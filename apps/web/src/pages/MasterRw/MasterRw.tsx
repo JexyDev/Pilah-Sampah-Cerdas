@@ -109,7 +109,7 @@ const MasterRw: React.FC = () => {
     kabupatenId: 1,
     kecamatanId: 1,
     kelurahanId: "",
-    rwName: "",
+    rwNumber: "",
   });
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -162,7 +162,7 @@ const MasterRw: React.FC = () => {
 
       const rws: RwItem[] = (resRw.data?.data || []).map((r: any) => ({
         id: r.id,
-        name: r.name,
+        name: (r.name || "").split("(")[0].trim(),
         kelurahanId: String(r.kelurahanId || r.kelurahan?.id || ""),
         kelurahanNama: r.kelurahan?.name || r.kelurahan?.nama || "Dago",
         kecamatanNama: formatKecName(r.kelurahan?.kecamatan?.name || r.kelurahan?.kecamatan?.nama || "Kecamatan"),
@@ -283,7 +283,42 @@ const MasterRw: React.FC = () => {
       kabupatenId: parentKabId,
       kecamatanId: parentKecId,
       kelurahanId: defaultKel,
-      rwName: "",
+      rwNumber: "",
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (rw: { id: number; name: string }, kelurahanId: string) => {
+    setModalType("edit");
+    const foundRw = rawRwList.find((r) => r.id === rw.id);
+    if (foundRw) {
+      setSelectedRwToEdit(foundRw);
+    } else {
+      setSelectedRwToEdit({
+        id: rw.id,
+        name: rw.name,
+        kelurahanId,
+        kelurahanNama: "",
+        kecamatanNama: "",
+        kabupatenNama: "",
+        provinsiNama: "",
+      });
+    }
+
+    const numOnly = rw.name.replace(/\D/g, "");
+    const selectedKelObj = kelurahanList.find((k) => k.id === kelurahanId);
+    const parentKecId = selectedKelObj?.kecamatanId || kecamatanList[0]?.id || 1;
+    const parentKecObj = kecamatanList.find((kc) => kc.id === parentKecId);
+    const parentKabId = parentKecObj?.kabupatenId || kabupatenList[0]?.id || 1;
+    const parentKabObj = kabupatenList.find((kb) => kb.id === parentKabId);
+    const parentProvId = parentKabObj?.provinsiId || provinsiList[0]?.id || 1;
+
+    setFormData({
+      provinsiId: parentProvId,
+      kabupatenId: parentKabId,
+      kecamatanId: parentKecId,
+      kelurahanId,
+      rwNumber: numOnly,
     });
     setIsModalOpen(true);
   };
@@ -317,12 +352,37 @@ const MasterRw: React.FC = () => {
   // Submit Add / Edit Form
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.rwName.trim()) {
-      toast.error("Nama RW tidak boleh kosong!");
+    if (!formData.rwNumber || !String(formData.rwNumber).trim()) {
+      toast.error("Nomor Rukun Warga tidak boleh kosong!");
       return;
     }
+
+    const numVal = parseInt(String(formData.rwNumber).replace(/\D/g, "") || "0", 10);
+    if (isNaN(numVal) || numVal <= 0) {
+      toast.error("Nomor Rukun Warga harus berupa angka positif!");
+      return;
+    }
+
     if (!formData.kelurahanId) {
       toast.error("Pilih Kelurahan terlebih dahulu!");
+      return;
+    }
+
+    const formattedName = `RW ${String(numVal).padStart(2, "0")}`;
+
+    // Unique Validation Check within selected Kelurahan
+    const isDuplicate = rawRwList.some(
+      (item) =>
+        String(item.kelurahanId) === String(formData.kelurahanId) &&
+        (item.name.toLowerCase() === formattedName.toLowerCase() ||
+          parseInt(item.name.replace(/\D/g, "") || "0", 10) === numVal) &&
+        (modalType === "add" || (selectedRwToEdit && item.id !== selectedRwToEdit.id))
+    );
+
+    if (isDuplicate) {
+      const selectedKelObj = kelurahanList.find((k) => k.id === formData.kelurahanId);
+      const kelName = selectedKelObj?.nama || "Kelurahan ini";
+      toast.error(`Rukun Warga "${formattedName}" sudah terdaftar di Kel. ${kelName}! Nomor RW harus unik.`);
       return;
     }
 
@@ -330,16 +390,16 @@ const MasterRw: React.FC = () => {
     try {
       if (modalType === "add") {
         await api.post("/areas/rw", {
-          name: formData.rwName.trim(),
+          name: formattedName,
           kelurahanId: formData.kelurahanId,
         });
-        toast.success(`Rukun Warga "${formData.rwName.trim()}" berhasil ditambahkan!`);
+        toast.success(`Rukun Warga "${formattedName}" berhasil ditambahkan!`);
       } else if (selectedRwToEdit) {
         await api.put(`/areas/rw/${selectedRwToEdit.id}`, {
-          name: formData.rwName.trim(),
+          name: formattedName,
           kelurahanId: formData.kelurahanId,
         });
-        toast.success(`Rukun Warga "${formData.rwName.trim()}" berhasil diperbarui!`);
+        toast.success(`Rukun Warga "${formattedName}" berhasil diperbarui!`);
       }
       setIsModalOpen(false);
       fetchData();
@@ -376,7 +436,7 @@ const MasterRw: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* 1. Header Navigation & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 border border-[#009966]/20 text-[#009966] flex items-center justify-center shrink-0 shadow-2xs">
             <Tag size={24} />
@@ -386,63 +446,26 @@ const MasterRw: React.FC = () => {
               Rukun Warga
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Kelola data Rukun Warga (RW) terintegrasi secara real-time dengan backend & Master Pengguna.
+              Kelola data Rukun Warga terintegrasi secara real-time dengan backend.
             </p>
           </div>
         </div>
 
         {!isReadOnly && (
-          <button
-            type="button"
-            onClick={() => handleOpenAddModal()}
-            className="bg-[#009966] hover:bg-[#008055] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 active:scale-95"
-          >
-            <Plus size={16} />
-            Tambah Rukun Warga
-          </button>
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+            <button
+              type="button"
+              onClick={() => handleOpenAddModal()}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer shrink-0"
+            >
+              <Plus size={16} />
+              <span>Tambah Rukun Warga</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* 2. Top Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
-              TOTAL RUKUN WARGA DATABASE
-            </span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
-              {rawRwList.length} <span className="text-xs font-bold text-slate-500">RW</span>
-            </h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#009966] border border-emerald-100 flex items-center justify-center">
-            <Tag size={20} />
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
-              CAKUPAN PENUGASAN UTAMA
-            </span>
-            <h3 className="text-xl font-black text-[#009966]">{kelurahanList.length} Kelurahan Terdata</h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center">
-            <MapPin size={20} />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
-              INTEGRASI BACKEND API
-            </span>
-            <h3 className="text-xl font-black text-emerald-600">Terhubung Real-Time</h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
-            <ShieldCheck size={20} />
-          </div>
-        </div>
-      </div>
 
       {/* 3. Search Bar Container */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -480,18 +503,15 @@ const MasterRw: React.FC = () => {
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 <th className="py-3.5 px-4 text-center w-16 whitespace-nowrap">NO</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">PROVINSI</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">KOTA, KABUPATEN</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">KECAMATAN</th>
                 <th className="py-3.5 px-4 whitespace-nowrap">KELURAHAN</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">RUKUN WARGA</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">DAFTAR RUKUN WARGA</th>
                 {!isReadOnly && <th className="py-3.5 px-4 text-center w-32 whitespace-nowrap">AKSI</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={4} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20">
                         <Loader2 className="animate-spin text-[#009966]" size={22} />
@@ -502,7 +522,7 @@ const MasterRw: React.FC = () => {
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-rose-600 font-bold text-xs">
+                  <td colSpan={4} className="py-12 text-center text-rose-600 font-bold text-xs">
                     <div className="flex flex-col items-center gap-2">
                       <AlertTriangle size={24} className="text-rose-500" />
                       <p>{error}</p>
@@ -529,51 +549,20 @@ const MasterRw: React.FC = () => {
                         {itemNumber}
                       </td>
 
-                      {/* PROVINSI */}
+                      {/* KELURAHAN & WILAYAH INDUK */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-700 border border-teal-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                            <Globe2 size={15} />
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-[#009966] border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                            <Home size={18} />
                           </div>
-                          <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">
-                            {group.provinsiNama}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* KOTA, KABUPATEN */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                            <Building2 size={15} />
+                          <div>
+                            <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs block">
+                              {group.kelurahanNama.startsWith("Kel.") ? group.kelurahanNama : `Kel. ${group.kelurahanNama}`}
+                            </span>
+                            <span className="text-[10.5px] font-semibold text-slate-400 dark:text-slate-500 block mt-0.5">
+                              {group.provinsiNama} • {group.kabupatenNama} • {group.kecamatanNama}
+                            </span>
                           </div>
-                          <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">
-                            {group.kabupatenNama}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* KECAMATAN */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#009966] border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                            <Compass size={15} />
-                          </div>
-                          <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">
-                            {group.kecamatanNama}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* KELURAHAN */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-emerald-50 text-[#009966] border border-emerald-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                            <Home size={15} />
-                          </div>
-                          <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">
-                            {group.kelurahanNama.startsWith("Kel.") ? group.kelurahanNama : `Kel. ${group.kelurahanNama}`}
-                          </span>
                         </div>
                       </td>
 
@@ -586,7 +575,9 @@ const MasterRw: React.FC = () => {
                             group.rws.map((rw) => (
                               <div
                                 key={rw.id}
+                                onClick={() => handleOpenEditModal(rw, group.kelurahanId)}
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200/80 text-[11px] font-mono font-black shadow-2xs hover:bg-blue-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+                                title="Klik untuk edit Rukun Warga ini"
                               >
                                 <Tag size={11} className="text-blue-600" />
                                 <span>{rw.name}</span>
@@ -598,10 +589,10 @@ const MasterRw: React.FC = () => {
                             <button
                               onClick={() => handleOpenAddModal(group.kelurahanId)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-slate-800 hover:border-[#009966] text-[11px] font-bold transition-all cursor-pointer active:scale-95"
-                              title="Tambah RW baru di kelurahan ini"
+                              title="Tambah Rukun Warga baru di kelurahan ini"
                             >
                               <Plus size={12} />
-                              <span>Tambah RW</span>
+                              <span>Tambah Rukun Warga</span>
                             </button>
                           )}
                         </div>
@@ -610,23 +601,23 @@ const MasterRw: React.FC = () => {
                       {/* AKSI */}
                       {!isReadOnly && (
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1.5">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"
                               onClick={() => handleOpenAddModal(group.kelurahanId)}
-                              className="p-2 rounded-xl text-emerald-600 hover:text-white hover:bg-[#009966] border border-emerald-100 hover:border-[#009966] transition-all cursor-pointer shadow-2xs"
-                              title="Tambah RW Baru"
+                              className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                              title="Tambah Rukun Warga Baru"
                             >
-                              <Plus size={15} />
+                              <Plus size={14} />
                             </button>
                             {group.rws.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() => handleOpenDeleteModal(group)}
-                                className="p-2 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
-                                title="Pilih & Hapus RW"
+                                className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                                title="Pilih & Hapus Rukun Warga"
                               >
-                                <Trash2 size={15} />
+                                <Trash2 size={14} />
                               </button>
                             )}
                           </div>
@@ -637,7 +628,7 @@ const MasterRw: React.FC = () => {
                 })
               ) : (
                 <EmptyTableState
-                  colSpan={7}
+                  colSpan={4}
                   entityName="Rukun Warga"
                   isSearch={!!searchTerm}
                   searchQuery={searchTerm}
@@ -724,10 +715,10 @@ const MasterRw: React.FC = () => {
                 </select>
               </div>
 
-              {/* Kota, Kabupaten */}
+              {/* Kota / Kabupaten */}
               <div>
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 block mb-1">
-                  Kota, Kabupaten <span className="text-rose-500">*</span>
+                  Kota / Kabupaten <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
@@ -781,10 +772,10 @@ const MasterRw: React.FC = () => {
                 </select>
               </div>
 
-              {/* Kelurahan Penugasan */}
+              {/* Kelurahan */}
               <div>
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 block mb-1">
-                  Kelurahan Penugasan <span className="text-rose-500">*</span>
+                  Kelurahan <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
@@ -802,24 +793,29 @@ const MasterRw: React.FC = () => {
                 </select>
               </div>
 
-              {/* Nama RW */}
+              {/* Nomor RW */}
               <div>
                 <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300 block mb-1">
-                  Nama Rukun Warga (RW) <span className="text-rose-500">*</span>
+                  Nomor Rukun Warga <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: RW 07 (atau RW 07, RW 08 untuk sekaligus)"
-                  value={formData.rwName}
-                  onChange={(e) => setFormData({ ...formData, rwName: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
-                />
-                {modalType === "add" && (
-                  <span className="text-[10px] text-slate-400 font-semibold mt-1 block">
-                    Bisa mengisikan beberapa RW sekaligus dipisah koma (Contoh: RW 07, RW 08)
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="px-4 py-2.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 text-[#009966] font-black text-xs rounded-xl shrink-0 shadow-2xs">
+                    RW
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max="99"
+                    required
+                    placeholder="Contoh: 01"
+                    value={formData.rwNumber}
+                    onChange={(e) => setFormData({ ...formData, rwNumber: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] focus:bg-white transition-all"
+                  />
+                </div>
+                <span className="text-[10px] text-slate-400 font-semibold mt-1 block">
+                  Cukup masukkan angka (misal: 1 atau 01). Sistem otomatis format "RW 01" & validasi keunikan.
+                </span>
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
@@ -874,7 +870,7 @@ const MasterRw: React.FC = () => {
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                 <span className="text-xs font-black text-slate-700 dark:text-slate-300">
-                  Pilih RW Yang Ingin Dihapus:
+                  Pilih Rukun Warga Yang Ingin Dihapus:
                 </span>
                 <button
                   type="button"
@@ -952,7 +948,7 @@ const MasterRw: React.FC = () => {
                 <span>
                   {isSubmitting
                     ? "Menghapus..."
-                    : `Hapus ${selectedRwIdsToDelete.length} RW Terpilih`}
+                    : `Hapus ${selectedRwIdsToDelete.length} Rukun Warga Terpilih`}
                 </span>
               </button>
             </div>

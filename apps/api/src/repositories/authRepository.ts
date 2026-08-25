@@ -476,7 +476,7 @@ export class AuthRepository {
       const user = await tx.user.create({
         data: {
           ...userData,
-          fotoProfil: userData.fotoProfil || getRandomDefaultAvatar(userData.name),
+          fotoProfil: userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
           phone: formattedPhone,
           roleId: role.id,
           wargaSubtype: wargaSubtype || "UTAMA",
@@ -548,7 +548,7 @@ export class AuthRepository {
       const user = await tx.user.create({
         data: {
           ...userData,
-          fotoProfil: userData.fotoProfil || getRandomDefaultAvatar(userData.name),
+          fotoProfil: userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
           roleId: role.id,
           status: "Aktif",
         },
@@ -577,7 +577,7 @@ export class AuthRepository {
       const user = await tx.user.create({
         data: {
           ...userData,
-          fotoProfil: userData.fotoProfil || getRandomDefaultAvatar(userData.name),
+          fotoProfil: userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
           roleId: role.id,
           status: "Pending",
         },

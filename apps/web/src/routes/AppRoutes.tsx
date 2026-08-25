@@ -257,13 +257,14 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/leaderboard" element={<Navigate to="/peringkat" replace />} />
         <Route
-          path="/master-pengguna"
+          path="/pengguna"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE", "RW", "DEVELOPER"]}>
               <ManajemenPengguna />
             </ProtectedRoute>
           }
         />
+        <Route path="/master-pengguna" element={<Navigate to="/pengguna" replace />} />
         <Route
           path="/master-data-pengguna"
           element={
@@ -329,7 +330,7 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/manajemen-tempat-sampah" element={<Navigate to="/master-data/manajemen-tempat-sampah" replace />} />
         <Route
-          path="/master-data/rule-engine"
+          path="/peraturan"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -349,9 +350,12 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/master-rule-engine" element={<Navigate to="/master-data/rule-engine" replace />} />
+        <Route path="/dataset/peraturan" element={<Navigate to="/peraturan" replace />} />
+        <Route path="/master-data/rule-engine" element={<Navigate to="/peraturan" replace />} />
+        <Route path="/master-rule-engine" element={<Navigate to="/peraturan" replace />} />
+        {/* Provinsi */}
         <Route
-          path="/master-data/provinsi"
+          path="/wilayah/provinsi"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -369,9 +373,12 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/master-provinsi" element={<Navigate to="/master-data/provinsi" replace />} />
+        <Route path="/master-data/provinsi" element={<Navigate to="/wilayah/provinsi" replace />} />
+        <Route path="/master-provinsi" element={<Navigate to="/wilayah/provinsi" replace />} />
+
+        {/* Kota / Kabupaten */}
         <Route
-          path="/master-data/kota-kabupaten"
+          path="/wilayah/kota-kabupaten"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -389,10 +396,13 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/master-kota-kabupaten" element={<Navigate to="/master-data/kota-kabupaten" replace />} />
-        <Route path="/master-kabupaten" element={<Navigate to="/master-data/kota-kabupaten" replace />} />
+        <Route path="/master-data/kota-kabupaten" element={<Navigate to="/wilayah/kota-kabupaten" replace />} />
+        <Route path="/master-kota-kabupaten" element={<Navigate to="/wilayah/kota-kabupaten" replace />} />
+        <Route path="/master-kabupaten" element={<Navigate to="/wilayah/kota-kabupaten" replace />} />
+
+        {/* Kecamatan */}
         <Route
-          path="/master-data/kecamatan"
+          path="/wilayah/kecamatan"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -410,10 +420,13 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/master-kecamatan" element={<Navigate to="/master-data/kecamatan" replace />} />
-        <Route path="/master-data/kecematan" element={<Navigate to="/master-data/kecamatan" replace />} />
+        <Route path="/master-data/kecamatan" element={<Navigate to="/wilayah/kecamatan" replace />} />
+        <Route path="/master-kecamatan" element={<Navigate to="/wilayah/kecamatan" replace />} />
+        <Route path="/master-data/kecematan" element={<Navigate to="/wilayah/kecamatan" replace />} />
+
+        {/* Kelurahan */}
         <Route
-          path="/master-data/kelurahan"
+          path="/wilayah/kelurahan"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -431,9 +444,12 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/master-kelurahan" element={<Navigate to="/master-data/kelurahan" replace />} />
+        <Route path="/master-data/kelurahan" element={<Navigate to="/wilayah/kelurahan" replace />} />
+        <Route path="/master-kelurahan" element={<Navigate to="/wilayah/kelurahan" replace />} />
+
+        {/* RW */}
         <Route
-          path="/master-data/rukun-warga"
+          path="/wilayah/rw"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -451,7 +467,9 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="/master-rw" element={<Navigate to="/master-data/rukun-warga" replace />} />
+        <Route path="/master-data/rukun-warga" element={<Navigate to="/wilayah/rw" replace />} />
+        <Route path="/master-rw" element={<Navigate to="/wilayah/rw" replace />} />
+        <Route path="/wilayah/rukun-warga" element={<Navigate to="/wilayah/rw" replace />} />
         <Route
           path="/dashboard-dpl"
           element={
@@ -494,12 +512,16 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/penilaian-kkn/mahasiswa"
+          path="/penilaian-kkn/individu"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "LURAH", "CAMAT", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
               <PenilaianKknMahasiswaPage />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/penilaian-kkn/mahasiswa"
+          element={<Navigate to="/penilaian-kkn/individu" replace />}
         />
         <Route
           path="/penilaian-kkn/program-kerja"
@@ -732,7 +754,7 @@ const AppRoutes: React.FC = () => {
         />
         <Route
           path="/superUser/configs"
-          element={<Navigate to="/master-data/rule-engine" replace />}
+          element={<Navigate to="/peraturan" replace />}
         />
         <Route
           path="/log-aktivitas"
@@ -791,7 +813,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/superUser/data-survei-baseline"
+          path="/survei/baseline"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH", "DEVELOPER"]}>
               <DataSurveiKkn type="BASELINE" />
@@ -799,18 +821,26 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/superUser/data-survei-endline"
+          path="/survei/endline"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "ADMIN_DLH", "CAMAT", "LURAH", "DEVELOPER"]}>
               <DataSurveiKkn type="ENDLINE" />
             </ProtectedRoute>
           }
         />
-        <Route path="/data-survei-baseline" element={<Navigate to="/superUser/data-survei-baseline" replace />} />
-        <Route path="/survei-baseline" element={<Navigate to="/superUser/data-survei-baseline" replace />} />
-        <Route path="/data-survei-endline" element={<Navigate to="/superUser/data-survei-endline" replace />} />
-        <Route path="/survei-endline" element={<Navigate to="/superUser/data-survei-endline" replace />} />
-        <Route path="/data-survei-kkn" element={<Navigate to="/superUser/data-survei-baseline" replace />} />
+        <Route
+          path="/superUser/data-survei-baseline"
+          element={<Navigate to="/survei/baseline" replace />}
+        />
+        <Route
+          path="/superUser/data-survei-endline"
+          element={<Navigate to="/survei/endline" replace />}
+        />
+        <Route path="/data-survei-baseline" element={<Navigate to="/survei/baseline" replace />} />
+        <Route path="/survei-baseline" element={<Navigate to="/survei/baseline" replace />} />
+        <Route path="/data-survei-endline" element={<Navigate to="/survei/endline" replace />} />
+        <Route path="/survei-endline" element={<Navigate to="/survei/endline" replace />} />
+        <Route path="/data-survei-kkn" element={<Navigate to="/survei/baseline" replace />} />
         <Route
           path="/evaluasi-dampak-kkn"
           element={

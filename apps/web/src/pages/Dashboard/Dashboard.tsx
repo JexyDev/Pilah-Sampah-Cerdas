@@ -1952,7 +1952,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPengguna?.trend}
           trendLabel={stats?.totalPengguna?.trendLabel}
           trendUp={stats?.totalPengguna?.trendUp}
-          linkTo="/master-pengguna"
+          linkTo="/pengguna"
         />
         <KpiCard
           iconName="delete"

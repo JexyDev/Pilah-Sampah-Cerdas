@@ -144,8 +144,8 @@ export class DatasetKlasifikasiController {
 
       // Categorization breakdown (YOLOv8-seg ONNX 2-Class Model: ORGANIC & NON_ORGANIC)
       const [organikCount, anorganikCount] = await Promise.all([
-        prisma.setoranOtomatis.count({ where: { hasilKlasifikasiAi: { contains: "ORGANIK", mode: "insensitive" } } }).catch(() => 4),
-        prisma.setoranOtomatis.count({ where: { OR: [{ hasilKlasifikasiAi: { contains: "ANORGANIK", mode: "insensitive" } }, { hasilKlasifikasiAi: { contains: "NON_ORGANIC", mode: "insensitive" } }] } }).catch(() => 2),
+        prisma.setoranOtomatis.count({ where: { hasilKlasifikasiAi: { contains: "ORGANIK", mode: "insensitive" } } }).catch(() => 0),
+        prisma.setoranOtomatis.count({ where: { OR: [{ hasilKlasifikasiAi: { contains: "ANORGANIK", mode: "insensitive" } }, { hasilKlasifikasiAi: { contains: "NON_ORGANIC", mode: "insensitive" } }] } }).catch(() => 0),
       ]);
 
       const formattedRecords = records.map((r) => {
@@ -193,8 +193,8 @@ export class DatasetKlasifikasiController {
       });
 
       const totalRatings = formattedRecords.reduce((acc, curr) => acc + (curr.ratingWarga || 5), 0);
-      const avgRating = formattedRecords.length > 0 ? Math.round((totalRatings / formattedRecords.length) * 100) / 100 : 4.85;
-      const accuracyRatePercent = Math.round((avgRating / 5) * 1000) / 10;
+      const avgRating = formattedRecords.length > 0 ? Math.round((totalRatings / formattedRecords.length) * 100) / 100 : 0.0;
+      const accuracyRatePercent = avgRating > 0 ? Math.round((avgRating / 5) * 1000) / 10 : 0.0;
 
       res.status(200).json({
         success: true,

@@ -25,6 +25,7 @@ import {
   Award,
   BookOpen,
   ClipboardList,
+  Bot,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -72,10 +73,26 @@ const checkRouteActive = (
     ];
     if (dplLogAliases.includes(tPath) && dplLogAliases.includes(cPath)) return true;
     if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
-    const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
+    const userMasterAliases = ["/pengguna", "/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
     const fasilitasAliases = ["/pengelolaan-sampah", "/fasilitas-posko", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
     if (fasilitasAliases.includes(tPath) && fasilitasAliases.includes(cPath)) return true;
+
+    const provAliases = ["/wilayah/provinsi", "/master-data/provinsi", "/master-provinsi"];
+    if (provAliases.includes(tPath) && provAliases.includes(cPath)) return true;
+
+    const kabAliases = ["/wilayah/kota-kabupaten", "/master-data/kota-kabupaten", "/master-kota-kabupaten", "/master-kabupaten"];
+    if (kabAliases.includes(tPath) && kabAliases.includes(cPath)) return true;
+
+    const kecAliases = ["/wilayah/kecamatan", "/master-data/kecamatan", "/master-kecamatan", "/master-data/kecematan"];
+    if (kecAliases.includes(tPath) && kecAliases.includes(cPath)) return true;
+
+    const kelAliases = ["/wilayah/kelurahan", "/master-data/kelurahan", "/master-kelurahan"];
+    if (kelAliases.includes(tPath) && kelAliases.includes(cPath)) return true;
+
+    const rwAliases = ["/wilayah/rw", "/master-data/rukun-warga", "/master-rw", "/wilayah/rukun-warga"];
+    if (rwAliases.includes(tPath) && rwAliases.includes(cPath)) return true;
+
     return false;
   };
 
@@ -112,7 +129,9 @@ const checkRouteActive = (
       }
       if (targetRole === currentRole) return true;
       if (targetRole === "su" && ["su", "admin", "superuser", "super_user"].includes(currentRole)) return true;
-      if (targetRole === "petugas-residu" && ["petugas-residu", "petugas_residu", "petugas"].includes(currentRole)) return true;
+      if (targetRole === "petugas-pemilah" || targetRole === "petugas-residu") {
+        return ["petugas-pemilah", "petugas-residu", "petugas_residu", "petugas"].includes(currentRole);
+      }
       if (targetRole === "mahasiswa" && ["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(currentRole)) return true;
       if (targetRole === "taskforce" && ["taskforce", "task-force", "panitia_taskforce"].includes(currentRole)) return true;
       return false;
@@ -442,7 +461,7 @@ const NavGroup: React.FC<{
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
           isAnySubActive
-            ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
+            ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-semibold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
             : "text-slate-600 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
@@ -451,10 +470,10 @@ const NavGroup: React.FC<{
         )}
 
         <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
-        <span className="flex-1 font-bold text-slate-800 dark:text-slate-200 truncate tracking-tight">{label}</span>
+        <span className={`flex-1 truncate tracking-tight ${isAnySubActive ? "font-semibold text-[#035941] dark:text-emerald-400" : "font-medium text-slate-600 dark:text-slate-300 group-hover:text-[#035941] dark:group-hover:text-emerald-400"}`}>{label}</span>
         <ChevronDown
           size={14}
-          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#035941] dark:text-emerald-400 font-bold" : "text-slate-400"}`}
+          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#035941] dark:text-emerald-400" : "text-slate-400"}`}
         />
       </button>
       {isOpen && (
@@ -571,10 +590,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     }
 
     if (groupLabel === "Dataset") {
-      if (userRole === "DEVELOPER") {
-        return items;
-      }
-      return [];
+      return items.filter((c) => !c.allowed || hasAccess(c.allowed));
     }
 
     return items.filter((c) => !c.allowed || hasAccess(c.allowed));
@@ -731,7 +747,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ] as UserRole[],
           children: [
             {
-              to: "/penilaian-kkn/mahasiswa",
+              to: "/penilaian-kkn/individu",
               label: "Penilaian Individu",
               allowed: [
                 "DEVELOPER",
@@ -804,7 +820,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           ] as UserRole[],
           children: [
             {
-              to: "/superUser/data-survei-baseline",
+              to: "/survei/baseline",
               label: "Survei Baseline",
               allowed: [
                 "DEVELOPER",
@@ -819,7 +835,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/superUser/data-survei-endline",
+              to: "/survei/endline",
               label: "Survei Endline",
               allowed: [
                 "DEVELOPER",
@@ -965,7 +981,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       ],
     },
     {
-      header: "DATA MASTER",
+      header: "MASTER DATA",
       items: [
         {
           type: "group",
@@ -973,18 +989,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: Users,
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN", "RW"] as UserRole[],
           children: [
-            { to: "/master-pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
-            { to: "/master-pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
-            { to: "/master-pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/master-pengguna?role=dpl", label: "DPL", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/master-pengguna?role=dlh", label: "DLH", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=rw", label: "RW", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
-            { to: "/master-pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/master-pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=dpl", label: "Dosen Pembimbing Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            // { to: "/pengguna?role=dlh", label: "Dinas Lingkungan Hidup", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            // { to: "/pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            // { to: "/pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            // { to: "/pengguna?role=rw", label: "Rukun Warga", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
           ],
         },
         {
@@ -993,21 +1008,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: MapPin,
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
           children: [
-            { to: "/master-data/provinsi", label: "Provinsi" },
-            { to: "/master-data/kota-kabupaten", label: "Kota / Kabupaten" },
-            { to: "/master-data/kecamatan", label: "Kecamatan" },
-            { to: "/master-data/kelurahan", label: "Kelurahan" },
-            { to: "/master-data/rukun-warga", label: "RW" },
-          ],
-        },
-        {
-          type: "group",
-          label: "Panduan & Edukasi",
-          icon: BookOpen,
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
-          children: [
-            { to: "/master-data/panduan", label: "Buku Panduan" },
-            { to: "/master-data/kegiatan-sampah", label: "Kegiatan Sampah" },
+            { to: "/wilayah/provinsi", label: "Provinsi" },
+            { to: "/wilayah/kota-kabupaten", label: "Kota / Kabupaten" },
+            { to: "/wilayah/kecamatan", label: "Kecamatan" },
+            { to: "/wilayah/kelurahan", label: "Kelurahan" },
+            { to: "/wilayah/rw", label: "Rukun Warga" },
           ],
         },
         {
@@ -1018,6 +1023,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/dataset/hasil-klasifikasi", label: "Hasil Klasifikasi" },
           ],
+        },
+        {
+          to: "/peraturan",
+          icon: Bot,
+          label: "Peraturan",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
         },
       ],
     },
@@ -1080,7 +1091,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/pengaturan", label: "Profil", allowed: ALL_ROLES },
             { to: "/notifikasi", label: "Notifikasi", allowed: ALL_ROLES },
-            { to: "/master-data/rule-engine", label: "Mesin Aturan (Rule Engine)", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
           ],
         },
         {

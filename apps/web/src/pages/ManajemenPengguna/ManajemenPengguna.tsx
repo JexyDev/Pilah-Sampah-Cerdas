@@ -1,4 +1,4 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown } from "lucide-react";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -26,7 +26,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   RW: "Rukun Warga",
   PEMIMPIN: "Pimpinan",
   PANITIA_TASKFORCE: "Task Force",
-  DPL: "Dosen Pendamping Lapangan",
+  DPL: "Dosen Pembimbing Lapangan",
   PETUGAS_RESIDU: "Petugas Pemilah",
   MAHASISWA_KKN: "Mahasiswa",
   WARGA: "Warga",
@@ -46,9 +46,9 @@ const detectKelurahanName = (u: any): string => {
   if (u?.kelurahan && u.kelurahan !== "-") {
     return cleanKelurahanName(u.kelurahan);
   }
-  
+
   const combinedText = `${u?.name || ""} ${u?.address || ""} ${u?.wilayah || ""} ${u?.rw || ""}`.toLowerCase();
-  
+
   const knownKelurahans = [
     { name: "Sadang Serang", label: "Kel. Sadang Serang" },
     { name: "Sedang Serang", label: "Kel. Sadang Serang" },
@@ -114,7 +114,7 @@ const normalizeRoleFromUrl = (param: string | null): string => {
   if (["camat"].includes(p)) return "CAMAT";
   if (["lurah"].includes(p)) return "LURAH";
   if (["rw", "rukun-warga"].includes(p)) return "RW";
-  if (["petugas-residu", "petugas_residu", "petugas"].includes(p)) return "PETUGAS_RESIDU";
+  if (["petugas-pemilah", "petugas-residu", "petugas_residu", "petugas"].includes(p)) return "PETUGAS_RESIDU";
   if (["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(p)) return "MAHASISWA_KKN";
   if (["warga"].includes(p)) return "WARGA";
   return param.toUpperCase();
@@ -310,35 +310,39 @@ const ManajemenPengguna: React.FC = () => {
 
   const filteredRwsByKelurahan = useMemo(() => {
     const targetClean = getCleanKelName(modalKelurahan).toLowerCase();
-    if (!targetClean || targetClean === "unassigned") {
-      return [];
-    }
-
     const list = areasList.filter((a: any) => {
+      if (!targetClean || targetClean === "unassigned") return true;
       const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
       return areaKel === targetClean || areaKel.includes(targetClean) || targetClean.includes(areaKel);
     });
 
-    // Deduplicate list by numeric RW identifier to prevent duplicate RW buttons in modal
     const seen = new Set<string>();
     const uniqueList: any[] = [];
-    for (const item of list) {
-      const rawName = item.name.split("(")[0].trim();
+    for (const item of (list.length > 0 ? list : areasList)) {
+      const rawName = (item.name || "").split("(")[0].trim();
       const rwNum = rawName.replace(/\D/g, "").padStart(2, "0");
       if (rwNum && rwNum !== "00" && !seen.has(rwNum)) {
         seen.add(rwNum);
         uniqueList.push({
           ...item,
-          cleanName: rawName.startsWith("RW") ? rawName : `RW ${rwNum}`
+          cleanName: `RW ${rwNum}`
         });
       }
     }
 
-    return uniqueList.sort((a: any, b: any) => {
-      const numA = parseInt(a.name.replace(/\D/g, "") || "0", 10);
-      const numB = parseInt(b.name.replace(/\D/g, "") || "0", 10);
-      return numA - numB;
-    });
+    if (uniqueList.length > 0) {
+      return uniqueList.sort((a: any, b: any) => {
+        const numA = parseInt(a.cleanName.replace(/\D/g, "") || "0", 10);
+        const numB = parseInt(b.cleanName.replace(/\D/g, "") || "0", 10);
+        return numA - numB;
+      });
+    }
+
+    return Array.from({ length: 15 }, (_, i) => ({
+      id: (i + 1).toString(),
+      name: `RW ${(i + 1).toString().padStart(2, "0")}`,
+      cleanName: `RW ${(i + 1).toString().padStart(2, "0")}`
+    }));
   }, [areasList, modalKelurahan]);
 
   // Helper to normalize kecamatan name (e.g. "Kecamatan Coblong" <-> "Coblong")
@@ -363,21 +367,33 @@ const ManajemenPengguna: React.FC = () => {
 
   // Dynamically filter Kecamatan by selected Kota / Kabupaten
   const filteredKecamatanList = useMemo(() => {
-    if (!formData.kabupaten || kabupatenList.length === 0) return [];
-    const selectedKab = kabupatenList.find(
-      (kb: any) => (kb.name || kb.nama || "").toLowerCase() === formData.kabupaten.toLowerCase()
-    );
-    if (!selectedKab) return [];
-    return kecamatanList.filter((kc: any) => {
+    const defaultList = kecamatanList && kecamatanList.length > 0
+      ? kecamatanList
+      : [{ id: 6, name: "Kecamatan Coblong" }];
+    if (!formData.kabupaten) return defaultList;
+    const kabClean = formData.kabupaten.toLowerCase();
+    const filtered = defaultList.filter((kc: any) => {
       const kId = kc.kabupatenId || kc.kabupaten?.id;
       const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
-      return Number(kId) === Number(selectedKab.id) || (kName && kName === formData.kabupaten.toLowerCase());
+      return kName === kabClean || kName.includes(kabClean) || kabClean.includes(kName) || (kId && Number(kId) === 1);
     });
+    return filtered.length > 0 ? filtered : defaultList;
   }, [kabupatenList, kecamatanList, formData.kabupaten]);
 
-  // Dynamically filter Kelurahan by selected Kecamatan (STRICT FK ID SCOPE)
+  // Dynamically filter Kelurahan by selected Kecamatan (STRICT FK ID SCOPE WITH ROBUST FALLBACKS)
   const filteredKelurahanList = useMemo(() => {
-    if (!formData.kecamatan || kelurahanList.length === 0) return [];
+    const baseKelList = kelurahanList && kelurahanList.length > 0
+      ? kelurahanList
+      : [
+          { id: 1, name: "Cipaganti", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
+          { id: 2, name: "Dago", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
+          { id: 3, name: "Lebak Gede", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
+          { id: 4, name: "Lebak Siliwangi", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
+          { id: 5, name: "Sadang Serang", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
+          { id: 6, name: "Sekeloa", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } }
+        ];
+
+    if (!formData.kecamatan) return baseKelList;
     const curKecRaw = formData.kecamatan;
     const curKecNorm = normalizeKecamatan(curKecRaw);
 
@@ -386,12 +402,17 @@ const ManajemenPengguna: React.FC = () => {
       return kNameNorm === curKecNorm || (kc.name || kc.nama || "").toLowerCase() === curKecRaw.toLowerCase();
     });
 
-    if (!selectedKec) return [];
-
-    return kelurahanList.filter((kl: any) => {
-      const kecId = kl.kecamatanId || kl.kecamatan?.id;
-      return Number(kecId) === Number(selectedKec.id);
+    const filtered = baseKelList.filter((kl: any) => {
+      if (selectedKec) {
+        const kecId = kl.kecamatanId || kl.kecamatan?.id;
+        if (kecId && Number(kecId) === Number(selectedKec.id)) return true;
+      }
+      const klKecName = kl.kecamatanName || kl.kecamatan?.name || kl.kecamatan?.nama || "";
+      if (klKecName && normalizeKecamatan(klKecName) === curKecNorm) return true;
+      return false;
     });
+
+    return filtered.length > 0 ? filtered : baseKelList;
   }, [kecamatanList, kelurahanList, formData.kecamatan]);
 
   const handleProvinsiSelect = (newProv: string) => {
@@ -858,7 +879,7 @@ const ManajemenPengguna: React.FC = () => {
     let clean = name.trim();
     clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
     clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
-    
+
     // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
     const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
     if (informalMatch) {
@@ -867,6 +888,13 @@ const ManajemenPengguna: React.FC = () => {
       return `Kelompok ${num} ${place}`;
     }
     return clean;
+  };
+
+  const formatCleanRw = (rwStr?: string): string => {
+    if (!rwStr || rwStr === "-") return "-";
+    const rawClean = rwStr.split("(")[0].trim();
+    const rwNum = rawClean.replace(/\D/g, "").padStart(2, "0");
+    return rwNum && rwNum !== "00" ? `RW ${rwNum}` : rawClean;
   };
 
   // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges
@@ -1093,45 +1121,33 @@ const ManajemenPengguna: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
-        {/* Tier 1: Title & Status Badge */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
-              Manajemen Pengguna
+      {/* 1. Header Bar (Executive Standard UI) */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0 border border-[#009966]/15 dark:border-emerald-700/30 shadow-2xs">
+            <Users size={24} />
+          </div>
+          <div className="space-y-0.5">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+              Pengguna
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Kelola akses, daftar pengguna, peran sistem, dan otentikasi akun
+              Kelola daftar pengguna, peran sistem, hak akses wilayah, dan autentikasi akun secara terintegrasi.
             </p>
           </div>
-
-          <div className="self-start sm:self-center flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
-              RBAC Aktif
-            </span>
-          </div>
         </div>
 
-        {/* Tier 2: Info & Action Buttons */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            Total {users.length} pengguna terdaftar di seluruh role
+        {!isReadOnly && (
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+            <button
+              onClick={handleOpenAddModal}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer"
+            >
+              <UserPlus size={16} />
+              <span>Tambah Pengguna</span>
+            </button>
           </div>
-
-          {!isReadOnly && (
-            <div className="flex items-center gap-2 ml-auto sm:ml-0">
-              <button
-                onClick={handleOpenAddModal}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#009966] hover:bg-[#008855] text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
-              >
-                <UserPlus size={15} />
-                <span>Tambah Pengguna</span>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -1242,12 +1258,12 @@ const ManajemenPengguna: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Table Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+      {/* Main Table Card (Desktop view) */}
+      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-800/80 text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+            <thead className="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md">
+              <tr className="text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                 {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
                   <>
                     <th className="py-3 px-4">NAMA LENGKAP</th>
@@ -1270,8 +1286,8 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NIP</th>
                     <th className="py-3 px-4">NO. HP</th>
-                    <th className="py-3 px-4">PENDAMPING KELOMPOK</th>
-                    <th className="py-3 px-4">JENJANG PENDIDIKAN</th>
+                    <th className="py-3 px-4">PEMBIMBING KELOMPOK</th>
+                    <th className="py-3 px-4">MENGAJAR JENJANG</th>
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
@@ -1336,7 +1352,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KELOMPOK KKN</th>
-                    <th className="py-3 px-4">DOSEN PENDAMPING</th>
+                    <th className="py-3 px-4">DOSEN PEMBIMBING</th>
                     <th className="py-3 px-4">WILAYAH PENUGASAN</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
@@ -1349,7 +1365,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">KELURAHAN</th>
                     <th className="py-3 px-4">RUKUN WARGA</th>
                     <th className="py-3 px-4">ALAMAT LENGKAP</th>
-                    <th className="py-3 px-4 text-center">JML. ANGGOTA KELUARGA</th>
+                    <th className="py-3 px-4 text-center">JUMLAH ANGGOTA KELUARGA</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
                   </>
@@ -1500,7 +1516,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">
                           {u.rw && u.rw !== "-" ? (
                             <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
-                              {u.rw.startsWith("RW") ? u.rw : `RW ${String(u.rw).padStart(2, "0")}`}
+                              {formatCleanRw(u.rw)}
                             </span>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
@@ -1525,13 +1541,13 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">
                           {u.rw && u.rw !== "-" ? (
                             <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
-                              {u.rw.startsWith("RW") ? u.rw : `RW ${String(u.rw).padStart(2, "0")}`}
+                              {formatCleanRw(u.rw)}
                             </span>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.wilayah || (u.rw ? `${u.rw}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.wilayah || (u.rw ? `${formatCleanRw(u.rw)}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
                         <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
                       </>
                     ) : selectedRole === "MAHASISWA_KKN" ? (
@@ -1569,7 +1585,7 @@ const ManajemenPengguna: React.FC = () => {
                         </td>
                         <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
                           <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
-                            {u.rw ? (u.rw.startsWith("RW") ? u.rw : `RW ${String(u.rw).padStart(2, "0")}`) : "RW 06"}
+                            {formatCleanRw(u.rw)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
@@ -1592,7 +1608,7 @@ const ManajemenPengguna: React.FC = () => {
 
                     {!isReadOnly && (
                       <td className="py-3 px-4 text-center">
-                        <div className="flex justify-center gap-1">
+                        <div className="flex justify-center gap-1.5">
                           {(() => {
                             const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
                             const canEdit =
@@ -1606,10 +1622,10 @@ const ManajemenPengguna: React.FC = () => {
                             return (
                               <button
                                 onClick={() => handleOpenEditModal(u)}
-                                className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                                title="Edit"
+                                className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                                title="Edit Data Pengguna"
                               >
-                                <Pencil size={15} />
+                                <Pencil size={14} />
                               </button>
                             );
                           })()}
@@ -1631,14 +1647,14 @@ const ManajemenPengguna: React.FC = () => {
                                   if (isSelf) return;
                                   handleDeleteClick(u);
                                 }}
-                                className={`w-8 h-8 rounded-lg transition-colors flex items-center justify-center ${
+                                className={`w-8 h-8 rounded-xl border transition-all flex items-center justify-center active:scale-95 shadow-2xs ${
                                   isSelf
-                                    ? "bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed"
-                                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-rose-600 hover:text-white cursor-pointer"
+                                    ? "bg-slate-50 dark:bg-slate-800/40 text-slate-300 dark:text-slate-700 border-slate-200/60 dark:border-slate-800/60 opacity-50 cursor-not-allowed"
+                                    : "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-900/40 cursor-pointer"
                                 }`}
-                                title={isSelf ? "Akun Anda Sendiri - Tidak dapat dihapus" : "Hapus"}
+                                title={isSelf ? "Akun Anda Sendiri - Tidak dapat dihapus" : "Hapus Pengguna"}
                               >
-                                <Trash2 size={15} />
+                                <Trash2 size={14} />
                               </button>
                             );
                           })()}
@@ -1650,13 +1666,12 @@ const ManajemenPengguna: React.FC = () => {
               ) : (
                 <EmptyTableState
                   colSpan={10}
-                  entityName="Pengguna"
-                  isSearch={!!(searchQuery || selectedRole !== "ALL" || selectedStatus !== "ALL")}
+                  entityName={ROLE_LABEL_MAP[selectedRole] || "Pengguna"}
+                  isSearch={!!(searchQuery || selectedStatus !== "Semua")}
                   searchQuery={searchQuery}
                   onResetSearch={() => {
                     setSearchQuery("");
-                    setSelectedRole("ALL");
-                    setSelectedStatus("ALL");
+                    setSelectedStatus("Semua");
                   }}
                 />
               )}
@@ -1677,6 +1692,156 @@ const ManajemenPengguna: React.FC = () => {
         )}
       </div>
 
+      {/* Mobile Card List (Mobile View <640px) */}
+      <div className="block md:hidden space-y-4">
+        {loading ? (
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center gap-3">
+            <Loader2 className="animate-spin text-blue-600" size={28} />
+            <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">Memuat data pengguna...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-rose-50 text-rose-700 p-6 rounded-2xl border border-rose-200 text-center text-xs font-bold">
+            {error}
+          </div>
+        ) : paginatedUsers.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden">
+            <EmptyTableState
+              entityName={ROLE_LABEL_MAP[selectedRole] || "Pengguna"}
+              isSearch={!!(searchQuery || selectedStatus !== "Semua")}
+              searchQuery={searchQuery}
+              onResetSearch={() => {
+                setSearchQuery("");
+                setSelectedStatus("Semua");
+              }}
+            />
+          </div>
+        ) : (
+          paginatedUsers.map((u) => {
+            const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
+            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+            const canEdit =
+              user?.peran === "DEVELOPER" ||
+              (user?.peran === "SUPER_USER" && !isDevTarget) ||
+              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
+            const canDelete =
+              !isSelf &&
+              (user?.peran === "DEVELOPER" ||
+                (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)));
+
+            return (
+              <div key={u.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+                {/* Profile Card Header */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {renderAvatar(u)}
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs">{u.name}</h4>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-850 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold mt-1 inline-block">
+                        {ROLE_LABEL_MAP[u.role || selectedRole] || u.role}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
+                    (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                      : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                  }`}>
+                    {u.status || "Aktif"}
+                  </span>
+                </div>
+
+                {/* Details Info Grid */}
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
+                  <div>
+                    <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">No. Telepon</span>
+                    <span className="font-semibold block">{renderPhoneCell(u.phone)}</span>
+                  </div>
+
+                  {u.nip && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">NIP</span>
+                      <span className="font-bold font-mono text-slate-800 dark:text-slate-100 block">{u.nip}</span>
+                    </div>
+                  )}
+
+                  {u.nim && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">NIM</span>
+                      <span className="font-bold font-mono text-slate-800 dark:text-slate-100 block">{u.nim}</span>
+                    </div>
+                  )}
+
+                  {u.kecamatan && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kecamatan</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{formatKecamatanName(u.kecamatan)}</span>
+                    </div>
+                  )}
+
+                  {u.kelurahan && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kelurahan</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{detectKelurahanName(u)}</span>
+                    </div>
+                  )}
+
+                  {u.rw && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Rukun Warga</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">
+                        {formatCleanRw(u.rw)}
+                      </span>
+                    </div>
+                  )}
+
+                  {u.wilayah && (
+                    <div className="col-span-2">
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">
+                        {u.role === "WARGA" ? "Wilayah Domisili" : "Wilayah Penugasan"}
+                      </span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{renderWilayahBadges(u.wilayah)}</span>
+                    </div>
+                  )}
+
+                  {u.address && (
+                    <div className="col-span-2">
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Alamat Lengkap</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100 leading-snug">{u.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Action Buttons */}
+                {!isReadOnly && (canEdit || canDelete) && (
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    {canEdit && selectedRole.toUpperCase() !== "RW" && (
+                      <button
+                        onClick={() => handleOpenEditModal(u)}
+                        className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 border border-amber-200/80 dark:border-amber-900/40 text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                      >
+                        <Pencil size={13} />
+                        <span>Ubah</span>
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDeleteClick(u)}
+                        className="px-4 py-2 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 border border-rose-200/80 dark:border-rose-900/40 text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                      >
+                        <Trash2 size={13} />
+                        <span>Hapus</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {/* Modal Tambah/Edit — Standar ISO 27001 */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4" onClick={handleCloseModal}>
@@ -1688,7 +1853,7 @@ const ManajemenPengguna: React.FC = () => {
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                     modalType === "add"
                       ? "bg-[#009966]/10 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-800/60"
-                      : "bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60"
+                      : "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60"
                   }`}>
                     {modalType === "add" ? <UserPlus size={20} /> : <Pencil size={20} />}
                   </div>
@@ -1713,7 +1878,7 @@ const ManajemenPengguna: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <User size={14} className="text-slate-400 dark:text-slate-500" />
-                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Informasi Dasar & Foto Profil</span>
+                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Informasi Dasar</span>
                   </div>
                   <div className="space-y-3.5">
                     {/* Foto Profil Input & Live Preview */}
@@ -1819,18 +1984,15 @@ const ManajemenPengguna: React.FC = () => {
                       {formData.roleName === "DPL" && (
                         <>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP / NIDN</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
                             <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
-                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Mengajar Jenjang</label>
+                              <select value={formData.jenjangPendidikan || "S1"} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
                                 <option value="S1">S1 (Sarjana)</option>
-                                <option value="S2">S2 (Magister)</option>
-                                <option value="S3">S3 (Doktor)</option>
                                 <option value="D3">D3 (Diploma Tiga)</option>
-                                <option value="D4">D4 (Diploma Empat)</option>
                               </select>
                             </div>
                             <div>
@@ -1839,7 +2001,7 @@ const ManajemenPengguna: React.FC = () => {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN Bimbingan</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pembimbing Kelompok</label>
                             <select
                               value={formData.dplKelompokIds?.[0] || ""}
                               onChange={(e) => {
@@ -1848,14 +2010,14 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
-                               <option value="">-- Pilih Kelompok Bimbingan KKN --</option>
+                               <option value="">-- Tidak Membimbing Kelompok --</option>
                               {kelompokList.map((k: any) => (
                                 <option key={k.id} value={k.id}>
                                   {cleanKknDisplayName(k.name)}
                                 </option>
                               ))}
                             </select>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 Kelompok KKN terintegrasi secara real-time dari database.</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 kelompok KKN terintegrasi secara real-time dari database.</p>
                           </div>
                         </>
                       )}
@@ -1865,27 +2027,22 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM (Nomor Induk Mahasiswa)</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM</label>
                               <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
-                            </div>
-                            <div>
+                                               <div>
                               <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
                               <select
                                 value={formData.dplKelompokIds?.[0] || ""}
                                 onChange={(e) => {
                                   const val = e.target.value;
-                                  let autoDplId = formData.dplId;
+                                  let autoDplId = "";
                                   let autoKelName = "";
                                   if (val) {
                                     const foundKel = kelompokList.find((k: any) => k.id === val);
-                                    if (foundKel?.dplId || foundKel?.dpl?.id) {
-                                      autoDplId = foundKel.dplId || foundKel.dpl?.id;
-                                    }
+                                    autoDplId = foundKel?.dplId || foundKel?.dpl?.id || "";
                                     if (foundKel?.kelurahan || foundKel?.name) {
                                       autoKelName = foundKel.kelurahan || cleanKelurahanName(foundKel.name);
                                     }
-                                  } else {
-                                    autoDplId = "";
                                   }
                                   if (autoKelName) setModalKelurahan(getCleanKelName(autoKelName));
                                   setFormData({
@@ -1896,10 +2053,10 @@ const ManajemenPengguna: React.FC = () => {
                                 }}
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               >
-                                <option value="">-- Tanpa Kelompok (Mandiri / Unassigned) --</option>
+                                <option value="">-- Tanpa Kelompok --</option>
                                 {kelompokList.map((k: any) => (
                                   <option key={k.id} value={k.id}>
-                                    {cleanKknDisplayName(k.name)} {(k.dplName || k.dpl?.name) ? `- DPL: ${k.dplName || k.dpl?.name}` : ""}
+                                    {cleanKknDisplayName(k.name)}
                                   </option>
                                 ))}
                               </select>
@@ -1907,39 +2064,24 @@ const ManajemenPengguna: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pendamping Lapangan (DPL)</label>
-                            <select
-                              value={formData.dplId || ""}
-                              onChange={(e) => {
-                                const selectedDplId = e.target.value;
-                                let autoKelompokId = formData.dplKelompokIds?.[0] || "";
-                                if (selectedDplId) {
-                                  const matchedKel = kelompokList.find((k: any) => k.dplId === selectedDplId || k.dpl?.id === selectedDplId);
-                                  if (matchedKel) {
-                                    autoKelompokId = matchedKel.id;
-                                    if (matchedKel.kelurahan || matchedKel.name) {
-                                      setModalKelurahan(getCleanKelName(matchedKel.kelurahan || cleanKelurahanName(matchedKel.name)));
-                                    }
-                                  }
-                                } else {
-                                  autoKelompokId = "";
-                                }
-                                setFormData({
-                                  ...formData,
-                                  dplId: selectedDplId,
-                                  dplKelompokIds: autoKelompokId ? [autoKelompokId] : [],
-                                });
-                              }}
-                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
-                            >
-                              <option value="">-- Tanpa Dosen Pendamping --</option>
-                              {dplList.map((d: any) => (
-                                <option key={d.id} value={d.id}>
-                                  {d.name} {d.nip ? `(NIP: ${d.nip})` : ""} {d.programStudi ? `- ${cleanProdiName(d.programStudi)}` : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pembimbing Lapangan</label>
+                            <input
+                              type="text"
+                              readOnly
+                              disabled
+                              value={
+                                (() => {
+                                  const selectedKelId = formData.dplKelompokIds?.[0];
+                                  if (!selectedKelId) return "Belum Ada Dosen Pembimbing";
+                                  const foundKel = kelompokList.find((k: any) => k.id === selectedKelId);
+                                  const dplObj = foundKel?.dpl || dplList.find((d: any) => d.id === (foundKel?.dplId || formData.dplId));
+                                  return dplObj?.name || foundKel?.dplName || foundKel?.dplNamaMentah || "Belum Ada Dosen Pembimbing";
+                                })()
+                              }
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none select-none opacity-90"
+                            />
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Otomatis terhubung secara dinamis mengikuti DPL yang bertugas di kelompok KKN yang dipilih.</p>
+                          </div>            </div>
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -2054,17 +2196,21 @@ const ManajemenPengguna: React.FC = () => {
                           <div>
                             <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
                             <select
-                              value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
-                              onChange={(e) => setFormData({ ...formData, kecamatan: e.target.value })}
+                              value={
+                                filteredKecamatanList.find((kc: any) => {
+                                  const cur = formData.kecamatan || "";
+                                  const name = kc.name || kc.nama || "";
+                                  return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
+                                })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
+                              }
+                              onChange={(e) => handleKecamatanSelect(e.target.value)}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
-                              {filteredKecamatanList.length === 0 ? (
-                                <option value="">-- Belum ada Kecamatan di Master Data --</option>
-                              ) : (
-                                filteredKecamatanList.map((kc: any) => (
-                                  <option key={kc.id} value={kc.name}>{kc.name}</option>
-                                ))
-                              )}
+                              {filteredKecamatanList.map((kc: any) => (
+                                <option key={kc.id} value={kc.name || kc.nama}>
+                                  {kc.name || kc.nama}
+                                </option>
+                              ))}
                             </select>
                           </div>
                           <div>
@@ -2098,7 +2244,9 @@ const ManajemenPengguna: React.FC = () => {
                         <>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                {formData.roleName === "WARGA" ? "Provinsi Domisili *" : "Provinsi Penugasan *"}
+                              </label>
                               <select
                                 value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
                                 onChange={(e) => handleProvinsiSelect(e.target.value)}
@@ -2112,7 +2260,9 @@ const ManajemenPengguna: React.FC = () => {
                               </select>
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                {formData.roleName === "WARGA" ? "Kota / Kabupaten Domisili *" : "Kota / Kabupaten Penugasan *"}
+                              </label>
                               <select
                                 value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
                                 onChange={(e) => handleKabupatenSelect(e.target.value)}
@@ -2131,25 +2281,33 @@ const ManajemenPengguna: React.FC = () => {
 
                           {/* 1. Kecamatan (Dropdown) */}
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              {formData.roleName === "WARGA" ? "Kecamatan Domisili *" : "Kecamatan Penugasan *"}
+                            </label>
                             <select
-                              value={formData.kecamatan || (filteredKecamatanList[0]?.name || "")}
+                              value={
+                                filteredKecamatanList.find((kc: any) => {
+                                  const cur = formData.kecamatan || "";
+                                  const name = kc.name || kc.nama || "";
+                                  return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
+                                })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
+                              }
                               onChange={(e) => handleKecamatanSelect(e.target.value)}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
-                              {filteredKecamatanList.length === 0 ? (
-                                <option value="">-- Belum ada Kecamatan di Master Data --</option>
-                              ) : (
-                                filteredKecamatanList.map((kc: any) => (
-                                  <option key={kc.id} value={kc.name}>{kc.name}</option>
-                                ))
-                              )}
+                              {filteredKecamatanList.map((kc: any) => (
+                                <option key={kc.id} value={kc.name || kc.nama}>
+                                  {kc.name || kc.nama}
+                                </option>
+                              ))}
                             </select>
                           </div>
 
                           {/* 2. Kelurahan (Dropdown - Cascading Level 1) */}
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelurahan Penugasan *</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              {formData.roleName === "WARGA" ? "Kelurahan Domisili *" : "Kelurahan Penugasan *"}
+                            </label>
                             <select
                               value={getCleanKelName(modalKelurahan)}
                               onChange={(e) => {
@@ -2187,33 +2345,25 @@ const ManajemenPengguna: React.FC = () => {
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               disabled={filteredKelurahanList.length === 0}
                             >
-                              {(() => {
-                                const activeKelList = filteredKelurahanList;
-                                return activeKelList.length === 0 ? (
-                                  <option value="">-- Belum ada Kelurahan untuk Kecamatan ini --</option>
-                                ) : (
-                                  <>
-                                    <option value="">-- Pilih Kelurahan --</option>
-                                    {activeKelList.map((kl: any) => {
-                                      const kName = getCleanKelName(kl.name || kl.nama);
-                                      return (
-                                        <option key={kl.id} value={kName}>
-                                          Kel. {kName}
-                                        </option>
-                                      );
-                                    })}
-                                  </>
+                              {filteredKelurahanList.map((kl: any) => {
+                                const kName = getCleanKelName(kl.name || kl.nama);
+                                return (
+                                  <option key={kl.id} value={kName}>
+                                    Kel. {kName}
+                                  </option>
                                 );
-                              })()}
+                              })}
                             </select>
                           </div>
 
                           {/* 3. Rukun Warga (RW) */}
                           {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Rukun Warga Penugasan *</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                {formData.roleName === "WARGA" ? "Rukun Warga Domisili *" : "Rukun Warga Penugasan *"}
+                              </label>
                               <select
-                                value={formData.rtRwId || ""}
+                                value={formData.rtRwId || (filteredRwsByKelurahan[0]?.id.toString() || "")}
                                 onChange={(e) => {
                                   const selectedId = e.target.value;
                                   const foundArea = areasList.find((a: any) => a.id.toString() === selectedId);
@@ -2237,18 +2387,11 @@ const ManajemenPengguna: React.FC = () => {
                                 className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                                 disabled={filteredRwsByKelurahan.length === 0}
                               >
-                                {filteredRwsByKelurahan.length === 0 ? (
-                                  <option value="">-- Belum ada RW untuk Kelurahan ini --</option>
-                                ) : (
-                                  <>
-                                    <option value="">-- Pilih RW (Kel. {getCleanKelName(modalKelurahan)}) --</option>
-                                    {filteredRwsByKelurahan.map((a: any) => (
-                                      <option key={a.id} value={a.id}>
-                                        {a.name} (Kel. {a.kelurahan?.name || getCleanKelName(modalKelurahan)})
-                                      </option>
-                                    ))}
-                                  </>
-                                )}
+                                {filteredRwsByKelurahan.map((a: any) => (
+                                  <option key={a.id} value={a.id.toString()}>
+                                    {a.cleanName || a.name.split("(")[0].trim()}
+                                  </option>
+                                ))}
                               </select>
                             </div>
                           )}
@@ -2330,30 +2473,20 @@ const ManajemenPengguna: React.FC = () => {
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                               disabled={filteredKelurahanList.length === 0}
                             >
-                              {(() => {
-                                const activeKelList = filteredKelurahanList;
-                                return activeKelList.length === 0 ? (
-                                  <option value="">-- Belum ada Kelurahan untuk Kecamatan ini --</option>
-                                ) : (
-                                  <>
-                                    <option value="">-- Pilih Kelurahan --</option>
-                                    {activeKelList.map((kl: any) => {
-                                      const kName = getCleanKelName(kl.name || kl.nama);
-                                      return (
-                                        <option key={kl.id} value={kName}>
-                                          Kel. {kName}
-                                        </option>
-                                      );
-                                    })}
-                                  </>
+                              {filteredKelurahanList.map((kl: any) => {
+                                const kName = getCleanKelName(kl.name || kl.nama);
+                                return (
+                                  <option key={kl.id} value={kName}>
+                                    Kel. {kName}
+                                  </option>
                                 );
-                              })()}
+                              })}
                             </select>
                           </div>
 
                           <div>
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Wilayah Penugasan (RW)</label>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Wilayah Penugasan</label>
                               <span className="text-[10px] font-extrabold text-[#009966] dark:text-emerald-400 bg-[#009966]/10 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-[#009966]/20 dark:border-emerald-800/60">
                                 Kel. {getCleanKelName(modalKelurahan) || "-"}
                               </span>
@@ -2541,9 +2674,7 @@ const ManajemenPengguna: React.FC = () => {
                 <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                   Batal
                 </button>
-                <button type="submit" disabled={isSubmitting || !isPasswordValid} className={`px-5 py-2.5 text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all ${
-                  modalType === "add" ? "bg-[#009966] hover:bg-[#008855]" : "bg-blue-600 hover:bg-blue-700"
-                }`}>
+                <button type="submit" disabled={isSubmitting || !isPasswordValid} className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95">
                   {isSubmitting && <Loader2 className="animate-spin" size={14} />}
                   {modalType === "add" ? "Tambah Pengguna" : "Simpan Perubahan"}
                 </button>
@@ -2553,8 +2684,8 @@ const ManajemenPengguna: React.FC = () => {
         </div>
       )}      {/* Delete Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-150" onClick={closeDeleteModal}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center border border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-200 dark:border-rose-800/80">
               <AlertTriangle size={24} />
             </div>

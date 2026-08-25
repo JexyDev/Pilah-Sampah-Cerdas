@@ -22,7 +22,8 @@ import {
   Lock,
   Phone,
   Smartphone,
-  CheckCheck
+  CheckCheck,
+  ShieldCheck
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -119,6 +120,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("SEMUA");
   const [selectedRating, setSelectedRating] = useState("SEMUA");
+  const [selectedDateRange, setSelectedDateRange] = useState("SEMUA");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -177,6 +179,20 @@ const MasterDatasetKlasifikasi: React.FC = () => {
       if (selectedRating === "4" && item.ratingWarga < 4) return false;
       if (selectedRating === "LOW" && item.ratingWarga >= 4) return false;
 
+      // Date range filter
+      if (selectedDateRange !== "SEMUA") {
+        const itemTime = new Date(item.createdAt).getTime();
+        const now = Date.now();
+        if (selectedDateRange === "TODAY") {
+          const startOfToday = new Date().setHours(0, 0, 0, 0);
+          if (itemTime < startOfToday) return false;
+        } else if (selectedDateRange === "7_DAYS") {
+          if (now - itemTime > 7 * 24 * 60 * 60 * 1000) return false;
+        } else if (selectedDateRange === "30_DAYS") {
+          if (now - itemTime > 30 * 24 * 60 * 60 * 1000) return false;
+        }
+      }
+
       // Search term
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
@@ -189,7 +205,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
       return true;
     });
-  }, [datasetList, selectedCategory, selectedRating, searchTerm]);
+  }, [datasetList, selectedCategory, selectedRating, selectedDateRange, searchTerm]);
 
   const totalPages = Math.ceil(filteredDataset.length / itemsPerPage) || 1;
   const paginatedDataset = useMemo(() => {
@@ -237,6 +253,13 @@ const MasterDatasetKlasifikasi: React.FC = () => {
   };
 
   const renderStars = (rating: number) => {
+    if (!rating || rating === 0) {
+      return (
+        <span className="text-[11px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+          Belum Ulasan
+        </span>
+      );
+    }
     return (
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -253,23 +276,32 @@ const MasterDatasetKlasifikasi: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto animate-fade-in">
-      {/* 1. CLEAN ENTERPRISE PAGE HEADER */}
-      <PageHeader
-        icon={BrainCircuit}
-        category="Master Data & Audit Telemetri"
-        scope="Sistem Klasifikasi AI"
-        title="Dataset Hasil Klasifikasi AI"
-        description="Stream data telemetri real-time hasil inferensi model AI (Organik & Anorganik) yang diunggah warga melalui aplikasi mobile BERSEKA secara otomatis dan terintegrasi penuh ke database."
-        actions={
+      {/* 1. Header Navigation & Title (Matching Wilayah & Pengguna style) */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 border border-[#009966]/20 text-[#009966] flex items-center justify-center shrink-0 shadow-2xs">
+            <BrainCircuit size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+              Hasil Klasifikasi
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Kelola data hasil klasifikasi terintegrasi secara real-time dengan backend.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
           <button
             onClick={handleExportJSON}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer shrink-0"
           >
-            <Download size={15} />
-            <span>Ekspor Dataset (JSON)</span>
+            <Download size={16} />
+            <span>Ekspor Dataset</span>
           </button>
-        }
-      />
+        </div>
+      </div>
 
       {/* 2. AI MODEL SPECIFICATION & LIVE VPS METRICS WIDGET */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -320,7 +352,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 <Server size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Status Server VPS Real-Time Stream</h3>
+                <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Status Server VPS Real-Time</h3>
                 <p className="text-[11px] font-semibold text-slate-400">Host: {vpsData?.os.hostname || "localhost"} ({vpsData?.os.platform || "Linux"})</p>
               </div>
             </div>
@@ -367,9 +399,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             <FileSpreadsheet size={24} />
           </div>
           <div>
-            <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Total Sampel Dataset</p>
-            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.totalDatasetCount || datasetList.length} Upload</h3>
-            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Real-time dari aplikasi mobile</p>
+            <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Total Sampel Data</p>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.totalDatasetCount ?? datasetList.length} Unggahan</h3>
+            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">Real-time dari aplikasi seluler</p>
           </div>
         </div>
 
@@ -379,7 +411,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Sampel Organik</p>
-            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.organikCount || 4} Items</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+              {summary?.organikCount ?? datasetList.filter((d) => d.hasilKlasifikasiAi === "ORGANIK").length} Item
+            </h3>
             <p className="text-[10px] font-bold text-slate-400 mt-0.5">Kelas 0: ORGANIC</p>
           </div>
         </div>
@@ -390,7 +424,9 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Sampel Anorganik</p>
-            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.anorganikCount || 2} Items</h3>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+              {summary?.anorganikCount ?? datasetList.filter((d) => d.hasilKlasifikasiAi === "ANORGANIK").length} Item
+            </h3>
             <p className="text-[10px] font-bold text-slate-400 mt-0.5">Kelas 1: NON_ORGANIC</p>
           </div>
         </div>
@@ -401,8 +437,12 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           </div>
           <div>
             <p className="text-[11px] font-black uppercase text-slate-400 tracking-wider">Rating Akurasi Warga</p>
-            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{summary?.avgRating || 4.9} / 5.0 ⭐</h3>
-            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">{summary?.accuracyRatePercent || 98.0}% Akurasi Umpan Balik</p>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+              {summary?.avgRating !== undefined ? summary.avgRating : 0} / 5.0 ⭐
+            </h3>
+            <p className="text-[10px] font-bold text-emerald-600 mt-0.5">
+              {summary?.accuracyRatePercent !== undefined ? summary.accuracyRatePercent : 0}% Akurasi Umpan Balik
+            </p>
           </div>
         </div>
       </div>
@@ -417,13 +457,13 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Daftar Hasil Klasifikasi AI (Data Mobile Stream)</h3>
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Daftar Hasil Klasifikasi AI (Unggahan Seluler)</h3>
                 <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10.5px] font-black flex items-center gap-1 border border-slate-200 dark:border-slate-800">
-                  <Lock size={10} /> READ-ONLY AUDIT
+                  <Lock size={10} /> AUDIT BACA-SAJA
                 </span>
               </div>
               <p className="text-xs font-semibold text-slate-500">
-                Menampilkan {filteredDataset.length} data aktual klasifikasi sampah yang diunggah warga dari aplikasi mobile
+                Menampilkan {filteredDataset.length} data aktual klasifikasi sampah yang diunggah warga dari aplikasi seluler
               </p>
             </div>
           </div>
@@ -435,7 +475,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
               <input
                 type="text"
-                placeholder="Cari warga, HP, QR..."
+                placeholder="Cari warga, no. HP, QR..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -457,6 +497,21 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               <option value="SEMUA">Semua Kategori (2 Kelas)</option>
               <option value="ORGANIK">Organik (Class 0)</option>
               <option value="ANORGANIK">Anorganik (Class 1)</option>
+            </select>
+
+            {/* Date Range Filter */}
+            <select
+              value={selectedDateRange}
+              onChange={(e) => {
+                setSelectedDateRange(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none focus:border-[#009966] cursor-pointer"
+            >
+              <option value="SEMUA">Semua Waktu</option>
+              <option value="TODAY">Hari Ini</option>
+              <option value="7_DAYS">7 Hari Terakhir</option>
+              <option value="30_DAYS">30 Hari Terakhir</option>
             </select>
 
             {/* Rating Filter */}
@@ -481,16 +536,16 @@ const MasterDatasetKlasifikasi: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white dark:bg-slate-900 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-100 dark:border-slate-800">
-                <th className="py-4 px-4 text-center w-12">No.</th>
-                <th className="py-4 px-4">Nama Lengkap</th>
-                <th className="py-4 px-4">No. HP</th>
-                <th className="py-4 px-4">Kecamatan</th>
-                <th className="py-4 px-4">Kelurahan</th>
-                <th className="py-4 px-4">Rukun Warga</th>
-                <th className="py-4 px-4">Foto Sampah</th>
-                <th className="py-4 px-4">Hasil AI</th>
-                <th className="py-4 px-4">Rating Warga</th>
-                <th className="py-4 px-4 text-center">Aksi</th>
+                <th className="py-4 px-4 text-center w-12">NO</th>
+                <th className="py-4 px-4">NAMA LENGKAP</th>
+                <th className="py-4 px-4">NO. HANDPHONE</th>
+                <th className="py-4 px-4">KECAMATAN</th>
+                <th className="py-4 px-4">KELURAHAN</th>
+                <th className="py-4 px-4">RUKUN WARGA</th>
+                <th className="py-4 px-4">FOTO SAMPAH</th>
+                <th className="py-4 px-4">HASIL AI</th>
+                <th className="py-4 px-4">ULASAN WARGA</th>
+                <th className="py-4 px-4 text-center">AKSI</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900">
@@ -498,7 +553,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
                     <Loader2 className="animate-spin inline-block mr-2" size={18} />
-                    Memuat stream data dataset dari VPS server...
+                    Memuat data hasil klasifikasi dari server VPS...
                   </td>
                 </tr>
               ) : paginatedDataset.length === 0 ? (
@@ -587,7 +642,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                     <td className="py-4 px-4 whitespace-nowrap">
                       {item.warga.rw && item.warga.rw !== "-" ? (
                         <span className="inline-block bg-[#eef5ff] text-[#2b6cb0] font-bold text-xs px-3 py-1 rounded-xl border border-[#c3dafe]">
-                          {item.warga.rw}
+                          {item.warga.rw.replace(/\s*\([^)]*\)/g, "").trim()}
                         </span>
                       ) : (
                         <span className="inline-block bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold text-xs px-3 py-0.5 rounded-xl border border-slate-200 dark:border-slate-800">
@@ -613,7 +668,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                       </div>
                     </td>
 
-                    {/* Hasil AI (Persentase Organik & Anorganik Dalam 1 Baris) */}
+                    {/* Hasil AI (Persentase Organik & Anorganik Dalam 1 Baris dengan Icon Kepercayaan) */}
                     <td className="py-4 px-4 whitespace-nowrap min-w-[200px]">
                       {(() => {
                         const org = item.organikPercent ?? (item.hasilKlasifikasiAi === "ORGANIK" ? 95 : 5);
@@ -622,7 +677,10 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between gap-2">
                               {renderCategoryBadge(item.hasilKlasifikasiAi)}
-                              <span className="text-[10.5px] font-black text-slate-500">{item.confidenceAi}% Conf</span>
+                              <span className="inline-flex items-center gap-1 text-[10.5px] font-black text-emerald-800 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800">
+                                <ShieldCheck size={12} className="text-[#009966]" />
+                                <span>{item.confidenceAi}%</span>
+                              </span>
                             </div>
                             <div className="flex justify-between items-center text-[10.5px] font-black">
                               <span className="text-emerald-700">🌱 Organik: {org}%</span>
@@ -696,12 +754,12 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Inspeksi Datapoint Klasifikasi AI</h3>
+                    <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Detail Hasil Klasifikasi AI</h3>
                     <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black border border-slate-200 dark:border-slate-800 flex items-center gap-1">
-                      <Lock size={10} /> READ-ONLY
+                      <Lock size={10} /> AUDIT BACA-SAJA
                     </span>
                   </div>
-                  <p className="text-[11px] font-semibold text-slate-400">Detail telemetri inferensi mobile &amp; metadata VPS</p>
+                  <p className="text-[11px] font-semibold text-slate-400">Detail inferensi seluler &amp; metadata server VPS</p>
                 </div>
               </div>
               <button
@@ -715,15 +773,15 @@ const MasterDatasetKlasifikasi: React.FC = () => {
             {/* Modal Body */}
             <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {/* Image Preview & Timestamp */}
-              <div className="w-full h-56 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative group shadow-2xs">
+              <div className="w-full h-64 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative group shadow-2xs bg-slate-950 flex items-center justify-center">
                 <img
                   src={selectedItemForDetail.fotoSampahUrl}
                   alt="Foto Sampah Mobile"
-                  className="w-full h-full object-cover"
+                  className="max-w-full max-h-full object-contain"
                 />
-                <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/75 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold">
-                  <span>Waktu Scan: {new Date(selectedItemForDetail.createdAt).toLocaleString("id-ID")} WIB</span>
-                  <span className="font-mono text-emerald-300">Tempat Sampah: {selectedItemForDetail.bin.qrCode}</span>
+                <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold border border-white/10">
+                  <span>Waktu Pindai: {new Date(selectedItemForDetail.createdAt).toLocaleString("id-ID")}</span>
+                  <span className="font-mono text-emerald-300">Tempat Sampah (QR): {selectedItemForDetail.bin.qrCode}</span>
                 </div>
               </div>
 
@@ -748,7 +806,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                         <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${inorg}%` }} />
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-1">
-                        <span>Akurasi Confidence: {selectedItemForDetail.confidenceAi}%</span>
+                        <span>Tingkat Kepercayaan: {selectedItemForDetail.confidenceAi}%</span>
                         <span>Estimasi Berat: {selectedItemForDetail.beratKg} Kg</span>
                       </div>
                     </div>
@@ -759,7 +817,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
-                  <span className="text-[10px] font-black uppercase text-slate-400">Pengirim Mobile</span>
+                  <span className="text-[10px] font-black uppercase text-slate-400">Pengirim Seluler</span>
                   <p className="font-extrabold text-slate-800 dark:text-slate-100">{selectedItemForDetail.warga.nama}</p>
                   <p className="text-slate-500 font-semibold">{selectedItemForDetail.warga.phone}</p>
                 </div>
@@ -767,7 +825,7 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
                   <span className="text-[10px] font-black uppercase text-slate-400">Wilayah Penugasan</span>
                   <p className="font-extrabold text-slate-800 dark:text-slate-100">Kec. {selectedItemForDetail.warga.kecamatan}</p>
-                  <p className="text-slate-500 font-semibold">Kel. {selectedItemForDetail.warga.kelurahan}, {selectedItemForDetail.warga.rw}</p>
+                  <p className="text-slate-500 font-semibold">Kel. {selectedItemForDetail.warga.kelurahan}, {selectedItemForDetail.warga.rw.replace(/\s*\([^)]*\)/g, "").trim()}</p>
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">

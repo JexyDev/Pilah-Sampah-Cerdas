@@ -96,11 +96,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
         return ["Pemilahan & Angkut", "Rekapitulasi Setoran"];
+      case "/survei/baseline":
       case "/superUser/data-survei-baseline":
       case "/data-survei-baseline":
       case "/superUser/data-survei-kkn":
       case "/data-survei-kkn":
         return ["Survei & Dampak", "Survei Baseline"];
+      case "/survei/endline":
       case "/superUser/data-survei-endline":
       case "/data-survei-endline":
         return ["Survei & Dampak", "Survei Endline"];
@@ -110,6 +112,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
         return ["Survei & Dampak", "Evaluasi & Dampak"];
+      case "/penilaian-kkn/individu":
       case "/penilaian-kkn/mahasiswa":
         return ["Penilaian KKN", "Penilaian Individu"];
       case "/penilaian-kkn/program-kerja":
@@ -121,6 +124,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
         return ["Pemilahan & Angkut", "Pengangkutan Residu"];
+      case "/pengguna":
       case "/master-pengguna":
       case "/master-data-pengguna":
       case "/manajemen-pengguna":
@@ -131,17 +135,21 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         if (role) {
           const roleMap: Record<string, string> = {
             developer: "Developer",
+            su: "Admin",
             admin: "Admin",
             superuser: "Admin",
+            super_user: "Admin",
             pimpinan: "Pimpinan",
             pemimpin: "Pimpinan",
             taskforce: "Task Force",
-            dpl: "DPL",
-            dlh: "DLH",
+            dpl: "Dosen Pembimbing Lapangan",
+            dlh: "Dinas Lingkungan Hidup",
             camat: "Camat",
             lurah: "Lurah",
-            rw: "RW",
-            "petugas-residu": "Petugas Residu",
+            rw: "Rukun Warga",
+            "petugas-pemilah": "Petugas Pemilah",
+            "petugas-residu": "Petugas Pemilah",
+            petugas: "Petugas Pemilah",
             mahasiswa: "Mahasiswa",
             warga: "Warga",
           };
@@ -153,28 +161,36 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/master-data/manajemen-tempat-sampah":
       case "/manajemen-tempat-sampah":
         return ["Pemilahan & Angkut", "Tempat Sampah"];
+      case "/peraturan":
+      case "/dataset/peraturan":
       case "/master-data/rule-engine":
       case "/master-rule-engine":
       case "/rule-engine":
       case "/pengaturan/rule-engine":
-        return ["Akun & Sistem", "Mesin Aturan (Rule Engine)"];
+        return ["Peraturan"];
+      case "/wilayah/provinsi":
       case "/master-data/provinsi":
       case "/master-provinsi":
         return ["Wilayah", "Provinsi"];
+      case "/wilayah/kota-kabupaten":
       case "/master-data/kota-kabupaten":
       case "/master-kota-kabupaten":
       case "/master-kabupaten":
         return ["Wilayah", "Kota / Kabupaten"];
+      case "/wilayah/kecamatan":
       case "/master-data/kecamatan":
       case "/master-data/kecematan":
       case "/master-kecamatan":
         return ["Wilayah", "Kecamatan"];
+      case "/wilayah/kelurahan":
       case "/master-data/kelurahan":
       case "/master-kelurahan":
         return ["Wilayah", "Kelurahan"];
+      case "/wilayah/rw":
+      case "/wilayah/rukun-warga":
       case "/master-data/rukun-warga":
       case "/master-rw":
-        return ["Wilayah", "RW"];
+        return ["Wilayah", "Rukun Warga"];
       case "/manajemen-lokasi":
       case "/peta":
         return ["Manajemen Lokasi"];
@@ -205,6 +221,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/rekapitulasi-setoran":
       case "/rekap-setoran":
         return ["Tata Kelola Sampah", "Rekapitulasi Setoran"];
+      case "/master-data/panduan":
+        return ["Panduan & Edukasi", "Buku Panduan"];
+      case "/master-data/kegiatan-sampah":
+        return ["Panduan & Edukasi", "Kegiatan Sampah"];
       case "/dataset/hasil-klasifikasi":
       case "/master-dataset-klasifikasi":
       case "/dataset-klasifikasi":
@@ -223,35 +243,32 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         const params = new URLSearchParams(search);
         const tab = params.get("tab");
         if (tab === "dpl") {
-          return ["Log Aktivitas", "Log Aktivitas DPL"];
+          return ["Log Aktivitas DPL"];
         }
-        if (tab === "kepatuhan") {
-          return ["Log Aktivitas", "Kepatuhan & Toleransi"];
-        }
-        return ["Log Aktivitas", "Log Aktivitas Mahasiswa"];
+        return ["Log Aktivitas Mahasiswa"];
       }
       case "/log-aktivitas-dpl":
       case "/dpl/log-aktivitas":
-        return ["Log Aktivitas", "Log Aktivitas DPL"];
+        return ["Log Aktivitas DPL"];
       case "/notifikasi":
-        return ["Notifikasi"];
+        return ["Akun & Sistem", "Notifikasi"];
       case "/pengaturan":
-        return ["Pengaturan"];
+        return ["Akun & Sistem", "Profil"];
       case "/pengguna-online":
-        return ["Administrasi", "Pengguna Online"];
+        return ["Audit & Log", "Pengguna Daring"];
       case "/log-aktivitas":
       case "/superUser/audit":
       case "/audit-trail":
       case "/audit-log":
-        return ["Administrasi", "Audit Trail Sistem"];
+        return ["Audit & Log", "Audit Trail Sistem"];
       case "/evaluasi-ai":
       case "/superUser/discrepancies":
-        return ["Administrasi", "Diskrepansi AI"];
+        return ["Verifikasi & QR", "Diskrepansi AI"];
       case "/superUser/configs":
-        return ["Pengaturan", "Konfigurasi Sistem"];
+        return ["Akun & Sistem", "Konfigurasi Sistem"];
       case "/superUser/master-qr":
       case "/superUser/qr-master":
-        return ["Administrasi", "Batch QR Code"];
+        return ["Verifikasi & QR", "Batch Kode QR"];
       case "/rw/approval":
         return ["Verifikasi Tempat Sampah"];
       case "/rw/fasilitas":
@@ -302,15 +319,26 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
   const handleMarkNotificationRead = async (notifId: string) => {
     try {
+      // Optimistic UI update (Instant visual feedback)
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
+      );
       const targetNotif = notifications.find((n) => n.id === notifId);
       if (targetNotif && !targetNotif.isRead) {
         await api.put(`/notifications/${notifId}/read`);
       }
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
-      );
     } catch (err) {
       console.error("Error marking notification read:", err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Optimistic UI update
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      await api.put("/notifications/read-all");
+    } catch (err) {
+      console.error("Error marking all notifications read:", err);
     }
   };
 
@@ -365,7 +393,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
           {/* Notifications Dropdown Popover */}
           {showNotifications && (
-            <div className="absolute top-12 right-0 w-80 sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute top-12 right-0 w-[340px] sm:w-96 max-w-[calc(100vw-2rem)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* Popover Header */}
               <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-850">
                 <div className="flex items-center gap-2">
@@ -374,16 +402,34 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                   </div>
                   <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">Notifikasi Sistem</span>
                 </div>
-                <span className="text-[11px] bg-[#e5f7ed] dark:bg-emerald-950 text-[#009966] dark:text-emerald-300 px-3 py-1 rounded-full font-black border border-[#009966]/20 dark:border-emerald-700/30 shrink-0">
-                  {unreadCount > 0 ? `${unreadCount} Belum Dibaca` : `${notifications.length} Peristiwa`}
-                </span>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer transition-all"
+                    >
+                      Tandai Semua Dibaca
+                    </button>
+                  )}
+                  <span className="text-[11px] bg-[#e5f7ed] dark:bg-emerald-950 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-black border border-[#009966]/20 dark:border-emerald-700/30 shrink-0">
+                    {unreadCount > 0 ? `${unreadCount} Baru` : `${notifications.length} Peristiwa`}
+                  </span>
+                </div>
               </div>
 
               {/* Popover List Body */}
               <div className="divide-y divide-slate-100/80 dark:divide-slate-800 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
                 {loadingNotifs && notifications.length === 0 ? (
-                  <div className="p-6 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
-                    Memuat notifikasi aktual...
+                  <div className="p-4 space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 animate-pulse p-2">
+                        <div className="w-9 h-9 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                          <div className="h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded w-1/2" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="p-6 text-center text-xs font-bold text-slate-400 dark:text-slate-500 flex flex-col items-center gap-1.5">

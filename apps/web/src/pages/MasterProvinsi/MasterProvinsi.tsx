@@ -177,7 +177,7 @@ const MasterProvinsi: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
       {/* 1. Header Navigation & Title matching Manajemen Tempat Sampah UI/UX */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#009966]/10 border border-[#009966]/20 text-[#009966] flex items-center justify-center shrink-0 shadow-2xs">
             <Globe2 size={24} />
@@ -187,63 +187,26 @@ const MasterProvinsi: React.FC = () => {
               Provinsi
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Kelola data wilayah provinsi terintegrasi secara real-time dengan backend & Master Pengguna.
+              Kelola data wilayah provinsi terintegrasi secara real-time dengan backend.
             </p>
           </div>
         </div>
 
         {!isReadOnly && (
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="bg-[#009966] hover:bg-[#008055] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 active:scale-95"
-          >
-            <Plus size={16} />
-            Tambah Provinsi
-          </button>
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer shrink-0"
+            >
+              <Plus size={16} />
+              <span>Tambah Provinsi</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {/* 2. Top Summary KPI Cards matching Manajemen Tempat Sampah */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
-              TOTAL PROVINSI DATABASE
-            </span>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-slate-100">
-              {provinsiList.length} <span className="text-xs font-bold text-slate-500">Wilayah</span>
-            </h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 border border-teal-100 flex items-center justify-center">
-            <Globe2 size={20} />
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
-              PROVINSI UTAMA WILAYAH
-            </span>
-            <h3 className="text-xl font-black text-[#009966]">Jawa Barat</h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center">
-            <MapPin size={20} />
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-0.5">
-              INTEGRASI BACKEND API
-            </span>
-            <h3 className="text-xl font-black text-emerald-600">Terhubung Real-Time</h3>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
-            <ShieldCheck size={20} />
-          </div>
-        </div>
-      </div>
 
       {/* 3. Search Bar Container */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -345,10 +308,10 @@ const MasterProvinsi: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenEditModal(prov)}
-                              className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all cursor-pointer"
+                              className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                               title="Edit Data Provinsi"
                             >
-                              <Pencil size={15} />
+                              <Pencil size={14} />
                             </button>
                             <button
                               type="button"
@@ -356,10 +319,10 @@ const MasterProvinsi: React.FC = () => {
                                 setProvToDelete(prov);
                                 setIsDeleteModalOpen(true);
                               }}
-                              className="p-2 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all cursor-pointer"
+                              className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
                               title="Hapus Data Provinsi"
                             >
-                              <Trash2 size={15} />
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -396,7 +359,7 @@ const MasterProvinsi: React.FC = () => {
 
       {/* 5. Modal Tambah / Edit Provinsi */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
@@ -409,9 +372,9 @@ const MasterProvinsi: React.FC = () => {
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
@@ -454,7 +417,7 @@ const MasterProvinsi: React.FC = () => {
 
       {/* 6. Modal Hapus Provinsi */}
       {isDeleteModalOpen && provToDelete && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-slate-800 text-center space-y-4 animate-in zoom-in-95 duration-150">
             <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto border border-rose-100">
               <Trash2 size={24} />

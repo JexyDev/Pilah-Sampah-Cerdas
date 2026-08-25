@@ -73,7 +73,9 @@ function formatTitleCaseName(name?: string): string {
     "h.": "H.",
     "hj.": "Hj.",
     "ak.": "Ak.",
+    ak: "Ak.",
     "ca.": "CA.",
+    ca: "CA",
     "s.s.": "S.S.",
     "m.hum": "M.Hum.",
     "m.hum.": "M.Hum.",
@@ -83,8 +85,12 @@ function formatTitleCaseName(name?: string): string {
     .split(" ")
     .map((word) => {
       if (!word) return "";
-      const wLower = word.toLowerCase();
-      if (degrees[wLower]) return degrees[wLower];
+      const cleanWord = word.replace(/,$/, "");
+      const hasTrailingComma = word.endsWith(",");
+      const wLower = cleanWord.toLowerCase();
+      if (degrees[wLower]) {
+        return degrees[wLower] + (hasTrailingComma ? "," : "");
+      }
       return word
         .split(/([\s\-'\.])/)
         .map((p) =>
@@ -238,7 +244,7 @@ export class UserService {
           }
         }
       }
-      let rwName = rwObj?.name || "-";
+      let rwName = rwObj?.name ? rwObj.name.split("(")[0].trim() : "-";
       let rtName = u.rt?.name || "-";
 
       if (u.role?.name === "CAMAT" && kecamatanName === "-") {
@@ -577,7 +583,7 @@ export class UserService {
           status: status || "Aktif",
           rwId: effectiveRwId ? parseInt(effectiveRwId) : null,
           address: address || null,
-          fotoProfil: data.fotoProfil || getRandomDefaultAvatar(name),
+          fotoProfil: data.fotoProfil && data.fotoProfil.trim() !== "" ? data.fotoProfil : null,
           nip: nip || null,
           institusi: institusi || null,
           jabatan: data.jabatan || null,
