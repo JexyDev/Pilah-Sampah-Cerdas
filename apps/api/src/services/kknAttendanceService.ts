@@ -129,20 +129,89 @@ export function calculateInZoneDurationMinutes(
 }
 
 /**
+ * Universal robust time parser for schedule strings:
+ * Supports formats: "08:00", "08.00", "08:00 AM", "08:00 WIB", "08:05 PM", "8:05", "13:00", etc.
+ */
+export function parseScheduleTimeString(timeStr: string, defaultH: number = 8, defaultM: number = 0): [number, number] {
+  if (!timeStr) return [defaultH, defaultM];
+  const cleaned = timeStr.replace(/\s*(WIB|WITA|WIT)\s*/gi, "").trim();
+  const match = cleaned.match(/(\d{1,2})[:.](\d{2})/);
+  if (match) {
+    let h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    if (cleaned.toLowerCase().includes("pm") && h < 12) h += 12;
+    if (cleaned.toLowerCase().includes("am") && h === 12) h = 0;
+    return [h, m];
+  }
+  const hourMatch = cleaned.match(/(\d{1,2})/);
+  if (hourMatch) {
+    let h = parseInt(hourMatch[1], 10);
+    if (cleaned.toLowerCase().includes("pm") && h < 12) h += 12;
+    if (cleaned.toLowerCase().includes("am") && h === 12) h = 0;
+    return [h, 0];
+  }
+  return [defaultH, defaultM];
+}
+
+/**
+ * Universal parser for schedule time range string (e.g. "08:00 - 16:00", "08:00 AM - 08:05 AM WIB")
+ */
+export function parseScheduleTimeRange(timeStr?: string | null): {
+  jamMulai: string;
+  jamSelesai: string;
+  startH: number;
+  startM: number;
+  endH: number;
+  endM: number;
+  startMinutesTotal: number;
+  endMinutesTotal: number;
+  isOvernight: boolean;
+} {
+  let jamMulai = "08:00";
+  let jamSelesai = "16:00";
+  if (timeStr) {
+    const normalized = timeStr
+      .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
+      .replace(/[\u2013\u2014~]|s\/d|sd/gi, "-")
+      .trim();
+    if (normalized.includes("-")) {
+      const parts = normalized.split("-");
+      jamMulai = parts[0].trim();
+      jamSelesai = parts[1].trim();
+    }
+  }
+  const [startH, startM] = parseScheduleTimeString(jamMulai, 8, 0);
+  const [endH, endM] = parseScheduleTimeString(jamSelesai, 16, 0);
+  const cleanStartH = startH === 24 ? 0 : startH;
+  const cleanStartM = startM;
+  const cleanEndH = endH === 24 ? 24 : endH;
+  const cleanEndM = endM;
+  const startMinutesTotal = cleanStartH * 60 + cleanStartM;
+  const endMinutesTotal = cleanEndH * 60 + cleanEndM;
+  const isOvernight = endMinutesTotal <= startMinutesTotal;
+
+  return {
+    jamMulai,
+    jamSelesai,
+    startH: cleanStartH,
+    startM: cleanStartM,
+    endH: cleanEndH,
+    endM: cleanEndM,
+    startMinutesTotal,
+    endMinutesTotal,
+    isOvernight,
+  };
+}
+
+/**
  * Helper: Determine required attendance duration (minutes) for a schedule activity.
  */
 export async function getScheduleTargetDurationMinutes(schedule: { time?: string | null }): Promise<number> {
   let scheduleDurationMinutes = 0;
-  if (schedule?.time && schedule.time.includes("-")) {
-    const parts = schedule.time.split("-");
-    const startParts = parts[0].trim().replace(".", ":").split(":");
-    const endParts = parts[1].trim().replace(".", ":").split(":");
-    if (startParts.length >= 2 && endParts.length >= 2) {
-      const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-      const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-      if (endMins > startMins) {
-        scheduleDurationMinutes = endMins - startMins;
-      }
+  if (schedule?.time) {
+    const range = parseScheduleTimeRange(schedule.time);
+    if (range.endMinutesTotal > range.startMinutesTotal) {
+      scheduleDurationMinutes = range.endMinutesTotal - range.startMinutesTotal;
     }
   }
 
@@ -299,23 +368,10 @@ export class KknAttendanceService {
         const scheduleDateWibStrPing = new Date(sch.date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         let isFutureDatePing = false;
         
-        let jamMulaiPing = "08:00";
-        let jamSelesaiPing = "16:00";
-        const normalizedTimePing = (sch.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
-        if (normalizedTimePing.includes("-")) {
-          const parts = normalizedTimePing.split("-");
-          jamMulaiPing = parts[0].trim();
-          jamSelesaiPing = parts[1].trim();
-        }
-        const [startHPing, startMPing] = jamMulaiPing.replace(".", ":").split(":").map(Number);
-        const [endHPing, endMPing] = jamSelesaiPing.replace(".", ":").split(":").map(Number);
-        const cleanStartHPing = !isNaN(startHPing) ? (startHPing === 24 ? 0 : startHPing) : 8;
-        const cleanStartMPing = !isNaN(startMPing) ? startMPing : 0;
-        const cleanEndHPing = !isNaN(endHPing) ? (endHPing === 24 ? 24 : endHPing) : 16;
-        const cleanEndMPing = !isNaN(endMPing) ? endMPing : 0;
-        const startMinutesTotal = cleanStartHPing * 60 + cleanStartMPing;
-        const endMinutesTotal = cleanEndHPing * 60 + cleanEndMPing;
-        const isOvernightPing = endMinutesTotal <= startMinutesTotal;
+        const timeRangePing = parseScheduleTimeRange(sch.time);
+        const startMinutesTotal = timeRangePing.startMinutesTotal;
+        const endMinutesTotal = timeRangePing.endMinutesTotal;
+        const isOvernightPing = timeRangePing.isOvernight;
         let isExpiredDatePing = false;
         if (isOvernightPing) {
           if (scheduleDateWibStrPing === todayWibStrPing) {
@@ -590,17 +646,10 @@ export class KknAttendanceService {
         });
 
         // Hitung batas menit untuk mengetahui apakah jadwal ini sudah SELESAI
-        const jamMulai = sch.time?.split("-")[0]?.trim() || "08:00";
-        const jamSelesai = sch.time?.split("-")[1]?.trim() || "16:00";
-        const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
-        const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
-        const cleanStartH = !isNaN(startH) ? (startH === 24 ? 0 : startH) : 8;
-        const cleanStartM = !isNaN(startM) ? startM : 0;
-        const cleanEndH = !isNaN(endH) ? (endH === 24 ? 24 : endH) : 16;
-        const cleanEndM = !isNaN(endM) ? endM : 0;
-        const startMinutesTotal = cleanStartH * 60 + cleanStartM;
-        const endMinutesTotal = cleanEndH * 60 + cleanEndM;
-        const isOvernight = endMinutesTotal <= startMinutesTotal;
+        const timeRangeBatch = parseScheduleTimeRange(sch.time);
+        const startMinutesTotal = timeRangeBatch.startMinutesTotal;
+        const endMinutesTotal = timeRangeBatch.endMinutesTotal;
+        const isOvernight = timeRangeBatch.isOvernight;
 
         const now = new Date();
         const nowWib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
@@ -886,14 +935,9 @@ export class KknAttendanceService {
       try {
         const sched = await prisma.schedule.findUnique({ where: { id: scheduleId }, select: { time: true } });
         if (sched?.time) {
-          const stripped = sched.time.replace(/\s*(WIB|WITA|WIT)\s*/gi, "").trim();
-          const parts = stripped.split("-");
-          if (parts.length >= 2) {
-            const [sH, sM] = parts[0].trim().replace(".", ":").split(":").map(Number);
-            const [eH, eM] = parts[1].trim().replace(".", ":").split(":").map(Number);
-            if (!isNaN(sH) && !isNaN(sM)) scheduleStartTotal = sH * 60 + sM;
-            if (!isNaN(eH) && !isNaN(eM)) scheduleEndTotal = eH * 60 + eM;
-          }
+          const range = parseScheduleTimeRange(sched.time);
+          scheduleStartTotal = range.startMinutesTotal;
+          scheduleEndTotal = range.endMinutesTotal;
         }
       } catch (_) { /* keep defaults */ }
 
@@ -2091,44 +2135,12 @@ export class KknAttendanceService {
     const todayStr = nowWib.toISOString().slice(0, 10);
 
     const result = schedules.map((sch) => {
-      let jamMulai = "08:00";
-      let jamSelesai = "16:00";
-      // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
-      const normalizedTime = (sch.time || "")
-        .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
-        .replace(/[\u2013\u2014~]|s\/d|sd/gi, "-")
-        .trim();
-      if (normalizedTime.includes("-")) {
-        const parts = normalizedTime.split("-");
-        jamMulai = parts[0].trim();
-        jamSelesai = parts[1].trim();
-      }
-
-        // Ekstrak angka jam dan menit menggunakan regex agar lebih tangguh (robust)
-        const parseTime = (timeStr: string, defaultH: number, defaultM: number) => {
-          const match = timeStr.match(/(\d{1,2})[:.](\d{2})/);
-          if (match) {
-            return [parseInt(match[1], 10), parseInt(match[2], 10)];
-          }
-          const hourMatch = timeStr.match(/(\d{1,2})/);
-          if (hourMatch) {
-            return [parseInt(hourMatch[1], 10), 0];
-          }
-          return [defaultH, defaultM];
-        };
-
-        const [startH, startM] = parseTime(jamMulai, 8, 0);
-        const [endH, endM] = parseTime(jamSelesai, 23, 59);
-
-        const cleanStartH = startH === 24 ? 0 : startH;
-        const cleanStartM = startM;
-        const cleanEndH = endH === 24 ? 24 : endH;
-        const cleanEndM = endM;
-
-        const startMinutesTotal = cleanStartH * 60 + cleanStartM;
-        const endMinutesTotal = cleanEndH * 60 + cleanEndM;
-
-        const isOvernight = endMinutesTotal <= startMinutesTotal;
+      const timeRange = parseScheduleTimeRange(sch.time);
+      const jamMulai = timeRange.jamMulai;
+      const jamSelesai = timeRange.jamSelesai;
+      const startMinutesTotal = timeRange.startMinutesTotal;
+      const endMinutesTotal = timeRange.endMinutesTotal;
+      const isOvernight = timeRange.isOvernight;
 
       // Normalize tanggal jadwal ke WIB untuk perbandingan string YYYY-MM-DD
       // sch.date dari Prisma adalah UTC. Kita harus convert ke WIB sebelum ambil date string.
@@ -2144,21 +2156,21 @@ export class KknAttendanceService {
       // Bandingkan apakah jadwal ada di masa depan (pakai string tanggal WIB)
       const isFutureDate = schDateStr > todayStr;
 
-      // Status waktu kegiatan
+      // Status waktu kegiatan (dengan toleransi persiapan 60 menit sebelum mulai)
       let scheduleStatus = "AKTIF";
       if (isOvernight) {
         if (isSchedDateToday) {
-          scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "AKAN_DATANG";
+          scheduleStatus = currentMinutesTotal >= (startMinutesTotal - 60) ? "AKTIF" : "AKAN_DATANG";
         } else if (isFutureDate) {
           scheduleStatus = "AKAN_DATANG";
         } else {
-          scheduleStatus = currentMinutesTotal <= endMinutesTotal ? "AKTIF" : "SELESAI";
+          scheduleStatus = currentMinutesTotal <= (endMinutesTotal + 180) ? "AKTIF" : "SELESAI";
         }
       } else {
         if (isSchedDateToday) {
-          if (currentMinutesTotal < startMinutesTotal) {
+          if (currentMinutesTotal < (startMinutesTotal - 60)) {
             scheduleStatus = "AKAN_DATANG";
-          } else if (currentMinutesTotal > endMinutesTotal) {
+          } else if (currentMinutesTotal > (endMinutesTotal + 180) && (!sch.attendances || sch.attendances.length === 0)) {
             scheduleStatus = "SELESAI";
           } else {
             scheduleStatus = "AKTIF";
@@ -2317,23 +2329,10 @@ export class KknAttendanceService {
     const currentMinutesTotal = currentHour * 60 + currentMinute;
     
     // Hitung menit mulai dan selesai untuk validasi akses
-    let jamMulai = "08:00";
-    let jamSelesai = "16:00";
-    const normalizedTime = (schedule.time || "").replace(/\s*(WIB|WITA|WIT)\s*/gi, "").replace(/[\u2013\u2014~]|s\/d|sd/gi, "-").trim();
-    if (normalizedTime.includes("-")) {
-      const parts = normalizedTime.split("-");
-      jamMulai = parts[0].trim();
-      jamSelesai = parts[1].trim();
-    }
-    const [startH, startM] = jamMulai.replace(".", ":").split(":").map(Number);
-    const [endH, endM] = jamSelesai.replace(".", ":").split(":").map(Number);
-    const cleanStartH = !isNaN(startH) ? (startH === 24 ? 0 : startH) : 8;
-    const cleanStartM = !isNaN(startM) ? startM : 0;
-    const cleanEndH = !isNaN(endH) ? (endH === 24 ? 24 : endH) : 16;
-    const cleanEndM = !isNaN(endM) ? endM : 0;
-    const startMinutesTotal = cleanStartH * 60 + cleanStartM;
-    const endMinutesTotal = cleanEndH * 60 + cleanEndM;
-    const isOvernight = endMinutesTotal <= startMinutesTotal;
+    const timeRange = parseScheduleTimeRange(schedule.time);
+    const startMinutesTotal = timeRange.startMinutesTotal;
+    const endMinutesTotal = timeRange.endMinutesTotal;
+    const isOvernight = timeRange.isOvernight;
 
     let schDateStr = todayStr;
     if (schedule.date) {
@@ -2347,18 +2346,17 @@ export class KknAttendanceService {
     let scheduleStatus = "AKTIF";
     if (isOvernight) {
       if (isSchedDateToday) {
-        scheduleStatus = currentMinutesTotal >= startMinutesTotal ? "AKTIF" : "AKAN_DATANG";
+        scheduleStatus = currentMinutesTotal >= (startMinutesTotal - 60) ? "AKTIF" : "AKAN_DATANG";
       } else if (isFutureDate) {
         scheduleStatus = "AKAN_DATANG";
       } else {
-        scheduleStatus = currentMinutesTotal <= endMinutesTotal ? "AKTIF" : "SELESAI";
+        scheduleStatus = currentMinutesTotal <= (endMinutesTotal + 180) ? "AKTIF" : "SELESAI";
       }
     } else {
       if (isSchedDateToday) {
-        if (currentMinutesTotal < startMinutesTotal) {
+        // Toleransi persiapan presensi 60 menit sebelum jam mulai
+        if (currentMinutesTotal < (startMinutesTotal - 60)) {
           scheduleStatus = "AKAN_DATANG";
-        } else if (currentMinutesTotal > endMinutesTotal) {
-          scheduleStatus = "SELESAI";
         } else {
           scheduleStatus = "AKTIF";
         }
@@ -2398,7 +2396,6 @@ export class KknAttendanceService {
     }
 
     // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG
-    // Pengecekan mencakup semua hari (tidak dibatasi startOfDay) untuk mencegah sesi menggantung
     const activeOtherSession = await prisma.activityAttendance.findFirst({
       where: {
         studentId: studentUserId,
@@ -2410,9 +2407,21 @@ export class KknAttendanceService {
     });
 
     if (activeOtherSession) {
-      throw new Error(
-        `CONCURRENCY_CONFLICT: Selesaikan sesi kegiatan '${activeOtherSession.schedule?.title || "sebelumnya"}' terlebih dahulu sebelum memulai kegiatan baru.`
-      );
+      const startOfDay = new Date(`${todayStr}T00:00:00+07:00`);
+      if (new Date(activeOtherSession.attendedAt).getTime() < startOfDay.getTime()) {
+        // Sesi tertinggal dari hari-hari sebelumnya di-checkout otomatis agar mahasiswa tidak terkunci
+        await prisma.activityAttendance.update({
+          where: { id: activeOtherSession.id },
+          data: {
+            checkOutAt: new Date(activeOtherSession.attendedAt.getTime() + 8 * 3600 * 1000),
+            status: "SELESAI",
+          },
+        }).catch(() => {});
+      } else {
+        throw new Error(
+          `CONCURRENCY_CONFLICT: Selesaikan sesi kegiatan '${activeOtherSession.schedule?.title || "sebelumnya"}' terlebih dahulu sebelum memulai kegiatan baru.`
+        );
+      }
     }
 
     // Upsert session di activityAttendance
@@ -2550,8 +2559,8 @@ export class KknAttendanceService {
       sessionId: `SES-${schedule.id.slice(0, 8)}-${studentUserId.slice(-6)}`,
       scheduleId: schedule.id,
       namaKegiatan: schedule.title,
-      jamMulai,
-      jamSelesai,
+      jamMulai: timeRange.jamMulai,
+      jamSelesai: timeRange.jamSelesai,
       durasiWajibMenit,
       attendedAt: attendance.attendedAt.toISOString(),
       lokasi: {
@@ -2753,14 +2762,8 @@ export class KknAttendanceService {
       for (const att of activeAttendances) {
         if (!att.schedule || !att.schedule.time) continue;
 
-        const parts = att.schedule.time.split("-");
-        if (parts.length < 2) continue;
-
-        const endStr = parts[1].trim().replace(".", ":");
-        const endParts = endStr.split(":");
-        if (endParts.length < 2) continue;
-
-        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+        const timeRange = parseScheduleTimeRange(att.schedule.time);
+        const endMins = timeRange.endMinutesTotal;
 
         // Jika waktu saat ini sudah lewat / sama dengan batas selesai jadwal
         if (currentMins >= endMins) {

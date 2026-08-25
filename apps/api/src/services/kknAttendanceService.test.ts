@@ -11,6 +11,8 @@ import {
   calculateInZoneDurationMinutes,
   getScheduleTargetDurationMinutes,
   calculateDistance,
+  parseScheduleTimeString,
+  parseScheduleTimeRange,
   KknAttendanceService,
 } from "./kknAttendanceService.js";
 import { prisma } from "../lib/prisma.js";
@@ -83,6 +85,41 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
   beforeEach(() => {
     vi.clearAllMocks();
     service = new KknAttendanceService();
+  });
+
+  describe("parseScheduleTimeString & parseScheduleTimeRange helpers", () => {
+    it("should parse standard 24-hour time strings correctly", () => {
+      expect(parseScheduleTimeString("08:30")).toEqual([8, 30]);
+      expect(parseScheduleTimeString("16.45")).toEqual([16, 45]);
+      expect(parseScheduleTimeString("00:00")).toEqual([0, 0]);
+    });
+
+    it("should parse 12-hour AM/PM time strings correctly", () => {
+      expect(parseScheduleTimeString("08:00 AM")).toEqual([8, 0]);
+      expect(parseScheduleTimeString("08:05 AM")).toEqual([8, 5]);
+      expect(parseScheduleTimeString("01:30 PM")).toEqual([13, 30]);
+      expect(parseScheduleTimeString("12:00 PM")).toEqual([12, 0]);
+      expect(parseScheduleTimeString("12:00 AM")).toEqual([0, 0]);
+    });
+
+    it("should parse full schedule time ranges with WIB / AM / PM / delimiters", () => {
+      const r1 = parseScheduleTimeRange("08:00 AM - 08:05 AM");
+      expect(r1.startH).toBe(8);
+      expect(r1.startM).toBe(0);
+      expect(r1.endH).toBe(8);
+      expect(r1.endM).toBe(5);
+      expect(r1.startMinutesTotal).toBe(480);
+      expect(r1.endMinutesTotal).toBe(485);
+      expect(r1.isOvernight).toBe(false);
+
+      const r2 = parseScheduleTimeRange("08.00 WIB - 16.00 WIB");
+      expect(r2.startMinutesTotal).toBe(480);
+      expect(r2.endMinutesTotal).toBe(960);
+      expect(r2.isOvernight).toBe(false);
+
+      const r3 = parseScheduleTimeRange("22:00 - 04:00");
+      expect(r3.isOvernight).toBe(true);
+    });
   });
 
   describe("calculateInZoneDurationMinutes helper", () => {
