@@ -18,99 +18,66 @@ export class AiService {
    * AI Detection using WasteAiAdapterFactory with Redis Queue
    */
   async detectWasteMock(userId: string, imageUrl: string, imagePath?: string) {
-    // 1. Check Quota via Redis
     const hasQuota = await redisService.checkAndUseQuota(userId);
-    if (!hasQuota) {
-      throw new Error("QUOTA_EXCEEDED");
-    }
+    if (!hasQuota) throw new Error("QUOTA_EXCEEDED");
 
     const requestId = uuidv4();
     const finalImageUrl = imageUrl || "http://mock-storage/waste.jpg";
 
     try {
-      // 2. Enqueue the AI Task into FIFO Queue (max 2 concurrent from redisService)
       const result: any = await redisService.enqueueAiTask(async () => {
         const adapter = WasteAiAdapterFactory.getAdapter();
-        const aiResponse = await adapter.classifyWaste({
-          imageUrl: finalImageUrl,
-          imagePath,
-        });
+        const aiResult = await adapter.classifyWaste({ imageUrl, imagePath });
 
-        const isOrganic = (aiResponse.detectedType || "").toLowerCase().includes("organ");
-        const detectedType = isOrganic ? "ORGANIC" : "NON_ORGANIC";
-        const volumeEstimate = aiResponse.estimatedVolumeLiter || 2.0;
-        const confidence = aiResponse.confidenceScore || 0.9;
-
-        const detections = aiResponse.detections?.length
-          ? aiResponse.detections
-          : [
-              {
-                detectedType,
-                volumeEstimate,
-                confidence,
-              },
-            ];
-
-        const orgDet = detections.find((d) =>
-          d.detectedType?.toUpperCase().includes("ORGANIC")
-        );
-        const nonOrgDet = detections.find((d) =>
-          d.detectedType?.toUpperCase().includes("NON")
-        );
-        const orgVol = orgDet ? orgDet.volumeEstimate : isOrganic ? volumeEstimate : 0;
-        const nonOrgVol = nonOrgDet ? nonOrgDet.volumeEstimate : !isOrganic ? volumeEstimate : 0;
+        const detections = aiResult.detections || [];
+        const orgDet = detections.filter((d: any) => d.detectedType === "ORGANIC");
+        const nonOrgDet = detections.filter((d: any) => d.detectedType === "NON_ORGANIC");
+        const orgVol = orgDet.reduce((s: number, d: any) => s + (d.volumeEstimate || 0), 0);
+        const nonOrgVol = nonOrgDet.reduce((s: number, d: any) => s + (d.volumeEstimate || 0), 0);
         const totalVol = orgVol + nonOrgVol;
 
-        let organik_percent = (aiResponse.rawPayload as any)?.organik_percent;
-        let non_organik_percent = (aiResponse.rawPayload as any)?.non_organik_percent;
-
+        const rawPercent = (aiResult.rawPayload as any) || {};
+        let organik_percent = rawPercent.organik_percent;
+        let non_organik_percent = rawPercent.non_organik_percent;
         if (organik_percent === undefined || non_organik_percent === undefined) {
           if (totalVol > 0) {
             organik_percent = Math.round((orgVol / totalVol) * 100);
             non_organik_percent = 100 - organik_percent;
-          } else if (isOrganic) {
-            organik_percent = 100;
-            non_organik_percent = 0;
           } else {
-            organik_percent = 0;
-            non_organik_percent = 100;
+            organik_percent = aiResult.detectedType === "ORGANIC" ? 100 : 0;
+            non_organik_percent = 100 - organik_percent;
           }
         }
 
         return {
-          requestId: aiResponse.requestId || requestId,
-          detectedType,
-          volumeEstimate,
-          confidence,
+          requestId,
+          detectedType: aiResult.detectedType,
+          volumeEstimate: aiResult.estimatedVolumeLiter,
+          confidence: aiResult.confidenceScore,
           detections,
           isBlurry: false,
           organik_percent,
           non_organik_percent,
-          recommended_bin: isOrganic ? "organik" : "anorganik",
-          vendorName: aiResponse.vendorName,
-          annotatedImageBase64: aiResponse.annotatedImageBase64,
+          recommended_bin:
+            String(aiResult.detectedType).toLowerCase() === "organic" ||
+            String(aiResult.detectedType).toLowerCase() === "organik"
+              ? "organik"
+              : "anorganik",
+          vendorName: aiResult.vendorName,
+          annotatedImageBase64: aiResult.annotatedImageBase64,
         };
       });
 
-      // 3. Write Success Log
       await aiRepository.logRequest(userId, requestId, finalImageUrl, "SUCCESS").catch((err) => {
         console.warn("Failed to write AI success log to DB:", err.message);
       });
 
       return result;
     } catch (error: any) {
-      // Handle Failure
       const isTimeout = error.message === "AI_TIMEOUT";
       const failureStatus = isTimeout ? "TIMEOUT" : "IMAGE_UNREADABLE";
-
-      // Write Failed Log
-      await aiRepository
-        .logRequest(userId, requestId, finalImageUrl, failureStatus)
-        .catch(() => {});
-
-      // Refund Quota
+      await aiRepository.logRequest(userId, requestId, finalImageUrl, failureStatus).catch(() => {});
       await redisService.refundQuota(userId);
-
       throw error;
     }
   }
