@@ -483,13 +483,9 @@ archiveAuditLogsCron.start();
       'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
     ];
 
-    for (const stmt of alterStatements) {
-      try {
-        await prisma.$executeRawUnsafe(stmt);
-      } catch {
-        // Ignore duplicate column errors
-      }
-    }
+    await Promise.allSettled(
+      alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt))
+    );
     console.log("[AutoMigration] Database columns checked and synced successfully.");
 
     const dummyUser = await prisma.user.findFirst({
