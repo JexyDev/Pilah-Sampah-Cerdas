@@ -141,19 +141,19 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
       to={to}
       className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ease-out text-[12.5px] group overflow-hidden transform-gpu z-10 ${
         isCurrentActive
-          ? "bg-[#f3fbf5]/90 dark:bg-emerald-950/80 text-[#055c46] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
-          : "text-slate-600 dark:text-slate-300 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
+          ? "bg-[#f2f8f4]/90 dark:bg-emerald-950/80 text-[#035941] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
+          : "text-slate-600 dark:text-slate-300 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
       }`}
     >
       {/* Left Curved Accent Indicator Bar */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full shadow-xs" />
+        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#58A621] dark:bg-emerald-500 rounded-r-full shadow-xs" />
       )}
 
-      <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
+      <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
       <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#549e26] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
+        <span className="bg-[#58A621] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
       )}
     </Link>
   );
@@ -172,8 +172,8 @@ const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => 
       title={label}
       className={`relative w-10 h-10 rounded-xl flex items-center justify-center my-0.5 transition-all duration-200 group cursor-pointer shrink-0 ${
         isCurrentActive
-          ? "bg-[#055c46] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
-          : "text-slate-500 dark:text-slate-400 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-[#f3fbf5] dark:hover:bg-slate-800"
+          ? "bg-[#035941] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
+          : "text-slate-500 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-[#f2f8f4] dark:hover:bg-slate-800"
       }`}
     >
       <Icon size={17} className="transition-transform duration-200 group-hover:scale-110" />
@@ -189,7 +189,6 @@ const NavGroup: React.FC<{
   label: string;
   items: Array<{ to: string; label: string }>;
 }> = ({ icon: Icon, label, items }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
   const location = useLocation();
 
   const isSubActive = (subTo: string, index: number) => {
@@ -199,6 +198,8 @@ const NavGroup: React.FC<{
   const isAnySubActive = useMemo(() => {
     return items.some((item, idx) => isSubActive(item.to, idx));
   }, [items, location.pathname, location.search]);
+
+  const [isOpen, setIsOpen] = React.useState(isAnySubActive);
 
   React.useEffect(() => {
     if (isAnySubActive) {
@@ -212,19 +213,19 @@ const NavGroup: React.FC<{
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
           isAnySubActive
-            ? "bg-[#f3fbf5] dark:bg-emerald-950/70 text-[#055c46] dark:text-emerald-400 font-bold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
-            : "text-slate-600 dark:text-slate-400 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
+            ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
+            : "text-slate-600 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
         {isAnySubActive && (
-          <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full" />
+          <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#58A621] dark:bg-emerald-500 rounded-r-full" />
         )}
 
-        <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
+        <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
         <span className="flex-1 font-bold text-slate-800 dark:text-slate-200 truncate tracking-tight">{label}</span>
         <ChevronDown
           size={14}
-          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#055c46] dark:text-emerald-400 font-bold" : "text-slate-400"}`}
+          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#035941] dark:text-emerald-400 font-bold" : "text-slate-400"}`}
         />
       </button>
       {isOpen && (
@@ -238,15 +239,15 @@ const NavGroup: React.FC<{
                 title={sub.label}
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200 group ${
                   isActive
-                    ? "bg-[#f3fbf5] dark:bg-emerald-950/70 text-[#055c46] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#055c46] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
+                    ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
                     isActive
-                      ? "bg-[#549e26] dark:bg-emerald-400 scale-125 ring-3 ring-[#549e26]/30 dark:ring-emerald-800"
-                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#549e26] dark:group-hover:bg-emerald-400"
+                      ? "bg-[#58A621] dark:bg-emerald-400 scale-125 ring-3 ring-[#58A621]/30 dark:ring-emerald-800"
+                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#58A621] dark:group-hover:bg-emerald-400"
                   }`}
                 />
                 <span className="truncate">{sub.label}</span>
@@ -306,7 +307,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const confirmLogout = () => {
     logout();
-    showToast.success("Berhasil keluar sistem");
+    showToast.success("Berhasil keluar dari sistem");
     navigate("/login");
   };
 
@@ -690,7 +691,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penyetoran-sampah",
-              label: "Setor Sampah",
+              label: "Penyetoran Sampah",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -752,7 +753,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/master-pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/master-pengguna?role=rw", label: "RW", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Residu", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
             { to: "/master-pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/master-pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
           ],
@@ -824,7 +825,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
           children: [
             { to: "/log-aktivitas", label: "Audit Trail Sistem", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/pengguna-online", label: "Pengguna Online", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/pengguna-online", label: "Pengguna Daring", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
           ],
         },
         {
@@ -834,7 +835,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
           children: [
             { to: "/superUser/discrepancies", label: "Diskrepansi AI", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/superUser/master-qr", label: "Batch QR Code", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/superUser/master-qr", label: "Batch Kode QR", allowed: ["DEVELOPER"] as UserRole[] },
           ],
         },
       ],
@@ -850,7 +851,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/pengaturan", label: "Profil", allowed: ALL_ROLES },
             { to: "/notifikasi", label: "Notifikasi", allowed: ALL_ROLES },
-            { to: "/master-data/rule-engine", label: "Rule Engine", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
+            { to: "/master-data/rule-engine", label: "Mesin Aturan (Rule Engine)", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
           ],
         },
         {
@@ -943,7 +944,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0">
               <button
                 onClick={handleLogout}
-                title="Keluar Sistem"
+                title="Keluar"
                 className="w-10 h-10 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-all relative group cursor-pointer"
               >
                 <LogOut size={18} />
@@ -953,11 +954,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         ) : (
           /* Render Full Sidebar */
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
-            {/* Top Brand Logo Header Section with Real-Time Clock */}
-            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#f3fbf5]/40 dark:from-emerald-950/20 via-transparent to-transparent shrink-0">
+            {/* Top Brand Logo Header Section */}
+            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#f2f8f4]/40 dark:from-emerald-950/20 via-transparent to-transparent shrink-0">
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
-              <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 mb-3 px-2 w-full text-center">
+              <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 px-2 w-full text-center">
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
@@ -965,27 +966,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 />
                 <div className="flex flex-col justify-center text-left min-w-0">
                   {/* ponytail: static header layout; abstract to brand config if dynamic multi-tenant text is required */}
-                  <h1 className="text-[20px] font-black tracking-wide text-[#055c46] dark:text-emerald-400 group-hover:text-[#549e26] dark:group-hover:text-emerald-300 transition-colors uppercase leading-none mb-1 truncate">
+                  <h1 className="text-[20px] font-black tracking-wide text-[#035941] dark:text-emerald-400 group-hover:text-[#58A621] dark:group-hover:text-emerald-300 transition-colors uppercase leading-none mb-1 truncate">
                     BERSEKA
                   </h1>
-                  <p className="text-[10px] font-bold text-[#549e26] dark:text-emerald-500 tracking-tight leading-tight truncate">
+                  <p className="text-[10px] font-bold text-[#58A621] dark:text-emerald-500 tracking-tight leading-tight truncate">
                     Bersih, Sehat, Kampung Asri
                   </p>
                 </div>
               </Link>
-
-              {/* Real-time System Clock Card */}
-              <div className="w-full bg-[#f3fbf5]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
-                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
-                  <Clock size={13} className="text-[#055c46] dark:text-emerald-400" />
-                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
-                    {dateStr || "Kamis, 20 Agustus 2026"}
-                  </p>
-                </div>
-                <p className="text-sm font-black text-[#055c46] dark:text-emerald-400 tracking-wider font-mono">
-                  {timeStr || "09.55.12 WIB"}
-                </p>
-              </div>
             </div>
 
             {/* Scrollable Navigation Sections */}
@@ -1015,10 +1003,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                         }
                         return (
                           <NavGroup
-                            key={item.label}
-                            icon={item.icon}
-                            label={item.label}
-                            items={childrenToRender}
+                              key={item.label}
+                              icon={item.icon}
+                              label={item.label}
+                              items={childrenToRender}
                           />
                         );
                       }
@@ -1031,14 +1019,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Footer Section: Clean Logout Button */}
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+            {/* Bottom Footer Section: Real-time System Clock Card & Clean Logout Button */}
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-3.5">
+              {/* Real-time System Clock Card */}
+              <div className="w-full bg-[#f2f8f4]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
+                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
+                  <Clock size={13} className="text-[#035941] dark:text-emerald-400" />
+                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
+                    {dateStr || "Kamis, 20 Agustus 2026"}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-[#035941] dark:text-emerald-400 tracking-wider font-mono">
+                  {timeStr || "09.55.12 WIB"}
+                </p>
+              </div>
+
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-start gap-3 px-3.5 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-all duration-200 cursor-pointer group font-semibold text-xs border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 active:scale-[0.98]"
               >
                 <LogOut size={16} className="text-rose-500 dark:text-rose-400 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar Sistem</span>
+                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar</span>
               </button>
             </div>
           </div>
@@ -1053,9 +1054,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               <LogOut size={26} />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Sesi Keluar</h3>
+              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Keluar</h3>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-                Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem BERSEKA?
+                Apakah Anda yakin ingin keluar dari sistem BERSEKA?
               </p>
             </div>
             <div className="flex gap-3 pt-2">

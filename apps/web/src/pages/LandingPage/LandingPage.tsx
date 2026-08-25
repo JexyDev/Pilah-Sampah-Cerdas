@@ -311,7 +311,7 @@ export const LandingPage: React.FC = () => {
                   className="btn-primary-clean"
                 >
                   <span className="material-symbols-outlined text-lg">dashboard</span>
-                  Ke Dashboard
+                  Dasbor
                 </button>
               ) : (
                 <Link to="/login" className="btn-primary-clean">
@@ -385,7 +385,7 @@ export const LandingPage: React.FC = () => {
                   className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-[#035941] text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">dashboard</span>
-                  Ke Dashboard
+                  Dasbor
                 </button>
               ) : (
                 <Link
