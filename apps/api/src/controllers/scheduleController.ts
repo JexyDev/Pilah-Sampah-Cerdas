@@ -68,7 +68,7 @@ export const scheduleController = {
         return;
       }
 
-      let resolvedKelompokId = kelompokId || undefined;
+      let resolvedKelompokId = (kelompokId && kelompokId !== "ALL" && kelompokId !== "") ? kelompokId : undefined;
       const userRole = String(req.user?.role || "").toUpperCase();
       const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
       const isMahasiswa = userRole === "MAHASISWA_KKN";

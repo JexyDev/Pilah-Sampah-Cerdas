@@ -950,28 +950,49 @@ export const LogbookKknPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Anggota Hadir */}
+            {/* Anggota Tim Kelompok */}
             <div className="space-y-1.5">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Anggota Hadir:</span>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Anggota Tim Kelompok ({selectedItemDetail.anggotaKelompok?.length || 0} Mahasiswa):
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Aktivitas Tim Terdaftar
+                </span>
+              </div>
               {selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 items-center">
-                  {selectedItemDetail.anggotaKelompok.map((st) => (
-                    <span
-                      key={st.id}
-                      title={st.name + (st.isKetua ? " (Ketua)" : "")}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        st.isKetua
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300"
-                          : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200"
-                      }`}
-                    >
-                      <span>{st.name}</span>
-                      {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua)</span>}
-                    </span>
-                  ))}
+                  {selectedItemDetail.anggotaKelompok.map((st) => {
+                    const isPenulis =
+                      st.name === selectedItemDetail.penulisNama ||
+                      (selectedItemDetail.penulisNim && st.name.includes(selectedItemDetail.penulisNama));
+                    return (
+                      <span
+                        key={st.id}
+                        title={
+                          st.name +
+                          (st.isKetua ? " (Ketua)" : "") +
+                          (isPenulis ? " (Penginput)" : "")
+                        }
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          isPenulis
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300"
+                            : st.isKetua
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300"
+                            : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200"
+                        }`}
+                      >
+                        <span>{st.name}</span>
+                        {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua)</span>}
+                        {isPenulis && !st.isKetua && (
+                          <span className="text-[10px] text-emerald-700 font-bold">(Penginput)</span>
+                        )}
+                      </span>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-slate-500 italic">Semua anggota kelompok terdaftar ({selectedItemDetail.penulisNama})</p>
+                <p className="text-slate-500 italic">Diinput oleh {selectedItemDetail.penulisNama}</p>
               )}
             </div>
 
@@ -983,14 +1004,24 @@ export const LogbookKknPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Bukti Lampiran Foto */}
-            {selectedItemDetail.fotoBuktiUrl && (
+            {/* Bukti Lampiran Foto (Kosong jika tidak ada foto / null) */}
+            {selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== "" && (
               <div className="space-y-1">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">Bukti Lampiran Foto:</span>
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-60 bg-slate-900">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-60 bg-slate-900 flex items-center justify-center min-h-[140px]">
                   <img
                     src={resolveImageUrl(selectedItemDetail.fotoBuktiUrl)}
                     alt="Bukti Aktivitas"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                      const parent = (e.target as HTMLElement).parentElement;
+                      if (parent) {
+                        const fallback = document.createElement("div");
+                        fallback.className = "text-slate-400 text-xs italic p-4 text-center";
+                        fallback.innerText = "Foto bukti tidak dapat dimuat atau belum diunggah.";
+                        parent.appendChild(fallback);
+                      }
+                    }}
                     className="w-full h-full object-contain max-h-60"
                   />
                   <button

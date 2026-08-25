@@ -3476,8 +3476,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             setFormData((prev) => ({
                               ...prev,
                               kelompokId: newGroupId,
-                              location: locInfo.fullAddress,
-                              title: targetGroup ? `${cat} - Kel. ${locInfo.kelurahan}${rwTag}` : prev.title,
+                              location: targetGroup ? locInfo.fullAddress : (prev.location || "Kecamatan Coblong, Kota Bandung"),
+                              title: targetGroup ? `${cat} - Kel. ${locInfo.kelurahan}${rwTag}` : `${cat} - Kegiatan Bersama Seluruh Wilayah`,
                             }));
                           }}
                           className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/60 focus:bg-white focus:border-emerald-500 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"

@@ -926,6 +926,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "WARGA",
             "PEMIMPIN",
             "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
           ] as UserRole[],
           children: [
             {

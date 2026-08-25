@@ -2050,12 +2050,15 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
-    // ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
+    // 🎯 Filter jadwal aktif (spesifik kelompok KKN atau jadwal bersama/global tanpa kelompokId)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
-          kelompokId: student.kelompokId,
+          OR: [
+            { kelompokId: student.kelompokId },
+            { kelompokId: null },
+          ],
           date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
         },
