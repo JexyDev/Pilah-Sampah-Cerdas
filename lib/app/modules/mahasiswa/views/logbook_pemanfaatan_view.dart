@@ -26,7 +26,19 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
   final _formKey = GlobalKey<FormState>();
   String? _selectedProkerId;
   String? _selectedFasilitasId;
-  final _teknologiCtrl = TextEditingController();
+  
+  final List<String> _teknologiList = [
+    'Kompos Organik (Buruan Sae)',
+    'Maggot BSF',
+    'Pupuk Organik Cair (POC)',
+    'Bank Sampah Anorganik',
+    'Loseda (Lorong Sisa Dapur)',
+    'Bata Terawang',
+    'Kompos Keranjang Takakura',
+    'Daur Ulang Anorganik Lainnya',
+  ];
+  String? _selectedTeknologi = 'Kompos Organik (Buruan Sae)';
+
   final _bahanBakuCtrl = TextEditingController();
   final _beratInputCtrl = TextEditingController();
   File? _selectedImage;
@@ -57,7 +69,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
       await repo.submitLogbookPemanfaatan({
         'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
-        'teknologi': _teknologiCtrl.text.trim(),
+        'teknologi': _selectedTeknologi ?? 'Kompos Organik (Buruan Sae)',
         'bahanBaku': _bahanBakuCtrl.text.trim(),
         'beratInputKg': double.tryParse(_beratInputCtrl.text.trim()) ?? 0,
       }, imagePath: _selectedImage?.path);
@@ -96,7 +108,6 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
 
   @override
   void dispose() {
-    _teknologiCtrl.dispose();
     _bahanBakuCtrl.dispose();
     _beratInputCtrl.dispose();
     super.dispose();
@@ -222,12 +233,23 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                 title: 'Detail Kegiatan',
                 icon: Icons.tune_rounded,
                 children: [
-                  const Text('Teknologi / Metode', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Teknologi / Metode Pengolahan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _teknologiCtrl,
-                    decoration: _inputDecoration('Contoh: Komposter, Maggot BSF'),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedTeknologi,
+                    isExpanded: true,
+                    decoration: _inputDecoration('Pilih Jenis Pengolahan'),
+                    items: _teknologiList.map((tek) {
+                      return DropdownMenuItem<String>(
+                        value: tek,
+                        child: Text(
+                          tek,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedTeknologi = val),
+                    validator: (val) => val == null || val.isEmpty ? 'Wajib dipilih' : null,
                   ),
                   const SizedBox(height: 16),
 
