@@ -1,3 +1,14 @@
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from apps/api/.env with root .env fallback
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config();
+
 import { prisma } from "./lib/prisma.js";
 /**
  * Project: BERSEKA
@@ -7,7 +18,6 @@ import { prisma } from "./lib/prisma.js";
  */
 
 import express from "express";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import fs from "fs";
 
@@ -189,8 +199,8 @@ app.use((err: any, req: any, res: any, _next: any) => {
 // Initialize Swagger Docs
 setupSwagger(app);
 
-// Health check
-app.get("/health", (req, res) => {
+// Health check (supports /health, /api/health, /api/v1/health)
+app.get(["/health", "/api/health", "/api/v1/health"], (_req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
@@ -198,6 +208,14 @@ const server = app.listen(PORT, () => {
   console.log(`===============================================`);
   console.log(`pilahsampah.id Backend running on port ${PORT}`);
   console.log(`===============================================`);
+});
+
+server.on("error", (err: any) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`[Server Warning] Port ${PORT} is already in use. Please check running Node processes.`);
+  } else {
+    console.error("[Server Error]", err);
+  }
 });
 
 // Initialize WebSocket Server
