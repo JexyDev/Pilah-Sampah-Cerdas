@@ -995,6 +995,8 @@ class ApiAuthRepository implements AuthRepository {
     List<String> rtRws = [];
     List<Map<String, dynamic>> rtRwListRaw = [];
     List<Map<String, dynamic>> kelurahanListRaw = [];
+    List<Map<String, dynamic>> kotaListRaw = [];
+    List<Map<String, dynamic>> kecamatanListRaw = [];
 
     try {
       final provResp = await apiClient.dio.get('/wilayah/provinsi');
@@ -1012,6 +1014,9 @@ class ApiAuthRepository implements AuthRepository {
       if (kotaResp.statusCode == 200 && kotaResp.data != null) {
         final list = kotaResp.data is List ? kotaResp.data as List : (kotaResp.data['data'] as List? ?? []);
         for (final item in list) {
+          if (item is Map) {
+            kotaListRaw.add(Map<String, dynamic>.from(item));
+          }
           String clean = _cleanName(item);
           if (clean.isNotEmpty && !clean.contains('{') && !kotas.contains(clean)) kotas.add(clean);
         }
@@ -1024,6 +1029,9 @@ class ApiAuthRepository implements AuthRepository {
       if (kecResp.statusCode == 200 && kecResp.data != null) {
         final list = kecResp.data is List ? kecResp.data as List : (kecResp.data['data'] as List? ?? []);
         for (final item in list) {
+          if (item is Map) {
+            kecamatanListRaw.add(Map<String, dynamic>.from(item));
+          }
           String clean = _cleanName(item);
           clean = clean.replaceAll(RegExp(r'^Kecamatan\s+', caseSensitive: false), '').trim();
           if (clean.isNotEmpty && !clean.contains('{') && !kecamatans.contains(clean)) {
@@ -1130,6 +1138,8 @@ class ApiAuthRepository implements AuthRepository {
       'rtRws': rtRws,
       'rawRtRw': rtRwListRaw,
       'rawKelurahan': kelurahanListRaw,
+      'rawKota': kotaListRaw,
+      'rawKecamatan': kecamatanListRaw,
     };
   }
 }

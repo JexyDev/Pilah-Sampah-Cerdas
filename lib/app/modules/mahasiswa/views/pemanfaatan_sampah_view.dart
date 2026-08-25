@@ -27,7 +27,17 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
 
   final _formKey1 = GlobalKey<FormState>();
   final _programPemanfaatanCtrl = TextEditingController();
-  final _teknologiCtrl = TextEditingController();
+  final List<String> _teknologiList = [
+    'Kompos Organik (Buruan Sae)',
+    'Maggot BSF',
+    'Pupuk Organik Cair (POC)',
+    'Bank Sampah Anorganik',
+    'Loseda (Lorong Sisa Dapur)',
+    'Bata Terawang',
+    'Kompos Keranjang Takakura',
+    'Daur Ulang Anorganik',
+  ];
+  String _selectedTeknologi = 'Kompos Organik (Buruan Sae)';
   final _bahanBakuCtrl = TextEditingController();
   final _volBahanBakuCtrl = TextEditingController();
   final _hasilCtrl = TextEditingController();
@@ -117,7 +127,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
       return;
     }
     final req = PemanfaatanSampahRequest(
-      jenisPemanfaatan: isPemanfaatan ? (_teknologiCtrl.text.trim().isNotEmpty ? _teknologiCtrl.text.trim() : 'Teknologi Standar') : _kategoriProker,
+      jenisPemanfaatan: isPemanfaatan ? _selectedTeknologi : _kategoriProker,
       kategoriSampah: isPemanfaatan ? _bahanBakuCtrl.text.trim() : _sumberProker,
       jumlah: isPemanfaatan ? (double.tryParse(_volBahanBakuCtrl.text.trim()) ?? 0) : (double.tryParse(_kebutuhanBiayaCtrl.text.trim()) ?? 0),
       satuan: isPemanfaatan ? _unitBahanBaku : 'Rp',
@@ -274,18 +284,19 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           ),
           const SizedBox(height: 16),
           
-          const Text('Teknologi yang Digunakan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+          const Text('Metode / Kategori Pengolahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
           const SizedBox(height: 6),
-          TextFormField(
-            controller: _teknologiCtrl,
+          DropdownButtonFormField<String>(
+            initialValue: _selectedTeknologi,
+            isExpanded: true,
             decoration: InputDecoration(
-              hintText: 'Contoh: Biopori / Bata Terawang',
               filled: true,
               fillColor: Colors.white,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
             ),
-            validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+            items: _teknologiList.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
+            onChanged: (v) => setState(() => _selectedTeknologi = v!),
           ),
           const SizedBox(height: 16),
 

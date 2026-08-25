@@ -524,17 +524,17 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     ),
                     const SizedBox(height: AppDimensions.md),
 
-                    // ── PIC Fasilitas ───────────────────────────────────────
+                    // ── PIC Fasilitas (Warga) ───────────────────────────────────────
                     const _SectionLabel(
                       icon: Icons.person_rounded,
-                      label: 'PIC (Penanggung Jawab)',
+                      label: 'PIC (Penanggung Jawab Warga)',
                     ),
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _picController,
-                      hintText: 'Masukkan Nama PIC',
+                      hintText: 'Nama Warga / Pengelola Fasilitas (cth: Ibu Siti)',
                       validator: (val) => (val == null || val.isEmpty)
-                          ? 'PIC wajib diisi'
+                          ? 'Nama PIC warga wajib diisi'
                           : null,
                     ),
                     const SizedBox(height: AppDimensions.md),

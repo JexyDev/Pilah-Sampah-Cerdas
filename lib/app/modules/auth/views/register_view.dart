@@ -46,6 +46,8 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   DateTime? _tglSelesaiKKN;
   final Map<String, List<String>> _rwByKelurahan = {};
   final Map<String, List<String>> _kelurahanByKecamatan = {};
+  final Map<String, List<String>> _kotaByProvinsi = {};
+  final Map<String, List<String>> _kecamatanByKota = {};
   final Map<String, int> _rtRwIdMap = {};
 
   final List<String> _jenjangList = ['D3', 'D4', 'S1', 'S2', 'S3'];
@@ -68,7 +70,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
         return rws;
       }
     }
-    // Mengambil murni daftar RW asli dari database backend VPS
     return [];
   }
 
@@ -83,6 +84,32 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       }
     }
     return _kelurahanList;
+  }
+
+  List<String> get _availableKecamatanList {
+    if (_kotaController.text.isEmpty) return _kecamatanList;
+    final kota = _kotaController.text.trim().toLowerCase();
+    for (final entry in _kecamatanByKota.entries) {
+      if (entry.key.trim().toLowerCase() == kota && entry.value.isNotEmpty) {
+        final kecs = entry.value.toSet().toList();
+        kecs.sort();
+        return kecs;
+      }
+    }
+    return _kecamatanList;
+  }
+
+  List<String> get _availableKotaList {
+    if (_provinsiController.text.isEmpty) return _kotaList;
+    final prov = _provinsiController.text.trim().toLowerCase();
+    for (final entry in _kotaByProvinsi.entries) {
+      if (entry.key.trim().toLowerCase() == prov && entry.value.isNotEmpty) {
+        final kotas = entry.value.toSet().toList();
+        kotas.sort();
+        return kotas;
+      }
+    }
+    return _kotaList;
   }
 
   String _selectedRole = 'Warga';
@@ -799,7 +826,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                   prefixIcon: Icons.location_city,
                                   enabled: _provinsiController.text.isNotEmpty,
                                   value: _kotaController.text.isNotEmpty ? _kotaController.text : null,
-                                  items: _kotaList.map((k) => DropdownItem(value: k, label: k)).toList(),
+                                  items: _availableKotaList.map((k) => DropdownItem(value: k, label: k)).toList(),
                                   onChanged: (val) {
                                     if (val != null) {
                                       setState(() {
@@ -817,10 +844,11 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 const SizedBox(height: 6),
                                 SearchableDropdownField<String>(
                                   labelText: 'Kecamatan',
-                                  hintText: 'Pilih Kecamatan',
-                                  prefixIcon: Icons.map_rounded,
+                                  hintText: _kotaController.text.isEmpty ? 'Pilih Kota/Kab dulu' : 'Pilih Kecamatan',
+                                  prefixIcon: Icons.location_on,
+                                  enabled: _kotaController.text.isNotEmpty,
                                   value: _kecamatanController.text.isNotEmpty ? _kecamatanController.text : null,
-                                  items: _kecamatanList.map((k) => DropdownItem(value: k, label: 'Kecamatan $k')).toList(),
+                                  items: _availableKecamatanList.map((k) => DropdownItem(value: k, label: k)).toList(),
                                   onChanged: (val) {
                                     if (val != null && val != _kecamatanController.text) {
                                       setState(() {

@@ -107,20 +107,21 @@ jobs:
           fi
 
           echo "Uploading $APK_FILE to VPS..."
-          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:/tmp/berseka-release-arm64-v8a.apk"
+          sshpass -p "$VPS_PASS" scp -o StrictHostKeyChecking=no "$APK_FILE" "$VPS_USER@$VPS_HOST:berseka-release-arm64-v8a.apk"
 
           sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' CI_SECRET='$CI_SECRET' bash -s" << 'EOF'
             set -e
+            TMP_APK="$HOME/berseka-release-arm64-v8a.apk"
             echo "=== 1. Deploying APK to Nginx Static & API Downloads ==="
             echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads
 
-            echo "$VPS_PASS" | sudo -S cp /tmp/berseka-release-arm64-v8a.apk /var/www/html/downloads/berseka-release-arm64-v8a.apk
-            echo "$VPS_PASS" | sudo -S cp /tmp/berseka-release-arm64-v8a.apk /var/www/pilah-sampah-cerdas/frontend/dist/downloads/berseka-release-arm64-v8a.apk
-            echo "$VPS_PASS" | sudo -S cp /tmp/berseka-release-arm64-v8a.apk /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk
+            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" /var/www/html/downloads/berseka-release-arm64-v8a.apk
+            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/berseka-release-arm64-v8a.apk
+            echo "$VPS_PASS" | sudo -S cp "$TMP_APK" /home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk
 
             echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html/downloads
             echo "$VPS_PASS" | sudo -S chmod 644 /var/www/html/downloads/berseka-release-arm64-v8a.apk
-            rm -f /tmp/berseka-release-arm64-v8a.apk
+            rm -f "$TMP_APK"
 
             echo "=== 2. Updating Release Info in Database API ==="
             FILE_SIZE=$(stat -c%s "/home/maker/Pilah-Sampah-Cerdas/apps/api/uploads/berseka-release-arm64-v8a.apk" 2>/dev/null || echo "26004512")
