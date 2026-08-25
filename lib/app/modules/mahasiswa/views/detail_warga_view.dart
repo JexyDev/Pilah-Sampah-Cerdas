@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/detail_warga_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
@@ -46,11 +47,56 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
     }
   }
 
+  Future<void> _handleClaimWarga(BuildContext context, WidgetRef ref, WargaDampingan warga) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfirmasi Klaim Warga', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('Klaim ${warga.wargaName} sebagai warga dampingan Anda?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Klaim', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      await repo.claimWargaMandiri(warga.wargaId);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Berhasil mengklaim warga dampingan!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        // Refresh data warga di list & detail
+        ref.read(mahasiswaControllerProvider.notifier).refresh();
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(detailWargaControllerProvider);
     final warga = state.warga;
-    final currentUser = ref.watch(authProvider).user;
     final kelompokState = ref.watch(kelompokKknProvider);
 
     if (warga == null) {
@@ -214,30 +260,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                         if (warga.pendampingName.isEmpty && warga.mahasiswaId.isEmpty) ...[
                                           const SizedBox(width: 8),
                                           InkWell(
-                                            onTap: () async {
-                                              final confirm = await showDialog<bool>(
-                                                context: context,
-                                                builder: (ctx) => AlertDialog(
-                                                  title: const Text('Klaim Warga', style: TextStyle(fontWeight: FontWeight.bold)),
-                                                  content: const Text('Apakah Anda yakin ingin mengklaim warga ini sebagai warga dampingan Anda?'),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () => Navigator.of(ctx).pop(false),
-                                                      child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-                                                    ),
-                                                    ElevatedButton(
-                                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
-                                                      onPressed: () => Navigator.of(ctx).pop(true),
-                                                      child: const Text('Ya, Klaim', style: TextStyle(color: Colors.white)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-
-                                              if (confirm == true && context.mounted) {
-                                                ref.read(detailWargaControllerProvider.notifier).claimWarga(context);
-                                              }
-                                            },
+                                            onTap: () => _handleClaimWarga(context, ref, warga),
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(

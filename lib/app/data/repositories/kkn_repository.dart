@@ -59,7 +59,7 @@ abstract class KknRepository {
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng});
 
   /// Mengklaim warga yang melakukan aktivasi mandiri (POST /api/v1/kkn/warga/:wargaId/claim)
-  Future<Map<String, dynamic>> claimWarga(String wargaId);
+  Future<bool> claimWargaMandiri(String wargaId);
 
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();

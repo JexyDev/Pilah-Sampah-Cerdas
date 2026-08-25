@@ -292,15 +292,35 @@ class ApiKknRepository implements KknRepository {
     return response.statusCode == 200 || response.statusCode == 201;
   }
 
-  @override
-  Future<Map<String, dynamic>> claimWarga(String wargaId) async {
-    try {
-      final response = await apiClient.dio.post('/api/v1/kkn/warga/$wargaId/claim');
-      return response.data as Map<String, dynamic>;
-    } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        throw Exception(e.response!.data['message'] ?? e.toString());
+  String _extractSafeErrorMessage(dynamic data, String fallback) {
+    if (data is Map<String, dynamic>) {
+      final msg = data['message'] ?? data['error'];
+      if (msg != null && msg.toString().trim().isNotEmpty) {
+        return msg.toString();
       }
+    } else if (data is String && data.trim().isNotEmpty) {
+      if (data.contains('<!DOCTYPE') || data.contains('<html') || data.length > 120) {
+        return 'Format respons server tidak valid (Cek Endpoint Backend)';
+      }
+      return data;
+    }
+    return fallback;
+  }
+
+  @override
+  Future<bool> claimWargaMandiri(String wargaId) async {
+    try {
+      final response = await apiClient.dio.post(ApiEndpoints.kknClaimWarga(wargaId));
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final message = _extractSafeErrorMessage(
+        e.response?.data,
+        'Gagal mengklaim warga (HTTP $statusCode)',
+      );
+      throw Exception(message);
+    } catch (e) {
+      if (e is Exception) rethrow;
       throw Exception('Gagal mengklaim warga: $e');
     }
   }

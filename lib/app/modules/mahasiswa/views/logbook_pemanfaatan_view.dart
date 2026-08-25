@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:latlong2/latlong.dart';
 import '../../../core/utils/thousands_formatter.dart';
 
 import '../../../core/values/app_colors.dart';
@@ -69,8 +68,8 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
     try {
       final repo = ref.read(kknRepositoryProvider);
       // Dummy coords for context
-      final double latitude = 0.0;
-      final double longitude = 0.0;
+      const double latitude = 0.0;
+      const double longitude = 0.0;
 
       await repo.submitLogbookPemanfaatan({
         'programKerjaId': _selectedProkerId,
