@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import '../../../core/utils/thousands_formatter.dart';
 
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -66,12 +68,18 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
+      // Dummy coords for context
+      final double latitude = 0.0;
+      final double longitude = 0.0;
+
       await repo.submitLogbookPemanfaatan({
         'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
         'teknologi': _selectedTeknologi ?? 'Kompos Organik (Buruan Sae)',
         'bahanBaku': _bahanBakuCtrl.text.trim(),
-        'beratInputKg': double.tryParse(_beratInputCtrl.text.trim()) ?? 0,
+        'beratInputKg': double.tryParse(_beratInputCtrl.text.trim().replaceAll('.', '')) ?? 0,
+        'latitude': latitude,
+        'longitude': longitude,
       }, imagePath: _selectedImage?.path);
       
       if (mounted) {
@@ -267,6 +275,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                   TextFormField(
                     controller: _beratInputCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [ThousandsFormatter()],
                     decoration: _inputDecoration('').copyWith(suffixText: 'Kg'),
                     validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
                   ),

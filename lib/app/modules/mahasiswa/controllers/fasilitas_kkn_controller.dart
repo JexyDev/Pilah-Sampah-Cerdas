@@ -8,12 +8,14 @@ class FasilitasKknState {
   final String? error;
   final List<JenisFasilitas> jenisFasilitasList;
   final bool isLoadingJenis;
+  final List<WargaDampingan> wargaList;
 
   FasilitasKknState({
     this.isLoading = false,
     this.error,
     this.jenisFasilitasList = const [],
     this.isLoadingJenis = false,
+    this.wargaList = const [],
   });
 
   FasilitasKknState copyWith({
@@ -22,12 +24,14 @@ class FasilitasKknState {
     bool clearError = false,
     List<JenisFasilitas>? jenisFasilitasList,
     bool? isLoadingJenis,
+    List<WargaDampingan>? wargaList,
   }) {
     return FasilitasKknState(
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       jenisFasilitasList: jenisFasilitasList ?? this.jenisFasilitasList,
       isLoadingJenis: isLoadingJenis ?? this.isLoadingJenis,
+      wargaList: wargaList ?? this.wargaList,
     );
   }
 }
@@ -44,9 +48,18 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
     state = state.copyWith(isLoadingJenis: true);
     try {
       final repository = ref.read(kknRepositoryProvider);
-      final list = await repository.getJenisFasilitas();
+      
+      final results = await Future.wait([
+        repository.getJenisFasilitas(),
+        repository.getWargaDampingan(),
+      ]);
+
+      final jenisList = results[0] as List<JenisFasilitas>;
+      final wargaList = results[1] as List<WargaDampingan>;
+
       state = state.copyWith(
-        jenisFasilitasList: list,
+        jenisFasilitasList: jenisList,
+        wargaList: wargaList,
         isLoadingJenis: false,
       );
     } catch (e) {

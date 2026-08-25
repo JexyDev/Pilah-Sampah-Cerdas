@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/pemanfaatan_sampah_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -129,8 +130,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
     final req = PemanfaatanSampahRequest(
       jenisPemanfaatan: isPemanfaatan ? _selectedTeknologi : _kategoriProker,
       kategoriSampah: isPemanfaatan ? _bahanBakuCtrl.text.trim() : _sumberProker,
-      jumlah: isPemanfaatan ? (double.tryParse(_volBahanBakuCtrl.text.trim()) ?? 0) : (double.tryParse(_kebutuhanBiayaCtrl.text.trim()) ?? 0),
-      satuan: isPemanfaatan ? _unitBahanBaku : 'Rp',
+      jumlah: isPemanfaatan ? (double.tryParse(_volBahanBakuCtrl.text.trim().replaceAll('.', '')) ?? 0) : (double.tryParse(_kebutuhanBiayaCtrl.text.trim().replaceAll('.', '')) ?? 0),
+      satuan: isPemanfaatan ? _unitBahanBaku : 'Rupiah',
       wilayahDampingan: isPemanfaatan ? _programPemanfaatanCtrl.text.trim() : _judulProkerCtrl.text.trim(),
       deskripsi: isPemanfaatan ? _catatanCtrl.text.trim() : _waktuPelaksanaanCtrl.text.trim(),
       programKerjaId: _selectedProgramKerjaId,
@@ -327,7 +328,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _volBahanBakuCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [ThousandsFormatter()],
                       decoration: InputDecoration(
                         hintText: '0',
                         filled: true,
@@ -379,7 +381,8 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _hasilCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [ThousandsFormatter()],
                       decoration: InputDecoration(
                         hintText: '0',
                         filled: true,
@@ -545,6 +548,7 @@ class _PemanfaatanSampahViewState extends ConsumerState<PemanfaatanSampahView> {
           TextFormField(
             controller: _kebutuhanBiayaCtrl,
             keyboardType: TextInputType.number,
+            inputFormatters: [ThousandsFormatter()],
             decoration: InputDecoration(
               hintText: '0',
               prefixText: 'Rp ',
