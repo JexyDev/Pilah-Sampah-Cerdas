@@ -4,7 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:printing/printing.dart';
+
 import '../../../../app/data/providers/repository_providers.dart';
 
 class KetersediaanQrState {
@@ -13,6 +13,7 @@ class KetersediaanQrState {
   final List<dynamic> allItems;
   final List<dynamic> items;
   final String selectedCategory;
+  final String selectedStatus;
   final String searchQuery;
 
   const KetersediaanQrState({
@@ -21,6 +22,7 @@ class KetersediaanQrState {
     this.allItems = const [],
     this.items = const [],
     this.selectedCategory = 'Semua',
+    this.selectedStatus = 'Semua Status',
     this.searchQuery = '',
   });
 
@@ -30,6 +32,7 @@ class KetersediaanQrState {
     List<dynamic>? allItems,
     List<dynamic>? items,
     String? selectedCategory,
+    String? selectedStatus,
     String? searchQuery,
     bool clearError = false,
   }) {
@@ -39,6 +42,7 @@ class KetersediaanQrState {
       allItems: allItems ?? this.allItems,
       items: items ?? this.items,
       selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedStatus: selectedStatus ?? this.selectedStatus,
       searchQuery: searchQuery ?? this.searchQuery,
     );
   }
@@ -55,7 +59,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final binRepo = ref.read(binRepositoryProvider);
-      final data = await binRepo.getUnusedBins(); // Fetch ALL printed bins
+      final data = await binRepo.getAllQrBins(); // Fetch ALL bins
       state = state.copyWith(allItems: data);
       _applyFilters();
     } catch (e) {
@@ -70,6 +74,16 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
       filtered = filtered.where((item) {
         final categoryName = item['category']?['name']?.toString() ?? '';
         return categoryName.toLowerCase() == state.selectedCategory.toLowerCase();
+      }).toList();
+    }
+
+    if (state.selectedStatus != 'Semua Status') {
+      filtered = filtered.where((item) {
+        final statusBin = item['status']?.toString().toUpperCase() ?? 'PRINTED';
+        final isUsed = statusBin != 'PRINTED';
+        if (state.selectedStatus == 'Tersedia') return !isUsed;
+        if (state.selectedStatus == 'Digunakan') return isUsed;
+        return true;
       }).toList();
     }
 
@@ -90,6 +104,12 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     _applyFilters();
   }
 
+  void setStatusFilter(String status) {
+    if (state.selectedStatus == status) return;
+    state = state.copyWith(selectedStatus: status);
+    _applyFilters();
+  }
+
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
     _applyFilters();
@@ -102,7 +122,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     try {
       final pdf = pw.Document();
       // Ukuran 10cm x 15cm
-      final pageFormat = PdfPageFormat(100 * PdfPageFormat.mm, 150 * PdfPageFormat.mm, marginAll: 5 * PdfPageFormat.mm);
+      const pageFormat = PdfPageFormat(100 * PdfPageFormat.mm, 150 * PdfPageFormat.mm, marginAll: 5 * PdfPageFormat.mm);
 
       // Chunk items (6 item per halaman - grid 2x3)
       const itemsPerPage = 6;
@@ -118,7 +138,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
             build: (pw.Context context) {
               return pw.GridView(
                 crossAxisCount: 2,
-                childAspectRatio: 1.0,
+                childAspectRatio: 0.75, // Beri ruang lebih vertikal agar tidak overflow
                 crossAxisSpacing: 5 * PdfPageFormat.mm,
                 mainAxisSpacing: 5 * PdfPageFormat.mm,
                 children: chunk.map((item) {
@@ -128,24 +148,27 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                     decoration: pw.BoxDecoration(
                       border: pw.Border.all(color: PdfColors.black, width: 1),
                     ),
-                    padding: const pw.EdgeInsets.all(4),
+                    padding: const pw.EdgeInsets.all(8),
                     child: pw.Column(
                       mainAxisAlignment: pw.MainAxisAlignment.center,
                       children: [
                         pw.BarcodeWidget(
                           barcode: pw.Barcode.qrCode(),
                           data: qrCodeStr,
-                          width: 40 * PdfPageFormat.mm,
-                          height: 40 * PdfPageFormat.mm,
+                          width: 30 * PdfPageFormat.mm,
+                          height: 30 * PdfPageFormat.mm,
                         ),
-                        pw.SizedBox(height: 4),
+                        pw.SizedBox(height: 8),
                         pw.Text(
                           qrCodeStr,
-                          style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                          style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                          textAlign: pw.TextAlign.center,
                         ),
+                        pw.SizedBox(height: 2),
                         pw.Text(
                           typeLabel,
                           style: const pw.TextStyle(fontSize: 6),
+                          textAlign: pw.TextAlign.center,
                         ),
                       ],
                     ),

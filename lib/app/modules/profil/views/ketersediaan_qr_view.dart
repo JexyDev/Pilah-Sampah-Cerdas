@@ -56,7 +56,7 @@ class KetersediaanQrView extends ConsumerWidget {
                 ),
               ),
             ),
-            _buildFilters(state, controller),
+            _buildFilters(context, state, controller),
             const SizedBox(height: 16),
             Expanded(
               child: _buildContent(state),
@@ -84,29 +84,221 @@ class KetersediaanQrView extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilters(KetersediaanQrState state, KetersediaanQrController controller) {
+  Widget _buildFilters(BuildContext context, KetersediaanQrState state, KetersediaanQrController controller) {
     final categories = ['Semua', 'Organik', 'Anorganik'];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: categories.map((cat) {
-          final isSelected = state.selectedCategory == cat;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(cat),
-              selected: isSelected,
-              onSelected: (_) => controller.setFilter(cat),
-              selectedColor: AppColors.primaryGreen,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textPrimary,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    final statuses = ['Semua Status', 'Tersedia', 'Digunakan'];
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: categories.map((cat) {
+              final isSelected = state.selectedCategory == cat;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(cat),
+                  selected: isSelected,
+                  onSelected: (_) => controller.setFilter(cat),
+                  selectedColor: AppColors.primaryGreen,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: InkWell(
+            onTap: () => _showStatusDropdown(context, state, controller, statuses),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    state.selectedStatus,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                ],
               ),
             ),
-          );
-        }).toList(),
-      ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showStatusDropdown(BuildContext context, KetersediaanQrState state, KetersediaanQrController controller, List<String> statuses) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Pilih Status',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(ctx),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 20,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: statuses.map((status) {
+                    final isSelected = state.selectedStatus == status;
+                    return InkWell(
+                      onTap: () {
+                        controller.setStatusFilter(status);
+                        Navigator.pop(ctx);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? const Color(0xFFE8F5E9)
+                                    : const Color(0xFFF5F7FA),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                status == 'Tersedia' 
+                                  ? Icons.check_circle_outline 
+                                  : status == 'Digunakan' 
+                                      ? Icons.block 
+                                      : Icons.all_inclusive,
+                                size: 20,
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                    : AppColors.textHint,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    status,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
+                                      color: isSelected
+                                          ? AppColors.primaryGreen
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    status == 'Tersedia' 
+                                      ? 'QR Code belum terikat dengan fasilitas' 
+                                      : status == 'Digunakan'
+                                          ? 'QR Code sudah terikat dengan fasilitas'
+                                          : 'Tampilkan semua status QR Code',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primaryGreen
+                                      : Colors.grey.shade400,
+                                  width: isSelected ? 6 : 1.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -150,7 +342,7 @@ class KetersediaanQrView extends ConsumerWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.68,
       ),
       itemCount: state.items.length,
       itemBuilder: (context, index) {
@@ -158,6 +350,8 @@ class KetersediaanQrView extends ConsumerWidget {
         final qrCodeStr = item['qrCode']?.toString() ?? 'UNKNOWN';
         final categoryName = item['category']?['name']?.toString() ?? 'Unknown';
         final isOrganik = categoryName.toLowerCase() == 'organik';
+        final statusBin = item['status']?.toString().toUpperCase() ?? 'PRINTED';
+        final isUsed = statusBin != 'PRINTED';
 
         return Container(
           decoration: BoxDecoration(
@@ -166,7 +360,7 @@ class KetersediaanQrView extends ConsumerWidget {
             border: Border.all(color: Colors.grey.shade200),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -212,6 +406,22 @@ class KetersediaanQrView extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isUsed ? Colors.orange.shade50 : Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  isUsed ? 'Digunakan' : 'Tersedia',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isUsed ? Colors.orange.shade700 : Colors.green.shade700,
+                  ),
+                ),
               )
             ],
           ),

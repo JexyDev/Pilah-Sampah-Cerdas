@@ -153,9 +153,9 @@ class ApiBinRepository implements BinRepository {
   }
 
   @override
-  Future<List<dynamic>> getUnusedBins({String? categoryId}) async {
+  Future<List<dynamic>> getAllQrBins({String? categoryId}) async {
     try {
-      final queryParams = <String, dynamic>{'status': 'PRINTED'};
+      final queryParams = <String, dynamic>{};
       if (categoryId != null && categoryId != 'Semua') {
         queryParams['categoryId'] = categoryId;
       }

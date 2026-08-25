@@ -290,8 +290,9 @@ class _ForceChangePasswordViewState
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Sandi baru wajib diisi';
+                    }
                     return null;
                   },
                 ),
@@ -370,10 +371,12 @@ class _ForceChangePasswordViewState
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return 'Konfirmasi sandi wajib diisi';
-                    if (value != _newPasswordController.text)
+                    }
+                    if (value != _newPasswordController.text) {
                       return 'Kata sandi tidak cocok';
+                    }
                     return null;
                   },
                 ),
@@ -486,7 +489,7 @@ class _ForceChangePasswordViewState
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.blueGrey.shade50.withOpacity(0.5),
+            color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200),
           ),
