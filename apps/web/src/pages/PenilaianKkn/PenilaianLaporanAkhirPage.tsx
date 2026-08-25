@@ -622,9 +622,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                               ? "text-slate-800 dark:text-slate-200 font-medium"
                               : "text-slate-400 italic"
                           }`}
-                          title={item.judulLaporan || "Belum ada judul laporan"}
+                          title={getCleanTitle(item.judulLaporan)}
                         >
-                          {item.judulLaporan || "Belum ada judul laporan yang diajukan"}
+                          {getCleanTitle(item.judulLaporan)}
                         </span>
                       </td>
 
