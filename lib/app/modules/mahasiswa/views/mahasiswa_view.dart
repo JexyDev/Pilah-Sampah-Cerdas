@@ -662,9 +662,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             label: 'Total Warga',
             value: '$totalWarga',
             color: AppColors.primaryGreen,
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.daftarWarga);
-            },
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
@@ -675,9 +672,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             label: 'Tempat Sampah Aktif',
             value: '$wargaAktif',
             color: AppColors.primaryBlueDark,
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.kelolaBin);
-            },
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
@@ -688,9 +682,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             label: 'Poin Personal',
             value: '${d?.contributionPoints ?? 0}',
             color: AppColors.success,
-            onTap: () {
-              Navigator.pushNamed(context, AppRoutes.poin);
-            },
           ),
         ),
       ],

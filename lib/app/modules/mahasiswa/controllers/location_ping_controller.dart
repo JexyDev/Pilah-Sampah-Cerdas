@@ -218,12 +218,16 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
               ?.toString().toLowerCase() ?? '';
           final localStatusKh = _ref.read(kknLocationProvider).activeActivity?['statusKehadiran']
               ?.toString().toLowerCase() ?? '';
-          if (localStatus != 'berlangsung' && localStatusKh != 'berlangsung') {
+          if (localStatus != 'berlangsung' && localStatusKh != 'berlangsung' && 
+              localStatus != 'terjeda' && localStatusKh != 'terjeda') {
             stopTracking();
             _ref.read(kknLocationProvider.notifier).stopTracking();
             return;
           }
           // Jika lokal masih berlangsung, jangan matikan — biarkan ping berikutnya
+        } else {
+          // Sinkronkan status Terjeda dan inZoneSeconds dengan backend
+          _ref.read(kknLocationProvider.notifier).syncWithPingData(data);
         }
 
         state = state.copyWith(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -606,6 +607,39 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       // Jangan hapus session ID karena jika belum selesai, mereka cuma lanjut sesi
     }
     return isSuccess;
+  }
+
+  /// Sinkronisasi data dari response `/location-ping`
+  void syncWithPingData(Map<String, dynamic> data) {
+    if (!state.isTracking) return;
+
+    final attendanceStatus = data['attendanceStatus']?.toString().toUpperCase() ?? '';
+    if (attendanceStatus == 'TERJEDA' || attendanceStatus == 'BERLANGSUNG') {
+      final updatedActivity = Map<String, dynamic>.from(state.activeActivity ?? {});
+      updatedActivity['attendanceStatus'] = attendanceStatus;
+      updatedActivity['statusKehadiran'] = attendanceStatus;
+
+      int serverSecs = _accumulatedSeconds;
+      if (data['actualInZoneSeconds'] != null) {
+        serverSecs = int.tryParse(data['actualInZoneSeconds'].toString()) ?? serverSecs;
+      }
+      
+      // Guard Minus (Kalkulasi Timer dengan Math.max)
+      serverSecs = math.max(0, serverSecs);
+      _accumulatedSeconds = serverSecs;
+
+      state = state.copyWith(
+        activeActivity: updatedActivity,
+        inZoneDurationSeconds: serverSecs,
+      );
+
+      if (attendanceStatus == 'TERJEDA') {
+        _zoneEntryTime = null; // Prevent double addition from local difference
+        _stopZoneTimer(isExitingZone: true);
+      } else if (attendanceStatus == 'BERLANGSUNG' && state.isInsideRadius && _zoneDurationTimer == null) {
+        _startZoneTimer();
+      }
+    }
   }
 
   /// Pindah kegiatan: selesai kegiatan lama → mulai kegiatan baru
@@ -1421,10 +1455,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     // Mengecek apakah mahasiswa sudah menekan "Mulai Kegiatan"
     final currentStatus = state.activeActivity?['attendanceStatus']?.toString().toLowerCase() ?? 
                          state.activeActivity?['statusKehadiran']?.toString().toLowerCase() ?? '';
-    final isBerlangsung = currentStatus == 'berlangsung';
+    final isBerlangsungOrTerjeda = currentStatus == 'berlangsung' || currentStatus == 'terjeda';
 
     // Send update to backend only if background service is not handling it AND activity has officially started
-    if (!_backgroundServiceStarted && isBerlangsung) {
+    if (!_backgroundServiceStarted && isBerlangsungOrTerjeda) {
       try {
         final repo = ref.read(kknRepositoryProvider);
         final currentTotalSeconds = state.isInsideRadius && _zoneEntryTime != null
@@ -1439,6 +1473,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // [FIX A3] Backend mengembalikan { success, data: { ... } }
         // Parse dari level 'data' terlebih dahulu, fallback ke top-level
         final pingData = (pingResponse['data'] as Map<String, dynamic>?) ?? pingResponse;
+
+        // Sinkronkan status Terjeda dan nilai inZoneSeconds dari server
+        syncWithPingData(pingData);
 
         // Jika backend me-trigger auto attendance (karena durasi cukup dll)
         if (pingData.containsKey('autoAttendanceTriggered') &&
@@ -1625,14 +1662,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         _zoneEntryTime = null;
       }
 
-      // Akumulasi out-of-zone counter (per 10 detik polling)
-      if (state.isTracking && state.selectedKegiatan != null && state.attendanceTime != null) {
+      // Auto-pause ketika berada di luar wilayah (dihapus karena sudah ditangani Backend)
+      if (isSesiBerlangsung) {
         final newOutOfZone = state.outOfZoneSeconds + 10;
         state = state.copyWith(outOfZoneSeconds: newOutOfZone);
-        // Cek toleransi (default 5 menit = 300 detik)
-        if (newOutOfZone >= 300 && newOutOfZone < 310) {
-          _recordOutOfZoneViolation();
-        }
       }
     } else {
       // Jika sudah sukses, hentikan timer (jika masih berjalan) tanpa mereset waktu
