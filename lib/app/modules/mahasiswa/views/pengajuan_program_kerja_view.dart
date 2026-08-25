@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/providers/repository_providers.dart';
 
 class PengajuanProgramKerjaView extends ConsumerStatefulWidget {
@@ -31,7 +32,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
       await repo.submitProgramKerja({
         'judul': _judulCtrl.text.trim(),
         'kategori': _kategori,
-        'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim()) ?? 0,
+        'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim().replaceAll('.', '')) ?? 0,
         'targetTanggal': '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}', 
         'deskripsi': _deskripsiCtrl.text.trim(),
         'linkGoogleDrive': _linkDriveCtrl.text.trim(),
@@ -104,6 +105,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
               TextFormField(
                 controller: _anggaranCtrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [ThousandsFormatter()],
                 decoration: const InputDecoration(border: OutlineInputBorder(), prefixText: 'Rp '),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),

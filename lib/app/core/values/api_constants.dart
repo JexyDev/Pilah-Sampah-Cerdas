@@ -59,6 +59,7 @@ class ApiEndpoints {
   static const String kknActivateBin = '/kkn/warga/activate-bin';
   static const String kknHistory = '/kkn/history';
   static const String kknKelompokMe = '/kkn/kelompok/me';
+  static const String timesheetSummary = '/timesheet/summary';
   
   // 3 Pilar KKN
   static const String kknProgramKerja = '/kkn/program-kerja';

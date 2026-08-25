@@ -58,6 +58,9 @@ abstract class KknRepository {
   /// Mengaktivasi tempat sampah untuk warga dengan lokasi GPS (latitude, longitude)
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng});
 
+  /// Mengklaim warga yang melakukan aktivasi mandiri (POST /api/v1/kkn/warga/:wargaId/claim)
+  Future<Map<String, dynamic>> claimWarga(String wargaId);
+
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();
 
@@ -127,6 +130,10 @@ abstract class KknRepository {
   /// Ambil riwayat presensi (jam masuk, jam pulang, durasi aktual/target) — untuk tampilan historis setelah GPS mati
   /// GET /api/v1/kkn/kegiatan/{id}/presensi-history
   Future<Map<String, dynamic>?> getPresensiHistory(String scheduleId);
+
+  /// Ambil ringkasan total jam presensi KKN (Timesheet Summary)
+  /// GET /api/v1/timesheet/summary
+  Future<Map<String, dynamic>> getTimesheetSummary();
 
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)

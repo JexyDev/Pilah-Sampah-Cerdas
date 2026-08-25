@@ -7,22 +7,26 @@ class RiwayatKknState {
   final bool isLoading;
   final String? errorMessage;
   final List<KknHistoryLog> logs;
+  final Map<String, dynamic>? timesheetSummary;
 
   RiwayatKknState({
     this.isLoading = false,
     this.errorMessage,
     this.logs = const [],
+    this.timesheetSummary,
   });
 
   RiwayatKknState copyWith({
     bool? isLoading,
     String? errorMessage,
     List<KknHistoryLog>? logs,
+    Map<String, dynamic>? timesheetSummary,
   }) {
     return RiwayatKknState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       logs: logs ?? this.logs,
+      timesheetSummary: timesheetSummary ?? this.timesheetSummary,
     );
   }
 }
@@ -106,6 +110,10 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
             durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
             scheduleId: data['scheduleId']?.toString() ?? data['kegiatanId']?.toString(),
+            isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
+            statusDisplay: data['statusDisplay']?.toString(),
+            durasiAktualMenit: data['durasiAktualMenit'] as int?,
+            durasiTargetMenit: data['durasiTargetMenit'] as int?,
           ));
         }
       } catch (_) {}
@@ -134,6 +142,10 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             statusKehadiran: data['statusKehadiran']?.toString() ?? data['status']?.toString(),
             durationFormatted: data['durationFormatted']?.toString() ?? data['durasiFormatted']?.toString(),
             scheduleId: data['scheduleId']?.toString() ?? data['kegiatanId']?.toString() ?? data['id']?.toString(),
+            isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
+            statusDisplay: data['statusDisplay']?.toString(),
+            durasiAktualMenit: data['durasiAktualMenit'] as int?,
+            durasiTargetMenit: data['durasiTargetMenit'] as int?,
           ));
         }
       } catch (e) {
@@ -170,7 +182,11 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
               isGpsActive: true,
               statusKehadiran: data['attendanceStatus']?.toString(),
               durationFormatted: null,
-              scheduleId: data['id']?.toString(),
+              scheduleId: data['id']?.toString() ?? data['scheduleId']?.toString(),
+              isMemenuhiDurasi: data['isMemenuhiDurasi'] as bool?,
+              statusDisplay: data['statusDisplay']?.toString(),
+              durasiAktualMenit: data['durasiAktualMenit'] as int?,
+              durasiTargetMenit: data['durasiTargetMenit'] as int?,
             ));
           }
         }
@@ -211,8 +227,13 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
           uniqueLogs.add(log);
         }
       }
+      // 6. Ambil data Timesheet Summary
+      Map<String, dynamic>? summaryData;
+      try {
+        summaryData = await kknRepo.getTimesheetSummary();
+      } catch (_) {}
 
-      state = state.copyWith(isLoading: false, logs: uniqueLogs);
+      state = state.copyWith(isLoading: false, logs: uniqueLogs, timesheetSummary: summaryData);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

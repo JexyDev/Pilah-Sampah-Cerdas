@@ -174,42 +174,88 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                   ),
                                   if (warga.isActivated) ...[
                                     const SizedBox(height: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: Colors.white38),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
-                                          const SizedBox(width: 4),
-                                          Flexible(
-                                            child: Builder(builder: (_) {
-                                              String mName = warga.pendampingName;
-                                              if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
-                                                final mem = kelompokState.kelompok?.members.where((m) => m.userId == warga.mahasiswaId).firstOrNull;
-                                                if (mem != null) mName = mem.name;
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.2),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.white38),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
+                                              const SizedBox(width: 4),
+                                              Flexible(
+                                                child: Builder(builder: (_) {
+                                                  String mName = warga.pendampingName;
+                                                  if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
+                                                    final mem = kelompokState.kelompok?.members.where((m) => m.userId == warga.mahasiswaId).firstOrNull;
+                                                    if (mem != null) mName = mem.name;
+                                                  }
+                                                  return Text(
+                                                    mName.isNotEmpty
+                                                        ? 'Diaktivasi oleh: $mName'
+                                                        : 'Aktivasi Mandiri',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  );
+                                                }),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (warga.pendampingName.isEmpty && warga.mahasiswaId.isEmpty) ...[
+                                          const SizedBox(width: 8),
+                                          InkWell(
+                                            onTap: () async {
+                                              final confirm = await showDialog<bool>(
+                                                context: context,
+                                                builder: (ctx) => AlertDialog(
+                                                  title: const Text('Klaim Warga', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                  content: const Text('Apakah Anda yakin ingin mengklaim warga ini sebagai warga dampingan Anda?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(ctx).pop(false),
+                                                      child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                                                    ),
+                                                    ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+                                                      onPressed: () => Navigator.of(ctx).pop(true),
+                                                      child: const Text('Ya, Klaim', style: TextStyle(color: Colors.white)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+
+                                              if (confirm == true && context.mounted) {
+                                                ref.read(detailWargaControllerProvider.notifier).claimWarga(context);
                                               }
-                                              return Text(
-                                                mName.isNotEmpty
-                                                    ? 'Diaktivasi oleh: $mName'
-                                                    : (currentUser?.name != null && currentUser!.name.isNotEmpty
-                                                        ? 'Diaktivasi oleh: ${currentUser.name}'
-                                                        : 'Diaktivasi Mahasiswa'),
-                                                style: const TextStyle(
+                                            },
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: const Text(
+                                                'Klaim Warga',
+                                                style: TextStyle(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
+                                                  color: AppColors.primaryGreen,
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
-                                              );
-                                            }),
+                                              ),
+                                            ),
                                           ),
                                         ],
-                                      ),
+                                      ],
                                     ),
                                   ],
                                 ],

@@ -293,6 +293,19 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> claimWarga(String wargaId) async {
+    try {
+      final response = await apiClient.dio.post('/api/v1/kkn/warga/$wargaId/claim');
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException && e.response?.data != null) {
+        throw Exception(e.response!.data['message'] ?? e.toString());
+      }
+      throw Exception('Gagal mengklaim warga: $e');
+    }
+  }
+
+  @override
   Future<bool> activateBin(String wargaId, String binOrganikId, String binAnorganikId, {double? lat, double? lng}) async {
     final response = await apiClient.dio.post(
       ApiEndpoints.kknActivateBin,
@@ -693,6 +706,20 @@ class ApiKknRepository implements KknRepository {
     } catch (e) {
       debugPrint('[KKN] getPresensiHistory error: $e');
       return null;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getTimesheetSummary() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.timesheetSummary);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      debugPrint('[KKN] getTimesheetSummary error: $e');
+      return {};
     }
   }
 

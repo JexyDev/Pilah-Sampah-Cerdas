@@ -1360,7 +1360,17 @@ class KegiatanKknCard extends StatelessWidget {
     Color textColor;
     String buttonText;
 
-    if (statusKehadiran == 'HADIR') {
+    if (statusKehadiran == 'HADIR_MEMENUHI') {
+      statusText = '✅ HADIR & MEMENUHI';
+      badgeColor = Colors.green.withValues(alpha: 0.1);
+      textColor = Colors.green;
+      buttonText = 'Sesi Selesai (Memenuhi)';
+    } else if (statusKehadiran == 'HADIR_TIDAK_MEMENUHI') {
+      statusText = '⚠️ HADIR (TIDAK MEMENUHI)';
+      badgeColor = Colors.orange.shade700.withValues(alpha: 0.1);
+      textColor = Colors.orange.shade700;
+      buttonText = 'Sesi Selesai (Tidak Memenuhi)';
+    } else if (statusKehadiran == 'HADIR') {
       statusText = '✅ HADIR';
       badgeColor = AppColors.primaryGreen.withValues(alpha: 0.1);
       textColor = AppColors.primaryGreen;
@@ -1465,6 +1475,8 @@ class KegiatanKknCard extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       if (statusKehadiran == 'HADIR' ||
+                          statusKehadiran == 'HADIR_MEMENUHI' ||
+                          statusKehadiran == 'HADIR_TIDAK_MEMENUHI' ||
                           statusKehadiran == 'SELESAI' ||
                           statusKehadiran == 'SELESAI_TELAT' ||
                           statusKehadiran == 'ALPA' ||
@@ -1478,6 +1490,8 @@ class KegiatanKknCard extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: (canStart &&
                               statusKehadiran != 'HADIR' &&
+                              statusKehadiran != 'HADIR_MEMENUHI' &&
+                              statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
                               statusKehadiran != 'SELESAI' &&
                               statusKehadiran != 'SELESAI_TELAT' &&
                               statusKehadiran != 'ALPA' &&
@@ -1501,14 +1515,14 @@ class KegiatanKknCard extends StatelessWidget {
                   if (!canStart) ...[
                     const SizedBox(height: 6),
                     Text(
-                      statusKehadiran == 'HADIR' || statusKehadiran == 'SELESAI'
+                      statusKehadiran == 'HADIR' || statusKehadiran == 'HADIR_MEMENUHI' || statusKehadiran == 'SELESAI'
                           ? 'Anda sudah tercatat hadir pada kegiatan ini.'
-                          : (statusKehadiran == 'ALPA' || statusKehadiran == 'TANPA_KETERANGAN')
-                              ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
-                              : statusKehadiran == 'IZIN' || statusKehadiran == 'SAKIT'
-                                  ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
-                                  : statusKehadiran == 'SELESAI_TELAT'
-                                      ? 'Sesi berakhir (durasi kurang dari target).'
+                          : statusKehadiran == 'HADIR_TIDAK_MEMENUHI' || statusKehadiran == 'SELESAI_TELAT'
+                              ? 'Sesi berakhir (durasi kurang dari target).'
+                              : (statusKehadiran == 'ALPA' || statusKehadiran == 'TANPA_KETERANGAN')
+                                  ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
+                                  : statusKehadiran == 'IZIN' || statusKehadiran == 'SAKIT'
+                                      ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
                                       : !isAktif
                                           ? 'Kegiatan belum dimulai sesuai jadwal.'
                                           : 'Tombol tidak tersedia saat ini.',

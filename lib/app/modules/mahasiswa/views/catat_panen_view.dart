@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/providers/repository_providers.dart';
 
 final unharvestedLogbooksProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
@@ -45,8 +46,8 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
       final repo = ref.read(kknRepositoryProvider);
       await repo.submitPanenHasil({
         'pemanfaatanId': _selectedPemanfaatanId,
-        'beratOutputKg': double.tryParse(_beratOutputCtrl.text.trim()) ?? 0,
-        'nilaiEkonomiRp': double.tryParse(_nilaiEkonomiCtrl.text.trim()) ?? 0,
+        'beratOutputKg': double.tryParse(_beratOutputCtrl.text.trim().replaceAll('.', '')) ?? 0,
+        'nilaiEkonomiRp': double.tryParse(_nilaiEkonomiCtrl.text.trim().replaceAll('.', '')) ?? 0,
       }, imagePath: _selectedImage?.path);
       
       if (mounted) {
@@ -118,7 +119,8 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               TextFormField(
                 controller: _beratOutputCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(border: OutlineInputBorder(), suffixText: 'Kg', hintText: 'Contoh: 5.5'),
+                inputFormatters: [ThousandsFormatter()],
+                decoration: const InputDecoration(border: OutlineInputBorder(), suffixText: 'Kg', hintText: 'Contoh: 5'),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),
@@ -128,7 +130,8 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               TextFormField(
                 controller: _nilaiEkonomiCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(border: OutlineInputBorder(), prefixText: 'Rp ', hintText: 'Contoh: 50000'),
+                inputFormatters: [ThousandsFormatter()],
+                decoration: const InputDecoration(border: OutlineInputBorder(), prefixText: 'Rp ', hintText: 'Contoh: 50.000'),
                 validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: 16),

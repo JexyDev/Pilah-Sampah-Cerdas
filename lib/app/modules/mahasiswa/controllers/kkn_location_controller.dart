@@ -273,7 +273,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final status = (activeZone['attendanceStatus'] ?? activeZone['status'] ?? activeZone['kehadiran'] ?? '')
             .toString()
             .toLowerCase();
-        final bool isAttended = activeZone['isAttended'] == true || status == 'hadir';
+        final bool isAttended = activeZone['isAttended'] == true || status == 'hadir' || status == 'hadir_memenuhi' || status == 'hadir_tidak_memenuhi';
         final bool isAlpa = status == 'alpa' || status == 'tanpa_keterangan';
 
         state = state.copyWith(
@@ -716,7 +716,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               (activeZone['attendanceStatus'] ?? activeZone['statusKehadiran'] ?? activeZone['kehadiran'] ?? '')
                   .toString()
                   .toLowerCase();
-          final bool isAttended = activeZone['isAttended'] == true || attendanceStatus == 'hadir';
+          final bool isAttended = activeZone['isAttended'] == true || attendanceStatus == 'hadir' || attendanceStatus == 'hadir_memenuhi' || attendanceStatus == 'hadir_tidak_memenuhi';
 
           final double rawTargetMins = double.tryParse(activeZone['targetDurationMinutes']?.toString() ?? '') ??
               double.tryParse(activeZone['durationMinutes']?.toString() ?? '') ??
@@ -727,7 +727,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           }
           if (targetMins <= 0) targetMins = 1;
 
-          if (isAttended || attendanceStatus == 'hadir') {
+          if (isAttended) {
             state = state.copyWith(
               isSuccessAttendance: true,
               inZoneDurationSeconds: _accumulatedSeconds,
