@@ -19,7 +19,7 @@ import '../modules/mahasiswa/views/aktivasi_warga_view.dart';
 import '../modules/profil/kelola_bin_view.dart';
 import '../modules/auth/views/reset_bin_view.dart';
 import '../modules/notifikasi/views/notifikasi_view.dart';
-import '../modules/petugas_pemilahan/timbangan_pemilahan_view.dart';
+import '../modules/petugas_pemilahan/views/timbangan_pemilahan_view.dart';
 import '../modules/tentang/tentang_aplikasi_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_view.dart';
 import '../modules/mahasiswa/views/kkn_attendance_history_view.dart';

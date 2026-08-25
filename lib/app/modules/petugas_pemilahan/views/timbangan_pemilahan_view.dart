@@ -5,12 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../core/values/app_colors.dart';
-import '../../core/values/app_dimensions.dart';
-import '../../data/services/location_service.dart';
-import '../shared/controllers/connectivity_controller.dart';
-import '../shared/widgets/feature_rating_dialog.dart';
-import 'controllers/petugas_pemilahan_controller.dart';
+import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_dimensions.dart';
+import '../../../data/services/location_service.dart';
+import '../../shared/controllers/connectivity_controller.dart';
+import '../../shared/widgets/feature_rating_dialog.dart';
+import '../controllers/petugas_pemilahan_controller.dart';
 
 class TimbanganPemilahanView extends ConsumerStatefulWidget {
   const TimbanganPemilahanView({super.key});
