@@ -517,7 +517,7 @@ export class LogbookService {
     const isAssignedDpl = logbook.kelompok.dplId === dplUserId;
 
     if (!isAssignedDpl && !isSuper) {
-      throw new Error("Akses ditolak: Anda hanya berwenang memverifikasi logbook kelompok bimbingan Anda.");
+      throw new Error("Akses ditolak: Anda hanya berwenang memverifikasi logbook kelompok dampingan Anda.");
     }
 
     const newStatus: StatusLogbookKkn =
@@ -680,7 +680,7 @@ export class LogbookService {
       });
       const allowedGroupIds = allowedGroups.map((g) => g.id);
       if (kelompok.dplId && kelompok.dplId !== dplUserId && !allowedGroupIds.includes(kelompok.id)) {
-        throw new Error("Akses ditolak: Anda hanya dapat mengisi logbook untuk kelompok bimbingan Anda.");
+        throw new Error("Akses ditolak: Anda hanya dapat mengisi logbook untuk kelompok dampingan Anda.");
       }
     }
 

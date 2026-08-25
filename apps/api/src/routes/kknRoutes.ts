@@ -486,6 +486,29 @@ router.get(
   kknController.getAllPosko
 );
 
+router.post(
+  "/posko",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  safeUploadSingleImage("foto"),
+  kknController.createPosko
+);
+
+router.put(
+  "/posko/:id",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updatePosko
+);
+
+router.delete(
+  "/posko/:id",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknController.deletePosko
+);
+
 /**
  * @swagger
  * /api/v1/kkn/active-zone:

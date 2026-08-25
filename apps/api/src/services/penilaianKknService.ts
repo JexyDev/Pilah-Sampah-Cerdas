@@ -29,7 +29,7 @@ export const calculateAspectScore = (score: number, weight: number): number => {
   return Number(((safeScore * weight) / 100).toFixed(2));
 };
 
-// Helper to calculate composite final score (Mitra 50% + DPL 50% - Pembagian Sama Rata)
+// Helper to calculate composite final score (Mitra 50% + DPL 50%)
 export const calculateCompositeScore = (subtotalMitra: number, subtotalDpl: number): number => {
   const sMitra = Number(subtotalMitra) || 0;
   const sDpl = Number(subtotalDpl) || 0;
@@ -89,8 +89,8 @@ export const penilaianKknService = {
     const kelurahan = rw?.kelurahan;
     const dpl = kelompok?.dpl;
 
-    // Strict Scope: Jika evaluator DPL, pastikan mahasiswa berada di bawah kelompok bimbingannya
-    if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
+    // Strict Scope: Jika evaluator DPL, pastikan mahasiswa berada di bawah kelompok dampingannya
+    if (evaluatorRole && ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(evaluatorRole.toUpperCase()) && evaluatorId) {
       let isSupervised = dpl?.id === evaluatorId || kelompok?.dplId === evaluatorId;
       if (!isSupervised) {
         const evalUser = await prisma.user.findUnique({
@@ -108,7 +108,7 @@ export const penilaianKknService = {
         }
       }
       if (!isSupervised) {
-        throw new Error("Akses ditolak: Mahasiswa ini bukan bagian dari kelompok bimbingan DPL Anda");
+        throw new Error("Akses ditolak: Mahasiswa ini bukan bagian dari kelompok dampingan DPL Anda");
       }
     }
 
@@ -347,16 +347,16 @@ export const penilaianKknService = {
       throw new Error("Data mahasiswa tidak ditemukan");
     }
 
-    const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(evaluatorRole);
+    const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(evaluatorRole);
     const isMitra = ["RW", "MITRA", "ADMIN_DLH", "DLH", "LURAH", "KELURAHAN"].includes(evaluatorRole);
 
-    // Strict Scope: DPL hanya dapat menilai mahasiswa di bawah bimbingannya
+    // Strict Scope: DPL hanya dapat menilai mahasiswa di bawah dampingannya
     if (isDpl && evaluatorId) {
       const isSupervised =
         studentUser.studentProfile?.kelompok?.dplId === evaluatorId ||
         studentUser.studentProfile?.kelompok?.dpl?.id === evaluatorId;
       if (!isSupervised) {
-        throw new Error("Akses ditolak: Anda hanya berwenang menilai mahasiswa di bawah bimbingan DPL Anda");
+        throw new Error("Akses ditolak: Anda hanya berwenang menilai mahasiswa di bawah dampingan DPL Anda");
       }
     }
 
@@ -445,7 +445,7 @@ export const penilaianKknService = {
       calculateAspectScore(skorDplLaporanAkhir, 10)
     ).toFixed(2));
 
-    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Mitra 50% + DPL 50% - Pembagian Sama Rata)
+    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Mitra 50% + DPL 50%)
     const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
     const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 

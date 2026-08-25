@@ -425,7 +425,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
-              Sistem tata kelola pemilahan sampah cerdas berbasis kecerdasan buatan (AI) dan partisipasi masyarakat terpadu. Menghubungkan warga, pengurus RW, petugas pemilah, mahasiswa KKN, Dosen Pembimbing Lapangan (DPL), pihak kelurahan, kecamatan, hingga Dinas Lingkungan Hidup.
+              Sistem tata kelola pemilahan sampah cerdas berbasis kecerdasan buatan (AI) dan partisipasi masyarakat terpadu. Menghubungkan warga, pengurus RW, petugas pemilah, mahasiswa KKN, Dosen Pendamping Lapangan (DPL), pihak kelurahan, kecamatan, hingga Dinas Lingkungan Hidup.
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
@@ -1347,7 +1347,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 5 && (
                 <div className="faq-answer">
                   <p>
-                    BERSEKA dirancang multi-peran untuk mendukung seluruh pemangku kepentingan: Warga, Mahasiswa KKN, Dosen Pembimbing (DPL), Pengurus RW, Petugas Residu, Lurah se-Kecamatan Coblong, Camat, hingga Dinas Lingkungan Hidup (DLH) Kota Bandung.
+                    BERSEKA dirancang multi-peran untuk mendukung seluruh pemangku kepentingan: Warga, Mahasiswa KKN, Dosen Pendamping (DPL), Pengurus RW, Petugas Residu, Lurah se-Kecamatan Coblong, Camat, hingga Dinas Lingkungan Hidup (DLH) Kota Bandung.
                   </p>
                 </div>
               )}
@@ -1486,7 +1486,7 @@ export const LandingPage: React.FC = () => {
             <h5 className="text-white font-extrabold text-xs uppercase tracking-wider mb-4">Layanan Warga</h5>
             <ul className="space-y-2.5 text-xs font-semibold">
               <li><Link to="/login" className="hover:text-white transition">Portal Rukun Warga</Link></li>
-              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pembimbing Lapangan</Link></li>
+              <li><Link to="/login" className="hover:text-white transition">Portal Dosen Pendamping Lapangan</Link></li>
               <li><Link to="/login" className="hover:text-white transition">Pendampingan Kuliah Kerja Nyata</Link></li>
             </ul>
           </div>

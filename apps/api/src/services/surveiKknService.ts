@@ -628,7 +628,7 @@ export async function updateSurvey(
   role?: string,
   userId?: string
 ) {
-  // Validasi jika DPL, pastikan kelurahan ini masuk wilayah bimbingannya
+  // Validasi jika DPL, pastikan kelurahan ini masuk wilayah dampingannya
   if (role === "DPL" && userId) {
     const existing = await prisma.surveiKelurahan.findUnique({
       where: { kelurahanId },

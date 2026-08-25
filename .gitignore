@@ -85,7 +85,11 @@ Thumbs.db
 scratch/
 uploads/
 apps/api/uploads/
-# apps/api/scripts/
+apps/api/scripts/audit_*.ts
+apps/api/scripts/check_*.ts
+apps/api/scripts/clean_*.ts
+apps/api/scripts/deep_*.ts
+apps/api/scripts/test_*.ts
 !apps/api/scripts/localhost_data_dump.json
 !apps/api/scripts/export-local-db.ts
 !apps/api/scripts/restore-exact-local-db.ts

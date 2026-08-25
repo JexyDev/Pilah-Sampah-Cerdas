@@ -155,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
             pimpinan: "Pimpinan",
             pemimpin: "Pimpinan",
             taskforce: "Task Force",
-            dpl: "Dosen Pembimbing Lapangan",
+            dpl: "Dosen Pendamping Lapangan",
             dlh: "Dinas Lingkungan Hidup",
             camat: "Camat",
             lurah: "Lurah",
@@ -268,14 +268,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         const params = new URLSearchParams(search);
         const tab = params.get("tab");
         if (tab === "dpl") {
-          return ["Log Aktivitas", "Dosen Pembimbing Lapangan"];
+          return ["Log Aktivitas", "Dosen Pendamping Lapangan"];
         }
         return ["Log Aktivitas", "Mahasiswa"];
       }
+      case "/log-aktivitas/dosen-pendamping-lapangan":
       case "/log-aktivitas/dosen-pembimbing-lapangan":
       case "/log-aktivitas-dpl":
       case "/dpl/log-aktivitas":
-        return ["Log Aktivitas", "Dosen Pembimbing Lapangan"];
+        return ["Log Aktivitas", "Dosen Pendamping Lapangan"];
       case "/notifikasi":
         return ["Notifikasi"];
       case "/profil":

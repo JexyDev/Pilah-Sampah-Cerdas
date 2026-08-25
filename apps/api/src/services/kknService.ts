@@ -1458,8 +1458,8 @@ export class KknService {
 
     return poskos.map((p) => {
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
-      const ketuaName = ketua?.user?.name || p.pic || "Ketua Kelompok KKN";
-      const kontak = ketua?.user?.phone || ketua?.noWa || p.kontak || "-";
+      const ketuaName = p.pic || ketua?.user?.name || "Ketua Kelompok KKN";
+      const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || ketua?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
       const kelurahan = p.rw?.kelurahan?.name || p.kelompok?.kelurahan || "Coblong";
 
@@ -1470,6 +1470,7 @@ export class KknService {
         kelompokId: p.kelompokId,
         kelompokName: p.kelompok?.name || "Kelompok KKN",
         kelurahan,
+        rwId: p.rwId,
         rwName: p.rw?.name || "-",
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
@@ -1482,6 +1483,212 @@ export class KknService {
         createdAt: p.createdAt,
       };
     });
+  }
+
+  async createPoskoAdmin(
+    userId: string,
+    payload: {
+      nama: string;
+      alamat?: string;
+      kelompokId?: string;
+      rwId?: number;
+      latitude: number;
+      longitude: number;
+      foto?: string;
+      pic?: string;
+      kontak?: string;
+      statusApproval?: string;
+    }
+  ) {
+    if (!payload.nama || !payload.nama.trim()) {
+      throw new Error("Nama Posko wajib diisi.");
+    }
+    const lat = Number(payload.latitude);
+    const lng = Number(payload.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+      throw new Error("Koordinat GPS (latitude & longitude) wajib valid dan tidak boleh kosong.");
+    }
+
+    let targetRwId = payload.rwId ? Number(payload.rwId) : undefined;
+    let targetKelompokId = payload.kelompokId || undefined;
+    let resolvedPic = payload.pic?.trim();
+    let resolvedKontak = payload.kontak?.trim();
+
+    if (targetKelompokId) {
+      const kelompok = await prisma.kelompokKkn.findUnique({
+        where: { id: targetKelompokId },
+        include: {
+          dpl: true,
+          students: {
+            include: { user: true },
+          },
+        },
+      });
+
+      if (kelompok) {
+        if (!targetRwId && kelompok.cakupanRw) {
+          try {
+            const parsed = typeof kelompok.cakupanRw === "string" ? JSON.parse(kelompok.cakupanRw) : kelompok.cakupanRw;
+            if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
+          } catch (_) {}
+        }
+        if (!resolvedPic) {
+          const ketua = kelompok.students.find((s) => s.isKetua) || kelompok.students[0];
+          resolvedPic = ketua?.user?.name || "Ketua Kelompok KKN";
+        }
+        if (!resolvedKontak) {
+          const ketua = kelompok.students.find((s) => s.isKetua) || kelompok.students[0];
+          resolvedKontak = ketua?.user?.phone || ketua?.noWa || "-";
+        }
+      }
+    }
+
+    if (!targetRwId) {
+      const firstRw = await prisma.rw.findFirst();
+      targetRwId = firstRw?.id || 1;
+    }
+
+    const posko = await prisma.facility.create({
+      data: {
+        nama: payload.nama.trim(),
+        jenis: "posko_kkn",
+        alamat: payload.alamat?.trim() || "-",
+        rwId: targetRwId,
+        kelompokId: targetKelompokId || null,
+        latitude: lat,
+        longitude: lng,
+        foto: payload.foto || null,
+        pic: resolvedPic || "Ketua Posko",
+        kontak: resolvedKontak || "-",
+        statusApproval: payload.statusApproval || "APPROVED",
+        registeredByUserId: userId || null,
+      },
+      include: {
+        rw: { include: { kelurahan: true } },
+        kelompok: { include: { dpl: true, students: { include: { user: true } } } },
+      },
+    });
+
+    try {
+      await prisma.auditTrail.create({
+        data: {
+          userId: userId || undefined,
+          action: "CREATE_POSKO_KKN",
+          newValue: {
+            poskoId: posko.id,
+            nama: posko.nama,
+            kelompokId: posko.kelompokId,
+            latitude: lat,
+            longitude: lng,
+            status: posko.statusApproval,
+          },
+        },
+      });
+    } catch (_) {}
+
+    return posko;
+  }
+
+  async updatePoskoAdmin(
+    id: string,
+    userId: string,
+    payload: {
+      nama?: string;
+      alamat?: string;
+      kelompokId?: string | null;
+      rwId?: number | null;
+      latitude?: number;
+      longitude?: number;
+      foto?: string;
+      pic?: string;
+      kontak?: string;
+      statusApproval?: string;
+    }
+  ) {
+    const existing = await prisma.facility.findFirst({
+      where: { id, jenis: "posko_kkn" },
+    });
+
+    if (!existing) {
+      const err: any = new Error("Data Posko KKN tidak ditemukan.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const updateData: any = {};
+    if (payload.nama !== undefined) updateData.nama = payload.nama.trim();
+    if (payload.alamat !== undefined) updateData.alamat = payload.alamat.trim();
+    if (payload.kelompokId !== undefined) updateData.kelompokId = payload.kelompokId || null;
+    if (payload.rwId !== undefined && payload.rwId !== null && !isNaN(Number(payload.rwId))) updateData.rwId = Number(payload.rwId);
+    if (payload.latitude !== undefined && !isNaN(Number(payload.latitude))) updateData.latitude = Number(payload.latitude);
+    if (payload.longitude !== undefined && !isNaN(Number(payload.longitude))) updateData.longitude = Number(payload.longitude);
+    if (payload.foto !== undefined) updateData.foto = payload.foto;
+    if (payload.pic !== undefined) updateData.pic = payload.pic.trim();
+    if (payload.kontak !== undefined) updateData.kontak = payload.kontak.trim();
+    if (payload.statusApproval !== undefined) updateData.statusApproval = payload.statusApproval;
+
+    const updated = await prisma.facility.update({
+      where: { id },
+      data: updateData,
+      include: {
+        rw: { include: { kelurahan: true } },
+        kelompok: { include: { dpl: true, students: { include: { user: true } } } },
+      },
+    });
+
+    try {
+      await prisma.auditTrail.create({
+        data: {
+          userId: userId || undefined,
+          action: "UPDATE_POSKO_KKN",
+          oldValue: {
+            nama: existing.nama,
+            alamat: existing.alamat,
+            latitude: Number(existing.latitude),
+            longitude: Number(existing.longitude),
+            status: existing.statusApproval,
+          },
+          newValue: {
+            poskoId: id,
+            ...updateData,
+          },
+        },
+      });
+    } catch (_) {}
+
+    return updated;
+  }
+
+  async deletePoskoAdmin(id: string, userId?: string) {
+    const existing = await prisma.facility.findFirst({
+      where: { id, jenis: "posko_kkn" },
+    });
+
+    if (!existing) {
+      const err: any = new Error("Data Posko KKN tidak ditemukan.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    await prisma.facility.delete({
+      where: { id },
+    });
+
+    try {
+      await prisma.auditTrail.create({
+        data: {
+          userId: userId || undefined,
+          action: "DELETE_POSKO_KKN",
+          oldValue: {
+            poskoId: id,
+            nama: existing.nama,
+            kelompokId: existing.kelompokId,
+          },
+        },
+      });
+    } catch (_) {}
+
+    return { success: true, message: "Posko KKN berhasil dihapus." };
   }
 
   async getMyGroup(userId: string) {
@@ -1938,7 +2145,7 @@ export class KknService {
         data: {
           userId: dplUser.id,
           title: `Tembusan ${laporanLabel}`,
-          message: `Mahasiswa bimbingan Anda (${studentName}) menginput ${laporanLabel.toLowerCase()} ${laporanDesc} untuk ${rwName}.`,
+          message: `Mahasiswa dampingan Anda (${studentName}) menginput ${laporanLabel.toLowerCase()} ${laporanDesc} untuk ${rwName}.`,
           isRead: false,
         },
       });
@@ -2677,7 +2884,7 @@ export class KknService {
       }
       if (targetGroupId && targetGroupId !== "ALL") {
         if (!dplGroupIds.includes(targetGroupId)) {
-          throw new Error("Akses ditolak: Anda hanya dapat melihat program kerja kelompok bimbingan Anda.");
+          throw new Error("Akses ditolak: Anda hanya dapat melihat program kerja kelompok dampingan Anda.");
         }
         whereClause.kelompokId = targetGroupId;
       } else {

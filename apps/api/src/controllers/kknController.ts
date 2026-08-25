@@ -501,6 +501,93 @@ export class KknController {
     }
   }
 
+  async createPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload = {
+        nama: req.body.nama,
+        alamat: req.body.alamat,
+        kelompokId: req.body.kelompokId || undefined,
+        rwId: req.body.rwId != null && req.body.rwId !== "" ? Number(req.body.rwId) : undefined,
+        latitude: req.body.latitude != null ? Number(req.body.latitude) : 0,
+        longitude: req.body.longitude != null ? Number(req.body.longitude) : 0,
+        foto: fotoUrl,
+        pic: req.body.pic,
+        kontak: req.body.kontak,
+        statusApproval: req.body.statusApproval || "APPROVED",
+      };
+
+      const data = await kknService.createPoskoAdmin(userId, payload);
+      res.status(201).json({
+        success: true,
+        message: "Posko KKN berhasil ditambahkan.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] createPosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
+  async updatePosko(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload: any = {
+        ...req.body,
+      };
+      if (fotoUrl !== undefined) {
+        payload.foto = fotoUrl;
+      }
+      if (req.body.latitude != null && req.body.latitude !== "") {
+        payload.latitude = Number(req.body.latitude);
+      }
+      if (req.body.longitude != null && req.body.longitude !== "") {
+        payload.longitude = Number(req.body.longitude);
+      }
+      if (req.body.rwId != null && req.body.rwId !== "") {
+        payload.rwId = Number(req.body.rwId);
+      }
+
+      const data = await kknService.updatePoskoAdmin(id, userId, payload);
+      res.status(200).json({
+        success: true,
+        message: "Posko KKN berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] updatePosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
+  async deletePosko(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+      const data = await kknService.deletePoskoAdmin(id, userId);
+      res.status(200).json({
+        success: true,
+        message: "Posko KKN berhasil dihapus.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] deletePosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
   // ──────────────────────────────────────────────────────────

@@ -400,7 +400,7 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  const displayName = user?.name || (user as any)?.nama || user?.email?.split("@")[0] || "Dosen Pembimbing Lapangan";
+  const displayName = user?.name || (user as any)?.nama || user?.email?.split("@")[0] || "Dosen Pendamping Lapangan";
 
   return (
     <div className="min-h-screen bg-slate-50/60 p-4 md:p-6 lg:p-8 space-y-6">

@@ -1,4 +1,4 @@
-﻿# 📄 LAPORAN RESMI INTEGRASI ENDPOINT & RESPONSE API MOBILE
+# 📄 LAPORAN RESMI INTEGRASI ENDPOINT & RESPONSE API MOBILE
 ## Sistem Pemilahan Sampah Terintegrasi — BERSEKA (Kecamatan Coblong & Kota Bandung)
 
 ---
@@ -154,7 +154,7 @@ Authorization: Bearer <token_jwt>
     "kelompok": {
       "id": "klp_01",
       "nama": "Kelompok 01 Sadang Serang",
-      "dpl": "Dr. Dosen Pembimbing, M.T."
+      "dpl": "Dr. Dosen Pendamping, M.T."
     }
   }
 }
@@ -376,7 +376,7 @@ Authorization: Bearer <token_jwt>
 ```json
 {
   "success": true,
-  "message": "Pengajuan izin berhasil dikirimkan ke Dosen Pembimbing Lapangan (DPL)",
+  "message": "Pengajuan izin berhasil dikirimkan ke Dosen Pendamping Lapangan (DPL)",
   "data": {
     "id": "izn_501",
     "jenisIzin": "IZIN",
@@ -475,7 +475,7 @@ Authorization: Bearer <token_jwt>
     "id": "klp_01",
     "nama": "Kelompok 01 Coblong - Sadang Serang",
     "dpl": {
-      "name": "Dr. Dosen Pembimbing, M.T.",
+      "name": "Dr. Dosen Pendamping, M.T.",
       "phone": "+62812345678"
     },
     "anggota": [

@@ -29,7 +29,7 @@ export const roleMiddleware = (allowedRoles: string[]) => {
         if (["ADMIN_KECAMATAN", "CAMAT", "CAMAT_ADMIN"].includes(upper)) return "CAMAT";
         if (["ADMIN_KELURAH", "LURAH", "LURAH_ADMIN"].includes(upper)) return "LURAH";
         if (["SUPER_USER", "superUser", "SUPER USER"].includes(upper)) return "SUPER_USER";
-        if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING"].includes(upper)) return "DPL";
+        if (["DPL", "DOSEN_PEMBIMBING", "DOSEN PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN", "DOSEN PENDAMPING LAPANGAN"].includes(upper)) return "DPL";
         if (["PEMIMPIN", "PIMPINAN"].includes(upper)) return "PEMIMPIN";
         if (["PANITIA_TASKFORCE", "PANITIA", "TASKFORCE", "TASK_FORCE"].includes(upper))
           return "PANITIA_TASKFORCE";

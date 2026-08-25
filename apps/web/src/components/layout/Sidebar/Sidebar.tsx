@@ -64,6 +64,7 @@ const checkRouteActive = (
     const logbookAliases = ["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"];
     if (logbookAliases.includes(tPath) && logbookAliases.includes(cPath)) return true;
     const dplLogAliases = [
+      "/log-aktivitas/dosen-pendamping-lapangan",
       "/log-aktivitas/dosen-pembimbing-lapangan",
       "/log-aktivitas-dpl",
       "/dpl/log-aktivitas",
@@ -896,8 +897,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: ALL_ROLES,
             },
             {
-              to: "/log-aktivitas/dosen-pembimbing-lapangan",
-              label: "Dosen Pembimbing Lapangan",
+              to: "/log-aktivitas/dosen-pendamping-lapangan",
+              label: "Dosen Pendamping Lapangan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1163,7 +1164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
             { to: "/pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=dpl", label: "Dosen Pembimbing Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
             { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },

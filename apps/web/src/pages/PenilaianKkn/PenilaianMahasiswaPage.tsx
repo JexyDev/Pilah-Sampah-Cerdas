@@ -56,7 +56,7 @@ export const PenilaianMahasiswaPage: React.FC = () => {
       setScoreMap(initialScores);
       setNoteMap(initialNotes);
     } catch (err) {
-      toast.error("Gagal memuat daftar mahasiswa bimbingan");
+      toast.error("Gagal memuat daftar mahasiswa dampingan");
     } finally {
       setLoading(false);
     }

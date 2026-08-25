@@ -49,8 +49,8 @@ export async function getScopingFilters(user: {
     return {};
   }
 
-  // 1b. DPL (Dosen Pembimbing Lapangan) is strictly scoped to their assigned Kelompok KKN Kelurahan
-  if (role === "DPL" || role === "DOSEN_PEMBIMBING") {
+  // 1b. DPL (Dosen Pendamping Lapangan) is strictly scoped to their assigned Kelompok KKN Kelurahan
+  if (role === "DPL" || role === "DOSEN_PEMBIMBING" || role === "DOSEN_PENDAMPING" || role === "DOSEN_PENDAMPING_LAPANGAN") {
     const dplOr: any[] = [
       { dplId: dbUser.id },
       { dpl: { id: dbUser.id } },

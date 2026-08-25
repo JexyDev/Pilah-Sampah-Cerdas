@@ -1,6 +1,6 @@
 /**
  * Project: BERSEKA
- * Component: DplDashboardPage (Portal Dosen Pembimbing Lapangan)
+ * Component: DplDashboardPage (Portal Dosen Pendamping Lapangan)
  * Single Navigation via Sidebar - Clean, Simple, & Intuitive UX
  */
 
@@ -761,7 +761,7 @@ export const DplDashboardPage: React.FC = () => {
               Verifikasi Ajuan Izin &amp; Sakit
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
-              Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN bimbingan.
+              Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan.
             </p>
           </div>
 
@@ -1508,7 +1508,7 @@ export const DplDashboardPage: React.FC = () => {
                 Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan Izin/Sakit)
               </h4>
               <p className="text-xs text-amber-800 dark:text-amber-400">
-                Beberapa mahasiswa bimbingan mengajukan surat izin / sakit yang memerlukan validasi DPL.
+                Beberapa mahasiswa dampingan mengajukan surat izin / sakit yang memerlukan validasi DPL.
               </p>
             </div>
           </div>

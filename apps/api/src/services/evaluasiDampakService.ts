@@ -9,7 +9,7 @@ import { prisma } from "../lib/prisma.js";
 export const evaluasiDampakService = {
   /**
    * Mengambil data baseline (SurveiKelurahan) beserta relasi child.
-   * Untuk DPL, data di-scope ke kelurahan kelompok bimbingannya.
+   * Untuk DPL, data di-scope ke kelurahan kelompok dampingannya.
    */
   getBaselineData: async (userId: string, userRole: string) => {
     const whereClause = await buildKelurahanScope(userId, userRole);
@@ -297,7 +297,7 @@ export const evaluasiDampakService = {
 
 /**
  * Membangun scope filter kelurahan berdasarkan role pengguna.
- * DPL hanya bisa melihat kelurahan yang menjadi area kelompok bimbingannya.
+ * DPL hanya bisa melihat kelurahan yang menjadi area kelompok dampingannya.
  * SUPER_USER, PANITIA_TASKFORCE, PEMIMPIN bisa melihat semua.
  */
 async function buildKelurahanScope(userId: string, userRole: string) {
@@ -305,7 +305,7 @@ async function buildKelurahanScope(userId: string, userRole: string) {
     return {}; // Semua kelurahan
   }
 
-  // DPL: scope ke kelurahan dari kelompok bimbingan
+  // DPL: scope ke kelurahan dari kelompok dampingan
   const kelompokDpl = await prisma.kelompokKkn.findMany({
     where: { dplId: userId },
     select: { kelurahan: true },

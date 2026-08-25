@@ -9,20 +9,20 @@ const router = Router();
 
 // Protect all DPL routes with authentication and role check
 router.use(authMiddleware);
-router.use(roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]));
+router.use(roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]));
 
 /**
  * @swagger
  * tags:
  *   name: DPL
- *   description: API Monitoring & Evaluasi Dosen Pembimbing Lapangan (DPL)
+ *   description: API Monitoring & Evaluasi Dosen Pendamping Lapangan (DPL)
  */
 
 /**
  * @swagger
  * /api/v1/dpl/groups:
  *   get:
- *     summary: Mendapatkan ringkasan kelompok KKN bimbingan DPL
+ *     summary: Mendapatkan ringkasan kelompok KKN dampingan DPL
  *     tags: [DPL]
  *     security:
  *       - bearerAuth: []
@@ -37,7 +37,7 @@ router.get("/group-summary", dplScopeMiddleware, dplController.getGroupSummary);
  * @swagger
  * /api/v1/dpl/students:
  *   get:
- *     summary: Mendapatkan daftar detail mahasiswa KKN bimbingan DPL
+ *     summary: Mendapatkan daftar detail mahasiswa KKN dampingan DPL
  *     tags: [DPL]
  *     security:
  *       - bearerAuth: []

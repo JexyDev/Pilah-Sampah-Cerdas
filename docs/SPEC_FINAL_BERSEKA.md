@@ -1,4 +1,4 @@
-﻿# SPEC FINAL � BERSEKA (Hasil Klarifikasi Meeting 27 Juli 2026)
+# SPEC FINAL � BERSEKA (Hasil Klarifikasi Meeting 27 Juli 2026)
 
 > Dokumen ini adalah **keputusan final** dari semua pertanyaan kritis di MEETING_BREAKDOWN_27JULI2026.md. Statusnya sudah **disetujui**, bukan lagi opsi/pertanyaan. AI agent atau developer manapun yang lanjut development **wajib ikut spesifikasi ini**, tidak boleh berasumsi lain.
 
@@ -85,7 +85,7 @@ status_history {
 - Admin Kecamatan (monitoring only)
 - SUPER USER (akses penuh)
 - Mahasiswa KKN
-- DPL (Dosen Pembimbing Lapangan)
+- DPL (Dosen Pendamping Lapangan)
 
 **Setiap role independen** � masing-masing punya alur registrasi & data yang berbeda satu sama lain (tidak ada 1 form registrasi generik untuk semua role).
 

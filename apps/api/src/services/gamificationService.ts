@@ -442,7 +442,7 @@ export const gamificationService = {
 
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
-    // 3. DPL (Dosen Pembimbing Lapangan) Leaderboard
+    // 3. DPL (Dosen Pendamping Lapangan) Leaderboard
     const dplUsers = await prisma.user.findMany({
       where: { role: { name: "DPL" } },
       select: {

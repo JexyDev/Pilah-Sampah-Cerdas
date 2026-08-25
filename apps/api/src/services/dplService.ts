@@ -261,7 +261,7 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
 
 export const dplService = {
   /**
-   * 1. Ringkasan Kelompok Bimbingan (Murni scoped ke kelompok DPL sendiri)
+   * 1. Ringkasan Kelompok Dampingan (Murni scoped ke kelompok DPL sendiri)
    */
   getGroupSummary: async (dplUserId: string, role?: string) => {
     const kelurahanRecords = await prisma.kelurahan.findMany({
@@ -525,7 +525,7 @@ export const dplService = {
           }
         }
 
-        // Query kondisi Tempat Sampah terkait kelompok KKN (strictly berdasarkan pendaftar mahasiswa bimbingan DPL)
+        // Query kondisi Tempat Sampah terkait kelompok KKN (strictly berdasarkan pendaftar mahasiswa dampingan DPL)
         const binWhere: any =
           studentUserIds.length > 0
             ? {
@@ -749,7 +749,7 @@ export const dplService = {
   },
 
   /**
-   * 2. Detail per Mahasiswa Bimbingan DPL
+   * 2. Detail per Mahasiswa Dampingan DPL
    */
   getStudentDetails: async (dplUserId: string, groupId?: string, role?: string, search?: string) => {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
@@ -1189,7 +1189,7 @@ export const dplService = {
   },
 
   /**
-   * 5. Notifikasi / Alert DPL (Hanya Pengajuan Izin dari Mahasiswa Bimbingan DPL)
+   * 5. Notifikasi / Alert DPL (Hanya Pengajuan Izin dari Mahasiswa Dampingan DPL)
    */
   getAlerts: async (dplUserId: string, role?: string) => {
     // 1. Auto-eskalasi pengajuan izin yang PENDING lebih dari 24 jam ke Panitia Task Force
