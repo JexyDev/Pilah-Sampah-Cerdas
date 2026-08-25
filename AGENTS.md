@@ -103,7 +103,9 @@ Jika tim Mobile membutuhkan endpoint API baru yang belum selesai diimplementasik
 
 ---
 
-## Git & PR Workflow
+## Git & PR Workflow (Branching Policy)
 
+- **Development Branch First**: Seluruh perbaikan, penambahan fitur, dan perbaikan UI wajib di-commit dan di-push ke branch **`development`** terlebih dahulu. Dilarang push langsung ke `main`.
+- **Production Merge via Main**: Penggabungan dari `development` ke `main` (yang memicu CI/CD auto-deploy VPS) HANYA dilakukan setelah kode lolos 100% QC dan memperoleh konfirmasi pengguna.
 - **Commit format**: `<type>(<scope>): <description>` — Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`.
-- **Pre-Commit Review**: Dilarang push/commit otomatis sebelum pengguna me-review dan mengonfirmasi ringkasan perubahan.
+- **Pre-Commit Review**: Dilarang push/commit otomatis sebelum menyampaikan Ringkasan Review Perubahan kepada pengguna.
