@@ -973,9 +973,12 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/histori-sistem" element={<Navigate to="/master-data/histori-sistem" replace />} />
         <Route path="/superUser/audit" element={<Navigate to="/master-data/histori-sistem" replace />} />
         <Route path="/audit-trail" element={<Navigate to="/master-data/histori-sistem" replace />} />
         <Route path="/audit-log" element={<Navigate to="/master-data/histori-sistem" replace />} />
+        <Route path="/master-data/pengguna-daring" element={<Navigate to="/master-data/pengguna-online" replace />} />
+        <Route path="/pengguna-daring" element={<Navigate to="/master-data/pengguna-online" replace />} />
         <Route path="/superUser/qr-master" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />
         <Route path="/superUser/master-qr" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />
         <Route path="/qr-master" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />

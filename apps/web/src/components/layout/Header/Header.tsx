@@ -281,14 +281,17 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/pengaturan":
         return ["Profil"];
       case "/master-data/pengguna-online":
+      case "/master-data/pengguna-daring":
       case "/pengguna-online":
-        return ["Master Data", "Pengguna Daring"];
+      case "/pengguna-daring":
+        return ["Pengguna Daring"];
       case "/master-data/histori-sistem":
+      case "/histori-sistem":
       case "/log-aktivitas":
       case "/superUser/audit":
       case "/audit-trail":
       case "/audit-log":
-        return ["Master Data", "Histori Sistem"];
+        return ["Histori Sistem"];
       case "/evaluasi-ai":
       case "/superUser/discrepancies":
         return ["Verifikasi & QR", "Diskrepansi AI"];
