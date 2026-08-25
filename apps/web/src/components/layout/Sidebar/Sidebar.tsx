@@ -25,6 +25,8 @@ import {
   Award,
   BookOpen,
   ClipboardList,
+  Truck,
+  Recycle,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -913,7 +915,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         {
           type: "group",
-          label: "Pemilahan & Angkut",
+          label: "Fasilitas & Tempat Sampah",
           icon: Trash2,
           allowed: [
             "DEVELOPER",
@@ -959,23 +961,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "MAHASISWA_KKN",
               ] as UserRole[],
             },
-            {
-              to: "/hasil-pemanfaatan",
-              label: "Hasil Pemanfaatan",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "PETUGAS_RESIDU",
-                "WARGA",
-                "PEMIMPIN",
-                "PANITIA_TASKFORCE",
-                "MAHASISWA_KKN",
-              ] as UserRole[],
-            },
+          ],
+        },
+        {
+          type: "group",
+          label: "Penyetoran & Pengangkutan",
+          icon: Truck,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "WARGA",
+          ] as UserRole[],
+          children: [
             {
               to: "/penyetoran-sampah",
               label: "Penyetoran Sampah",
@@ -1001,6 +1003,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
+              ] as UserRole[],
+            },
+          ],
+        },
+        {
+          type: "group",
+          label: "Pemanfaatan & Rekapitulasi",
+          icon: Recycle,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "WARGA",
+            "PEMIMPIN",
+            "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
+          ] as UserRole[],
+          children: [
+            {
+              to: "/hasil-pemanfaatan",
+              label: "Hasil Pemanfaatan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
               ] as UserRole[],
             },
             {
