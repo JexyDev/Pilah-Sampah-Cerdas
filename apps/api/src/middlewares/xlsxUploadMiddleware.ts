@@ -23,7 +23,7 @@ const xlsxStorage = multer.memoryStorage();
 
 const xlsxFileFilter = (
   _req: Request,
-  file: Express.Multer.File,
+  file: any,
   cb: multer.FileFilterCallback
 ) => {
   if (ALLOWED_XLSX_MIME_TYPES.includes(file.mimetype)) {

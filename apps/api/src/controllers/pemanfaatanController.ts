@@ -152,7 +152,7 @@ export class PemanfaatanController {
       if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
       } else if (req.files) {
-        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const files = req.files as Record<string, any[]>;
         const uploaded =
           files.fotoBukti?.[0] ||
           files.fotoDokumentasi?.[0] ||
