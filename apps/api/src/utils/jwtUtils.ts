@@ -20,8 +20,8 @@ export interface TokenPayload {
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "access_secret_super_secure_key_123";
 
 // Expiration times
-const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h"; // 24 hours for access token
-const REFRESH_TOKEN_EXPIRES_DAYS = 7; // 7 days for refresh token
+const ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "5d"; // 5 days for access token
+const REFRESH_TOKEN_EXPIRES_DAYS = 5; // 5 days for refresh token
 
 /**
  * Generate Access Token
