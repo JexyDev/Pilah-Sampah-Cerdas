@@ -97,7 +97,7 @@ export class AiController {
 
       const filePath = `/uploads/${req.file.filename}`;
       const evidencePhotoUrl = `${req.protocol}://${req.get("host")}${filePath}`;
-      const result = await aiService.detectWasteMock(userId, filePath);
+      const result = await aiService.detectWasteMock(userId, filePath, req.file.path);
       const quotaRemaining = await redisService.getRemainingQuota(userId);
 
       const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(2)) || 1.0;

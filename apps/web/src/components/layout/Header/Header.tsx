@@ -18,7 +18,6 @@ import {
 import { useAuthStore } from "../../../store/useAuthStore";
 import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
 import api from "../../../services/api";
-import { ThemeToggle } from "../../common/ThemeToggle";
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return "";
@@ -96,21 +95,21 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/pemantauan-rekapitulasi":
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
-        return ["Tata Kelola Sampah", "Rekapitulasi Setoran"];
+        return ["Pemilahan & Angkut", "Rekapitulasi Setoran"];
       case "/superUser/data-survei-baseline":
       case "/data-survei-baseline":
       case "/superUser/data-survei-kkn":
       case "/data-survei-kkn":
-        return ["Program KKN", "Survei Baseline"];
+        return ["Survei & Dampak", "Survei Baseline"];
       case "/superUser/data-survei-endline":
       case "/data-survei-endline":
-        return ["Program KKN", "Survei Endline"];
+        return ["Survei & Dampak", "Survei Endline"];
       case "/superUser/import-survei-kkn":
       case "/import-survei-kkn":
-        return ["Program KKN", "Impor Data Survei"];
+        return ["Survei & Dampak", "Impor Data Survei"];
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
-        return ["Program KKN", "Evaluasi & Dampak"];
+        return ["Survei & Dampak", "Evaluasi & Dampak"];
       case "/penilaian-kkn/mahasiswa":
         return ["Penilaian KKN", "Penilaian Individu"];
       case "/penilaian-kkn/program-kerja":
@@ -121,7 +120,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Penilaian KKN", "Rekap & Nilai Akhir"];
       case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
-        return ["Tata Kelola Sampah", "Pengangkutan Residu"];
+        return ["Pemilahan & Angkut", "Pengangkutan Residu"];
       case "/master-pengguna":
       case "/master-data-pengguna":
       case "/manajemen-pengguna":
@@ -153,12 +152,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       }
       case "/master-data/manajemen-tempat-sampah":
       case "/manajemen-tempat-sampah":
-        return ["Tata Kelola Sampah", "Tempat Sampah"];
+        return ["Pemilahan & Angkut", "Tempat Sampah"];
       case "/master-data/rule-engine":
       case "/master-rule-engine":
       case "/rule-engine":
       case "/pengaturan/rule-engine":
-        return ["Pengaturan", "Rule Engine"];
+        return ["Akun & Sistem", "Mesin Aturan (Rule Engine)"];
       case "/master-data/provinsi":
       case "/master-provinsi":
         return ["Wilayah", "Provinsi"];
@@ -328,27 +327,27 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
           <LayoutGrid size={19} />
         </button>
 
-        {breadcrumbItems.map((item, idx) => (
-          <React.Fragment key={idx}>
-            <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
-            <span
-              className={`text-xs px-3.5 py-1.5 rounded-full border transition-all truncate max-w-[140px] sm:max-w-[200px] ${
-                idx === breadcrumbItems.length - 1
-                  ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700 font-black shadow-2xs"
-                  : "bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
-              }`}
-            >
-              {item}
-            </span>
-          </React.Fragment>
-        ))}
+        {breadcrumbItems.map((item, idx) => {
+          const isLast = idx === breadcrumbItems.length - 1;
+          return (
+            <React.Fragment key={idx}>
+              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+              <span
+                className={`flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full border transition-all truncate max-w-[150px] sm:max-w-[220px] ${
+                  isLast
+                    ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700 font-black shadow-2xs"
+                    : "bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
+                }`}
+              >
+                <span className="truncate">{item}</span>
+              </span>
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* Right Section: System Actions & User Profile */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* Theme Toggle Button */}
-        <ThemeToggle />
-
         {/* Notifications Popover Trigger & Container */}
         <div className="relative" ref={notifRef}>
           <button

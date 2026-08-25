@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
             alt="BERSEKA"
             className="h-8 w-auto object-contain shrink-0"
           />
-          <span>• Universitas Komputer Indonesia</span>
+          <span>BERSEKA</span>
         </div>
         <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
         <span className="text-[#549e26] font-semibold">

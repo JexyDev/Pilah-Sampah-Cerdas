@@ -11,7 +11,6 @@ import { Outlet } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
 import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Header/Header";
-import Footer from "../Footer/Footer";
 import ErrorBoundaryFallback from "../../common/ErrorBoundaryFallback";
 import { useThemeStore } from "../../../store/useThemeStore";
 
@@ -54,9 +53,6 @@ const MainLayout: React.FC = () => {
               <Outlet />
             </div>
           </ErrorBoundary>
-        </div>
-        <div className="px-6 pb-4 pt-0 w-full min-w-0 max-w-full">
-          <Footer />
         </div>
       </main>
     </div>

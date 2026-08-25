@@ -15,9 +15,9 @@ import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactor
 
 export class AiService {
   /**
-   * Mock AI Detection using Redis Queue with strict limits
+   * AI Detection using WasteAiAdapterFactory with Redis Queue
    */
-  async detectWasteMock(userId: string, imageUrl: string) {
+  async detectWasteMock(userId: string, imageUrl: string, imagePath?: string) {
     // 1. Check Quota via Redis
     const hasQuota = await redisService.checkAndUseQuota(userId);
     if (!hasQuota) {
@@ -29,93 +29,67 @@ export class AiService {
 
     try {
       // 2. Enqueue the AI Task into FIFO Queue (max 2 concurrent from redisService)
-      const result = await redisService.enqueueAiTask(() => {
-        return new Promise((resolve, reject) => {
-          // Decide AI computation duration (15% chance of timeout > 2000ms)
-          const isTimeout = Math.random() < 0.15;
-          const duration = isTimeout ? 2500 : 1200;
-
-          // 20% chance of image unreadable failure
-          const isUnreadable = Math.random() < 0.2;
-
-          const timeoutId = setTimeout(() => {
-            if (isTimeout) {
-              reject(new Error("AI_TIMEOUT"));
-            } else if (isUnreadable) {
-              reject(new Error("IMAGE_UNREADABLE"));
-            } else {
-              // 80% chance of mixture, 10% organic only, 10% inorganic only
-              const rand = Math.random();
-              const detections = [];
-              if (rand < 0.8) {
-                // Mixture
-                detections.push({
-                  detectedType: "ORGANIC",
-                  volumeEstimate: parseFloat((Math.random() * 3 + 1.0).toFixed(2)),
-                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)), // 80%-100%
-                });
-                detections.push({
-                  detectedType: "NON_ORGANIC",
-                  volumeEstimate: parseFloat((Math.random() * 3 + 1.0).toFixed(2)),
-                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)), // 80%-100%
-                });
-              } else if (rand < 0.9) {
-                // Organic only
-                detections.push({
-                  detectedType: "ORGANIC",
-                  volumeEstimate: parseFloat((Math.random() * 4.5 + 1.5).toFixed(2)),
-                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)),
-                });
-              } else {
-                // Inorganic only
-                detections.push({
-                  detectedType: "NON_ORGANIC",
-                  volumeEstimate: parseFloat((Math.random() * 4.5 + 1.5).toFixed(2)),
-                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)),
-                });
-              }
-
-              const dominant = detections.reduce((prev, current) =>
-                prev.volumeEstimate > current.volumeEstimate ? prev : current
-              );
-              const orgDet = detections.find((d) => d.detectedType === "ORGANIC");
-              const nonOrgDet = detections.find((d) => d.detectedType === "NON_ORGANIC");
-              const orgVol = orgDet ? orgDet.volumeEstimate : 0;
-              const nonOrgVol = nonOrgDet ? nonOrgDet.volumeEstimate : 0;
-              const totalVol = orgVol + nonOrgVol;
-
-              let organik_percent = 0;
-              let non_organik_percent = 0;
-              if (totalVol > 0) {
-                organik_percent = Math.round((orgVol / totalVol) * 100);
-                non_organik_percent = 100 - organik_percent;
-              } else if (dominant.detectedType === "ORGANIC") {
-                organik_percent = 100;
-              } else {
-                non_organik_percent = 100;
-              }
-
-              resolve({
-                requestId,
-                detectedType: dominant.detectedType,
-                volumeEstimate: dominant.volumeEstimate,
-                confidence: dominant.confidence,
-                detections,
-                isBlurry: false,
-                organik_percent,
-                non_organik_percent,
-                recommended_bin:
-                  dominant.detectedType.toLowerCase() === "organic" ? "organik" : "anorganik",
-              });
-            }
-          }, duration);
-
-          // Standard 2-second threshold for client response timeout
-          setTimeout(() => {
-            clearTimeout(timeoutId);
-            reject(new Error("AI_TIMEOUT"));
-          }, 2000);
+      const result: any = await redisService.enqueueAiTask(async () => {
+        const adapter = WasteAiAdapterFactory.getAdapter();
+        const aiResponse = await adapter.classifyWaste({
+          imageUrl: finalImageUrl,
+          imagePath,
         });
+
+        const isOrganic = (aiResponse.detectedType || "").toLowerCase().includes("organ");
+        const detectedType = isOrganic ? "ORGANIC" : "NON_ORGANIC";
+        const volumeEstimate = aiResponse.estimatedVolumeLiter || 2.0;
+        const confidence = aiResponse.confidenceScore || 0.9;
+
+        const detections = aiResponse.detections?.length
+          ? aiResponse.detections
+          : [
+              {
+                detectedType,
+                volumeEstimate,
+                confidence,
+              },
+            ];
+
+        const orgDet = detections.find((d) =>
+          d.detectedType?.toUpperCase().includes("ORGANIC")
+        );
+        const nonOrgDet = detections.find((d) =>
+          d.detectedType?.toUpperCase().includes("NON")
+        );
+        const orgVol = orgDet ? orgDet.volumeEstimate : isOrganic ? volumeEstimate : 0;
+        const nonOrgVol = nonOrgDet ? nonOrgDet.volumeEstimate : !isOrganic ? volumeEstimate : 0;
+        const totalVol = orgVol + nonOrgVol;
+
+        let organik_percent = (aiResponse.rawPayload as any)?.organik_percent;
+        let non_organik_percent = (aiResponse.rawPayload as any)?.non_organik_percent;
+
+        if (organik_percent === undefined || non_organik_percent === undefined) {
+          if (totalVol > 0) {
+            organik_percent = Math.round((orgVol / totalVol) * 100);
+            non_organik_percent = 100 - organik_percent;
+          } else if (isOrganic) {
+            organik_percent = 100;
+            non_organik_percent = 0;
+          } else {
+            organik_percent = 0;
+            non_organik_percent = 100;
+          }
+        }
+
+        return {
+          requestId: aiResponse.requestId || requestId,
+          detectedType,
+          volumeEstimate,
+          confidence,
+          detections,
+          isBlurry: false,
+          organik_percent,
+          non_organik_percent,
+          recommended_bin: isOrganic ? "organik" : "anorganik",
+          vendorName: aiResponse.vendorName,
+          annotatedImageBase64: aiResponse.annotatedImageBase64,
+        };
       });
 
       // 3. Write Success Log
