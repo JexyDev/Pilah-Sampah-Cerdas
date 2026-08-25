@@ -61,17 +61,28 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
     try {
       const formData = new FormData();
       const fs = await import("fs");
+      const path = await import("path");
 
-      if (payload.imagePath && fs.existsSync(payload.imagePath)) {
-        const fileBuffer = fs.readFileSync(payload.imagePath);
+      let resolvedPath = payload.imagePath ? path.resolve(payload.imagePath) : "";
+      if (!resolvedPath || !fs.existsSync(resolvedPath)) {
+        if (payload.imageUrl && !payload.imageUrl.startsWith("http")) {
+          const cleanUrl = payload.imageUrl.replace(/^\/?uploads\//, "");
+          const candidatePath = path.resolve(process.cwd(), "uploads", cleanUrl);
+          if (fs.existsSync(candidatePath)) {
+            resolvedPath = candidatePath;
+          }
+        }
+      }
+
+      if (resolvedPath && fs.existsSync(resolvedPath)) {
+        const fileBuffer = fs.readFileSync(resolvedPath);
         formData.append("image", new Blob([new Uint8Array(fileBuffer)], { type: "image/jpeg" }), "waste.jpg");
       } else if (payload.imageUrl && payload.imageUrl.startsWith("http")) {
         const imgResp = await fetch(payload.imageUrl);
         const arrayBuf = await imgResp.arrayBuffer();
         formData.append("image", new Blob([arrayBuf], { type: "image/jpeg" }), "waste.jpg");
       } else {
-        // Fallback dummy payload if no file/URL available
-        formData.append("image", new Blob([new Uint8Array(Buffer.from("dummy"))], { type: "image/jpeg" }), "waste.jpg");
+        throw new Error("IMAGE_UNREADABLE");
       }
 
       const response = await fetch(this.endpoint, {
@@ -115,8 +126,7 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
         throw error;
       }
       console.error("[VendorWasteAiAdapter] Error calling vendor AI API:", error.message);
-      const fallback = new MockWasteAiAdapter();
-      return fallback.classifyWaste(payload);
+      throw error;
     }
   }
 }
