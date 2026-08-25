@@ -81,7 +81,7 @@ export class BinController {
           : "Belum Terikat (GPS)";
 
         const ensureTcFormat = (codeStr: string, catName?: string) => {
-          if (!codeStr) return "BSK-OGN-250826-1001";
+          if (!codeStr) return "BSK-OGN-250826-0001";
           if (codeStr.startsWith("BSK-") || codeStr.startsWith("TC-")) return codeStr;
           const upperCat = (catName || "").toUpperCase();
           let tag = "OGN";
@@ -89,8 +89,8 @@ export class BinController {
           else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
           const digits = codeStr.replace(/\D/g, "");
           const seq = digits
-            ? String(parseInt(digits.slice(-4) || "1001", 10)).padStart(4, "0")
-            : "1001";
+            ? String(parseInt(digits.slice(-4) || "1", 10)).padStart(4, "0")
+            : "0001";
           return `BSK-${tag}-250826-${seq}`;
         };
 

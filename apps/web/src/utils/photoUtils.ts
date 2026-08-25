@@ -51,6 +51,43 @@ export function getProfilePhotoUrl(path?: string, userName: string = "User"): st
 }
 
 /**
+ * Returns full image URL for media / evidence / activity / documentation photo
+ */
+export function getMediaPhotoUrl(path?: string | null): string {
+  if (!path || path.trim() === "" || path === "null") {
+    return "";
+  }
+
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:image/")) {
+    return path;
+  }
+
+  const baseUrl = getApiBaseUrl();
+  const host = baseUrl.replace(/\/api\/v1\/?$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${host}${cleanPath}`;
+}
+
+/**
+ * Formats a Google Drive URL from various input formats (full URL, folder ID, file ID)
+ */
+export function formatGoogleDriveUrl(url?: string | null): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("drive.google.com") || trimmed.startsWith("docs.google.com")) {
+    return `https://${trimmed}`;
+  }
+  // Drive folder/file ID (e.g. 1jci_wfqpkerlrwfmkeutnsdu2bwa91zf)
+  if (/^[a-zA-Z0-9_-]{15,}$/.test(trimmed)) {
+    return `https://drive.google.com/drive/folders/${trimmed}`;
+  }
+  return `https://${trimmed}`;
+}
+
+/**
  * Event handler for img onError to prevent infinite loops and show fallback initials SVG
  */
 export function handleAvatarError(

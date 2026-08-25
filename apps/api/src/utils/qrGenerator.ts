@@ -39,7 +39,7 @@ export function formatCurrentDateDDMMYY(d: Date = new Date()): string {
 
 /**
  * Mencari nomor urut (sequence) tertinggi untuk kode QR standar BERSEKA (prefix BSK-).
- * Jika belum ada kode BSK di database, nomor urut dasar dimulai dari 999 sehingga kode pertama adalah 1000.
+ * Jika belum ada kode BSK di database, nomor urut dasar dimulai dari 0 sehingga kode pertama adalah 0001.
  */
 export async function getGlobalHighestSequence(tx: any = prisma): Promise<number> {
   const bskBins = await tx.bin.findMany({
@@ -51,7 +51,7 @@ export async function getGlobalHighestSequence(tx: any = prisma): Promise<number
     select: { qrCode: true },
   });
 
-  let maxSeq = 999; // Nomor urut dasar, sehingga QR pertama adalah 1000
+  let maxSeq = 0; // Nomor urut dasar, sehingga QR pertama adalah 0001
   for (const bin of bskBins) {
     const code = bin.qrCode || "";
     const parts = code.split("-");
@@ -69,9 +69,9 @@ export async function getGlobalHighestSequence(tx: any = prisma): Promise<number
 }
 
 /**
- * Generate kode QR unik BERSEKA dengan format: BSK-[CATEGORY]-[DDMMYY]-[SEQUENCE]
- * Contoh: BSK-OGN-250826-1000, BSK-AGN-250826-1001, BSK-OGN-250826-1002
- * Dilengkapi proteksi anti-duplikasi otomatis by system dengan nomor urut global terpadu.
+ * Generate kode QR unik BERSEKA dengan format: BSK-[CATEGORY]-[DDMMYY]-[0001]
+ * Contoh: BSK-OGN-250826-0001, BSK-AGN-250826-0002, BSK-OGN-250826-0003
+ * Dilengkapi proteksi anti-duplikasi otomatis by system dengan nomor urut 4 digit (0001, 0002, dst).
  */
 export async function generateNextQrCode(categoryId: string): Promise<string> {
   let catName = categoryId;
@@ -90,12 +90,14 @@ export async function generateNextQrCode(categoryId: string): Promise<string> {
   // Cari sequence global tertinggi di database untuk prefix BSK-
   const maxSeq = await getGlobalHighestSequence(prisma);
   let nextSeq = maxSeq + 1;
-  let qrCode = `BSK-${codeTag}-${dateStr}-${nextSeq}`;
+  let paddedSeq = String(nextSeq).padStart(4, "0");
+  let qrCode = `BSK-${codeTag}-${dateStr}-${paddedSeq}`;
 
   // Loop perlindungan ekstra untuk memastikan tidak ada duplikasi sama sekali di database
   while (await prisma.bin.findUnique({ where: { qrCode } })) {
     nextSeq++;
-    qrCode = `BSK-${codeTag}-${dateStr}-${nextSeq}`;
+    paddedSeq = String(nextSeq).padStart(4, "0");
+    qrCode = `BSK-${codeTag}-${dateStr}-${paddedSeq}`;
   }
 
   return qrCode;
