@@ -323,7 +323,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         id: "att-rec-1",
         studentId,
         scheduleId,
-        status: "HADIR",
+        status: "HADIR_MEMENUHI",
         attendedAt: new Date(),
         checkOutAt: new Date(),
         method: "MANUAL",
@@ -346,7 +346,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           kategori: "PARTISIPASI_STREAK",
         }),
       });
-      expect(result.status).toBe("HADIR");
+      expect(result.status).toBe("HADIR_MEMENUHI");
     });
 
     it("should award +10 points when student checks out (kepulangan)", async () => {
@@ -423,6 +423,90 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       });
 
       expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+    });
+
+    it("should set status to HADIR_MEMENUHI when in-zone duration >= target duration", async () => {
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date(Date.now() - 150 * 60 * 1000), // 150 minutes ago
+        checkOutAt: null,
+      } as any);
+
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Posko KKN",
+        time: "08:00 - 10:00 WIB", // 120 minutes target
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+
+      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-rec-1",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date(Date.now() - 150 * 60 * 1000),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan Posko KKN" },
+          student: { id: studentId, name: "Mahasiswa KKN", studentProfile: { nim: "130121001" } },
+        } as any;
+      });
+
+      const result = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe("HADIR_MEMENUHI");
+      expect(result.data.statusDisplay).toBe("Hadir & Memenuhi");
+      expect(result.data.isMemenuhiDurasi).toBe(true);
+    });
+
+    it("should set status to HADIR_TIDAK_MEMENUHI when in-zone duration < target duration", async () => {
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-rec-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+        checkOutAt: null,
+      } as any);
+
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Posko KKN",
+        time: "08:00 - 10:00 WIB", // 120 minutes target
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+
+      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-rec-1",
+          studentId,
+          scheduleId,
+          status: data.status,
+          attendedAt: new Date(Date.now() - 30 * 60 * 1000),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan Posko KKN" },
+          student: { id: studentId, name: "Mahasiswa KKN", studentProfile: { nim: "130121001" } },
+        } as any;
+      });
+
+      const result = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe("HADIR_TIDAK_MEMENUHI");
+      expect(result.data.statusDisplay).toBe("Hadir & Tidak Memenuhi");
+      expect(result.data.isMemenuhiDurasi).toBe(false);
     });
   });
 });
