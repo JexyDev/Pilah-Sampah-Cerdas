@@ -16,13 +16,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   BookOpen,
-  Calendar,
   Clock,
   CheckCircle,
   AlertTriangle,
   XCircle,
   Search,
-  Filter,
   Download,
   Eye,
   RefreshCw,
@@ -34,10 +32,7 @@ import {
   ShieldCheck,
   Award,
   Smartphone,
-  ExternalLink,
   X,
-  FileText,
-  MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -49,14 +44,6 @@ import {
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
 import LogAktivitasDpl from "./LogAktivitasDpl";
-
-// Helper Inisial Avatar
-const getInitials = (name?: string | null): string => {
-  if (!name) return "MHS";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-};
 
 // Helper Format Tanggal
 const formatDateShort = (dateStr: string): string => {
