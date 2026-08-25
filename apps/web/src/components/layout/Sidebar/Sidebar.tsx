@@ -500,7 +500,7 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const userRole = (user?.peran || "WARGA") as UserRole;
+  const userRole = (((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase()) as UserRole;
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
 
   // Live real-time clock state
@@ -558,8 +558,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "WARGA",
   ];
 
-  const hasAccess = (allowed: UserRole[]) =>
-    userRole === "DEVELOPER" || allowed.includes(userRole);
+  const hasAccess = (allowed?: UserRole[]) =>
+    !allowed || userRole === "DEVELOPER" || allowed.includes(userRole);
 
   const getFilteredGroupChildren = (
     groupLabel: string,
