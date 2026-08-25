@@ -18,6 +18,7 @@
     "prisma:generate": "npm run prisma:generate --workspace=apps/api",
     "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
     "test:api": "npm exec --workspace=apps/api -- vitest run",
+    "kill:ports": "npx -y kill-port 3000 5173",
     "bulk-insert-kkn": "npm run bulk-insert-kkn --workspace=apps/api --",
     "db:sync-vps": "node scripts/tools/sync_db_from_vps.cjs"
   },
