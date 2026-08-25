@@ -64,14 +64,14 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
 
       if (payload.imagePath && fs.existsSync(payload.imagePath)) {
         const fileBuffer = fs.readFileSync(payload.imagePath);
-        formData.append("image", new Blob([fileBuffer]), "waste.jpg");
+        formData.append("image", new Blob([new Uint8Array(fileBuffer)], { type: "image/jpeg" }), "waste.jpg");
       } else if (payload.imageUrl && payload.imageUrl.startsWith("http")) {
         const imgResp = await fetch(payload.imageUrl);
         const arrayBuf = await imgResp.arrayBuffer();
-        formData.append("image", new Blob([arrayBuf]), "waste.jpg");
+        formData.append("image", new Blob([arrayBuf], { type: "image/jpeg" }), "waste.jpg");
       } else {
         // Fallback dummy payload if no file/URL available
-        formData.append("image", new Blob([Buffer.from("dummy")]), "waste.jpg");
+        formData.append("image", new Blob([new Uint8Array(Buffer.from("dummy"))], { type: "image/jpeg" }), "waste.jpg");
       }
 
       const response = await fetch(this.endpoint, {
