@@ -375,13 +375,39 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               onTap: () async {
                 final now = DateTime.now();
                 final tomorrow = DateTime(now.year, now.month, now.day + 1);
-                final initial = _tanggalKegiatan.isBefore(tomorrow) ? tomorrow : _tanggalKegiatan;
+                
+                final blockedDates = <DateTime>[];
+                for (final item in _izinHistory) {
+                  final status = item['status']?.toString().toUpperCase();
+                  if (status == 'PENDING' || status == 'APPROVED' || status == 'CANCEL_REQUESTED') {
+                    final tglStr = item['startDate']?.toString() ?? item['createdAt']?.toString() ?? '';
+                    if (tglStr.length >= 10) {
+                      try {
+                        blockedDates.add(DateFormat('yyyy-MM-dd').parse(tglStr.substring(0, 10)));
+                      } catch (_) {}
+                    }
+                  }
+                }
+
+                DateTime initial = _tanggalKegiatan.isBefore(tomorrow) ? tomorrow : _tanggalKegiatan;
+                while (blockedDates.any((b) => b.year == initial.year && b.month == initial.month && b.day == initial.day)) {
+                  initial = initial.add(const Duration(days: 1));
+                }
 
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: initial,
                   firstDate: tomorrow,
                   lastDate: DateTime(tomorrow.year + 1),
+                  selectableDayPredicate: (DateTime day) {
+                    if (day.isBefore(tomorrow)) return false;
+                    for (final blocked in blockedDates) {
+                      if (day.year == blocked.year && day.month == blocked.month && day.day == blocked.day) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  },
                   builder: (context, child) => Theme(
                     data: Theme.of(context).copyWith(
                       colorScheme: const ColorScheme.light(primary: AppColors.primaryGreen),

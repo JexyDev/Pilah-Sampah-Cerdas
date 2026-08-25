@@ -63,83 +63,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
     return logs.where((log) => log.points == null || log.points == 0).toList();
   }
 
-  Widget _buildProgressCard(Map<String, dynamic> summary) {
-    final students = summary['students'] as List?;
-    if (students == null || students.isEmpty) return const SizedBox();
 
-    final student = students.first as Map<String, dynamic>;
-    final totalFormatted = student['totalFormatted']?.toString() ?? '0 Jam 0 Menit';
-    final targetTotalHours = (student['targetTotalHours'] as num?)?.toDouble() ?? 100.0;
-    final progressPercentage = (student['progressPercentage'] as num?)?.toDouble() ?? 0.0;
-    final totalDaysAttended = student['totalDaysAttended'] as int? ?? 0;
-    
-    // Safely extract targetTotalHari from targetRules if available
-    final targetRules = summary['targetRules'] as Map<String, dynamic>?;
-    final targetTotalHari = targetRules?['targetTotalHari'] as int? ?? 50;
-
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Progress Total Jam KKN',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Text(
-                '${progressPercentage.toStringAsFixed(1)}%',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryGreen,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: (progressPercentage / 100).clamp(0.0, 1.0),
-              minHeight: 8,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '$totalFormatted / ${targetTotalHours.toInt()} Jam',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                '$totalDaysAttended / $targetTotalHari Hari Hadir',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,10 +78,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
       ),
       body: Column(
         children: [
-          if (state.timesheetSummary != null) ...[
-            _buildProgressCard(state.timesheetSummary!),
-            const Divider(height: 1, thickness: 4, color: Color(0xFFF3F4F6)),
-          ],
+
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),

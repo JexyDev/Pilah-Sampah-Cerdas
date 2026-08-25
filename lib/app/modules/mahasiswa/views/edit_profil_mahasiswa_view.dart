@@ -25,6 +25,11 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   final ImagePicker _picker = ImagePicker();
 
   bool _isSubmittingPassword = false;
+  final _profileFormKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  bool _isSubmittingProfile = false;
+
   bool _obscureOld = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
@@ -33,10 +38,15 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   @override
   void initState() {
     super.initState();
+    final user = ref.read(authProvider).user;
+    _nameController.text = user?.name ?? '';
+    _phoneController.text = user?.phone ?? '';
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
     _oldPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -104,6 +114,35 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
           ),
         );
       }
+    }
+  }
+
+  Future<void> _submitProfile() async {
+    if (!_profileFormKey.currentState!.validate()) return;
+    setState(() => _isSubmittingProfile = true);
+
+    final success = await ref.read(authProvider.notifier).updateProfile(
+      name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+    );
+
+    setState(() => _isSubmittingProfile = false);
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profil berhasil diperbarui!'),
+          backgroundColor: AppColors.primaryGreen,
+        ),
+      );
+    } else if (!success && mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memperbarui profil.'),
+          backgroundColor: AppColors.dangerRed,
+        ),
+      );
     }
   }
 
@@ -194,6 +233,79 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
             ),
             const SizedBox(height: AppDimensions.lg),
 
+            // ── Form Edit Profil ─────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Form(
+                key: _profileFormKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.person_outline_rounded, color: AppColors.primaryGreen, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'DATA PRIBADI',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Lengkap',
+                        labelStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen)),
+                      ),
+                      validator: (val) => val == null || val.isEmpty ? 'Nama wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Nomor WhatsApp',
+                        labelStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen)),
+                      ),
+                      validator: (val) => val == null || val.isEmpty ? 'Nomor WA wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        onPressed: _isSubmittingProfile ? null : _submitProfile,
+                        child: _isSubmittingProfile
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Simpan Profil', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimensions.lg),
+
             // ── 2. Read-Only Academic & Assignment Section ────────────
             Container(
               padding: const EdgeInsets.all(16),
@@ -226,17 +338,17 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlueLight,
+                      color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.info_outline_rounded, color: AppColors.primaryBlueDark, size: 18),
+                        Icon(Icons.info_outline_rounded, color: AppColors.textSecondary, size: 18),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Data akademik & wilayah penugasan bersifat resmi. Perubahan data wajib diajukan melalui Admin KKN / DPL.',
-                            style: TextStyle(fontSize: 11, color: AppColors.primaryBlueDark, height: 1.3),
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.3),
                           ),
                         ),
                       ],
@@ -255,6 +367,8 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                 border: Border.all(color: AppColors.border),
               ),
               child: ExpansionTile(
+                shape: const Border(),
+                collapsedShape: const Border(),
                 initiallyExpanded: _isPasswordSectionExpanded,
                 onExpansionChanged: (exp) => setState(() => _isPasswordSectionExpanded = exp),
                 leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primaryGreen),
@@ -330,7 +444,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                                   : const Icon(Icons.save_rounded, color: Colors.white, size: 18),
                               label: Text(_isSubmittingPassword ? 'Memperbarui...' : 'Simpan Kata Sandi Baru'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryBlueDark,
+                                backgroundColor: AppColors.primaryGreen,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),

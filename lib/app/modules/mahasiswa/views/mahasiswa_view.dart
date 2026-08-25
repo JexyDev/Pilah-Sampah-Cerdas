@@ -83,9 +83,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                     padding: const EdgeInsets.all(AppDimensions.md),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
-                        _buildSummaryCards(state),
+                        _buildTargetKegiatan(state, locationState, kknLocationState),
                         const SizedBox(height: AppDimensions.md),
-                        _buildLocationStatus(locationState, kknLocationState),
+                        _buildSummaryCards(state),
                         const SizedBox(height: AppDimensions.lg),
                         _buildQuickActions(kknLocationState),
                         const SizedBox(height: AppDimensions.lg),
@@ -456,6 +456,159 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
   // Summary Cards (3 cards)
   // ═══════════════════════════════════════════════════════════════════════════
 
+  Widget _buildTargetKegiatan(MahasiswaState state, LocationPingState locationState, KknLocationState kknLocationState) {
+    if (state.timesheetSummary == null) return _buildLocationStatus(locationState, kknLocationState);
+    
+    final summary = state.timesheetSummary!;
+    final students = summary['students'] as List?;
+    if (students == null || students.isEmpty) return _buildLocationStatus(locationState, kknLocationState);
+
+    final student = students.first as Map<String, dynamic>;
+    final totalFormatted = student['totalFormatted']?.toString() ?? '0 Jam 0 Menit';
+    final targetTotalHours = (student['targetTotalHours'] as num?)?.toInt() ?? 100;
+    final progressPercentage = (student['progressPercentage'] as num?)?.toDouble() ?? 0.0;
+
+    
+    final targetRules = summary['targetRules'] as Map<String, dynamic>?;
+    final targetTotalHari = targetRules?['targetTotalHari'] as int? ?? 50;
+    final targetTotalPekan = targetRules?['targetTotalPekan'] as int? ?? 10;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.track_changes_rounded, color: AppColors.primaryGreen, size: 20),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Target Kegiatan Lapangan',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTargetItem(
+                  icon: Icons.calendar_month_outlined,
+                  value: '$targetTotalPekan',
+                  unit: 'Pekan',
+                  label: 'Periode Kegiatan',
+                ),
+              ),
+              Container(width: 1, height: 40, color: Colors.grey.shade200),
+              Expanded(
+                child: _buildTargetItem(
+                  icon: Icons.check_circle_outline_rounded,
+                  value: '$targetTotalHari',
+                  unit: 'Hari',
+                  label: 'Total Hari Kegiatan',
+                ),
+              ),
+              Container(width: 1, height: 40, color: Colors.grey.shade200),
+              Expanded(
+                child: _buildTargetItem(
+                  icon: Icons.access_time_rounded,
+                  value: '$targetTotalHours Jam',
+                  unit: 'Target',
+                  label: 'Minimal Jam Kumulatif',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Tercapai: $totalFormatted',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Text(
+                '${progressPercentage.toStringAsFixed(1)}%',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (progressPercentage / 100).clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildLocationStatus(locationState, kknLocationState),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetItem({required IconData icon, required String value, required String unit, required String label}) {
+    return Column(
+      children: [
+        Icon(icon, size: 20, color: AppColors.primaryGreen),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        Text(
+          unit,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primaryGreen,
+          ),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 10,
+            color: AppColors.textHint,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSummaryCards(MahasiswaState state) {
     final d = state.dashboard;
 
@@ -502,6 +655,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
             label: 'Total Warga',
             value: '$totalWarga',
             color: AppColors.primaryGreen,
+            onTap: () {
+              Navigator.pushNamed(context, AppRoutes.daftarWarga);
+            },
           ),
         ),
         const SizedBox(width: AppDimensions.sm),
@@ -543,7 +699,6 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final bool isInsideZone = kknState.isInsideRadius;
     final bool isOn =
         kknState.isTracking && kknState.error == null && isInsideZone;
-    final durationMins = (kknState.inZoneDurationSeconds / 60).floor();
     final lastPing = locationState.lastPingTime;
 
     Color boxColor;
@@ -573,8 +728,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
       borderColor = AppColors.success.withValues(alpha: 0.3);
       iconData = Icons.location_on_rounded;
       statusTitle = 'Status: Aktif Memantau';
-      statusDesc =
-          'Anda terdeteksi di dalam Area Wilayah KKN ($durationMins / ${kknState.targetDurationMinutes} Menit).';
+      statusDesc = 'Anda terdeteksi di dalam Area Wilayah KKN.';
       textColor = AppColors.successDark;
     } else {
       boxColor = AppColors.dangerRed.withValues(alpha: 0.1);
@@ -1053,6 +1207,7 @@ class _SummaryCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.onTap,
   });
 
   final IconData icon;
@@ -1060,11 +1215,11 @@ class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
@@ -1076,8 +1231,15 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -1111,9 +1273,13 @@ class _SummaryCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          if (onTap != null) ...[
+            const SizedBox(height: 6),
+            Icon(Icons.chevron_right, size: 18, color: color),
+          ],
         ],
       ),
-    );
+    ))));
   }
 }
 

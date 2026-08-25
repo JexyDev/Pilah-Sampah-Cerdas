@@ -15,12 +15,14 @@ class MahasiswaState {
     this.errorMessage,
     this.dashboard,
     this.wargaList = const [],
+    this.timesheetSummary,
   });
 
   final bool isLoading;
   final String? errorMessage;
   final KknDashboardData? dashboard;
   final List<WargaDampingan> wargaList;
+  final Map<String, dynamic>? timesheetSummary;
 
   /// Warga yang membutuhkan edukasi ulang (kesalahan > 30%)
   List<WargaDampingan> get wargaNeedReeducation =>
@@ -31,12 +33,14 @@ class MahasiswaState {
     String? errorMessage,
     KknDashboardData? dashboard,
     List<WargaDampingan>? wargaList,
+    Map<String, dynamic>? timesheetSummary,
   }) {
     return MahasiswaState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
       dashboard: dashboard ?? this.dashboard,
       wargaList: wargaList ?? this.wargaList,
+      timesheetSummary: timesheetSummary ?? this.timesheetSummary,
     );
   }
 }
@@ -84,15 +88,20 @@ class MahasiswaNotifier extends StateNotifier<MahasiswaState> {
           lastError ??= NetworkExceptionHelper.getErrorMessage(e);
           return cachedWarga ?? state.wargaList;
         }),
+        repo.getTimesheetSummary().catchError((e) {
+          return <String, dynamic>{};
+        }),
       ]);
 
       newDashboard = results[0] as KknDashboardData?;
       newWargaList = results[1] as List<WargaDampingan>?;
+      final timesheetSummary = results[2] as Map<String, dynamic>?;
 
       state = state.copyWith(
         isLoading: false,
         dashboard: newDashboard ?? state.dashboard,
         wargaList: newWargaList ?? state.wargaList,
+        timesheetSummary: timesheetSummary,
         errorMessage: (newDashboard == null && newWargaList == null && cachedDashboard == null && cachedWarga == null)
             ? lastError
             : null,

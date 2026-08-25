@@ -521,6 +521,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
                                   ],
                                 ),
                               ),
+                              if (!isAktivasiBinMode)
+                                const Icon(Icons.chevron_right, size: 20, color: AppColors.textHint),
                             ],
                           ),
                           const SizedBox(height: 6),

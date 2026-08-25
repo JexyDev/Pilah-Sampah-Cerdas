@@ -10,6 +10,9 @@ import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../controllers/fasilitas_kkn_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../auth/controllers/auth_controller.dart';
+
+import 'package:flutter/services.dart';
 
 class RegisterFasilitasView extends ConsumerStatefulWidget {
   const RegisterFasilitasView({super.key});
@@ -150,7 +153,15 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Harap lengkapi semua field yang wajib diisi.'),
+          backgroundColor: AppColors.warningYellow,
+        ),
+      );
+      return;
+    }
     if (_selectedJenis == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -163,7 +174,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap ambil koordinat lokasi fasilitas.'),
+          content: Text('Harap tentukan titik koordinat GPS lokasi fasilitas.'),
           backgroundColor: AppColors.warningYellow,
         ),
       );
@@ -172,22 +183,26 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     if (_photoPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap unggah foto fasilitas.'),
+          content: Text('Harap lampirkan foto fasilitas.'),
           backgroundColor: AppColors.warningYellow,
         ),
       );
       return;
     }
 
+    final user = ref.read(authProvider).user;
+    final targetRwId = int.tryParse(user?.rw ?? '') ?? 0;
+    final safeKapasitas = int.tryParse(_kapasitasController.text.trim()) ?? 0;
+
     final success = await ref
         .read(fasilitasKknProvider.notifier)
         .registerFasilitas(
-          nama: _namaController.text,
-          pic: _picController.text,
-          kontak: _kontakController.text,
-          kapasitas: int.tryParse(_kapasitasController.text) ?? 0,
-          alamat: _alamatController.text,
-          rwId: 0,
+          nama: _namaController.text.trim(),
+          pic: _picController.text.trim(),
+          kontak: _kontakController.text.trim(),
+          kapasitas: safeKapasitas,
+          alamat: _alamatController.text.trim(),
+          rwId: targetRwId,
           jenis: _selectedJenis!,
           latitude: _selectedLocation!.latitude,
           longitude: _selectedLocation!.longitude,
@@ -201,7 +216,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
           backgroundColor: AppColors.primaryGreen,
         ),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     }
   }
 
@@ -245,7 +260,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     child: Row(
                       children: [
                         const Text(
-                          'Pilih Jenis Failitas',
+                          'Pilih Jenis Fasilitas',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -532,10 +547,17 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     const SizedBox(height: 8),
                     _StyledTextField(
                       controller: _picController,
-                      hintText: 'Nama Warga / Pengelola Fasilitas (cth: Ibu Siti)',
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Nama PIC warga wajib diisi'
-                          : null,
+                      hintText:
+                          'Nama Warga / Pengelola Fasilitas (cth: Ibu Siti)',
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Nama PIC / Pengelola Warga wajib diisi';
+                        }
+                        if (val.trim().length < 3) {
+                          return 'Nama PIC minimal 3 karakter';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: AppDimensions.md),
 
@@ -565,6 +587,12 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                       controller: _kapasitasController,
                       hintText: 'Masukkan Kapasitas',
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(
+                          7,
+                        ), // Maksimal 9.999.999
+                      ],
                       validator: (val) => (val == null || val.isEmpty)
                           ? 'Kapasitas wajib diisi'
                           : null,
@@ -1071,12 +1099,14 @@ class _StyledTextField extends StatelessWidget {
     required this.hintText,
     this.validator,
     this.keyboardType,
+    this.inputFormatters,
     this.maxLines = 1,
   });
   final TextEditingController controller;
   final String hintText;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final int maxLines;
 
   @override
@@ -1085,6 +1115,7 @@ class _StyledTextField extends StatelessWidget {
       controller: controller,
       validator: validator,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       maxLines: maxLines,
       decoration: InputDecoration(
         hintText: hintText,
