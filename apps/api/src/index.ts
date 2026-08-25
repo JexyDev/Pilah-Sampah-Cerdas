@@ -16,6 +16,7 @@ import { prisma } from "./lib/prisma.js";
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
+// CI/CD trigger: Synchronized release deployment
 
 import express from "express";
 import cookieParser from "cookie-parser";
