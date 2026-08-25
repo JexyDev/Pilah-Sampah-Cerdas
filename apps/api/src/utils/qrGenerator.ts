@@ -38,9 +38,40 @@ export function formatCurrentDateDDMMYY(d: Date = new Date()): string {
 }
 
 /**
+ * Mencari nomor urut (sequence) tertinggi untuk kode QR standar BERSEKA (prefix BSK-).
+ * Jika belum ada kode BSK di database, nomor urut dasar dimulai dari 999 sehingga kode pertama adalah 1000.
+ */
+export async function getGlobalHighestSequence(tx: any = prisma): Promise<number> {
+  const bskBins = await tx.bin.findMany({
+    where: {
+      qrCode: {
+        startsWith: "BSK-",
+      },
+    },
+    select: { qrCode: true },
+  });
+
+  let maxSeq = 999; // Nomor urut dasar, sehingga QR pertama adalah 1000
+  for (const bin of bskBins) {
+    const code = bin.qrCode || "";
+    const parts = code.split("-");
+    if (parts.length >= 4) {
+      const lastPart = parts[parts.length - 1];
+      const cleaned = lastPart.replace(/\D/g, "");
+      const parsed = parseInt(cleaned, 10);
+      if (!isNaN(parsed) && parsed > maxSeq) {
+        maxSeq = parsed;
+      }
+    }
+  }
+
+  return maxSeq;
+}
+
+/**
  * Generate kode QR unik BERSEKA dengan format: BSK-[CATEGORY]-[DDMMYY]-[SEQUENCE]
- * Contoh: BSK-OGN-140226-1000 atau BSK-AGN-250826-1001
- * Dilengkapi proteksi anti-duplikasi otomatis by system.
+ * Contoh: BSK-OGN-250826-1000, BSK-AGN-250826-1001, BSK-OGN-250826-1002
+ * Dilengkapi proteksi anti-duplikasi otomatis by system dengan nomor urut global terpadu.
  */
 export async function generateNextQrCode(categoryId: string): Promise<string> {
   let catName = categoryId;
@@ -56,29 +87,8 @@ export async function generateNextQrCode(categoryId: string): Promise<string> {
   const codeTag = getCategoryCodeTag(catName);
   const dateStr = formatCurrentDateDDMMYY();
 
-  // Cari semua bin dengan prefix BSK-{codeTag}- untuk mencari sequence tertinggi
-  const allMatchingBins = await prisma.bin.findMany({
-    where: {
-      qrCode: {
-        startsWith: `BSK-${codeTag}-`,
-      },
-    },
-    select: { qrCode: true },
-  });
-
-  let maxSeq = 999; // Base agar nomor awal mulai dari 1000
-  for (const bin of allMatchingBins) {
-    const parts = bin.qrCode.split("-");
-    const lastPart = parts[parts.length - 1];
-    if (lastPart) {
-      const cleaned = lastPart.replace(/\D/g, "");
-      const parsed = parseInt(cleaned, 10);
-      if (!isNaN(parsed) && parsed > maxSeq) {
-        maxSeq = parsed;
-      }
-    }
-  }
-
+  // Cari sequence global tertinggi di database untuk prefix BSK-
+  const maxSeq = await getGlobalHighestSequence(prisma);
   let nextSeq = maxSeq + 1;
   let qrCode = `BSK-${codeTag}-${dateStr}-${nextSeq}`;
 

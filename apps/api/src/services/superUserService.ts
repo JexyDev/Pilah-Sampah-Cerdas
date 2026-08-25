@@ -7,7 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { BinStatus } from "@prisma/client";
-import { getCategoryCodeTag, formatCurrentDateDDMMYY } from "../utils/qrGenerator.js";
+import { getCategoryCodeTag, formatCurrentDateDDMMYY, getGlobalHighestSequence } from "../utils/qrGenerator.js";
 
 
 export class SuperUserService {
@@ -301,29 +301,8 @@ export class SuperUserService {
       const codeTag = getCategoryCodeTag(catName);
       const dateStr = formatCurrentDateDDMMYY();
 
-      // Cari semua bin dengan prefix BSK-{codeTag}- untuk mencari sequence tertinggi
-      const allMatchingBins = await tx.bin.findMany({
-        where: {
-          qrCode: {
-            startsWith: `BSK-${codeTag}-`,
-          },
-        },
-        select: { qrCode: true },
-      });
-
-      let maxSeq = 999;
-      for (const b of allMatchingBins) {
-        const parts = b.qrCode.split("-");
-        const lastPart = parts[parts.length - 1];
-        if (lastPart) {
-          const cleaned = lastPart.replace(/\D/g, "");
-          const parsed = parseInt(cleaned, 10);
-          if (!isNaN(parsed) && parsed > maxSeq) {
-            maxSeq = parsed;
-          }
-        }
-      }
-
+      // Cari sequence global tertinggi di seluruh sistem basis data
+      const maxSeq = await getGlobalHighestSequence(tx);
       let currentSeq = maxSeq + 1;
       const binsData = [];
       for (let i = 0; i < totalQr; i++) {
