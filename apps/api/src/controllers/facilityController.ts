@@ -31,17 +31,35 @@ export class FacilityController {
         return;
       }
 
-      // Auto-resolve kelompokId jika MAHASISWA_KKN
+      // Auto-resolve kelompokId & rwId jika MAHASISWA_KKN
       let kelompokId: string | undefined;
+      let targetRwId: number | undefined =
+        rwId !== undefined && !isNaN(Number(rwId)) && Number(rwId) > 0
+          ? Number(rwId)
+          : undefined;
+
       if (peran === "MAHASISWA_KKN" && userId) {
         const student = await prisma.studentKkn.findUnique({
           where: { userId },
-          select: { kelompokId: true },
+          include: { kelompok: true, assignedRw: true },
         });
         kelompokId = student?.kelompokId ?? undefined;
+
+        if (!targetRwId) {
+          if (student?.assignedRwId) {
+            targetRwId = student.assignedRwId;
+          } else if (student?.kelompok?.cakupanRw) {
+            try {
+              const parsed =
+                typeof student.kelompok.cakupanRw === "string"
+                  ? JSON.parse(student.kelompok.cakupanRw)
+                  : student.kelompok.cakupanRw;
+              if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
+            } catch (_) {}
+          }
+        }
       }
 
-      let targetRwId: number | undefined = rwId !== undefined && !isNaN(Number(rwId)) ? Number(rwId) : undefined;
       if (!targetRwId && (req as any).user?.rwId) {
         targetRwId = Number((req as any).user.rwId);
       }

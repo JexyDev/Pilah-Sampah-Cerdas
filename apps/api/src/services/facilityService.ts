@@ -66,7 +66,7 @@ export const facilityService = {
         foto,
         kontak: resolvedKontak,
         alamat: alamat || null,
-        rwId: rwId !== undefined && !isNaN(Number(rwId)) ? Number(rwId) : null,
+        rwId: rwId !== undefined && !isNaN(Number(rwId)) && Number(rwId) > 0 ? Number(rwId) : null,
         kapasitas: kapasitas !== undefined ? Number(kapasitas) : null,
         latitude: latitude !== undefined ? Number(latitude) : 0.0,
         longitude: longitude !== undefined ? Number(longitude) : 0.0,

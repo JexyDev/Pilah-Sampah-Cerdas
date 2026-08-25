@@ -100,7 +100,7 @@ export const getDisplayPic = (item: FacilityItem): {
       name: rawPic,
       roleBadge: "Warga Pengelola",
       isWarga: true,
-      registeredByName: regName && regName.toLowerCase() !== rawPic.toLowerCase() ? regName : undefined,
+      registeredByName: regName || undefined,
       contact: directPhone,
     };
   }
@@ -114,7 +114,7 @@ export const getDisplayPic = (item: FacilityItem): {
     name: defaultWargaLabel,
     roleBadge: "Warga Pengelola",
     isWarga: true,
-    registeredByName: regName,
+    registeredByName: regName || undefined,
     contact: directPhone || regPhone,
   };
 };

@@ -938,7 +938,7 @@ export class KknService {
       const rawRw = String(data.rwId).trim();
       const numRw = parseInt(rawRw.replace(/\D/g, ""), 10);
 
-      if (!isNaN(numRw)) {
+      if (!isNaN(numRw) && numRw > 0) {
         const directRw = await prisma.rw.findUnique({ where: { id: numRw } });
         if (directRw) {
           targetRwId = directRw.id;
