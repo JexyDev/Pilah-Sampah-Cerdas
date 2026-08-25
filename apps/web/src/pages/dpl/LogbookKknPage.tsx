@@ -485,7 +485,7 @@ export const LogbookKknPage: React.FC = () => {
                 </div>
                 {groups.length === 1 && (
                   <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300">
-                    {groups[0].name} ({groups[0].kelurahan || "Coblong"})
+                    {groups[0].name} ({groups[0].kelurahan || "-"})
                   </span>
                 )}
               </div>
@@ -963,9 +963,10 @@ export const LogbookKknPage: React.FC = () => {
               {selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 items-center">
                   {selectedItemDetail.anggotaKelompok.map((st) => {
-                    const isPenulis =
-                      st.name === selectedItemDetail.penulisNama ||
-                      (selectedItemDetail.penulisNim && st.name.includes(selectedItemDetail.penulisNama));
+                    const isPenulis = Boolean(
+                      (st.userId && st.userId === selectedItemDetail.penulisId) ||
+                      (st.id && st.id === selectedItemDetail.penulisId)
+                    );
                     return (
                       <span
                         key={st.id}

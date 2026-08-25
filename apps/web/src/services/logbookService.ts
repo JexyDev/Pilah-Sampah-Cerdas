@@ -33,7 +33,7 @@ export interface LogbookMahasiswaItem {
   programKerjaKategori?: string | null;
   fasilitasId?: string | null;
   fasilitasNama?: string | null;
-  anggotaKelompok?: Array<{ id: string; name: string; isKetua: boolean }>;
+  anggotaKelompok?: Array<{ id: string; userId?: string; nim?: string; name: string; isKetua: boolean }>;
   disetujuiKetuaOleh?: string | null;
   disetujuiKetuaPada?: string | null;
   catatanKetua?: string | null;

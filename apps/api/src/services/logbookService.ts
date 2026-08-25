@@ -193,6 +193,8 @@ export class LogbookService {
             students: {
               select: {
                 id: true,
+                userId: true,
+                nim: true,
                 isKetua: true,
                 user: {
                   select: {
@@ -257,6 +259,8 @@ export class LogbookService {
       fasilitasNama: item.fasilitas?.nama || null,
       anggotaKelompok: item.kelompok?.students?.filter((s) => s.user).map((s) => ({
         id: s.id,
+        userId: s.userId || s.user?.id,
+        nim: s.nim || "-",
         name: s.user?.name || "Mahasiswa",
         isKetua: Boolean(s.isKetua),
       })) || [],
