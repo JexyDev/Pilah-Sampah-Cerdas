@@ -28,6 +28,8 @@ apps/web/dist/
 *.sqlite3
 *.db
 *.dump
+database/
+database/*.sql
 vps_db_dump.sql
 vps_users_real.json
 fetch_users.js
