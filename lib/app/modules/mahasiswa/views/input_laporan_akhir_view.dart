@@ -74,6 +74,19 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: AppColors.primaryGreen),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (ctx) => const _RiwayatLaporanAkhirSheet(),
+              );
+            },
+          )
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -138,3 +151,214 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
     );
   }
 }
+
+final programKerjaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.read(kknRepositoryProvider);
+  return repo.getProgramKerja();
+});
+
+class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
+  const _RiwayatLaporanAkhirSheet();
+
+  String _formatDate(String isoString) {
+    try {
+      final date = DateTime.parse(isoString);
+      return "${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}";
+    } catch (_) {
+      return isoString.split('T').first;
+    }
+  }
+
+  Widget _buildUsulanBadge(String? statusUsulan, String? legacyStatus) {
+    String u = (statusUsulan ?? '').toUpperCase();
+    final leg = (legacyStatus ?? '').toUpperCase();
+    if (u.isEmpty) {
+      if (leg == 'DITERIMA' || leg == 'DISETUJUI' || leg == 'SEDANG_BERJALAN' || leg == 'SELESAI') {
+        u = 'DISETUJUI';
+      } else if (leg == 'DITOLAK' || leg == 'TIDAK_DISETUJUI') {
+        u = 'DITOLAK';
+      } else {
+        u = 'BELUM_DISETUJUI';
+      }
+    }
+
+    Color color;
+    String label;
+    IconData icon;
+
+    if (u == 'DISETUJUI' || u == 'DITERIMA') {
+      color = AppColors.primaryGreen;
+      label = 'Disetujui';
+      icon = Icons.check_circle;
+    } else if (u == 'DITOLAK' || u == 'TIDAK_DISETUJUI') {
+      color = AppColors.dangerRed;
+      label = 'Ditolak';
+      icon = Icons.cancel;
+    } else {
+      color = AppColors.warningYellow;
+      label = 'Menunggu';
+      icon = Icons.access_time;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prokerState = ref.watch(programKerjaListProvider);
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Riwayat Laporan Akhir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1),
+          Expanded(
+            child: prokerState.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text(err.toString(), style: const TextStyle(color: AppColors.dangerRed))),
+              data: (rawList) {
+                final list = rawList.where((item) {
+                  final kat = item['kategori']?.toString().toUpperCase() ?? '';
+                  return kat == 'LAPORAN_AKHIR';
+                }).toList();
+
+                if (list.isEmpty) {
+                  return const Center(child: Text('Belum ada laporan akhir yang diajukan.'));
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: list.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final item = list[index];
+                    final judulStr = item['judul']?.toString() ?? '-';
+                    final deskripsi = item['deskripsi']?.toString() ?? '-';
+                    final statusUsulan = item['statusUsulan'] ?? item['status_usulan'];
+                    final legacyStatus = item['status']?.toString();
+                    final catatanDpl = item['catatanDpl'] ?? item['catatan_dpl'];
+                    final createdAtStr = item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
+
+                    return Card(
+                      elevation: 1.5,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(judulStr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            const SizedBox(height: 4),
+                            Text(deskripsi, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.withValues(alpha: 0.4)),
+                                  ),
+                                  child: const Text('LAPORAN_AKHIR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                                ),
+                                _buildUsulanBadge(statusUsulan, legacyStatus),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            if (createdAtStr != null)
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Diajukan Pada: ${_formatDate(createdAtStr)}',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.backgroundCanvas,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.feedback_outlined, size: 16, color: AppColors.dangerRed),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        'Catatan DPL: $catatanDpl',
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

@@ -7,7 +7,7 @@ import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
-
+import '../../../data/models/user_entity.dart';
 
 /// Layar login — nomor telepon + password.
 class LoginView extends ConsumerStatefulWidget {
@@ -88,12 +88,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final password = _passwordController.text;
 
     if (identifier.isEmpty && password.isEmpty) {
-      _showToast('Nomor Telepon dan Kata Sandi wajib diisi');
+      _showToast('Nomor Telepon atau NIM, serta Kata Sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (identifier.isEmpty) {
-      _showToast('Nomor Telepon wajib diisi');
+      _showToast('Nomor Telepon atau NIM wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -116,13 +116,29 @@ class _LoginViewState extends ConsumerState<LoginView> {
     if (ok && mounted) {
       final user = ref.read(authProvider).user;
       if (user != null) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+        if (user.role == UserRole.mahasiswaKkn && password == user.nim) {
+          Navigator.of(context).pushReplacementNamed(
+            AppRoutes.forceChangePassword,
+            arguments: normalized,
+          );
+        } else {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+        }
       } else {
         Navigator.of(context).pushReplacementNamed(AppRoutes.main);
       }
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Nomor telepon atau kata sandi salah. Silakan coba lagi.';
+
+      if (authState.errorCode == 'REQUIRE_PASSWORD_CHANGE') {
+        Navigator.of(context).pushReplacementNamed(
+          AppRoutes.forceChangePassword,
+          arguments: normalized,
+        );
+        return;
+      }
+
+      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
@@ -294,7 +310,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'Nomor telepon wajib diisi';
+                                    return 'Nomor telepon atau NIM wajib diisi';
                                   }
                                   final clean = v.trim().replaceAll(RegExp(r'[^\d]'), '');
                                   if (clean.length >= 8 && clean.length <= 16) {

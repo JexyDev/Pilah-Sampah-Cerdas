@@ -7,6 +7,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String main = '/main';
+  static const String forceChangePassword = '/force-change-password';
   static const String onboarding = '/onboarding';
   static const String dashboard = '/main';
   static const String scan = '/scan';
@@ -49,5 +50,6 @@ class AppRoutes {
   static const String catatPanen = '/mahasiswa/pemanfaatan/panen';
   static const String inputLaporanAkhir = '/mahasiswa/laporan-akhir/input';
   static const String inputLogbookKkn = '/mahasiswa/logbook-kkn/input';
+  static const String ketersediaanQr = '/ketersediaan-qr';
 }
 

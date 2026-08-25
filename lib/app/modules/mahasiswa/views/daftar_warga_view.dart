@@ -34,14 +34,10 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
       if (_activationFilterIndex == 1 && !w.isActivated) return false;
       if (_activationFilterIndex == 2 && w.isActivated) return false;
 
-      // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut dan pastikan RW sama.
-      final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final cleanUserRw = userRw.trim().replaceFirst(RegExp(r'^0+'), '');
-      
-      final isMyCitizen = w.pendampingName.trim().toLowerCase() == userName.trim().toLowerCase();
-      final isMyRw = cleanUserRw.isEmpty || cleanWargaRw == cleanUserRw;
+      // Filter QC: Tampilkan HANYA warga si mahasiswa tersebut.
+      final isMyCitizen = w.mahasiswaId == userId;
 
-      return isMyCitizen && isMyRw;
+      return isMyCitizen;
     }).map((w) {
       // Selaraskan alamat warga ke wilayah penugasan mahasiswa jika data mentah backend masih umum
       final targetKel = userKelurahan;

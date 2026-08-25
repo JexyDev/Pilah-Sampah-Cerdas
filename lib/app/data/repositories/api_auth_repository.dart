@@ -114,6 +114,11 @@ class ApiAuthRepository implements AuthRepository {
         );
       }
       final message = e.response?.data?['message']?.toString();
+      final errorCode = e.response?.data?['errorCode']?.toString() ?? e.response?.data?['code']?.toString();
+
+      if (errorCode == 'REQUIRE_PASSWORD_CHANGE' || message?.contains('REQUIRE_PASSWORD_CHANGE') == true) {
+        throw const AuthException('REQUIRE_PASSWORD_CHANGE', 'Anda harus mengganti sandi terlebih dahulu');
+      }
       
       if (status == 401 || status == 404) {
         throw const AuthException(
@@ -682,6 +687,38 @@ class ApiAuthRepository implements AuthRepository {
       final response = await apiClient.dio.post(
         '/auth/change-password',
         data: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      }
+      throw const AuthException('CHANGE_PASSWORD_FAILED', 'Gagal mengubah kata sandi');
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      final message = e.response?.data?['message']?.toString();
+      if (status == 400) {
+        throw AuthException('WRONG_OLD_PASSWORD', message ?? 'Kata sandi lama Anda salah');
+      }
+      throw AuthException('CHANGE_PASSWORD_FAILED', message ?? 'Gagal mengubah kata sandi');
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw AuthException('UNKNOWN_ERROR', NetworkExceptionHelper.getErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<bool> forceChangePassword({
+    required String phone,
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/auth/force-change-password',
+        data: {
+          'identifier': phone,
           'oldPassword': oldPassword,
           'newPassword': newPassword,
         },

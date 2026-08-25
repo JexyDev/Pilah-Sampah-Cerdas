@@ -559,9 +559,11 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'longitude': lng,
         'scheduleId': _scheduleId,
         'timestamp': DateTime.now().toIso8601String(),
-        // [BUGFIX] Key harus sama persis dengan yang dibaca backend
-        // (main/apps/api/src/routes/kknAttendanceRoutes.ts: req.body.accumulatedDuration).
-        if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
+        if (accumulatedSeconds != null) ...{
+          'accumulatedDuration': accumulatedSeconds,
+          'accumulatedDurationSeconds': accumulatedSeconds,
+          'inZoneSeconds': accumulatedSeconds,
+        },
       });
       
       request.write(payload);

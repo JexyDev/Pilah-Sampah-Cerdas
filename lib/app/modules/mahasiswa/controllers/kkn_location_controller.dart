@@ -1017,8 +1017,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
   }
 
-  /// Force immediate location & target refresh on demand (Pull-to-refresh / Button / App Resume)
   Future<void> forceLocationUpdate([BuildContext? context]) async {
+    if (!state.isTracking) {
+      await fetchKegiatanAktif();
+      return;
+    }
+
     if (state.isTracking) {
       // Bug #10 fix: simpan scheduleId aktif agar tidak hilang setelah restart
       final savedScheduleId = _currentTargetScheduleId;

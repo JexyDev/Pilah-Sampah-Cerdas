@@ -266,6 +266,19 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: isAktivasiBinMode 
+            ? [
+                TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/ketersediaan-qr'),
+                  icon: const Icon(Icons.qr_code_2, color: AppColors.primaryGreen, size: 20),
+                  label: const Text(
+                    'Daftar QR',
+                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ]
+            : null,
       ),
       body: RefreshIndicator(
         onRefresh: () async {

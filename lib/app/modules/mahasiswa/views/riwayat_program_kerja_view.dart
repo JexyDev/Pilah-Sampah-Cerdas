@@ -191,7 +191,12 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
       body: prokerState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text(err.toString(), style: const TextStyle(color: AppColors.dangerRed))),
-        data: (list) {
+        data: (rawList) {
+          final list = rawList.where((item) {
+            final kat = item['kategori']?.toString().toUpperCase() ?? '';
+            return kat != 'LAPORAN_AKHIR';
+          }).toList();
+
           if (list.isEmpty) {
             return const Center(child: Text('Belum ada program kerja yang diajukan.'));
           }
