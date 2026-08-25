@@ -11,6 +11,7 @@
 import { prisma } from "../lib/prisma.js";
 import { StatusLogbookKkn, TipeAktivitasKkn } from "@prisma/client";
 import { getKelompokWhere } from "./dplService.js";
+import { configService } from "./configService.js";
 
 // Target standar logbook per kelompok selama KKN (misal: 6 hari/pekan x 4 pekan = 24 aktivitas)
 const DEFAULT_LOGBOOK_TARGET = 24;
@@ -726,7 +727,13 @@ export class LogbookService {
    * Formula: (Total Disetujui / Target 24) x 100
    * Terintegrasi dengan modul Penilaian Akademik DPL (Bobot 20% DPL / 30% Nilai Akhir)
    */
-  async getLogbookComplianceScore(kelompokId: string, targetCount = DEFAULT_LOGBOOK_TARGET) {
+  async getLogbookComplianceScore(kelompokId: string, targetCount?: number) {
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const effectiveTarget = targetCount && targetCount > 0
+      ? targetCount
+      : (ruleConfigs?.logbookTargetKegiatan || DEFAULT_LOGBOOK_TARGET);
+    const effectiveBobot = ruleConfigs?.logbookBobotPersen || 20;
+
     // Mode Agregat Seluruh Kelompok jika "ALL"
     if (!kelompokId || kelompokId === "ALL" || kelompokId.trim() === "") {
       const allGroups = await prisma.kelompokKkn.findMany({
@@ -768,7 +775,7 @@ export class LogbookService {
           const gTotal = await prisma.logbookKkn.count({
             where: { kelompokId: g.id },
           });
-          const gRate = Math.min(100, Math.round((gApproved / targetCount) * 100));
+          const gRate = Math.min(100, Math.round((gApproved / effectiveTarget) * 100));
           return {
             id: g.id,
             name: g.name,
@@ -777,19 +784,19 @@ export class LogbookService {
             studentCount: g._count.students,
             totalSubmitted: gTotal,
             approvedCount: gApproved,
-            targetCount,
+            targetCount: effectiveTarget,
             complianceRate: gRate,
-            isTargetMet: gApproved >= targetCount,
+            isTargetMet: gApproved >= effectiveTarget,
           };
         })
       );
 
-      const calculatedScore = targetCount > 0 ? Math.min(100, Math.round((approvedCount / (targetCount * Math.max(1, allGroups.length))) * 100)) : 0;
+      const calculatedScore = effectiveTarget > 0 ? Math.min(100, Math.round((approvedCount / (effectiveTarget * Math.max(1, allGroups.length))) * 100)) : 0;
 
       return {
         isAggregate: true,
         kelompok: null,
-        targetCount,
+        targetCount: effectiveTarget,
         totalSubmitted,
         approvedCount,
         pendingKetuaCount,
@@ -798,23 +805,23 @@ export class LogbookService {
         complianceRate: calculatedScore,
         calculatedScore,
         isTargetMet: calculatedScore >= 100,
-        shortageCount: Math.max(0, targetCount - approvedCount),
+        shortageCount: Math.max(0, effectiveTarget - approvedCount),
         pekanBreakdown: {
-          1: { total: 0, approved: 0, pending: 0, target: 6, completionRate: 0, isMet: false },
-          2: { total: 0, approved: 0, pending: 0, target: 6, completionRate: 0, isMet: false },
-          3: { total: 0, approved: 0, pending: 0, target: 6, completionRate: 0, isMet: false },
-          4: { total: 0, approved: 0, pending: 0, target: 6, completionRate: 0, isMet: false },
+          1: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+          2: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+          3: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+          4: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
         },
         studentsList: [],
         recentApprovedActivities: [],
         groupsSummary,
         gradingIntegration: {
-          targetAktivitas: targetCount,
+          targetAktivitas: effectiveTarget,
           aktivitasTerverifikasi: approvedCount,
           skorDasarLogbook: calculatedScore,
-          bobotDplPersen: 20,
-          kontribusiPoinDpl: Number(((calculatedScore * 20) / 100).toFixed(1)),
-          kontribusiNilaiAkhirKkn: Number((((calculatedScore * 20) / 100) * 0.3).toFixed(2)),
+          bobotDplPersen: effectiveBobot,
+          kontribusiPoinDpl: Number(((calculatedScore * effectiveBobot) / 100).toFixed(1)),
+          kontribusiNilaiAkhirKkn: Number((((calculatedScore * effectiveBobot) / 100) * 0.3).toFixed(2)),
           statusSyaratNilai: calculatedScore >= 100 ? "MEMENUHI_SYARAT" : "BELUM_MEMENUHI",
           statusLabel: calculatedScore >= 100 ? "Prasyarat Terpenuhi (Lolos)" : "Belum Mencapai Target Standar",
         },
@@ -871,7 +878,7 @@ export class LogbookService {
       _count: { id: true },
     });
 
-    const targetPerWeek = Math.max(1, Math.ceil(targetCount / 4)); // default 6 aktivitas/pekan
+    const targetPerWeek = Math.max(1, Math.ceil(effectiveTarget / 4)); // e.g. 6 aktivitas/pekan untuk target 24
     const pekanBreakdown: Record<number, {
       total: number;
       approved: number;
@@ -959,12 +966,12 @@ export class LogbookService {
       catatanDpl: log.catatanDpl || null,
     }));
 
-    const calculatedScore = Math.min(100, Math.round((approvedCount / targetCount) * 100));
-    const isTargetMet = approvedCount >= targetCount;
-    const shortageCount = Math.max(0, targetCount - approvedCount);
+    const calculatedScore = Math.min(100, Math.round((approvedCount / effectiveTarget) * 100));
+    const isTargetMet = approvedCount >= effectiveTarget;
+    const shortageCount = Math.max(0, effectiveTarget - approvedCount);
 
-    const kontribusiPoinDpl = Number(((calculatedScore * 20) / 100).toFixed(1)); // 0 - 20.0 poin
-    const kontribusiNilaiAkhirKkn = Number((kontribusiPoinDpl * 0.3).toFixed(2)); // 0 - 6.00 poin
+    const kontribusiPoinDpl = Number(((calculatedScore * effectiveBobot) / 100).toFixed(1)); // misal 0 - 20.0 poin
+    const kontribusiNilaiAkhirKkn = Number((kontribusiPoinDpl * 0.3).toFixed(2)); // misal 0 - 6.00 poin
 
     const ketuaStudent = kelompok?.students.find((s) => s.isKetua);
 
@@ -983,7 +990,7 @@ export class LogbookService {
             studentCount: kelompok.students.length,
           }
         : null,
-      targetCount,
+      targetCount: effectiveTarget,
       totalSubmitted,
       approvedCount,
       pendingKetuaCount,
@@ -997,10 +1004,10 @@ export class LogbookService {
       studentsList,
       recentApprovedActivities,
       gradingIntegration: {
-        targetAktivitas: targetCount,
+        targetAktivitas: effectiveTarget,
         aktivitasTerverifikasi: approvedCount,
         skorDasarLogbook: calculatedScore,
-        bobotDplPersen: 20,
+        bobotDplPersen: effectiveBobot,
         kontribusiPoinDpl,
         kontribusiNilaiAkhirKkn,
         statusSyaratNilai: isTargetMet ? "MEMENUHI_SYARAT" : "BELUM_MEMENUHI",
@@ -1008,7 +1015,7 @@ export class LogbookService {
           ? "Prasyarat Terpenuhi (Lolos Syarat Nilai Akhir)"
           : `Belum Mencapai Target (Kurang ${shortageCount} Aktivitas)`,
         rekomendasi: isTargetMet
-          ? "Target logbook telah terpenuhi. Nilai kepatuhan 100% siap ditransfer ke form Penilaian KKN DPL."
+          ? `Target ${effectiveTarget} logbook telah terpenuhi. Nilai kepatuhan 100% siap ditransfer ke form Penilaian KKN DPL.`
           : `Kelompok masih membutuhkan ${shortageCount} aktivitas yang diverifikasi DPL agar prasyarat kelulusan akademik terpenuhi.`,
       },
     };

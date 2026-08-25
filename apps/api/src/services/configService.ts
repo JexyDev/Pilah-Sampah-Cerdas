@@ -77,6 +77,9 @@ export class ConfigService {
       "attendance_geofence_buffer_meters",
       "attendance_geofence_invalidation_hours",
       "attendance_auto_hadir_outside_zone",
+      "logbook_target_kegiatan",
+      "logbook_backdate_tolerance_days",
+      "logbook_bobot_persen",
     ];
 
     const records = await prisma.systemConfig.findMany({
@@ -131,6 +134,11 @@ export class ConfigService {
       attendanceGeofenceBufferMeters: parseInt(map["attendance_geofence_buffer_meters"] || "15", 10),
       attendanceGeofenceInvalidationHours: parseInt(map["attendance_geofence_invalidation_hours"] || "2", 10),
       attendanceAutoHadirOutsideZone: map["attendance_auto_hadir_outside_zone"] !== "false",
+
+      // Rule 7: Standar Logbook KKN & Prasyarat Nilai DPL
+      logbookTargetKegiatan: parseInt(map["logbook_target_kegiatan"] || "24", 10),
+      logbookBackdateToleranceDays: parseInt(map["logbook_backdate_tolerance_days"] || "1", 10),
+      logbookBobotPersen: parseInt(map["logbook_bobot_persen"] || "20", 10),
     };
   }
 
@@ -197,6 +205,9 @@ export class ConfigService {
       { key: "attendance_geofence_buffer_meters", value: String(data.attendanceGeofenceBufferMeters ?? 15) },
       { key: "attendance_geofence_invalidation_hours", value: String(data.attendanceGeofenceInvalidationHours ?? 2) },
       { key: "attendance_auto_hadir_outside_zone", value: String(data.attendanceAutoHadirOutsideZone ?? true) },
+      { key: "logbook_target_kegiatan", value: String(data.logbookTargetKegiatan ?? 24) },
+      { key: "logbook_backdate_tolerance_days", value: String(data.logbookBackdateToleranceDays ?? 1) },
+      { key: "logbook_bobot_persen", value: String(data.logbookBobotPersen ?? 20) },
     ];
 
     for (const item of pairs) {

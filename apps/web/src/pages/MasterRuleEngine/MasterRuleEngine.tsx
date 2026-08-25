@@ -23,6 +23,7 @@ import {
   Info,
   Plus,
   Trash2,
+  BookOpen,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -46,6 +47,9 @@ export interface RuleEngineConfig {
   kknEndDate: string;
   kknAutoHolidayWeekends: boolean;
   kknHolidays: Array<{ date: string; description: string }>;
+  logbookTargetKegiatan: number;
+  logbookBackdateToleranceDays: number;
+  logbookBobotPersen: number;
 }
 
 const DEFAULT_CONFIG: RuleEngineConfig = {
@@ -69,6 +73,9 @@ const DEFAULT_CONFIG: RuleEngineConfig = {
   kknHolidays: [
     { date: "2026-08-17", description: "HUT Kemerdekaan RI Ke-81" }
   ],
+  logbookTargetKegiatan: 24,
+  logbookBackdateToleranceDays: 1,
+  logbookBobotPersen: 20,
 };
 
 const MasterRuleEngine: React.FC = () => {
@@ -856,6 +863,115 @@ const MasterRuleEngine: React.FC = () => {
                   <span>Jadwal pada hari libur tidak akan memotong persentase presensi mahasiswa KKN</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ========================================== */}
+          {/* RULE 5: STANDAR LOGBOOK & PRASYARAT NILAI DPL */}
+          {/* ========================================== */}
+          <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-5 shadow-2xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/60 shrink-0">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 dark:text-slate-100">5. Standar Logbook KKN &amp; Prasyarat Nilai Akademik DPL</h2>
+                  <p className="text-[11px] font-semibold text-slate-500">
+                    Konfigurasi Target Kelulusan Aktivitas, Toleransi Backdate (H-X), dan Bobot Penilaian DPL
+                  </p>
+                </div>
+              </div>
+              <span className="bg-teal-100 text-teal-800 border border-teal-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0">
+                Logbook &amp; Prasyarat Nilai
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+              Aturan ini mengatur standar minimal aktivitas yang wajib disetujui DPL agar prasyarat nilai akhir KKN terbuka, batas toleransi pengisian tanggal lampau oleh mahasiswa, serta proporsi bobot nilai logbook pada lembar penilaian akademik DPL.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Target Aktivitas Logbook */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">
+                    Target Aktivitas Logbook
+                  </label>
+                  <span className="text-xs font-black text-teal-700 bg-teal-100 px-2 py-0.5 rounded-md">
+                    {config.logbookTargetKegiatan} Aktivitas
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={config.logbookTargetKegiatan}
+                  onChange={(e) => handleChange("logbookTargetKegiatan", parseInt(e.target.value) || 24)}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-teal-500 text-center"
+                />
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Jumlah minimal aktivitas logbook terverifikasi DPL (rata-rata {Math.ceil((config.logbookTargetKegiatan || 24) / 4)} aktivitas/pekan selama 4 pekan).
+                </p>
+              </div>
+
+              {/* Toleransi Input Backdate */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">
+                    Toleransi Backdate (H-X)
+                  </label>
+                  <span className="text-xs font-black text-teal-700 bg-teal-100 px-2 py-0.5 rounded-md">
+                    H-{config.logbookBackdateToleranceDays} Hari
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={config.logbookBackdateToleranceDays}
+                  onChange={(e) => handleChange("logbookBackdateToleranceDays", parseInt(e.target.value) || 0)}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-teal-500 text-center"
+                />
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Batas waktu mundur pengisian tanggal kegiatan logbook mahasiswa dari hari ini (0 = hanya hari ini).
+                </p>
+              </div>
+
+              {/* Bobot Nilai Logbook DPL */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">
+                    Bobot Penilaian DPL
+                  </label>
+                  <span className="text-xs font-black text-teal-700 bg-teal-100 px-2 py-0.5 rounded-md">
+                    {config.logbookBobotPersen}% DPL
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min="5"
+                  max="50"
+                  value={config.logbookBobotPersen}
+                  onChange={(e) => handleChange("logbookBobotPersen", parseInt(e.target.value) || 20)}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-teal-500 text-center"
+                />
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Persentase bobot aspek Logbook dalam penilaian akademik DPL ({config.logbookBobotPersen}% DPL = {((config.logbookBobotPersen * 0.3)).toFixed(1)} poin Nilai Akhir KKN).
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-teal-50/80 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800 flex items-center justify-between text-xs font-medium text-teal-900 dark:text-teal-200">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-teal-700 shrink-0" />
+                <span>
+                  Perubahan konfigurasi ini otomatis berlaku secara real-time pada kalkulasi Kepatuhan Logbook &amp; Form Penilaian Mahasiswa KKN.
+                </span>
+              </div>
+              <span className="font-mono font-bold text-[11px] bg-white dark:bg-slate-900 px-2 py-1 rounded border border-teal-300 dark:border-teal-700 shrink-0">
+                Formula: (Disetujui / {config.logbookTargetKegiatan}) × 100
+              </span>
             </div>
           </div>
 

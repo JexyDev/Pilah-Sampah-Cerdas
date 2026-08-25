@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { configService } from "./configService.js";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -163,7 +164,11 @@ export const penilaianKknService = {
         }).catch(() => 0)
       : 0;
 
-    // 3b. Hitung Kepatuhan Logbook KKN (Target standar: 24 aktivitas terverifikasi DPL)
+    // 3b. Hitung Kepatuhan Logbook KKN (Target standar & bobot dinamis dari Rule Engine)
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
+    const bobotLogbook = ruleConfigs?.logbookBobotPersen || 20;
+
     const approvedLogbookCount = await prisma.logbookKkn.count({
       where: {
         statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
@@ -183,7 +188,7 @@ export const penilaianKknService = {
       },
     }).catch(() => 0);
 
-    const calculatedLogbookScore = Math.min(100, Math.round((approvedLogbookCount / 24) * 100));
+    const calculatedLogbookScore = Math.min(100, Math.round((approvedLogbookCount / targetLogbook) * 100));
 
     // 4. Mitra Penilai (Ketua RW atau Mitra Lapangan)
     const namaMitra = rw?.name
@@ -239,11 +244,11 @@ export const penilaianKknService = {
       calculateAspectScore(assessment.skorMitraDampak, 10) +
       calculateAspectScore(assessment.skorMitraInisiatif, 7);
 
-    // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
+    // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook dinamis [default 20%], Analisis 20%, Output 20%, Laporan Akhir 10%)
     const subDpl =
       calculateAspectScore(assessment.skorDplPerencanaan, 20) +
       calculateAspectScore(assessment.skorDplKontribusi, 10) +
-      calculateAspectScore(assessment.skorDplLogbook, 20) +
+      calculateAspectScore(assessment.skorDplLogbook, bobotLogbook) +
       calculateAspectScore(assessment.skorDplAnalisis, 20) +
       calculateAspectScore(assessment.skorDplOutput, 20) +
       calculateAspectScore(assessment.skorDplLaporanAkhir, 10);
@@ -278,7 +283,9 @@ export const penilaianKknService = {
         approvedLogbookCount,
         totalSubmittedLogbooks,
         logbookComplianceScore: calculatedLogbookScore,
-        isLogbookValid: approvedLogbookCount >= 24,
+        isLogbookValid: approvedLogbookCount >= targetLogbook,
+        targetLogbook,
+        bobotLogbook,
       },
       assessment: {
         ...assessment,
