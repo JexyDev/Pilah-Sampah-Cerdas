@@ -751,7 +751,7 @@ const WargaDashboard: React.FC = () => {
               </p>
             </div>
             <button
-              onClick={() => navigate("/pengaturan")}
+              onClick={() => navigate("/profil")}
               className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1 cursor-pointer"
             >
               <Pencil size={16} />

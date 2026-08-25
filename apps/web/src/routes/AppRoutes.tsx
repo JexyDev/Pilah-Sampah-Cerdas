@@ -897,7 +897,7 @@ const AppRoutes: React.FC = () => {
         />
         <Route path="/notifikasi" element={<Notifikasi />} />
         <Route
-          path="/pengaturan"
+          path="/profil"
           element={
             <ProtectedRoute
               allowedRoles={[
@@ -918,6 +918,7 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/pengaturan" element={<Navigate to="/profil" replace />} />
         <Route path="/peta" element={<Navigate to="/monitoring" replace />} />
         <Route path="/evaluasi-ai" element={<Navigate to="/superUser/discrepancies" replace />} />
         <Route path="/lainnya" element={<PlaceholderPage title="Menu Lainnya" />} />
@@ -972,9 +973,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/superUser/audit" element={<Navigate to="/histori-sistem" replace />} />
         <Route path="/audit-trail" element={<Navigate to="/histori-sistem" replace />} />
         <Route path="/audit-log" element={<Navigate to="/histori-sistem" replace />} />
-        <Route path="/master-data/pengguna-daring" element={<Navigate to="/pengguna-daring" replace />} />
-        <Route path="/master-data/pengguna-online" element={<Navigate to="/pengguna-daring" replace />} />
         <Route path="/pengguna-online" element={<Navigate to="/pengguna-daring" replace />} />
+        <Route path="/master-data/pengguna-online" element={<Navigate to="/pengguna-daring" replace />} />
         <Route path="/superUser/qr-master" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />
         <Route path="/superUser/master-qr" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />
         <Route path="/qr-master" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />

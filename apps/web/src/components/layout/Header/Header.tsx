@@ -278,6 +278,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Log Aktivitas", "Dosen Pembimbing Lapangan"];
       case "/notifikasi":
         return ["Notifikasi"];
+      case "/profil":
       case "/pengaturan":
         return ["Profil"];
       case "/master-data/pengguna-online":
@@ -543,8 +544,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
         {/* User Profile Pill Card (Direct Navigation to Pengaturan) */}
         <div
-          onClick={() => navigate("/pengaturan")}
-          title="Pengaturan Profil"
+          onClick={() => navigate("/profil")}
+          title="Profil Pengguna"
           className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full pl-4 pr-1.5 py-1.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
         >
           <div className="flex flex-col items-center justify-center text-center gap-0.5">
