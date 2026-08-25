@@ -7,7 +7,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  MapPin,
   Search,
   Plus,
   Trash2,
@@ -15,7 +14,6 @@ import {
   X,
   Building2,
   Globe2,
-  ShieldCheck,
   AlertTriangle,
   Compass,
 } from "lucide-react";

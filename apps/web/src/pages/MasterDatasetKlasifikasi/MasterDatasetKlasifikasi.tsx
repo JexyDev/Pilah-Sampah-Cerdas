@@ -30,7 +30,6 @@ import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import PageHeader from "../../components/common/PageHeader";
 
 interface VpsHealthData {
   timestamp: string;

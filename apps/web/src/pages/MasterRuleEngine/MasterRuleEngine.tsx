@@ -7,7 +7,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Sliders,
   Clock,
   AlertTriangle,
   Timer,
@@ -114,22 +113,6 @@ const MasterRuleEngine: React.FC = () => {
     const updated = (config.kknHolidays || []).filter((h) => h.date !== dateToRemove);
     handleChange("kknHolidays", updated);
     showToast.info("Hari libur dihapus dari daftar");
-  };
-
-  const handleMarkTodayHoliday = () => {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const exists = (config.kknHolidays || []).some((h) => h.date === todayStr);
-    if (exists) {
-      showToast.info("Hari ini sudah tercatat sebagai hari libur");
-      return;
-    }
-    const updated = [
-      ...(config.kknHolidays || []),
-      { date: todayStr, description: "Dispensasi Libur Massal (Developer)" },
-    ].sort((a, b) => a.date.localeCompare(b.date));
-
-    handleChange("kknHolidays", updated);
-    showToast.success("Hari ini berhasil ditandai sebagai Hari Libur Massal");
   };
 
   const fetchRuleEngine = async () => {

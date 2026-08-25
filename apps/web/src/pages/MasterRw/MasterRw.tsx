@@ -7,18 +7,13 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  MapPin,
   Search,
   Plus,
   Pencil,
   Trash2,
   Loader2,
   X,
-  Building2,
-  Globe2,
-  ShieldCheck,
   AlertTriangle,
-  Compass,
   Home,
   Tag,
 } from "lucide-react";

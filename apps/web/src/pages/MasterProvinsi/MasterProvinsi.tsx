@@ -7,7 +7,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
-  MapPin,
   Search,
   Plus,
   Pencil,
@@ -15,7 +14,6 @@ import {
   Loader2,
   X,
   Globe2,
-  ShieldCheck,
   AlertTriangle,
 } from "lucide-react";
 import toast from "react-hot-toast";
