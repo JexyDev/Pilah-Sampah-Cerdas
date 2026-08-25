@@ -425,7 +425,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
-              Sistem tata kelola pemilahan sampah cerdas berbasis kecerdasan buatan (AI) dan partisipasi masyarakat terpadu. Menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN, Dosen Pembimbing Lapangan (DPL), pihak kelurahan, kecamatan, hingga Dinas Lingkungan Hidup.
+              Sistem tata kelola pemilahan sampah cerdas berbasis kecerdasan buatan (AI) dan partisipasi masyarakat terpadu. Menghubungkan warga, pengurus RW, petugas pemilah, mahasiswa KKN, Dosen Pembimbing Lapangan (DPL), pihak kelurahan, kecamatan, hingga Dinas Lingkungan Hidup.
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
@@ -1262,7 +1262,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 0 && (
                 <div className="faq-answer">
                   <p>
-                    BERSEKA (Bersih, Sehat, Kampung Asri) merupakan sistem tata kelola pemilahan sampah cerdas terpadu di Kecamatan Coblong yang menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN UNIKOM, dan instansi pemerintah melalui pemindaian QR Code Tempat Sampah fisik dan verifikasi berbasis AI.
+                    BERSEKA (Bersih, Sehat, Kampung Asri) merupakan sistem tata kelola pemilahan sampah cerdas terpadu di Kecamatan Coblong yang menghubungkan warga, pengurus RW, petugas pemilah, mahasiswa KKN UNIKOM, dan instansi pemerintah melalui pemindaian Kode QR Tempat Sampah fisik dan verifikasi berbasis AI.
                   </p>
                 </div>
               )}
