@@ -790,6 +790,8 @@ export default function SetorSampah() {
                     +{Math.round(selectedLog.poin)} Pts
                   </div>
                 </div>
+              </div>
+
               {/* AI Inference / Telemetry Breakdown Card */}
               {selectedLog.confidence !== null && selectedLog.confidence !== undefined ? (
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
