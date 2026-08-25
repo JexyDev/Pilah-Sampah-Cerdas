@@ -186,17 +186,23 @@ export const LogAktivitasDpl: React.FC = () => {
   useEffect(() => {
     if (!formTanggal || timelineWeeks.length === 0) return;
     try {
-      const selectedDate = new Date(formTanggal).getTime();
-      const matched = timelineWeeks.find((w) => {
-        if (w.startDate && w.endDate) {
-          const s = new Date(w.startDate).getTime();
-          const e = new Date(w.endDate).getTime();
-          return selectedDate >= s && selectedDate <= e;
+      const parts = formTanggal.split("-").map((v) => parseInt(v, 10));
+      if (parts.length === 3) {
+        const [y, m, d] = parts;
+        const targetUtc = Date.UTC(y, m - 1, d, 12, 0, 0); // midday UTC prevents timezone shift
+
+        const matched = timelineWeeks.find((w) => {
+          if (w.startDate && w.endDate) {
+            const s = new Date(w.startDate).getTime();
+            const e = new Date(w.endDate).getTime();
+            return targetUtc >= s && targetUtc <= e;
+          }
+          return false;
+        });
+
+        if (matched && !editingLogId) {
+          setFormPekanKe(matched.pekanKe);
         }
-        return false;
-      });
-      if (matched && !editingLogId) {
-        setFormPekanKe(matched.pekanKe);
       }
     } catch {
       // fallback
@@ -906,7 +912,9 @@ export const LogAktivitasDpl: React.FC = () => {
                     <label className="block font-semibold text-slate-700">
                       Pekan Ke- (Linimasa Dinamis) <span className="text-rose-500">*</span>
                     </label>
-                    <span className="text-[10px] text-emerald-600 font-medium">Auto-sinkron</span>
+                    <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      Auto-sinkron Tanggal
+                    </span>
                   </div>
                   <div className="relative">
                     <select
@@ -916,12 +924,20 @@ export const LogAktivitasDpl: React.FC = () => {
                     >
                       {timelineWeeks.map((w) => (
                         <option key={w.pekanKe} value={w.pekanKe}>
-                          Pekan {w.pekanKe} - {w.tanggalRange || w.tahapMinggu} {w.kegiatanUtama ? `(${w.kegiatanUtama})` : ""}
+                          Pekan {w.pekanKe} - {w.tanggalRange || w.tahapMinggu}
                         </option>
                       ))}
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
+                  {(() => {
+                    const activeWeek = timelineWeeks.find((w) => w.pekanKe === formPekanKe);
+                    return activeWeek?.kegiatanUtama ? (
+                      <p className="text-[11px] text-slate-500 line-clamp-1 mt-1 font-normal">
+                        <span className="font-semibold text-emerald-700">Agenda:</span> {activeWeek.kegiatanUtama}
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
 
                 {/* Waktu Mulai */}
