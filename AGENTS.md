@@ -5,6 +5,24 @@
 
 ---
 
+## 🛑 ATURAN UTAMA ALUR KERJA (MANDATORY WORKFLOW RULES)
+
+### 1. Alur Kerja Backlog & QC Berkelanjutan (Iterative Backlog ➡️ QC Loop)
+- **Breakdown Backlog Mandiri**: Setiap kali menerima prompt/instruksi dari pengguna, AI WAJIB menyusun daftar **BACKLOG** (task list) terperinci sesuai kebutuhan fitur/perbaikan.
+- **Sistem Eksekusi Strict (`BACKLOG` ➡️ `QC` ➡️ `Lanjut`)**:
+  1. Kerjakan 1 item **BACKLOG**.
+  2. Lakukan **QC Verification** (pastikan 100% bebas error secara **syntax**, **runtime**, dan **logical** via `flutter analyze` dengan 0 issues & pengujian fungsi).
+  3. **Jika PASS**: Baru diperbolehkan lanjut mengerjakan item BACKLOG selanjutnya.
+  4. **Jika BELUM PASS**: WAJIB diperbaiki dan di-QC ulang sampai benar-benar PASS tanpa bug/error sebelum menyentuh backlog berikutnya.
+
+### 2. Konfirmasi & Review Sebelum Commit / Push / Build / Run
+- **Review Perubahan Sebelum Eksekusi Lanjutan**: Sebelum menjalankan perintah `git commit`, `git push`, `flutter build`, atau perintah `run` eksekusi utama, AI WAJIB menyampaikan **Ringkasan Review Perubahan** kepada pengguna.
+- **Pola Komunikasi Mandat**:
+  > *"Berikut ringkasan perubahan yang telah diselesaikan. Silakan direview terlebih dahulu. Apakah perubahan ini sudah sesuai dan siap untuk dilanjutkan ke proses commit/push/build/run?"*
+- **Dilarang Otomatis Execution**: AI **DILARANG KERAS** melakukan `git commit`, `git push`, `flutter build`, atau eksekusi `run` tanpa persetujuan / konfirmasi dari pengguna terlebih dahulu.
+
+---
+
 ## 1. Tentang Proyek Mobile
 
 **Nama:** BERSEKA Mobile App (Bersih, Sehat, Kampung Asri) — Aplikasi Flutter Client untuk Warga, Mahasiswa KKN, dan Petugas Pemilahan Residu.
@@ -12,9 +30,9 @@
 
 ---
 
-## 2. 🛑 ATURAN UTAMA: WAJIB MEMBACA & MEMATUHI ATURAN DI `.agent/` (ANTI-HALUSINASI)
+## 2. 🛑 ATURAN MEMBACA & MEMATUHI ATURAN DI `.agent/` (ANTI-HALUSINASI)
 
-Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/) (khususnya [.agent/AGENTS.md](.agent/AGENTS.md), `.agent/rules/`, dan `.agent/workflows/`).
+Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan mematuhi aturan (*rules*), alur kerja (*workflows*), dan *skills* yang ada pada folder [.agent/](.agent/).
 
 ### 🔄 ALUR WAJIB SINKRONISASI API BACKEND (`main` BRANCH):
 1. **PULL TERBARU DARI MAIN:** Setiap kali AI Agent atau developer menerima prompt / mengerjakan fitur di folder `mobile`, Agent WAJIB menyarankan/memastikan untuk melakukan `git pull origin main` pada folder `main` terlebih dahulu agar acuan skema API dan backend selalu dalam kondisi paling terbaru.
@@ -55,6 +73,7 @@ lib/
 [ ] Tidak ada kata 'tong' di string UI
 [ ] Token disimpan aman via SafeStorage
 [ ] Tidak ada hardcoded credentials/secrets
+[ ] Memperoleh review & konfirmasi pengguna sebelum commit/push/build/run
 ```
 
 ---
@@ -101,4 +120,3 @@ refactor/mobile-<deskripsi-singkat>
 - **Pengembangan UI Tanpa API**: Jika API backend belum terintegrasi, AI wajib mencantumkan label visual yang jelas pada UI (misal badge `[Belum Terhubung API]`). DILARANG menyajikan data hardcode seolah-olah data tersebut live.
 - **Semua chart & progress stats** pada mobile wajib dirender secara dinamis dari response JSON backend.
 - Pelanggaran terhadap aturan real data ini dianggap setara dengan bug kritis (❌).
-
