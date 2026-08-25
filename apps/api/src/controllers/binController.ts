@@ -81,17 +81,17 @@ export class BinController {
           : "Belum Terikat (GPS)";
 
         const ensureTcFormat = (codeStr: string, catName?: string) => {
-          if (!codeStr) return "TC-OGN-13082026-001";
-          if (codeStr.startsWith("TC-")) return codeStr;
+          if (!codeStr) return "BSK-OGN-250826-1001";
+          if (codeStr.startsWith("BSK-") || codeStr.startsWith("TC-")) return codeStr;
           const upperCat = (catName || "").toUpperCase();
           let tag = "OGN";
-          if (upperCat.includes("ANORGANIK") || upperCat.includes("ANG")) tag = "ANG";
+          if (upperCat.includes("ANORGANIK") || upperCat.includes("AGN") || upperCat.includes("ANG")) tag = "AGN";
           else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
           const digits = codeStr.replace(/\D/g, "");
           const seq = digits
-            ? String(parseInt(digits.slice(0, 4) || "1", 10)).padStart(3, "0")
-            : "001";
-          return `TC-${tag}-13082026-${seq}`;
+            ? String(parseInt(digits.slice(-4) || "1001", 10)).padStart(4, "0")
+            : "1001";
+          return `BSK-${tag}-250826-${seq}`;
         };
 
         const lastDeposit = bin.setoranOtomatis?.[0] || null;
