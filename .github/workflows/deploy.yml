@@ -17,9 +17,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  validate:
+    name: Validate TypeScript & Code Integrity
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci --prefer-offline 2>/dev/null || npm install --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Type Check Backend API (apps/api)
+        run: cd apps/api && npx tsc --noEmit
+
+      - name: Type Check Web Dashboard (apps/web)
+        run: cd apps/web && npx tsc --noEmit
+
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: validate
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -77,13 +107,14 @@ jobs:
             npm install --silent --legacy-peer-deps --prefer-offline 2>/dev/null || true
             npx prisma generate --schema=apps/api/prisma/schema.prisma 2>/dev/null || true
             cd "$REPO_DIR/apps/api"
-            npx prisma generate || true
+            npx prisma generate
             if [ -d "$REPO_DIR/apps/api/node_modules" ] && [ -d "$REPO_DIR/node_modules/@prisma" ]; then
               mkdir -p "$REPO_DIR/apps/api/node_modules/@prisma" "$REPO_DIR/apps/api/node_modules/.prisma"
               cp -r "$REPO_DIR/node_modules/@prisma/." "$REPO_DIR/apps/api/node_modules/@prisma/" 2>/dev/null || true
               cp -r "$REPO_DIR/node_modules/.prisma/." "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
             fi
-            npx prisma migrate deploy || npx prisma db push --accept-data-loss || true
+            echo "Executing Prisma Migration Deploy..."
+            npx prisma migrate deploy
             npm run build
 
             echo "=== 3. Reloading PM2 Backend ==="
