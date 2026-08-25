@@ -184,6 +184,18 @@ export class BinService {
       }
     }
 
+    // ✅ TAMBAHAN: Jika QR khusus RW dan tidak punya owner terdaftar,
+    // pastikan scanner adalah warga dari RW yang sama
+    if (bin.rwId !== null && (!bin.binOwnerships || bin.binOwnerships.length === 0)) {
+      const scanUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { rwId: true },
+      });
+      if (scanUser?.rwId && scanUser.rwId !== bin.rwId) {
+        throw new Error("BIN_RW_MISMATCH");
+      }
+    }
+
     // 2. Validate Geofencing (< 50m) if coordinates are provided
     if (
       userLat !== undefined &&
@@ -648,6 +660,19 @@ export class BinService {
         if (bin.status !== "PRINTED") {
           throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
         }
+
+        // ✅ TAMBAHAN: Validasi RW jika QR bukan massal
+        if (bin.rwId !== null && bin.rwId !== undefined) {
+          // QR ini khusus untuk satu RW — hanya Warga di RW tersebut yang boleh aktivasi
+          const userRwId = user.rwId;
+          if (!userRwId) {
+            throw new Error("USER_RW_NOT_SET");
+          }
+          if (bin.rwId !== userRwId) {
+            throw new Error("BIN_RW_MISMATCH");
+          }
+        }
+        // Jika bin.rwId === null → QR massal → siapa pun boleh aktivasi ✅
 
         if (bin.categoryId) {
           // 1. Get user's current bins to check onboarding status

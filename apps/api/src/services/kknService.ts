@@ -1799,17 +1799,21 @@ export class KknService {
 
     const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+    const cleanProgramTitle = payload.wilayahDampingan || deskripsi || "Program Pengolahan Mandiri";
+    const cleanTeknologi = jenisPemanfaatan || "Kompos Organik";
+    const cleanBahanBaku = kategoriSampah || "Sampah Organik";
+
     const report = await prisma.pemanfaatan.create({
       data: {
         rwId: targetRwId,
         nomorCaraPemanfaatan: uniqueNo,
-        program: jenisPemanfaatan,
-        teknologi: kategoriSampah,
-        bahanBaku: deskripsi || jenisPemanfaatan,
-        volumeBahanBaku: Number(jumlah) || 10,
-        unitBahanBaku: satuan,
-        hasil: Number(jumlah) || 10,
-        unitHasil: satuan,
+        program: cleanProgramTitle,
+        teknologi: cleanTeknologi,
+        bahanBaku: cleanBahanBaku,
+        volumeBahanBaku: Number(jumlah) || 0,
+        unitBahanBaku: satuan || "Kg",
+        hasil: 0,
+        unitHasil: satuan || "Kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       },
@@ -2685,13 +2689,15 @@ export class KknService {
       }
     }
 
-    let teknologiString = teknologi || "Tidak Spesifik";
+    let cleanTeknologi = teknologi || "Kompos Organik";
+    let facilityName: string | null = null;
+    let facilityType: string | null = null;
     
     if (fasilitasId) {
       const fasilitas = await prisma.facility.findUnique({ where: { id: fasilitasId } });
       if (fasilitas) {
-        // Append facility name to teknologi so web displays it in lokasiFasilitas
-        teknologiString = `${teknologiString} - ${fasilitas.nama}`;
+        facilityName = fasilitas.nama;
+        facilityType = fasilitas.jenis;
       }
     }
 
@@ -2702,7 +2708,7 @@ export class KknService {
         rwId: targetRwId,
         nomorCaraPemanfaatan: uniqueNo,
         program: programName,
-        teknologi: teknologiString,
+        teknologi: cleanTeknologi,
         bahanBaku: bahanBaku || "Sampah Organik",
         volumeBahanBaku: Number(beratInputKg) || 0,
         unitBahanBaku: "Kg",
@@ -2710,6 +2716,7 @@ export class KknService {
         unitHasil: "Kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: new Date(),
+        jenisKomoditas: facilityName ? `${facilityName}${facilityType ? ` (${facilityType})` : ""}` : undefined,
       },
     });
 
@@ -2719,14 +2726,17 @@ export class KknService {
         const isKetua = Boolean(student.isKetua);
         const dayOfMonth = new Date().getDate();
         const pekanKe = dayOfMonth <= 7 ? 1 : dayOfMonth <= 14 ? 2 : dayOfMonth <= 21 ? 3 : 4;
+        const tempatKegiatan = facilityName
+          ? `Fasilitas ${facilityName}${facilityType ? ` (${facilityType})` : ""}`
+          : `RW ${targetRwId} (${student.assignedRw?.name || "Wilayah KKN"})`;
 
         await prisma.logbookKkn.create({
           data: {
             kelompokId: student.kelompokId,
             penulisId: userId,
             tanggalKegiatan: new Date(),
-            tempat: fasilitasId ? teknologiString : `RW ${targetRwId} (${student.assignedRw?.name || "Wilayah KKN"})`,
-            deskripsi: `Aksi Pemanfaatan Sampah: ${teknologiString} (${bahanBaku || "Sampah Organik"} - ${Number(beratInputKg) || 0} Kg)`,
+            tempat: tempatKegiatan,
+            deskripsi: `Aksi Pemanfaatan Sampah: ${cleanTeknologi} di ${facilityName || "Fasilitas Komunal"} (${bahanBaku || "Sampah Organik"} - ${Number(beratInputKg) || 0} Kg)`,
             fotoBuktiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
             tipeAktivitas: "KELOMPOK",
             programKerjaId: programKerjaId || null,
@@ -2767,7 +2777,7 @@ export class KknService {
         const rwNotifs = rwUsers.map(rw => ({
           userId: rw.id,
           title: "Laporan Pemanfaatan Sampah",
-          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat aksi pemanfaatan sampah: ${teknologiString}.`,
+          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat aksi pemanfaatan sampah: ${cleanTeknologi}.`,
         }));
         await prisma.notification.createMany({ data: rwNotifs });
       }
