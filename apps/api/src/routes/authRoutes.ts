@@ -513,17 +513,17 @@ router.patch(
   authController.approveKkn
 );
 
-// Online users (real-time via RefreshToken) — SUPER_USER only
+// Online users (real-time via RefreshToken) — SUPER_USER & DEVELOPER
 router.get(
   "/online-users",
   authMiddleware,
-  roleMiddleware(["SUPER_USER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
   authController.getOnlineUsers
 );
 router.delete(
   "/online-users/:userId",
   authMiddleware,
-  roleMiddleware(["SUPER_USER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
   authController.forceLogoutUser
 );
 

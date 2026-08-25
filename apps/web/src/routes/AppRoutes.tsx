@@ -350,21 +350,23 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/master-data/pengguna-online"
+          path="/master-data/pengguna-daring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
               <PenggunaOnline />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/pengguna-online"
+          path="/pengguna-daring"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER"]}>
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
               <PenggunaOnline />
             </ProtectedRoute>
           }
         />
+        <Route path="/master-data/pengguna-online" element={<Navigate to="/master-data/pengguna-daring" replace />} />
+        <Route path="/pengguna-online" element={<Navigate to="/master-data/pengguna-daring" replace />} />
         <Route
           path="/master-data/manajemen-tempat-sampah"
           element={
@@ -958,27 +960,21 @@ const AppRoutes: React.FC = () => {
           element={<Navigate to="/peraturan" replace />}
         />
         <Route
-          path="/master-data/histori-sistem"
+          path="/histori-sistem"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
               <AuditTrailList />
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/log-aktivitas"
-          element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
-              <AuditTrailList />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/histori-sistem" element={<Navigate to="/master-data/histori-sistem" replace />} />
-        <Route path="/superUser/audit" element={<Navigate to="/master-data/histori-sistem" replace />} />
-        <Route path="/audit-trail" element={<Navigate to="/master-data/histori-sistem" replace />} />
-        <Route path="/audit-log" element={<Navigate to="/master-data/histori-sistem" replace />} />
-        <Route path="/master-data/pengguna-daring" element={<Navigate to="/master-data/pengguna-online" replace />} />
-        <Route path="/pengguna-daring" element={<Navigate to="/master-data/pengguna-online" replace />} />
+        <Route path="/master-data/histori-sistem" element={<Navigate to="/histori-sistem" replace />} />
+        <Route path="/log-aktivitas" element={<Navigate to="/histori-sistem" replace />} />
+        <Route path="/superUser/audit" element={<Navigate to="/histori-sistem" replace />} />
+        <Route path="/audit-trail" element={<Navigate to="/histori-sistem" replace />} />
+        <Route path="/audit-log" element={<Navigate to="/histori-sistem" replace />} />
+        <Route path="/master-data/pengguna-daring" element={<Navigate to="/pengguna-daring" replace />} />
+        <Route path="/master-data/pengguna-online" element={<Navigate to="/pengguna-daring" replace />} />
+        <Route path="/pengguna-online" element={<Navigate to="/pengguna-daring" replace />} />
         <Route path="/superUser/qr-master" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />
         <Route path="/superUser/master-qr" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />
         <Route path="/qr-master" element={<Navigate to="/monitoring-pengelolaan/tempat-sampah?tab=batch_qr" replace />} />

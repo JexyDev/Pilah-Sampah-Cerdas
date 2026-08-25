@@ -105,7 +105,7 @@ const checkRouteActive = (
     const historiSistemAliases = ["/master-data/histori-sistem", "/log-aktivitas", "/superUser/audit", "/audit-trail", "/audit-log"];
     if (historiSistemAliases.includes(tPath) && historiSistemAliases.includes(cPath)) return true;
 
-    const onlineUsersAliases = ["/master-data/pengguna-online", "/pengguna-online"];
+    const onlineUsersAliases = ["/master-data/pengguna-online", "/pengguna-online", "/master-data/pengguna-daring", "/pengguna-daring"];
     if (onlineUsersAliases.includes(tPath) && onlineUsersAliases.includes(cPath)) return true;
 
     const provAliases = ["/wilayah/provinsi", "/master-data/provinsi", "/master-provinsi"];
@@ -1198,16 +1198,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
         },
         {
-          to: "/master-data/histori-sistem",
+          to: "/histori-sistem",
           icon: FileText,
           label: "Histori Sistem",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
-          to: "/master-data/pengguna-online",
+          to: "/pengguna-daring",
           icon: UserIcon,
           label: "Pengguna Daring",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
       ],
     },
