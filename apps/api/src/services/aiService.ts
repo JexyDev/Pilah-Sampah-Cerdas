@@ -47,25 +47,25 @@ export class AiService {
             const isOrg =
               String(aiResult.detectedType).toUpperCase() === "ORGANIC" ||
               String(aiResult.detectedType).toUpperCase() === "ORGANIK";
-            organik_percent = isOrg ? 100 : 0;
+            organik_percent = isOrg ? 95 : 5;
             non_organik_percent = 100 - organik_percent;
           }
         }
 
+        const isOrgMajority = Number(organik_percent) >= Number(non_organik_percent);
+        const finalDetectedType = isOrgMajority ? "ORGANIC" : "NON_ORGANIC";
+        const finalRecommendedBin = isOrgMajority ? "organik" : "anorganik";
+
         return {
           requestId,
-          detectedType: aiResult.detectedType,
+          detectedType: finalDetectedType,
           volumeEstimate: aiResult.estimatedVolumeLiter,
           confidence: aiResult.confidenceScore,
           detections,
           isBlurry: false,
           organik_percent,
           non_organik_percent,
-          recommended_bin:
-            String(aiResult.detectedType).toLowerCase() === "organic" ||
-            String(aiResult.detectedType).toLowerCase() === "organik"
-              ? "organik"
-              : "anorganik",
+          recommended_bin: finalRecommendedBin,
           vendorName: aiResult.vendorName,
           annotatedImageBase64: aiResult.annotatedImageBase64,
         };

@@ -670,15 +670,18 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                     {/* Hasil AI (Persentase Organik & Anorganik Dalam 1 Baris dengan Icon Kepercayaan) */}
                     <td className="py-4 px-4 whitespace-nowrap min-w-[200px]">
                       {(() => {
-                        const org = item.organikPercent ?? (item.hasilKlasifikasiAi === "ORGANIK" ? 95 : 5);
-                        const inorg = item.anorganikPercent ?? (100 - org);
+                        const rawOrg = item.organikPercent ?? (item.hasilKlasifikasiAi === "ORGANIK" ? 95 : 5);
+                        const rawInorg = item.anorganikPercent ?? (100 - rawOrg);
+                        const category = rawOrg >= rawInorg ? "ORGANIK" : "ANORGANIK";
+                        const org = rawOrg;
+                        const inorg = rawInorg;
                         return (
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between gap-2">
-                              {renderCategoryBadge(item.hasilKlasifikasiAi)}
+                              {renderCategoryBadge(category)}
                               <span className="inline-flex items-center gap-1 text-[10.5px] font-black text-emerald-800 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800">
                                 <ShieldCheck size={12} className="text-[#009966]" />
-                                <span>{item.confidenceAi}%</span>
+                                <span>{Math.max(org, inorg)}%</span>
                               </span>
                             </div>
                             <div className="flex justify-between items-center text-[10.5px] font-black">
@@ -784,18 +787,18 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                 </div>
               </div>
 
-              {/* Composition Breakdown (Organik % & Anorganik %) */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Klasifikasi Model ONNX (YOLOv8s-seg)</span>
-                  {renderCategoryBadge(selectedItemForDetail.hasilKlasifikasiAi)}
-                </div>
-
                 {(() => {
-                  const org = selectedItemForDetail.organikPercent ?? (selectedItemForDetail.hasilKlasifikasiAi === "ORGANIK" ? 95 : 5);
-                  const inorg = selectedItemForDetail.anorganikPercent ?? (100 - org);
+                  const rawOrg = selectedItemForDetail.organikPercent ?? (selectedItemForDetail.hasilKlasifikasiAi === "ORGANIK" ? 95 : 5);
+                  const rawInorg = selectedItemForDetail.anorganikPercent ?? (100 - rawOrg);
+                  const category = rawOrg >= rawInorg ? "ORGANIK" : "ANORGANIK";
+                  const org = rawOrg;
+                  const inorg = rawInorg;
                   return (
                     <div className="space-y-2">
+                      <div className="flex justify-between items-center pb-1">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Klasifikasi Model ONNX (YOLOv8s-seg)</span>
+                        {renderCategoryBadge(category)}
+                      </div>
                       <div className="flex justify-between text-xs font-black">
                         <span className="text-emerald-700 dark:text-emerald-400">🌱 Organik: {org}%</span>
                         <span className="text-amber-700 dark:text-amber-400">📦 Anorganik: {inorg}%</span>
@@ -805,13 +808,12 @@ const MasterDatasetKlasifikasi: React.FC = () => {
                         <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${inorg}%` }} />
                       </div>
                       <div className="flex justify-between text-[11px] font-bold text-slate-400 pt-1">
-                        <span>Tingkat Kepercayaan: {selectedItemForDetail.confidenceAi}%</span>
+                        <span>Tingkat Kepercayaan: {Math.max(org, inorg)}%</span>
                         <span>Estimasi Berat: {selectedItemForDetail.beratKg} Kg</span>
                       </div>
                     </div>
                   );
                 })()}
-              </div>
 
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-3 text-xs">

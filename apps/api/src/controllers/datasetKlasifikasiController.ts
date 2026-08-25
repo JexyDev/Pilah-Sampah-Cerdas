@@ -150,24 +150,20 @@ export class DatasetKlasifikasiController {
 
       const formattedRecords = records.map((r) => {
         const rawClass = (r.hasilKlasifikasiAi || "ORGANIK").toUpperCase();
-        const categoryFormatted = rawClass.includes("ANORGANIK") || rawClass.includes("NON_ORGANIC") || rawClass.includes("RESIDU")
-          ? "ANORGANIK"
-          : "ORGANIK";
-
         const rawConf = Number(r.confidenceAi || 0.95);
         const confidence = rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
-        const isOrganik = categoryFormatted === "ORGANIK";
-        const organikPercent = isOrganik
-          ? Math.min(100, Math.max(0, confidence))
-          : Math.max(0, Math.min(100, 100 - confidence));
+
+        const isOrganikRaw = !rawClass.includes("ANORGANIK") && !rawClass.includes("NON_ORGANIC") && !rawClass.includes("RESIDU");
+        const organikPercent = isOrganikRaw ? confidence : (100 - confidence);
         const anorganikPercent = 100 - organikPercent;
+        const categoryFormatted = organikPercent >= anorganikPercent ? "ORGANIK" : "ANORGANIK";
 
         return {
           id: r.id,
           createdAt: r.createdAt.toISOString(),
           fotoSampahUrl: r.fotoSampahUrl,
           hasilKlasifikasiAi: categoryFormatted,
-          confidenceAi: confidence,
+          confidenceAi: Math.max(organikPercent, anorganikPercent),
           organikPercent,
           anorganikPercent,
           beratKg: Number(r.berat || 0.0),
