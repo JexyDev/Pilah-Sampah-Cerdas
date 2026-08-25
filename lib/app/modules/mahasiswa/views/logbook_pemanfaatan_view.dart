@@ -127,7 +127,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Laporan Kegiatan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text('Laporan Kegiatan Pemanfaatan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
