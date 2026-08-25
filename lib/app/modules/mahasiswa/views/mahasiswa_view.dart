@@ -1211,7 +1211,6 @@ class _SummaryCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
-    this.onTap,
   });
 
   final IconData icon;
@@ -1219,7 +1218,6 @@ class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1238,7 +1236,6 @@ class _SummaryCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap,
           borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
           child: Padding(
             padding: const EdgeInsets.all(14),
