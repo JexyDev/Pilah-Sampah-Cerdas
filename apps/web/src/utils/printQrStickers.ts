@@ -47,6 +47,8 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
         item.qrCode
       )}`;
 
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+
       return `
         <div class="poster-card ${themeClass}">
           <!-- Header Section -->
@@ -67,25 +69,25 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           <div class="logos-row">
             <div class="logo-item">
               <div class="logo-img-wrapper">
-                <img src="/image/mitra/prov-jabar.png" alt="Jawa Barat" class="logo-img" />
+                <img src="${origin}/image/mitra/prov-jabar.png" alt="Jawa Barat" class="logo-img" />
               </div>
               <div class="logo-pill">PROVINSI<br/>JAWA BARAT</div>
             </div>
             <div class="logo-item">
               <div class="logo-img-wrapper">
-                <img src="/image/mitra/pemkot-bandung.svg" alt="Kota Bandung" class="logo-img" />
+                <img src="${origin}/image/mitra/pemkot-bandung.svg" alt="Kota Bandung" class="logo-img" />
               </div>
               <div class="logo-pill">PEMERINTAH<br/>KOTA BANDUNG</div>
             </div>
             <div class="logo-item">
               <div class="logo-img-wrapper">
-                <img src="/image/mitra/dlh-bandung.svg" alt="DLH Kota Bandung" class="logo-img" />
+                <img src="${origin}/image/mitra/dlh-bandung.svg" alt="DLH Kota Bandung" class="logo-img" />
               </div>
               <div class="logo-pill">DINAS<br/>LINGKUNGAN HIDUP</div>
             </div>
             <div class="logo-item">
               <div class="logo-img-wrapper">
-                <img src="/image/mitra/unikom.png" alt="UNIKOM" class="logo-img" />
+                <img src="${origin}/image/mitra/unikom.png" alt="UNIKOM" class="logo-img" />
               </div>
               <div class="logo-pill">UNIVERSITAS<br/>KOMPUTER INDONESIA</div>
             </div>
@@ -630,6 +632,13 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
       <div class="print-canvas">
         ${cardsHtml}
       </div>
+      <script>
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 300);
+        };
+      </script>
     </body>
     </html>
   `;

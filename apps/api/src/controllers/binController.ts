@@ -638,6 +638,20 @@ export class BinController {
       const format = (req.query.format as string) || "json";
 
       if (format === "html" || req.headers.accept?.includes("text/html")) {
+        const origin = req.protocol + "://" + req.get("host");
+        const themeClass = isAnorganik ? "theme-anorganik" : "theme-organik";
+        const catTitle = isAnorganik ? "ANORGANIK" : "ORGANIK";
+        const catDesc = description;
+
+        const formattedSerialCode = (() => {
+          if (!qrCode) return "BSK-OGN-250826-0001";
+          if (qrCode.startsWith("BSK-") || qrCode.startsWith("TC-")) return qrCode;
+          const tag = isAnorganik ? "AGN" : "OGN";
+          const digits = qrCode.replace(/\D/g, "");
+          const seq = digits ? String(parseInt(digits.slice(-4) || "1", 10)).padStart(4, "0") : "0001";
+          return `BSK-${tag}-250826-${seq}`;
+        })();
+
         const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -646,31 +660,471 @@ export class BinController {
   <title>Poster ${qrCode} BERSEKA</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=JetBrains+Mono:wght@800;900&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
-    .card { width: 100%; max-width: 380px; background: #fff; border-radius: 20px; padding: 16px; border: 5.5px solid ${isAnorganik ? '#F59E0B' : '#047857'}; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); text-align: center; }
-    .header { font-size: 24px; font-weight: 900; color: ${isAnorganik ? '#000' : '#047857'}; letter-spacing: 2px; }
-    .subtitle { font-size: 9px; font-weight: 800; color: #334155; margin-bottom: 8px; letter-spacing: 1px; }
-    .banner { background: ${isAnorganik ? '#FFFBEB' : '#047857'}; border: 2.5px solid ${isAnorganik ? '#F59E0B' : '#047857'}; border-radius: 14px; padding: 12px; margin: 8px 0; color: ${isAnorganik ? '#000' : '#fff'}; }
-    .banner-title { font-size: 20px; font-weight: 900; line-height: 1.1; }
-    .banner-desc { background: ${isAnorganik ? '#F59E0B' : '#065F46'}; color: ${isAnorganik ? '#000' : '#fff'}; font-size: 8px; font-weight: 800; border-radius: 8px; padding: 6px; margin-top: 6px; }
-    .qr-frame { width: 180px; height: 180px; margin: 12px auto; padding: 6px; border: 2px solid #000; border-radius: 12px; background: #fff; }
-    .qr-frame img { width: 100%; height: 100%; object-fit: contain; }
-    .pill { background: ${isAnorganik ? '#F59E0B' : '#047857'}; color: ${isAnorganik ? '#000' : '#fff'}; border-radius: 99px; padding: 6px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 900; display: inline-block; margin-top: 8px; }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #000000;
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    /* Poster Card (100mm x 150mm scale) */
+    .poster-card {
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 10 / 15;
+      border-radius: 16px;
+      padding: 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      background: #ffffff;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ANORGANIK YELLOW THEME */
+    .poster-card.theme-anorganik {
+      border: 12px solid #FFC20E;
+      background: #FFFFFF;
+    }
+    .poster-card.theme-anorganik .banner-box {
+      background: #FFC20E;
+      color: #000000;
+    }
+    .poster-card.theme-anorganik .logo-pill {
+      background: #FFC20E;
+      color: #000000;
+    }
+    .poster-card.theme-anorganik .benefit-icon {
+      background: #FFC20E;
+      color: #000000;
+    }
+    .poster-card.theme-anorganik .scan-icon-circle {
+      background: #FFC20E;
+      color: #000000;
+    }
+    .poster-card.theme-anorganik .pill-serial {
+      background: #FFC20E;
+      color: #000000;
+    }
+
+    /* ORGANIK GREEN THEME */
+    .poster-card.theme-organik {
+      border: 12px solid #006837;
+      background: #FFFFFF;
+    }
+    .poster-card.theme-organik .banner-box {
+      background: #006837;
+      color: #FFFFFF;
+    }
+    .poster-card.theme-organik .logo-pill {
+      background: #006837;
+      color: #FFFFFF;
+    }
+    .poster-card.theme-organik .benefit-icon {
+      background: #006837;
+      color: #FFFFFF;
+    }
+    .poster-card.theme-organik .scan-icon-circle {
+      background: #006837;
+      color: #FFFFFF;
+    }
+    .poster-card.theme-organik .pill-serial {
+      background: #006837;
+      color: #FFFFFF;
+    }
+
+    /* HEADER */
+    .header-section {
+      text-align: center;
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #000000;
+      line-height: 1;
+    }
+    .leaf-icon-left, .leaf-icon-right {
+      font-size: 14px;
+    }
+    .header-sub-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .header-sub-line {
+      flex: 1;
+      height: 1.5px;
+      background: #cbd5e1;
+    }
+    .header-subtitle {
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #000000;
+    }
+
+    /* LOGOS ROW */
+    .logos-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      padding: 3px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      text-align: center;
+      background: #ffffff;
+      margin: 8px 0;
+    }
+    .logo-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2px;
+      border-right: 1px solid #e2e8f0;
+      padding: 2px;
+    }
+    .logo-item:last-child {
+      border-right: none;
+    }
+    .logo-img-wrapper {
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-img {
+      max-height: 22px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+    .logo-pill {
+      font-size: 5px;
+      font-weight: 900;
+      line-height: 1.1;
+      border-radius: 4px;
+      padding: 2px 3px;
+      width: 100%;
+      text-transform: uppercase;
+    }
+
+    /* MAIN BANNER */
+    .banner-box {
+      border-radius: 12px;
+      padding: 6px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .banner-left {
+      flex-shrink: 0;
+    }
+    .bin-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .banner-right {
+      text-align: left;
+      flex: 1;
+    }
+    .banner-sub-sm {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .banner-title-main {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1.1;
+    }
+    .banner-leaf-divider {
+      font-size: 8px;
+      margin: 1px 0;
+    }
+    .banner-desc-box {
+      font-size: 7px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    /* 4 BENEFITS */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      text-align: center;
+      margin: 8px 0;
+    }
+    .benefit-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      border-right: 1px solid #f1f5f9;
+    }
+    .benefit-item:last-child {
+      border-right: none;
+    }
+    .benefit-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+    }
+    .benefit-text {
+      font-size: 5.5px;
+      font-weight: 800;
+      line-height: 1.15;
+      color: #000000;
+    }
+
+    /* QR SECTION */
+    .qr-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .qr-box {
+      width: 110px;
+      height: 110px;
+      background: #ffffff;
+      padding: 2px;
+      border-radius: 6px;
+      border: 1.5px solid #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .qr-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+    .qr-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      text-align: left;
+    }
+    .scan-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .scan-icon-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .scan-title-bold {
+      font-size: 9px;
+      font-weight: 900;
+      line-height: 1.1;
+      color: #000000;
+    }
+    .scan-desc {
+      font-size: 6px;
+      font-weight: 700;
+      color: #334155;
+      line-height: 1.2;
+    }
+    .pill-serial {
+      border-radius: 9999px;
+      padding: 3px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    /* FOOTER */
+    .footer-bar {
+      border-top: 1.5px solid #cbd5e1;
+      padding-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      text-align: left;
+    }
+    .shield-icon {
+      font-size: 10px;
+    }
+    .footer-text {
+      font-size: 6px;
+      font-weight: 900;
+      color: #000000;
+      line-height: 1.1;
+    }
+    .footer-right {
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="header">BERSEKA</div>
-    <div class="subtitle">BERSIH • SEHAT • KAMPUNG ASRI</div>
-    <div class="banner">
-      <div class="banner-title">TEMPAT SAMPAH<br>${isAnorganik ? 'ANORGANIK' : 'ORGANIK'}</div>
-      <div class="banner-desc">${description}</div>
+  <div class="poster-card ${themeClass}">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="header-top">
+        <span class="leaf-icon-left">🍃</span>
+        <div class="header-title">BERSEKA</div>
+        <span class="leaf-icon-right">🍃</span>
+      </div>
+      <div class="header-sub-row">
+        <div class="header-sub-line"></div>
+        <div class="header-subtitle">BERSIH • SEHAT • KAMPUNG ASRI</div>
+        <div class="header-sub-line"></div>
+      </div>
     </div>
-    <div class="qr-frame">
-      <img src="${qrImageUrl}" alt="${qrCode}">
+
+    <!-- Row of 4 Institutional Logos -->
+    <div class="logos-row">
+      <div class="logo-item">
+        <div class="logo-img-wrapper">
+          <img src="${origin}/image/mitra/prov-jabar.png" alt="Jawa Barat" class="logo-img" />
+        </div>
+        <div class="logo-pill">PROVINSI<br/>JAWA BARAT</div>
+      </div>
+      <div class="logo-item">
+        <div class="logo-img-wrapper">
+          <img src="${origin}/image/mitra/pemkot-bandung.svg" alt="Kota Bandung" class="logo-img" />
+        </div>
+        <div class="logo-pill">PEMERINTAH<br/>KOTA BANDUNG</div>
+      </div>
+      <div class="logo-item">
+        <div class="logo-img-wrapper">
+          <img src="${origin}/image/mitra/dlh-bandung.svg" alt="DLH Kota Bandung" class="logo-img" />
+        </div>
+        <div class="logo-pill">DINAS<br/>LINGKUNGAN HIDUP</div>
+      </div>
+      <div class="logo-item">
+        <div class="logo-img-wrapper">
+          <img src="${origin}/image/mitra/unikom.png" alt="UNIKOM" class="logo-img" />
+        </div>
+        <div class="logo-pill">UNIVERSITAS<br/>KOMPUTER INDONESIA</div>
+      </div>
     </div>
-    <div class="pill">${qrCode}</div>
+
+    <!-- Main Category Banner -->
+    <div class="banner-box">
+      <div class="banner-left">
+        <div class="bin-circle">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            <path d="M10 11v6m4-6v6"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="banner-right">
+        <div class="banner-sub-sm">TEMPAT SAMPAH</div>
+        <div class="banner-title-main">${catTitle}</div>
+        <div class="banner-leaf-divider">🍃 🍃</div>
+        <div class="banner-desc-box">${catDesc}</div>
+      </div>
+    </div>
+
+    <!-- 4 Benefit Columns -->
+    <div class="benefits-grid">
+      <div class="benefit-item">
+        <div class="benefit-icon">🍃</div>
+        <div class="benefit-text">Menjaga<br/>lingkungan<br/>tetap bersih</div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">♻️</div>
+        <div class="benefit-text">Mengurangi<br/>sampah<br/>ke TPA</div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🗑️</div>
+        <div class="benefit-text">Kelola sampah<br/>lebih baik dan<br/>bermanfaat</div>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">👥</div>
+        <div class="benefit-text">Bersama wujudkan<br/>kampung yang<br/>bersih & asri</div>
+      </div>
+    </div>
+
+    <!-- Bottom QR Code & Scan Section -->
+    <div class="qr-section">
+      <div class="qr-box">
+        <img src="${qrImageUrl}" alt="${qrCode}" class="qr-img" />
+      </div>
+      <div class="qr-right">
+        <div class="scan-header">
+          <div class="scan-icon-circle">📱</div>
+          <div class="scan-titles">
+            <div class="scan-title-bold">SCAN UNTUK</div>
+            <div class="scan-title-bold">CATAT & LAPOR</div>
+          </div>
+        </div>
+        <div class="scan-desc">
+          Setiap scan membantu kami mencatat dan mengelola sampah dengan lebih baik.
+        </div>
+        <div class="pill-serial">
+          ${formattedSerialCode}
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Bar -->
+    <div class="footer-bar">
+      <div class="footer-left">
+        <span class="shield-icon">🛡️</span>
+        <div class="footer-text">
+          <div>MARI JAGA KEBERSIHAN</div>
+          <div>UNTUK MASA DEPAN YANG LEBIH HIJAU</div>
+        </div>
+      </div>
+      <div class="footer-right">🍃</div>
+    </div>
   </div>
 </body>
 </html>`;
