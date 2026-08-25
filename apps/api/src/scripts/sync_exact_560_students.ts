@@ -258,13 +258,38 @@ async function syncExact560() {
     successCount++;
   }
 
+  // 3. Purge extra/unmatched StudentKkn records if not in Excel (Target: EXACT 560)
+  const validNims = new Set(list560.map((s) => s.nim));
+  const validNames = new Set(list560.map((s) => s.name.toLowerCase().trim()));
+
+  const allDbStudents = await prisma.studentKkn.findMany({
+    include: { user: true },
+  });
+
+  let purgedCount = 0;
+  for (const st of allDbStudents) {
+    const nimMatch = st.nim && validNims.has(st.nim);
+    const nameMatch = st.user?.name && validNames.has(st.user.name.toLowerCase().trim());
+    if (!nimMatch && !nameMatch) {
+      console.log(`[PURGE EXTRA STUDENT] Deleting extra record: ${st.user?.name || "No Name"} (NIM: ${st.nim})`);
+      await prisma.studentKkn.delete({ where: { id: st.id } });
+      if (st.userId) {
+        await prisma.user.delete({ where: { id: st.userId } }).catch(() => {});
+      }
+      purgedCount++;
+    }
+  }
+
   console.log(`\n=== SINKRONISASI TEPAT 560 MAHASISWA SELESAI ===`);
   console.log(`Mahasiswa Berhasil Disinkronkan: ${successCount}`);
+  if (purgedCount > 0) {
+    console.log(`Mahasiswa Ekstra/Dummy Dihapus: ${purgedCount}`);
+  }
 
   const finalStudentCount = await prisma.studentKkn.count({ where: { NOT: { kelompokId: null } } });
   const totalStudentKkn = await prisma.studentKkn.count();
   console.log(`Total Record StudentKkn di DB: ${totalStudentKkn}`);
-  console.log(`Total Mahasiswa Terhubung ke Kelompok di DB: ${finalStudentCount} (Target: 560)`);
+  console.log(`Total Mahasiswa Terhubung ke Kelompok di DB: ${finalStudentCount} (Target: TEPAT 560)`);
 }
 
 syncExact560()
