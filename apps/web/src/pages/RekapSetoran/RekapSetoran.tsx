@@ -561,19 +561,19 @@ export default function RekapSetoran() {
 
               {/* AI Confidence Composition Breakdown (Identik MasterDatasetKlasifikasi) */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Inferensi &amp; Akurasi Verifikasi AI</span>
-                  {renderCategoryBadge(selectedDeposit.jenis)}
-                </div>
-
                 {(() => {
-                  const jenisUpper = (selectedDeposit.jenis || "").toUpperCase();
-                  const isOrg = jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC");
-                  const conf = Number(selectedDeposit.confidence) || 0;
-                  const org = selectedDeposit.organikPercent ?? (isOrg ? conf : 100 - conf);
-                  const inorg = selectedDeposit.anorganikPercent ?? (100 - org);
+                  const conf = Number(selectedDeposit.confidence) || 95;
+                  const rawOrg = selectedDeposit.organikPercent ?? conf;
+                  const rawInorg = selectedDeposit.anorganikPercent ?? (100 - rawOrg);
+                  const org = rawOrg;
+                  const inorg = rawInorg;
+                  const category = org >= inorg ? "Organik" : "Anorganik";
                   return (
                     <div className="space-y-2">
+                      <div className="flex justify-between items-center pb-1">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100">Hasil Inferensi &amp; Akurasi Verifikasi AI</span>
+                        {renderCategoryBadge(category)}
+                      </div>
                       <div className="flex justify-between text-xs font-black">
                         <span className="text-emerald-700 dark:text-emerald-400">🌱 Organik: {org}%</span>
                         <span className="text-amber-700 dark:text-amber-400">📦 Anorganik: {inorg}%</span>

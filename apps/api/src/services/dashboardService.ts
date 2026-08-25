@@ -46,6 +46,16 @@ function isWilayahFiltered(wilayah?: string): boolean {
   return true;
 }
 
+// ponytail: majority-rule classification, mirrors transactionController.ts. Extract to shared util if a 3rd module needs it.
+function isOrganikMajority(log: { hasilKlasifikasiAi?: string | null; confidenceAi?: any }): boolean {
+  const conf = log.confidenceAi !== null && log.confidenceAi !== undefined ? Number(log.confidenceAi) : 95;
+  const confVal = conf <= 1 ? conf * 100 : conf;
+  const rawClass = (log.hasilKlasifikasiAi || "organik").toLowerCase();
+  const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+  const organikPercent = isOrgRaw ? confVal : 100 - confVal;
+  return organikPercent >= 50;
+}
+
 async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext> {
   if (!isWilayahFiltered(wilayah)) {
     return { isFiltered: false, rwIds: [], kelurahanIds: [], kelurahanNames: [] };
@@ -359,7 +369,7 @@ export const dashboardService = {
 
     wasteByCategory.forEach((log: any) => {
       const kg = Number(log.berat);
-      if (log.hasilKlasifikasiAi === "organik") {
+      if (isOrganikMajority(log)) {
         organikKg += kg;
       } else {
         anorganikKg += kg;
@@ -581,7 +591,7 @@ export const dashboardService = {
       id: trx.id,
       nama: trx.warga?.name || "Warga",
       waktu: trx.createdAt,
-      tipe: trx.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+      tipe: isOrganikMajority(trx) ? "Organik" : "Anorganik",
       volume: "-",
       poin: `+${trx.poin}`,
     }));
@@ -658,7 +668,7 @@ export const dashboardService = {
 
       logs.forEach((log: any) => {
         const kg = Number(log.berat);
-        if (log.hasilKlasifikasiAi === "organik") {
+        if (isOrganikMajority(log)) {
           organicWeight += kg;
         } else {
           inorganicWeight += kg;
@@ -709,7 +719,7 @@ export const dashboardService = {
 
     wasteLogs.forEach((log: any) => {
       const kg = Number(log.berat);
-      if (log.hasilKlasifikasiAi === "organik") {
+      if (isOrganikMajority(log)) {
         organikKg += kg;
       } else {
         anorganikKg += kg;

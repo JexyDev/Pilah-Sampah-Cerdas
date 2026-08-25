@@ -23,9 +23,12 @@ export const transactionController = {
         if (!wargaName) wargaName = "Warga Coblong";
 
         const rawConf = d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
-        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : null;
-        const isOrg = (d.hasilKlasifikasiAi || "").toLowerCase() === "organik";
-        const organikPercent = confVal !== null ? (isOrg ? confVal : 100 - confVal) : (isOrg ? 100 : 0);
+        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+        const rawClass = (d.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
+        const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+        const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+        const anorganikPercent = 100 - organikPercent;
+        const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
         return {
           id: d.id,
@@ -33,15 +36,15 @@ export const transactionController = {
           phone: d.warga?.phone || "-",
           rw: d.warga?.rw?.name || d.bin?.rw?.name || "RW 01",
           kelurahan: d.warga?.rw?.kelurahan?.name || d.bin?.rw?.kelurahan?.name || "Coblong",
-          jenis: isOrg ? "Organik" : "Anorganik",
+          jenis: finalJenis,
           berat: Number(d.berat),
           poin: Math.round(Number(d.poin || 0)),
           waktu: d.createdAt,
           status: d.status || "ACCEPTED",
           lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
-          confidence: confVal,
+          confidence: Math.max(organikPercent, anorganikPercent),
           organikPercent,
-          anorganikPercent: 100 - organikPercent,
+          anorganikPercent,
           fotoUrl: d.fotoSampahUrl || null,
           fotoProfil: d.warga?.fotoProfil || null,
           isManual: false,
@@ -96,11 +99,16 @@ export const transactionController = {
           d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
 
         const rawConf = d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
-        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : null;
+        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+        const rawClass = (d.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
+        const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+        const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+        const anorganikPercent = 100 - organikPercent;
+        const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
         return {
           id: d.id,
-          jenis: (d.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
+          jenis: finalJenis,
           berat: Number(d.berat || 0),
           volume: Number(d.volumeEstimate || 0),
           poin: poinVal,
@@ -114,7 +122,9 @@ export const transactionController = {
           kelurahan: kelName || areaName || null,
           binQrCode: binCode,
           confidenceAi: d.confidenceAi ? Number(d.confidenceAi) : null,
-          confidence: confVal,
+          confidence: Math.max(organikPercent, anorganikPercent),
+          organikPercent,
+          anorganikPercent,
         };
       });
 
@@ -230,9 +240,12 @@ export const transactionController = {
       }
 
       const rawConf = dep.confidenceAi !== null && dep.confidenceAi !== undefined ? Number(dep.confidenceAi) : null;
-      const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : null;
-      const isOrg = (dep.hasilKlasifikasiAi || "").toLowerCase() === "organik";
-      const organikPercent = confVal !== null ? (isOrg ? confVal : 100 - confVal) : (isOrg ? 100 : 0);
+      const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+      const rawClass = (dep.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
+      const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+      const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+      const anorganikPercent = 100 - organikPercent;
+      const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
       const mappedDeposit = {
         id: dep.id,
@@ -240,15 +253,15 @@ export const transactionController = {
         phone: dep.warga?.phone || "",
         rw: dep.bin?.rw?.name || dep.warga?.rw?.name || "RW 01",
         kelurahan: dep.bin?.rw?.kelurahan?.name || dep.warga?.rw?.kelurahan?.name || "Coblong",
-        jenis: isOrg ? "Organik" : "Anorganik",
+        jenis: finalJenis,
         berat: Number(dep.berat),
         poin: Math.round(Number(dep.poin || 0)),
         waktu: dep.createdAt,
         status: dep.status || "ACCEPTED",
         lokasi: `Tempat Sampah: ${dep.bin?.qrCode || "QR-001"}`,
-        confidence: confVal,
+        confidence: Math.max(organikPercent, anorganikPercent),
         organikPercent,
-        anorganikPercent: 100 - organikPercent,
+        anorganikPercent,
         gps: dep.lokasiGps,
         fotoUrl: dep.fotoSampahUrl,
         fotoProfil: dep.warga?.fotoProfil || null,

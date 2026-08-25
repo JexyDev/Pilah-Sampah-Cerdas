@@ -318,8 +318,11 @@ export class BinRepository {
       }
 
       // Broadcast real-time live event to monitoring dashboard
-      const isOrg = categoryName.toLowerCase().includes("organik");
-      const confVal = aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : null;
+      const isOrgRaw = categoryName.toLowerCase().includes("organik");
+      const confVal = aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : 95;
+      const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+      const anorganikPercent = 100 - organikPercent;
+      const isOrg = organikPercent >= anorganikPercent;
 
       tx.user
         .findUnique({
@@ -339,9 +342,9 @@ export class BinRepository {
             waktu: setoranOtomatis.createdAt,
             status: setoranOtomatis.status || "ACCEPTED",
             lokasi: `Tempat Sampah: ${binId}`,
-            confidence: confVal,
-            organikPercent: isOrg ? confVal || 100 : 100 - (confVal || 0),
-            anorganikPercent: isOrg ? 100 - (confVal || 100) : confVal || 100,
+            confidence: Math.max(organikPercent, anorganikPercent),
+            organikPercent,
+            anorganikPercent,
             fotoUrl: evidencePhotoUrl || null,
             fotoProfil: userData?.fotoProfil || null,
             isManual: false,
