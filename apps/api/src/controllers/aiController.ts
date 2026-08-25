@@ -309,12 +309,18 @@ export class AiController {
       const result = await adapter.classifyWaste({ imageUrl, imagePath });
 
       // Calculate organik & non-organik percentages if not calculated by adapter (fallback)
+      // NOTE: adapter berbeda mengembalikan format berbeda -- VendorWasteAiAdapter (model asli)
+      // pakai Bahasa Inggris uppercase ("ORGANIC"/"NON_ORGANIC"), sedangkan MockWasteAiAdapter
+      // (fallback saat AI_VENDOR_PROVIDER tidak di-set) pakai Bahasa Indonesia lowercase
+      // ("organik"/"anorganik"). toUpperCase() saja TIDAK cukup karena "organik".toUpperCase()
+      // = "ORGANIK" (beda ejaan dari "ORGANIC", C vs K) -- makanya pakai startsWith("ORGAN")
+      // yang cocok untuk kedua bahasa ("ORGANIC" & "ORGANIK" sama-sama diawali "ORGAN",
+      // sedangkan "NON_ORGANIC" & "ANORGANIK" tidak).
+      const isOrganicType = result.detectedType.toUpperCase().startsWith("ORGAN");
       const organik_percent =
-        (result.rawPayload as any)?.organik_percent ??
-        (result.detectedType === "ORGANIC" ? 100 : 0);
+        (result.rawPayload as any)?.organik_percent ?? (isOrganicType ? 100 : 0);
       const non_organik_percent =
-        (result.rawPayload as any)?.non_organik_percent ??
-        (result.detectedType === "NON_ORGANIC" ? 100 : 0);
+        (result.rawPayload as any)?.non_organik_percent ?? (isOrganicType ? 0 : 100);
 
       res.status(200).json({
         success: true,
