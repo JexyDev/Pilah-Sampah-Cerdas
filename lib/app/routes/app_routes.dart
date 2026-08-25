@@ -28,6 +28,7 @@ class AppRoutes {
   static const String detailWarga = '/detail-warga';
   static const String aktivasiWarga = '/aktivasi-warga';
   static const String aspirasiWarga = '/warga/aspirasi';
+  static const String wargaGantiPassword = '/warga/ganti-password';
 
   static const String riwayatPetugasPemilahan = '/riwayat-petugas-pemilahan';
   static const String pemanfaatanSampah = '/pemanfaatan-sampah';

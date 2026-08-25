@@ -143,23 +143,23 @@ class _InlineCameraWidgetState extends State<InlineCameraWidget>
               orElse: () => _cameras.first,
             );
 
-      // Gunakan ResolutionPreset.medium untuk startup kilat (<200ms) tanpa bottleneck ISP
+      // Gunakan ResolutionPreset.max untuk resolusi terbaik, fallback ke high jika gagal
       CameraController ctrl = CameraController(
         cam,
-        ResolutionPreset.medium,
+        ResolutionPreset.max,
         enableAudio: false,
       );
 
       try {
         await ctrl.initialize().timeout(const Duration(seconds: 4));
       } catch (initErr) {
-        debugPrint('[InlineCameraWidget] Medium preset failed or timed out ($initErr), trying low preset...');
+        debugPrint('[InlineCameraWidget] Max preset failed or timed out ($initErr), trying high preset...');
         try {
           await ctrl.dispose();
         } catch (_) {}
         ctrl = CameraController(
           cam,
-          ResolutionPreset.low,
+          ResolutionPreset.high,
           enableAudio: false,
         );
         await ctrl.initialize().timeout(const Duration(seconds: 4));

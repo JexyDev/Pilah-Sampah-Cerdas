@@ -44,9 +44,10 @@ class ScanGuard {
     final hasOrganic = bins.any((b) => b.binType == WasteType.organic && b.isActive);
     final hasNonOrganic = bins.any((b) => b.binType == WasteType.nonOrganic && b.isActive);
     
-    final isAnyBinFull = bins.any((b) => b.isActive && b.currentVolumeL >= b.maxCapacityL);
+    final activeBins = bins.where((b) => b.isActive).toList();
+    final areAllBinsFull = activeBins.isNotEmpty && activeBins.every((b) => b.currentVolumeL >= b.maxCapacityL);
 
-    if (isAnyBinFull) {
+    if (areAllBinsFull) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -57,14 +58,14 @@ class ScanGuard {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Tempat Sampah Penuh',
+                  'Semua Tempat Sampah Penuh',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               ),
             ],
           ),
           content: const Text(
-            'Salah satu tempat sampah Anda sudah penuh (100%). Anda tidak dapat melakukan setor sampah sebelum mengajukan pengosongan tempat sampah.',
+            'Semua tempat sampah Anda sudah penuh (100%). Anda tidak dapat melakukan setor sampah sebelum mengajukan pengosongan.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
           actions: [

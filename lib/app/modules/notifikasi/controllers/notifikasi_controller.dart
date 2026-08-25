@@ -88,6 +88,7 @@ bool _isWargaNotification(NotificationEntity notif) {
 /// Reset cache notifikasi lokal saat logout
 void clearNotificationCache() {
   _shownNotifIds.clear();
+  LocalNotificationCacheService().clear();
 }
 
 // ─── Notifications List Provider ──────────────────────────────────────────────

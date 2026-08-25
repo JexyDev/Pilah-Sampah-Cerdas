@@ -29,6 +29,7 @@ import '../modules/mahasiswa/views/kelompok_kkn_view.dart';
 import '../modules/mahasiswa/views/daftar_warga_view.dart';
 import '../modules/mahasiswa/views/detail_warga_view.dart';
 import '../modules/warga/views/warga_aspirasi_view.dart';
+import '../modules/profil/ganti_password_warga_view.dart';
 import '../modules/mahasiswa/views/register_posko_view.dart';
 import '../modules/mahasiswa/views/register_fasilitas_view.dart';
 import '../modules/mahasiswa/views/pemanfaatan_sampah_view.dart';
@@ -120,6 +121,8 @@ class AppPages {
         return _buildRoute(const AktivasiWargaView(), settings);
       case AppRoutes.aspirasiWarga:
         return _buildRoute(const WargaAspirasiView(), settings);
+      case AppRoutes.wargaGantiPassword:
+        return _buildRoute(const GantiPasswordWargaView(), settings);
       case AppRoutes.pemanfaatanSampah:
         return _buildRoute(const PemanfaatanSampahView(), settings);
       case AppRoutes.editProfilMahasiswa:

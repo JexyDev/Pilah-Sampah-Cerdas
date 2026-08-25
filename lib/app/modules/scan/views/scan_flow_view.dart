@@ -1324,8 +1324,6 @@ class _AiSuccessSheet extends StatelessWidget {
     final bool isOrganic = result.detectedType == WasteType.organic;
     final double orgPct = result.organicPercentage ?? (isOrganic ? 0.85 : 0.15);
     final double anorgPct = 1.0 - orgPct;
-    final double primaryPct = isOrganic ? orgPct : anorgPct;
-    final bool isCorrect = primaryPct >= 0.80;
 
     return SafeArea(
       top: false,
@@ -1525,49 +1523,6 @@ class _AiSuccessSheet extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isCorrect ? AppColors.primaryGreen.withValues(alpha: 0.1) : AppColors.dangerRed.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: isCorrect ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                            color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isCorrect ? 'Pemilahan Jelas' : 'Pemilahan Kurang Jelas',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (!isCorrect) ...[
-                        const SizedBox(height: 4),
-                        const Text(
-                          'AI mendeteksi terlalu banyak campuran sampah. Skor dominan harus ≥ 80%.',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.dangerRed,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
               ],
             ),
           ),

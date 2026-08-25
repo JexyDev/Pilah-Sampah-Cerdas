@@ -110,16 +110,33 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
     int? rwId,
   }) async {
     try {
-      final response = await apiClient.dio.post(
-        ApiEndpoints.pemanfaatanFeedback,
-        data: {
+      final isLocalFile = fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty && !fotoBuktiUrl.startsWith('http');
+      dynamic payload;
+      
+      if (isLocalFile) {
+        final MultipartFile file = await MultipartFile.fromFile(fotoBuktiUrl);
+        payload = FormData.fromMap({
+          'judul': judul,
+          'isiKritikSaran': isiKritikSaran,
+          if (kategori != null) 'kategori': kategori,
+          if (rating != null) 'rating': rating,
+          if (rwId != null) 'rwId': rwId,
+          'fotoBukti': file,
+        });
+      } else {
+        payload = {
           'judul': judul,
           'isiKritikSaran': isiKritikSaran,
           if (kategori != null) 'kategori': kategori,
           if (rating != null) 'rating': rating,
           if (fotoBuktiUrl != null && fotoBuktiUrl.isNotEmpty) 'fotoBuktiUrl': fotoBuktiUrl,
           if (rwId != null) 'rwId': rwId,
-        },
+        };
+      }
+
+      final response = await apiClient.dio.post(
+        ApiEndpoints.pemanfaatanFeedback,
+        data: payload,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

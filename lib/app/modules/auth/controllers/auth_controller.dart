@@ -146,10 +146,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
 
+      // Tunggu sync notifikasi dari backend selesai supaya cache lokal ter-update
+      // SEBELUM `user` dimasukkan ke state (yang akan men-trigger notificationsProvider)
+      await _restoreNotificationSyncState(user);
+
       state = state.copyWith(user: user, isLoading: false);
       // Daftarkan FCM token setelah login berhasil
       _registerFcmToken();
-      _restoreNotificationSyncState(user);
       NotificationEngine().scheduleRoleBasedNotifications(user.role.apiValue);
       return true;
     } on AuthException catch (e) {
@@ -180,10 +183,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         role: role,
         data: data,
       );
+      await _restoreNotificationSyncState(user);
+
       state = state.copyWith(user: user, isLoading: false);
       // Daftarkan FCM token setelah register berhasil
       _registerFcmToken();
-      _restoreNotificationSyncState(user);
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(
@@ -236,9 +240,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
 
+      await _restoreNotificationSyncState(user);
+
       state = state.copyWith(user: user, isLoading: false);
       _registerFcmToken();
-      _restoreNotificationSyncState(user);
       return true;
     } on AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorCode: e.code, clearUser: true);

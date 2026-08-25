@@ -1,8 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../controllers/warga_aspirasi_controller.dart';
-
 class WargaAspirasiView extends ConsumerStatefulWidget {
   const WargaAspirasiView({super.key});
 
@@ -14,10 +15,23 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
   final _formKey = GlobalKey<FormState>();
   final _judulAspirasiCtrl = TextEditingController();
   final _isiAspirasiCtrl = TextEditingController();
-  final _fotoUrlCtrl = TextEditingController();
+  File? _fotoBukti;
+  final _picker = ImagePicker();
+  
   String _kategoriAspirasi = 'UMUM';
   final List<String> _kategoriAspirasiList = ['UMUM', 'FASILITAS', 'PELAYANAN', 'LAINNYA'];
   int _ratingAspirasi = 5;
+
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+      if (pickedFile != null) {
+        setState(() => _fotoBukti = File(pickedFile.path));
+      }
+    } catch (e) {
+      debugPrint('Gagal memilih gambar: $e');
+    }
+  }
 
   Future<void> _onSubmit() async {
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -28,9 +42,9 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
       return;
     }
     
-    if (_fotoUrlCtrl.text.trim().isEmpty) {
+    if (_fotoBukti == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto bukti wajib dilampirkan (masukkan tautan Google Drive/Cloud).'), backgroundColor: AppColors.dangerRed),
+        const SnackBar(content: Text('Foto bukti fisik dari galeri wajib dilampirkan.'), backgroundColor: AppColors.dangerRed),
       );
       return;
     }
@@ -42,7 +56,7 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
       'isiKritikSaran': _isiAspirasiCtrl.text.trim(),
       'kategori': _kategoriAspirasi,
       'rating': _ratingAspirasi,
-      'fotoBuktiUrl': _fotoUrlCtrl.text.trim(),
+      'fotoBuktiUrl': _fotoBukti!.path,
     });
 
     if (mounted) {
@@ -169,42 +183,32 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
               ),
               const SizedBox(height: 16),
 
-              const Text('Tautan Bukti (Opsional)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+              const Text('Foto Bukti (Wajib)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _fotoUrlCtrl,
-                keyboardType: TextInputType.url,
-                decoration: InputDecoration(
-                  hintText: 'https://drive.google.com/file/...',
-                  hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
-                  filled: true,
-                  fillColor: const Color(0xFFF8F9FA),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
-                  prefixIcon: const Icon(Icons.link_rounded, color: AppColors.textHint),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline_rounded, size: 16, color: Colors.blue.shade700),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Fitur unggah foto langsung belum tersedia. Jika Anda memiliki foto bukti, silakan unggah ke Google Drive lalu tempelkan tautannya (link) di atas.',
-                        style: TextStyle(fontSize: 11, color: Colors.blue.shade800, height: 1.4),
-                      ),
-                    ),
-                  ],
+              InkWell(
+                onTap: _pickImage,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: _fotoBukti != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.file(_fotoBukti!, fit: BoxFit.cover),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_a_photo_rounded, size: 40, color: Colors.grey.shade400),
+                            const SizedBox(height: 12),
+                            Text('Ketuk untuk unggah foto dari galeri', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                          ],
+                        ),
                 ),
               ),
               const SizedBox(height: 24),

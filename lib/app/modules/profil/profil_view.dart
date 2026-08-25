@@ -396,6 +396,16 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ).pushNamed(AppRoutes.tentang),
                         ),
 
+                        // Ganti Kata Sandi (Khusus Warga)
+                        if (user?.role == UserRole.warga) ...[
+                          _MenuTile(
+                            icon: Icons.lock_reset_rounded,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(alpha: 0.1),
+                            label: 'Ganti Kata Sandi',
+                            onTap: () => Navigator.of(context).pushNamed(AppRoutes.wargaGantiPassword),
+                          ),
+                        ],
                         // Keluar
                         _MenuTile(
                           icon: Icons.logout_rounded,
