@@ -532,11 +532,11 @@ export const MasterQrManager: React.FC = () => {
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => handlePrintPdf([q])}
-                                title="Cetak Stiker QR Ini"
+                                title="Cetak Poster Resmi QR Ini"
                                 className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
                               >
                                 <Printer size={14} className="text-emerald-600 dark:text-emerald-400" />
-                                <span className="hidden xl:inline">Cetak</span>
+                                <span className="hidden xl:inline">Cetak Poster</span>
                               </button>
 
                               {(isBroken || isInactive) && (

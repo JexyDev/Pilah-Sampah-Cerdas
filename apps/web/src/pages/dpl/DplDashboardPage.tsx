@@ -45,7 +45,10 @@ export const DplDashboardPage: React.FC = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const isAjuanAbsensiPage = location.pathname === "/ajuan-absensi";
+  const isAjuanAbsensiPage =
+    location.pathname === "/ajuan-absensi" ||
+    location.pathname === "/monitoring-kegiatan/pengajuan-izin" ||
+    location.pathname === "/validasi-absensi";
 
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<GroupSummary[]>([]);
@@ -1085,7 +1088,7 @@ export const DplDashboardPage: React.FC = () => {
         {alerts && alerts.pendingApprovalsCount > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              to="/ajuan-absensi"
+              to="/monitoring-kegiatan/pengajuan-izin"
               className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
             >
               <AlertTriangle size={14} className="text-amber-600 shrink-0" />
@@ -1291,17 +1294,17 @@ export const DplDashboardPage: React.FC = () => {
 
           <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
             <Link
-              to="/ajuan-absensi"
+              to="/monitoring-kegiatan/pengajuan-izin"
               className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
+              title="Buka Halaman Pengajuan Izin (Filter Sakit)"
             >
               <span>{gradeDistribution.totalSakit} Sakit</span>
             </Link>
             <span className="text-slate-300 dark:text-slate-600">•</span>
             <Link
-              to="/ajuan-absensi"
+              to="/monitoring-kegiatan/pengajuan-izin"
               className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
+              title="Buka Halaman Pengajuan Izin (Filter Izin)"
             >
               <span>{gradeDistribution.totalIzin} Izin</span>
             </Link>
@@ -1511,7 +1514,7 @@ export const DplDashboardPage: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={() => navigate("/ajuan-absensi")}
+            onClick={() => navigate("/monitoring-kegiatan/pengajuan-izin")}
             className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap cursor-pointer"
           >
             Validasi Sekarang

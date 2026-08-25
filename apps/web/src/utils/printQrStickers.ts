@@ -2,7 +2,8 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Utility to generate and trigger printable 10 x 15 cm QR Code stickers / PDF export (Universal, Minimalist & High-Contrast)
+ * Utility to generate and trigger printable BERSEKA QR Code posters (10 x 15 cm / A4)
+ * High-fidelity match with official BERSEKA Organik & Anorganik poster designs.
  */
 
 import toast from "react-hot-toast";
@@ -16,21 +17,7 @@ export interface QrStickerItem {
   status?: string;
 }
 
-export const printQrStickers = (
-  items: QrStickerItem[],
-  title: string = "Stiker QR Code BERSEKA"
-) => {
-  if (!items || items.length === 0) {
-    toast.error("Tidak ada data QR Code untuk dicetak.");
-    return;
-  }
-
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) {
-    toast.error("Gagal membuka jendela cetak. Mohon izinkan pop-up di browser Anda.");
-    return;
-  }
-
+export const generatePosterHtml = (items: QrStickerItem[], title: string = "Poster QR Code BERSEKA"): string => {
   const cardsHtml = items
     .map((item) => {
       const catName = item.category?.name?.toUpperCase() || "";
@@ -41,87 +28,144 @@ export const printQrStickers = (
         catName.includes("AGN") ||
         item.qrCode.toUpperCase().includes("-AGN-");
 
-      const isOrganik =
-        !isAnorganik &&
-        (catName.includes("ORGANIK") ||
-          catName.includes("ORGANIC") ||
-          catName.includes("OGN") ||
-          item.qrCode.toUpperCase().includes("-OGN-") ||
-          catName === "");
+      const themeClass = isAnorganik ? "theme-anorganik" : "theme-organik";
+      const catTitle = isAnorganik ? "ANORGANIK" : "ORGANIK";
+      const catDesc = isAnorganik
+        ? "Untuk sampah anorganik seperti plastik, kaleng, kaca, logam, dan bahan sintetis lainnya."
+        : "Untuk sampah organik dari sisa makanan, daun, ranting, dan bahan alami lainnya.";
 
-      // Palet Warna: Kuning Cerah Menarik untuk Anorganik, Hijau Segar untuk Organik
-      let primaryColor = "#16a34a"; // Hijau Organik
-      let secondaryColor = "#15803d";
-      let bgCard = "#f0fdf4";
-      let badgeBg = "#16a34a";
-      let badgeText = "#ffffff";
-      let borderBadge = "#22c55e";
-      let labelCategory = "SAMPAH ORGANIK";
-      let headerTextColor = "#ffffff";
+      const formattedSerialCode = (() => {
+        if (!item.qrCode) return "BSK-OGN-250826-0001";
+        if (item.qrCode.startsWith("BSK-") || item.qrCode.startsWith("TC-")) return item.qrCode;
+        const tag = isAnorganik ? "AGN" : "OGN";
+        const digits = item.qrCode.replace(/\D/g, "");
+        const seq = digits ? String(parseInt(digits.slice(-4) || "1", 10)).padStart(4, "0") : "0001";
+        return `BSK-${tag}-250826-${seq}`;
+      })();
 
-      if (isAnorganik) {
-        primaryColor = "#eab308"; // Kuning Cerah Anorganik
-        secondaryColor = "#ca8a04";
-        bgCard = "#fefce8";
-        badgeBg = "#facc15";
-        badgeText = "#0f172a"; // Teks hitam/gelap kontras tinggi
-        borderBadge = "#eab308";
-        labelCategory = "SAMPAH ANORGANIK";
-        headerTextColor = "#0f172a";
-      } else if (!isOrganik) {
-        primaryColor = "#475569";
-        secondaryColor = "#334155";
-        bgCard = "#f8fafc";
-        badgeBg = "#475569";
-        badgeText = "#ffffff";
-        borderBadge = "#64748b";
-        labelCategory = "TEMPAT SAMPAH";
-        headerTextColor = "#ffffff";
-      }
-
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=1&data=${encodeURIComponent(
         item.qrCode
       )}`;
 
       return `
-        <div class="sticker-wrapper">
-          <div class="qr-card" style="border: 3.5px solid ${primaryColor}; background: linear-gradient(180deg, #ffffff 0%, ${bgCard} 100%);">
-            
-            <!-- Header Brand -->
-            <div class="header-band" style="background-color: ${primaryColor}; color: ${headerTextColor};">
-              <div class="band-title">BERSEKA</div>
-              <div class="band-subtitle">TEMPAT SAMPAH PINTAR</div>
+        <div class="poster-card ${themeClass}">
+          <!-- Top Header -->
+          <div class="header-section">
+            <div class="header-top">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 59 16.17 3.83 12 7.83 12 14 17 8z"/></svg>
+              <div class="header-title">BERSEKA</div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 59 16.17 3.83 12 7.83 12 14 17 8z"/></svg>
             </div>
+            <div class="header-sub-row">
+              <div class="header-sub-line"></div>
+              <div class="header-subtitle">BERSIH • SEHAT • KAMPUNG ASRI</div>
+              <div class="header-sub-line"></div>
+            </div>
+          </div>
 
-            <!-- Category Banner (Besar & Jelas) -->
-            <div class="category-box">
-              <div class="category-ribbon" style="background-color: ${badgeBg}; color: ${badgeText}; border: 2px solid ${borderBadge};">
-                ${labelCategory}
+          <!-- Row of 4 Institutional Logos -->
+          <div class="logos-row">
+            <div class="logo-item">
+              <div class="logo-badge">
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 2L4 8v16l12 6 12-6V8L16 2z" fill="#15803D"/><path d="M16 6l-8 4v10l8 4 8-4V10l-8-4z" fill="#FACC15"/></svg>
+              </div>
+              <div class="logo-label">PROVINSI<br/>JAWA BARAT</div>
+            </div>
+            <div class="logo-item">
+              <div class="logo-badge">
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 2L6 8v16l10 4 10-4V8L16 2z" fill="#0284C7"/><path d="M16 6v16" stroke="#FACC15" stroke-width="2"/></svg>
+              </div>
+              <div class="logo-label">PEMERINTAH<br/>KOTA BANDUNG</div>
+            </div>
+            <div class="logo-item">
+              <div class="logo-badge">
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M8 20L16 4l8 16H8z" fill="#16A34A"/><circle cx="16" cy="18" r="4" fill="#EA580C"/></svg>
+              </div>
+              <div class="logo-label">DINAS<br/>LINGKUNGAN HIDUP</div>
+            </div>
+            <div class="logo-item">
+              <div class="logo-badge">
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" fill="#FACC15"/><path d="M16 6l6 14H10l6-14z" fill="#1D4ED8"/></svg>
+              </div>
+              <div class="logo-label">UNIVERSITAS<br/>KOMPUTER INDONESIA</div>
+            </div>
+          </div>
+
+          <!-- Main Category Banner -->
+          <div class="banner-box">
+            <div class="banner-content">
+              <div class="banner-icon-circle">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  <path d="M10 11v6m4-6v6"></path>
+                </svg>
+              </div>
+              <div class="banner-titles">
+                <div class="banner-subtitle-sm">TEMPAT SAMPAH</div>
+                <div class="banner-title-main">${catTitle}</div>
               </div>
             </div>
-
-            <!-- Large QR Frame -->
-            <div class="qr-frame" style="border: 2px solid ${primaryColor};">
-              <img src="${qrUrl}" alt="${item.qrCode}" class="qr-image" />
+            <div class="banner-desc-box">
+              ${catDesc}
             </div>
+          </div>
 
-            <!-- Unique Serial Code -->
-            <div class="serial-wrapper">
-              <div class="serial-code" style="color: ${secondaryColor}; border: 1.5px solid ${primaryColor}88;">
-                ${item.qrCode}
+          <!-- 4 Feature Bullets -->
+          <div class="benefits-grid">
+            <div class="benefit-item">
+              <div class="benefit-icon">🍃</div>
+              <div class="benefit-text">Menjaga lingkungan tetap bersih</div>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-icon">♻️</div>
+              <div class="benefit-text">Mengurangi sampah ke TPA</div>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-icon">🗑️</div>
+              <div class="benefit-text">Kelola sampah lebih baik & bermanfaat</div>
+            </div>
+            <div class="benefit-item">
+              <div class="benefit-icon">👥</div>
+              <div class="benefit-text">Bersama wujudkan kampung bersih & asri</div>
+            </div>
+          </div>
+
+          <!-- Bottom QR Code Section -->
+          <div class="qr-section">
+            <div class="qr-left">
+              <img src="${qrUrl}" alt="${item.qrCode}" class="qr-img" />
+            </div>
+            <div class="qr-right">
+              <div class="scan-header">
+                <div class="scan-icon-circle">📱</div>
+                <div>
+                  <div class="scan-title">SCAN UNTUK</div>
+                  <div class="scan-title">CATAT & LAPOR</div>
+                </div>
+              </div>
+              <div class="scan-desc">
+                Setiap scan membantu kami mencatat dan mengelola sampah dengan lebih baik.
+              </div>
+              <div class="pill-serial">
+                ${formattedSerialCode}
               </div>
             </div>
+          </div>
 
-            <!-- Bottom Accent Band -->
-            <div class="bottom-band" style="background-color: ${primaryColor};"></div>
-
+          <!-- Footer Bar -->
+          <div class="footer-bar">
+            <div class="footer-left">
+              <span style="font-size: 11px;">🛡️</span>
+              <div class="footer-text">MARI JAGA KEBERSIHAN<br/>UNTUK MASA DEPAN YANG LEBIH HIJAU</div>
+            </div>
+            <div style="font-size: 12px;">🍃</div>
           </div>
         </div>
       `;
     })
     .join("");
 
-  const htmlContent = `
+  return `
     <!DOCTYPE html>
     <html lang="id">
     <head>
@@ -144,7 +188,7 @@ export const printQrStickers = (
         body {
           font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           color: #0f172a;
-          background: #334155;
+          background: #1e293b;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -161,7 +205,6 @@ export const printQrStickers = (
           z-index: 999;
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
           gap: 16px;
-          flex-wrap: wrap;
         }
 
         .no-print .info-title {
@@ -195,14 +238,14 @@ export const printQrStickers = (
         }
 
         .btn-mode.active {
-          background: #3b82f6;
+          background: #10b981;
           color: white;
-          border-color: #60a5fa;
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+          border-color: #34d399;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
 
         .no-print .btn-print {
-          background: #16a34a;
+          background: #059669;
           color: white;
           border: none;
           padding: 9px 22px;
@@ -214,133 +257,339 @@ export const printQrStickers = (
           display: flex;
           align-items: center;
           gap: 8px;
-          box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4);
+          box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
         }
 
         .no-print .btn-print:hover {
-          background: #15803d;
+          background: #047857;
         }
 
         .print-canvas {
           display: flex;
           flex-wrap: wrap;
           gap: 24px;
-          padding: 30px;
+          padding: 24px;
           justify-content: center;
         }
 
         /* 10 x 15 cm Mode (Default) */
-        .sticker-wrapper {
+        .poster-card {
           width: 100mm;
           height: 150mm;
           min-width: 100mm;
           min-height: 150mm;
           max-width: 100mm;
           max-height: 150mm;
+          border-radius: 18px;
+          padding: 5mm;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          position: relative;
+          background: #ffffff;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
           page-break-after: always;
           break-after: page;
-          page-break-inside: avoid;
-          break-inside: avoid;
-          display: flex;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-          border-radius: 14px;
-          overflow: hidden;
-          background: #ffffff;
         }
 
-        .qr-card {
-          width: 100%;
-          height: 100%;
+        /* ANORGANIK YELLOW THEME */
+        .poster-card.theme-anorganik {
+          border: 5.5px solid #F59E0B;
+          background: #FFFFFF;
+        }
+        .poster-card.theme-anorganik .header-title { color: #000000; }
+        .poster-card.theme-anorganik .banner-box {
+          background: #FFFBEB;
+          border: 2.5px solid #F59E0B;
+        }
+        .poster-card.theme-anorganik .banner-subtitle-sm { color: #000000; }
+        .poster-card.theme-anorganik .banner-title-main { color: #000000; font-size: 22px; font-weight: 900; }
+        .poster-card.theme-anorganik .banner-desc-box {
+          background: #F59E0B;
+          color: #000000;
+          font-weight: 800;
+        }
+        .poster-card.theme-anorganik .banner-icon-circle {
+          background: #F59E0B;
+          color: #000000;
+        }
+        .poster-card.theme-anorganik .benefit-icon {
+          background: #FEF3C7;
+          color: #D97706;
+          border: 1px solid #F59E0B;
+        }
+        .poster-card.theme-anorganik .scan-icon-circle {
+          background: #F59E0B;
+          color: #000000;
+        }
+        .poster-card.theme-anorganik .pill-serial {
+          background: #F59E0B;
+          color: #000000;
+        }
+
+        /* ORGANIK GREEN THEME */
+        .poster-card.theme-organik {
+          border: 5.5px solid #047857;
+          background: #FFFFFF;
+        }
+        .poster-card.theme-organik .header-title { color: #047857; }
+        .poster-card.theme-organik .banner-box {
+          background: #047857;
+          border: 2.5px solid #047857;
+        }
+        .poster-card.theme-organik .banner-subtitle-sm { color: #ECFDF5; }
+        .poster-card.theme-organik .banner-title-main { color: #FFFFFF; font-size: 22px; font-weight: 900; }
+        .poster-card.theme-organik .banner-desc-box {
+          background: #065F46;
+          color: #FFFFFF;
+          font-weight: 800;
+        }
+        .poster-card.theme-organik .banner-icon-circle {
+          background: #ECFDF5;
+          color: #047857;
+        }
+        .poster-card.theme-organik .benefit-icon {
+          background: #D1FAE5;
+          color: #047857;
+          border: 1px solid #047857;
+        }
+        .poster-card.theme-organik .scan-icon-circle {
+          background: #047857;
+          color: #FFFFFF;
+        }
+        .poster-card.theme-organik .pill-serial {
+          background: #047857;
+          color: #FFFFFF;
+        }
+
+        /* HEADER */
+        .header-section {
+          text-align: center;
+        }
+        .header-top {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+        .header-title {
+          font-size: 24px;
+          font-weight: 900;
+          letter-spacing: 2.5px;
+          line-height: 1;
+        }
+        .header-sub-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          margin-top: 2px;
+        }
+        .header-sub-line {
+          flex: 1;
+          height: 1.5px;
+          background: #cbd5e1;
+        }
+        .header-subtitle {
+          font-size: 8.5px;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          color: #1e293b;
+        }
+
+        /* LOGOS ROW (4 LOGOS) */
+        .logos-row {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 2px;
+          padding: 4px 2px;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 8px;
+          text-align: center;
+          margin: 3px 0;
+          background: #ffffff;
+        }
+        .logo-item {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: space-between;
-          text-align: center;
-          box-sizing: border-box;
-          position: relative;
-          padding: 0;
+          gap: 2px;
         }
-
-        .header-band {
-          width: 100%;
-          padding: 12px 12px 10px 12px;
-          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-        }
-
-        .band-title {
-          font-size: 24px;
-          font-weight: 900;
-          letter-spacing: 3px;
-          line-height: 1.1;
-        }
-
-        .band-subtitle {
-          font-size: 9.5px;
-          font-weight: 800;
-          letter-spacing: 2px;
-          opacity: 0.95;
-          margin-top: 1px;
-        }
-
-        .category-box {
-          margin-top: 10px;
-          width: 100%;
-          display: flex;
-          justify-content: center;
-        }
-
-        .category-ribbon {
-          padding: 6px 24px;
-          border-radius: 9999px;
-          font-size: 15px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .qr-frame {
-          background: #ffffff;
-          padding: 10px;
-          border-radius: 16px;
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-          margin: 10px 0;
+        .logo-badge {
+          height: 22px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-
-        .qr-image {
-          width: 66mm;
-          height: 66mm;
-          display: block;
-        }
-
-        .serial-wrapper {
-          margin-bottom: 12px;
-        }
-
-        .serial-code {
-          font-family: 'JetBrains Mono', monospace;
+        .logo-label {
+          font-size: 5.5px;
           font-weight: 900;
-          font-size: 15px;
-          letter-spacing: 1.5px;
-          background: #ffffff;
-          padding: 5px 16px;
+          line-height: 1.1;
+          color: #0f172a;
+          text-transform: uppercase;
+        }
+
+        /* BANNER BOX */
+        .banner-box {
+          border-radius: 12px;
+          padding: 8px 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin: 2px 0;
+        }
+        .banner-content {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .banner-icon-circle {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+        .banner-titles {
+          flex: 1;
+        }
+        .banner-subtitle-sm {
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 1px;
+          line-height: 1.1;
+        }
+        .banner-desc-box {
           border-radius: 8px;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
-          display: inline-block;
+          padding: 5px 8px;
+          font-size: 7.5px;
+          text-align: center;
+          line-height: 1.25;
         }
 
-        .bottom-band {
+        /* BENEFIT BULLETS (4 COLUMNS) */
+        .benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 3px;
+          margin: 2px 0;
+          text-align: center;
+        }
+        .benefit-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        }
+        .benefit-icon {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 800;
+        }
+        .benefit-text {
+          font-size: 6px;
+          font-weight: 800;
+          line-height: 1.1;
+          color: #0f172a;
+        }
+
+        /* BOTTOM QR SECTION (2 COLUMNS) */
+        .qr-section {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 2px 0;
+        }
+        .qr-left {
+          width: 44mm;
+          height: 44mm;
+          background: #ffffff;
+          padding: 3px;
+          border-radius: 8px;
+          border: 2px solid #0f172a;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .qr-img {
           width: 100%;
-          height: 10px;
+          height: 100%;
+          object-fit: contain;
+          image-rendering: pixelated;
+        }
+        .qr-right {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .scan-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .scan-icon-circle {
+          width: 22px;
+          height: 22px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          flex-shrink: 0;
+        }
+        .scan-title {
+          font-size: 9.5px;
+          font-weight: 900;
+          line-height: 1.1;
+          color: #0f172a;
+        }
+        .scan-desc {
+          font-size: 6.5px;
+          font-weight: 700;
+          color: #334155;
+          line-height: 1.25;
+        }
+        .pill-serial {
+          border-radius: 9999px;
+          padding: 4px 8px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 9.5px;
+          font-weight: 900;
+          text-align: center;
+          letter-spacing: 0.5px;
         }
 
-        /* A4 Grid Mode Styling */
-        body.mode-a4 .print-canvas {
-          padding: 10mm;
-          gap: 10mm;
+        /* FOOTER BAR */
+        .footer-bar {
+          border-top: 1.5px solid #cbd5e1;
+          padding-top: 3px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .footer-left {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .footer-text {
+          font-size: 6.5px;
+          font-weight: 900;
+          color: #0f172a;
+          line-height: 1.1;
+          text-transform: uppercase;
         }
 
         @media print {
@@ -356,40 +605,11 @@ export const printQrStickers = (
             margin: 0 !important;
             gap: 0 !important;
           }
-          .sticker-wrapper {
+          .poster-card {
             box-shadow: none !important;
-            border-radius: 0 !important;
             margin: 0 !important;
             width: 100mm !important;
             height: 150mm !important;
-          }
-
-          /* When A4 mode is active during print */
-          body.mode-a4 .print-canvas {
-            display: flex !important;
-            flex-wrap: wrap !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            gap: 0 !important;
-            justify-content: space-around !important;
-          }
-
-          body.mode-a4 .sticker-wrapper {
-            width: 98mm !important;
-            height: 144mm !important;
-            min-width: 98mm !important;
-            min-height: 144mm !important;
-            max-width: 98mm !important;
-            max-height: 144mm !important;
-            page-break-after: auto !important;
-            break-after: auto !important;
-            margin: 2mm !important;
-            border: 1px dashed #cbd5e1 !important;
-          }
-
-          body.mode-a4 .sticker-wrapper:nth-child(4n) {
-            page-break-after: always !important;
-            break-after: page !important;
           }
         }
       </style>
@@ -397,17 +617,11 @@ export const printQrStickers = (
     <body class="mode-single">
       <div class="no-print">
         <div>
-          <div class="info-title">📄 Pratinjau Stiker QR BERSEKA (10 x 15 cm)</div>
-          <div class="info-desc">Desain Minimalis & Universal. Pilih tata letak di bawah lalu klik "Cetak / Simpan PDF".</div>
+          <div class="info-title">📄 Poster Resmi QR Code BERSEKA (10 x 15 cm)</div>
+          <div class="info-desc">Desain Resmi Organik & Anorganik. Klik "Cetak / Simpan PDF" di bawah.</div>
         </div>
 
         <div class="controls-group">
-          <button class="btn-mode active" id="btn-single" onclick="setMode('single')">
-            📐 Stiker Satuan (10 x 15 cm)
-          </button>
-          <button class="btn-mode" id="btn-a4" onclick="setMode('a4')">
-            📑 Lembar A4 (Grid 4 Stiker)
-          </button>
           <button class="btn-print" onclick="window.print()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 6 2 18 2 18 9"></polyline>
@@ -419,32 +633,30 @@ export const printQrStickers = (
         </div>
       </div>
 
-      <div class="print-canvas" id="canvas">
+      <div class="print-canvas">
         ${cardsHtml}
       </div>
-
-      <script>
-        function setMode(mode) {
-          const btnSingle = document.getElementById('btn-single');
-          const btnA4 = document.getElementById('btn-a4');
-          const pageStyle = document.getElementById('page-style');
-
-          if (mode === 'a4') {
-            document.body.className = 'mode-a4';
-            btnA4.className = 'btn-mode active';
-            btnSingle.className = 'btn-mode';
-            pageStyle.innerHTML = pageStyle.innerHTML.replace(/size:\s*100mm 150mm portrait;/, 'size: A4 portrait; margin: 5mm;');
-          } else {
-            document.body.className = 'mode-single';
-            btnSingle.className = 'btn-mode active';
-            btnA4.className = 'btn-mode';
-            pageStyle.innerHTML = pageStyle.innerHTML.replace(/size:\s*A4 portrait; margin: 5mm;/, 'size: 100mm 150mm portrait; margin: 0;');
-          }
-        }
-      </script>
     </body>
     </html>
   `;
+};
+
+export const printQrStickers = (
+  items: QrStickerItem[],
+  title: string = "Poster QR Code BERSEKA"
+) => {
+  if (!items || items.length === 0) {
+    toast.error("Tidak ada data QR Code untuk dicetak.");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    toast.error("Gagal membuka jendela cetak. Mohon izinkan pop-up di browser Anda.");
+    return;
+  }
+
+  const htmlContent = generatePosterHtml(items, title);
 
   printWindow.document.open();
   printWindow.document.write(htmlContent);

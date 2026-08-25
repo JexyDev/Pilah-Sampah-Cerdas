@@ -71,47 +71,90 @@ export class BinService {
     }
   ) {
     let whereClause: any = {};
-    if (currentUser && (!filters || (filters.status !== "PRINTED" && filters.status !== "printed"))) {
+    let reqStatus = filters?.status?.toUpperCase();
+    if (filters?.status === "Rusak") {
+      reqStatus = "BROKEN";
+    }
+
+    if (currentUser) {
       const { getScopingFilters } = await import("../utils/rbacScoping.js");
       const scoping = await getScopingFilters(currentUser);
-      whereClause = { ...scoping.binFilter };
+      const hasScoping = scoping.binFilter && Object.keys(scoping.binFilter).length > 0;
+
+      if (hasScoping) {
+        if (reqStatus === "PRINTED") {
+          whereClause = { status: "PRINTED" };
+        } else if (reqStatus && reqStatus !== "ALL") {
+          whereClause = {
+            AND: [
+              scoping.binFilter,
+              { status: reqStatus }
+            ]
+          };
+        } else {
+          // Bypass scoping to also return unassigned PRINTED bins
+          whereClause = {
+            OR: [
+              scoping.binFilter,
+              { status: "PRINTED" }
+            ]
+          };
+        }
+      } else {
+        // Non-scoped user (SUPER_USER, DEVELOPER, etc.)
+        if (reqStatus && reqStatus !== "ALL") {
+          whereClause = { status: reqStatus };
+        }
+      }
+    } else {
+      if (reqStatus && reqStatus !== "ALL") {
+        whereClause = { status: reqStatus };
+      }
     }
 
     if (filters) {
-      if (filters.status) {
-        const validEnumValues = [
-          "PRINTED",
-          "ACTIVE",
-          "ACTIVE_BOUND",
-          "INACTIVE",
-          "BROKEN",
-          "PENDING_APPROVAL",
-        ];
-        if (filters.status === "PRINTED" || filters.status === "printed") {
-          // [MODIFIKASI]: Bypass scoping wilayah khusus untuk status PRINTED
-          // karena QR baru belum memiliki rwId/kelurahanId.
-          whereClause = { status: "PRINTED" };
-        } else if (validEnumValues.includes(filters.status)) {
-          whereClause.status = filters.status;
-        } else if (filters.status === "Rusak") {
-          whereClause.status = "BROKEN";
-        }
-        // Note: Human-friendly status filters like "Penuh", "Sedang", "Normal" are filtered post-fetch in binController
-      }
       if (filters.areaId) {
         const parsedAreaId = parseInt(filters.areaId, 10);
         if (!isNaN(parsedAreaId)) {
-          whereClause.rwId = parsedAreaId;
+          if (whereClause.OR) {
+            whereClause = {
+              AND: [
+                whereClause,
+                { rwId: parsedAreaId }
+              ]
+            };
+          } else {
+            whereClause.rwId = parsedAreaId;
+          }
         }
       }
       if (filters.categoryId) {
-        whereClause.categoryId = filters.categoryId;
+        if (whereClause.OR) {
+          whereClause = {
+            AND: [
+              whereClause,
+              { categoryId: filters.categoryId }
+            ]
+          };
+        } else {
+          whereClause.categoryId = filters.categoryId;
+        }
       }
       if (filters.search) {
-        whereClause.OR = [
+        const searchCondition = [
           { qrCode: { contains: filters.search, mode: "insensitive" } },
           { id: { contains: filters.search, mode: "insensitive" } },
         ];
+        if (whereClause.OR || whereClause.AND) {
+          whereClause = {
+            AND: [
+              whereClause,
+              { OR: searchCondition }
+            ]
+          };
+        } else {
+          whereClause.OR = searchCondition;
+        }
       }
     }
 

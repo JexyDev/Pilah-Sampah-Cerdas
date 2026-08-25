@@ -599,6 +599,106 @@ export class BinController {
   }
 
   /**
+   * Get poster specification / HTML for a bin / QR code (Mobile & Web sync)
+   */
+  async getPoster(req: Request, res: Response): Promise<void> {
+    try {
+      const { identifier } = req.params;
+      if (!identifier) {
+        res.status(400).json({ success: false, message: "QR Code or Bin ID is required" });
+        return;
+      }
+
+      const bin = await prisma.bin.findFirst({
+        where: {
+          OR: [{ id: identifier }, { qrCode: identifier }],
+        },
+        include: {
+          category: true,
+          rw: { include: { kelurahan: true } },
+        },
+      });
+
+      const qrCode = bin ? bin.qrCode : identifier;
+      const categoryName = bin?.category?.name || (identifier.toUpperCase().includes("-AGN-") ? "ANORGANIK" : "ORGANIK");
+      const isAnorganik =
+        categoryName.toUpperCase().includes("ANORGANIK") ||
+        categoryName.toUpperCase().includes("NON_ORGANIC") ||
+        categoryName.toUpperCase().includes("AGN") ||
+        qrCode.toUpperCase().includes("-AGN-");
+
+      const theme = isAnorganik ? "YELLOW" : "GREEN";
+      const title = isAnorganik ? "TEMPAT SAMPAH ANORGANIK" : "TEMPAT SAMPAH ORGANIK";
+      const description = isAnorganik
+        ? "Untuk sampah anorganik seperti plastik, kaleng, kaca, logam, dan bahan sintetis lainnya."
+        : "Untuk sampah organik dari sisa makanan, daun, ranting, dan bahan alami lainnya.";
+
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=1&data=${encodeURIComponent(qrCode)}`;
+
+      const format = (req.query.format as string) || "json";
+
+      if (format === "html" || req.headers.accept?.includes("text/html")) {
+        const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poster ${qrCode} BERSEKA</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=JetBrains+Mono:wght@800;900&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
+    .card { width: 100%; max-width: 380px; background: #fff; border-radius: 20px; padding: 16px; border: 5.5px solid ${isAnorganik ? '#F59E0B' : '#047857'}; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); text-align: center; }
+    .header { font-size: 24px; font-weight: 900; color: ${isAnorganik ? '#000' : '#047857'}; letter-spacing: 2px; }
+    .subtitle { font-size: 9px; font-weight: 800; color: #334155; margin-bottom: 8px; letter-spacing: 1px; }
+    .banner { background: ${isAnorganik ? '#FFFBEB' : '#047857'}; border: 2.5px solid ${isAnorganik ? '#F59E0B' : '#047857'}; border-radius: 14px; padding: 12px; margin: 8px 0; color: ${isAnorganik ? '#000' : '#fff'}; }
+    .banner-title { font-size: 20px; font-weight: 900; line-height: 1.1; }
+    .banner-desc { background: ${isAnorganik ? '#F59E0B' : '#065F46'}; color: ${isAnorganik ? '#000' : '#fff'}; font-size: 8px; font-weight: 800; border-radius: 8px; padding: 6px; margin-top: 6px; }
+    .qr-frame { width: 180px; height: 180px; margin: 12px auto; padding: 6px; border: 2px solid #000; border-radius: 12px; background: #fff; }
+    .qr-frame img { width: 100%; height: 100%; object-fit: contain; }
+    .pill { background: ${isAnorganik ? '#F59E0B' : '#047857'}; color: ${isAnorganik ? '#000' : '#fff'}; border-radius: 99px; padding: 6px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 900; display: inline-block; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">BERSEKA</div>
+    <div class="subtitle">BERSIH • SEHAT • KAMPUNG ASRI</div>
+    <div class="banner">
+      <div class="banner-title">TEMPAT SAMPAH<br>${isAnorganik ? 'ANORGANIK' : 'ORGANIK'}</div>
+      <div class="banner-desc">${description}</div>
+    </div>
+    <div class="qr-frame">
+      <img src="${qrImageUrl}" alt="${qrCode}">
+    </div>
+    <div class="pill">${qrCode}</div>
+  </div>
+</body>
+</html>`;
+        res.setHeader("Content-Type", "text/html");
+        res.status(200).send(html);
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          id: bin?.id || null,
+          qrCode,
+          category: categoryName,
+          theme,
+          title,
+          description,
+          qrImageUrl,
+          posterHtmlUrl: `/api/v1/bins/${encodeURIComponent(qrCode)}/poster?format=html`,
+        },
+      });
+    } catch (error: any) {
+      console.error("[BinController] getPoster error:", error);
+      res.status(500).json({ success: false, message: "Gagal mengambil poster QR code" });
+    }
+  }
+
+  /**
    * Create a new Bin (Admin only)
    */
   async createBin(req: Request, res: Response): Promise<void> {

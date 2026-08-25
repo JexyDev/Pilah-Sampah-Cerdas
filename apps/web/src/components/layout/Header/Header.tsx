@@ -65,9 +65,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       return ["Dasbor KKN"];
     }
 
-    if (pathname === "/manajemen-ekosistem-kkn") {
-      if (search.includes("tab=MAHASISWA")) return ["Pelaksanaan KKN", "Portofolio Mahasiswa"];
-      return ["Pelaksanaan KKN", "Kelompok KKN"];
+    if (pathname === "/manajemen-ekosistem-kkn" || pathname === "/pelaksanaan/kelompok") {
+      if (search.includes("tab=MAHASISWA")) return ["Pelaksanaan", "Portofolio Mahasiswa"];
+      return ["Pelaksanaan", "Kelompok"];
     }
 
     if (pathname.startsWith("/superUser/data-survei-kkn/")) {
@@ -82,48 +82,61 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring-wilayah":
       case "/monitoring":
         return ["Peta Wilayah"];
+      case "/pelaksanaan/linimasa-kegiatan":
       case "/jadwal-kegiatan":
-        return ["Pelaksanaan KKN", "Linimasa Kegiatan"];
+        return ["Pelaksanaan", "Linimasa Kegiatan"];
+      case "/monitoring-kegiatan/presensi":
       case "/monitoring-absen":
-        return ["Presensi & Absensi", "Presensi"];
+        return ["Monitoring Kegiatan", "Presensi"];
+      case "/monitoring-kegiatan/pengajuan-izin":
       case "/ajuan-absensi":
       case "/validasi-absensi":
-        return ["Presensi & Absensi", "Pengajuan Izin/Sakit"];
+        return ["Monitoring Kegiatan", "Pengajuan Izin"];
+      case "/pelaksanaan/program-kerja":
       case "/program-kerja-kkn":
       case "/program-kerja":
-        return ["Pelaksanaan KKN", "Program Kerja"];
+        return ["Pelaksanaan", "Program Kerja"];
       case "/pemantauan-rekapitulasi":
       case "/monitoring-pemilahan":
       case "/monitoring-aktivitas":
         return ["Pemilahan & Angkut", "Rekapitulasi Setoran"];
+      case "/hasil-survei/baseline":
       case "/survei/baseline":
       case "/superUser/data-survei-baseline":
       case "/data-survei-baseline":
       case "/superUser/data-survei-kkn":
       case "/data-survei-kkn":
-        return ["Survei & Dampak", "Survei Baseline"];
+        return ["Hasil Survei", "Baseline"];
+      case "/hasil-survei/endline":
       case "/survei/endline":
       case "/superUser/data-survei-endline":
       case "/data-survei-endline":
-        return ["Survei & Dampak", "Survei Endline"];
+        return ["Hasil Survei", "Endline"];
+      case "/hasil-survei/data-survei":
       case "/superUser/import-survei-kkn":
       case "/import-survei-kkn":
-        return ["Survei & Dampak", "Impor Data Survei"];
+        return ["Hasil Survei", "Data Survei"];
+      case "/hasil-survei/evaluasi-dan-dampak":
       case "/evaluasi-dampak-kkn":
       case "/evaluasi-dampak":
-        return ["Survei & Dampak", "Evaluasi & Dampak"];
+        return ["Hasil Survei", "Evaluasi dan Dampak"];
+      case "/penilaian/mahasiswa":
       case "/penilaian-kkn/individu":
       case "/penilaian-kkn/mahasiswa":
-        return ["Penilaian KKN", "Penilaian Individu"];
+        return ["Penilaian", "Mahasiswa"];
+      case "/penilaian/program-kerja":
       case "/penilaian-kkn/program-kerja":
-        return ["Penilaian KKN", "Penilaian Program Kerja"];
+        return ["Penilaian", "Program Kerja"];
+      case "/penilaian/laporan-akhir":
       case "/penilaian-kkn/laporan-akhir":
-        return ["Penilaian KKN", "Penilaian Laporan Akhir"];
+        return ["Penilaian", "Laporan Akhir"];
+      case "/penilaian/rekapitulasi-nilai-akhir":
       case "/penilaian-kkn/rekap":
-        return ["Penilaian KKN", "Rekap & Nilai Akhir"];
+        return ["Penilaian", "Rekapitulasi Nilai Akhir"];
+      case "/monitoring-pemilahan/pengangkutan-sampah":
       case "/pengangkutan-residu":
       case "/manajemen-pengangkutan":
-        return ["Pemilahan & Angkut", "Pengangkutan Residu"];
+        return ["Monitoring Pemilahan", "Pengangkutan Sampah"];
       case "/pengguna":
       case "/master-pengguna":
       case "/master-data-pengguna":
@@ -158,9 +171,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         }
         return ["Pengguna"];
       }
+      case "/monitoring-pengelolaan/tempat-sampah":
       case "/master-data/manajemen-tempat-sampah":
       case "/manajemen-tempat-sampah":
-        return ["Pemilahan & Angkut", "Tempat Sampah"];
+        return ["Monitoring Pengelolaan", "Tempat Sampah"];
       case "/peraturan":
       case "/dataset/peraturan":
       case "/master-data/rule-engine":
@@ -191,39 +205,45 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/master-data/rukun-warga":
       case "/master-rw":
         return ["Wilayah", "Rukun Warga"];
+      case "/monitoring-wilayah":
       case "/manajemen-lokasi":
       case "/peta":
-        return ["Manajemen Lokasi"];
+        return ["Monitoring Wilayah"];
       case "/dashboard-dpl":
         return ["Dasbor"];
       case "/role-permissions":
         return ["Hak Akses"];
+      case "/pelaksanaan/kelompok":
       case "/manajemen-ekosistem-kkn":
-        return ["Pelaksanaan KKN", "Kelompok KKN"];
+        return ["Pelaksanaan", "Kelompok"];
       case "/kkn-portal":
         return ["Dashboard KKN"];
       case "/residu-portal":
         return ["Dashboard Petugas Residu"];
+      case "/monitoring-pengelolaan/fasilitas":
       case "/pengelolaan-sampah":
       case "/pemanfaatan-sampah":
-        return ["Pemilahan & Angkut", "Fasilitas Pengelolaan Sampah"];
+        return ["Monitoring Pengelolaan", "Fasilitas"];
+      case "/pelaksanaan/posko":
       case "/posko-kkn":
       case "/posko":
-        return ["Pelaksanaan KKN", "Posko KKN"];
+        return ["Pelaksanaan", "Posko"];
+      case "/monitoring-pemanfaatan":
       case "/hasil-pemanfaatan":
-        return ["Pemilahan & Angkut", "Hasil Pemanfaatan"];
+        return ["Monitoring Pemanfaatan"];
+      case "/monitoring-pemilahan/penyetoran-sampah":
+      case "/penyetoran-sampah":
       case "/setor-sampah":
       case "/setor":
-        return ["Tata Kelola Sampah", "Setor Sampah"];
+        return ["Monitoring Pemilahan", "Penyetoran Sampah"];
+      case "/pelaksanaan/linimasa-kegiatan":
       case "/jadwal-kegiatan":
-        return ["Pelaksanaan KKN", "Linimasa Kegiatan"];
-      case "/input-manual":
-        return ["Input Manual"];
-      case "/penyetoran-sampah":
-        return ["Tata Kelola Sampah", "Setor Sampah"];
+        return ["Pelaksanaan", "Linimasa Kegiatan"];
+      case "/monitoring-pemilahan/rekapitulasi-setoran":
+      case "/pemantauan-rekapitulasi":
       case "/rekapitulasi-setoran":
       case "/rekap-setoran":
-        return ["Tata Kelola Sampah", "Rekapitulasi Setoran"];
+        return ["Monitoring Pemilahan", "Rekapitulasi Setoran"];
       case "/master-data/panduan":
         return ["Panduan & Edukasi", "Buku Panduan"];
       case "/master-data/kegiatan-sampah":
@@ -234,11 +254,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Dataset", "Hasil Klasifikasi"];
       case "/poin-warga":
         return ["Poin Warga"];
+      case "/monitoring-pemilahan/peringkat-warga":
       case "/peringkat":
       case "/leaderboard":
-        return ["Peringkat Warga"];
+        return ["Monitoring Pemilahan", "Peringkat Warga"];
       case "/laporan-analitik":
         return ["Laporan & Analitik"];
+      case "/log-aktivitas/mahasiswa":
       case "/logbook-kkn":
       case "/dpl/logbook":
       case "/logbook":
@@ -246,24 +268,27 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         const params = new URLSearchParams(search);
         const tab = params.get("tab");
         if (tab === "dpl") {
-          return ["Log Aktivitas DPL"];
+          return ["Log Aktivitas", "Dosen Pembimbing Lapangan"];
         }
-        return ["Log Aktivitas Mahasiswa"];
+        return ["Log Aktivitas", "Mahasiswa"];
       }
+      case "/log-aktivitas/dosen-pembimbing-lapangan":
       case "/log-aktivitas-dpl":
       case "/dpl/log-aktivitas":
-        return ["Log Aktivitas DPL"];
+        return ["Log Aktivitas", "Dosen Pembimbing Lapangan"];
       case "/notifikasi":
-        return ["Akun & Sistem", "Notifikasi"];
+        return ["Notifikasi"];
       case "/pengaturan":
-        return ["Akun & Sistem", "Profil"];
+        return ["Profil"];
+      case "/master-data/pengguna-online":
       case "/pengguna-online":
-        return ["Audit & Log", "Pengguna Daring"];
+        return ["Master Data", "Pengguna Daring"];
+      case "/master-data/histori-sistem":
       case "/log-aktivitas":
       case "/superUser/audit":
       case "/audit-trail":
       case "/audit-log":
-        return ["Audit & Log", "Audit Trail Sistem"];
+        return ["Master Data", "Histori Sistem"];
       case "/evaluasi-ai":
       case "/superUser/discrepancies":
         return ["Verifikasi & QR", "Diskrepansi AI"];

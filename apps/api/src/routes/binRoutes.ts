@@ -323,6 +323,7 @@ router.post("/scan", authMiddleware, roleMiddleware(["WARGA"]), binController.sc
  *         description: Success
  */
 router.get("/:id/status", binController.getStatus);
+router.get("/:identifier/poster", binController.getPoster);
 
 /**
  * @swagger

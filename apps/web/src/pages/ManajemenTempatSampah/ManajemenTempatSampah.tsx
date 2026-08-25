@@ -16,6 +16,7 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import KategoriSampah from "../KategoriSampah/KategoriSampah";
+import MasterQrManager from "../SuperUser/MasterQrManager";
 import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
@@ -95,14 +96,17 @@ const ManajemenTempatSampah: React.FC = () => {
   const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const getTabFromUrl = (): "kodefikasi" | "monitoring" | "kategori" => {
+  type TabType = "kodefikasi" | "monitoring" | "kategori" | "batch_qr";
+
+  const getTabFromUrl = (): TabType => {
     const tab = searchParams.get("tab");
     if (tab === "monitoring") return "monitoring";
     if (tab === "kategori") return "kategori";
+    if (tab === "batch_qr" || tab === "batch-qr" || tab === "qr" || tab === "batch") return "batch_qr";
     return "kodefikasi";
   };
 
-  const [activeTab, setActiveTab] = useState<"kodefikasi" | "monitoring" | "kategori">(getTabFromUrl());
+  const [activeTab, setActiveTab] = useState<TabType>(getTabFromUrl());
 
   useEffect(() => {
     const currentTab = getTabFromUrl();
@@ -111,7 +115,7 @@ const ManajemenTempatSampah: React.FC = () => {
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: "kodefikasi" | "monitoring" | "kategori") => {
+  const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
@@ -763,6 +767,18 @@ const ManajemenTempatSampah: React.FC = () => {
               <Tags size={15} />
               <span>Kategori Sampah</span>
             </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("batch_qr")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                activeTab === "batch_qr"
+                  ? "bg-[#009966] text-white shadow-xs"
+                  : "bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700"
+              }`}
+            >
+              <QrCode size={15} />
+              <span>Batch Kode QR</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 ml-auto sm:ml-0">
@@ -780,7 +796,9 @@ const ManajemenTempatSampah: React.FC = () => {
       </div>
 
       {/* 3. Sub-Tab Contents */}
-      {activeTab === "kategori" ? (
+      {activeTab === "batch_qr" ? (
+        <MasterQrManager />
+      ) : activeTab === "kategori" ? (
         <KategoriSampah openAddModalSignal={openKategoriAddSignal} />
       ) : activeTab === "monitoring" ? (
         <div className="space-y-6">

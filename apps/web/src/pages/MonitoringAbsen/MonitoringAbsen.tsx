@@ -2052,12 +2052,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </button>
 
           <Link
-            to="/ajuan-absensi"
+            to="/monitoring-kegiatan/pengajuan-izin"
             className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Buka Halaman Verifikasi Ajuan Izin & Sakit"
+            title="Buka Halaman Verifikasi Pengajuan Izin"
           >
             <FileCheck size={14} className="text-amber-600 dark:text-amber-400" />
-            <span>Pengajuan Izin/Sakit</span>
+            <span>Pengajuan Izin</span>
           </Link>
 
           <button
@@ -2797,7 +2797,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               </span>
                             ) : isCancelRequested ? (
                               <Link
-                                to="/ajuan-absensi"
+                                to="/monitoring-kegiatan/pengajuan-izin"
                                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
                                 title="Mahasiswa mengajukan pembatalan izin - Klik untuk review di menu Ajuan"
                               >
@@ -2807,7 +2807,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               </Link>
                             ) : isSakitPending ? (
                               <Link
-                                to="/ajuan-absensi"
+                                to="/monitoring-kegiatan/pengajuan-izin"
                                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
                                 title="Pengajuan Sakit sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
                               >
@@ -2817,7 +2817,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               </Link>
                             ) : isIzinPending ? (
                               <Link
-                                to="/ajuan-absensi"
+                                to="/monitoring-kegiatan/pengajuan-izin"
                                 className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
                                 title="Pengajuan Izin sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
                               >
@@ -2975,7 +2975,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           </span>
                         ) : rec.status === "IZIN_PENDING" || rec.currentStatus === "MENUNGGU_PERSETUJUAN_IZIN" ? (
                           <Link
-                            to="/ajuan-absensi"
+                            to="/monitoring-kegiatan/pengajuan-izin"
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition shrink-0 flex items-center gap-1"
                           >
                             <span>Izin (Menunggu)</span>
@@ -2983,7 +2983,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           </Link>
                         ) : rec.status === "SAKIT_PENDING" ? (
                           <Link
-                            to="/ajuan-absensi"
+                            to="/monitoring-kegiatan/pengajuan-izin"
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shrink-0 flex items-center gap-1"
                           >
                             <span>Sakit (Menunggu)</span>
@@ -2991,7 +2991,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           </Link>
                         ) : rec.status === "CANCEL_REQUESTED" || rec.currentStatus === "PENGAJUAN_BATAL_IZIN" ? (
                           <Link
-                            to="/ajuan-absensi"
+                            to="/monitoring-kegiatan/pengajuan-izin"
                             className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition shrink-0 flex items-center gap-1"
                           >
                             <span>Batal Izin (Menunggu)</span>
