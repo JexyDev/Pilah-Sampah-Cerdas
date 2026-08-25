@@ -4,7 +4,6 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/providers/repository_providers.dart';
-import '../../auth/controllers/auth_controller.dart';
 import '../controllers/detail_warga_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
