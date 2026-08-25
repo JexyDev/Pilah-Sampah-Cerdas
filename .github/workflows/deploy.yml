@@ -99,8 +99,37 @@ jobs:
             echo "=== 1. Pulling Latest Code from Git ==="
             if [ -d ~/Pilah-Sampah-Cerdas-new ]; then REPO_DIR=~/Pilah-Sampah-Cerdas-new; else REPO_DIR=~/Pilah-Sampah-Cerdas; fi
             cd "$REPO_DIR" || { echo "Directory not found"; exit 1; }
+            
+            # Backup existing .env if present before git reset
+            if [ -f "$REPO_DIR/apps/api/.env" ]; then
+              cp "$REPO_DIR/apps/api/.env" /tmp/apps_api_env_backup 2>/dev/null || true
+            elif [ -f "$REPO_DIR/.env" ]; then
+              cp "$REPO_DIR/.env" /tmp/apps_api_env_backup 2>/dev/null || true
+            fi
+
             git fetch --depth=1 origin main
             git reset --hard origin/main
+
+            # Restore or create .env for apps/api
+            if [ -f /tmp/apps_api_env_backup ]; then
+              cp /tmp/apps_api_env_backup "$REPO_DIR/apps/api/.env"
+              cp /tmp/apps_api_env_backup "$REPO_DIR/.env"
+            fi
+
+            if [ ! -f "$REPO_DIR/apps/api/.env" ]; then
+              echo "Recreating production .env for backend on VPS..."
+              echo "DATABASE_URL=postgresql://psc_user:psc_password@localhost:5432/psc_db" > "$REPO_DIR/apps/api/.env"
+              echo "REDIS_URL=redis://localhost:6379" >> "$REPO_DIR/apps/api/.env"
+              echo "JWT_SECRET=ganti_ini_dengan_string_random_minimal_32_karakter" >> "$REPO_DIR/apps/api/.env"
+              echo "JWT_EXPIRES_IN=24h" >> "$REPO_DIR/apps/api/.env"
+              echo "PORT=3000" >> "$REPO_DIR/apps/api/.env"
+              echo "NODE_ENV=production" >> "$REPO_DIR/apps/api/.env"
+              echo "FRONTEND_URL=https://psc.makerindo.com" >> "$REPO_DIR/apps/api/.env"
+              echo "GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json" >> "$REPO_DIR/apps/api/.env"
+              cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env" 2>/dev/null || true
+            fi
+
+            export DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db"
 
             echo "=== 2. Updating Backend (apps/api) ==="
             cd "$REPO_DIR"

@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Utility to generate and trigger printable 10 x 15 cm QR Code stickers / PDF export
+ * Utility to generate and trigger printable 10 x 15 cm QR Code stickers / PDF export (Universal, Minimalist & High-Contrast)
  */
 
 import toast from "react-hot-toast";
@@ -49,80 +49,71 @@ export const printQrStickers = (
           item.qrCode.toUpperCase().includes("-OGN-") ||
           catName === "");
 
-      // Tema Warna: Organik = Hijau, Anorganik = Kuning/Amber
+      // Palet Warna: Kuning Cerah Menarik untuk Anorganik, Hijau Segar untuk Organik
       let primaryColor = "#16a34a"; // Hijau Organik
-      let darkColor = "#15803d";
+      let secondaryColor = "#15803d";
       let bgCard = "#f0fdf4";
       let badgeBg = "#16a34a";
       let badgeText = "#ffffff";
       let borderBadge = "#22c55e";
       let labelCategory = "SAMPAH ORGANIK";
-      let subCategoryText = "Sisa Makanan • Dedaunan • Organik";
+      let headerTextColor = "#ffffff";
 
       if (isAnorganik) {
-        primaryColor = "#d97706"; // Kuning / Amber Anorganik
-        darkColor = "#b45309";
+        primaryColor = "#eab308"; // Kuning Cerah Anorganik
+        secondaryColor = "#ca8a04";
         bgCard = "#fefce8";
-        badgeBg = "#eab308";
-        badgeText = "#78350f";
-        borderBadge = "#facc15";
+        badgeBg = "#facc15";
+        badgeText = "#0f172a"; // Teks hitam/gelap kontras tinggi
+        borderBadge = "#eab308";
         labelCategory = "SAMPAH ANORGANIK";
-        subCategoryText = "Plastik • Kertas • Kardus • Logam";
+        headerTextColor = "#0f172a";
       } else if (!isOrganik) {
         primaryColor = "#475569";
-        darkColor = "#334155";
+        secondaryColor = "#334155";
         bgCard = "#f8fafc";
         badgeBg = "#475569";
         badgeText = "#ffffff";
         borderBadge = "#64748b";
         labelCategory = "TEMPAT SAMPAH";
-        subCategoryText = "Pilah Sampah Sesuai Kategori";
+        headerTextColor = "#ffffff";
       }
 
-      const wilayahStr = item.rtRw
-        ? `${item.rtRw.name} • Kel. ${item.rtRw.kelurahan.name}`
-        : "Wilayah Dampingan BERSEKA";
-
-      const batchStr = item.qrBatch?.batchCode ? `Batch: ${item.qrBatch.batchCode}` : "";
-
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
         item.qrCode
       )}`;
 
       return `
         <div class="sticker-wrapper">
-          <div class="qr-card" style="border: 3px solid ${primaryColor}; background: linear-gradient(180deg, #ffffff 0%, ${bgCard} 100%);">
+          <div class="qr-card" style="border: 3.5px solid ${primaryColor}; background: linear-gradient(180deg, #ffffff 0%, ${bgCard} 100%);">
             
-            <!-- Top Header Accent -->
-            <div class="header-band" style="background-color: ${primaryColor};">
+            <!-- Header Brand -->
+            <div class="header-band" style="background-color: ${primaryColor}; color: ${headerTextColor};">
               <div class="band-title">BERSEKA</div>
               <div class="band-subtitle">TEMPAT SAMPAH PINTAR</div>
             </div>
 
-            <!-- Category Ribbon -->
-            <div class="category-ribbon" style="background-color: ${badgeBg}; color: ${badgeText}; border: 1.5px solid ${borderBadge};">
-              <span class="ribbon-text">${labelCategory}</span>
+            <!-- Category Banner (Besar & Jelas) -->
+            <div class="category-box">
+              <div class="category-ribbon" style="background-color: ${badgeBg}; color: ${badgeText}; border: 2px solid ${borderBadge};">
+                ${labelCategory}
+              </div>
             </div>
-            <div class="category-subtext" style="color: ${darkColor};">${subCategoryText}</div>
 
-            <!-- QR Code Frame -->
-            <div class="qr-frame" style="border-color: ${primaryColor};">
+            <!-- Large QR Frame -->
+            <div class="qr-frame" style="border: 2px solid ${primaryColor};">
               <img src="${qrUrl}" alt="${item.qrCode}" class="qr-image" />
             </div>
 
             <!-- Unique Serial Code -->
-            <div class="serial-code" style="color: ${darkColor};">
-              ${item.qrCode}
+            <div class="serial-wrapper">
+              <div class="serial-code" style="color: ${secondaryColor}; border: 1.5px solid ${primaryColor}88;">
+                ${item.qrCode}
+              </div>
             </div>
 
-            <!-- Metadata & Instructions -->
-            <div class="card-meta">
-              ${batchStr ? `<span class="meta-batch">${batchStr}</span> &bull; ` : ""}<span class="meta-area">${wilayahStr}</span>
-            </div>
-
-            <div class="footer-instruction" style="border-top: 1px dashed ${primaryColor}66; color: ${darkColor};">
-              Pindai QR dengan Aplikasi BERSEKA untuk Aktivasi &amp; Catat Setoran
-            </div>
+            <!-- Bottom Accent Band -->
+            <div class="bottom-band" style="background-color: ${primaryColor};"></div>
 
           </div>
         </div>
@@ -136,8 +127,8 @@ export const printQrStickers = (
     <head>
       <meta charset="UTF-8">
       <title>${title} (10 x 15 cm)</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+      <style id="page-style">
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&family=JetBrains+Mono:wght@800;900&display=swap');
 
         @page {
           size: 100mm 150mm portrait;
@@ -153,7 +144,7 @@ export const printQrStickers = (
         body {
           font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           color: #0f172a;
-          background: #e2e8f0;
+          background: #334155;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -168,12 +159,14 @@ export const printQrStickers = (
           position: sticky;
           top: 0;
           z-index: 999;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+          gap: 16px;
+          flex-wrap: wrap;
         }
 
         .no-print .info-title {
           font-size: 14px;
-          font-weight: 800;
+          font-weight: 900;
           letter-spacing: 0.3px;
         }
 
@@ -183,6 +176,31 @@ export const printQrStickers = (
           margin-top: 2px;
         }
 
+        .controls-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .btn-mode {
+          background: #1e293b;
+          color: #cbd5e1;
+          border: 1px solid #475569;
+          padding: 8px 14px;
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-mode.active {
+          background: #3b82f6;
+          color: white;
+          border-color: #60a5fa;
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
         .no-print .btn-print {
           background: #16a34a;
           color: white;
@@ -190,13 +208,13 @@ export const printQrStickers = (
           padding: 9px 22px;
           border-radius: 8px;
           font-weight: 800;
-          font-size: 12px;
+          font-size: 13px;
           cursor: pointer;
           transition: background 0.2s;
           display: flex;
           align-items: center;
           gap: 8px;
-          box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+          box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4);
         }
 
         .no-print .btn-print:hover {
@@ -206,11 +224,12 @@ export const printQrStickers = (
         .print-canvas {
           display: flex;
           flex-wrap: wrap;
-          gap: 20px;
-          padding: 24px;
+          gap: 24px;
+          padding: 30px;
           justify-content: center;
         }
 
+        /* 10 x 15 cm Mode (Default) */
         .sticker-wrapper {
           width: 100mm;
           height: 150mm;
@@ -223,8 +242,8 @@ export const printQrStickers = (
           page-break-inside: avoid;
           break-inside: avoid;
           display: flex;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-          border-radius: 12px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+          border-radius: 14px;
           overflow: hidden;
           background: #ffffff;
         }
@@ -237,104 +256,91 @@ export const printQrStickers = (
           align-items: center;
           justify-content: space-between;
           text-align: center;
-          padding: 0 0 10px 0;
           box-sizing: border-box;
           position: relative;
+          padding: 0;
         }
 
         .header-band {
           width: 100%;
-          padding: 8px 12px 7px 12px;
-          color: #ffffff;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+          padding: 12px 12px 10px 12px;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
         }
 
         .band-title {
-          font-size: 20px;
+          font-size: 24px;
           font-weight: 900;
-          letter-spacing: 2px;
+          letter-spacing: 3px;
           line-height: 1.1;
         }
 
         .band-subtitle {
-          font-size: 8.5px;
-          font-weight: 700;
-          letter-spacing: 1.5px;
-          opacity: 0.92;
+          font-size: 9.5px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          opacity: 0.95;
+          margin-top: 1px;
+        }
+
+        .category-box {
+          margin-top: 10px;
+          width: 100%;
+          display: flex;
+          justify-content: center;
         }
 
         .category-ribbon {
-          margin-top: 6px;
-          padding: 4px 18px;
+          padding: 6px 24px;
           border-radius: 9999px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-        }
-
-        .ribbon-text {
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 900;
-          letter-spacing: 1px;
+          letter-spacing: 1.5px;
           text-transform: uppercase;
-        }
-
-        .category-subtext {
-          font-size: 8px;
-          font-weight: 700;
-          margin-top: 2px;
-          letter-spacing: 0.3px;
+          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
         }
 
         .qr-frame {
           background: #ffffff;
-          padding: 8px;
-          border-radius: 14px;
-          border: 2px solid;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-          margin: 6px 0;
+          padding: 10px;
+          border-radius: 16px;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+          margin: 10px 0;
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
         .qr-image {
-          width: 58mm;
-          height: 58mm;
+          width: 66mm;
+          height: 66mm;
           display: block;
+        }
+
+        .serial-wrapper {
+          margin-bottom: 12px;
         }
 
         .serial-code {
           font-family: 'JetBrains Mono', monospace;
           font-weight: 900;
-          font-size: 13px;
-          letter-spacing: 1.2px;
+          font-size: 15px;
+          letter-spacing: 1.5px;
           background: #ffffff;
-          padding: 3px 12px;
-          border-radius: 6px;
-          border: 1px solid #cbd5e1;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+          padding: 5px 16px;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+          display: inline-block;
         }
 
-        .card-meta {
-          font-size: 8.5px;
-          font-weight: 700;
-          color: #475569;
-          margin-top: 4px;
-          padding: 0 8px;
-          line-height: 1.2;
+        .bottom-band {
+          width: 100%;
+          height: 10px;
         }
 
-        .meta-batch {
-          color: #0f172a;
-        }
-
-        .footer-instruction {
-          width: 90%;
-          padding-top: 6px;
-          font-size: 7.5px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-          line-height: 1.2;
+        /* A4 Grid Mode Styling */
+        body.mode-a4 .print-canvas {
+          padding: 10mm;
+          gap: 10mm;
         }
 
         @media print {
@@ -357,35 +363,84 @@ export const printQrStickers = (
             width: 100mm !important;
             height: 150mm !important;
           }
+
+          /* When A4 mode is active during print */
+          body.mode-a4 .print-canvas {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+            justify-content: space-around !important;
+          }
+
+          body.mode-a4 .sticker-wrapper {
+            width: 98mm !important;
+            height: 144mm !important;
+            min-width: 98mm !important;
+            min-height: 144mm !important;
+            max-width: 98mm !important;
+            max-height: 144mm !important;
+            page-break-after: auto !important;
+            break-after: auto !important;
+            margin: 2mm !important;
+            border: 1px dashed #cbd5e1 !important;
+          }
+
+          body.mode-a4 .sticker-wrapper:nth-child(4n) {
+            page-break-after: always !important;
+            break-after: page !important;
+          }
         }
       </style>
     </head>
-    <body>
+    <body class="mode-single">
       <div class="no-print">
         <div>
-          <div class="info-title">📄 Pratinjau Cetak Stiker QR BERSEKA (Ukuran 10 x 15 cm)</div>
-          <div class="info-desc">Total: ${items.length} Lembar Stiker. Pilih opsi "Save as PDF" / "Simpan sebagai PDF" pada dialog cetak browser.</div>
+          <div class="info-title">📄 Pratinjau Stiker QR BERSEKA (10 x 15 cm)</div>
+          <div class="info-desc">Desain Minimalis & Universal. Pilih tata letak di bawah lalu klik "Cetak / Simpan PDF".</div>
         </div>
-        <button class="btn-print" onclick="window.print()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-            <rect x="6" y="14" width="12" height="8"></rect>
-          </svg>
-          Cetak / Simpan PDF (10x15 cm)
-        </button>
+
+        <div class="controls-group">
+          <button class="btn-mode active" id="btn-single" onclick="setMode('single')">
+            📐 Stiker Satuan (10 x 15 cm)
+          </button>
+          <button class="btn-mode" id="btn-a4" onclick="setMode('a4')">
+            📑 Lembar A4 (Grid 4 Stiker)
+          </button>
+          <button class="btn-print" onclick="window.print()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Cetak / Simpan PDF
+          </button>
+        </div>
       </div>
 
-      <div class="print-canvas">
+      <div class="print-canvas" id="canvas">
         ${cardsHtml}
       </div>
 
       <script>
-        window.onload = function() {
-          setTimeout(function() {
-            window.print();
-          }, 600);
-        };
+        function setMode(mode) {
+          const btnSingle = document.getElementById('btn-single');
+          const btnA4 = document.getElementById('btn-a4');
+          const pageStyle = document.getElementById('page-style');
+
+          if (mode === 'a4') {
+            document.body.className = 'mode-a4';
+            btnA4.className = 'btn-mode active';
+            btnSingle.className = 'btn-mode';
+            pageStyle.innerHTML = pageStyle.innerHTML.replace(/size:\s*100mm 150mm portrait;/, 'size: A4 portrait; margin: 5mm;');
+          } else {
+            document.body.className = 'mode-single';
+            btnSingle.className = 'btn-mode active';
+            btnA4.className = 'btn-mode';
+            pageStyle.innerHTML = pageStyle.innerHTML.replace(/size:\s*A4 portrait; margin: 5mm;/, 'size: 100mm 150mm portrait; margin: 0;');
+          }
+        }
       </script>
     </body>
     </html>
