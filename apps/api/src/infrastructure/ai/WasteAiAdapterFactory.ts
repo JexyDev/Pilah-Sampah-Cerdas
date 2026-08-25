@@ -94,14 +94,19 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
       }
 
       const data = (await response.json()) as any;
+      const detUpper = String(data.detectedType || "").toUpperCase();
+      const isOrganic =
+        detUpper === "ORGANIC" ||
+        detUpper === "ORGANIK" ||
+        (data.organik_percent !== undefined && Number(data.organik_percent) > Number(data.non_organik_percent || 0));
 
       return {
         requestId: data.requestId || uuidv4(),
-        detectedType: data.detectedType || "ORGANIC",
+        detectedType: isOrganic ? "ORGANIC" : "NON_ORGANIC",
         confidenceScore: Number(data.confidenceScore || 0.9),
         estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
         detections: data.detections || [],
-        vendorName: data.vendorName || "BERSEKA-v1",
+        vendorName: data.vendorName || "BERSEKA-v3c",
         annotatedImageBase64: data.annotatedImageBase64,
         rawPayload: data,
       };

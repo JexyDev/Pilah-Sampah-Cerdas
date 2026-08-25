@@ -126,6 +126,8 @@ jobs:
               echo "NODE_ENV=production" >> "$REPO_DIR/apps/api/.env"
               echo "FRONTEND_URL=https://psc.makerindo.com" >> "$REPO_DIR/apps/api/.env"
               echo "GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json" >> "$REPO_DIR/apps/api/.env"
+              echo "AI_VENDOR_PROVIDER=VENDOR" >> "$REPO_DIR/apps/api/.env"
+              echo "AI_VENDOR_ENDPOINT=http://localhost:8000/predict" >> "$REPO_DIR/apps/api/.env"
               cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env" 2>/dev/null || true
             fi
 

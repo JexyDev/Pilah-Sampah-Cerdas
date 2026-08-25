@@ -44,7 +44,10 @@ export class AiService {
             organik_percent = Math.round((orgVol / totalVol) * 100);
             non_organik_percent = 100 - organik_percent;
           } else {
-            organik_percent = aiResult.detectedType === "ORGANIC" ? 100 : 0;
+            const isOrg =
+              String(aiResult.detectedType).toUpperCase() === "ORGANIC" ||
+              String(aiResult.detectedType).toUpperCase() === "ORGANIK";
+            organik_percent = isOrg ? 100 : 0;
             non_organik_percent = 100 - organik_percent;
           }
         }
