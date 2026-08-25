@@ -347,6 +347,53 @@ async function main() {
     }).catch(() => {});
   }
 
+  console.log('📥 7. Restoring QR Batches & Bins...');
+  if (dump.qrBatches) {
+    for (const qb of dump.qrBatches) {
+      await prisma.qrBatch.create({
+        data: {
+          id: qb.id,
+          batchCode: qb.batchCode,
+          totalQty: qb.totalQty,
+          status: qb.status,
+          assignedPicUserId: qb.assignedPicUserId,
+          createdAt: new Date(qb.createdAt),
+          updatedAt: new Date(qb.updatedAt)
+        }
+      }).catch(() => {});
+    }
+  }
+
+  if (dump.bins) {
+    for (const b of dump.bins) {
+      await prisma.bin.create({
+        data: {
+          id: b.id,
+          qrCode: b.qrCode,
+          categoryId: b.categoryId,
+          maxCapacityLiter: b.maxCapacityLiter,
+          currentVolumeLiter: b.currentVolumeLiter,
+          rwId: b.rwId,
+          kelurahanId: b.kelurahanId,
+          latitude: b.latitude ? Number(b.latitude) : null,
+          longitude: b.longitude ? Number(b.longitude) : null,
+          qrBatchId: b.qrBatchId,
+          status: b.status,
+          userId: b.userId,
+          shape: b.shape,
+          diameter: b.diameter ? Number(b.diameter) : null,
+          registeredByStudentId: b.registeredByStudentId,
+          width: b.width ? Number(b.width) : null,
+          length: b.length ? Number(b.length) : null,
+          height: b.height ? Number(b.height) : null,
+          binType: b.binType,
+          createdAt: new Date(b.createdAt),
+          updatedAt: new Date(b.updatedAt)
+        }
+      }).catch(() => {});
+    }
+  }
+
   console.log('\n🎉 SUCCESS! VPS Database is now 100% IDENTICAL to Localhost DB!');
   console.log(`📊 Statistics on VPS:
   - Users: ${await prisma.user.count()}

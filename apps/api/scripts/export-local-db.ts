@@ -24,7 +24,9 @@ async function main() {
       }
     })).filter(u => u.phone !== "+628111111118" && u.name !== "Mahasiswa"),
     wasteCategories: await prisma.wasteCategory.findMany(),
-    systemConfigs: await prisma.systemConfig.findMany()
+    systemConfigs: await prisma.systemConfig.findMany(),
+    qrBatches: await prisma.qrBatch.findMany(),
+    bins: await prisma.bin.findMany()
   };
 
   const dumpPath = path.join(process.cwd(), 'scripts', 'localhost_data_dump.json');

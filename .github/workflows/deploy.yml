@@ -144,6 +144,8 @@ jobs:
             fi
             echo "Executing Prisma Migration Deploy..."
             npx prisma migrate deploy
+            echo "Restoring Database state from JSON dump..."
+            npx tsx scripts/restore-exact-local-db.ts
             npm run build
 
             echo "=== 3. Reloading PM2 Backend ==="

@@ -61,7 +61,10 @@ Thumbs.db
 scratch/
 uploads/
 apps/api/uploads/
-apps/api/scripts/
+# apps/api/scripts/
+!apps/api/scripts/localhost_data_dump.json
+!apps/api/scripts/export-local-db.ts
+!apps/api/scripts/restore-exact-local-db.ts
 graphify-out/
 android/local.properties
 android/app/
