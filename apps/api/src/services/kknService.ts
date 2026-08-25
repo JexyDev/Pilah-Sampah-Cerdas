@@ -1863,7 +1863,7 @@ export class KknService {
 
     const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    const cleanProgramTitle = payload.wilayahDampingan || deskripsi || "Program Pengolahan Mandiri";
+    const cleanProgramTitle = jenisPemanfaatan || payload.wilayahDampingan || deskripsi || "Program Pengolahan Mandiri";
     const cleanTeknologi = jenisPemanfaatan || "Kompos Organik";
     const cleanBahanBaku = kategoriSampah || "Sampah Organik";
 

@@ -710,7 +710,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           type: "group",
-          label: "Presensi & Kehadiran",
+          label: "Presensi & Absensi",
           icon: Clock,
           allowed: [
             "DEVELOPER",

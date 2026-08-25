@@ -42,7 +42,7 @@ describe("Pemanfaatan Service CRUD & Business Logic Tests", () => {
 
     // 3. Read One
     const one = await pemanfaatanService.getById(created.id);
-    expect(one.jenisProgram).toBe("Kompos Organik");
+    expect(one.jenisProgram).toBe("Kompos Organik (Buruan Sae)");
     expect(one.nilaiEkonomiRp).toBe(25000);
 
     // 4. Update

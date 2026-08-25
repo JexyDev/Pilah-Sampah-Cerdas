@@ -29,6 +29,7 @@ describe("Portals A & B Service Integration Tests", () => {
     await prisma.aiRequestLog.deleteMany({});
     await prisma.auditTrail.deleteMany({});
     await prisma.setoranManual.deleteMany({});
+    await prisma.binResetRequest.deleteMany({});
     await prisma.bin.deleteMany({});
     await prisma.household.deleteMany({});
     await prisma.user.deleteMany({ where: { role: { name: "WARGA" } } });
