@@ -23,6 +23,21 @@
 
 ---
 
+## 🛡️ SOP INTEGRASI FITUR & API DENGAN TIM BACKEND (LAN OFFICE NETWORK)
+
+Jika tim Mobile membutuhkan endpoint API baru yang belum rilis di server produksi:
+1. **Jalur Testing Lokal (Local Host Integration)**:
+   - Hubungkan aplikasi Flutter ke backend lokal developer di kantor menggunakan IP LAN kantor (`192.168.1.43`):
+     ```bash
+     flutter run --dart-define=API_BASE_URL=http://192.168.1.43:3000
+     ```
+2. **Jalur Mock Response (Client-Side Stubbing)**:
+   - Jika pengujian UI mendesak dan komputer backend tidak terhubung, gunakan mock response pada repository/provider Dart dengan menyertakan badge visual `[Belum Terhubung API]` sesuai aturan Anti-Dummy.
+3. **Sinkronisasi Spesifikasi API**:
+   - Selalu rujuk `docs/API_MOBILE_DOCUMENTATION.md` atau repositori `main` sebagai acuan tunggal struktur JSON. Dilarang keras mengarang nama field JSON tanpa kesepakatan dengan backend.
+
+---
+
 ## 1. Tentang Proyek Mobile
 
 **Nama:** BERSEKA Mobile App (Bersih, Sehat, Kampung Asri) — Aplikasi Flutter Client untuk Warga, Mahasiswa KKN, dan Petugas Pemilahan Residu.
@@ -40,7 +55,7 @@ Sebelum membuat atau mengubah kode/dokumentasi, AI Agent WAJIB membaca dan memat
 
 ### 🛡️ PRINSIP ANTI-HALUSINASI & ISOLASI REPOSITORI:
 1. 🚫 **ISOLASI REPOSITORI (STRICT ISOLATION):** Repositori `mobile` ini khusus dikembangkan untuk Aplikasi Client Mobile Flutter. AI Agent yang bekerja di folder/branch `mobile` **DILARANG KERAS** menyentuh, membuat, atau mengubah file/folder Monorepo `main` (`apps/api`, `apps/web`, `prisma/`, `main/`, dll). Perubahan backend/web dikelola secara terpisah pada repositori `main` (branch `main`).
-2. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` atau `grep_search` pada file sumber sebelum menulis kode.
+2. **DILARANG MENGARANG (NO HALLUCINATED LOGIC/ENDPOINTS):** Jangan pernah mengarang skema data, endpoint API, path file, atau nama komponen yang tidak terverifikasi langsung di codebase. Selalu lakukan `view_file` or `grep_search` pada file sumber me-referensi backend.
 3. **DILARANG DATA DUMMY TANPA LABEL:** Jangan menanamkan data dummy/hardcode yang seolah-olah data asli backend.
 4. **PATUHI ATURAN KATA 'TEMPAT SAMPAH':** **DILARANG** menggunakan kata 'tong' atau 'tong sampah' pada UI/dokumentasi. Selalu gunakan **'Tempat Sampah'**.
 5. **CEK KOMPILASI KODE:** Setiap perubahan kode Dart WAJIB dites secara lokal dengan `flutter analyze` dan dipastikan **0 Error (Clean Compilation)**.
@@ -110,7 +125,7 @@ refactor/mobile-<deskripsi-singkat>
 
 - **NIK (Nomor Induk Kependudukan)**: DIHAPUS dari SELURUH antarmuka pengguna (UI), local storage, form input, dan logic API. **Tidak ada role atau modul yang menggunakan NIK**.
 - **Identitas Auth Universal**: Warga, Mahasiswa KKN, DPL, dan Petugas menggunakan **Nomor Telepon (+62)** untuk login utama.
-- **LARANGAN KATA 'TONG' (WAJIB DIIKUTI)**: **DILARANG** menggunakan kata **'tong'** atau **'tong sampah'** di seluruh teks UI, nama berkas, notifikasi, log, komentar kode, maupun dokumentasi. SELALU gunakan istilah **'Tempat Sampah'** (contoh: 'Kapasitas Tempat Sampah', 'Tempat Sampah Organik').
+- **LARANGAN KATA 'TONG' (WAJIB DIIKUTI)**: **DILARANG** menggunakan kata **'tong'** or **'tong sampah'** di seluruh teks UI, nama berkas, notifikasi, log, komentar kode, maupun dokumentasi. SELALU gunakan istilah **'Tempat Sampah'** (contoh: 'Kapasitas Tempat Sampah', 'Tempat Sampah Organik').
 
 ---
 
