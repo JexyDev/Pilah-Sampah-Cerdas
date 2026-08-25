@@ -1420,6 +1420,65 @@ export class KknService {
     };
   }
 
+  async getAllPoskoKkn(filters?: { kelurahan?: string; search?: string }) {
+    const where: any = {
+      jenis: "posko_kkn",
+    };
+
+    if (filters?.kelurahan && filters.kelurahan !== "ALL") {
+      where.OR = [
+        { rw: { kelurahan: { name: { contains: filters.kelurahan, mode: "insensitive" } } } },
+        { kelompok: { kelurahan: { contains: filters.kelurahan, mode: "insensitive" } } },
+      ];
+    }
+
+    const poskos = await prisma.facility.findMany({
+      where,
+      include: {
+        rw: { include: { kelurahan: true } },
+        kelompok: {
+          include: {
+            dpl: { select: { id: true, name: true, phone: true } },
+            students: {
+              include: { user: { select: { id: true, name: true, phone: true } } },
+            },
+          },
+        },
+        registeredBy: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return poskos.map((p) => {
+      const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
+      const ketuaName = ketua?.user?.name || p.pic || "Ketua Kelompok KKN";
+      const kontak = ketua?.user?.phone || ketua?.noWa || p.kontak || "-";
+      const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
+      const kelurahan = p.rw?.kelurahan?.name || p.kelompok?.kelurahan || "Coblong";
+
+      return {
+        id: p.id,
+        nama: p.nama,
+        alamat: p.alamat || "-",
+        kelompokId: p.kelompokId,
+        kelompokName: p.kelompok?.name || "Kelompok KKN",
+        kelurahan,
+        rwName: p.rw?.name || "-",
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        foto: p.foto || null,
+        pic: ketuaName,
+        kontak,
+        dplName,
+        totalAnggota: p.kelompok?.students.length || 0,
+        statusApproval: p.statusApproval || "APPROVED",
+        createdAt: p.createdAt,
+      };
+    });
+  }
+
   async getMyGroup(userId: string) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },

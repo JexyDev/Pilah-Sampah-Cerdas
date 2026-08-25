@@ -58,6 +58,7 @@ import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
 import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
 import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
 import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
+import PoskoKknPage from "../pages/PoskoKkn/PoskoKknPage";
 import HasilPemanfaatan from "../pages/HasilPemanfaatan/HasilPemanfaatan";
 import { RwApproval } from "../pages/RwPortal/RwApproval";
 import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
@@ -610,8 +611,17 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/posko-kkn"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN", "WARGA"]}>
+              <PoskoKknPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/posko" element={<Navigate to="/posko-kkn" replace />} />
         <Route path="/pemanfaatan-sampah" element={<Navigate to="/pengelolaan-sampah" replace />} />
-        <Route path="/fasilitas-posko" element={<Navigate to="/pengelolaan-sampah" replace />} />
+        <Route path="/fasilitas-posko" element={<Navigate to="/posko-kkn" replace />} />
         <Route path="/fasilitas-dan-posko" element={<Navigate to="/pengelolaan-sampah" replace />} />
         <Route
           path="/hasil-pemanfaatan"

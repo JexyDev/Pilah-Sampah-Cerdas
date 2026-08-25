@@ -74,8 +74,10 @@ const checkRouteActive = (
     if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
     const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
-    const fasilitasAliases = ["/pengelolaan-sampah", "/fasilitas-posko", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
+    const fasilitasAliases = ["/pengelolaan-sampah", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
     if (fasilitasAliases.includes(tPath) && fasilitasAliases.includes(cPath)) return true;
+    const poskoAliases = ["/posko-kkn", "/posko", "/fasilitas-posko"];
+    if (poskoAliases.includes(tPath) && poskoAliases.includes(cPath)) return true;
     return false;
   };
 
@@ -694,8 +696,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
-              to: "/pengelolaan-sampah",
-              label: "Fasilitas & Posko KKN",
+              to: "/posko-kkn",
+              label: "Posko KKN",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -916,6 +918,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengelolaan-sampah",
+              label: "Fasilitas Pengelolaan Sampah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "MAHASISWA_KKN",
               ] as UserRole[],
             },
             {

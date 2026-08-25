@@ -470,6 +470,24 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/posko:
+ *   get:
+ *     summary: Mendapatkan seluruh daftar Posko KKN di seluruh kelurahan
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat daftar seluruh posko KKN
+ */
+router.get(
+  "/posko",
+  authMiddleware,
+  kknController.getAllPosko
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/active-zone:
  *   get:
  *     summary: Batas wilayah penugasan (Polygon RW & RT) Mahasiswa KKN
