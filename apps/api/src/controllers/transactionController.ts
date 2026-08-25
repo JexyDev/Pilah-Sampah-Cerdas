@@ -95,6 +95,9 @@ export const transactionController = {
         const addr =
           d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
 
+        const rawConf = d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
+        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : null;
+
         return {
           id: d.id,
           jenis: (d.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
@@ -110,6 +113,8 @@ export const transactionController = {
           rw: areaName || null,
           kelurahan: kelName || areaName || null,
           binQrCode: binCode,
+          confidenceAi: d.confidenceAi ? Number(d.confidenceAi) : null,
+          confidence: confVal,
         };
       });
 
