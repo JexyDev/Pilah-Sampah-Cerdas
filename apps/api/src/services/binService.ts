@@ -87,7 +87,11 @@ export class BinService {
           "BROKEN",
           "PENDING_APPROVAL",
         ];
-        if (validEnumValues.includes(filters.status)) {
+        if (filters.status === "PRINTED") {
+          // [MODIFIKASI]: Bypass scoping wilayah khusus untuk status PRINTED
+          // karena QR baru belum memiliki rwId/kelurahanId.
+          whereClause = { status: "PRINTED" };
+        } else if (validEnumValues.includes(filters.status)) {
           whereClause.status = filters.status;
         } else if (filters.status === "Rusak") {
           whereClause.status = "BROKEN";

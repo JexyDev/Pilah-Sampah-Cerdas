@@ -8,11 +8,9 @@
  * 1. Rekap Log Aktivitas Kelompok Mahasiswa (Tabel Full-Width 12 Kolom + Popup Modal Detail & Validasi DPL)
  * 2. Standardisasi Satuan Waktu Durasi 'Jam'
  * 3. Validasi Individual DPL melalui Modal Tinjau
- * 4. Kalkulasi Kepatuhan Logbook & Prasyarat Nilai KKN
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   BookOpen,
@@ -28,7 +26,6 @@ import {
   ChevronRight,
   ChevronLeft,
   Settings,
-  Award,
   Smartphone,
   X,
 } from "lucide-react";
@@ -36,7 +33,6 @@ import toast from "react-hot-toast";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
-  type ComplianceStats,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
@@ -137,7 +133,6 @@ export const LogbookKknPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
-  const [complianceStats, setComplianceStats] = useState<ComplianceStats | null>(null);
   const [toleranceDays, setToleranceDays] = useState<number>(1);
 
   // Pagination State
@@ -175,14 +170,7 @@ export const LogbookKknPage: React.FC = () => {
       });
       setLogbooks(mhsData);
 
-      // 3. Ambil kepatuhan untuk kelompok terpilih
-      const targetGroupId = selectedGroup !== "ALL" ? selectedGroup : groupData[0]?.id;
-      if (targetGroupId) {
-        const stats = await logbookApiService.getComplianceScore(targetGroupId).catch(() => null);
-        setComplianceStats(stats);
-      }
-
-      // 4. Ambil toleransi config
+      // 3. Ambil toleransi config
       const conf = await logbookApiService.getToleranceConfig().catch(() => ({ toleranceDays: 1 }));
       setToleranceDays(conf.toleranceDays);
       setConfigInputDays(conf.toleranceDays);
@@ -776,95 +764,10 @@ export const LogbookKknPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* ─────────────────────────────────────────────
-            4. KEPATUHAN & PRASYARAT NILAI AKHIR (CLEAN SECTION)
-            ───────────────────────────────────────────── */}
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                <Award className="w-5 h-5 text-emerald-600" />
-                Kalkulasi Kepatuhan Logbook & Prasyarat Nilai KKN
-              </h3>
-              <p className="text-sm text-slate-500 mt-1">
-                Logbook memiliki bobot 20% dalam penilaian akademik DPL. Standar minimal kelulusan logbook: 24 aktivitas terverifikasi DPL.
-              </p>
-            </div>
-
-            {groups.length > 1 && (
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="px-3.5 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none font-medium cursor-pointer"
-              >
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name} ({g.kelurahan || "-"})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {complianceStats && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tingkat Kepatuhan</p>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
-                    {complianceStats.complianceRate}%
-                  </span>
-                  <span className="text-xs text-slate-400">({complianceStats.approvedCount} / {complianceStats.targetCount} aktivitas)</span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full mt-3 overflow-hidden">
-                  <div
-                    className="bg-emerald-500 h-full rounded-full transition-all"
-                    style={{ width: `${Math.min(100, complianceStats.complianceRate)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Prasyarat Nilai</p>
-                <div className="mt-2">
-                  {complianceStats.isTargetMet ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      <CheckCircle className="w-4 h-4" />
-                      Prasyarat Terpenuhi (Lolos)
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                      <AlertTriangle className="w-4 h-4" />
-                      Belum Mencapai Target (Kurang {complianceStats.targetCount - complianceStats.approvedCount})
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400 mt-2">
-                  Nilai otomatis terintegrasi ke modul penilaian DPL.
-                </p>
-              </div>
-
-              <div className="p-5 bg-slate-50 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi Penilaian</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Kunjungi halaman Penilaian KKN untuk melihat rekapitulasi nilai akhir (Mitra 70% + DPL 30%).
-                </p>
-                <Link
-                  to="/penilaian-kkn/mahasiswa"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 mt-3 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition-colors"
-                >
-                  Buka Penilaian KKN
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ─────────────────────────────────────────────
-          5. POPUP MODAL: DETAIL AKTIVITAS MAHASISWA & VALIDASI DPL
+          4. POPUP MODAL: DETAIL AKTIVITAS MAHASISWA & VALIDASI DPL
           ───────────────────────────────────────────── */}
       {isDetailModalOpen && selectedItemDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">

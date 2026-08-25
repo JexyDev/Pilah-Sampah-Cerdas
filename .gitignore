@@ -43,8 +43,10 @@ apps/api/scripts/sync-live-vps-db-to-local.ts
 __pycache__/
 test_*.js
 deploy_*.js
+deploy_*.cjs
 check_*.js
 sync_*.js
+scripts/vps/
 *.tmp.*
 
 # Logs & Temporary files

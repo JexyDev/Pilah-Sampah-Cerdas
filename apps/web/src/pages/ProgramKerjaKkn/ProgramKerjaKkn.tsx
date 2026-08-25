@@ -778,7 +778,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       case "SEDANG_BERJALAN":
         return (
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/40">
-            Sedang Berjalan
+            Sedang Berlangsung
           </span>
         );
       default:
@@ -882,7 +882,7 @@ export const ProgramKerjaKkn: React.FC = () => {
           <div className="mt-3 flex items-baseline gap-3">
             <div>
               <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{sedangBerjalanCount}</span>
-              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Sedang Berjalan</span>
+              <span className="text-[10px] text-slate-500 ml-1 font-semibold">Sedang Berlangsung</span>
             </div>
             <span className="text-slate-300">•</span>
             <div>
@@ -979,7 +979,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             >
               <option value="ALL">Semua Pelaksanaan</option>
               <option value="BELUM_MULAI">Belum Mulai</option>
-              <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+              <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
               <option value="SELESAI">Selesai</option>
             </select>
           </div>
@@ -1416,7 +1416,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                         className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-semibold focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                       >
                         <option value="BELUM_MULAI">Belum Mulai</option>
-                        <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                        <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
                         <option value="SELESAI">Selesai</option>
                       </select>
                     </div>

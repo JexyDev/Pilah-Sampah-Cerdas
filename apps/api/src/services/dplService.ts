@@ -1684,7 +1684,7 @@ export const dplService = {
             { status: "SELESAI" },
           ],
         });
-      } else if (p === "BERJALAN" || p === "SEDANG_BERJALAN" || p === "SEDANG" || p === "SEDANG_DILAKSANAKAN") {
+      } else if (p === "BERJALAN" || p === "SEDANG_BERJALAN" || p === "SEDANG" || p === "SEDANG_DILAKSANAKAN" || p === "BERLANGSUNG" || p === "SEDANG_BERLANGSUNG") {
         andConditions.push({
           OR: [
             { statusPelaksanaan: { in: ["SEDANG_BERJALAN", "SEDANG_DILAKSANAKAN", "BERJALAN"] } },
@@ -1850,7 +1850,7 @@ export const dplService = {
     if (normalizedStatusUsulan === "TIDAK_DISETUJUI") normalizedStatusUsulan = "DITOLAK";
 
     let normalizedStatusPelaksanaan = data.statusPelaksanaan || "BELUM_MULAI";
-    if (normalizedStatusPelaksanaan === "BERJALAN" || normalizedStatusPelaksanaan === "SEDANG") normalizedStatusPelaksanaan = "SEDANG_BERJALAN";
+    if (normalizedStatusPelaksanaan === "BERJALAN" || normalizedStatusPelaksanaan === "SEDANG" || normalizedStatusPelaksanaan === "BERLANGSUNG" || normalizedStatusPelaksanaan === "SEDANG_BERLANGSUNG") normalizedStatusPelaksanaan = "SEDANG_BERJALAN";
     if (normalizedStatusPelaksanaan === "SUDAH") normalizedStatusPelaksanaan = "SELESAI";
 
     // Legacy status synchronization
@@ -2421,23 +2421,23 @@ export const dplService = {
         const mplIndivRaw = pRecord?.subtotalMitra ? Number(pRecord.subtotalMitra) : null;
         const mplIndiv = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : null;
 
-        // Gabungan Individu: ((30 * DPL) + (60 * MPL)) / 90
+        // Gabungan Individu: ((50 * DPL) + (50 * MPL)) / 100
         const indivGabungan = mplIndiv !== null && dplIndiv !== null
-          ? Math.round(((30 * dplIndiv + 60 * mplIndiv) / 90) * 10) / 10
+          ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
           : null;
 
         // Proker DPL & MPL Scores
         const dplProker = prokerAvgScore > 0 ? Math.round(prokerAvgScore * 10) / 10 : (dplIndiv !== null ? dplIndiv : null);
         const mplProker = mplIndiv !== null ? mplIndiv : null;
         const prokerGabungan = mplProker !== null && dplProker !== null
-          ? Math.round(((30 * dplProker + 60 * mplProker) / 90) * 10) / 10
+          ? Math.round(((50 * dplProker + 50 * mplProker) / 100) * 10) / 10
           : null;
 
         // Kelompok DPL & MPL Scores
         const dplKelompok = dplIndiv !== null ? dplIndiv : null;
         const mplKelompok = mplIndiv !== null ? mplIndiv : null;
         const kelompokGabungan = mplKelompok !== null && dplKelompok !== null
-          ? Math.round(((30 * dplKelompok + 60 * mplKelompok) / 90) * 10) / 10
+          ? Math.round(((50 * dplKelompok + 50 * mplKelompok) / 100) * 10) / 10
           : null;
 
         // Nilai Akhir & Huruf Mutu: HANYA DITERBITKAN JIKA KEDUA PIHAK (DPL & MPL) LENGKAP

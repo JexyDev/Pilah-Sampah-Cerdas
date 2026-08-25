@@ -3,7 +3,7 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Routes Penilaian KKN Mahasiswa (Komposisi Mitra/PL 70% + DPL 30%)
+ * Routes Penilaian KKN Mahasiswa (Komposisi Mitra/MPL 50% + DPL 50%)
  */
 
 import { Router } from "express";

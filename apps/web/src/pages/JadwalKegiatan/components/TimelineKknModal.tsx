@@ -49,7 +49,7 @@ const BIDANG_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { value: "BELUM_DIMULAI", label: "Belum Dimulai", color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
-  { value: "SEDANG_BERJALAN", label: "Sedang Berjalan", color: "bg-emerald-500 text-white font-extrabold" },
+  { value: "SEDANG_BERJALAN", label: "Sedang Berlangsung", color: "bg-emerald-500 text-white font-extrabold" },
   { value: "SELESAI", label: "Selesai", color: "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300" },
 ];
 

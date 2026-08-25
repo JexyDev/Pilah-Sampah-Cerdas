@@ -838,7 +838,7 @@ const JadwalKegiatan: React.FC = () => {
     if (status === "SEDANG_BERJALAN") {
       return (
         <span className="px-3 py-1 bg-emerald-500 text-white rounded-full text-[10.5px] font-extrabold flex items-center gap-1.5 w-fit shadow-2xs">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Berjalan
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Sedang Berlangsung
         </span>
       );
     }
@@ -1012,7 +1012,7 @@ const JadwalKegiatan: React.FC = () => {
                   </div>
                   <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60">
                     <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wider block">
-                      Sedang Berjalan
+                      Sedang Berlangsung
                     </span>
                     <span className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1 block">
                       {berjalan} Agenda
@@ -1138,7 +1138,7 @@ const JadwalKegiatan: React.FC = () => {
                 >
                   <option value="ALL">Semua Status</option>
                   <option value="BELUM_DIMULAI">Belum Dimulai</option>
-                  <option value="SEDANG_BERJALAN">Sedang Berjalan (Hijau)</option>
+                  <option value="SEDANG_BERJALAN">Sedang Berlangsung (Hijau)</option>
                   <option value="SELESAI">Selesai</option>
                 </select>
               </div>
@@ -1221,7 +1221,7 @@ const JadwalKegiatan: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
-                        ⚡ Pekan Sedang Berjalan (Hari Ini: {todayFormatted})
+                        ⚡ Pekan Sedang Berlangsung (Hari Ini: {todayFormatted})
                       </span>
                       <span className="text-xs font-black text-slate-900 dark:text-slate-100">
                         {activeItem.tahapMinggu} • {activeItem.tanggal}
@@ -1238,7 +1238,7 @@ const JadwalKegiatan: React.FC = () => {
                 <div className="shrink-0 flex items-center gap-2">
                   <span className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
                     <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
-                    SEDANG BERJALAN
+                    SEDANG BERLANGSUNG
                   </span>
                 </div>
               </div>
@@ -1389,7 +1389,7 @@ const JadwalKegiatan: React.FC = () => {
                               }`}
                             >
                               <option value="BELUM_DIMULAI">Belum Dimulai</option>
-                              <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+                              <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
                               <option value="SELESAI">Selesai</option>
                             </select>
                           ) : (

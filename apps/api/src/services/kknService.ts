@@ -2712,7 +2712,7 @@ export class KknService {
       let pl = (item as any).statusPelaksanaan;
       if (!pl) {
         if (st === "SELESAI") pl = "SELESAI";
-        else if (st === "SEDANG_BERJALAN" || st === "BERJALAN") pl = "SEDANG_BERJALAN";
+        else if (st === "SEDANG_BERJALAN" || st === "BERJALAN" || st === "BERLANGSUNG" || st === "SEDANG_BERLANGSUNG") pl = "SEDANG_BERJALAN";
         else pl = "BELUM_MULAI";
       }
       return {

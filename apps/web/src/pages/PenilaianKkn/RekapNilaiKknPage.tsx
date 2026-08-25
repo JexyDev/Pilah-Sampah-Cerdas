@@ -47,14 +47,14 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     poinDampingan: 85,
     individuDpl: 88,
     individuMpl: 90,
-    individuGabungan: 89.3,
+    individuGabungan: 89.0,
     prokerDpl: 86,
     prokerMpl: 92,
-    prokerGabungan: 90.0,
+    prokerGabungan: 89.0,
     kelompokDpl: 90,
     kelompokMpl: 88,
-    kelompokGabungan: 88.7,
-    nilaiAkhir: 89.4,
+    kelompokGabungan: 89.0,
+    nilaiAkhir: 89.2,
     predikat: "A",
     status: "Lengkap",
   },
@@ -73,14 +73,14 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     poinDampingan: 82,
     individuDpl: 85,
     individuMpl: 87,
-    individuGabungan: 86.3,
+    individuGabungan: 86.0,
     prokerDpl: 88,
     prokerMpl: 90,
-    prokerGabungan: 89.3,
+    prokerGabungan: 89.0,
     kelompokDpl: 86,
     kelompokMpl: 89,
-    kelompokGabungan: 88.0,
-    nilaiAkhir: 87.0,
+    kelompokGabungan: 87.5,
+    nilaiAkhir: 86.8,
     predikat: "A",
     status: "Lengkap",
   },
@@ -99,14 +99,14 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     poinDampingan: 90,
     individuDpl: 92,
     individuMpl: 94,
-    individuGabungan: 93.3,
+    individuGabungan: 93.0,
     prokerDpl: 90,
     prokerMpl: 93,
-    prokerGabungan: 92.0,
+    prokerGabungan: 91.5,
     kelompokDpl: 91,
     kelompokMpl: 92,
-    kelompokGabungan: 91.7,
-    nilaiAkhir: 92.6,
+    kelompokGabungan: 91.5,
+    nilaiAkhir: 92.5,
     predikat: "A",
     status: "Lengkap",
   },
@@ -151,14 +151,14 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
     poinDampingan: 88,
     individuDpl: 89,
     individuMpl: 91,
-    individuGabungan: 90.3,
+    individuGabungan: 90.0,
     prokerDpl: 88,
     prokerMpl: 90,
-    prokerGabungan: 89.3,
+    prokerGabungan: 89.0,
     kelompokDpl: 90,
     kelompokMpl: 92,
-    kelompokGabungan: 91.3,
-    nilaiAkhir: 89.9,
+    kelompokGabungan: 91.0,
+    nilaiAkhir: 89.7,
     predikat: "A",
     status: "Lengkap",
   },
@@ -189,21 +189,21 @@ export const RekapNilaiKknPage: React.FC = () => {
           const mplIndiv = s.individuMpl !== undefined && s.individuMpl !== null ? s.individuMpl : null;
           const indivGab =
             dplIndiv !== null && mplIndiv !== null
-              ? Math.round(((30 * dplIndiv + 60 * mplIndiv) / 90) * 10) / 10
+              ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
               : null;
 
           const dplProk = s.prokerDpl !== undefined && s.prokerDpl !== null ? s.prokerDpl : (s.skorProkerKelompok ?? null);
           const mplProk = s.prokerMpl !== undefined && s.prokerMpl !== null ? s.prokerMpl : null;
           const prokGab =
             dplProk !== null && mplProk !== null
-              ? Math.round(((30 * dplProk + 60 * mplProk) / 90) * 10) / 10
+              ? Math.round(((50 * dplProk + 50 * mplProk) / 100) * 10) / 10
               : null;
 
           const dplKel = s.kelompokDpl !== undefined && s.kelompokDpl !== null ? s.kelompokDpl : null;
           const mplKel = s.kelompokMpl !== undefined && s.kelompokMpl !== null ? s.kelompokMpl : null;
           const kelGab =
             dplKel !== null && mplKel !== null
-              ? Math.round(((30 * dplKel + 60 * mplKel) / 90) * 10) / 10
+              ? Math.round(((50 * dplKel + 50 * mplKel) / 100) * 10) / 10
               : null;
 
           const keh = s.kehadiran ?? s.tingkatKehadiran ?? 0;
@@ -717,7 +717,7 @@ export const RekapNilaiKknPage: React.FC = () => {
         <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-slate-600 dark:text-slate-400 font-medium shadow-2xs">
           <Info size={13} className="text-slate-500 shrink-0" />
           <span>
-            Komposisi: DPL 30% • MPL 60% (Normalisasi total 90%)
+            Komposisi: DPL 50% • MPL 50% (Sama Rata 100%)
           </span>
         </div>
       </div>
@@ -1088,10 +1088,10 @@ export const RekapNilaiKknPage: React.FC = () => {
               <span>Gabungan Nilai DPL dan MPL</span>
             </div>
             <p className="text-[12px] text-slate-600 dark:text-slate-400 leading-relaxed">
-              Bobot penilai menggunakan DPL 30% dan MPL 60%. Karena total bobot penilai 90%, nilai gabungan dinormalisasi kembali ke skala 100.
+              Bobot penilai menggunakan DPL 50% dan MPL 50% (final pembagian sama rata) dengan total bobot penilai 100%.
             </p>
             <div className="p-2 bg-[#f0fdf4] dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/80 rounded-lg text-center font-bold text-[11px] text-[#00704a] dark:text-emerald-300">
-              Nilai Gabungan = ((30 × Nilai DPL) + (60 × Nilai MPL)) ÷ 90
+              Nilai Gabungan = ((50 × Nilai DPL) + (50 × Nilai MPL)) ÷ 100
             </div>
           </div>
 

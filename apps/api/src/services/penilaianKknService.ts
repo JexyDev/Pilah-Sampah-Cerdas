@@ -5,7 +5,7 @@ import { configService } from "./configService.js";
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Service Penilaian KKN Mahasiswa (Komposisi Mitra/PL 70% + DPL 30%)
+ * Service Penilaian KKN Mahasiswa (Komposisi Mitra/MPL 50% + DPL 50%)
  * 100% Real-time Database integration with automatic criteria detection & strict formula calculation.
  */
 
@@ -29,19 +29,19 @@ export const calculateAspectScore = (score: number, weight: number): number => {
   return Number(((safeScore * weight) / 100).toFixed(2));
 };
 
-// Helper to calculate composite final score (Mitra 70% + DPL 30%)
+// Helper to calculate composite final score (Mitra 50% + DPL 50% - Pembagian Sama Rata)
 export const calculateCompositeScore = (subtotalMitra: number, subtotalDpl: number): number => {
   const sMitra = Number(subtotalMitra) || 0;
   const sDpl = Number(subtotalDpl) || 0;
 
   if (sMitra > 0 && sDpl > 0) {
-    return Number((sMitra + (sDpl * 0.3)).toFixed(2));
+    return Number(((sMitra * 0.5) + (sDpl * 0.5)).toFixed(2));
   }
   if (sDpl > 0) {
     return Number(sDpl.toFixed(2));
   }
   if (sMitra > 0) {
-    return Number(((sMitra / 70) * 100).toFixed(2));
+    return Number(sMitra.toFixed(2));
   }
   return 0;
 };
@@ -235,14 +235,14 @@ export const penilaianKknService = {
 
     // Calculate dynamic subtotal from actual aspect scores (Skala 0-100 per aspek)
     const subMitra =
-      calculateAspectScore(assessment.skorMitraKehadiran, 10) +
-      calculateAspectScore(assessment.skorMitraWargaBinaan, 10) +
-      calculateAspectScore(assessment.skorMitraProker, 10) +
-      calculateAspectScore(assessment.skorMitraKomunikasi, 8) +
-      calculateAspectScore(assessment.skorMitraTanggungJawab, 8) +
-      calculateAspectScore(assessment.skorMitraBuktiKegiatan, 7) +
-      calculateAspectScore(assessment.skorMitraDampak, 10) +
-      calculateAspectScore(assessment.skorMitraInisiatif, 7);
+      calculateAspectScore(assessment.skorMitraKehadiran, 15) +
+      calculateAspectScore(assessment.skorMitraWargaBinaan, 15) +
+      calculateAspectScore(assessment.skorMitraProker, 15) +
+      calculateAspectScore(assessment.skorMitraKomunikasi, 10) +
+      calculateAspectScore(assessment.skorMitraTanggungJawab, 10) +
+      calculateAspectScore(assessment.skorMitraBuktiKegiatan, 10) +
+      calculateAspectScore(assessment.skorMitraDampak, 15) +
+      calculateAspectScore(assessment.skorMitraInisiatif, 10);
 
     // DPL academic 6 aspects (Total Bobot 100%: Perencanaan 20%, Kontribusi 10%, Logbook dinamis [default 20%], Analisis 20%, Output 20%, Laporan Akhir 10%)
     const subDpl =
@@ -423,16 +423,16 @@ export const penilaianKknService = {
       ? (prev?.skorDplLaporanAkhir ?? 0)
       : (payload.skorDplLaporanAkhir !== undefined ? Number(payload.skorDplLaporanAkhir) : (prev?.skorDplLaporanAkhir ?? 0));
 
-    // 2. Kalkulasi Subtotal Mitra (Max 70)
+    // 2. Kalkulasi Subtotal Mitra (Max 100)
     const subtotalMitra = Number((
-      calculateAspectScore(skorMitraKehadiran, 10) +
-      calculateAspectScore(skorMitraWargaBinaan, 10) +
-      calculateAspectScore(skorMitraProker, 10) +
-      calculateAspectScore(skorMitraKomunikasi, 8) +
-      calculateAspectScore(skorMitraTanggungJawab, 8) +
-      calculateAspectScore(skorMitraBuktiKegiatan, 7) +
-      calculateAspectScore(skorMitraDampak, 10) +
-      calculateAspectScore(skorMitraInisiatif, 7)
+      calculateAspectScore(skorMitraKehadiran, 15) +
+      calculateAspectScore(skorMitraWargaBinaan, 15) +
+      calculateAspectScore(skorMitraProker, 15) +
+      calculateAspectScore(skorMitraKomunikasi, 10) +
+      calculateAspectScore(skorMitraTanggungJawab, 10) +
+      calculateAspectScore(skorMitraBuktiKegiatan, 10) +
+      calculateAspectScore(skorMitraDampak, 15) +
+      calculateAspectScore(skorMitraInisiatif, 10)
     ).toFixed(2));
 
     // 3. Kalkulasi Subtotal DPL (Bobot total 100%: Perencanaan 20%, Kontribusi 10%, Logbook 20%, Analisis 20%, Output 20%, Laporan Akhir 10%)
@@ -445,7 +445,7 @@ export const penilaianKknService = {
       calculateAspectScore(skorDplLaporanAkhir, 10)
     ).toFixed(2));
 
-    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Mitra 70% + DPL 30%)
+    // 4. Kalkulasi Nilai Akhir & Kategori (Formula Komposisi Mitra 50% + DPL 50% - Pembagian Sama Rata)
     const nilaiAkhir = calculateCompositeScore(subtotalMitra, subtotalDpl);
     const kategoriNilai = calculateGradeCategory(nilaiAkhir);
 

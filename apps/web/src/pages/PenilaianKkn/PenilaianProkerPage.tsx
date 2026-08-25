@@ -460,7 +460,7 @@ export const PenilaianProkerPage: React.FC = () => {
       case "BERJALAN":
         return (
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/40">
-            Sedang Berjalan
+            Sedang Berlangsung
           </span>
         );
       default:
@@ -640,7 +640,7 @@ export const PenilaianProkerPage: React.FC = () => {
           >
             <option value="ALL">Semua Pelaksanaan</option>
             <option value="BELUM_MULAI">Belum Mulai</option>
-            <option value="SEDANG_BERJALAN">Sedang Berjalan</option>
+            <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
             <option value="SELESAI">Selesai</option>
           </select>
           <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">

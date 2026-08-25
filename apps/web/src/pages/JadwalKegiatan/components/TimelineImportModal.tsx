@@ -243,7 +243,7 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
         let normalizedStatus: "SELESAI" | "SEDANG_BERJALAN" | "BELUM_DIMULAI" = "BELUM_DIMULAI";
         if (statusRaw.includes("SELESAI") || statusRaw.includes("DONE") || statusRaw.includes("FINISHED")) {
           normalizedStatus = "SELESAI";
-        } else if (statusRaw.includes("JALAN") || statusRaw.includes("PROGRESS") || statusRaw.includes("BERJALAN") || statusRaw.includes("SEDANG")) {
+        } else if (statusRaw.includes("JALAN") || statusRaw.includes("PROGRESS") || statusRaw.includes("BERJALAN") || statusRaw.includes("SEDANG") || statusRaw.includes("BERLANGSUNG")) {
           normalizedStatus = "SEDANG_BERJALAN";
         }
 
@@ -542,7 +542,7 @@ export const TimelineImportModal: React.FC<TimelineImportModalProps> = ({
                         <td className="py-2 px-3 text-center font-bold text-[10.5px]">
                           {r.statusPelaksanaan === "SEDANG_BERJALAN" ? (
                             <span className="px-2.5 py-0.5 bg-emerald-500 text-white rounded-full font-extrabold shadow-2xs">
-                              Berjalan
+                              Sedang Berlangsung
                             </span>
                           ) : r.statusPelaksanaan === "SELESAI" ? (
                             <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 rounded-full">

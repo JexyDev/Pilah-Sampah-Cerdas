@@ -3,7 +3,7 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Frontend API Service for Penilaian KKN Mahasiswa (70% Mitra + 30% DPL)
+ * Frontend API Service for Penilaian KKN Mahasiswa (50% Mitra + 50% DPL)
  */
 
 import api from "./api";
