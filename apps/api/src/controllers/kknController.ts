@@ -541,7 +541,20 @@ export class KknController {
 
   async createLogbookPemanfaatan(req: Request, res: Response) {
     try {
-      const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
+      if (req.file) {
+        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.fotoBukti?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      }
+
       const payload = { ...req.body, fotoDokumentasiUrl };
       const data = await kknService.createLogbookPemanfaatan(req.user!.userId, payload);
       res.status(201).json({ success: true, message: "Aksi Pemanfaatan berhasil dicatat.", data });
@@ -563,12 +576,54 @@ export class KknController {
 
   async createPanenHasil(req: Request, res: Response) {
     try {
-      const fotoDokumentasiUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
+      if (req.file) {
+        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        const filesObj = req.files as any;
+        const f =
+          filesObj.fotoDokumentasi?.[0] ||
+          filesObj.fotoBukti?.[0] ||
+          filesObj.image?.[0] ||
+          filesObj.foto?.[0] ||
+          filesObj.file?.[0];
+        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      }
+
       const payload = { ...req.body, fotoDokumentasiUrl };
       const data = await kknService.createPanenHasil(req.user!.userId, payload);
       res.status(201).json({ success: true, message: "Hasil Panen berhasil dicatat.", data });
     } catch (error: any) {
       console.error("[KknController] createPanenHasil error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async claimWargaMandiri(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      const { wargaId } = req.params;
+
+      const result = await kknService.claimWargaMandiri(kknUserId, wargaId);
+      res.status(200).json({
+        success: true,
+        message: "Berhasil mengklaim warga menjadi dampingan.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknController] claimWargaMandiri error:", error);
+      if (error.message === "WARGA_NOT_FOUND") {
+        res.status(404).json({ success: false, error: "WARGA_NOT_FOUND", message: "Warga tidak ditemukan." });
+        return;
+      }
+      if (error.message === "NO_ACTIVE_BINS") {
+        res.status(400).json({ success: false, error: "NO_ACTIVE_BINS", message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim." });
+        return;
+      }
+      if (error.message === "ALREADY_CLAIMED") {
+        res.status(400).json({ success: false, error: "ALREADY_CLAIMED", message: "Warga ini sudah menjadi dampingan mahasiswa lain." });
+        return;
+      }
       res.status(400).json({ success: false, message: error.message });
     }
   }

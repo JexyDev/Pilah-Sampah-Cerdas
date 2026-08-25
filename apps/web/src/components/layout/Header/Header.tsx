@@ -191,7 +191,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Dashboard Petugas Residu"];
       case "/pengelolaan-sampah":
       case "/pemanfaatan-sampah":
-        return ["Tata Kelola Sampah", "Inovasi Pengolahan"];
+        return ["Pelaksanaan KKN", "Fasilitas & Posko KKN"];
       case "/hasil-pemanfaatan":
         return ["Tata Kelola Sampah", "Hasil Pemanfaatan"];
       case "/setor-sampah":

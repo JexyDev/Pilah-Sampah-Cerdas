@@ -8,6 +8,7 @@ import { Router } from "express";
 import { facilityController } from "../controllers/facilityController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.post(
   "/",
   authMiddleware,
   roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW", "RT", "WARGA"]),
+  safeUploadSingleImage("foto"),
   facilityController.createFacility
 );
 

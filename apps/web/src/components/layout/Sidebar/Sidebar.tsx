@@ -6,6 +6,7 @@
  */
 
 import React, { useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   LayoutDashboard,
   Trash2,
@@ -20,7 +21,6 @@ import {
   GraduationCap,
   ChevronDown,
   Clock,
-  Recycle,
   ShieldCheck,
   Award,
   BookOpen,
@@ -74,6 +74,8 @@ const checkRouteActive = (
     if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
     const userMasterAliases = ["/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
+    const fasilitasAliases = ["/pengelolaan-sampah", "/fasilitas-posko", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
+    if (fasilitasAliases.includes(tPath) && fasilitasAliases.includes(cPath)) return true;
     return false;
   };
 
@@ -140,46 +142,274 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
       to={to}
       className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ease-out text-[12.5px] group overflow-hidden transform-gpu z-10 ${
         isCurrentActive
-          ? "bg-[#f3fbf5]/90 dark:bg-emerald-950/80 text-[#055c46] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
-          : "text-slate-600 dark:text-slate-300 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
+          ? "bg-[#f2f8f4]/90 dark:bg-emerald-950/80 text-[#035941] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
+          : "text-slate-600 dark:text-slate-300 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 hover:translate-x-1 font-medium active:scale-[0.98]"
       }`}
     >
       {/* Left Curved Accent Indicator Bar */}
       {isCurrentActive && (
-        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full shadow-xs" />
+        <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#58A621] dark:bg-emerald-500 rounded-r-full shadow-xs" />
       )}
 
-      <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
+      <Icon className={`shrink-0 transition-all duration-300 ease-out ${isCurrentActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-400 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
       <span className="flex-1 truncate tracking-tight">{label}</span>
       {badge !== undefined && (
-        <span className="bg-[#549e26] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
+        <span className="bg-[#58A621] dark:bg-emerald-600 text-white text-[9.5px] font-bold px-1.5 py-0.2 rounded-full shadow-2xs group-hover:scale-105 transition-transform">{badge}</span>
       )}
     </Link>
   );
 };
 
+const Portal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  if (typeof document === "undefined") return null;
+  return createPortal(children, document.body);
+};
+
 const NavItemCollapsed: React.FC<NavItemProps> = ({ to, icon: Icon, label }) => {
   const location = useLocation();
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const containerRef = React.useRef<HTMLAnchorElement>(null);
 
   const isCurrentActive = useMemo(() => {
     return checkRouteActive(to, location.pathname, location.search);
   }, [to, location.pathname, location.search]);
 
+  const handleMouseEnter = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({ top: rect.top + (rect.height - 30) / 2, left: rect.right + 12 });
+    }
+    setIsHovered(true);
+  };
+
   return (
     <Link
+      ref={containerRef}
       to={to}
-      title={label}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setIsHovered(false)}
       className={`relative w-10 h-10 rounded-xl flex items-center justify-center my-0.5 transition-all duration-200 group cursor-pointer shrink-0 ${
         isCurrentActive
-          ? "bg-[#055c46] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
-          : "text-slate-500 dark:text-slate-400 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-[#f3fbf5] dark:hover:bg-slate-800"
+          ? "bg-[#035941] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
+          : "text-slate-500 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-[#f2f8f4] dark:hover:bg-slate-800"
       }`}
     >
       <Icon size={17} className="transition-transform duration-200 group-hover:scale-110" />
-      <span className="absolute left-14 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[70] border border-slate-700/60">
-        {label}
-      </span>
+      {isHovered && (
+        <Portal>
+          <div
+            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+            className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
+          >
+            {label}
+          </div>
+        </Portal>
+      )}
     </Link>
+  );
+};
+
+const CollapsedClockButton: React.FC<{ dateStr: string; timeStr: string }> = ({ dateStr, timeStr }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleMouseEnter = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({ top: rect.top + (rect.height - 30) / 2, left: rect.right + 12 });
+    }
+    setIsHovered(true);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setIsHovered(false)}
+      className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all shrink-0"
+    >
+      <Clock size={17} className="text-[#035941] dark:text-emerald-400" />
+      {isHovered && (
+        <Portal>
+          <div
+            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+            className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
+          >
+            {dateStr ? `${dateStr} • ${timeStr}` : timeStr || "Jam Sistem"}
+          </div>
+        </Portal>
+      )}
+    </div>
+  );
+};
+
+const CollapsedLogoutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const containerRef = React.useRef<HTMLButtonElement>(null);
+
+  const handleMouseEnter = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({ top: rect.top + (rect.height - 30) / 2, left: rect.right + 12 });
+    }
+    setIsHovered(true);
+  };
+
+  return (
+    <button
+      ref={containerRef}
+      onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setIsHovered(false)}
+      className="w-10 h-10 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-all relative group cursor-pointer shrink-0"
+    >
+      <LogOut size={18} />
+      {isHovered && (
+        <Portal>
+          <div
+            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+            className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
+          >
+            Keluar
+          </div>
+        </Portal>
+      )}
+    </button>
+  );
+};
+
+const NavGroupCollapsed: React.FC<{
+  icon: LucideIcon;
+  label: string;
+  items: Array<{ to: string; label: string }>;
+}> = ({ icon: Icon, label, items }) => {
+  const location = useLocation();
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isClickedOpen, setIsClickedOpen] = React.useState(false);
+  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const isSubActive = (subTo: string, index: number) => {
+    return checkRouteActive(subTo, location.pathname, location.search, index);
+  };
+
+  const isAnySubActive = useMemo(() => {
+    return items.some((item, idx) => isSubActive(item.to, idx));
+  }, [items, location.pathname, location.search]);
+
+  const updateCoordinates = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setCoords({ top: rect.top, left: rect.right + 12 });
+    }
+  };
+
+  const handleMouseEnter = () => {
+    updateCoordinates();
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
+  const handleIconClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateCoordinates();
+    setIsClickedOpen((prev) => !prev);
+  };
+
+  const handleSubItemClick = () => {
+    setIsHovered(false);
+    setIsClickedOpen(false);
+  };
+
+  // Close dropdown if clicked outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        isClickedOpen &&
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target)
+      ) {
+        setIsClickedOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isClickedOpen]);
+
+  const isVisible = isHovered || isClickedOpen;
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="relative flex items-center justify-center my-0.5 shrink-0"
+    >
+      <button
+        type="button"
+        onClick={handleIconClick}
+        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+          isAnySubActive || isVisible
+            ? "bg-[#035941] dark:bg-emerald-600 text-white shadow-md shadow-emerald-900/20 scale-105"
+            : "text-slate-500 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-[#f2f8f4] dark:hover:bg-slate-800"
+        }`}
+      >
+        <Icon size={17} className="transition-transform duration-200" />
+      </button>
+
+      {isVisible && (
+        <Portal>
+          <div
+            ref={dropdownRef}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={handleMouseLeave}
+            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+            className="fixed bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 px-1.5 min-w-[210px] z-[999999] flex flex-col animate-in fade-in slide-in-from-left-2 duration-150 text-left pointer-events-auto"
+          >
+            <div className="px-3 py-1.5 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1">
+              {label}
+            </div>
+            {items.map((sub, idx) => {
+              const isActive = isSubActive(sub.to, idx);
+              return (
+                <Link
+                  key={sub.to}
+                  to={sub.to}
+                  onClick={handleSubItemClick}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all ${
+                    isActive
+                      ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400"
+                  }`}
+                >
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      isActive
+                        ? "bg-[#58A621] dark:bg-emerald-400"
+                        : "bg-slate-300 dark:bg-slate-600"
+                    }`}
+                  />
+                  <span className="truncate">{sub.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </Portal>
+      )}
+    </div>
   );
 };
 
@@ -188,7 +418,6 @@ const NavGroup: React.FC<{
   label: string;
   items: Array<{ to: string; label: string }>;
 }> = ({ icon: Icon, label, items }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
   const location = useLocation();
 
   const isSubActive = (subTo: string, index: number) => {
@@ -198,6 +427,8 @@ const NavGroup: React.FC<{
   const isAnySubActive = useMemo(() => {
     return items.some((item, idx) => isSubActive(item.to, idx));
   }, [items, location.pathname, location.search]);
+
+  const [isOpen, setIsOpen] = React.useState(isAnySubActive);
 
   React.useEffect(() => {
     if (isAnySubActive) {
@@ -211,19 +442,19 @@ const NavGroup: React.FC<{
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-[12.5px] text-left group relative overflow-hidden ${
           isAnySubActive
-            ? "bg-[#f3fbf5] dark:bg-emerald-950/70 text-[#055c46] dark:text-emerald-400 font-bold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
-            : "text-slate-600 dark:text-slate-400 hover:text-[#055c46] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
+            ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/80 dark:border-emerald-700/40"
+            : "text-slate-600 dark:text-slate-400 hover:text-[#035941] dark:hover:text-emerald-400 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 font-medium"
         }`}
       >
         {isAnySubActive && (
-          <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#549e26] dark:bg-emerald-500 rounded-r-full" />
+          <span className="absolute left-0 top-2 bottom-2 w-1.5 bg-[#58A621] dark:bg-emerald-500 rounded-r-full" />
         )}
 
-        <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#055c46] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#055c46] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
+        <Icon className={`shrink-0 transition-all duration-200 ${isAnySubActive ? "text-[#035941] dark:text-emerald-400 scale-110" : "text-slate-400 dark:text-slate-500 group-hover:text-[#035941] dark:group-hover:text-emerald-400 group-hover:scale-110"}`} size={17} />
         <span className="flex-1 font-bold text-slate-800 dark:text-slate-200 truncate tracking-tight">{label}</span>
         <ChevronDown
           size={14}
-          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#055c46] dark:text-emerald-400 font-bold" : "text-slate-400"}`}
+          className={`transition-transform duration-300 ${isOpen ? "rotate-180 text-[#035941] dark:text-emerald-400 font-bold" : "text-slate-400"}`}
         />
       </button>
       {isOpen && (
@@ -237,15 +468,15 @@ const NavGroup: React.FC<{
                 title={sub.label}
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200 group ${
                   isActive
-                    ? "bg-[#f3fbf5] dark:bg-emerald-950/70 text-[#055c46] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#055c46] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
+                    ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#035941] dark:hover:text-emerald-400 hover:translate-x-1 font-medium active:scale-[0.98]"
                 }`}
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
                     isActive
-                      ? "bg-[#549e26] dark:bg-emerald-400 scale-125 ring-3 ring-[#549e26]/30 dark:ring-emerald-800"
-                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#549e26] dark:group-hover:bg-emerald-400"
+                      ? "bg-[#58A621] dark:bg-emerald-400 scale-125 ring-3 ring-[#58A621]/30 dark:ring-emerald-800"
+                      : "bg-slate-300 dark:bg-slate-600 group-hover:bg-[#58A621] dark:group-hover:bg-emerald-400"
                   }`}
                 />
                 <span className="truncate">{sub.label}</span>
@@ -282,7 +513,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-        }).replace(/:/g, ".") + " WIB"
+        }).replace(/:/g, ".")
       );
       setDateStr(
         now.toLocaleDateString("id-ID", {
@@ -305,7 +536,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const confirmLogout = () => {
     logout();
-    showToast.success("Berhasil keluar sistem");
+    showToast.success("Berhasil keluar dari sistem");
     navigate("/login");
   };
 
@@ -392,6 +623,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "DOSEN_PEMBIMBING",
             "PANITIA_TASKFORCE",
             "PEMIMPIN",
+            "MAHASISWA_KKN",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "WARGA",
           ] as UserRole[],
           children: [
             {
@@ -455,6 +691,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
+              ] as UserRole[],
+            },
+            {
+              to: "/pengelolaan-sampah",
+              label: "Fasilitas & Posko KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "MAHASISWA_KKN",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "WARGA",
               ] as UserRole[],
             },
           ],
@@ -647,6 +901,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "RW",
             "PETUGAS_RESIDU",
             "WARGA",
+            "PEMIMPIN",
+            "PANITIA_TASKFORCE",
           ] as UserRole[],
           children: [
             {
@@ -664,7 +920,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/penyetoran-sampah",
-              label: "Setor Sampah",
+              label: "Penyetoran Sampah",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -689,26 +945,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PETUGAS_RESIDU",
               ] as UserRole[],
             },
-          ],
-        },
-        {
-          type: "group",
-          label: "Pemanfaatan & Hasil",
-          icon: Recycle,
-          allowed: [
-            "DEVELOPER",
-            "SUPER_USER",
-            "ADMIN_DLH",
-            "CAMAT",
-            "LURAH",
-            "RW",
-            "PEMIMPIN",
-            "PANITIA_TASKFORCE",
-            "PETUGAS_RESIDU",
-            "WARGA",
-            "DPL",
-          ] as UserRole[],
-          children: [
             {
               to: "/pemantauan-rekapitulasi",
               label: "Rekapitulasi Setoran",
@@ -722,36 +958,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "PETUGAS_RESIDU",
-              ] as UserRole[],
-            },
-            {
-              to: "/pengelolaan-sampah",
-              label: "Inovasi & Posko KKN",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "WARGA",
-                "DPL",
-                "PANITIA_TASKFORCE",
-              ] as UserRole[],
-            },
-            {
-              to: "/hasil-pemanfaatan",
-              label: "Hasil Pemanfaatan",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "WARGA",
-                "DPL",
-                "PANITIA_TASKFORCE",
               ] as UserRole[],
             },
           ],
@@ -776,7 +982,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/master-pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/master-pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/master-pengguna?role=rw", label: "RW", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Residu", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            { to: "/master-pengguna?role=petugas-residu", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
             { to: "/master-pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/master-pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
           ],
@@ -848,7 +1054,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
           children: [
             { to: "/log-aktivitas", label: "Audit Trail Sistem", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/pengguna-online", label: "Pengguna Online", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
+            { to: "/pengguna-online", label: "Pengguna Daring", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
           ],
         },
         {
@@ -858,7 +1064,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[],
           children: [
             { to: "/superUser/discrepancies", label: "Diskrepansi AI", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE"] as UserRole[] },
-            { to: "/superUser/master-qr", label: "Batch QR Code", allowed: ["DEVELOPER"] as UserRole[] },
+            { to: "/superUser/master-qr", label: "Batch Kode QR", allowed: ["DEVELOPER"] as UserRole[] },
           ],
         },
       ],
@@ -874,7 +1080,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/pengaturan", label: "Profil", allowed: ALL_ROLES },
             { to: "/notifikasi", label: "Notifikasi", allowed: ALL_ROLES },
-            { to: "/master-data/rule-engine", label: "Rule Engine", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
+            { to: "/master-data/rule-engine", label: "Mesin Aturan (Rule Engine)", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
           ],
         },
         {
@@ -908,28 +1114,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {/* Render Collapsed Mini Sidebar */}
         {isCollapsed ? (
           <div className="relative z-10 flex flex-col h-full items-center justify-between py-3">
-            {/* Top Brand Logo & Clock */}
-            <div className="flex flex-col items-center w-full border-b border-slate-100 dark:border-slate-800 pb-2 mb-1 gap-2 shrink-0">
+            {/* Top Brand Logo */}
+            <div className="flex flex-col items-center w-full border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
               <div
                 title="BERSEKA"
-                className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 border border-[#009966]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
+                className="w-12 h-12 rounded-2xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
-              </div>
-
-              {/* Collapsed Clock Button */}
-              <div
-                title={timeStr ? `${dateStr} - ${timeStr}` : "Jam Sistem"}
-                className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 flex items-center justify-center relative group cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/80 transition-all"
-              >
-                <Clock size={17} className="text-[#009966] dark:text-emerald-400" />
-                <span className="absolute left-16 bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[60] border border-slate-700/60">
-                  {dateStr ? `${dateStr} • ${timeStr}` : timeStr || "Jam Sistem"}
-                </span>
               </div>
             </div>
 
@@ -943,11 +1138,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                     {idx > 0 && <div className="w-6 h-px bg-slate-200/80 dark:bg-slate-800 my-1.5 mx-auto shrink-0" />}
                     {visibleItems.map((item: any) =>
                       item.type === "group" ? (
-                        <NavItemCollapsed
+                        <NavGroupCollapsed
                           key={item.label}
-                          to={getFilteredGroupChildren(item.label, item.children)[0]?.to || "/master-pengguna"}
                           icon={item.icon}
                           label={item.label}
+                          items={getFilteredGroupChildren(item.label, item.children)}
                         />
                       ) : (
                         <NavItemCollapsed
@@ -964,52 +1159,34 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             </nav>
 
             {/* Bottom Actions for Collapsed Mode */}
-            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0">
-              <button
-                onClick={handleLogout}
-                title="Keluar Sistem"
-                className="w-10 h-10 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-all relative group cursor-pointer"
-              >
-                <LogOut size={18} />
-              </button>
+            <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0 gap-2">
+              <CollapsedClockButton dateStr={dateStr} timeStr={timeStr} />
+              <CollapsedLogoutButton onClick={handleLogout} />
             </div>
           </div>
         ) : (
           /* Render Full Sidebar */
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
-            {/* Top Brand Logo Header Section with Real-Time Clock */}
-            <div className="pt-4 pb-3 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#f3fbf5]/40 dark:from-emerald-950/20 via-transparent to-transparent shrink-0">
+            {/* Top Brand Logo Header Section */}
+            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
-              <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 mb-3 px-2 w-full text-center">
+              <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 px-2 w-full text-center">
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
-                  className="h-10 w-auto object-contain transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_2px_8px_rgba(5,92,70,0.15)] shrink-0"
+                  className="h-10 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
                 />
                 <div className="flex flex-col justify-center text-left min-w-0">
                   {/* ponytail: static header layout; abstract to brand config if dynamic multi-tenant text is required */}
-                  <h1 className="text-[20px] font-black tracking-wide text-[#055c46] dark:text-emerald-400 group-hover:text-[#549e26] dark:group-hover:text-emerald-300 transition-colors uppercase leading-none mb-1 truncate">
+                  <h1 className="text-[20px] font-black tracking-wide text-[#035941] dark:text-emerald-400 uppercase leading-none mb-1 truncate transition-opacity group-hover:opacity-90">
                     BERSEKA
                   </h1>
-                  <p className="text-[10px] font-bold text-[#549e26] dark:text-emerald-500 tracking-tight leading-tight truncate">
+                  <p className="text-[10px] font-bold text-[#58A621] dark:text-emerald-500 tracking-tight leading-tight truncate">
                     Bersih, Sehat, Kampung Asri
                   </p>
                 </div>
               </Link>
-
-              {/* Real-time System Clock Card */}
-              <div className="w-full bg-[#f3fbf5]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
-                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
-                  <Clock size={13} className="text-[#055c46] dark:text-emerald-400" />
-                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
-                    {dateStr || "Kamis, 20 Agustus 2026"}
-                  </p>
-                </div>
-                <p className="text-sm font-black text-[#055c46] dark:text-emerald-400 tracking-wider font-mono">
-                  {timeStr || "09.55.12 WIB"}
-                </p>
-              </div>
             </div>
 
             {/* Scrollable Navigation Sections */}
@@ -1039,10 +1216,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                         }
                         return (
                           <NavGroup
-                            key={item.label}
-                            icon={item.icon}
-                            label={item.label}
-                            items={childrenToRender}
+                              key={item.label}
+                              icon={item.icon}
+                              label={item.label}
+                              items={childrenToRender}
                           />
                         );
                       }
@@ -1055,14 +1232,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Footer Section: Clean Logout Button */}
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+            {/* Bottom Footer Section: Real-time System Clock Card & Clean Logout Button */}
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-3.5">
+              {/* Real-time System Clock Card */}
+              <div className="w-full bg-[#f2f8f4]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
+                <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
+                  <Clock size={13} className="text-[#035941] dark:text-emerald-400" />
+                  <p className="text-[10.5px] font-black text-slate-600 dark:text-slate-300 truncate">
+                    {dateStr || "Kamis, 20 Agustus 2026"}
+                  </p>
+                </div>
+                <p className="text-sm font-black text-[#035941] dark:text-emerald-400">
+                  {timeStr || "09.55.12"}
+                </p>
+              </div>
+
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-start gap-3 px-3.5 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-all duration-200 cursor-pointer group font-semibold text-xs border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 active:scale-[0.98]"
               >
                 <LogOut size={16} className="text-rose-500 dark:text-rose-400 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar Sistem</span>
+                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar</span>
               </button>
             </div>
           </div>
@@ -1077,9 +1267,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               <LogOut size={26} />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Sesi Keluar</h3>
+              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Keluar</h3>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-                Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem BERSEKA?
+                Apakah Anda yakin ingin keluar dari sistem BERSEKA?
               </p>
             </div>
             <div className="flex gap-3 pt-2">

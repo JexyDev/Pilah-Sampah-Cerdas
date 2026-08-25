@@ -254,8 +254,8 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => scrollToSection("#about")}
               className={`transition-colors duration-300 ${activeSection === "#about"
-                ? "text-[#055c46] font-extrabold active"
-                : "text-slate-700 hover:text-[#055c46]"
+                ? "text-[#035941] font-extrabold active"
+                : "text-slate-700 hover:text-[#035941]"
                 }`}
             >
               Tentang Kami
@@ -264,8 +264,8 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => scrollToSection("#why-us")}
               className={`transition-colors duration-300 ${activeSection === "#why-us"
-                ? "text-[#055c46] font-extrabold active"
-                : "text-slate-700 hover:text-[#055c46]"
+                ? "text-[#035941] font-extrabold active"
+                : "text-slate-700 hover:text-[#035941]"
                 }`}
             >
               Mengapa BERSEKA
@@ -274,8 +274,8 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => scrollToSection("#dampak")}
               className={`transition-colors duration-300 ${activeSection === "#dampak"
-                ? "text-[#055c46] font-extrabold active"
-                : "text-slate-700 hover:text-[#055c46]"
+                ? "text-[#035941] font-extrabold active"
+                : "text-slate-700 hover:text-[#035941]"
                 }`}
             >
               Dampak
@@ -284,8 +284,8 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => scrollToSection("#mitra")}
               className={`transition-colors duration-300 ${activeSection.toLowerCase() === "#mitra"
-                ? "text-[#055c46] font-extrabold active"
-                : "text-slate-700 hover:text-[#055c46]"
+                ? "text-[#035941] font-extrabold active"
+                : "text-slate-700 hover:text-[#035941]"
                 }`}
             >
               Mitra
@@ -294,8 +294,8 @@ export const LandingPage: React.FC = () => {
             <button
               onClick={() => scrollToSection("#faq")}
               className={`transition-colors duration-300 ${activeSection === "#faq"
-                ? "text-[#055c46] font-extrabold active"
-                : "text-slate-700 hover:text-[#055c46]"
+                ? "text-[#035941] font-extrabold active"
+                : "text-slate-700 hover:text-[#035941]"
                 }`}
             >
               FAQ
@@ -311,7 +311,7 @@ export const LandingPage: React.FC = () => {
                   className="btn-primary-clean"
                 >
                   <span className="material-symbols-outlined text-lg">dashboard</span>
-                  Ke Dashboard
+                  Dasbor
                 </button>
               ) : (
                 <Link to="/login" className="btn-primary-clean">
@@ -357,7 +357,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => scrollToSection("#why-us")}
                 className={`py-2 text-left transition ${activeSection === "#why-us" ? "text-emerald-600 font-extrabold" : "hover:text-emerald-600"}`}
               >
-                Mengapa Aplikasi Ini
+                Mengapa BERSEKA
               </button>
               <button
                 onClick={() => scrollToSection("#dampak")}
@@ -382,19 +382,19 @@ export const LandingPage: React.FC = () => {
               {isAuthenticated ? (
                 <button
                   onClick={() => { setIsMobileMenuOpen(false); navigate("/dasbor"); }}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
+                  className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-[#035941] text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">dashboard</span>
-                  Ke Dashboard
+                  Dasbor
                 </button>
               ) : (
                 <Link
                   to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-600/20"
+                  className="w-full py-3 rounded-xl border border-slate-200 bg-slate-50 text-[#035941] text-sm font-extrabold flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-lg">login</span>
-                  Masuk
+                  Masuk Portal Web
                 </Link>
               )}
 
@@ -416,44 +416,47 @@ export const LandingPage: React.FC = () => {
           {/* Hero Left Column */}
           <div className="lg:col-span-6 xl:col-span-5 space-y-6 text-left relative z-20 pl-4 sm:pl-8 lg:pl-16 xl:pl-24 pr-4 animate-fade-in-up">
             <div className="space-y-2">
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black text-[#055c46] leading-none tracking-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black text-[#035941] leading-none tracking-tight">
                 BERSEKA
               </h1>
-              <p className="text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold text-[#549e26] leading-tight tracking-tight">
+              <p className="text-2xl sm:text-3xl lg:text-[2.25rem] font-extrabold text-[#58A621] leading-tight tracking-tight">
                 Bersih, Sehat, Kampung Asri
               </p>
             </div>
 
             <p className="text-slate-600 text-sm sm:text-base font-medium leading-relaxed max-w-xl">
-              Sistem tata kelola pemilahan sampah cerdas berbasis kecerdasan buatan (AI) dan partisipasi masyarakat terpadu. Menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN, Dosen Pembimbing Lapangan (DPL), pihak kelurahan, kecamatan, hingga Dinas Lingkungan Hidup.
+              Sistem tata kelola pemilahan sampah cerdas berbasis kecerdasan buatan (AI) dan partisipasi masyarakat terpadu. Menghubungkan warga, pengurus RW, petugas pemilah, mahasiswa KKN, Dosen Pembimbing Lapangan (DPL), pihak kelurahan, kecamatan, hingga Dinas Lingkungan Hidup.
             </p>
 
             <div className="flex flex-wrap items-center gap-3.5 pt-2">
-              <button
-                onClick={() => scrollToSection("#program")}
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#055c46] hover:bg-[#044d3a] text-white font-extrabold text-sm transition shadow-md hover:shadow-lg cursor-pointer"
+              <Link
+                to="/download"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-sm transition shadow-md hover:shadow-lg cursor-pointer"
               >
-                Lihat Program <span className="text-lg">→</span>
-              </button>
+                <Download size={18} />
+                <span>Unduh APK Mobile</span>
+              </Link>
 
               <button
-                onClick={() => scrollToSection("#about")}
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-900 font-extrabold text-sm transition shadow-xs hover:shadow-md cursor-pointer"
+                onClick={() => scrollToSection("#program")}
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-sm transition shadow-xs cursor-pointer"
               >
-                Pelajari Lebih Lanjut
+                Lihat Program <span className="text-lg">→</span>
               </button>
             </div>
           </div>
 
-           {/* Hero Right Column: Clean Dashboard Image with Subtle Left Edge Soft Fade */}
-           {/* Hero Right Column: Clean Dashboard Image with Ultra-Smooth & Balanced Left Fade */}
-           <div className="lg:col-span-6 xl:col-span-7 relative h-[320px] sm:h-[420px] md:h-[460px] lg:h-[560px] w-full animate-fade-in-up" style={{ animationDelay: "150ms" }}>
-             {/* Smooth Multi-stage Gradient Blend Overlay */}
-             <div className="absolute inset-y-0 left-0 w-28 sm:w-44 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
+           {/* Hero Right Column: Clean Dashboard Image with Responsively Scoped Fade */}
+           <div className="lg:col-span-6 xl:col-span-7 relative h-[280px] sm:h-[380px] md:h-[440px] lg:h-[560px] w-full animate-fade-in-up" style={{ animationDelay: "150ms" }}>
+             {/* Smooth Multi-stage Gradient Blend Overlay (Desktop Only) */}
+             <div className="hidden lg:block absolute inset-y-0 left-0 w-28 sm:w-44 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
              <img
                src="/image/landingpage.png"
                alt="Aksi Pemilahan Sampah Mahasiswa KKN Berdampak"
-               className="w-full h-full object-cover object-center lg:object-right transition-all duration-500 [mask-image:linear-gradient(to_right,transparent_0%,black_18%)]"
+               className="w-full h-full object-cover object-center lg:object-right transition-all duration-500 lg:[mask-image:linear-gradient(to_right,transparent_0%,black_18%)]"
+               // @ts-ignore
+               fetchpriority="high"
+               decoding="async"
              />
            </div>
         </div>
@@ -463,7 +466,7 @@ export const LandingPage: React.FC = () => {
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
-              <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#055c46] border border-[#c8e6b2]/60 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#035941] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="tabler:activity" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
@@ -473,7 +476,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
-              <div className="w-10 h-10 rounded-2xl bg-[#ebf3fb] text-[#0062bd] border border-[#6fa0d6]/40 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-[#ebf3fb] text-[#0468BF] border border-[#0477BF]/40 flex items-center justify-center">
                 <Icon icon="octicon:people-16" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
@@ -483,7 +486,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
-              <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#549e26] border border-[#c8e6b2]/60 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#58A621] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
@@ -493,7 +496,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
-              <div className="w-10 h-10 rounded-2xl bg-[#ebf3fb] text-[#6fa0d6] border border-[#6fa0d6]/40 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-[#ebf3fb] text-[#0477BF] border border-[#0477BF]/40 flex items-center justify-center">
                 <Icon icon="lucide:home" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
@@ -522,15 +525,15 @@ export const LandingPage: React.FC = () => {
 
           {/* About Header Narrative */}
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight text-[#055c46]">
+            <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight text-[#035941]">
               BERSEKA
             </h2>
-            <p className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-[#549e26] -mt-2">
+            <p className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-[#58A621] -mt-2">
               Bersih, Sehat, Kampung Asri
             </p>
 
             <p className="text-slate-600 text-base sm:text-lg leading-relaxed font-medium">
-              Mengangkat kearifan lokal Sunda <em>"Berseka"</em> yang bermakna hidup bersih, apik, dan tertata rapi, platform <strong className="text-[#055c46] font-bold">BERSEKA</strong> mengintegrasikan pemilahan sampah dari sumber rumah tangga, verifikasi kode QR fisik tempat sampah, audit klasifikasi berbasis kecerdasan buatan (AI), serta pengangkutan residu secara terstruktur di wilayah Kecamatan Coblong.
+              Mengangkat kearifan lokal Sunda <em>"Berseka"</em> yang bermakna hidup bersih, apik, dan tertata rapi, platform <strong className="text-[#035941] font-bold">BERSEKA</strong> mengintegrasikan pemilahan sampah dari sumber rumah tangga, verifikasi kode QR fisik tempat sampah, audit klasifikasi berbasis kecerdasan buatan (AI), serta pengangkutan residu secara terstruktur di wilayah Kecamatan Coblong.
             </p>
           </div>
 
@@ -581,7 +584,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <p className="sdg-bottom-text text-center text-sm text-slate-600 font-medium mt-10 max-w-3xl mx-auto leading-relaxed">
-              Bersama <strong className="text-[#055c46] font-extrabold">BERSEKA</strong>, pengelolaan sampah menjadi bagian dari solusi nyata untuk mewujudkan kampung yang bersih, sehat, dan berkelanjutan.
+              Bersama <strong className="text-[#035941] font-extrabold">BERSEKA</strong>, pengelolaan sampah menjadi bagian dari solusi nyata untuk mewujudkan kampung yang bersih, sehat, dan berkelanjutan.
             </p>
           </div>
 
@@ -620,7 +623,7 @@ export const LandingPage: React.FC = () => {
 
                   <article className="program-card">
                     <span className="program-icon" aria-hidden="true">
-                      <span className="material-symbols-outlined text-[#055c46] text-2xl">analytics</span>
+                      <span className="material-symbols-outlined text-[#035941] text-2xl">analytics</span>
                     </span>
                     <h3>Pemantauan Data Sampah</h3>
                     <p>Pemantauan volume sampah organik, anorganik, dan residu secara terukur serta real-time.</p>
@@ -723,7 +726,7 @@ export const LandingPage: React.FC = () => {
 
                             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
                               <span className="flex items-center gap-1.5 text-slate-600 font-medium text-xs leading-normal">
-                                <span className="material-symbols-outlined text-base text-[#055c46] shrink-0">location_on</span>
+                                <span className="material-symbols-outlined text-base text-[#035941] shrink-0">location_on</span>
                                 <span>{item.location || "Kec. Coblong"}</span>
                               </span>
                               <span className="text-emerald-600 font-extrabold flex items-center gap-1 text-[11px] group-hover:translate-x-1 transition-transform shrink-0">
@@ -849,7 +852,7 @@ export const LandingPage: React.FC = () => {
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Hadiah Ide Daur Ulang
                     </span>
-                    <p className="text-xl sm:text-2xl font-black text-[#055c46]">
+                    <p className="text-xl sm:text-2xl font-black text-[#035941]">
                       +{statsData && statsData.poinRewardIde !== undefined ? statsData.poinRewardIde : 50} Poin
                     </p>
                   </div>
@@ -1259,7 +1262,7 @@ export const LandingPage: React.FC = () => {
               {openFaq === 0 && (
                 <div className="faq-answer">
                   <p>
-                    BERSEKA (Bersih, Sehat, Kampung Asri) merupakan sistem tata kelola pemilahan sampah cerdas terpadu di Kecamatan Coblong yang menghubungkan warga, pengurus RW, petugas residu, mahasiswa KKN UNIKOM, dan instansi pemerintah melalui pemindaian QR Code Tempat Sampah fisik dan verifikasi berbasis AI.
+                    BERSEKA (Bersih, Sehat, Kampung Asri) merupakan sistem tata kelola pemilahan sampah cerdas terpadu di Kecamatan Coblong yang menghubungkan warga, pengurus RW, petugas pemilah, mahasiswa KKN UNIKOM, dan instansi pemerintah melalui pemindaian Kode QR Tempat Sampah fisik dan verifikasi berbasis AI.
                   </p>
                 </div>
               )}
@@ -1528,7 +1531,7 @@ export const LandingPage: React.FC = () => {
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#055c46] border border-[#c8e6b2] flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#035941] border border-[#c8e6b2] flex items-center justify-center shrink-0">
                     <span className="material-symbols-outlined text-xl">contact_support</span>
                   </div>
                   <div>
@@ -1556,7 +1559,7 @@ export const LandingPage: React.FC = () => {
                 <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/70 space-y-4">
                   {/* Location Item */}
                   <div className="flex items-start gap-3.5">
-                    <div className="w-9 h-9 rounded-xl bg-[#f3fbf5] text-[#055c46] border border-[#c8e6b2] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                    <div className="w-9 h-9 rounded-xl bg-[#f3fbf5] text-[#035941] border border-[#c8e6b2] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                       <span className="material-symbols-outlined text-lg">location_on</span>
                     </div>
                     <div className="space-y-1 flex-1">
@@ -1570,7 +1573,7 @@ export const LandingPage: React.FC = () => {
                         href="https://maps.google.com/?q=Universitas+Komputer+Indonesia+Jl.+Dipati+Ukur+No.112-116+Bandung"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1.5 rounded-xl bg-[#055c46] hover:bg-[#044d3a] text-white font-extrabold text-[11px] transition shadow-2xs"
+                        className="inline-flex items-center gap-1.5 mt-1.5 px-3 py-1.5 rounded-xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-[11px] transition shadow-2xs"
                       >
                         <span className="material-symbols-outlined text-sm">map</span>
                         Buka di Google Maps <span>→</span>
@@ -1580,14 +1583,14 @@ export const LandingPage: React.FC = () => {
 
                   {/* Email Item */}
                   <div className="flex items-center gap-3.5 pt-3 border-t border-slate-200/70">
-                    <div className="w-9 h-9 rounded-xl bg-sky-100 text-[#0062bd] flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="w-9 h-9 rounded-xl bg-sky-100 text-[#0468BF] flex items-center justify-center shrink-0 shadow-2xs">
                       <span className="material-symbols-outlined text-lg">mail</span>
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Resmi</p>
                       <a
                         href="mailto:cdc@unikom.ac.id"
-                        className="font-extrabold text-slate-900 hover:text-[#055c46] transition-colors text-xs sm:text-sm"
+                        className="font-extrabold text-slate-900 hover:text-[#035941] transition-colors text-xs sm:text-sm"
                       >
                         cdc@unikom.ac.id
                       </a>
@@ -1605,7 +1608,7 @@ export const LandingPage: React.FC = () => {
                         href="https://wa.me/6285715516065"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-extrabold text-slate-900 hover:text-[#055c46] transition-colors text-xs sm:text-sm"
+                        className="font-extrabold text-slate-900 hover:text-[#035941] transition-colors text-xs sm:text-sm"
                       >
                         +62 857-1551-6065
                       </a>
@@ -1617,7 +1620,7 @@ export const LandingPage: React.FC = () => {
               {/* Footer Action */}
               <button
                 onClick={() => setShowContactModal(false)}
-                className="w-full py-3.5 rounded-2xl bg-[#055c46] hover:bg-[#044d3a] text-white font-extrabold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-[#055c46]/20"
+                className="w-full py-3.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-[#035941]/20"
               >
                 Tutup
               </button>
@@ -1633,7 +1636,7 @@ export const LandingPage: React.FC = () => {
             <div className="bg-white rounded-3xl max-w-md w-full p-8 space-y-6 shadow-2xl border border-slate-100">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#055c46]">android</span>
+                  <span className="material-symbols-outlined text-[#035941]">android</span>
                   Unduh Aplikasi Mobile
                 </h3>
                 <button onClick={() => setShowApkModal(false)} className="text-slate-400 hover:text-slate-600 transition">
@@ -1642,21 +1645,32 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="text-center py-2 space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-[#f3fbf5] text-[#055c46] flex items-center justify-center mx-auto shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-[#f3fbf5] text-[#035941] flex items-center justify-center mx-auto shadow-sm">
                   <span className="material-symbols-outlined text-3xl">download_for_offline</span>
                 </div>
-                <h4 className="font-bold text-slate-900 text-base">BERSEKA Mobile App</h4>
+                <h4 className="font-bold text-slate-900 text-base">BERSEKA Mobile App (Android APK)</h4>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  File instalasi rilis APK Android sedang diproses. Tautan unduhan langsung akan segera aktif.
+                  Unduh berkas installer APK rilis terbaru atau lihat catatan rilis dan panduan instalasi lengkap.
                 </p>
               </div>
 
-              <button
-                onClick={() => setShowApkModal(false)}
-                className="w-full py-3.5 rounded-2xl bg-[#055c46] hover:bg-[#044d3a] text-white font-extrabold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-[#055c46]/20"
-              >
-                Tutup
-              </button>
+              <div className="flex flex-col gap-2.5">
+                <Link
+                  to="/download"
+                  onClick={() => setShowApkModal(false)}
+                  className="w-full py-3.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-[#035941]/20"
+                >
+                  <Download size={16} />
+                  <span>Buka Halaman Unduh APK</span>
+                </Link>
+
+                <button
+                  onClick={() => setShowApkModal(false)}
+                  className="w-full py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-extrabold text-xs flex items-center justify-center transition cursor-pointer hover:bg-slate-100"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         )
@@ -1666,11 +1680,11 @@ export const LandingPage: React.FC = () => {
       <div className="fixed bottom-6 right-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">
         <div className="relative flex items-center justify-center">
           {/* Outer Animated Ping Ripple Effect */}
-          <span className="absolute -inset-1.5 rounded-full bg-[#055c46]/30 animate-ping opacity-75 pointer-events-none" />
+          <span className="absolute -inset-1.5 rounded-full bg-[#035941]/30 animate-ping opacity-75 pointer-events-none" />
 
           <Link
             to="/download"
-            className="relative w-14 h-14 bg-[#055c46] hover:bg-[#044d3a] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#055c46]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
+            className="relative w-14 h-14 bg-[#035941] hover:bg-[#024633] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#035941]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
             aria-label="Unduh Aplikasi Mobile BERSEKA (APK)"
           >
             <Download size={22} className="text-white group-hover:rotate-12 transition-transform" />

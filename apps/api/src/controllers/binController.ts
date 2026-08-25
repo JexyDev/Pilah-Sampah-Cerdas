@@ -405,7 +405,7 @@ export class BinController {
         data: result,
       });
     } catch (error: any) {
-      if (error.message === "BIN_NOT_FOUND") {
+      if (error.message === "BIN_NOT_FOUND" || error.message.startsWith("BIN_NOT_FOUND:")) {
         res.status(404).json({
           status: "error",
           error: "RESOURCE_NOT_FOUND",
@@ -420,6 +420,11 @@ export class BinController {
         res.status(403).json({
           error: "BIN_NOT_OWNED",
           message: "tempat sampah ini milik warga lain dan tidak dapat digunakan oleh Anda.",
+        });
+      } else if (error.message === "BIN_RW_MISMATCH") {
+        res.status(403).json({
+          error: "BIN_RW_MISMATCH",
+          message: "QR Code ini hanya dapat digunakan oleh warga yang terdaftar di RW yang sama.",
         });
       } else if (
         error.message === "LOCATION_OUT_OF_RANGE" ||
@@ -465,6 +470,34 @@ export class BinController {
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] registerWargaBin error:", error);
+
+      // ✅ FIX: handle format BIN_NOT_FOUND dengan dan tanpa suffix qrCode
+      if (error.message === "BIN_NOT_FOUND" || error.message.startsWith("BIN_NOT_FOUND:")) {
+        res.status(404).json({
+          success: false,
+          error: "BIN_NOT_FOUND",
+          message: "QR Code tidak terdaftar di sistem. Pastikan QR Code yang Anda scan benar.",
+        });
+        return;
+      }
+
+      if (error.message === "BIN_RW_MISMATCH") {
+        res.status(403).json({
+          success: false,
+          error: "BIN_RW_MISMATCH",
+          message: "QR Code ini hanya dapat diaktivasi oleh warga yang terdaftar di RW yang sama.",
+        });
+        return;
+      }
+
+      if (error.message === "USER_RW_NOT_SET") {
+        res.status(400).json({
+          success: false,
+          error: "USER_RW_NOT_SET",
+          message: "Data RW akun Anda belum terdaftar. Silakan lengkapi profil terlebih dahulu.",
+        });
+        return;
+      }
 
       if (error.message.startsWith("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:")) {
         const missingCat = error.message.split(":")[1];

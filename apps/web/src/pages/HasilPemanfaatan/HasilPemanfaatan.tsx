@@ -332,6 +332,50 @@ export const HasilPemanfaatan: React.FC = () => {
     }
   };
 
+  const getCategoryBadge = (jenis: string) => {
+    const j = (jenis || "").toLowerCase();
+    if (j.includes("maggot") || j.includes("bsf")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50">
+          Maggot BSF
+        </span>
+      );
+    }
+    if (j.includes("poc") || j.includes("pupuk cair") || j.includes("cair")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700/50">
+          Pupuk POC
+        </span>
+      );
+    }
+    if (j.includes("bank") || j.includes("anorganik")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-700/50">
+          Bank Sampah
+        </span>
+      );
+    }
+    if (j.includes("loseda")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-lime-50 dark:bg-lime-950/60 text-lime-800 dark:text-lime-300 border border-lime-200 dark:border-lime-700/50">
+          Loseda
+        </span>
+      );
+    }
+    if (j.includes("bata") || j.includes("terawang")) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+          Bata Terawang
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/50">
+        {jenis || "Kompos Organik"}
+      </span>
+    );
+  };
+
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center gap-1 text-amber-400">
@@ -481,6 +525,8 @@ export const HasilPemanfaatan: React.FC = () => {
                   <option value="Maggot">Maggot BSF</option>
                   <option value="POC">Pupuk Organik Cair (POC)</option>
                   <option value="Bank Sampah">Bank Sampah Anorganik</option>
+                  <option value="Loseda">Loseda (Lorong Sisa Dapur)</option>
+                  <option value="Bata Terawang">Bata Terawang</option>
                 </select>
               </div>
             </div>
@@ -522,27 +568,32 @@ export const HasilPemanfaatan: React.FC = () => {
                           })()}
                         </span>
                         <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5 font-medium">
-                          <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal"}
+                          <MapPin size={12} /> {p.lokasiFasilitas || "Fasilitas Komunal RW"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                          {p.jenisProgram}
-                        </span>
+                        {getCategoryBadge(p.jenisProgram)}
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/50 px-2.5 py-0.5 rounded-md text-[11px] inline-block">
-                          {p.rw?.name || `RW ${p.rwId}`} ({p.rw?.kelurahan?.name || "Wilayah Dampingan"})
+                          {(() => {
+                            const rwText = p.rw?.name || (p.rwId ? `RW ${p.rwId}` : "RW 01");
+                            const kelText = p.rw?.kelurahan?.name;
+                            if (kelText && !rwText.toLowerCase().includes(kelText.toLowerCase())) {
+                              return `${rwText} (${kelText})`;
+                            }
+                            return rwText;
+                          })()}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-center font-bold text-slate-700 dark:text-slate-300">
-                        {Number(p.jumlahBahanMasukKg || 0).toFixed(2)} Kg
+                        {Number(p.jumlahBahanMasukKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Kg
                       </td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-emerald-700 dark:text-emerald-400">
-                        {Number(p.jumlahHasilKg || 0).toFixed(2)} {p.unitHasil || "Kg"}
+                        {Number(p.jumlahHasilKg || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {p.unitHasil || "Kg"}
                       </td>
                       <td className="px-4 py-3.5 text-center font-extrabold text-amber-600 dark:text-amber-400">
-                        {p.nilaiEkonomiRp ? `Rp ${p.nilaiEkonomiRp.toLocaleString("id-ID")}` : "-"}
+                        {p.nilaiEkonomiRp ? `Rp ${Number(p.nilaiEkonomiRp).toLocaleString("id-ID")}` : "-"}
                       </td>
                       <td className="px-4 py-3.5 font-medium text-slate-600 dark:text-slate-300">
                         {p.targetPenerimaManfaat || "Warga Sekitar RW"}

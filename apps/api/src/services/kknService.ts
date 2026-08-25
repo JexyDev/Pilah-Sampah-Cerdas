@@ -902,7 +902,9 @@ export class KknService {
   async bantuInputFasilitas(
     kknUserId: string,
     data: {
-      userId: string;
+      userId?: string;
+      pic?: string;
+      kontak?: string;
       rwId?: any;
       nama: string;
       jenis: any;
@@ -980,9 +982,35 @@ export class KknService {
       targetRwId = firstRw?.id || 1;
     }
 
-    const picName = wargaUser ? wargaUser.name : (data.userId || "Warga Binaan");
-    const kontakPhone = wargaUser ? wargaUser.phone || "-" : "-";
+    // Prioritaskan nama PIC warga yang diinput langsung atau dari profil warga binaan
+    let picName = (data.pic || "").trim();
+    if (!picName && wargaUser?.name) {
+      picName = wargaUser.name;
+    } else if (!picName && data.userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.userId.trim())) {
+      picName = data.userId.trim();
+    }
+
+    let kontakPhone = (data.kontak || "").trim();
+    if (!kontakPhone || kontakPhone === "-") {
+      kontakPhone = wargaUser ? (wargaUser.phone || "-") : "-";
+    }
+
     const alamatLokasi = data.alamat || (wargaUser ? wargaUser.address || "-" : "-");
+
+    // Jika picName masih berupa string UUID (legacy), lookup ke nama user warga
+    if (picName && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(picName)) {
+      const u = await prisma.user.findUnique({ where: { id: picName }, select: { name: true, phone: true } });
+      if (u?.name) {
+        picName = u.name;
+        if ((!kontakPhone || kontakPhone === "-") && u.phone) kontakPhone = u.phone;
+      } else {
+        picName = "Warga Pengelola";
+      }
+    }
+
+    if (!picName) {
+      picName = "Warga Pengelola";
+    }
 
     const facility = await prisma.facility.create({
       data: {
@@ -1771,17 +1799,21 @@ export class KknService {
 
     const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+    const cleanProgramTitle = payload.wilayahDampingan || deskripsi || "Program Pengolahan Mandiri";
+    const cleanTeknologi = jenisPemanfaatan || "Kompos Organik";
+    const cleanBahanBaku = kategoriSampah || "Sampah Organik";
+
     const report = await prisma.pemanfaatan.create({
       data: {
         rwId: targetRwId,
         nomorCaraPemanfaatan: uniqueNo,
-        program: jenisPemanfaatan,
-        teknologi: kategoriSampah,
-        bahanBaku: deskripsi || jenisPemanfaatan,
-        volumeBahanBaku: Number(jumlah) || 10,
-        unitBahanBaku: satuan,
-        hasil: Number(jumlah) || 10,
-        unitHasil: satuan,
+        program: cleanProgramTitle,
+        teknologi: cleanTeknologi,
+        bahanBaku: cleanBahanBaku,
+        volumeBahanBaku: Number(jumlah) || 0,
+        unitBahanBaku: satuan || "Kg",
+        hasil: 0,
+        unitHasil: satuan || "Kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: payload.timestamp ? new Date(payload.timestamp) : new Date(),
       },
@@ -2126,11 +2158,16 @@ export class KknService {
       : null;
 
     let attendanceStatus = "belum_absen";
+    let isMemenuhiDurasi = false;
     if (activeLeave) {
       const typeLower = (activeLeave.type || "").toLowerCase();
       attendanceStatus = typeLower.includes("sakit") ? "sakit" : "izin";
     } else if (attendanceForActiveSchedule) {
       const attStatUpper = String(attendanceForActiveSchedule.status || "").toUpperCase();
+      const actualMins = attendanceForActiveSchedule.actualInZoneMinutes ?? 0;
+      const isDurMet = targetDurationMinutes <= 0 || actualMins >= targetDurationMinutes;
+      isMemenuhiDurasi = isDurMet;
+
       if (attStatUpper.includes("IZIN")) {
         attendanceStatus = "izin";
       } else if (attStatUpper.includes("SAKIT")) {
@@ -2139,8 +2176,14 @@ export class KknService {
         attendanceStatus = "alpa";
       } else if (attStatUpper === "BERLANGSUNG" || attStatUpper === "DALAM_RADIUS" || attStatUpper === "DI_ZONA") {
         attendanceStatus = "berlangsung";
+      } else if (attStatUpper === "HADIR_MEMENUHI") {
+        attendanceStatus = "hadir_memenuhi";
+        isMemenuhiDurasi = true;
+      } else if (attStatUpper === "HADIR_TIDAK_MEMENUHI" || attStatUpper === "SELESAI_TELAT") {
+        attendanceStatus = "hadir_tidak_memenuhi";
+        isMemenuhiDurasi = false;
       } else if (attStatUpper === "HADIR" || attStatUpper === "SELESAI" || attendanceForActiveSchedule.checkOutAt !== null) {
-        attendanceStatus = "hadir";
+        attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
       } else {
         attendanceStatus = attStatUpper.toLowerCase();
       }
@@ -2316,6 +2359,8 @@ export class KknService {
         attendanceStatus,
         status: attendanceStatus,
         statusKehadiran: attendanceStatus.toUpperCase(),
+        statusDisplay: attendanceStatus === "hadir_memenuhi" ? "Hadir & Memenuhi" : attendanceStatus === "hadir_tidak_memenuhi" ? "Hadir & Tidak Memenuhi" : attendanceStatus,
+        isMemenuhiDurasi,
         kehadiran: attendanceStatus,
         attendedAt: attendanceForActiveSchedule?.attendedAt,
         polygon: activeSchedule && activeSchedule.polygon ? activeSchedule.polygon : null,
@@ -2351,6 +2396,8 @@ export class KknService {
       attendanceStatus,
       status: attendanceStatus,
       statusKehadiran: attendanceStatus.toUpperCase(),
+      statusDisplay: attendanceStatus === "hadir_memenuhi" ? "Hadir & Memenuhi" : attendanceStatus === "hadir_tidak_memenuhi" ? "Hadir & Tidak Memenuhi" : attendanceStatus,
+      isMemenuhiDurasi,
       kehadiran: attendanceStatus,
       polygonPoints:
         lat && lng
@@ -2657,13 +2704,15 @@ export class KknService {
       }
     }
 
-    let teknologiString = teknologi || "Tidak Spesifik";
+    let cleanTeknologi = teknologi || "Kompos Organik";
+    let facilityName: string | null = null;
+    let facilityType: string | null = null;
     
     if (fasilitasId) {
       const fasilitas = await prisma.facility.findUnique({ where: { id: fasilitasId } });
       if (fasilitas) {
-        // Append facility name to teknologi so web displays it in lokasiFasilitas
-        teknologiString = `${teknologiString} - ${fasilitas.nama}`;
+        facilityName = fasilitas.nama;
+        facilityType = fasilitas.jenis;
       }
     }
 
@@ -2674,7 +2723,7 @@ export class KknService {
         rwId: targetRwId,
         nomorCaraPemanfaatan: uniqueNo,
         program: programName,
-        teknologi: teknologiString,
+        teknologi: cleanTeknologi,
         bahanBaku: bahanBaku || "Sampah Organik",
         volumeBahanBaku: Number(beratInputKg) || 0,
         unitBahanBaku: "Kg",
@@ -2682,6 +2731,7 @@ export class KknService {
         unitHasil: "Kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: new Date(),
+        jenisKomoditas: facilityName ? `${facilityName}${facilityType ? ` (${facilityType})` : ""}` : undefined,
       },
     });
 
@@ -2691,14 +2741,17 @@ export class KknService {
         const isKetua = Boolean(student.isKetua);
         const dayOfMonth = new Date().getDate();
         const pekanKe = dayOfMonth <= 7 ? 1 : dayOfMonth <= 14 ? 2 : dayOfMonth <= 21 ? 3 : 4;
+        const tempatKegiatan = facilityName
+          ? `Fasilitas ${facilityName}${facilityType ? ` (${facilityType})` : ""}`
+          : `RW ${targetRwId} (${student.assignedRw?.name || "Wilayah KKN"})`;
 
         await prisma.logbookKkn.create({
           data: {
             kelompokId: student.kelompokId,
             penulisId: userId,
             tanggalKegiatan: new Date(),
-            tempat: fasilitasId ? teknologiString : `RW ${targetRwId} (${student.assignedRw?.name || "Wilayah KKN"})`,
-            deskripsi: `Aksi Pemanfaatan Sampah: ${teknologiString} (${bahanBaku || "Sampah Organik"} - ${Number(beratInputKg) || 0} Kg)`,
+            tempat: tempatKegiatan,
+            deskripsi: `Aksi Pemanfaatan Sampah: ${cleanTeknologi} di ${facilityName || "Fasilitas Komunal"} (${bahanBaku || "Sampah Organik"} - ${Number(beratInputKg) || 0} Kg)`,
             fotoBuktiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
             tipeAktivitas: "KELOMPOK",
             programKerjaId: programKerjaId || null,
@@ -2739,7 +2792,7 @@ export class KknService {
         const rwNotifs = rwUsers.map(rw => ({
           userId: rw.id,
           title: "Laporan Pemanfaatan Sampah",
-          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat aksi pemanfaatan sampah: ${teknologiString}.`,
+          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat aksi pemanfaatan sampah: ${cleanTeknologi}.`,
         }));
         await prisma.notification.createMany({ data: rwNotifs });
       }
@@ -2865,6 +2918,76 @@ export class KknService {
     }
 
     return report;
+  }
+
+  async claimWargaMandiri(kknUserId: string, wargaId: string) {
+    return await prisma.$transaction(async (tx) => {
+      // 1. Validasi warga
+      const warga = await tx.user.findUnique({
+        where: { id: wargaId },
+        select: { id: true, name: true, phone: true, address: true },
+      });
+      if (!warga) {
+        throw new Error("WARGA_NOT_FOUND");
+      }
+
+      // 2. Cari tempat sampah aktif milik warga
+      const bins = await tx.bin.findMany({
+        where: {
+          userId: wargaId,
+          status: "ACTIVE_BOUND",
+        },
+        select: {
+          id: true,
+          qrCode: true,
+          binType: true,
+          status: true,
+          registeredByStudentId: true,
+        },
+      });
+
+      if (bins.length === 0) {
+        throw new Error("NO_ACTIVE_BINS");
+      }
+
+      // 3. Filter bin yang belum terikat mahasiswa (mandiri)
+      const unassignedBins = bins.filter((b) => b.registeredByStudentId === null);
+      if (unassignedBins.length === 0) {
+        throw new Error("ALREADY_CLAIMED");
+      }
+
+      const unassignedBinIds = unassignedBins.map((b) => b.id);
+
+      // 4. Update Bin untuk menetapkan pendamping
+      await tx.bin.updateMany({
+        where: { id: { in: unassignedBinIds } },
+        data: { registeredByStudentId: kknUserId },
+      });
+
+      // 5. Beri Poin Gamifikasi
+      const points = 5;
+      const pointDesc = `Mengklaim pendampingan warga mandiri: ${warga.name}`;
+      await tx.pointHistory.create({
+        data: {
+          userId: kknUserId,
+          points,
+          description: pointDesc,
+          kategori: "PARTISIPASI_STREAK",
+        },
+      });
+
+      return {
+        warga,
+        claimedBinsCount: unassignedBins.length,
+        claimedBins: unassignedBins.map(({ registeredByStudentId, ...rest }) => rest),
+        gamification: {
+          pointsEarned: points,
+          category: "PARTISIPASI_STREAK",
+          description: pointDesc,
+        },
+        claimedAt: new Date().toISOString(),
+      };
+    });
   }
 }
 

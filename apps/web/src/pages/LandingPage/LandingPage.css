@@ -7,27 +7,27 @@ html {
 }
 
 :root {
-  /* Official BERSEKA 8-Color Palette */
-  --berseka-leaf-green: #549E26;
-  --berseka-ocean-blue: #0062BD;
-  --berseka-mint-light: #F3FBF5;
-  --berseka-forest-dark: #055C46;
+  /* Official BERSEKA 8-Color Palette (Updated to User-Specified Colors) */
+  --berseka-leaf-green: #58A621;
+  --berseka-ocean-blue: #0468BF;
+  --berseka-mint-light: #F2F2F2;
+  --berseka-forest-dark: #035941;
   --berseka-mint-badge: #C8E6B2;
-  --berseka-sky-blue: #6FA0D6;
-  --berseka-sage-green: #7DAE62;
+  --berseka-sky-blue: #0477BF;
+  --berseka-sage-green: #58A621;
   --berseka-slate-teal: #5D8D83;
-  --berseka-vibrant-green: #4FB523;
+  --berseka-vibrant-green: #58A621;
 
   /* Theme mappings */
   --primary-emerald: var(--berseka-forest-dark);
-  --primary-emerald-hover: #044D3A;
+  --primary-emerald-hover: #024633;
   --primary-emerald-light: var(--berseka-mint-light);
   --accent-blue: var(--berseka-ocean-blue);
-  --accent-blue-hover: #0052A3;
-  --accent-blue-light: #EBF3FB;
+  --accent-blue-hover: #03549B;
+  --accent-blue-light: #F2F2F2;
   --brand-green: var(--berseka-leaf-green);
   --dark-slate: #0F172A;
-  --bg-light: #F8FAFC;
+  --bg-light: #F2F2F2;
 }
 
 .landing-page {
@@ -131,7 +131,7 @@ html {
 }
 
 .nav-links-centered button:hover {
-  color: #055c46;
+  color: #035941;
 }
 
 .nav-links-centered button::after {
@@ -141,7 +141,7 @@ html {
   left: 0;
   width: 0;
   height: 2.5px;
-  background-color: #055c46;
+  background-color: #035941;
   transition: width 0.2s ease;
   border-radius: 99px;
 }
@@ -153,7 +153,7 @@ html {
 
 /* FRESH ECO EMERALD BUTTONS */
 .btn-primary-clean {
-  background-color: #055c46;
+  background-color: #035941;
   color: #ffffff;
   font-weight: 700;
   font-size: 0.875rem;
@@ -164,7 +164,7 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid #055c46;
+  border: 1px solid #035941;
   white-space: nowrap;
 }
 

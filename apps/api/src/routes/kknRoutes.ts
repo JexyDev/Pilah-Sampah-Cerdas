@@ -209,6 +209,36 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/warga/{wargaId}/claim:
+ *   post:
+ *     summary: Mahasiswa KKN mengklaim warga mandiri menjadi warga dampingannya
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: wargaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID Warga yang akan diklaim
+ *     responses:
+ *       200:
+ *         description: Berhasil mengklaim warga
+ *       400:
+ *         description: Warga belum memiliki tempat sampah aktif atau sudah didampingi mahasiswa lain
+ *       404:
+ *         description: Warga tidak ditemukan
+ */
+router.post(
+  "/warga/:wargaId/claim",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.claimWargaMandiri
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/activity-log:
  *   get:
  *     summary: Logbook riwayat aktivitas lapangan Mahasiswa KKN

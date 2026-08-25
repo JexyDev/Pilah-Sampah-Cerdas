@@ -19,25 +19,96 @@ function calculateNilaiEkonomi(program: string, teknologi: string, hasil: number
   if (h <= 0) return 0;
   const t = (teknologi || "").toLowerCase();
   const p = (program || "").toLowerCase();
+  const combined = `${t} ${p}`;
 
-  if (t.includes("maggot") || p.includes("maggot")) {
+  if (combined.includes("maggot") || combined.includes("bsf")) {
     return Math.round(h * 8000); // Rp 8.000 / Kg
   }
-  if (t.includes("poc") || t.includes("cair") || p.includes("poc")) {
+  if (combined.includes("poc") || combined.includes("cair") || combined.includes("pupuk cair")) {
     return Math.round(h * 15000); // Rp 15.000 / Liter
   }
-  if (t.includes("bank") || p.includes("bank")) {
+  if (combined.includes("bank") || combined.includes("anorganik") || combined.includes("dino") || combined.includes("hinodutro")) {
     return Math.round(h * 3000); // Rp 3.000 / Kg
   }
   return Math.round(h * 2500); // Rp 2.500 / Kg default kompos
 }
 
+function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string): string {
+  const t = (rawTeknologi || "").toLowerCase();
+  const p = (rawProgram || "").toLowerCase();
+  const combined = `${t} ${p}`;
+
+  if (combined.includes("maggot") || combined.includes("bsf")) {
+    return "Maggot BSF";
+  }
+  if (combined.includes("poc") || combined.includes("pupuk organik cair") || combined.includes("pupuk cair")) {
+    return "Pupuk Organik Cair (POC)";
+  }
+  if (combined.includes("bank") || combined.includes("anorganik") || combined.includes("dino") || combined.includes("hinodutro")) {
+    return "Bank Sampah Anorganik";
+  }
+  if (combined.includes("loseda")) {
+    return "Loseda";
+  }
+  if (combined.includes("bata") || combined.includes("terawang")) {
+    return "Bata Terawang";
+  }
+  if (combined.includes("takakura")) {
+    return "Kompos Takakura";
+  }
+  if (combined.includes("buruan sae") || combined.includes("kompos") || combined.includes("organik")) {
+    return "Kompos Organik (Buruan Sae)";
+  }
+  if (rawTeknologi && !rawTeknologi.includes(" - ")) {
+    return rawTeknologi.trim();
+  }
+  return "Kompos Organik";
+}
+
+function formatCleanRwName(item: any): string {
+  const rwRaw = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "RW 01");
+  const kelName = item.rw?.kelurahan?.name || "";
+
+  if (kelName && rwRaw.includes(`(${kelName})`)) {
+    return rwRaw;
+  }
+  if (kelName && !rwRaw.toLowerCase().includes(kelName.toLowerCase())) {
+    return `${rwRaw} (${kelName})`;
+  }
+  return rwRaw;
+}
+
+function extractFacilityLocation(item: any, rwCleanName: string, cleanCategory: string): string {
+  if (item.facility?.nama) {
+    const fJenis = item.facility.jenis ? ` (${item.facility.jenis})` : "";
+    return `${item.facility.nama}${fJenis} (${rwCleanName})`;
+  }
+
+  const rawTek = String(item.teknologi || "").trim();
+
+  // If teknologi contains delimiter " - " (e.g. "Hinodutro - bank sampah RW 1" or "maggot bsf - Maggot RW 1")
+  if (rawTek.includes(" - ")) {
+    const parts = rawTek.split(" - ");
+    let fasName = parts[parts.length - 1].trim();
+    fasName = fasName.replace(/\b\w/g, (l) => l.toUpperCase());
+    return `Fasilitas ${fasName} (${rwCleanName})`;
+  }
+
+  // Fallback to Category
+  return `Fasilitas ${cleanCategory} (${rwCleanName})`;
+}
+
 function formatPemanfaatanRecord(item: any) {
   const bahanMasuk = Number(item.volumeBahanBaku || 0);
   const hasil = Number(item.hasil || 0);
-  const nilaiEkonomi = calculateNilaiEkonomi(item.program, item.teknologi, hasil, item.unitHasil);
+  const cleanCategory = normalizeJenisOlahan(item.teknologi, item.program);
+  const rwCleanName = formatCleanRwName(item);
 
-  const rwName = item.rw?.name || (item.rwId ? `RW ${item.rwId}` : "RW 01");
+  // Read recorded economic value if saved in luasLahanM2 / direct field, else calculate
+  const recordedEkonomi = Number(item.luasLahanM2) || 0;
+  const nilaiEkonomi = recordedEkonomi > 0 && hasil > 0
+    ? recordedEkonomi
+    : calculateNilaiEkonomi(item.program, cleanCategory, hasil, item.unitHasil);
 
   const rawProgram = item.program || "Program Pengolahan Mandiri";
   let cleanProgramName = rawProgram.replace(/\*\*/g, "").replace(/\*/g, "").split("\n")[0].trim();
@@ -49,16 +120,17 @@ function formatPemanfaatanRecord(item: any) {
     cleanProgramName = cleanProgramName.split(" – ")[0].trim();
   }
 
+  const lokasiFasilitas = extractFacilityLocation(item, rwCleanName, cleanCategory);
+
   return {
     ...item,
-    // Standard UI / Mobile mapped keys
     namaProgram: cleanProgramName || "Program Pengolahan Mandiri",
-    jenisProgram: item.teknologi || "Kompos Organik",
-    kategoriBahan: (item.bahanBaku || "").toLowerCase().includes("anorganik") ? "ANORGANIK" : "ORGANIK",
+    jenisProgram: cleanCategory,
+    kategoriBahan: (item.bahanBaku || "").toLowerCase().includes("anorganik") || cleanCategory.includes("Bank Sampah") ? "ANORGANIK" : "ORGANIK",
     jumlahBahanMasukKg: bahanMasuk,
     jumlahHasilKg: hasil,
     unitHasil: item.unitHasil || "Kg",
-    lokasiFasilitas: `Fasilitas ${item.teknologi || "Komunal"} (${rwName})`,
+    lokasiFasilitas,
     penanggungJawab: "Pengelola RW & Mahasiswa KKN",
     targetPenerimaManfaat: item.jenisKomoditas
       ? `Kelompok Tani / Buruan Sae (${item.jenisKomoditas})`

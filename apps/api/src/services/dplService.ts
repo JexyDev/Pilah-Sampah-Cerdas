@@ -83,6 +83,24 @@ export function getRoleString(role: any): string {
   return String(role).toUpperCase();
 }
 
+export function isDplSuperUser(role: any): boolean {
+  const r = getRoleString(role);
+  return [
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH",
+    "DLH_ADMIN",
+    "ADMIN",
+    "SUPER_ADMIN",
+    "ADMIN_LPPM",
+    "LPPM",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "PANITIA",
+  ].some((s) => r.includes(s));
+}
+
 export const REAL_32_DPL_STANDARDIZED = [
   { no: 1, name: "Muhammad Aksan Ipaenin, S.T. M.Sc", phone: "+6285294754801", rawPhone: "085294754801", nip: "4127.99.90.268", prodi: "S1 Teknik Sipil", kelompok: "Kelompok 1 Lebak Gede", kelurahan: "Lebak Gede" },
   { no: 2, name: "Assoc.Prof. Dr. Wartika S.Kom.,MT", phone: "+62895337560201", rawPhone: "0895337560201", nip: "4127.70.26.002", prodi: "S1 Sistem Informasi", kelompok: "Kelompok 2 Lebak Gede", kelurahan: "Lebak Gede" },
@@ -2742,7 +2760,7 @@ export const dplService = {
       limit?: number;
     }
   ) => {
-    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
+    const isSuper = isDplSuperUser(role);
     
     const allowedGroups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
@@ -2870,6 +2888,19 @@ export const dplService = {
     const limit = params?.limit || 10;
     const totalPages = Math.max(1, Math.ceil(totalMatching / limit));
 
+    // Resolve Program Kerja deskripsi via database relation ID
+    const prokerIds = items.map((it) => it.programKerjaId).filter(Boolean) as string[];
+    const prokerMap = new Map<string, string>();
+    if (prokerIds.length > 0) {
+      const prokerList = await prisma.programKerjaKkn.findMany({
+        where: { id: { in: prokerIds } },
+        select: { id: true, deskripsi: true, nomor: true },
+      });
+      prokerList.forEach((p) => {
+        prokerMap.set(p.id, p.nomor ? `Proker #${p.nomor}: ${p.deskripsi}` : p.deskripsi);
+      });
+    }
+
     return {
       stats: {
         totalAktivitas,
@@ -2909,7 +2940,7 @@ export const dplService = {
         const durasiM = item.durasiMenit || 120;
         const durasiH = Math.floor(durasiM / 60);
         const durasiRemM = durasiM % 60;
-        const durasiLabel = durasiH > 0 && durasiRemM > 0 ? `${durasiH}j ${durasiRemM}m` : durasiH > 0 ? `${durasiH}j` : `${durasiM}m`;
+        const durasiLabel = durasiH > 0 && durasiRemM > 0 ? `${durasiH} jam ${durasiRemM} menit` : durasiH > 0 ? `${durasiH} jam` : `${durasiM} menit`;
 
         return {
           id: item.id,
@@ -2931,7 +2962,7 @@ export const dplService = {
           hasilTindakLanjut: item.arahanEvaluasi || "",
           arahanEvaluasi: item.arahanEvaluasi || "",
           programKerjaId: item.programKerjaId || null,
-          programKerjaDeskripsi: null,
+          programKerjaDeskripsi: item.programKerjaId ? prokerMap.get(item.programKerjaId) || null : null,
           durasiMenit: durasiM,
           durasi: durasiLabel,
           bukti: buktiLabel,
@@ -2977,12 +3008,7 @@ export const dplService = {
     if (!data.deskripsi || data.deskripsi.trim() === "") throw new Error("Uraian aktivitas wajib diisi");
 
     const requestedStatus = data.status || "TERKIRIM";
-    const arahanVal = (data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || "");
-    if (requestedStatus !== "DRAF" && !arahanVal) {
-      throw new Error("Arahan evaluasi wajib diisi untuk log aktivitas yang dikirim (bukan draf)");
-    }
-
-    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
+    const isSuper = isDplSuperUser(role);
     const kelompok = await prisma.kelompokKkn.findUnique({
       where: { id: data.kelompokId },
     });
@@ -3036,7 +3062,7 @@ export const dplService = {
         waktuMulai: data.waktuMulai || "09.00",
         waktuSelesai: data.waktuSelesai || "11.00",
         kategori: data.kategori || "Kunjungan Lapangan",
-        pekanKe: data.pekanKe || 1,
+        pekanKe: data.pekanKe ? Number(data.pekanKe) : 1,
         tempat: lokasiVal,
         programKerjaId: data.programKerjaId || null,
         deskripsi: data.deskripsi.trim(),
@@ -3076,7 +3102,7 @@ export const dplService = {
       pekanKe?: number;
     }
   ) => {
-    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
+    const isSuper = isDplSuperUser(role);
     const existing = await prisma.logbookDpl.findUnique({
       where: { id },
     });
@@ -3084,15 +3110,6 @@ export const dplService = {
     if (!existing) throw new Error("Aktivitas DPL tidak ditemukan");
     if (!isSuper && existing.dplId !== dplUserId) {
       throw new Error("Akses ditolak: Anda tidak memiliki izin mengedit aktivitas ini.");
-    }
-
-    // Validasi arahanEvaluasi wajib jika status berubah ke bukan DRAF
-    const targetStatus = data.status ?? existing.status;
-    if (targetStatus !== "DRAF") {
-      const arahanFinal = data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || existing.arahanEvaluasi || "";
-      if (!arahanFinal) {
-        throw new Error("Arahan evaluasi wajib diisi untuk log aktivitas yang dikirim (bukan draf)");
-      }
     }
 
     const updateData: any = {};
@@ -3142,7 +3159,7 @@ export const dplService = {
   },
 
   deleteDplActivityLog: async (id: string, dplUserId: string, role: any) => {
-    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(getRoleString(role));
+    const isSuper = isDplSuperUser(role);
     const existing = await prisma.logbookDpl.findUnique({
       where: { id },
     });

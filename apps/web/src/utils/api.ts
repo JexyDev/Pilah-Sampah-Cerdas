@@ -38,6 +38,10 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Jika data berupa FormData, hapus default Content-Type agar browser mengatur multipart boundary secara otomatis
+    if (config.data instanceof FormData && config.headers) {
+      delete config.headers["Content-Type"];
+    }
     return config;
   },
   (error) => Promise.reject(error)

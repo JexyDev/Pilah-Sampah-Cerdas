@@ -213,8 +213,6 @@ archiveAuditLogsCron.start();
 // Auto-migrate missing database columns on startup
 (async () => {
   try {
-    const { PrismaClient } = await import("@prisma/client");
-    
     const alterStatements = [
       'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;',
       'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;',
@@ -233,15 +231,19 @@ archiveAuditLogsCron.start();
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;',
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "catatan_penilaian_dpl" TEXT;',
+      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "sudah_dinilai" BOOLEAN DEFAULT false;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
+      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "log_jeda" JSONB;',
+      'ALTER TABLE "jejak_audit" ADD COLUMN IF NOT EXISTS "hash" TEXT;',
+      'ALTER TABLE "jejak_audit" ADD COLUMN IF NOT EXISTS "previous_hash" TEXT;',
       'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "id_pendaftar" TEXT;',
       'ALTER TABLE "pemanfaatan_sampah" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
       'ALTER TABLE "pemanfaatan_sampah" ALTER COLUMN "id_rw" DROP NOT NULL;',
       'ALTER TABLE "kritik_saran_pemanfaatan" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
-      'UPDATE "fasilitas" SET "status_approval" = \'APPROVED\' WHERE "status_approval" = \'PENDING\';',
+      'UPDATE "fasilitas" SET "status_persetujuan" = \'APPROVED\' WHERE "status_persetujuan" = \'PENDING\';',
       `DO $$ BEGIN
         CREATE TYPE "StatusProker" AS ENUM ('BELUM_DISETUJUI', 'DITERIMA', 'DITOLAK', 'SEDANG_BERJALAN', 'SELESAI');
       EXCEPTION
@@ -485,13 +487,7 @@ archiveAuditLogsCron.start();
       'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
     ];
 
-    for (const stmt of alterStatements) {
-      try {
-        await prisma.$executeRawUnsafe(stmt);
-      } catch (err: any) {
-        // Ignore duplicate column errors
-      }
-    }
+    await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));
     console.log("[AutoMigration] Database columns checked and synced successfully.");
 
     const dummyUser = await prisma.user.findFirst({
