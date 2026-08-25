@@ -49,12 +49,12 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
 
       return `
         <div class="poster-card ${themeClass}">
-          <!-- Top Header -->
+          <!-- Header Section -->
           <div class="header-section">
             <div class="header-top">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 59 16.17 3.83 12 7.83 12 14 17 8z"/></svg>
+              <span class="leaf-icon-left">🍃</span>
               <div class="header-title">BERSEKA</div>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 59 16.17 3.83 12 7.83 12 14 17 8z"/></svg>
+              <span class="leaf-icon-right">🍃</span>
             </div>
             <div class="header-sub-row">
               <div class="header-sub-line"></div>
@@ -66,81 +66,80 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           <!-- Row of 4 Institutional Logos -->
           <div class="logos-row">
             <div class="logo-item">
-              <div class="logo-badge">
-                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 2L4 8v16l12 6 12-6V8L16 2z" fill="#15803D"/><path d="M16 6l-8 4v10l8 4 8-4V10l-8-4z" fill="#FACC15"/></svg>
+              <div class="logo-img-wrapper">
+                <img src="/image/mitra/prov-jabar.png" alt="Jawa Barat" class="logo-img" />
               </div>
-              <div class="logo-label">PROVINSI<br/>JAWA BARAT</div>
+              <div class="logo-pill">PROVINSI<br/>JAWA BARAT</div>
             </div>
             <div class="logo-item">
-              <div class="logo-badge">
-                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M16 2L6 8v16l10 4 10-4V8L16 2z" fill="#0284C7"/><path d="M16 6v16" stroke="#FACC15" stroke-width="2"/></svg>
+              <div class="logo-img-wrapper">
+                <img src="/image/mitra/pemkot-bandung.svg" alt="Kota Bandung" class="logo-img" />
               </div>
-              <div class="logo-label">PEMERINTAH<br/>KOTA BANDUNG</div>
+              <div class="logo-pill">PEMERINTAH<br/>KOTA BANDUNG</div>
             </div>
             <div class="logo-item">
-              <div class="logo-badge">
-                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><path d="M8 20L16 4l8 16H8z" fill="#16A34A"/><circle cx="16" cy="18" r="4" fill="#EA580C"/></svg>
+              <div class="logo-img-wrapper">
+                <img src="/image/mitra/dlh-bandung.svg" alt="DLH Kota Bandung" class="logo-img" />
               </div>
-              <div class="logo-label">DINAS<br/>LINGKUNGAN HIDUP</div>
+              <div class="logo-pill">DINAS<br/>LINGKUNGAN HIDUP</div>
             </div>
             <div class="logo-item">
-              <div class="logo-badge">
-                <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" fill="#FACC15"/><path d="M16 6l6 14H10l6-14z" fill="#1D4ED8"/></svg>
+              <div class="logo-img-wrapper">
+                <img src="/image/mitra/unikom.png" alt="UNIKOM" class="logo-img" />
               </div>
-              <div class="logo-label">UNIVERSITAS<br/>KOMPUTER INDONESIA</div>
+              <div class="logo-pill">UNIVERSITAS<br/>KOMPUTER INDONESIA</div>
             </div>
           </div>
 
           <!-- Main Category Banner -->
           <div class="banner-box">
-            <div class="banner-content">
-              <div class="banner-icon-circle">
-                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="banner-left">
+              <div class="bin-circle">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
                   <path d="M10 11v6m4-6v6"></path>
                 </svg>
               </div>
-              <div class="banner-titles">
-                <div class="banner-subtitle-sm">TEMPAT SAMPAH</div>
-                <div class="banner-title-main">${catTitle}</div>
-              </div>
             </div>
-            <div class="banner-desc-box">
-              ${catDesc}
+            <div class="banner-right">
+              <div class="banner-sub-sm">TEMPAT SAMPAH</div>
+              <div class="banner-title-main">${catTitle}</div>
+              <div class="banner-leaf-divider">🍃 🍃</div>
+              <div class="banner-desc-box">${catDesc}</div>
             </div>
           </div>
 
-          <!-- 4 Feature Bullets -->
+          <!-- 4 Benefit Columns -->
           <div class="benefits-grid">
             <div class="benefit-item">
               <div class="benefit-icon">🍃</div>
-              <div class="benefit-text">Menjaga lingkungan tetap bersih</div>
+              <div class="benefit-text">Menjaga<br/>lingkungan<br/>tetap bersih</div>
             </div>
             <div class="benefit-item">
               <div class="benefit-icon">♻️</div>
-              <div class="benefit-text">Mengurangi sampah ke TPA</div>
+              <div class="benefit-text">Mengurangi<br/>sampah<br/>ke TPA</div>
             </div>
             <div class="benefit-item">
               <div class="benefit-icon">🗑️</div>
-              <div class="benefit-text">Kelola sampah lebih baik & bermanfaat</div>
+              <div class="benefit-text">Kelola sampah<br/>lebih baik dan<br/>bermanfaat</div>
             </div>
             <div class="benefit-item">
               <div class="benefit-icon">👥</div>
-              <div class="benefit-text">Bersama wujudkan kampung bersih & asri</div>
+              <div class="benefit-text">Bersama wujudkan<br/>kampung yang<br/>bersih & asri</div>
             </div>
           </div>
 
-          <!-- Bottom QR Code Section -->
+          <!-- Bottom QR Code & Scan Section -->
           <div class="qr-section">
-            <div class="qr-left">
+            <div class="qr-box">
               <img src="${qrUrl}" alt="${item.qrCode}" class="qr-img" />
             </div>
             <div class="qr-right">
               <div class="scan-header">
                 <div class="scan-icon-circle">📱</div>
-                <div>
-                  <div class="scan-title">SCAN UNTUK</div>
-                  <div class="scan-title">CATAT & LAPOR</div>
+                <div class="scan-titles">
+                  <div class="scan-title-bold">SCAN UNTUK</div>
+                  <div class="scan-title-bold">CATAT & LAPOR</div>
                 </div>
               </div>
               <div class="scan-desc">
@@ -155,10 +154,13 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           <!-- Footer Bar -->
           <div class="footer-bar">
             <div class="footer-left">
-              <span style="font-size: 11px;">🛡️</span>
-              <div class="footer-text">MARI JAGA KEBERSIHAN<br/>UNTUK MASA DEPAN YANG LEBIH HIJAU</div>
+              <span class="shield-icon">🛡️</span>
+              <div class="footer-text">
+                <div>MARI JAGA KEBERSIHAN</div>
+                <div>UNTUK MASA DEPAN YANG LEBIH HIJAU</div>
+              </div>
             </div>
-            <div style="font-size: 12px;">🍃</div>
+            <div class="footer-right">🍃</div>
           </div>
         </div>
       `;
@@ -187,7 +189,7 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
 
         body {
           font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          color: #0f172a;
+          color: #000000;
           background: #1e293b;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
@@ -225,25 +227,6 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           gap: 10px;
         }
 
-        .btn-mode {
-          background: #1e293b;
-          color: #cbd5e1;
-          border: 1px solid #475569;
-          padding: 8px 14px;
-          border-radius: 8px;
-          font-weight: 700;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-mode.active {
-          background: #10b981;
-          color: white;
-          border-color: #34d399;
-          box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-        }
-
         .no-print .btn-print {
           background: #059669;
           color: white;
@@ -272,7 +255,7 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           justify-content: center;
         }
 
-        /* 10 x 15 cm Mode (Default) */
+        /* Poster Card (100mm x 150mm) */
         .poster-card {
           width: 100mm;
           height: 150mm;
@@ -280,8 +263,8 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           min-height: 150mm;
           max-width: 100mm;
           max-height: 150mm;
-          border-radius: 18px;
-          padding: 5mm;
+          border-radius: 16px;
+          padding: 4mm;
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
@@ -295,71 +278,53 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
 
         /* ANORGANIK YELLOW THEME */
         .poster-card.theme-anorganik {
-          border: 5.5px solid #F59E0B;
+          border: 5mm solid #FFC20E;
           background: #FFFFFF;
         }
-        .poster-card.theme-anorganik .header-title { color: #000000; }
         .poster-card.theme-anorganik .banner-box {
-          background: #FFFBEB;
-          border: 2.5px solid #F59E0B;
-        }
-        .poster-card.theme-anorganik .banner-subtitle-sm { color: #000000; }
-        .poster-card.theme-anorganik .banner-title-main { color: #000000; font-size: 22px; font-weight: 900; }
-        .poster-card.theme-anorganik .banner-desc-box {
-          background: #F59E0B;
+          background: #FFC20E;
           color: #000000;
-          font-weight: 800;
         }
-        .poster-card.theme-anorganik .banner-icon-circle {
-          background: #F59E0B;
+        .poster-card.theme-anorganik .logo-pill {
+          background: #FFC20E;
           color: #000000;
         }
         .poster-card.theme-anorganik .benefit-icon {
-          background: #FEF3C7;
-          color: #D97706;
-          border: 1px solid #F59E0B;
+          background: #FFC20E;
+          color: #000000;
         }
         .poster-card.theme-anorganik .scan-icon-circle {
-          background: #F59E0B;
+          background: #FFC20E;
           color: #000000;
         }
         .poster-card.theme-anorganik .pill-serial {
-          background: #F59E0B;
+          background: #FFC20E;
           color: #000000;
         }
 
         /* ORGANIK GREEN THEME */
         .poster-card.theme-organik {
-          border: 5.5px solid #047857;
+          border: 5mm solid #006837;
           background: #FFFFFF;
         }
-        .poster-card.theme-organik .header-title { color: #047857; }
         .poster-card.theme-organik .banner-box {
-          background: #047857;
-          border: 2.5px solid #047857;
-        }
-        .poster-card.theme-organik .banner-subtitle-sm { color: #ECFDF5; }
-        .poster-card.theme-organik .banner-title-main { color: #FFFFFF; font-size: 22px; font-weight: 900; }
-        .poster-card.theme-organik .banner-desc-box {
-          background: #065F46;
+          background: #006837;
           color: #FFFFFF;
-          font-weight: 800;
         }
-        .poster-card.theme-organik .banner-icon-circle {
-          background: #ECFDF5;
-          color: #047857;
+        .poster-card.theme-organik .logo-pill {
+          background: #006837;
+          color: #FFFFFF;
         }
         .poster-card.theme-organik .benefit-icon {
-          background: #D1FAE5;
-          color: #047857;
-          border: 1px solid #047857;
+          background: #006837;
+          color: #FFFFFF;
         }
         .poster-card.theme-organik .scan-icon-circle {
-          background: #047857;
+          background: #006837;
           color: #FFFFFF;
         }
         .poster-card.theme-organik .pill-serial {
-          background: #047857;
+          background: #006837;
           color: #FFFFFF;
         }
 
@@ -374,10 +339,14 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           gap: 6px;
         }
         .header-title {
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 900;
-          letter-spacing: 2.5px;
+          letter-spacing: 2px;
+          color: #000000;
           line-height: 1;
+        }
+        .leaf-icon-left, .leaf-icon-right {
+          font-size: 14px;
         }
         .header-sub-row {
           display: flex;
@@ -392,22 +361,21 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           background: #cbd5e1;
         }
         .header-subtitle {
-          font-size: 8.5px;
-          font-weight: 800;
-          letter-spacing: 1.5px;
-          color: #1e293b;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: 1px;
+          color: #000000;
         }
 
-        /* LOGOS ROW (4 LOGOS) */
+        /* LOGOS ROW */
         .logos-row {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 2px;
-          padding: 4px 2px;
+          padding: 3px;
           border: 1.5px solid #cbd5e1;
           border-radius: 8px;
           text-align: center;
-          margin: 3px 0;
           background: #ffffff;
         }
         .logo-item {
@@ -416,75 +384,97 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           align-items: center;
           justify-content: space-between;
           gap: 2px;
+          border-right: 1px solid #e2e8f0;
+          padding: 2px;
         }
-        .logo-badge {
-          height: 22px;
+        .logo-item:last-child {
+          border-right: none;
+        }
+        .logo-img-wrapper {
+          height: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-        .logo-label {
-          font-size: 5.5px;
+        .logo-img {
+          max-height: 22px;
+          max-width: 100%;
+          object-fit: contain;
+        }
+        .logo-pill {
+          font-size: 5px;
           font-weight: 900;
           line-height: 1.1;
-          color: #0f172a;
+          border-radius: 4px;
+          padding: 2px 3px;
+          width: 100%;
           text-transform: uppercase;
         }
 
-        /* BANNER BOX */
+        /* MAIN BANNER */
         .banner-box {
           border-radius: 12px;
-          padding: 8px 10px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          margin: 2px 0;
-        }
-        .banner-content {
+          padding: 6px 8px;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }
-        .banner-icon-circle {
+        .banner-left {
+          flex-shrink: 0;
+        }
+        .bin-circle {
           width: 44px;
           height: 44px;
           border-radius: 50%;
+          background: #ffffff;
+          color: #0f172a;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
-        .banner-titles {
+        .banner-right {
           flex: 1;
         }
-        .banner-subtitle-sm {
-          font-size: 12px;
+        .banner-sub-sm {
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 0.5px;
+          line-height: 1;
+        }
+        .banner-title-main {
+          font-size: 18px;
           font-weight: 900;
           letter-spacing: 1px;
           line-height: 1.1;
         }
+        .banner-leaf-divider {
+          font-size: 8px;
+          margin: 1px 0;
+        }
         .banner-desc-box {
-          border-radius: 8px;
-          padding: 5px 8px;
-          font-size: 7.5px;
-          text-align: center;
-          line-height: 1.25;
+          font-size: 6.5px;
+          line-height: 1.2;
+          font-weight: 700;
         }
 
-        /* BENEFIT BULLETS (4 COLUMNS) */
+        /* 4 BENEFITS */
         .benefits-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 3px;
-          margin: 2px 0;
+          gap: 2px;
           text-align: center;
+          margin: 2px 0;
         }
         .benefit-item {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 2px;
+          border-right: 1px solid #f1f5f9;
+        }
+        .benefit-item:last-child {
+          border-right: none;
         }
         .benefit-icon {
           width: 22px;
@@ -494,29 +484,28 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           align-items: center;
           justify-content: center;
           font-size: 11px;
-          font-weight: 800;
         }
         .benefit-text {
-          font-size: 6px;
+          font-size: 5.5px;
           font-weight: 800;
-          line-height: 1.1;
-          color: #0f172a;
+          line-height: 1.15;
+          color: #000000;
         }
 
-        /* BOTTOM QR SECTION (2 COLUMNS) */
+        /* QR SECTION */
         .qr-section {
           display: flex;
           align-items: center;
           gap: 8px;
           margin: 2px 0;
         }
-        .qr-left {
-          width: 44mm;
-          height: 44mm;
+        .qr-box {
+          width: 38mm;
+          height: 38mm;
           background: #ffffff;
-          padding: 3px;
-          border-radius: 8px;
-          border: 2px solid #0f172a;
+          padding: 2px;
+          border-radius: 6px;
+          border: 1.5px solid #000000;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -532,7 +521,7 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 3px;
         }
         .scan-header {
           display: flex;
@@ -540,41 +529,41 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           gap: 6px;
         }
         .scan-icon-circle {
-          width: 22px;
-          height: 22px;
-          border-radius: 6px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 12px;
+          font-size: 11px;
           flex-shrink: 0;
         }
-        .scan-title {
-          font-size: 9.5px;
+        .scan-title-bold {
+          font-size: 9px;
           font-weight: 900;
           line-height: 1.1;
-          color: #0f172a;
+          color: #000000;
         }
         .scan-desc {
-          font-size: 6.5px;
+          font-size: 6px;
           font-weight: 700;
           color: #334155;
-          line-height: 1.25;
+          line-height: 1.2;
         }
         .pill-serial {
           border-radius: 9999px;
-          padding: 4px 8px;
+          padding: 3px 8px;
           font-family: 'JetBrains Mono', monospace;
-          font-size: 9.5px;
+          font-size: 8.5px;
           font-weight: 900;
           text-align: center;
           letter-spacing: 0.5px;
         }
 
-        /* FOOTER BAR */
+        /* FOOTER */
         .footer-bar {
           border-top: 1.5px solid #cbd5e1;
-          padding-top: 3px;
+          padding-top: 2px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -584,12 +573,17 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
           align-items: center;
           gap: 4px;
         }
+        .shield-icon {
+          font-size: 10px;
+        }
         .footer-text {
-          font-size: 6.5px;
+          font-size: 6px;
           font-weight: 900;
-          color: #0f172a;
+          color: #000000;
           line-height: 1.1;
-          text-transform: uppercase;
+        }
+        .footer-right {
+          font-size: 10px;
         }
 
         @media print {
@@ -614,11 +608,11 @@ export const generatePosterHtml = (items: QrStickerItem[], title: string = "Post
         }
       </style>
     </head>
-    <body class="mode-single">
+    <body>
       <div class="no-print">
         <div>
           <div class="info-title">📄 Poster Resmi QR Code BERSEKA (10 x 15 cm)</div>
-          <div class="info-desc">Desain Resmi Organik & Anorganik. Klik "Cetak / Simpan PDF" di bawah.</div>
+          <div class="info-desc">Desain Resmi Organik & Anorganik 1:1. Klik "Cetak / Simpan PDF" di bawah.</div>
         </div>
 
         <div class="controls-group">

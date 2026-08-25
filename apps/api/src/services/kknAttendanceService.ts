@@ -397,46 +397,9 @@ export class KknAttendanceService {
           }
         }
 
-        const jedaLogsArray = (existingAtt?.jedaLogs as any[]) || [];
-        const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
-        const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
-        const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
-
-        const scheduleLogs = todayLogs.filter((l) => {
-          const logWib = new Date(l.recordedAt.getTime() + 7 * 60 * 60 * 1000);
-          const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
-          return logMins >= startMinutesTotal && (!lastResumeTime || l.recordedAt >= lastResumeTime);
-        });
-
-        const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, jedaLogsArray);
-
-        let durationFromStart = 0;
-        if (existingAtt && isInsideZone) {
-          const startTimeMs = lastResumeTime
-            ? lastResumeTime.getTime()
-            : new Date(existingAtt.attendedAt).getTime();
-          const nowMs = Date.now();
-          if (nowMs > startTimeMs) {
-            durationFromStart = Math.floor((nowMs - startTimeMs) / 60000);
-          }
-        }
-
-        let durationFromMobile = 0;
-        if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
-          durationFromMobile = Math.floor(Number(accumulatedDurationSeconds) / 60);
-        }
-
-        let durationInZone = Math.max(
-          pausedBaseMinutes + durationCalculated,
-          pausedBaseMinutes + durationFromStart,
-          durationFromMobile,
-          existingAtt?.actualInZoneMinutes ?? 0
-        );
-
-        inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
-
-        // Cek posisi saat ini menggunakan buffer dinamis (Smart Coordinate Detector)
+        // 1. Cek posisi saat ini terhadap geofence kegiatan ini
         const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
+        let isCurrInside = false;
         if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
           const polyPoints = (geofence.polygon as any[]).map((p) => {
             const val0 = Number(p[0]);
@@ -446,23 +409,123 @@ export class KknAttendanceService {
             return { lat: pLat, lng: pLng };
           });
           const inPoly = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters);
-          isInsideZone = inPoly || (dist <= (geofence.radius + bufferMeters));
+          isCurrInside = inPoly || (dist <= (geofence.radius + bufferMeters));
         } else {
-          isInsideZone = dist <= (geofence.radius + bufferMeters);
+          isCurrInside = dist <= (geofence.radius + bufferMeters);
         }
+        isInsideZone = isCurrInside;
 
-        const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
+        const isAttFinished = existingAtt && (
+          existingAtt.status === "SELESAI" ||
+          existingAtt.status === "SELESAI_TELAT" ||
+          existingAtt.status === "HADIR_MEMENUHI" ||
+          existingAtt.status === "HADIR_TIDAK_MEMENUHI" ||
+          existingAtt.status === "HADIR" ||
+          Boolean(existingAtt.checkOutAt)
+        );
 
-        // Update / upsert actualInZoneMinutes so Web Dashboard and Mobile are 100% in sync
-        // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang"
-        if (existingAtt) {
-          if (existingAtt.status !== "SELESAI" && existingAtt.status !== "SELESAI_TELAT" && existingAtt.status !== "HADIR_MEMENUHI" && existingAtt.status !== "HADIR_TIDAK_MEMENUHI" && existingAtt.status !== "HADIR") {
+        if (existingAtt && !isAttFinished) {
+          const currentLogs = (existingAtt.jedaLogs as any[]) || [];
+          let currentAttStatus = existingAtt.status;
+
+          // Auto-Pause saat keluar zona
+          if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
+            currentLogs.push({
+              alasan: "Keluar Zona Geofence (Otomatis)",
+              waktuJeda: new Date().toISOString(),
+              durasiSebelumJedaMenit: existingAtt.actualInZoneMinutes || 0,
+              autoTriggered: true,
+            });
+            currentAttStatus = "TERJEDA";
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: {
+                status: "TERJEDA",
+                jedaLogs: currentLogs,
+              },
+            });
+            existingAtt.status = "TERJEDA";
+            existingAtt.jedaLogs = currentLogs as any;
+            websocketService.broadcastStudentAttendance({
+              id: existingAtt.id,
+              studentId: existingAtt.studentId,
+              scheduleId: existingAtt.scheduleId,
+              status: "TERJEDA",
+              currentStatus: "DI_LUAR_ZONA",
+              attendedAt: existingAtt.attendedAt.toISOString(),
+              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+            });
+          }
+          // Auto-Resume saat kembali masuk zona
+          else if (isCurrInside && currentAttStatus === "TERJEDA") {
+            currentLogs.push({
+              waktuResume: new Date().toISOString(),
+              durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
+              autoTriggered: true,
+            });
+            currentAttStatus = "BERLANGSUNG";
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: {
+                status: "BERLANGSUNG",
+                jedaLogs: currentLogs,
+              },
+            });
+            existingAtt.status = "BERLANGSUNG";
+            existingAtt.jedaLogs = currentLogs as any;
+            websocketService.broadcastStudentAttendance({
+              id: existingAtt.id,
+              studentId: existingAtt.studentId,
+              scheduleId: existingAtt.scheduleId,
+              status: "BERLANGSUNG",
+              currentStatus: "MASIH_DI_LOKASI",
+              attendedAt: existingAtt.attendedAt.toISOString(),
+              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+            });
+          }
+
+          // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
+          let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
+          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
+            const jedaLogsArray = (existingAtt.jedaLogs as any[]) || [];
+            const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
+            const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+            const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
+
+            const scheduleLogs = todayLogs.filter((l) => {
+              const logWib = new Date(l.recordedAt.getTime() + 7 * 60 * 60 * 1000);
+              const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
+              return logMins >= startMinutesTotal && (!lastResumeTime || l.recordedAt >= lastResumeTime);
+            });
+
+            const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, jedaLogsArray);
+
+            let durationFromStart = 0;
+            const startTimeMs = lastResumeTime
+              ? lastResumeTime.getTime()
+              : new Date(existingAtt.attendedAt).getTime();
+            const nowMs = Date.now();
+            if (nowMs > startTimeMs) {
+              durationFromStart = Math.floor((nowMs - startTimeMs) / 60000);
+            }
+
+            let durationFromMobile = 0;
+            if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
+              durationFromMobile = Math.max(0, Math.floor(Number(accumulatedDurationSeconds) / 60));
+            }
+
+            durationInZone = Math.max(
+              pausedBaseMinutes + durationCalculated,
+              pausedBaseMinutes + durationFromStart,
+              durationFromMobile,
+              existingAtt.actualInZoneMinutes ?? 0
+            );
+
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
               data: { actualInZoneMinutes: durationInZone },
             });
 
-            // Broadcast real-time WebSocket attendance update for Web Dashboard
             websocketService.broadcastStudentAttendance({
               id: existingAtt.id,
               studentId: existingAtt.studentId,
@@ -472,6 +535,8 @@ export class KknAttendanceService {
               actualInZoneMinutes: durationInZone,
             });
           }
+
+          inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
         }
       }
     }
@@ -697,55 +762,114 @@ export class KknAttendanceService {
 
         const geofence = await buildGeofence(sch);
 
-        const jedaLogsArray = (existingAtt?.jedaLogs as any[]) || [];
-        const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
-        const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
-        const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
-
-        const sessionLogs = (existingAtt && existingAtt.attendedAt)
-          ? todayLogs.filter((log) => log.recordedAt >= (lastResumeTime || existingAtt.attendedAt!))
-          : todayLogs;
-
-        const newDuration = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, jedaLogsArray);
-        let durationInZone = pausedBaseMinutes + newDuration;
-        
-        // --- LOGIKA SINKRONISASI 2-ARAH (FIX: WEB MENJADI SOURCE OF TRUTH) ---
-        // Backend menghitung murni berdasarkan log GPS di database (calculateInZoneDurationMinutes)
-        // Mobile dipaksa untuk mengikuti hasil kalkulasi durasi dari backend.
-
-        inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
-
-        // Cek posisi saat ini menggunakan buffer dinamis
+        // 1. Cek posisi saat ini menggunakan buffer dinamis
+        let isCurrInside = false;
         if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
           const polyPoints = (geofence.polygon as any[]).map((p) => ({
             lat: Number(p[0]),
             lng: Number(p[1]),
           }));
-          isInsideZone = isPointInPolygonWithBuffer({ lat: latestLoc!.latitude, lng: latestLoc!.longitude }, polyPoints, bufferMeters);
+          isCurrInside = isPointInPolygonWithBuffer({ lat: latestLoc!.latitude, lng: latestLoc!.longitude }, polyPoints, bufferMeters);
         } else {
           const dist = calculateDistance(latestLoc!.latitude, latestLoc!.longitude, geofence.latitude, geofence.longitude);
-          isInsideZone = dist <= (geofence.radius + bufferMeters);
+          isCurrInside = dist <= (geofence.radius + bufferMeters);
         }
+        isInsideZone = isCurrInside;
 
         const durasiWajibMenit = await getScheduleTargetDurationMinutes(sch);
 
-        // Update actualInZoneMinutes pada attendance yang sedang BERLANGSUNG
-        if (existingAtt && existingAtt.status === "BERLANGSUNG") {
+        const isAttFinished = existingAtt && (
+          existingAtt.status === "SELESAI" ||
+          existingAtt.status === "SELESAI_TELAT" ||
+          existingAtt.status === "HADIR_MEMENUHI" ||
+          existingAtt.status === "HADIR_TIDAK_MEMENUHI" ||
+          existingAtt.status === "HADIR" ||
+          Boolean(existingAtt.checkOutAt)
+        );
+
+        if (existingAtt && !isAttFinished) {
           activeScheduleId = existingAtt.scheduleId;
           activeJamMasuk = existingAtt.attendedAt.toISOString();
           activeTargetDurationMinutes = durasiWajibMenit;
 
-          if (isInsideZone) {
-            // Mahasiswa DI DALAM zona — update durasi berdasarkan GPS logs yang tervalidasi geofence
-            // durationInZone sudah dihitung dari calculateInZoneDurationMinutes() (L471)
-            activeActualInZoneSeconds = durationInZone * 60;
+          const currentLogs = (existingAtt.jedaLogs as any[]) || [];
+          let currentAttStatus = existingAtt.status;
+
+          // Auto-Pause saat keluar zona
+          if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
+            currentLogs.push({
+              alasan: "Keluar Zona Geofence (Otomatis)",
+              waktuJeda: new Date().toISOString(),
+              durasiSebelumJedaMenit: existingAtt.actualInZoneMinutes || 0,
+              autoTriggered: true,
+            });
+            currentAttStatus = "TERJEDA";
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: {
+                status: "TERJEDA",
+                jedaLogs: currentLogs,
+              },
+            });
+            existingAtt.status = "TERJEDA";
+            existingAtt.jedaLogs = currentLogs as any;
+            websocketService.broadcastStudentAttendance({
+              id: existingAtt.id,
+              studentId: existingAtt.studentId,
+              scheduleId: existingAtt.scheduleId,
+              status: "TERJEDA",
+              currentStatus: "DI_LUAR_ZONA",
+              attendedAt: existingAtt.attendedAt.toISOString(),
+              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+            });
+          }
+          // Auto-Resume saat kembali masuk zona
+          else if (isCurrInside && currentAttStatus === "TERJEDA") {
+            currentLogs.push({
+              waktuResume: new Date().toISOString(),
+              durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
+              autoTriggered: true,
+            });
+            currentAttStatus = "BERLANGSUNG";
+            await prisma.activityAttendance.update({
+              where: { id: existingAtt.id },
+              data: {
+                status: "BERLANGSUNG",
+                jedaLogs: currentLogs,
+              },
+            });
+            existingAtt.status = "BERLANGSUNG";
+            existingAtt.jedaLogs = currentLogs as any;
+            websocketService.broadcastStudentAttendance({
+              id: existingAtt.id,
+              studentId: existingAtt.studentId,
+              scheduleId: existingAtt.scheduleId,
+              status: "BERLANGSUNG",
+              currentStatus: "MASIH_DI_LOKASI",
+              attendedAt: existingAtt.attendedAt.toISOString(),
+              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+            });
+          }
+
+          let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
+          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
+            const jedaLogsArray = (existingAtt.jedaLogs as any[]) || [];
+            const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
+            const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+            const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
+
+            const sessionLogs = (existingAtt && existingAtt.attendedAt)
+              ? todayLogs.filter((log) => log.recordedAt >= (lastResumeTime || existingAtt.attendedAt!))
+              : todayLogs;
+
+            const newDuration = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, jedaLogsArray);
+            durationInZone = pausedBaseMinutes + newDuration;
 
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
               data: { actualInZoneMinutes: durationInZone },
             });
 
-            // Broadcast real-time WebSocket attendance update for Web Dashboard
             websocketService.broadcastStudentAttendance({
               id: existingAtt.id,
               studentId: existingAtt.studentId,
@@ -754,12 +878,10 @@ export class KknAttendanceService {
               attendedAt: existingAtt.attendedAt.toISOString(),
               actualInZoneMinutes: durationInZone,
             });
-          } else {
-            // Mahasiswa DI LUAR zona — gunakan nilai terakhir dari DB, JANGAN tambah durasi
-            const lastStoredMinutes = existingAtt.actualInZoneMinutes ?? 0;
-            activeActualInZoneSeconds = lastStoredMinutes * 60;
-            durationInZone = lastStoredMinutes;
           }
+
+          activeActualInZoneSeconds = durationInZone * 60;
+          inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
         }
 
         // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang" (manual check-in)
@@ -2225,9 +2347,19 @@ export class KknAttendanceService {
       if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
         let liveMins = att.actualInZoneMinutes ?? 0;
         if (att.attendedAt) {
-          const elapsedMins = Math.floor((Date.now() - new Date(att.attendedAt).getTime()) / 60000);
-          if (elapsedMins > liveMins) {
-            liveMins = elapsedMins;
+          const jedaLogsArray = (att.jedaLogs as any[]) || [];
+          const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
+          const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
+          const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
+
+          const startTimeMs = lastResumeTime
+            ? lastResumeTime.getTime()
+            : new Date(att.attendedAt).getTime();
+          const elapsedMins = Math.floor((Date.now() - startTimeMs) / 60000);
+          const currentLive = pausedBaseMinutes + elapsedMins;
+
+          if (currentLive > liveMins) {
+            liveMins = currentLive;
           }
         }
         actualInZoneMinutes = liveMins;
