@@ -20,7 +20,6 @@ import {
   X,
   FileText,
   AlertCircle,
-  RefreshCw,
   Edit3,
   Eye,
   PlusCircle,
@@ -584,15 +583,6 @@ export const PenilaianProkerPage: React.FC = () => {
             Evaluasi dan penilaian capaian program kerja setiap kelompok KKN yang telah disetujui dan selesai dilaksanakan
           </p>
         </div>
-
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer self-start sm:self-auto"
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin text-[#009966]" : "text-[#009966]"} />
-          <span>Segarkan Data</span>
-        </button>
       </div>
 
       {/* Baris Filter Interaktif (3 Kontrol: Search, Kategori, Status Penilaian + Info Banner) */}

@@ -87,7 +87,6 @@ export const RwFacilityInput: React.FC = () => {
   const [pendingIde, setPendingIde] = useState<any[]>([]);
   const [pendingFacilities, setPendingFacilities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   // Map & GIS states
   const [selectedFacilityOnMap, setSelectedFacilityOnMap] = useState<any | null>(null);
@@ -156,9 +155,8 @@ export const RwFacilityInput: React.FC = () => {
   }, [periode]);
 
   // Fetch all data
-  const fetchData = async (isSilent = false) => {
-    if (!isSilent) setLoading(true);
-    else setRefreshing(true);
+  const fetchData = async () => {
+    setLoading(true);
 
     try {
       const [facRes, ideRes, pendFacRes] = await Promise.all([
@@ -183,7 +181,6 @@ export const RwFacilityInput: React.FC = () => {
       toast.error("Gagal memuat data fasilitas dan ide");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -281,7 +278,7 @@ export const RwFacilityInput: React.FC = () => {
         toast.error("Pengajuan ide telah ditolak.");
       }
       setRejectModal((prev) => ({ ...prev, isOpen: false }));
-      fetchData(true);
+      fetchData();
     } catch (error: any) {
       console.error("Failed to verify ide", error);
       toast.error(error?.response?.data?.message || "Gagal memverifikasi ide");
@@ -301,7 +298,7 @@ export const RwFacilityInput: React.FC = () => {
         toast.error("Pendaftaran fasilitas telah ditolak.");
       }
       setRejectModal((prev) => ({ ...prev, isOpen: false }));
-      fetchData(true);
+      fetchData();
     } catch (error: any) {
       console.error("Failed to verify facility", error);
       toast.error(error?.response?.data?.message || "Gagal memverifikasi fasilitas");
@@ -326,7 +323,7 @@ export const RwFacilityInput: React.FC = () => {
       setMaterialMasuk("");
       setOutput("");
       setJenisOutput("");
-      fetchData(true);
+      fetchData();
     } catch (error: any) {
       console.error("Failed to submit production data", error);
       toast.error(error?.response?.data?.message || "Gagal menyimpan data produksi");
@@ -361,7 +358,7 @@ export const RwFacilityInput: React.FC = () => {
         latitude: -6.8906,
         longitude: 107.6150
       });
-      fetchData(true);
+      fetchData();
     } catch (error: any) {
       console.error("Failed to create facility", error);
       toast.error(error?.response?.data?.message || "Gagal mendaftarkan fasilitas");
@@ -439,16 +436,8 @@ export const RwFacilityInput: React.FC = () => {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
-            onClick={() => fetchData(true)}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all shadow-xs disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={refreshing ? "animate-spin text-emerald-600" : ""} />
-            <span>Segarkan</span>
-          </button>
-          <button
             onClick={() => setIsAddFacilityModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-98 rounded-xl transition-all shadow-sm shadow-emerald-600/20"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-98 rounded-xl transition-all shadow-sm shadow-emerald-600/20 cursor-pointer"
           >
             <Plus size={15} className="stroke-[2.5]" />
             <span>+ Fasilitas Baru</span>

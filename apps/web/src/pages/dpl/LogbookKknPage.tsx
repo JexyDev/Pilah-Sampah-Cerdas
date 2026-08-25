@@ -406,15 +406,6 @@ export const LogbookKknPage: React.FC = () => {
                 Toleransi (H-{toleranceDays})
               </button>
             )}
-
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-xl text-slate-600 dark:text-slate-300 transition-colors shadow-2xs cursor-pointer"
-              title="Segarkan Data"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            </button>
           </div>
         </div>
 

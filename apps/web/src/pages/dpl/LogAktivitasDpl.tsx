@@ -382,17 +382,6 @@ export const LogAktivitasDpl: React.FC = () => {
             <span>Catat Kegiatan DPL</span>
           </button>
 
-          {/* Refresh Data */}
-          <button
-            type="button"
-            onClick={fetchActivityLogs}
-            disabled={loading}
-            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 transition-colors shadow-2xs cursor-pointer"
-            title="Segarkan Data"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-
           {/* User Profile Pill */}
           <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full py-1 pl-1 pr-3 shadow-xs">
             <div className="w-7 h-7 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">
