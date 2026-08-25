@@ -55,6 +55,42 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
  * Helper: Calculate total accumulated duration (minutes) spent inside geofence
  * from studentLocation records.
  */
+/**
+ * Helper: Calculate live in-zone minutes based on check-in time and jedaLogs
+ * without counting any time spent while paused/jeda.
+ */
+export function calculateLiveInZoneMinutes(att: {
+  attendedAt: Date | string;
+  actualInZoneMinutes?: number | null;
+  jedaLogs?: any;
+}): number {
+  const storedMins = att.actualInZoneMinutes ?? 0;
+  if (!att.attendedAt) return storedMins;
+
+  const jedaLogsArray = (att.jedaLogs as any[]) || [];
+  if (jedaLogsArray.length === 0) {
+    const elapsed = Math.floor((Date.now() - new Date(att.attendedAt).getTime()) / 60000);
+    return Math.max(storedMins, elapsed);
+  }
+
+  const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
+  if (!lastLog) return storedMins;
+
+  if (lastLog.waktuResume) {
+    const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
+    const baseMins = Number(lastLog.durasiSebelumResumeMenit) || storedMins;
+    const elapsedSinceResume = Math.max(0, Math.floor((Date.now() - resumeTimeMs) / 60000));
+    return Math.max(storedMins, baseMins + elapsedSinceResume);
+  }
+
+  if (lastLog.waktuJeda) {
+    const baseMins = Number(lastLog.durasiSebelumJedaMenit) || storedMins;
+    return Math.max(storedMins, baseMins);
+  }
+
+  return storedMins;
+}
+
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
@@ -487,36 +523,18 @@ export class KknAttendanceService {
           // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
           if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const jedaLogsArray = (existingAtt.jedaLogs as any[]) || [];
-            const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
-            const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
-            const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
-
-            const scheduleLogs = todayLogs.filter((l) => {
-              const logWib = new Date(l.recordedAt.getTime() + 7 * 60 * 60 * 1000);
-              const logMins = logWib.getUTCHours() * 60 + logWib.getUTCMinutes();
-              return logMins >= startMinutesTotal && (!lastResumeTime || l.recordedAt >= lastResumeTime);
-            });
-
-            const durationCalculated = calculateInZoneDurationMinutes(scheduleLogs, geofence, bufferMeters, jedaLogsArray);
-
-            let durationFromStart = 0;
-            const startTimeMs = lastResumeTime
-              ? lastResumeTime.getTime()
-              : new Date(existingAtt.attendedAt).getTime();
-            const nowMs = Date.now();
-            if (nowMs > startTimeMs) {
-              durationFromStart = Math.floor((nowMs - startTimeMs) / 60000);
-            }
+            const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
 
             let durationFromMobile = 0;
             if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
               durationFromMobile = Math.max(0, Math.floor(Number(accumulatedDurationSeconds) / 60));
+              if (durationFromMobile > liveCalculatedMins + 2) {
+                durationFromMobile = liveCalculatedMins;
+              }
             }
 
             durationInZone = Math.max(
-              pausedBaseMinutes + durationCalculated,
-              pausedBaseMinutes + durationFromStart,
+              liveCalculatedMins,
               durationFromMobile,
               existingAtt.actualInZoneMinutes ?? 0
             );
@@ -868,17 +886,8 @@ export class KknAttendanceService {
 
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
           if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const jedaLogsArray = (existingAtt.jedaLogs as any[]) || [];
-            const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
-            const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
-            const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
-
-            const sessionLogs = (existingAtt && existingAtt.attendedAt)
-              ? todayLogs.filter((log) => log.recordedAt >= (lastResumeTime || existingAtt.attendedAt!))
-              : todayLogs;
-
-            const newDuration = calculateInZoneDurationMinutes(sessionLogs, geofence, bufferMeters, jedaLogsArray);
-            durationInZone = pausedBaseMinutes + newDuration;
+            const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
+            durationInZone = Math.max(existingAtt.actualInZoneMinutes ?? 0, liveCalculatedMins);
 
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
@@ -2360,24 +2369,7 @@ export class KknAttendanceService {
       let actualInZoneMinutes = 0;
       const att = sch.attendances?.[0];
       if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
-        let liveMins = att.actualInZoneMinutes ?? 0;
-        if (att.attendedAt) {
-          const jedaLogsArray = (att.jedaLogs as any[]) || [];
-          const lastResumeLog = [...jedaLogsArray].reverse().find((log) => log.waktuResume);
-          const lastResumeTime = lastResumeLog ? new Date(lastResumeLog.waktuResume) : null;
-          const pausedBaseMinutes = lastResumeLog ? (Number(lastResumeLog.durasiSebelumResumeMenit) || 0) : 0;
-
-          const startTimeMs = lastResumeTime
-            ? lastResumeTime.getTime()
-            : new Date(att.attendedAt).getTime();
-          const elapsedMins = Math.floor((Date.now() - startTimeMs) / 60000);
-          const currentLive = pausedBaseMinutes + elapsedMins;
-
-          if (currentLive > liveMins) {
-            liveMins = currentLive;
-          }
-        }
-        actualInZoneMinutes = liveMins;
+        actualInZoneMinutes = calculateLiveInZoneMinutes(att);
         actualInZoneSeconds = actualInZoneMinutes * 60;
       } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR_MEMENUHI" || att.status === "HADIR_TIDAK_MEMENUHI")) {
         // Sesi terjeda / selesai — gunakan nilai tersimpan di DB secara pasti tanpa penambahan elapsed time
