@@ -75,8 +75,7 @@ class FasilitasKknController extends StateNotifier<FasilitasKknState> {
       final payload = <String, dynamic>{
         'jenis': jenis,
         'nama': nama,
-        'userId': pic, // API expect userId
-        'pic': pic, // but still send pic just in case
+        'pic': pic,
         'kontak': kontak,
         'kapasitas': kapasitas,
         'latitude': latitude,
