@@ -85,10 +85,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/jadwal-kegiatan":
         return ["Pelaksanaan KKN", "Linimasa Kegiatan"];
       case "/monitoring-absen":
-        return ["Pelaksanaan KKN", "Presensi"];
+        return ["Presensi & Kehadiran", "Presensi"];
       case "/ajuan-absensi":
       case "/validasi-absensi":
-        return ["Pelaksanaan KKN", "Pengajuan Izin/Sakit"];
+        return ["Presensi & Kehadiran", "Pengajuan Izin/Sakit"];
       case "/program-kerja-kkn":
       case "/program-kerja":
         return ["Pelaksanaan KKN", "Program Kerja"];
