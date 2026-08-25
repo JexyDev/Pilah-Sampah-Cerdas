@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Utility to generate and trigger printable A4 QR Code stickers / PDF export
+ * Utility to generate and trigger printable 10 x 15 cm QR Code stickers / PDF export
  */
 
 import toast from "react-hot-toast";
@@ -18,7 +18,7 @@ export interface QrStickerItem {
 
 export const printQrStickers = (
   items: QrStickerItem[],
-  title: string = "Master QR Code BERSEKA"
+  title: string = "Stiker QR Code BERSEKA"
 ) => {
   if (!items || items.length === 0) {
     toast.error("Tidak ada data QR Code untuk dicetak.");
@@ -33,58 +33,97 @@ export const printQrStickers = (
 
   const cardsHtml = items
     .map((item) => {
-      const catName = item.category?.name?.toUpperCase() || "UMUM";
-      const isOrganik = catName.includes("ORGANIK") && !catName.includes("ANORGANIK");
-      const isAnorganik = catName.includes("ANORGANIK");
+      const catName = item.category?.name?.toUpperCase() || "";
+      const isAnorganik =
+        catName.includes("ANORGANIK") ||
+        catName.includes("NON_ORGANIC") ||
+        catName.includes("ANORG") ||
+        catName.includes("AGN") ||
+        item.qrCode.toUpperCase().includes("-AGN-");
 
-      let themeColor = "#0f766e"; // teal default
-      let bgLight = "#f0fdfa";
-      let borderBadge = "#99f6e4";
+      const isOrganik =
+        !isAnorganik &&
+        (catName.includes("ORGANIK") ||
+          catName.includes("ORGANIC") ||
+          catName.includes("OGN") ||
+          item.qrCode.toUpperCase().includes("-OGN-") ||
+          catName === "");
 
-      if (isOrganik) {
-        themeColor = "#059669"; // emerald
-        bgLight = "#ecfdf5";
-        borderBadge = "#a7f3d0";
-      } else if (isAnorganik) {
-        themeColor = "#2563eb"; // blue
-        bgLight = "#eff6ff";
-        borderBadge = "#bfdbfe";
+      // Tema Warna: Organik = Hijau, Anorganik = Kuning/Amber
+      let primaryColor = "#16a34a"; // Hijau Organik
+      let darkColor = "#15803d";
+      let bgCard = "#f0fdf4";
+      let badgeBg = "#16a34a";
+      let badgeText = "#ffffff";
+      let borderBadge = "#22c55e";
+      let labelCategory = "SAMPAH ORGANIK";
+      let subCategoryText = "Sisa Makanan • Dedaunan • Organik";
+
+      if (isAnorganik) {
+        primaryColor = "#d97706"; // Kuning / Amber Anorganik
+        darkColor = "#b45309";
+        bgCard = "#fefce8";
+        badgeBg = "#eab308";
+        badgeText = "#78350f";
+        borderBadge = "#facc15";
+        labelCategory = "SAMPAH ANORGANIK";
+        subCategoryText = "Plastik • Kertas • Kardus • Logam";
+      } else if (!isOrganik) {
+        primaryColor = "#475569";
+        darkColor = "#334155";
+        bgCard = "#f8fafc";
+        badgeBg = "#475569";
+        badgeText = "#ffffff";
+        borderBadge = "#64748b";
+        labelCategory = "TEMPAT SAMPAH";
+        subCategoryText = "Pilah Sampah Sesuai Kategori";
       }
 
       const wilayahStr = item.rtRw
-        ? `${item.rtRw.name} - Kel. ${item.rtRw.kelurahan.name}`
-        : "Wilayah Umum Coblong";
+        ? `${item.rtRw.name} • Kel. ${item.rtRw.kelurahan.name}`
+        : "Wilayah Dampingan BERSEKA";
 
       const batchStr = item.qrBatch?.batchCode ? `Batch: ${item.qrBatch.batchCode}` : "";
 
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
         item.qrCode
       )}`;
 
       return `
-        <div class="qr-card" style="border-top: 5px solid ${themeColor};">
-          <div class="card-header">
-            <div class="brand-title">BERSEKA</div>
-            <div class="brand-subtitle">Pilah Sampah Cerdas &bull; Coblong</div>
-          </div>
+        <div class="sticker-wrapper">
+          <div class="qr-card" style="border: 3px solid ${primaryColor}; background: linear-gradient(180deg, #ffffff 0%, ${bgCard} 100%);">
+            
+            <!-- Top Header Accent -->
+            <div class="header-band" style="background-color: ${primaryColor};">
+              <div class="band-title">BERSEKA</div>
+              <div class="band-subtitle">TEMPAT SAMPAH PINTAR</div>
+            </div>
 
-          <div class="qr-image-box">
-            <img src="${qrUrl}" alt="${item.qrCode}" class="qr-img" />
-          </div>
+            <!-- Category Ribbon -->
+            <div class="category-ribbon" style="background-color: ${badgeBg}; color: ${badgeText}; border: 1.5px solid ${borderBadge};">
+              <span class="ribbon-text">${labelCategory}</span>
+            </div>
+            <div class="category-subtext" style="color: ${darkColor};">${subCategoryText}</div>
 
-          <div class="qr-code-text" style="color: ${themeColor};">${item.qrCode}</div>
+            <!-- QR Code Frame -->
+            <div class="qr-frame" style="border-color: ${primaryColor};">
+              <img src="${qrUrl}" alt="${item.qrCode}" class="qr-image" />
+            </div>
 
-          <div class="badge-category" style="background-color: ${bgLight}; color: ${themeColor}; border: 1px solid ${borderBadge};">
-            ${catName}
-          </div>
+            <!-- Unique Serial Code -->
+            <div class="serial-code" style="color: ${darkColor};">
+              ${item.qrCode}
+            </div>
 
-          <div class="card-meta">
-            ${batchStr ? `<span class="meta-batch">${batchStr}</span>` : ""}
-            <span class="meta-area">${wilayahStr}</span>
-          </div>
+            <!-- Metadata & Instructions -->
+            <div class="card-meta">
+              ${batchStr ? `<span class="meta-batch">${batchStr}</span> &bull; ` : ""}<span class="meta-area">${wilayahStr}</span>
+            </div>
 
-          <div class="card-footer">
-            Pindai dengan Aplikasi Mobile BERSEKA untuk Aktivasi
+            <div class="footer-instruction" style="border-top: 1px dashed ${primaryColor}66; color: ${darkColor};">
+              Pindai QR dengan Aplikasi BERSEKA untuk Aktivasi &amp; Catat Setoran
+            </div>
+
           </div>
         </div>
       `;
@@ -96,25 +135,25 @@ export const printQrStickers = (
     <html lang="id">
     <head>
       <meta charset="UTF-8">
-      <title>${title} - Siap Cetak / Simpan PDF</title>
+      <title>${title} (10 x 15 cm)</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
 
         @page {
-          size: A4 portrait;
-          margin: 8mm;
+          size: 100mm 150mm portrait;
+          margin: 0;
         }
 
         * {
           box-sizing: border-box;
+          margin: 0;
+          padding: 0;
         }
 
         body {
           font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           color: #0f172a;
-          margin: 0;
-          padding: 0;
-          background: #ffffff;
+          background: #e2e8f0;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -129,139 +168,173 @@ export const printQrStickers = (
           position: sticky;
           top: 0;
           z-index: 999;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
-        .no-print .info-text {
-          font-size: 13px;
-          font-weight: 600;
+        .no-print .info-title {
+          font-size: 14px;
+          font-weight: 800;
+          letter-spacing: 0.3px;
         }
 
-        .no-print .info-sub {
+        .no-print .info-desc {
           font-size: 11px;
           color: #94a3b8;
           margin-top: 2px;
         }
 
         .no-print .btn-print {
-          background: #059669;
+          background: #16a34a;
           color: white;
           border: none;
-          padding: 8px 20px;
+          padding: 9px 22px;
           border-radius: 8px;
-          font-weight: 700;
+          font-weight: 800;
           font-size: 12px;
           cursor: pointer;
           transition: background 0.2s;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
+          box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
         }
 
         .no-print .btn-print:hover {
-          background: #047857;
+          background: #15803d;
         }
 
-        .print-container {
-          padding: 10px;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
+        .print-canvas {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+          padding: 24px;
+          justify-content: center;
+        }
+
+        .sticker-wrapper {
+          width: 100mm;
+          height: 150mm;
+          min-width: 100mm;
+          min-height: 150mm;
+          max-width: 100mm;
+          max-height: 150mm;
+          page-break-after: always;
+          break-after: page;
+          page-break-inside: avoid;
+          break-inside: avoid;
+          display: flex;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+          border-radius: 12px;
+          overflow: hidden;
+          background: #ffffff;
         }
 
         .qr-card {
-          border: 1.5px solid #cbd5e1;
-          border-radius: 12px;
-          background: #ffffff;
-          padding: 10px 8px 8px 8px;
+          width: 100%;
+          height: 100%;
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: space-between;
           text-align: center;
-          page-break-inside: avoid;
-          break-inside: avoid;
-          min-height: 250px;
+          padding: 0 0 10px 0;
+          box-sizing: border-box;
           position: relative;
         }
 
-        .card-header {
-          margin-bottom: 6px;
-          line-height: 1.15;
+        .header-band {
+          width: 100%;
+          padding: 8px 12px 7px 12px;
+          color: #ffffff;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
-        .brand-title {
+        .band-title {
+          font-size: 20px;
+          font-weight: 900;
+          letter-spacing: 2px;
+          line-height: 1.1;
+        }
+
+        .band-subtitle {
+          font-size: 8.5px;
+          font-weight: 700;
+          letter-spacing: 1.5px;
+          opacity: 0.92;
+        }
+
+        .category-ribbon {
+          margin-top: 6px;
+          padding: 4px 18px;
+          border-radius: 9999px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        .ribbon-text {
           font-size: 13px;
           font-weight: 900;
-          color: #0f172a;
-          letter-spacing: 0.5px;
-        }
-
-        .brand-subtitle {
-          font-size: 8px;
-          font-weight: 600;
-          color: #64748b;
+          letter-spacing: 1px;
           text-transform: uppercase;
         }
 
-        .qr-image-box {
+        .category-subtext {
+          font-size: 8px;
+          font-weight: 700;
+          margin-top: 2px;
+          letter-spacing: 0.3px;
+        }
+
+        .qr-frame {
           background: #ffffff;
-          padding: 4px;
-          border-radius: 8px;
-          border: 1px solid #f1f5f9;
+          padding: 8px;
+          border-radius: 14px;
+          border: 2px solid;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+          margin: 6px 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 6px;
         }
 
-        .qr-img {
-          width: 125px;
-          height: 125px;
+        .qr-image {
+          width: 58mm;
+          height: 58mm;
           display: block;
         }
 
-        .qr-code-text {
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        .serial-code {
+          font-family: 'JetBrains Mono', monospace;
           font-weight: 900;
           font-size: 13px;
-          letter-spacing: 1px;
-          margin-bottom: 4px;
-        }
-
-        .badge-category {
-          font-size: 9px;
-          font-weight: 800;
-          text-transform: uppercase;
-          padding: 2px 10px;
-          border-radius: 9999px;
-          margin-bottom: 6px;
-          letter-spacing: 0.5px;
+          letter-spacing: 1.2px;
+          background: #ffffff;
+          padding: 3px 12px;
+          border-radius: 6px;
+          border: 1px solid #cbd5e1;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
         }
 
         .card-meta {
-          font-size: 8px;
+          font-size: 8.5px;
+          font-weight: 700;
           color: #475569;
-          font-weight: 600;
-          line-height: 1.25;
-          margin-bottom: 6px;
-          display: flex;
-          flex-direction: column;
-          gap: 1px;
+          margin-top: 4px;
+          padding: 0 8px;
+          line-height: 1.2;
         }
 
         .meta-batch {
-          font-weight: 700;
           color: #0f172a;
         }
 
-        .card-footer {
-          border-top: 1px dashed #e2e8f0;
-          padding-top: 4px;
-          font-size: 7px;
-          color: #94a3b8;
-          font-weight: 600;
-          width: 100%;
+        .footer-instruction {
+          width: 90%;
+          padding-top: 6px;
+          font-size: 7.5px;
+          font-weight: 700;
           text-transform: uppercase;
+          letter-spacing: 0.4px;
+          line-height: 1.2;
         }
 
         @media print {
@@ -269,15 +342,20 @@ export const printQrStickers = (
             display: none !important;
           }
           body {
-            padding: 0;
-            background: #ffffff;
+            background: #ffffff !important;
           }
-          .print-container {
-            padding: 0;
-            gap: 10px;
+          .print-canvas {
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
           }
-          .qr-card {
-            border: 1.5px solid #94a3b8;
+          .sticker-wrapper {
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            width: 100mm !important;
+            height: 150mm !important;
           }
         }
       </style>
@@ -285,20 +363,20 @@ export const printQrStickers = (
     <body>
       <div class="no-print">
         <div>
-          <div class="info-text">📄 Pratinjau Dokumen Cetak (${items.length} Stiker QR Code)</div>
-          <div class="info-sub">Gunakan opsi "Save as PDF" / "Simpan sebagai PDF" pada dialog cetak browser untuk mengekspor ke berkas PDF.</div>
+          <div class="info-title">📄 Pratinjau Cetak Stiker QR BERSEKA (Ukuran 10 x 15 cm)</div>
+          <div class="info-desc">Total: ${items.length} Lembar Stiker. Pilih opsi "Save as PDF" / "Simpan sebagai PDF" pada dialog cetak browser.</div>
         </div>
         <button class="btn-print" onclick="window.print()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 6 2 18 2 18 9"></polyline>
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
             <rect x="6" y="14" width="12" height="8"></rect>
           </svg>
-          Cetak / Simpan PDF
+          Cetak / Simpan PDF (10x15 cm)
         </button>
       </div>
 
-      <div class="print-container">
+      <div class="print-canvas">
         ${cardsHtml}
       </div>
 

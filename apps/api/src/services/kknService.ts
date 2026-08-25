@@ -1182,7 +1182,12 @@ export class KknService {
         const maxCapacityLiter = data.maxCapacityLiter ? Number(data.maxCapacityLiter) : 50;
 
         const qrLower = qr.toLowerCase();
-        const isAnorg = qrLower.includes("anorganik") || qrLower.includes("non_organic") || qrLower.includes("anorg");
+        const isAnorg =
+          qrLower.includes("anorganik") ||
+          qrLower.includes("non_organic") ||
+          qrLower.includes("anorg") ||
+          qrLower.includes("agn") ||
+          qrLower.includes("ang");
         const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
 
         if (!bin) {
