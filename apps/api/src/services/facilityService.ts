@@ -43,11 +43,11 @@ export const facilityService = {
       throw new Error("INVALID_FACILITY_TYPE");
     }
 
-    let resolvedPic = pic;
-    let resolvedKontak = kontak;
-    if (pic && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pic.trim())) {
+    let resolvedPic = (pic || "").trim();
+    let resolvedKontak = kontak ? String(kontak).trim() : undefined;
+    if (resolvedPic && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedPic)) {
       const userObj = await prisma.user.findUnique({
-        where: { id: pic.trim() },
+        where: { id: resolvedPic },
         select: { name: true, phone: true },
       });
       if (userObj?.name) {
@@ -58,18 +58,23 @@ export const facilityService = {
       }
     }
 
+    const safeKapasitas =
+      kapasitas !== undefined && kapasitas !== null && !isNaN(Number(kapasitas))
+        ? Math.min(Math.max(Number(kapasitas), 0), 99999999)
+        : null;
+
     return prisma.facility.create({
       data: {
         jenis: jenis as FacilityType,
-        nama,
+        nama: (nama || "").trim(),
         pic: resolvedPic,
-        foto,
-        kontak: resolvedKontak,
-        alamat: alamat || null,
+        foto: foto || null,
+        kontak: resolvedKontak || null,
+        alamat: alamat ? alamat.trim() : null,
         rwId: rwId !== undefined && !isNaN(Number(rwId)) && Number(rwId) > 0 ? Number(rwId) : null,
-        kapasitas: kapasitas !== undefined ? Number(kapasitas) : null,
-        latitude: latitude !== undefined ? Number(latitude) : 0.0,
-        longitude: longitude !== undefined ? Number(longitude) : 0.0,
+        kapasitas: safeKapasitas,
+        latitude: latitude !== undefined && !isNaN(Number(latitude)) ? Number(latitude) : 0.0,
+        longitude: longitude !== undefined && !isNaN(Number(longitude)) ? Number(longitude) : 0.0,
         registeredByUserId: registeredByUserId ?? undefined,
         kelompokId: kelompokId ?? undefined,
         statusApproval: statusApproval || "APPROVED",
@@ -169,7 +174,7 @@ export const facilityService = {
    */
   getFacilities: async (jenis?: string, user?: any) => {
     let whereClause: any = {};
-    if (jenis) {
+    if (jenis && jenis !== "ALL") {
       const validTypes = [
         "loseda",
         "bata_terawang",
@@ -184,6 +189,9 @@ export const facilityService = {
         throw new Error("INVALID_FACILITY_TYPE");
       }
       whereClause.jenis = jenis as any;
+    } else if (!jenis || jenis === "ALL") {
+      // Default: Fasilitas pengelolaan sampah murni (tanpa posko_kkn)
+      whereClause.jenis = { not: "posko_kkn" };
     }
 
     if (user) {

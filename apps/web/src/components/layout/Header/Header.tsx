@@ -85,10 +85,10 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/jadwal-kegiatan":
         return ["Pelaksanaan KKN", "Linimasa Kegiatan"];
       case "/monitoring-absen":
-        return ["Pelaksanaan KKN", "Presensi"];
+        return ["Presensi & Kehadiran", "Presensi"];
       case "/ajuan-absensi":
       case "/validasi-absensi":
-        return ["Pelaksanaan KKN", "Pengajuan Izin/Sakit"];
+        return ["Presensi & Kehadiran", "Pengajuan Izin/Sakit"];
       case "/program-kerja-kkn":
       case "/program-kerja":
         return ["Pelaksanaan KKN", "Program Kerja"];
@@ -206,9 +206,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         return ["Dashboard Petugas Residu"];
       case "/pengelolaan-sampah":
       case "/pemanfaatan-sampah":
-        return ["Pelaksanaan KKN", "Fasilitas & Posko KKN"];
+        return ["Pemilahan & Angkut", "Fasilitas Pengelolaan Sampah"];
+      case "/posko-kkn":
+      case "/posko":
+        return ["Pelaksanaan KKN", "Posko KKN"];
       case "/hasil-pemanfaatan":
-        return ["Tata Kelola Sampah", "Hasil Pemanfaatan"];
+        return ["Pemilahan & Angkut", "Hasil Pemanfaatan"];
       case "/setor-sampah":
       case "/setor":
         return ["Tata Kelola Sampah", "Setor Sampah"];

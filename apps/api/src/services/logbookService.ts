@@ -11,6 +11,7 @@
 import { prisma } from "../lib/prisma.js";
 import { StatusLogbookKkn, TipeAktivitasKkn } from "@prisma/client";
 import { getKelompokWhere } from "./dplService.js";
+import { configService } from "./configService.js";
 
 // Target standar logbook per kelompok selama KKN (misal: 6 hari/pekan x 4 pekan = 24 aktivitas)
 const DEFAULT_LOGBOOK_TARGET = 24;
@@ -192,6 +193,8 @@ export class LogbookService {
             students: {
               select: {
                 id: true,
+                userId: true,
+                nim: true,
                 isKetua: true,
                 user: {
                   select: {
@@ -256,6 +259,8 @@ export class LogbookService {
       fasilitasNama: item.fasilitas?.nama || null,
       anggotaKelompok: item.kelompok?.students?.filter((s) => s.user).map((s) => ({
         id: s.id,
+        userId: s.userId || s.user?.id,
+        nim: s.nim || "-",
         name: s.user?.name || "Mahasiswa",
         isKetua: Boolean(s.isKetua),
       })) || [],
@@ -724,27 +729,122 @@ export class LogbookService {
   /**
    * Menghitung Statistik & Skor Kepatuhan Logbook Mahasiswa/Kelompok
    * Formula: (Total Disetujui / Target 24) x 100
+   * Terintegrasi dengan modul Penilaian Akademik DPL (Bobot 20% DPL / 30% Nilai Akhir)
    */
-  async getLogbookComplianceScore(kelompokId: string, targetCount = DEFAULT_LOGBOOK_TARGET) {
+  async getLogbookComplianceScore(kelompokId: string, targetCount?: number) {
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const effectiveTarget = targetCount && targetCount > 0
+      ? targetCount
+      : (ruleConfigs?.logbookTargetKegiatan || DEFAULT_LOGBOOK_TARGET);
+    const effectiveBobot = ruleConfigs?.logbookBobotPersen || 20;
+
+    // Mode Agregat Seluruh Kelompok jika "ALL"
     if (!kelompokId || kelompokId === "ALL" || kelompokId.trim() === "") {
-      return {
-        targetCount,
-        totalSubmitted: 0,
-        approvedCount: 0,
-        pendingKetuaCount: 0,
-        pendingDplCount: 0,
-        revisiCount: 0,
-        complianceRate: 0,
-        calculatedScore: 0,
-        pekanBreakdown: {
-          1: { total: 0, approved: 0 },
-          2: { total: 0, approved: 0 },
-          3: { total: 0, approved: 0 },
-          4: { total: 0, approved: 0 },
+      const allGroups = await prisma.kelompokKkn.findMany({
+        select: {
+          id: true,
+          name: true,
+          kelurahan: true,
+          dpl: { select: { name: true } },
+          _count: { select: { students: true } },
         },
-        isTargetMet: false,
+        orderBy: { name: "asc" },
+      });
+
+      const totalSubmitted = await prisma.logbookKkn.count();
+      const approvedCount = await prisma.logbookKkn.count({
+        where: { statusApproval: StatusLogbookKkn.DISETUJUI_DPL },
+      });
+      const pendingDplCount = await prisma.logbookKkn.count({
+        where: { statusApproval: StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL },
+      });
+      const pendingKetuaCount = await prisma.logbookKkn.count({
+        where: { statusApproval: StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA },
+      });
+      const revisiCount = await prisma.logbookKkn.count({
+        where: {
+          statusApproval: { in: [StatusLogbookKkn.PERLU_REVISI_DPL, StatusLogbookKkn.DITOLAK_KETUA] },
+        },
+      });
+
+      // Hitung kepatuhan per kelompok
+      const groupsSummary = await Promise.all(
+        allGroups.map(async (g) => {
+          const gApproved = await prisma.logbookKkn.count({
+            where: {
+              kelompokId: g.id,
+              statusApproval: StatusLogbookKkn.DISETUJUI_DPL,
+            },
+          });
+          const gTotal = await prisma.logbookKkn.count({
+            where: { kelompokId: g.id },
+          });
+          const gRate = Math.min(100, Math.round((gApproved / effectiveTarget) * 100));
+          return {
+            id: g.id,
+            name: g.name,
+            kelurahan: g.kelurahan || "-",
+            dplNama: g.dpl?.name || "-",
+            studentCount: g._count.students,
+            totalSubmitted: gTotal,
+            approvedCount: gApproved,
+            targetCount: effectiveTarget,
+            complianceRate: gRate,
+            isTargetMet: gApproved >= effectiveTarget,
+          };
+        })
+      );
+
+      const calculatedScore = effectiveTarget > 0 ? Math.min(100, Math.round((approvedCount / (effectiveTarget * Math.max(1, allGroups.length))) * 100)) : 0;
+
+      return {
+        isAggregate: true,
+        kelompok: null,
+        targetCount: effectiveTarget,
+        totalSubmitted,
+        approvedCount,
+        pendingKetuaCount,
+        pendingDplCount,
+        revisiCount,
+        complianceRate: calculatedScore,
+        calculatedScore,
+        isTargetMet: calculatedScore >= 100,
+        shortageCount: Math.max(0, effectiveTarget - approvedCount),
+        pekanBreakdown: {
+          1: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+          2: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+          3: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+          4: { total: 0, approved: 0, pending: 0, target: Math.ceil(effectiveTarget / 4), completionRate: 0, isMet: false },
+        },
+        studentsList: [],
+        recentApprovedActivities: [],
+        groupsSummary,
+        gradingIntegration: {
+          targetAktivitas: effectiveTarget,
+          aktivitasTerverifikasi: approvedCount,
+          skorDasarLogbook: calculatedScore,
+          bobotDplPersen: effectiveBobot,
+          kontribusiPoinDpl: Number(((calculatedScore * effectiveBobot) / 100).toFixed(1)),
+          kontribusiNilaiAkhirKkn: Number((((calculatedScore * effectiveBobot) / 100) * 0.3).toFixed(2)),
+          statusSyaratNilai: calculatedScore >= 100 ? "MEMENUHI_SYARAT" : "BELUM_MEMENUHI",
+          statusLabel: calculatedScore >= 100 ? "Prasyarat Terpenuhi (Lolos)" : "Belum Mencapai Target Standar",
+        },
       };
     }
+
+    // Detail Kelompok Spesifik
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: kelompokId },
+      include: {
+        dpl: { select: { id: true, name: true, phone: true, nip: true } },
+        students: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+          orderBy: [{ isKetua: "desc" }, { createdAt: "asc" }],
+        },
+      },
+    });
 
     const totalSubmitted = await prisma.logbookKkn.count({ where: { kelompokId } });
     const approvedCount = await prisma.logbookKkn.count({
@@ -771,7 +871,7 @@ export class LogbookService {
     const revisiCount = await prisma.logbookKkn.count({
       where: {
         kelompokId,
-        statusApproval: StatusLogbookKkn.PERLU_REVISI_DPL,
+        statusApproval: { in: [StatusLogbookKkn.PERLU_REVISI_DPL, StatusLogbookKkn.DITOLAK_KETUA] },
       },
     });
 
@@ -782,27 +882,119 @@ export class LogbookService {
       _count: { id: true },
     });
 
-    const pekanBreakdown: Record<number, { total: number; approved: number }> = {
-      1: { total: 0, approved: 0 },
-      2: { total: 0, approved: 0 },
-      3: { total: 0, approved: 0 },
-      4: { total: 0, approved: 0 },
+    const targetPerWeek = Math.max(1, Math.ceil(effectiveTarget / 4)); // e.g. 6 aktivitas/pekan untuk target 24
+    const pekanBreakdown: Record<number, {
+      total: number;
+      approved: number;
+      pending: number;
+      target: number;
+      completionRate: number;
+      isMet: boolean;
+    }> = {
+      1: { total: 0, approved: 0, pending: 0, target: targetPerWeek, completionRate: 0, isMet: false },
+      2: { total: 0, approved: 0, pending: 0, target: targetPerWeek, completionRate: 0, isMet: false },
+      3: { total: 0, approved: 0, pending: 0, target: targetPerWeek, completionRate: 0, isMet: false },
+      4: { total: 0, approved: 0, pending: 0, target: targetPerWeek, completionRate: 0, isMet: false },
     };
 
     weeklyLogs.forEach((item) => {
-      const p = item.pekanKe || 1;
+      const p = Math.min(4, Math.max(1, item.pekanKe || 1));
       if (pekanBreakdown[p]) {
         pekanBreakdown[p].total += item._count.id;
         if (item.statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
           pekanBreakdown[p].approved += item._count.id;
+        } else if (
+          item.statusApproval === StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL ||
+          item.statusApproval === StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA
+        ) {
+          pekanBreakdown[p].pending += item._count.id;
         }
       }
     });
 
-    const calculatedScore = Math.min(100, Math.round((approvedCount / targetCount) * 100));
+    for (let p = 1; p <= 4; p++) {
+      const pb = pekanBreakdown[p];
+      pb.completionRate = Math.min(100, Math.round((pb.approved / pb.target) * 100));
+      pb.isMet = pb.approved >= pb.target;
+    }
+
+    // Breakdown kontribusi individu per mahasiswa
+    const studentsList = await Promise.all(
+      (kelompok?.students || []).map(async (st) => {
+        const userId = st.userId;
+        const submitted = await prisma.logbookKkn.count({
+          where: { kelompokId, penulisId: userId },
+        });
+        const approved = await prisma.logbookKkn.count({
+          where: { kelompokId, penulisId: userId, statusApproval: StatusLogbookKkn.DISETUJUI_DPL },
+        });
+
+        const contrPct = approvedCount > 0 ? Math.round((approved / approvedCount) * 100) : 0;
+
+        return {
+          id: st.id,
+          userId,
+          name: st.user?.name || "Mahasiswa",
+          nim: st.nim || "-",
+          jurusan: st.jurusan || "-",
+          fakultas: st.fakultas || "-",
+          isKetua: Boolean(st.isKetua),
+          submittedCount: submitted,
+          approvedCount: approved,
+          contributionPct: contrPct,
+        };
+      })
+    );
+
+    // Daftar aktivitas terverifikasi terakhir (Audit Trail)
+    const recentApprovedRaw = await prisma.logbookKkn.findMany({
+      where: { kelompokId, statusApproval: StatusLogbookKkn.DISETUJUI_DPL },
+      include: {
+        penulis: { select: { name: true, studentProfile: { select: { nim: true } } } },
+        programKerja: { select: { deskripsi: true, kategori: true } },
+      },
+      orderBy: { tanggalKegiatan: "desc" },
+      take: 8,
+    });
+
+    const recentApprovedActivities = recentApprovedRaw.map((log) => ({
+      id: log.id,
+      tanggalKegiatan: log.tanggalKegiatan ? log.tanggalKegiatan.toISOString().split("T")[0] : "-",
+      penulisNama: log.penulis?.name || "Mahasiswa",
+      penulisNim: log.penulis?.studentProfile?.nim || "-",
+      tempat: log.tempat,
+      deskripsi: log.deskripsi,
+      pekanKe: log.pekanKe,
+      kategori: log.programKerja?.kategori || "Aktivitas KKN",
+      diverifikasiDplPada: log.diverifikasiDplPada ? log.diverifikasiDplPada.toISOString() : null,
+      catatanDpl: log.catatanDpl || null,
+    }));
+
+    const calculatedScore = Math.min(100, Math.round((approvedCount / effectiveTarget) * 100));
+    const isTargetMet = approvedCount >= effectiveTarget;
+    const shortageCount = Math.max(0, effectiveTarget - approvedCount);
+
+    const kontribusiPoinDpl = Number(((calculatedScore * effectiveBobot) / 100).toFixed(1)); // misal 0 - 20.0 poin
+    const kontribusiNilaiAkhirKkn = Number((kontribusiPoinDpl * 0.3).toFixed(2)); // misal 0 - 6.00 poin
+
+    const ketuaStudent = kelompok?.students.find((s) => s.isKetua);
 
     return {
-      targetCount,
+      isAggregate: false,
+      kelompok: kelompok
+        ? {
+            id: kelompok.id,
+            name: kelompok.name,
+            kelurahan: kelompok.kelurahan || "-",
+            dplNama: kelompok.dpl?.name || "-",
+            dplNip: kelompok.dpl?.nip || "-",
+            dplPhone: kelompok.dpl?.phone || "-",
+            ketuaNama: ketuaStudent?.user?.name || "-",
+            ketuaNim: ketuaStudent?.nim || "-",
+            studentCount: kelompok.students.length,
+          }
+        : null,
+      targetCount: effectiveTarget,
       totalSubmitted,
       approvedCount,
       pendingKetuaCount,
@@ -810,8 +1002,26 @@ export class LogbookService {
       revisiCount,
       complianceRate: calculatedScore,
       calculatedScore,
+      isTargetMet,
+      shortageCount,
       pekanBreakdown,
-      isTargetMet: approvedCount >= targetCount,
+      studentsList,
+      recentApprovedActivities,
+      gradingIntegration: {
+        targetAktivitas: effectiveTarget,
+        aktivitasTerverifikasi: approvedCount,
+        skorDasarLogbook: calculatedScore,
+        bobotDplPersen: effectiveBobot,
+        kontribusiPoinDpl,
+        kontribusiNilaiAkhirKkn,
+        statusSyaratNilai: isTargetMet ? "MEMENUHI_SYARAT" : "BELUM_MEMENUHI",
+        statusLabel: isTargetMet
+          ? "Prasyarat Terpenuhi (Lolos Syarat Nilai Akhir)"
+          : `Belum Mencapai Target (Kurang ${shortageCount} Aktivitas)`,
+        rekomendasi: isTargetMet
+          ? `Target ${effectiveTarget} logbook telah terpenuhi. Nilai kepatuhan 100% siap ditransfer ke form Penilaian KKN DPL.`
+          : `Kelompok masih membutuhkan ${shortageCount} aktivitas yang diverifikasi DPL agar prasyarat kelulusan akademik terpenuhi.`,
+      },
     };
   }
 }

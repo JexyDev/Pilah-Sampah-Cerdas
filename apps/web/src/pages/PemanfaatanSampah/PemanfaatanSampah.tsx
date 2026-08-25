@@ -231,38 +231,8 @@ export const PemanfaatanSampah: React.FC = () => {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const [facRes, poskoRes] = await Promise.allSettled([
-        api.get("/facilities"),
-        api.get("/posko-kkn"),
-      ]);
-
-      let facilityList: FacilityItem[] = [];
-      if (facRes.status === "fulfilled") {
-        facilityList = facRes.value.data.data || [];
-      }
-
-      let poskoList: FacilityItem[] = [];
-      if (poskoRes.status === "fulfilled") {
-        const rawPosko = poskoRes.value.data.data || [];
-        poskoList = rawPosko.map((p: any) => ({
-          id: p.id,
-          nama: p.nama || `Posko ${p.kelompok?.name || "KKN"}`,
-          jenis: "posko_kkn",
-          pic: p.kelompok?.students?.find((s: any) => s.isKetua)?.user?.name || p.kelompok?.dpl?.name || "Ketua Kelompok KKN",
-          kontak: p.kelompok?.students?.find((s: any) => s.isKetua)?.user?.phone || "-",
-          alamat: p.alamat || `Kel. ${p.kelompok?.kelurahan || "-"}`,
-          latitude: p.latitude,
-          longitude: p.longitude,
-          foto: p.fotoUrl || undefined,
-          createdAt: p.createdAt || new Date().toISOString(),
-          rw: {
-            id: 0,
-            name: p.kelompok?.kelurahan ? `Kel. ${p.kelompok.kelurahan}` : "Posko KKN",
-          },
-        }));
-      }
-
-      setItems([...facilityList, ...poskoList]);
+      const res = await api.get("/facilities");
+      setItems(res.data.data || []);
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal memuat data fasilitas");
     } finally {
@@ -274,16 +244,16 @@ export const PemanfaatanSampah: React.FC = () => {
     fetchItems();
   }, []);
 
-  // Metrik Penghitungan Fasilitas
+  // Metrik Penghitungan Fasilitas Persampahan
   const metrics = useMemo(() => {
     const total = items.length;
-    const posko = items.filter((i) => i.jenis === "posko_kkn" || i.jenis === "posko").length;
-    const buruanSae = items.filter((i) => i.jenis === "buruan_sae").length;
-    const organik = items.filter((i) => ["loseda", "bata_terawang", "rumah_maggot", "poc"].includes(i.jenis)).length;
     const bankSampah = items.filter((i) => i.jenis === "bank_sampah").length;
+    const organik = items.filter((i) => ["loseda", "bata_terawang", "rumah_maggot", "poc"].includes(i.jenis)).length;
+    const buruanSae = items.filter((i) => i.jenis === "buruan_sae").length;
     const tps = items.filter((i) => i.jenis === "tps").length;
+    const totalKapasitas = items.reduce((acc, curr) => acc + (Number(curr.kapasitas) || 0), 0);
 
-    return { total, posko, buruanSae, organik, bankSampah, tps };
+    return { total, bankSampah, organik, buruanSae, tps, totalKapasitas };
   }, [items]);
 
   // Handler toggle filter jenis saat card metrik diklik
@@ -363,8 +333,8 @@ export const PemanfaatanSampah: React.FC = () => {
   return (
     <div className="pb-24 lg:pb-8">
       <PageHeader
-        title="Fasilitas & Posko KKN"
-        description="Pemetaan dan inventarisasi fasilitas pengolahan sampah, inovasi daur ulang warga (Buruan Sae, Bank Sampah, Loseda, Bata Terawang, Rumah Maggot, TPS) serta lokasi Posko Mahasiswa KKN."
+        title="Fasilitas Pengelolaan Sampah"
+        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, POC, TPS) di Kecamatan Coblong."
         icon={Sprout}
       />
 
@@ -403,35 +373,63 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           </button>
 
-          {/* Card 2: Posko KKN */}
+          {/* Card 2: Bank Sampah */}
           <button
             type="button"
-            onClick={() => handleCardFilterClick("posko_kkn")}
+            onClick={() => handleCardFilterClick("bank_sampah")}
             className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "posko_kkn"
-                ? "bg-indigo-50/90 dark:bg-indigo-950/50 border-indigo-500 text-indigo-950 dark:text-indigo-50 shadow-md ring-2 ring-indigo-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-indigo-400 hover:shadow-xs"
+              selectedJenis === "bank_sampah"
+                ? "bg-blue-50/90 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-50 shadow-md ring-2 ring-blue-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 hover:shadow-xs"
             }`}
           >
             <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "posko_kkn" ? "text-indigo-800 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Posko KKN
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Bank Sampah
               </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "posko_kkn" ? "bg-indigo-200/60 dark:bg-indigo-800/60 text-indigo-900 dark:text-indigo-200" : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"}`}>
-                <GraduationCap size={17} />
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
+                <Coins size={17} />
               </div>
             </div>
             <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "posko_kkn" ? "text-indigo-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.posko}
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.bankSampah}
               </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "posko_kkn" ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Posko Mahasiswa
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Unit Tabungan
               </p>
             </div>
           </button>
 
-          {/* Card 3: Buruan Sae */}
+          {/* Card 3: Inovasi Organik */}
+          <button
+            type="button"
+            onClick={() => handleCardFilterClick("organik_group")}
+            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
+              selectedJenis === "organik_group"
+                ? "bg-teal-50/90 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/20"
+                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
+            }`}
+          >
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Inovasi Organik
+              </span>
+              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "organik_group" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
+                <Recycle size={17} />
+              </div>
+            </div>
+            <div>
+              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "organik_group" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
+                {metrics.organik}
+              </div>
+              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
+                Loseda, Maggot, POC
+              </p>
+            </div>
+          </button>
+
+          {/* Card 4: Buruan Sae */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("buruan_sae")}
@@ -459,63 +457,7 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           </button>
 
-          {/* Card 4: Inovasi Organik */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("organik_group")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "organik_group"
-                ? "bg-teal-50/90 dark:bg-teal-950/50 border-teal-500 text-teal-950 dark:text-teal-50 shadow-md ring-2 ring-teal-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-teal-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "organik_group" ? "text-teal-800 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Inovasi Organik
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "organik_group" ? "bg-teal-200/60 dark:bg-teal-800/60 text-teal-900 dark:text-teal-200" : "bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400"}`}>
-                <Recycle size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "organik_group" ? "text-teal-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.organik}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "organik_group" ? "text-teal-700 dark:text-teal-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Loseda, Maggot, Bata
-              </p>
-            </div>
-          </button>
-
-          {/* Card 5: Bank Sampah */}
-          <button
-            type="button"
-            onClick={() => handleCardFilterClick("bank_sampah")}
-            className={`relative p-4 sm:p-4.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden group ${
-              selectedJenis === "bank_sampah"
-                ? "bg-blue-50/90 dark:bg-blue-950/50 border-blue-500 text-blue-950 dark:text-blue-50 shadow-md ring-2 ring-blue-500/20"
-                : "bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 hover:shadow-xs"
-            }`}
-          >
-            <div className="flex items-center justify-between w-full mb-2.5">
-              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${selectedJenis === "bank_sampah" ? "text-blue-800 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Bank Sampah
-              </span>
-              <div className={`p-2 rounded-xl transition-colors ${selectedJenis === "bank_sampah" ? "bg-blue-200/60 dark:bg-blue-800/60 text-blue-900 dark:text-blue-200" : "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"}`}>
-                <Coins size={17} />
-              </div>
-            </div>
-            <div>
-              <div className={`text-2xl sm:text-[26px] font-black tracking-tight ${selectedJenis === "bank_sampah" ? "text-blue-950 dark:text-white" : "text-slate-900 dark:text-white"}`}>
-                {metrics.bankSampah}
-              </div>
-              <p className={`text-xs font-semibold mt-1 truncate ${selectedJenis === "bank_sampah" ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}>
-                Unit Tabungan Warga
-              </p>
-            </div>
-          </button>
-
-          {/* Card 6: TPS (Tempat Penampungan Sementara) */}
+          {/* Card 5: TPS */}
           <button
             type="button"
             onClick={() => handleCardFilterClick("tps")}
@@ -543,10 +485,32 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           </button>
 
+          {/* Card 6: Kapasitas Olah Total */}
+          <div
+            className="relative p-4 sm:p-4.5 rounded-2xl border text-left flex flex-col justify-between overflow-hidden bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 text-slate-800 dark:text-slate-100"
+          >
+            <div className="flex items-center justify-between w-full mb-2.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Kapasitas Olah
+              </span>
+              <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                <Boxes size={17} />
+              </div>
+            </div>
+            <div>
+              <div className="text-2xl sm:text-[26px] font-black tracking-tight text-slate-900 dark:text-white">
+                {metrics.totalKapasitas > 0 ? `${metrics.totalKapasitas} Kg` : "-"}
+              </div>
+              <p className="text-xs font-semibold mt-1 truncate text-slate-500 dark:text-slate-400">
+                Kapasitas Fasilitas
+              </p>
+            </div>
+          </div>
+
         </div>
 
         {/* ========================================================================= */}
-        {/* 2. PETA GIS INTERAKTIF (DENGAN LEGENDA LENGKAP TERMASUK BURUAN SAE)       */}
+        {/* 2. PETA GIS INTERAKTIF (DENGAN LEGENDA LENGKAP FASILITAS PERSAMPAHAN)     */}
         {/* ========================================================================= */}
         <div ref={mapSectionRef} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 relative overflow-hidden">
           
@@ -557,7 +521,7 @@ export const PemanfaatanSampah: React.FC = () => {
               </span>
               <div>
                 <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
-                  Peta Sebaran Fasilitas & Posko KKN
+                  Peta Sebaran Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Wilayah Kecamatan Coblong, Kota Bandung ({filteredItems.length} titik aktif)
@@ -595,16 +559,12 @@ export const PemanfaatanSampah: React.FC = () => {
                 </div>
 
                 <div className="space-y-2.5">
-                  {/* Fasilitas & Posko */}
+                  {/* Fasilitas */}
                   <div className="space-y-1">
                     <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
-                      Fasilitas & Posko KKN
+                      Jenis Fasilitas
                     </span>
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 text-[10px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-xs bg-[#4f46e5] shrink-0" />
-                        <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Posko KKN</span>
-                      </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-xs bg-[#65a30d] shrink-0" />
                         <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Buruan Sae</span>
@@ -734,7 +694,7 @@ export const PemanfaatanSampah: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. TABEL DATA INVENTARIS FASILITAS & POSKO (TERPADU & RAPI)                */}
+        {/* 3. TABEL DATA INVENTARIS FASILITAS PERSAMPAHAN (TERPADU & RAPI)            */}
         {/* ========================================================================= */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-0">
           
@@ -746,7 +706,7 @@ export const PemanfaatanSampah: React.FC = () => {
               </span>
               <div>
                 <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100">
-                  Daftar Inventaris Fasilitas & Posko KKN
+                  Daftar Inventaris Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Menampilkan {filteredItems.length} fasilitas terdata di Kecamatan Coblong
@@ -781,9 +741,9 @@ export const PemanfaatanSampah: React.FC = () => {
                 className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
               >
                 <option value="ALL">Semua Jenis Fasilitas</option>
-                <option value="posko_kkn">Posko KKN</option>
-                <option value="buruan_sae">Buruan Sae</option>
                 <option value="bank_sampah">Bank Sampah</option>
+                <option value="organik_group">Inovasi Organik (Loseda, Maggot, Bata, POC)</option>
+                <option value="buruan_sae">Buruan Sae</option>
                 <option value="loseda">Loseda</option>
                 <option value="bata_terawang">Bata Terawang</option>
                 <option value="rumah_maggot">Rumah Maggot</option>

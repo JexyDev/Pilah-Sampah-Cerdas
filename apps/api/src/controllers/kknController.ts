@@ -485,6 +485,22 @@ export class KknController {
     }
   }
 
+  async getAllPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const kelurahan = req.query.kelurahan as string | undefined;
+      const search = req.query.search as string | undefined;
+      const data = await kknService.getAllPoskoKkn({ kelurahan, search });
+      res.status(200).json({
+        success: true,
+        message: "Data posko KKN berhasil dimuat",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getAllPosko error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
   // ──────────────────────────────────────────────────────────

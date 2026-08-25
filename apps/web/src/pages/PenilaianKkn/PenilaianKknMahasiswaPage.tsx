@@ -16,7 +16,6 @@ import {
   GraduationCap,
   Edit3,
   CheckCircle2,
-  RefreshCw,
   Award,
   Users,
   FileText,
@@ -390,16 +389,6 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             Evaluasi capaian 6 aspek akademik bimbingan Dosen Pendamping Lapangan (DPL) mahasiswa KKN
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={fetchStudents}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer self-start sm:self-auto"
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin text-[#009966]" : "text-[#009966]"} />
-          <span>Segarkan Data</span>
-        </button>
       </div>
 
       {/* Metric Cards KPI */}

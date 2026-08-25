@@ -26,6 +26,8 @@ import {
   BookOpen,
   ClipboardList,
   Bot,
+  Truck,
+  Recycle,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -75,7 +77,7 @@ const checkRouteActive = (
     if (tQuery?.includes("tab=dpl") && dplLogAliases.includes(cPath) && logbookAliases.includes(tPath)) return true;
     const userMasterAliases = ["/pengguna", "/master-pengguna", "/master-data-pengguna", "/manajemen-pengguna"];
     if (userMasterAliases.includes(tPath) && userMasterAliases.includes(cPath)) return true;
-    const fasilitasAliases = ["/pengelolaan-sampah", "/fasilitas-posko", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
+    const fasilitasAliases = ["/pengelolaan-sampah", "/pemanfaatan-sampah", "/fasilitas-dan-posko"];
     if (fasilitasAliases.includes(tPath) && fasilitasAliases.includes(cPath)) return true;
 
     const provAliases = ["/wilayah/provinsi", "/master-data/provinsi", "/master-provinsi"];
@@ -93,6 +95,8 @@ const checkRouteActive = (
     const rwAliases = ["/wilayah/rw", "/master-data/rukun-warga", "/master-rw", "/wilayah/rukun-warga"];
     if (rwAliases.includes(tPath) && rwAliases.includes(cPath)) return true;
 
+    const poskoAliases = ["/posko-kkn", "/posko", "/fasilitas-posko"];
+    if (poskoAliases.includes(tPath) && poskoAliases.includes(cPath)) return true;
     return false;
   };
 
@@ -517,7 +521,7 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const userRole = (user?.peran || "WARGA") as UserRole;
+  const userRole = (((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase()) as UserRole;
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
 
   // Live real-time clock state
@@ -575,8 +579,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "WARGA",
   ];
 
-  const hasAccess = (allowed: UserRole[]) =>
-    userRole === "DEVELOPER" || allowed.includes(userRole);
+  const hasAccess = (allowed?: UserRole[]) =>
+    !allowed || userRole === "DEVELOPER" || allowed.includes(userRole);
 
   const getFilteredGroupChildren = (
     groupLabel: string,
@@ -673,6 +677,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              to: "/posko-kkn",
+              label: "Posko KKN",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "MAHASISWA_KKN",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "WARGA",
+              ] as UserRole[],
+            },
+            {
               to: "/program-kerja-kkn",
               label: "Program Kerja",
               allowed: [
@@ -684,6 +706,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PANITIA_TASKFORCE",
               ] as UserRole[],
             },
+          ],
+        },
+        {
+          type: "group",
+          label: "Presensi & Kehadiran",
+          icon: Clock,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "DPL",
+            "DOSEN_PEMBIMBING",
+            "PANITIA_TASKFORCE",
+            "PEMIMPIN",
+            "MAHASISWA_KKN",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "WARGA",
+          ] as UserRole[],
+          children: [
             {
               to: "/monitoring-absen",
               label: "Presensi",
@@ -707,24 +750,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
-              ] as UserRole[],
-            },
-            {
-              to: "/pengelolaan-sampah",
-              label: "Fasilitas & Posko KKN",
-              allowed: [
-                "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "DPL",
-                "DOSEN_PEMBIMBING",
-                "PANITIA_TASKFORCE",
-                "PEMIMPIN",
-                "MAHASISWA_KKN",
-                "CAMAT",
-                "LURAH",
-                "RW",
-                "WARGA",
               ] as UserRole[],
             },
           ],
@@ -877,13 +902,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       header: "LOG AKTIVITAS",
       items: [
         {
-          to: "/logbook-kkn?tab=mahasiswa",
+          to: "/logbook-kkn",
           icon: ClipboardList,
           label: "Log Aktivitas Mahasiswa",
           allowed: ALL_ROLES,
         },
         {
-          to: "/logbook-kkn?tab=dpl",
+          to: "/log-aktivitas-dpl",
           icon: BookOpen,
           label: "Log Aktivitas DPL",
           allowed: [
@@ -906,7 +931,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       items: [
         {
           type: "group",
-          label: "Pemilahan & Angkut",
+          label: "Fasilitas & Tempat Sampah",
           icon: Trash2,
           allowed: [
             "DEVELOPER",
@@ -919,6 +944,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "WARGA",
             "PEMIMPIN",
             "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
           ] as UserRole[],
           children: [
             {
@@ -934,6 +960,40 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PETUGAS_RESIDU",
               ] as UserRole[],
             },
+            {
+              to: "/pengelolaan-sampah",
+              label: "Fasilitas Pengelolaan Sampah",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
+              ] as UserRole[],
+            },
+          ],
+        },
+        {
+          type: "group",
+          label: "Penyetoran & Pengangkutan",
+          icon: Truck,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "WARGA",
+          ] as UserRole[],
+          children: [
             {
               to: "/penyetoran-sampah",
               label: "Penyetoran Sampah",
@@ -959,6 +1019,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
+              ] as UserRole[],
+            },
+          ],
+        },
+        {
+          type: "group",
+          label: "Pemanfaatan & Rekapitulasi",
+          icon: Recycle,
+          allowed: [
+            "DEVELOPER",
+            "SUPER_USER",
+            "ADMIN_DLH",
+            "CAMAT",
+            "LURAH",
+            "RW",
+            "PETUGAS_RESIDU",
+            "WARGA",
+            "PEMIMPIN",
+            "PANITIA_TASKFORCE",
+            "MAHASISWA_KKN",
+          ] as UserRole[],
+          children: [
+            {
+              to: "/hasil-pemanfaatan",
+              label: "Hasil Pemanfaatan",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "CAMAT",
+                "LURAH",
+                "RW",
+                "PETUGAS_RESIDU",
+                "WARGA",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
               ] as UserRole[],
             },
             {

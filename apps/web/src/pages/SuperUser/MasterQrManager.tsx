@@ -5,7 +5,8 @@ import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer } from "lucide-react";
+import { printQrStickers } from "../../utils/printQrStickers";
 
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -225,6 +226,25 @@ export const MasterQrManager: React.FC = () => {
   };
 
 
+  const handlePrintPdf = (itemsToPrint?: BinQr[]) => {
+    const list = itemsToPrint && itemsToPrint.length > 0 ? itemsToPrint : qrs;
+    if (!list || list.length === 0) {
+      toast.error("Tidak ada data QR Code untuk dicetak.");
+      return;
+    }
+    printQrStickers(
+      list.map((item) => ({
+        id: item.id,
+        qrCode: item.qrCode,
+        category: item.category,
+        rtRw: item.rtRw,
+        qrBatch: item.qrBatch,
+        status: item.status,
+      })),
+      `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}`
+    );
+  };
+
   const handleExportCsv = () => {
     if (!qrs || qrs.length === 0) {
       toast.error("Tidak ada data Kode QR dalam tabel untuk diekspor.");
@@ -280,6 +300,13 @@ export const MasterQrManager: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => handlePrintPdf(qrs)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Printer size={15} className="text-emerald-400" />
+            Cetak / Ekspor PDF
+          </button>
           <button
             onClick={handleExportCsv}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
@@ -483,26 +510,35 @@ export const MasterQrManager: React.FC = () => {
                         {!isReadOnly && (
                           <td className="px-6 py-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handlePrintPdf([q])}
+                                title="Cetak Stiker QR Ini"
+                                className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Printer size={14} className="text-emerald-600 dark:text-emerald-400" />
+                                <span className="hidden xl:inline">Cetak</span>
+                              </button>
+
                               {(isBroken || isInactive) && (
                                 <button
-                                  onClick={() => handleReactivate(q.id)}
-                                  title="Aktifkan Kembali"
-                                  className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-xs font-bold transition-all border border-emerald-200 dark:border-emerald-800 cursor-pointer inline-flex items-center gap-1"
-                                >
-                                  <PlayCircle size={14} />
-                                  <span className="hidden sm:inline">Aktifkan</span>
-                                </button>
+                                   onClick={() => handleReactivate(q.id)}
+                                   title="Aktifkan Kembali"
+                                   className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg text-xs font-bold transition-all border border-emerald-200 dark:border-emerald-800 cursor-pointer inline-flex items-center gap-1"
+                                 >
+                                   <PlayCircle size={14} />
+                                   <span className="hidden sm:inline">Aktifkan</span>
+                                 </button>
                               )}
 
                               {isBroken && (
                                 <button
-                                  onClick={() => handleOpenReplaceModal(q)}
-                                  title="Ganti QR Code Rusak"
-                                  className="p-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-bold transition-all border border-blue-200 dark:border-blue-800 cursor-pointer inline-flex items-center gap-1"
-                                >
-                                  <RefreshCw size={14} />
-                                  <span className="hidden sm:inline">Ganti QR</span>
-                                </button>
+                                   onClick={() => handleOpenReplaceModal(q)}
+                                   title="Ganti QR Code Rusak"
+                                   className="p-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-xs font-bold transition-all border border-blue-200 dark:border-blue-800 cursor-pointer inline-flex items-center gap-1"
+                                 >
+                                   <RefreshCw size={14} />
+                                   <span className="hidden sm:inline">Ganti QR</span>
+                                 </button>
                               )}
 
                               <button

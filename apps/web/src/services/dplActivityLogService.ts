@@ -96,88 +96,124 @@ export const dplActivityLogService = {
    * Mengambil daftar pekan dinamis (Pekan 1-12) dari relasi backend Timeline KKN
    */
   getTimelineWeeks: async (): Promise<DynamicWeekItem[]> => {
+    // 12 Pekan Acuan Resmi KKN Coblong 2026 dengan rentang tanggal presisi
+    const standardCalendar: Record<number, { tanggalRange: string; startDate: string; endDate: string; kegiatanUtama: string }> = {
+      1: { tanggalRange: "12 - 18 Agustus 2026", startDate: "2026-08-12T00:00:00.000Z", endDate: "2026-08-18T23:59:59.000Z", kegiatanUtama: "Kick Off & Penerjunan Posko" },
+      2: { tanggalRange: "19 - 25 Agustus 2026", startDate: "2026-08-19T00:00:00.000Z", endDate: "2026-08-25T23:59:59.000Z", kegiatanUtama: "Observasi Lapangan & Matrik Proker" },
+      3: { tanggalRange: "26 Agustus - 1 September 2026", startDate: "2026-08-26T00:00:00.000Z", endDate: "2026-09-01T23:59:59.000Z", kegiatanUtama: "Finalisasi Matrik & Pilot RT Percontohan" },
+      4: { tanggalRange: "2 - 8 September 2026", startDate: "2026-09-02T00:00:00.000Z", endDate: "2026-09-08T23:59:59.000Z", kegiatanUtama: "Distribusi Sarana & Aktivasi QR Code" },
+      5: { tanggalRange: "9 - 15 September 2026", startDate: "2026-09-09T00:00:00.000Z", endDate: "2026-09-15T23:59:59.000Z", kegiatanUtama: "Uji Coba Aplikasi & Edukasi Warga Door-to-Door" },
+      6: { tanggalRange: "16 - 22 September 2026", startDate: "2026-09-16T00:00:00.000Z", endDate: "2026-09-22T23:59:59.000Z", kegiatanUtama: "Perluasan Program ke Seluruh RW" },
+      7: { tanggalRange: "23 - 29 September 2026", startDate: "2026-09-23T00:00:00.000Z", endDate: "2026-09-29T23:59:59.000Z", kegiatanUtama: "Aktivasi Leaderboard & Bank Sampah" },
+      8: { tanggalRange: "30 September - 6 Oktober 2026", startDate: "2026-09-30T00:00:00.000Z", endDate: "2026-10-06T23:59:59.000Z", kegiatanUtama: "Pendampingan Pengangkutan IoT & Kompos" },
+      9: { tanggalRange: "7 - 13 Oktober 2026", startDate: "2026-10-07T00:00:00.000Z", endDate: "2026-10-13T23:59:59.000Z", kegiatanUtama: "Operasional Bank Sampah & POC" },
+      10: { tanggalRange: "14 - 20 Oktober 2026", startDate: "2026-10-14T00:00:00.000Z", endDate: "2026-10-20T23:59:59.000Z", kegiatanUtama: "Mitigasi & Penguatan Kelembagaan TPS 3R" },
+      11: { tanggalRange: "21 - 27 Oktober 2026", startDate: "2026-10-21T00:00:00.000Z", endDate: "2026-10-27T23:59:59.000Z", kegiatanUtama: "Optimalisasi Rute & SOP Pengelolaan" },
+      12: { tanggalRange: "28 - 31 Oktober 2026", startDate: "2026-10-28T00:00:00.000Z", endDate: "2026-10-31T23:59:59.000Z", kegiatanUtama: "Konsolidasi Capaian, Laporan Akhir & Penutupan" },
+    };
+
     try {
       const res = await api.get("/timeline-kkn");
       const items = res.data?.data || [];
       if (Array.isArray(items) && items.length > 0) {
-        const weeks: DynamicWeekItem[] = [];
-        
-        // Map items from timeline to weeks
+        const weeksMap = new Map<number, DynamicWeekItem>();
+
+        // Map items from database timeline to weeks
         items.forEach((it: any) => {
           const tm = (it.tahapMinggu || "").trim();
-          // Match "Minggu X" or "Pekan X" or "Minggu X dan Y"
+          
+          // Pola: "Minggu 6 dan 7", "Minggu 10 dan 11"
+          const matchDan = tm.match(/Minggu\s*(\d+)\s*dan\s*(\d+)/i);
+          // Pola: "Minggu 3 - 4", "Minggu 5 - 8"
+          const matchRange = tm.match(/Minggu\s*(\d+)\s*[-–]\s*(\d+)/i);
+          // Pola: "Minggu 1", "Pekan 2"
           const matchSingle = tm.match(/Minggu\s*(\d+)/i) || tm.match(/Pekan\s*(\d+)/i);
-          const matchMulti = tm.match(/Minggu\s*(\d+)\s*dan\s*(\d+)/i);
 
-          if (matchMulti) {
-            const w1 = parseInt(matchMulti[1], 10);
-            const w2 = parseInt(matchMulti[2], 10);
-            weeks.push({
-              pekanKe: w1,
-              label: `Pekan ${w1} (${it.tanggal || it.fase})`,
-              tahapMinggu: it.tahapMinggu,
-              tanggalRange: it.tanggal || "",
-              fase: it.fase,
-              kegiatanUtama: it.kegiatanUtama,
-              startDate: it.startDate,
-              endDate: it.endDate,
+          if (matchDan) {
+            const w1 = parseInt(matchDan[1], 10);
+            const w2 = parseInt(matchDan[2], 10);
+            [w1, w2].forEach((w) => {
+              const std = standardCalendar[w];
+              weeksMap.set(w, {
+                pekanKe: w,
+                label: `Pekan ${w} - ${std?.tanggalRange || it.tanggal}`,
+                tahapMinggu: `Minggu ${w}`,
+                tanggalRange: std?.tanggalRange || it.tanggal,
+                fase: it.fase,
+                kegiatanUtama: it.kegiatanUtama || std?.kegiatanUtama,
+                startDate: std?.startDate || it.startDate,
+                endDate: std?.endDate || it.endDate,
+              });
             });
-            weeks.push({
-              pekanKe: w2,
-              label: `Pekan ${w2} (${it.tanggal || it.fase})`,
-              tahapMinggu: it.tahapMinggu,
-              tanggalRange: it.tanggal || "",
-              fase: it.fase,
-              kegiatanUtama: it.kegiatanUtama,
-              startDate: it.startDate,
-              endDate: it.endDate,
-            });
+          } else if (matchRange) {
+            const startW = parseInt(matchRange[1], 10);
+            const endW = parseInt(matchRange[2], 10);
+            for (let w = startW; w <= endW; w++) {
+              const std = standardCalendar[w];
+              weeksMap.set(w, {
+                pekanKe: w,
+                label: `Pekan ${w} - ${std?.tanggalRange || it.tanggal}`,
+                tahapMinggu: `Minggu ${w}`,
+                tanggalRange: std?.tanggalRange || it.tanggal,
+                fase: it.fase,
+                kegiatanUtama: it.kegiatanUtama || std?.kegiatanUtama,
+                startDate: std?.startDate || it.startDate,
+                endDate: std?.endDate || it.endDate,
+              });
+            }
           } else if (matchSingle) {
             const w = parseInt(matchSingle[1], 10);
-            weeks.push({
+            const std = standardCalendar[w];
+            weeksMap.set(w, {
               pekanKe: w,
-              label: `Pekan ${w} (${it.tanggal || it.fase})`,
-              tahapMinggu: it.tahapMinggu,
-              tanggalRange: it.tanggal || "",
+              label: `Pekan ${w} - ${std?.tanggalRange || it.tanggal}`,
+              tahapMinggu: `Minggu ${w}`,
+              tanggalRange: std?.tanggalRange || it.tanggal,
               fase: it.fase,
-              kegiatanUtama: it.kegiatanUtama,
-              startDate: it.startDate,
-              endDate: it.endDate,
+              kegiatanUtama: it.kegiatanUtama || std?.kegiatanUtama,
+              startDate: it.startDate || std?.startDate,
+              endDate: it.endDate || std?.endDate,
             });
           }
         });
 
-        if (weeks.length > 0) {
-          // Sort by pekanKe and deduplicate
-          const uniqueMap = new Map<number, DynamicWeekItem>();
-          weeks.forEach((w) => {
-            if (!uniqueMap.has(w.pekanKe)) {
-              uniqueMap.set(w.pekanKe, w);
-            }
-          });
-          return Array.from(uniqueMap.values()).sort((a, b) => a.pekanKe - b.pekanKe);
+        // Pastikan seluruh 1-12 pekan terisi lengkap
+        for (let w = 1; w <= 12; w++) {
+          if (!weeksMap.has(w)) {
+            const std = standardCalendar[w];
+            weeksMap.set(w, {
+              pekanKe: w,
+              label: `Pekan ${w} - ${std.tanggalRange}`,
+              tahapMinggu: `Minggu ${w}`,
+              tanggalRange: std.tanggalRange,
+              fase: "Pelaksanaan KKN",
+              kegiatanUtama: std.kegiatanUtama,
+              startDate: std.startDate,
+              endDate: std.endDate,
+            });
+          }
         }
+
+        return Array.from(weeksMap.values()).sort((a, b) => a.pekanKe - b.pekanKe);
       }
     } catch (err) {
-      console.warn("Gagal mengambil timeline backend, menggunakan fallback 12 pekan default:", err);
+      console.warn("Gagal mengambil timeline backend, menggunakan fallback acuan 12 pekan:", err);
     }
 
-    // Fallback standard 1-12 pekan jika backend offline/kosong
-    const fallbackWeeks: DynamicWeekItem[] = [
-      { pekanKe: 1, label: "Pekan 1 (12 - 18 Agustus 2026)", tahapMinggu: "Minggu 1", tanggalRange: "12 - 18 Agustus 2026", kegiatanUtama: "Kick Off & Penerjunan" },
-      { pekanKe: 2, label: "Pekan 2 (19 - 25 Agustus 2026)", tahapMinggu: "Minggu 2", tanggalRange: "19 - 25 Agustus 2026", kegiatanUtama: "Observasi & Pembuatan Proposal" },
-      { pekanKe: 3, label: "Pekan 3 (26 Agustus - 1 September 2026)", tahapMinggu: "Minggu 3", tanggalRange: "26 Agustus - 1 September 2026", kegiatanUtama: "Finalisasi Matrik & Pilot Project" },
-      { pekanKe: 4, label: "Pekan 4 (2 - 8 September 2026)", tahapMinggu: "Minggu 4", tanggalRange: "2 - 8 September 2026", kegiatanUtama: "Distribusi Sarana & Aktivasi QR" },
-      { pekanKe: 5, label: "Pekan 5 (9 - 15 September 2026)", tahapMinggu: "Minggu 5", tanggalRange: "9 - 15 September 2026", kegiatanUtama: "Uji Coba Aplikasi & Edukasi Warga" },
-      { pekanKe: 6, label: "Pekan 6 (16 - 22 September 2026)", tahapMinggu: "Minggu 6", tanggalRange: "16 - 22 September 2026", kegiatanUtama: "Perluasan Program ke Seluruh RW" },
-      { pekanKe: 7, label: "Pekan 7 (23 - 29 September 2026)", tahapMinggu: "Minggu 7", tanggalRange: "23 - 29 September 2026", kegiatanUtama: "Aktivasi Leaderboard & Bank Sampah" },
-      { pekanKe: 8, label: "Pekan 8 (30 September - 6 Oktober 2026)", tahapMinggu: "Minggu 8", tanggalRange: "30 September - 6 Oktober 2026", kegiatanUtama: "Pendampingan Pengangkutan IoT & Kompos" },
-      { pekanKe: 9, label: "Pekan 9 (7 - 13 Oktober 2026)", tahapMinggu: "Minggu 9", tanggalRange: "7 - 13 Oktober 2026", kegiatanUtama: "Operasional Bank Sampah & POC" },
-      { pekanKe: 10, label: "Pekan 10 (14 - 20 Oktober 2026)", tahapMinggu: "Minggu 10", tanggalRange: "14 - 20 Oktober 2026", kegiatanUtama: "Mitigasi & Edukasi Lanjutan" },
-      { pekanKe: 11, label: "Pekan 11 (21 - 27 Oktober 2026)", tahapMinggu: "Minggu 11", tanggalRange: "21 - 27 Oktober 2026", kegiatanUtama: "Optimalisasi Rute & SOP Kelembagaan" },
-      { pekanKe: 12, label: "Pekan 12 (28 - 31 Oktober 2026)", tahapMinggu: "Minggu 12", tanggalRange: "28 - 31 Oktober 2026", kegiatanUtama: "Evaluasi, Laporan Akhir & Penutupan" },
-    ];
-    return fallbackWeeks;
+    // Fallback standard 1-12 pekan lengkap
+    return Object.entries(standardCalendar).map(([key, val]) => {
+      const w = parseInt(key, 10);
+      return {
+        pekanKe: w,
+        label: `Pekan ${w} - ${val.tanggalRange}`,
+        tahapMinggu: `Minggu ${w}`,
+        tanggalRange: val.tanggalRange,
+        fase: "Pelaksanaan KKN",
+        kegiatanUtama: val.kegiatanUtama,
+        startDate: val.startDate,
+        endDate: val.endDate,
+      };
+    });
   },
 
   /**

@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { BinStatus } from "@prisma/client";
+import { getCategoryCodeTag, formatCurrentDateDDMMYY } from "../utils/qrGenerator.js";
 
 
 export class SuperUserService {
@@ -289,40 +290,49 @@ export class SuperUserService {
         },
       });
 
-      let prefix = "ORG"; // fallback to ORG
+      let catName = categoryId;
       if (categoryId) {
         const category = await tx.wasteCategory.findUnique({ where: { id: categoryId } });
         if (category) {
-          const nameUpper = category.name.toUpperCase();
-          prefix = nameUpper === "ORGANIC" || nameUpper === "ORGANIK" ? "ORG" : "ANORG";
+          catName = category.name;
         }
       }
-      const year = new Date().getFullYear().toString();
 
-      // Find the latest QR code for this prefix and year
-      const latestBin = await tx.bin.findFirst({
+      const codeTag = getCategoryCodeTag(catName);
+      const dateStr = formatCurrentDateDDMMYY();
+
+      // Cari semua bin dengan prefix BSK-{codeTag}- untuk mencari sequence tertinggi
+      const allMatchingBins = await tx.bin.findMany({
         where: {
           qrCode: {
-            startsWith: prefix,
-            endsWith: year,
+            startsWith: `BSK-${codeTag}-`,
           },
         },
-        orderBy: { qrCode: "desc" },
+        select: { qrCode: true },
       });
 
-      let startNum = 1;
-      if (latestBin) {
-        const match = latestBin.qrCode.match(new RegExp(`^${prefix}(\\d+)${year}$`));
-        if (match) {
-          startNum = parseInt(match[1], 10) + 1;
+      let maxSeq = 999;
+      for (const b of allMatchingBins) {
+        const parts = b.qrCode.split("-");
+        const lastPart = parts[parts.length - 1];
+        if (lastPart) {
+          const cleaned = lastPart.replace(/\D/g, "");
+          const parsed = parseInt(cleaned, 10);
+          if (!isNaN(parsed) && parsed > maxSeq) {
+            maxSeq = parsed;
+          }
         }
       }
 
-      // Create Bins corresponding to the QR codes
+      let currentSeq = maxSeq + 1;
       const binsData = [];
       for (let i = 0; i < totalQr; i++) {
-        const sequence = (startNum + i).toString().padStart(4, "0");
-        const qrCode = `${prefix}${sequence}${year}`;
+        let qrCode = `BSK-${codeTag}-${dateStr}-${currentSeq}`;
+        while (await tx.bin.findUnique({ where: { qrCode } })) {
+          currentSeq++;
+          qrCode = `BSK-${codeTag}-${dateStr}-${currentSeq}`;
+        }
+
         binsData.push({
           qrCode,
           categoryId: (categoryId || null) as any,
@@ -330,6 +340,7 @@ export class SuperUserService {
           status: "PRINTED" as any,
           qrBatchId: batch.id,
         });
+        currentSeq++;
       }
 
       await tx.bin.createMany({

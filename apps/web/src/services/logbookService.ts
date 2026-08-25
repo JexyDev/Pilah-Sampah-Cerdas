@@ -33,7 +33,7 @@ export interface LogbookMahasiswaItem {
   programKerjaKategori?: string | null;
   fasilitasId?: string | null;
   fasilitasNama?: string | null;
-  anggotaKelompok?: Array<{ id: string; name: string; isKetua: boolean }>;
+  anggotaKelompok?: Array<{ id: string; userId?: string; nim?: string; name: string; isKetua: boolean }>;
   disetujuiKetuaOleh?: string | null;
   disetujuiKetuaPada?: string | null;
   catatanKetua?: string | null;
@@ -60,6 +60,18 @@ export interface LogbookDplItem {
 }
 
 export interface LogbookComplianceStats {
+  isAggregate?: boolean;
+  kelompok?: {
+    id: string;
+    name: string;
+    kelurahan: string;
+    dplNama: string;
+    dplNip?: string;
+    dplPhone?: string;
+    ketuaNama: string;
+    ketuaNim?: string;
+    studentCount: number;
+  } | null;
   targetCount: number;
   totalSubmitted: number;
   approvedCount: number;
@@ -68,8 +80,66 @@ export interface LogbookComplianceStats {
   revisiCount: number;
   complianceRate: number;
   calculatedScore: number;
-  pekanBreakdown: Record<number, { total: number; approved: number }>;
   isTargetMet: boolean;
+  shortageCount: number;
+  pekanBreakdown: Record<
+    number,
+    {
+      total: number;
+      approved: number;
+      pending?: number;
+      target?: number;
+      completionRate?: number;
+      isMet?: boolean;
+    }
+  >;
+  studentsList?: Array<{
+    id: string;
+    userId: string;
+    name: string;
+    nim: string;
+    jurusan: string;
+    fakultas: string;
+    isKetua: boolean;
+    submittedCount: number;
+    approvedCount: number;
+    contributionPct: number;
+  }>;
+  recentApprovedActivities?: Array<{
+    id: string;
+    tanggalKegiatan: string;
+    penulisNama: string;
+    penulisNim: string;
+    tempat: string;
+    deskripsi: string;
+    pekanKe: number;
+    kategori: string;
+    diverifikasiDplPada: string | null;
+    catatanDpl: string | null;
+  }>;
+  groupsSummary?: Array<{
+    id: string;
+    name: string;
+    kelurahan: string;
+    dplNama: string;
+    studentCount: number;
+    totalSubmitted: number;
+    approvedCount: number;
+    targetCount: number;
+    complianceRate: number;
+    isTargetMet: boolean;
+  }>;
+  gradingIntegration: {
+    targetAktivitas: number;
+    aktivitasTerverifikasi: number;
+    skorDasarLogbook: number;
+    bobotDplPersen: number;
+    kontribusiPoinDpl: number;
+    kontribusiNilaiAkhirKkn: number;
+    statusSyaratNilai: "MEMENUHI_SYARAT" | "BELUM_MEMENUHI";
+    statusLabel: string;
+    rekomendasi?: string;
+  };
 }
 
 export type ComplianceStats = LogbookComplianceStats;

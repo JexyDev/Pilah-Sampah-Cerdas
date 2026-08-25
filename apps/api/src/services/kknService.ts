@@ -1182,7 +1182,12 @@ export class KknService {
         const maxCapacityLiter = data.maxCapacityLiter ? Number(data.maxCapacityLiter) : 50;
 
         const qrLower = qr.toLowerCase();
-        const isAnorg = qrLower.includes("anorganik") || qrLower.includes("non_organic") || qrLower.includes("anorg");
+        const isAnorg =
+          qrLower.includes("anorganik") ||
+          qrLower.includes("non_organic") ||
+          qrLower.includes("anorg") ||
+          qrLower.includes("agn") ||
+          qrLower.includes("ang");
         const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
 
         if (!bin) {
@@ -1418,6 +1423,65 @@ export class KknService {
       isUserLeader: Boolean(student.isKetua),
       kelompokId: student.kelompokId,
     };
+  }
+
+  async getAllPoskoKkn(filters?: { kelurahan?: string; search?: string }) {
+    const where: any = {
+      jenis: "posko_kkn",
+    };
+
+    if (filters?.kelurahan && filters.kelurahan !== "ALL") {
+      where.OR = [
+        { rw: { kelurahan: { name: { contains: filters.kelurahan, mode: "insensitive" } } } },
+        { kelompok: { kelurahan: { contains: filters.kelurahan, mode: "insensitive" } } },
+      ];
+    }
+
+    const poskos = await prisma.facility.findMany({
+      where,
+      include: {
+        rw: { include: { kelurahan: true } },
+        kelompok: {
+          include: {
+            dpl: { select: { id: true, name: true, phone: true } },
+            students: {
+              include: { user: { select: { id: true, name: true, phone: true } } },
+            },
+          },
+        },
+        registeredBy: {
+          select: { id: true, name: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return poskos.map((p) => {
+      const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
+      const ketuaName = ketua?.user?.name || p.pic || "Ketua Kelompok KKN";
+      const kontak = ketua?.user?.phone || ketua?.noWa || p.kontak || "-";
+      const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
+      const kelurahan = p.rw?.kelurahan?.name || p.kelompok?.kelurahan || "Coblong";
+
+      return {
+        id: p.id,
+        nama: p.nama,
+        alamat: p.alamat || "-",
+        kelompokId: p.kelompokId,
+        kelompokName: p.kelompok?.name || "Kelompok KKN",
+        kelurahan,
+        rwName: p.rw?.name || "-",
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        foto: p.foto || null,
+        pic: ketuaName,
+        kontak,
+        dplName,
+        totalAnggota: p.kelompok?.students.length || 0,
+        statusApproval: p.statusApproval || "APPROVED",
+        createdAt: p.createdAt,
+      };
+    });
   }
 
   async getMyGroup(userId: string) {
@@ -1991,12 +2055,15 @@ export class KknService {
     });
     const completedScheduleIds = new Set(completedAttendances.map((a) => a.scheduleId));
 
-    // ÃƒÂ°Ã…Â¸Ã…Â½Ã‚Â¯ Filter jadwal aktif khusus untuk kelompok KKN mahasiswa ybs (isActive: true)
+    // 🎯 Filter jadwal aktif (spesifik kelompok KKN atau jadwal bersama/global tanpa kelompokId)
     let activeSchedules: any[] = [];
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
-          kelompokId: student.kelompokId,
+          OR: [
+            { kelompokId: student.kelompokId },
+            { kelompokId: null },
+          ],
           date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
         },

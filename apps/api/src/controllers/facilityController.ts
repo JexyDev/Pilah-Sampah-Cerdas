@@ -64,15 +64,24 @@ export class FacilityController {
         targetRwId = Number((req as any).user.rwId);
       }
 
+      // Sanitasi input numerik agar tidak overflow pada database
+      const safeKapasitas =
+        kapasitas !== undefined && kapasitas !== null && kapasitas !== "" && !isNaN(Number(kapasitas))
+          ? Math.min(Math.max(Number(kapasitas), 0), 99999999)
+          : undefined;
+
+      const safeLat = latitude !== undefined && !isNaN(Number(latitude)) ? Number(latitude) : 0.0;
+      const safeLng = longitude !== undefined && !isNaN(Number(longitude)) ? Number(longitude) : 0.0;
+
       const facility = await facilityService.createFacility(
         jenis,
         nama,
         pic,
         foto,
         kontak,
-        kapasitas,
-        latitude,
-        longitude,
+        safeKapasitas,
+        safeLat,
+        safeLng,
         userId,
         kelompokId,
         alamat,
