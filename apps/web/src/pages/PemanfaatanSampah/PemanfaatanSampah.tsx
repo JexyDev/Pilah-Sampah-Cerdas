@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   MapContainer,
   Marker,
   Popup,
-  Polygon
+  Polygon,
+  useMap
 } from "react-leaflet";
 import {
   Loader2,
@@ -18,7 +19,16 @@ import {
   Phone,
   Layers,
   Sparkles,
-  X
+  X,
+  ExternalLink,
+  Copy,
+  Check,
+  Calendar,
+  Clock,
+  User,
+  ZoomIn,
+  Eye,
+  Building2
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -26,8 +36,9 @@ import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { createFacilityIcon, KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
-interface FacilityItem {
+export interface FacilityItem {
   id: string;
   nama: string;
   jenis: string;
@@ -49,6 +60,37 @@ interface FacilityItem {
     phone?: string;
   };
 }
+
+// Helper cek apakah string adalah UUID
+export const isUUID = (str?: string): boolean => {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+};
+
+// Helper smart resolver PIC (mengubah UUID menjadi nama orang jika ada)
+export const getDisplayPic = (item: FacilityItem): { name: string; isFromRegistrant: boolean; contact?: string } => {
+  const rawPic = (item.pic || "").trim();
+  const regName = item.registeredBy?.name?.trim();
+  const regPhone = item.registeredBy?.phone?.trim();
+  const directPhone = item.kontak && item.kontak !== "-" ? item.kontak.trim() : undefined;
+
+  if (isUUID(rawPic)) {
+    if (regName) {
+      return { name: regName, isFromRegistrant: true, contact: directPhone || regPhone };
+    }
+    return { name: "Penanggung Jawab Fasilitas", isFromRegistrant: false, contact: directPhone };
+  }
+
+  if (rawPic && rawPic !== "-") {
+    return { name: rawPic, isFromRegistrant: false, contact: directPhone || regPhone };
+  }
+
+  if (regName) {
+    return { name: regName, isFromRegistrant: true, contact: directPhone || regPhone };
+  }
+
+  return { name: "Penanggung Jawab Fasilitas", isFromRegistrant: false, contact: directPhone };
+};
 
 // Helper format label jenis fasilitas
 export const formatFacilityTypeLabel = (jenis: string): string => {
@@ -99,6 +141,43 @@ export const getFacilityBadgeClass = (jenis: string): string => {
   }
 };
 
+// Helper Icon Jenis Fasilitas
+export const getFacilityTypeIcon = (jenis: string) => {
+  const j = (jenis || "").toLowerCase();
+  switch (j) {
+    case "posko_kkn":
+    case "posko":
+      return GraduationCap;
+    case "buruan_sae":
+      return Leaf;
+    case "bank_sampah":
+      return Coins;
+    case "rumah_maggot":
+    case "loseda":
+    case "bata_terawang":
+    case "poc":
+      return Recycle;
+    case "tps":
+      return Trash2;
+    default:
+      return Sprout;
+  }
+};
+
+// Map FlyTo Helper Component
+const MapFlyToController: React.FC<{ center: [number, number] | null; zoom?: number }> = ({
+  center,
+  zoom = 16,
+}) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center && !isNaN(center[0]) && !isNaN(center[1])) {
+      map.flyTo(center, zoom, { duration: 1.2 });
+    }
+  }, [center, zoom, map]);
+  return null;
+};
+
 export const PemanfaatanSampah: React.FC = () => {
   const [items, setItems] = useState<FacilityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +189,17 @@ export const PemanfaatanSampah: React.FC = () => {
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Map Animation State
+  const [mapTargetCenter, setMapTargetCenter] = useState<[number, number] | null>(null);
+  const [mapTargetZoom, setMapTargetZoom] = useState<number>(14);
+  const mapSectionRef = useRef<HTMLDivElement>(null);
+
+  // Image Preview Lightbox Modal State
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+
+  // Copy coordinate feedback state
+  const [copiedCoordId, setCopiedCoordId] = useState<string | null>(null);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -183,12 +273,15 @@ export const PemanfaatanSampah: React.FC = () => {
     return items.filter((item) => {
       const q = searchQuery.toLowerCase().trim();
       const rwName = item?.rw?.name || "";
+      const picInfo = getDisplayPic(item);
       const matchSearch =
         !q ||
         (item.nama || "").toLowerCase().includes(q) ||
+        picInfo.name.toLowerCase().includes(q) ||
         (item.pic || "").toLowerCase().includes(q) ||
         (item.jenis || "").toLowerCase().includes(q) ||
         (item.kontak || "").toLowerCase().includes(q) ||
+        (item.alamat || "").toLowerCase().includes(q) ||
         rwName.toLowerCase().includes(q);
 
       let matchJenis = true;
@@ -215,6 +308,30 @@ export const PemanfaatanSampah: React.FC = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
   }, [filteredItems, currentPage, itemsPerPage]);
+
+  // Fly to Map Location Handler
+  const handleViewOnMap = (lat: number | string, lng: number | string) => {
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (isNaN(latNum) || isNaN(lngNum) || latNum === 0) {
+      showToast.error("Koordinat GPS fasilitas tidak valid");
+      return;
+    }
+    setMapTargetCenter([latNum, lngNum]);
+    setMapTargetZoom(17);
+    if (mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  // Copy Coordinate to Clipboard Handler
+  const handleCopyCoordinate = (id: string, lat: number | string, lng: number | string) => {
+    const text = `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
+    navigator.clipboard.writeText(text);
+    setCopiedCoordId(id);
+    showToast.success(`Koordinat disalin: ${text}`);
+    setTimeout(() => setCopiedCoordId(null), 2000);
+  };
 
   return (
     <div className="pb-24 lg:pb-8">
@@ -380,7 +497,7 @@ export const PemanfaatanSampah: React.FC = () => {
         {/* ========================================================================= */}
         {/* 2. PETA GIS INTERAKTIF (DENGAN LEGENDA LENGKAP TERMASUK BURUAN SAE)       */}
         {/* ========================================================================= */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 relative overflow-hidden">
+        <div ref={mapSectionRef} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-3 relative overflow-hidden">
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-2 py-1 mb-2 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
@@ -493,6 +610,7 @@ export const PemanfaatanSampah: React.FC = () => {
               className="z-0"
             >
               <ThemeTileLayer />
+              <MapFlyToController center={mapTargetCenter} zoom={mapTargetZoom} />
               
               {/* Render Kelurahan Boundaries */}
               {Object.values(KELURAHAN_GEODATA).map((kg) => (
@@ -512,8 +630,11 @@ export const PemanfaatanSampah: React.FC = () => {
                 if (!fac.latitude || !fac.longitude) return null;
                 const latNum = Number(fac.latitude);
                 const lngNum = Number(fac.longitude);
-                if (isNaN(latNum) || isNaN(lngNum)) return null;
+                if (isNaN(latNum) || isNaN(lngNum) || latNum === 0) return null;
                 const icon = createFacilityIcon(fac.jenis, fac.nama);
+                const picInfo = getDisplayPic(fac);
+                const resolvedFoto = resolveImageUrl(fac.foto);
+
                 return (
                   <Marker key={fac.id} position={[latNum, lngNum]} icon={icon}>
                     <Popup className="custom-popup">
@@ -524,13 +645,28 @@ export const PemanfaatanSampah: React.FC = () => {
                           </span>
                         </div>
                         <h3 className="font-bold text-slate-900 text-sm mb-1.5 leading-snug">{fac.nama}</h3>
-                        {fac.foto && (
-                          <img src={fac.foto} alt={fac.nama} className="w-full h-24 object-cover rounded-lg mb-2 shadow-xs" />
+                        {resolvedFoto && (
+                          <div 
+                            className="relative group cursor-pointer overflow-hidden rounded-lg mb-2"
+                            onClick={() => setPreviewImage({ url: resolvedFoto, title: fac.nama, subtitle: fac.alamat })}
+                          >
+                            <img 
+                              src={resolvedFoto} 
+                              alt={fac.nama} 
+                              className="w-full h-28 object-cover rounded-lg shadow-xs hover:scale-105 transition duration-300"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold gap-1 transition">
+                              <Eye size={13} /> Lihat Foto
+                            </div>
+                          </div>
                         )}
                         <div className="space-y-1 text-xs text-slate-700 border-t border-slate-100 pt-1.5">
-                          <p><strong className="text-slate-900">PIC:</strong> {fac.pic}</p>
-                          {fac.kontak && fac.kontak !== "-" && (
-                            <p><strong className="text-slate-900">Kontak:</strong> {fac.kontak}</p>
+                          <p><strong className="text-slate-900">PIC:</strong> {picInfo.name}</p>
+                          {picInfo.contact && picInfo.contact !== "-" && (
+                            <p><strong className="text-slate-900">Kontak:</strong> {picInfo.contact}</p>
                           )}
                           <p><strong className="text-slate-900">Wilayah:</strong> {fac.rw?.name || fac.alamat || "-"}</p>
                           <p className="text-[10.5px] text-slate-500 font-mono">
@@ -547,7 +683,7 @@ export const PemanfaatanSampah: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. TABEL DATA INVENTARIS FASILITAS & POSKO (TERPADU SATU HALAMAN)          */}
+        {/* 3. TABEL DATA INVENTARIS FASILITAS & POSKO (TERPADU & RAPI)                */}
         {/* ========================================================================= */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-0">
           
@@ -562,7 +698,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   Daftar Inventaris Fasilitas & Posko KKN
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Menampilkan {filteredItems.length} fasilitas terdata
+                  Menampilkan {filteredItems.length} fasilitas terdata di Kecamatan Coblong
                 </p>
               </div>
             </div>
@@ -572,7 +708,7 @@ export const PemanfaatanSampah: React.FC = () => {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
                   type="text"
-                  placeholder="Cari fasilitas, PIC, atau wilayah..."
+                  placeholder="Cari fasilitas, PIC, alamat, wilayah..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 placeholder-slate-400 transition-all"
@@ -614,87 +750,228 @@ export const PemanfaatanSampah: React.FC = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[920px]">
                 <thead>
-                  <tr className="bg-slate-50/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    <th className="p-4">Fasilitas / Posko</th>
-                    <th className="p-4">Jenis</th>
-                    <th className="p-4">Penanggung Jawab (PIC)</th>
-                    <th className="p-4">Wilayah & Koordinat</th>
-                    <th className="p-4">Waktu Terdaftar</th>
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700/80 text-[11px] font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                    <th className="py-3.5 px-4 w-12 text-center">No</th>
+                    <th className="py-3.5 px-4 min-w-[240px]">Foto &amp; Fasilitas</th>
+                    <th className="py-3.5 px-4 min-w-[150px]">Jenis Fasilitas</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Penanggung Jawab (PIC)</th>
+                    <th className="py-3.5 px-4 min-w-[220px]">Wilayah &amp; Koordinat</th>
+                    <th className="py-3.5 px-4 min-w-[140px]">Waktu Terdaftar</th>
+                    <th className="py-3.5 px-4 w-28 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
-                  {paginatedItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          {item.foto ? (
-                            <img
-                              src={item.foto}
-                              alt={item.nama}
-                              className="w-11 h-11 rounded-xl object-cover bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0"
-                            />
-                          ) : (
-                            <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                              <Sprout size={20} />
+                  {paginatedItems.map((item, index) => {
+                    const picInfo = getDisplayPic(item);
+                    const resolvedFoto = resolveImageUrl(item.foto);
+                    const TypeIcon = getFacilityTypeIcon(item.jenis);
+                    const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                    const latNum = Number(item.latitude);
+                    const lngNum = Number(item.longitude);
+                    const hasValidCoords = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0;
+
+                    return (
+                      <tr 
+                        key={item.id} 
+                        className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition duration-150 group"
+                      >
+                        {/* 1. Kolom Nomor */}
+                        <td className="py-4 px-4 text-center font-bold text-slate-400 dark:text-slate-500">
+                          {rowNumber}
+                        </td>
+
+                        {/* 2. Kolom Foto & Nama Fasilitas */}
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3.5">
+                            {/* Thumbnail Foto */}
+                            {resolvedFoto ? (
+                              <div 
+                                className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0 group/img cursor-pointer shadow-2xs"
+                                onClick={() => setPreviewImage({ 
+                                  url: resolvedFoto, 
+                                  title: item.nama, 
+                                  subtitle: item.alamat || item.rw?.name 
+                                })}
+                                title="Klik untuk memperbesar foto"
+                              >
+                                <img
+                                  src={resolvedFoto}
+                                  alt={item.nama}
+                                  className="w-full h-full object-cover group-hover/img:scale-110 transition duration-300"
+                                  onError={(e) => {
+                                    // Fallback ke icon jika URL gambar error 404
+                                    (e.target as HTMLElement).style.display = "none";
+                                    const fallbackDiv = (e.target as HTMLElement).nextElementSibling as HTMLElement;
+                                    if (fallbackDiv) fallbackDiv.style.display = "flex";
+                                  }}
+                                />
+                                <div className="hidden absolute inset-0 bg-emerald-50 dark:bg-emerald-950/60 items-center justify-center text-emerald-600 dark:text-emerald-400">
+                                  <Sprout size={20} />
+                                </div>
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white transition">
+                                  <ZoomIn size={16} />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 shadow-2xs">
+                                <TypeIcon size={22} />
+                              </div>
+                            )}
+
+                            {/* Info Nama & Kapasitas */}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm leading-snug">
+                                {item.nama}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                {item.kapasitas !== undefined && item.kapasitas !== null && item.kapasitas > 0 && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                    <Building2 size={10} /> Kapasitas: {item.kapasitas} Kg
+                                  </span>
+                                )}
+                                <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  Aktif
+                                </span>
+                              </div>
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="font-bold text-slate-900 dark:text-slate-100 truncate">
-                              {item.nama}
-                            </p>
+                          </div>
+                        </td>
+
+                        {/* 3. Kolom Jenis Fasilitas */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
+                            <TypeIcon size={13} className="shrink-0" />
+                            {formatFacilityTypeLabel(item.jenis)}
+                          </span>
+                        </td>
+
+                        {/* 4. Kolom Penanggung Jawab (PIC) */}
+                        <td className="py-4 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <User size={13} className="text-slate-400 shrink-0" />
+                              <p className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
+                                {picInfo.name}
+                              </p>
+                            </div>
+
+                            {picInfo.contact && picInfo.contact !== "-" && (
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                <Phone size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <a 
+                                  href={`https://wa.me/${picInfo.contact.replace(/\D/g, '')}`} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline font-mono text-[11.5px]"
+                                  title="Hubungi via WhatsApp"
+                                >
+                                  {picInfo.contact}
+                                </a>
+                              </div>
+                            )}
+
+                            {picInfo.isFromRegistrant && (
+                              <span className="inline-block text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                Pendata Mahasiswa
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 5. Kolom Wilayah & Koordinat */}
+                        <td className="py-4 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Coblong"}
+                              </span>
+                            </div>
+
                             {item.alamat && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                              <p className="text-xs text-slate-600 dark:text-slate-400 leading-snug line-clamp-2">
                                 {item.alamat}
                               </p>
                             )}
+
+                            {hasValidCoords && (
+                              <div className="flex items-center gap-1.5 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
+                                  className="inline-flex items-center gap-1 text-[10.5px] font-mono text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 cursor-pointer transition"
+                                  title="Salin Koordinat GPS"
+                                >
+                                  {copiedCoordId === item.id ? (
+                                    <Check size={11} className="text-emerald-600" />
+                                  ) : (
+                                    <Copy size={11} />
+                                  )}
+                                  <span>{latNum.toFixed(5)}, {lngNum.toFixed(5)}</span>
+                                </button>
+
+                                <a
+                                  href={`https://www.google.com/maps?q=${latNum},${lngNum}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-slate-400 hover:text-blue-600 p-0.5"
+                                  title="Buka di Google Maps"
+                                >
+                                  <ExternalLink size={12} />
+                                </a>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 whitespace-nowrap">
-                        <span className={`inline-block px-2.5 py-1 rounded-md text-[10.5px] font-bold border ${getFacilityBadgeClass(item.jenis)}`}>
-                          {formatFacilityTypeLabel(item.jenis)}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <p className="font-bold text-slate-800 dark:text-slate-200">
-                          {item.pic}
-                        </p>
-                        {item.kontak && item.kontak !== "-" && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                            <Phone size={11} className="shrink-0 text-slate-400" /> {item.kontak}
-                          </p>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                          <MapPin size={12} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          {item.rw?.name || item.alamat || "-"}
-                        </p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-                          {Number(item.latitude).toFixed(5)}, {Number(item.longitude).toFixed(5)}
-                        </p>
-                      </td>
-                      <td className="p-4 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(item.createdAt).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                        <span className="block text-[10.5px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          {new Date(item.createdAt).toLocaleTimeString('id-ID', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })} WIB
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        {/* 6. Kolom Waktu Terdaftar */}
+                        <td className="py-4 px-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar size={12} className="text-slate-400 shrink-0" />
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">
+                              {new Date(item.createdAt).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                            <Clock size={11} className="shrink-0" />
+                            <span>
+                              {new Date(item.createdAt).toLocaleTimeString('id-ID', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })} WIB
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* 7. Kolom Aksi */}
+                        <td className="py-4 px-4 text-center whitespace-nowrap">
+                          {hasValidCoords ? (
+                            <button
+                              type="button"
+                              onClick={() => handleViewOnMap(latNum, lngNum)}
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 text-[#009966] dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800/80 transition active:scale-95 cursor-pointer shadow-2xs"
+                              title="Tampilkan lokasi titik ini di peta GIS"
+                            >
+                              <MapPin size={13} />
+                              <span>Peta</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
 
                   {paginatedItems.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={7} className="p-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="max-w-xs mx-auto flex flex-col items-center">
                           <Sprout size={32} className="text-slate-300 dark:text-slate-600 mb-2" />
                           <p className="font-semibold text-sm">Tidak ada fasilitas yang ditemukan</p>
@@ -710,7 +987,7 @@ export const PemanfaatanSampah: React.FC = () => {
 
           {/* Paginasi */}
           {!loading && filteredItems.length > 0 && (
-            <div className="border-t border-slate-200 dark:border-slate-800 p-2 sm:p-3">
+            <div className="border-t border-slate-200 dark:border-slate-800 p-2 sm:p-3 bg-slate-50/40 dark:bg-slate-800/20">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -726,6 +1003,65 @@ export const PemanfaatanSampah: React.FC = () => {
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* 4. MODAL LIGHTBOX IMAGE PREVIEW (MEMPERBESAR FOTO FASILITAS)                */}
+      {/* ========================================================================= */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h4 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                  {previewImage.title}
+                </h4>
+                {previewImage.subtitle && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {previewImage.subtitle}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Gambar Besar */}
+            <div className="p-4 bg-slate-950 flex items-center justify-center max-h-[70vh] overflow-hidden">
+              <img
+                src={previewImage.url}
+                alt={previewImage.title}
+                className="max-h-[65vh] max-w-full object-contain rounded-lg shadow-md"
+              />
+            </div>
+
+            {/* Footer Modal */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+              <span>Foto dokumentasi fasilitas terverifikasi</span>
+              <a
+                href={previewImage.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+              >
+                <ExternalLink size={13} /> Buka Gambar Asli
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

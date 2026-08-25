@@ -43,13 +43,28 @@ export const facilityService = {
       throw new Error("INVALID_FACILITY_TYPE");
     }
 
+    let resolvedPic = pic;
+    let resolvedKontak = kontak;
+    if (pic && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(pic.trim())) {
+      const userObj = await prisma.user.findUnique({
+        where: { id: pic.trim() },
+        select: { name: true, phone: true },
+      });
+      if (userObj?.name) {
+        resolvedPic = userObj.name;
+        if (!resolvedKontak && userObj.phone) {
+          resolvedKontak = userObj.phone;
+        }
+      }
+    }
+
     return prisma.facility.create({
       data: {
         jenis: jenis as FacilityType,
         nama,
-        pic,
+        pic: resolvedPic,
         foto,
-        kontak,
+        kontak: resolvedKontak,
         alamat: alamat || null,
         rwId: rwId !== undefined && !isNaN(Number(rwId)) ? Number(rwId) : null,
         kapasitas: kapasitas !== undefined ? Number(kapasitas) : null,
@@ -188,7 +203,7 @@ export const facilityService = {
       }
     }
 
-    return prisma.facility.findMany({
+    const list = await prisma.facility.findMany({
       where: whereClause,
       include: {
         rw: true,
@@ -201,6 +216,24 @@ export const facilityService = {
         },
       },
       orderBy: { createdAt: "desc" },
+    });
+
+    return list.map((fac) => {
+      let resolvedPic = fac.pic;
+      let resolvedKontak = fac.kontak;
+      if (fac.pic && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fac.pic.trim())) {
+        if (fac.registeredBy?.name) {
+          resolvedPic = fac.registeredBy.name;
+        }
+        if ((!resolvedKontak || resolvedKontak === "-") && fac.registeredBy?.phone) {
+          resolvedKontak = fac.registeredBy.phone;
+        }
+      }
+      return {
+        ...fac,
+        pic: resolvedPic,
+        kontak: resolvedKontak,
+      };
     });
   },
 

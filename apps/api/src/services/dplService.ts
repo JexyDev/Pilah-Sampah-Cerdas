@@ -2888,6 +2888,19 @@ export const dplService = {
     const limit = params?.limit || 10;
     const totalPages = Math.max(1, Math.ceil(totalMatching / limit));
 
+    // Resolve Program Kerja deskripsi via database relation ID
+    const prokerIds = items.map((it) => it.programKerjaId).filter(Boolean) as string[];
+    const prokerMap = new Map<string, string>();
+    if (prokerIds.length > 0) {
+      const prokerList = await prisma.programKerjaKkn.findMany({
+        where: { id: { in: prokerIds } },
+        select: { id: true, deskripsi: true, nomor: true },
+      });
+      prokerList.forEach((p) => {
+        prokerMap.set(p.id, p.nomor ? `Proker #${p.nomor}: ${p.deskripsi}` : p.deskripsi);
+      });
+    }
+
     return {
       stats: {
         totalAktivitas,
@@ -2949,7 +2962,7 @@ export const dplService = {
           hasilTindakLanjut: item.arahanEvaluasi || "",
           arahanEvaluasi: item.arahanEvaluasi || "",
           programKerjaId: item.programKerjaId || null,
-          programKerjaDeskripsi: null,
+          programKerjaDeskripsi: item.programKerjaId ? prokerMap.get(item.programKerjaId) || null : null,
           durasiMenit: durasiM,
           durasi: durasiLabel,
           bukti: buktiLabel,

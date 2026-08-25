@@ -980,9 +980,19 @@ export class KknService {
       targetRwId = firstRw?.id || 1;
     }
 
-    const picName = wargaUser ? wargaUser.name : (data.userId || "Warga Binaan");
-    const kontakPhone = wargaUser ? wargaUser.phone || "-" : "-";
+    let picName = wargaUser ? wargaUser.name : (data.userId || "Warga Binaan");
+    let kontakPhone = wargaUser ? wargaUser.phone || "-" : "-";
     const alamatLokasi = data.alamat || (wargaUser ? wargaUser.address || "-" : "-");
+
+    if (picName && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(picName.trim())) {
+      const u = await prisma.user.findUnique({ where: { id: picName.trim() }, select: { name: true, phone: true } });
+      if (u?.name) {
+        picName = u.name;
+        if ((!kontakPhone || kontakPhone === "-") && u.phone) kontakPhone = u.phone;
+      } else if (student?.user?.name) {
+        picName = student.user.name;
+      }
+    }
 
     const facility = await prisma.facility.create({
       data: {
