@@ -44,7 +44,7 @@ export class AiController {
           error: "AI_TIMEOUT",
           message: "Waktu deteksi AI habis (Timeout > 2000ms). Silakan coba lagi.",
         });
-      } else if (error.message === "IMAGE_UNREADABLE") {
+      } else if (error.message === "IMAGE_UNREADABLE" || error.message === "NO_WASTE_DETECTED") {
         res.status(422).json({
           error: "IMAGE_UNREADABLE",
           message: "Gambar buram atau jenis sampah tidak teridentifikasi.",
@@ -134,7 +134,7 @@ export class AiController {
           error: "AI_TIMEOUT",
           message: "Waktu deteksi AI habis (Timeout > 2000ms). Silakan coba lagi.",
         });
-      } else if (error.message === "IMAGE_UNREADABLE") {
+      } else if (error.message === "IMAGE_UNREADABLE" || error.message === "NO_WASTE_DETECTED") {
         res.status(422).json({
           error: "IMAGE_UNREADABLE",
           message: "Gambar buram atau jenis sampah tidak teridentifikasi.",
