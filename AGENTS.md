@@ -22,6 +22,25 @@
 
 ---
 
+## 🛡️ KEBIJAKAN PENCEGAHAN BUG PRODUKSI & INTEGRASI MOBILE DEV
+
+### 1. Kebijakan Anti-Bug Server Produksi (Safeguarding Production)
+- **Wajib Uji Coba Localhost / LAN**: Seluruh pengembangan, penambahan fitur, dan perbaikan bug wajib disimulasikan terlebih dahulu pada lingkungan lokal/LAN (`192.168.1.43`) menggunakan `docker-compose` (Postgres & Redis lokal) dan dijalankan via `npm run dev:all`.
+- **Dilarang Test-in-Production**: Dilarang keras melakukan pushing ke branch `main` (yang memicu auto-deploy produksi) hanya untuk melakukan uji coba instan/trial-error kode baru.
+- **Validasi Migrasi Database**: Setiap kali memodifikasi Prisma Schema (`schema.prisma`), migrasi wajib dieksekusi di database lokal terlebih dahulu (`npx prisma migrate dev`). Pastikan tidak ada data yang hilang/corrupt sebelum di-push ke server produksi.
+
+### 2. SOP Kolaborasi Pembuatan API Baru dengan Tim Mobile Dev (Kantor LAN Office Setup)
+Jika tim Mobile membutuhkan endpoint API baru yang belum selesai diimplementasikan oleh Backend:
+- **Dilarang push kode setengah matang** ke branch produksi `main` hanya demi memfasilitasi testing tim mobile.
+- **Solusi Uji Coba Integrasi Jaringan Kantor (Paling Direkomendasikan)**: 
+  1. Developer backend menjalankan API secara lokal di komputer kantor (`npm run dev:api`).
+  2. Developer mobile menghubungkan aplikasi mobile-nya ke IP LAN kantor (`192.168.1.43`) menggunakan opsi:
+     `flutter run --dart-define=API_BASE_URL=http://192.168.1.43:3000`
+  3. Setiap pengujian & perbaikan bug API dilakukan secara real-time di jaringan LAN kantor tanpa mengganggu server produksi VPS.
+- **Kesepakatan Spec Dokumen**: Pembuatan endpoint baru wajib didokumentasikan strukturnya terlebih dahulu di `docs/API_MOBILE_DOCUMENTATION.md` untuk menyamakan skema JSON (request & response) sebelum kode ditulis.
+
+---
+
 ## Core Principles
 
 1. **Agent-First** — Delegate to specialized agents for domain tasks
