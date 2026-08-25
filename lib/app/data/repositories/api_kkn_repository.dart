@@ -745,7 +745,6 @@ class ApiKknRepository implements KknRepository {
 
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
-  // [Belum Terhubung API] - Akan mengembalikan error / mock data sampai backend siap
   // ──────────────────────────────────────────────────────────
 
   @override

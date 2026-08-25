@@ -141,23 +141,30 @@ class ApiWasteLogRepository implements WasteLogRepository {
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   WasteLogEntity _mapWasteLog(Map<String, dynamic> json, String userId) {
+    // Cek dari nested bin.category.name dulu (paling akurat)
+    final binJson = json['bin'] as Map<String, dynamic>?;
+    final categoryJson = binJson?['category'] as Map<String, dynamic>?;
+    final categoryName = categoryJson?['name']?.toString().toUpperCase() ?? '';
+
     final String rawKategori = (
-      json['jenis'] ?? 
+      categoryName.isNotEmpty ? categoryName :
+      (json['jenis'] ?? 
       json['wasteType'] ?? 
       json['kategori'] ?? 
       json['type'] ?? 
       json['hasilKlasifikasiAi'] ?? 
       json['hasil_klasifikasi_ai'] ?? 
-      ''
-    ).toString().trim().toUpperCase();
+      '').toString()
+    ).trim().toUpperCase();
     
     WasteType wasteType;
+    // Cek NON/ANORG dulu — 'ORGANIC' adalah substring dari 'ANORGANIK'
     if (rawKategori.contains('NON') || rawKategori.contains('ANORG')) {
       wasteType = WasteType.nonOrganic;
     } else if (rawKategori.contains('ORG')) {
       wasteType = WasteType.organic;
     } else {
-      wasteType = WasteType.nonOrganic; // Default fallback
+      wasteType = WasteType.organic; // default organic
     }
 
     // berat dari backend: coba weightKg dulu, fallback ke berat/volumeLiter
@@ -204,7 +211,10 @@ class ApiWasteLogRepository implements WasteLogRepository {
       createdAt: createdAt,
       kelurahan: binLocation,
       discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
-      aiConfidence: (json['confidence'] as num?)?.toDouble() ?? (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
+      aiConfidence: (json['confidence'] as num?)?.toDouble() ?? 
+                    (json['confidenceAi'] as num?)?.toDouble() ?? 
+                    (json['aiConfidence'] as num?)?.toDouble() ?? 
+                    (json['ai_confidence'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -225,9 +235,11 @@ class ApiWasteLogRepository implements WasteLogRepository {
     } else if (rawWasteType.contains('ORG')) {
       wasteType = WasteType.organic;
     } else {
-      // Fallback: deteksi dari description
+      // Fallback: deteksi dari description — cek NON/ANORG dulu sebelum ORG
+      // karena 'ORGANIC' adalah substring dari 'ANORGANIK'
       final descUpper = desc.toUpperCase();
-      if (descUpper.contains('NON_ORGANIC') || descUpper.contains('ANORGANIK') || descUpper.contains('Anorganik')) {
+      if (descUpper.contains('NON_ORGANIC') || descUpper.contains('NON ORGANIC') ||
+          descUpper.contains('ANORGANIK') || descUpper.contains('NON-ORGANIC')) {
         wasteType = WasteType.nonOrganic;
       } else if (descUpper.contains('ORGANIC') || descUpper.contains('ORGANIK')) {
         wasteType = WasteType.organic;

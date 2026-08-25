@@ -70,7 +70,11 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(title: const Text('Riwayat Pemilahan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: Colors.white))),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        title: const Text('Riwayat Pemilahan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18, color: AppColors.textPrimary)),
+      ),
       body: Column(
         children: [
           // Header Bar Filter
@@ -279,19 +283,6 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
   }
 
   Widget _buildContent(List<RiwayatItemData> items) {
-    // Hitung total kg (hanya dari wasteLog)
-    double organicKg = 0;
-    double nonOrganicKg = 0;
-    for (final l in items) {
-      if (l.wasteLog != null) {
-        if (l.wasteLog!.wasteType == WasteType.organic) {
-          organicKg += l.wasteLog!.weightKg;
-        } else {
-          nonOrganicKg += l.wasteLog!.weightKg;
-        }
-      }
-    }
-
     // Group by date label
     final Map<String, List<RiwayatItemData>> grouped = {};
     final now = DateTime.now();
@@ -315,32 +306,10 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
         final item = flatList[index];
 
         if (item == 'SUMMARY') {
-          return Column(
+          return const Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryCard(
-                      iconColor: AppColors.organicColor,
-                      bgColor: AppColors.organicColor.withValues(alpha: 0.1),
-                      label: 'Organik',
-                      value: '${organicKg.toStringAsFixed(1)} KG',
-                      valueColor: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _SummaryCard(
-                      iconColor: AppColors.warningYellow,
-                      bgColor: AppColors.warningYellow.withValues(alpha: 0.15),
-                      label: 'Anorganik',
-                      value: '${nonOrganicKg.toStringAsFixed(1)} KG',
-                      valueColor: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+              _SummaryCard(),
+              SizedBox(height: 16),
             ],
           );
         } else if (item is String) {
@@ -404,63 +373,86 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
 }
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.iconColor,
-    required this.bgColor,
-    required this.label,
-    required this.value,
-    required this.valueColor,
-  });
-
-  final Color iconColor;
-  final Color bgColor;
-  final String label;
-  final String value;
-  final Color valueColor;
+  const _SummaryCard();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(8),
+    return Consumer(
+      builder: (context, ref, _) {
+        final logsAsync = ref.watch(wasteLogsProvider);
+        return logsAsync.when(
+          data: (logs) {
+            double org = 0;
+            double anorg = 0;
+            for (var l in logs) {
+              if (l.wasteType == WasteType.organic) {
+                org += l.weightKg;
+              } else {
+                anorg += l.weightKg;
+              }
+            }
+            return Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildSummaryItem('Organik', org, AppColors.organicColor),
+                  ),
+                  Container(width: 1, height: 40, color: AppColors.border),
+                  Expanded(
+                    child: _buildSummaryItem('Anorganik', anorg, AppColors.nonOrganicColor),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: SkeletonLoading(height: 80, width: double.infinity, borderRadius: BorderRadius.all(Radius.circular(16))),
+          ),
+          error: (_, __) => const SizedBox.shrink(),
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryItem(String label, double weight, Color color) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              weight.toStringAsFixed(1),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
             ),
-            child: Image.asset('assets/icons/recycle-bin.png', color: iconColor, width: 18, height: 18),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: valueColor,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            const SizedBox(width: 4),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 3),
+              child: Text('kg', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ),
+          ],
+        )
+      ],
     );
   }
 }
@@ -471,32 +463,38 @@ class _RiwayatItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final String displayLocation = ...; (reserved for future location display feature)
-
     final bool isOrganic = log.wasteType == WasteType.organic;
     final Color color = isOrganic
         ? AppColors.organicColor
         : AppColors.nonOrganicColor;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Image.asset('assets/icons/recycle-bin.png', color: color, width: 22, height: 22),
+            child: Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -504,19 +502,20 @@ class _RiwayatItem extends ConsumerWidget {
                 Text(
                   isOrganic ? 'Sampah Organik' : 'Sampah Anorganik',
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     Text(
                       '${log.wasteType.displayName} • ',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                     ),
                     WeightText(
                       log.weightKg,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -524,16 +523,17 @@ class _RiwayatItem extends ConsumerWidget {
                 Row(
                   children: [
                     const Icon(
-                      Icons.calendar_month_rounded,
-                      size: 11,
+                      Icons.schedule_rounded,
+                      size: 13,
                       color: AppColors.textHint,
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 4),
                     Text(
-                      DateFormat('d MMM, HH:mm', 'id_ID').format(log.createdAt.toLocal()),
+                      DateFormat('HH:mm', 'id_ID').format(log.createdAt.toLocal()),
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: AppColors.textHint,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -554,28 +554,37 @@ class _NotificationHistoryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPengajuan = notif.type.toUpperCase().contains('PENGAJUAN') || notif.type.toUpperCase().contains('RESET');
-    final color = isPengajuan ? Colors.blue : AppColors.textSecondary;
+    final color = isPengajuan ? AppColors.primaryBlue : AppColors.textSecondary;
     final icon = isPengajuan ? Icons.mark_email_unread_rounded : Icons.info_rounded;
     DateTime dt = notif.createdAt.toLocal();
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,30 +593,31 @@ class _NotificationHistoryItem extends StatelessWidget {
                   notif.title,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   notif.desc,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(
-                      Icons.calendar_month_rounded,
-                      size: 11,
+                      Icons.schedule_rounded,
+                      size: 13,
                       color: AppColors.textHint,
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 4),
                     Text(
-                      DateFormat('d MMM, HH:mm', 'id_ID').format(dt),
+                      DateFormat('HH:mm', 'id_ID').format(dt),
                       style: const TextStyle(
-                        fontSize: 11,
+                        fontSize: 12,
                         color: AppColors.textHint,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],

@@ -163,17 +163,21 @@ class _BinCardLarge extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          bin.isResetPending 
-                              ? 'DIAJUKAN PENGOSONGAN' 
-                              : (bin.backendStatus.isNotEmpty 
-                                  ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() 
-                                  : (bin.isActive ? 'AKTIF' : 'NON-AKTIF')),
+                          !bin.isActive
+                              ? 'NON AKTIF (Dinonaktifkan di Web)'
+                              : bin.isResetPending 
+                                  ? 'DIAJUKAN PENGOSONGAN' 
+                                  : (bin.backendStatus.isNotEmpty 
+                                      ? bin.backendStatus.replaceAll('_', ' ').toUpperCase() 
+                                      : 'AKTIF'),
                           style: TextStyle(
-                            color: bin.isResetPending 
-                                ? AppColors.warningYellow 
-                                : ((bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || (bin.backendStatus.isEmpty && bin.isActive)) 
-                                    ? AppColors.primaryGreen 
-                                    : AppColors.dangerRed),
+                            color: !bin.isActive 
+                                ? AppColors.dangerRed
+                                : bin.isResetPending 
+                                    ? AppColors.warningYellow 
+                                    : ((bin.backendStatus.toUpperCase() == 'ACTIVE_BOUND' || bin.backendStatus.toUpperCase() == 'AKTIF' || bin.backendStatus.toUpperCase() == 'NORMAL' || bin.backendStatus.isEmpty) 
+                                        ? AppColors.primaryGreen 
+                                        : AppColors.dangerRed),
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
@@ -192,16 +196,14 @@ class _BinCardLarge extends StatelessWidget {
               value: bin.isActive ? bin.capacityPercent.clamp(0.0, 1.0) : 0.0,
               minHeight: 8,
               backgroundColor: bin.isActive ? AppColors.border : Colors.grey.shade300,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+              valueColor: AlwaysStoppedAnimation<Color>(bin.isActive ? color : Colors.grey),
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            !bin.isActive
-                ? 'Tempat Sampah Dinonaktifkan di Web'
-                : bin.isResetPending
-                    ? 'Pengajuan pengosongan sedang diproses'
-                    : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} KG / ${bin.maxCapacityL.toStringAsFixed(0)} KG',
+            bin.isResetPending
+                ? 'Pengajuan pengosongan sedang diproses'
+                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} L / ${bin.maxCapacityL.toStringAsFixed(0)} L',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],

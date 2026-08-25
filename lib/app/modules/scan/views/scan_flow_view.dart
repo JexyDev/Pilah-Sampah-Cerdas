@@ -185,10 +185,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
             featureSubtitle: 'Bagaimana kepuasan Anda saat pertama kali melakukan setoran & pemilahan sampah Berseka?',
             roleTag: 'Warga',
           ).then((_) {
-            if (mounted) {
-              // ignore: use_build_context_synchronously
-              Navigator.of(capturedContext).pop(); // Keluar dari halaman scan
-            }
+            // Biarkan user melihat Step 3 (Pencatatan Berhasil)
+            // Jangan otomatis di-pop agar popup berhasil tidak ter-skip
           });
         });
       }
@@ -1534,23 +1532,39 @@ class _AiSuccessSheet extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: isCorrect ? AppColors.primaryGreen.withValues(alpha: 0.3) : AppColors.dangerRed.withValues(alpha: 0.3)),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
                     children: [
-                      Icon(
-                        isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                        color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
-                        size: 16,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                            color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isCorrect ? 'Pemilahan Jelas' : 'Pemilahan Kurang Jelas',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isCorrect ? 'Pemilahan Benar' : 'Pemilahan Kurang Benar',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: isCorrect ? AppColors.primaryGreen : AppColors.dangerRed,
+                      if (!isCorrect) ...[
+                        const SizedBox(height: 4),
+                        const Text(
+                          'AI mendeteksi terlalu banyak campuran sampah. Skor dominan harus ≥ 80%.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.dangerRed,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -1765,22 +1779,42 @@ class _MismatchDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onScanUlang,
-              icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text('SCAN ULANG TEMPAT SAMPAH YANG BENAR'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.warningOrange,
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: onScanUlang,
+                icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'SCAN ULANG TEMPAT SAMPAH YANG BENAR',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warningOrange,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 8),
-            OutlinedButton(
-              onPressed: onBatal,
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: AppColors.border),
-                foregroundColor: AppColors.textSecondary,
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: onBatal,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.border),
+                  foregroundColor: AppColors.textSecondary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('BATAL', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
-              child: const Text('BATAL'),
             ),
           ],
         ),

@@ -88,12 +88,12 @@ class _LoginViewState extends ConsumerState<LoginView> {
     final password = _passwordController.text;
 
     if (identifier.isEmpty && password.isEmpty) {
-      _showToast('Nomor Telepon atau NIM, serta Kata Sandi wajib diisi');
+      _showToast('Nomor Telepon dan Kata Sandi wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
     if (identifier.isEmpty) {
-      _showToast('Nomor Telepon atau NIM wajib diisi');
+      _showToast('Nomor Telepon wajib diisi');
       _formKey.currentState!.validate();
       return;
     }
@@ -122,7 +122,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
       }
     } else if (mounted) {
       final authState = ref.read(authProvider);
-      String errorText = 'Nomor telepon/NIM atau kata sandi salah. Silakan coba lagi.';
+      String errorText = 'Nomor telepon atau kata sandi salah. Silakan coba lagi.';
       if (authState.errorCode == 'NETWORK_ERROR') {
         errorText = 'Tidak dapat terhubung ke server. Periksa koneksi.';
       } else if (authState.errorCode == 'UNAUTHORIZED_ROLE') {
@@ -294,7 +294,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 ),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
-                                    return 'Nomor telepon atau NIM wajib diisi';
+                                    return 'Nomor telepon wajib diisi';
                                   }
                                   final clean = v.trim().replaceAll(RegExp(r'[^\d]'), '');
                                   if (clean.length >= 8 && clean.length <= 16) {

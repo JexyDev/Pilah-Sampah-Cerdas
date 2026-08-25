@@ -46,6 +46,7 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
     });
 
     if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Kritik & Saran berhasil dikirim!'), backgroundColor: AppColors.primaryGreen),
@@ -90,9 +91,9 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                   hintText: 'Contoh: Masalah Bak Sampah',
                   filled: true,
                   fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
                 ),
                 validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
               ),
@@ -107,9 +108,9 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                   hintText: 'Tuliskan detail kritik atau saran Anda...',
                   filled: true,
                   fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
                 ),
                 validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
               ),
@@ -130,8 +131,8 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
                           ),
                           items: _kategoriAspirasiList.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                           onChanged: (v) => setState(() => _kategoriAspirasi = v!),
@@ -152,8 +153,8 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
                           ),
                           items: List.generate(5, (index) {
                             int rating = index + 1;
@@ -174,19 +175,37 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                 controller: _fotoUrlCtrl,
                 keyboardType: TextInputType.url,
                 decoration: InputDecoration(
-                  hintText: 'https://...',
+                  hintText: 'https://drive.google.com/file/...',
+                  hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 13),
                   filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
-                  prefixIcon: const Icon(Icons.link_rounded, color: Colors.grey),
+                  fillColor: const Color(0xFFF8F9FA),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5)),
+                  prefixIcon: const Icon(Icons.link_rounded, color: AppColors.textHint),
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                '* Catatan: Fitur unggah foto langsung dari HP belum tersedia. Jika Anda memiliki foto bukti, silakan unggah ke Google Drive/layanan cloud lainnya dan tempelkan tautannya (link) di atas.',
-                style: TextStyle(fontSize: 11, color: Colors.grey, height: 1.3),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded, size: 16, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Fitur unggah foto langsung belum tersedia. Jika Anda memiliki foto bukti, silakan unggah ke Google Drive lalu tempelkan tautannya (link) di atas.',
+                        style: TextStyle(fontSize: 11, color: Colors.blue.shade800, height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
             ],
@@ -200,9 +219,10 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
             onPressed: state.isLoading ? null : _onSubmit,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGreen,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 4,
+              shadowColor: AppColors.primaryGreen.withValues(alpha: 0.4),
             ),
             child: state.isLoading
                 ? const SizedBox(
@@ -210,7 +230,7 @@ class _WargaAspirasiViewState extends ConsumerState<WargaAspirasiView> {
                     width: 20,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                   )
-                : const Text('Kirim Kritik & Saran', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
+                : const Text('Kirim Kritik & Saran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
           ),
         ),
       ),

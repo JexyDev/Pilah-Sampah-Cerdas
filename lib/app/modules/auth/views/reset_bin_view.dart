@@ -10,7 +10,6 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../scan/controllers/scan_controller.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
-import '../../shared/widgets/weight_text.dart';
 import '../../../data/services/notification_engine.dart';
 
 /// Halaman pengajuan pengosongan tempat sampah.
@@ -377,18 +376,17 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                       : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
-                            WeightText(
-                              bin.currentVolumeL,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            Text(
+                              '${bin.currentVolumeL.toStringAsFixed(1)} L',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
                             ),
                             Text(
                               ' / ',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
-                            WeightText(
-                              bin.maxCapacityL,
-                              fractionDigits: 0,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
+                            Text(
+                              '${bin.maxCapacityL.toStringAsFixed(0)} L',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -720,6 +718,13 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             ),
           ],
         ),
+      );
+    }
+
+    if (state.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
       );
     }
 

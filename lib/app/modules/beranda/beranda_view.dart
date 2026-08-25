@@ -380,7 +380,6 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
           ),
           const SizedBox(height: 12),
 
-          // Bar — AI Confidence
           Builder(
             builder: (context) {
               final validLogs = logs.where((l) => l.aiConfidence > 0).toList();
@@ -389,10 +388,22 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   : 0.0;
               final displayPercentage = avgConfidence > 1.0 ? avgConfidence : avgConfidence * 100;
               
-              return _HorizontalBar(
-                label: 'Akurasi AI (Rata-rata)',
-                percentage: displayPercentage,
-                color: AppColors.primaryGreen,
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Akurasi AI (Rata-rata)',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  Text(
+                    validLogs.isEmpty ? 'N/A' : '${displayPercentage.toStringAsFixed(1)}%',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: validLogs.isEmpty ? AppColors.textHint : AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -615,15 +626,16 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
 
   Widget _buildStatsCard(BuildContext context, int totalPoints) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            spreadRadius: 1,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
         ],
       ),
@@ -801,203 +813,156 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
     }
 
     // Default: Warga
-    return Row(
+    return Column(
       children: [
-        // Scan Sampah
-        Expanded(
-          child: GestureDetector(
-            onTap: isOnline
-                ? () => ScanGuard.handleScanNavigation(context, ref)
-                : null,
-            child: AnimatedOpacity(
-              opacity: isOnline ? 1.0 : 0.5,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+        // Primary CTA: Scan Tempat Sampah
+        GestureDetector(
+          onTap: isOnline
+              ? () => ScanGuard.handleScanNavigation(context, ref)
+              : null,
+          child: AnimatedOpacity(
+            opacity: isOnline ? 1.0 : 0.5,
+            duration: const Duration(milliseconds: 200),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryGreen, Color(0xFF15803D)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.organicColor, Color(0xFF388E3C)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.qr_code_scanner_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  )
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Scan Tempat Sampah',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Scan Sampah',
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        // Minta Kosongkan
-        Expanded(
-          child: GestureDetector(
-            onTap: isOnline
-                ? () => Navigator.of(context).pushNamed(AppRoutes.resetBin)
-                : () {
-                    ScaffoldMessenger.of(context).clearSnackBars(); 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Koneksi internet diperlukan.'),
-                        backgroundColor: AppColors.dangerRed,
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-            child: AnimatedOpacity(
-              opacity: isOnline ? 1.0 : 0.5,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+        const SizedBox(height: 12),
+        // Secondary Actions
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: isOnline
+                    ? () {
+                        Navigator.of(context).pushNamed(AppRoutes.resetBin);
+                      }
+                    : null,
+                child: AnimatedOpacity(
+                  opacity: isOnline ? 1.0 : 0.5,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Image.asset(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
                           'assets/icons/waste.png',
                           color: AppColors.primaryGreen,
-                          width: 22,
-                          height: 22,
+                          width: 20,
+                          height: 20,
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Pengajuan',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Kosongkan',
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        // Kritik & Saran
-        Expanded(
-          child: GestureDetector(
-            onTap: isOnline
-                ? () => Navigator.of(context).pushNamed(AppRoutes.aspirasiWarga)
-                : null,
-            child: AnimatedOpacity(
-              opacity: isOnline ? 1.0 : 0.5,
-              duration: const Duration(milliseconds: 200),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200, width: 1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: isOnline
+                    ? () => Navigator.of(context).pushNamed(AppRoutes.aspirasiWarga)
+                    : null,
+                child: AnimatedOpacity(
+                  opacity: isOnline ? 1.0 : 0.5,
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Icon(
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
                           Icons.forum_rounded,
                           color: AppColors.primaryGreen,
-                          size: 22,
+                          size: 20,
                         ),
-                      ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Kritik/Saran',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Kritik/Saran',
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ],
     );

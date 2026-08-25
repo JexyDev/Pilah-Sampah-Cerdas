@@ -13,6 +13,7 @@ import '../providers/api_client.dart';
 import '../../core/utils/image_compressor.dart';
 import '../../core/utils/network_exception_helper.dart';
 import '../../core/values/api_constants.dart';
+import '../../core/values/app_config.dart';
 
 /// Implementasi BinRepository yang terhubung ke backend Express.js.
 ///
@@ -228,7 +229,7 @@ class ApiBinRepository implements BinRepository {
       });
 
       final response = await apiClient.dio.post(
-        ApiEndpoints.wasteDetect,
+        AppConfig.aiApiUrl,
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -250,6 +251,8 @@ class ApiBinRepository implements BinRepository {
           volumeEstimate: (data['volumeEstimate'] as num).toDouble(),
           weightKg: (data['weightKg'] as num?)?.toDouble(),
           confidence: (data['confidence'] as num?)?.toDouble(),
+          organicPercentage: (data['organicPercentage'] as num?)?.toDouble(),
+          estimatedPoints: (data['estimatedPoints'] as num?)?.toInt(),
           isBlurry: data['isBlurry'] as bool? ?? false,
           requestId: data['requestId']?.toString(),
           evidencePhotoUrl: data['evidencePhotoUrl']?.toString(),

@@ -118,14 +118,14 @@ class ApiAuthRepository implements AuthRepository {
       if (status == 401 || status == 404) {
         throw const AuthException(
           'INVALID_CREDENTIALS',
-          'Nomor telepon/NIM atau password salah',
+          'Nomor telepon atau password salah',
         );
       }
 
       if (status == 403) {
         throw const AuthException(
           'INVALID_CREDENTIALS',
-          'Nomor telepon/NIM atau password salah',
+          'Nomor telepon atau password salah',
         );
       }
       if (status == 429) {

@@ -641,9 +641,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       children: [
         const Row(
           children: [
-            const SizedBox(width: 4),
-            const SizedBox(width: 8),
-            const Text(
+            SizedBox(width: 4),
+            SizedBox(width: 8),
+            Text(
               'Detail Kegiatan',
               style: TextStyle(
                 fontSize: 16,

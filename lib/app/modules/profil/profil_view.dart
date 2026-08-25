@@ -111,10 +111,9 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
             Container(
               width: double.infinity,
               color: Colors.white,
-              padding: const EdgeInsets.only(bottom: 28),
+              padding: const EdgeInsets.only(bottom: 24, top: 12),
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
                   // Avatar dengan GestureDetector untuk upload foto
                   GestureDetector(
                     onTap: _pickImage,
@@ -122,22 +121,37 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       alignment: Alignment.bottomRight,
                       children: [
                         Container(
-                          width: 90,
-                          height: 90,
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.border, width: 3),
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                             color: AppColors.backgroundCanvas,
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: _buildAvatarImage(_profileImage?.path ?? user?.fotoProfil),
                         ),
                         Container(
-                          width: 32,
-                          height: 32,
-                          decoration: const BoxDecoration(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
                             color: AppColors.primaryGreen,
                             shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
                           ),
                           child: const Icon(
                             Icons.camera_alt_rounded,
@@ -148,13 +162,13 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Text(
                     user != null ? user.name : 'Warga',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
@@ -368,19 +382,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                             ).pushNamed(AppRoutes.ukurKapasitas),
                           ),
                           const Divider(height: 1, indent: 56),
-                          // Ajukan Pengosongan Tempat Sampah
-                          _MenuTile(
-                            icon: Icons.restore_rounded,
-                            iconColor: AppColors.warningOrange,
-                            iconBgColor: AppColors.warningOrange.withValues(
-                              alpha: 0.1,
-                            ),
-                            label: 'Ajukan Pengosongan Tempat Sampah',
-                            onTap: () => Navigator.of(
-                              context,
-                            ).pushNamed(AppRoutes.resetBin),
-                          ),
-                          const Divider(height: 1, indent: 56),
                         ],
                         // Tentang Aplikasi
                         _MenuTile(
@@ -502,16 +503,27 @@ class _InfoTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppColors.textSecondary),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundCanvas,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: AppColors.textSecondary),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: 1),
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -520,7 +532,7 @@ class _InfoTile extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
                 ),

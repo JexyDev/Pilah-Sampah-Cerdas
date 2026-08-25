@@ -1,0 +1,218 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]>
+<xml>
+  <x:ExcelWorkbook>
+    <x:ExcelWorksheets>
+      <x:ExcelWorksheet>
+        <x:Name>Checklist Warga</x:Name>
+        <x:WorksheetOptions>
+          <x:DisplayGridlines/>
+        </x:WorksheetOptions>
+      </x:ExcelWorksheet>
+    </x:ExcelWorksheets>
+  </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  table { border-collapse: collapse; }
+  th, td { border: 1px solid black; padding: 5px; }
+  th { background-color: #4CAF50; color: white; font-weight: bold; }
+  .status { text-align: center; }
+</style>
+</head>
+<body>
+  <table>
+    <tr>
+      <th>No</th>
+      <th>Module / Page</th>
+      <th>Fitur / Aksi UI</th>
+      <th>Endpoint API Utama</th>
+      <th>Status Pengecekan</th>
+      <th>Kesesuaian Rule (AGENTS.md)</th>
+      <th>Catatan / Issue</th>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Auth (Login/Reg)</td>
+      <td>Login via No Telepon & Password</td>
+      <td>POST /auth/login</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Auth (Login/Reg)</td>
+      <td>Register Akun Warga Baru</td>
+      <td>POST /auth/register/warga</td>
+      <td></td>
+      <td>Pantang menggunakan field NIK</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Beranda (Home)</td>
+      <td>Tampilkan Nama & Foto Profil</td>
+      <td>GET /auth/me</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Beranda (Home)</td>
+      <td>Lihat Total Poin & Nominal Rp</td>
+      <td>GET /points/me</td>
+      <td></td>
+      <td>Render dinamis tanpa dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Beranda (Home)</td>
+      <td>Lihat Berat Sampah (Organik & Anorganik)</td>
+      <td>GET /transactions/my-deposits</td>
+      <td></td>
+      <td>Render dinamis tanpa dummy</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Beranda (Home)</td>
+      <td>Button: Scan Sampah</td>
+      <td>Navigasi ke ScanFlowView</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Beranda (Home)</td>
+      <td>Button: Aspirasi Warga (Kritik & Saran)</td>
+      <td>Navigasi ke WargaAspirasiView</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>Beranda (Home)</td>
+      <td>Indikator Notifikasi Masuk (Badge)</td>
+      <td>GET /notifications/unread</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>Scan Sampah</td>
+      <td>Scan QR Code Tempat Sampah</td>
+      <td>GET /bins/scan</td>
+      <td></td>
+      <td>Pantang menggunakan kata 'Tong'</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>Scan Sampah</td>
+      <td>Konfirmasi & Submit Setor Sampah</td>
+      <td>POST /transactions/deposits</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>11</td>
+      <td>Aspirasi Warga</td>
+      <td>Kirim Kritik & Saran (Text + Foto)</td>
+      <td>POST /pemanfaatan/feedback</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>12</td>
+      <td>Aspirasi Warga</td>
+      <td>Lihat Riwayat / Tanggapan Aspirasi</td>
+      <td>GET /pemanfaatan/feedback</td>
+      <td></td>
+      <td>Render dinamis, ada label fallback jika API blm siap</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>13</td>
+      <td>Riwayat Tab</td>
+      <td>Lihat Riwayat Transaksi Penyetoran</td>
+      <td>GET /transactions/my-deposits</td>
+      <td></td>
+      <td>Semua status render dinamis</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>14</td>
+      <td>Notifikasi Tab</td>
+      <td>Lihat Daftar Notifikasi Sistem</td>
+      <td>GET /notifications</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>Notifikasi Tab</td>
+      <td>Tandai Notifikasi Dibaca (Read)</td>
+      <td>PUT /notifications/{id}/read</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>16</td>
+      <td>Profil Tab</td>
+      <td>Lihat Detail Profil & Alamat Warga</td>
+      <td>GET /auth/me</td>
+      <td></td>
+      <td>Identitas utama No HP, BUKAN NIK</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>17</td>
+      <td>Profil Tab</td>
+      <td>Edit Data Diri (Alamat, Kelurahan, dsb)</td>
+      <td>PUT /auth/me atau setara</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>18</td>
+      <td>Profil Tab</td>
+      <td>Ganti / Upload Foto Avatar</td>
+      <td>POST /auth/upload-avatar</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>Profil Tab</td>
+      <td>Ganti Password Akun</td>
+      <td>PUT /auth/change-password</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>20</td>
+      <td>Profil Tab</td>
+      <td>Logout</td>
+      <td>POST /auth/logout</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </table>
+</body>
+</html>

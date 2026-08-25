@@ -155,15 +155,15 @@ class PoinView extends ConsumerWidget {
     final colorSore = isSoreAvailable ? AppColors.primaryGreen : (isSoreOver ? AppColors.dangerRed : Colors.grey);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            spreadRadius: 1,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -421,11 +421,6 @@ class _StatsCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: underline
-              ? const Border(
-                  bottom: BorderSide(color: AppColors.primaryGreen, width: 2.5),
-                )
-              : null,
         ),
         child: Column(
           children: [
@@ -567,26 +562,35 @@ class _PoinHistoryItem extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: iconData == Icons.delete_rounded
-                ? Image.asset('assets/icons/recycle-bin.png', color: color, width: 20, height: 20)
-                : Icon(iconData, color: color, size: 20),
+                ? Image.asset('assets/icons/recycle-bin.png', color: color, width: 24, height: 24)
+                : Icon(iconData, color: color, size: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,19 +598,28 @@ class _PoinHistoryItem extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                Text(
-                  DateFormat(
-                    'd MMM yyyy • HH:mm',
-                    'id_ID',
-                  ).format(item.createdAt.toLocal()),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textHint,
-                  ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.schedule_rounded,
+                      size: 13,
+                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      DateFormat('d MMM yyyy • HH:mm', 'id_ID').format(item.createdAt.toLocal()),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textHint,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -620,15 +633,15 @@ class _PoinHistoryItem extends StatelessWidget {
                   Text(
                     isPunishment ? '-${item.points.abs()}' : '+${item.points.abs()}',
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
                       color: isPunishment ? AppColors.dangerRed : AppColors.primaryGreen,
                     ),
                   ),
                   const SizedBox(width: 2),
                   const Text(
                     'pts',
-                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),

@@ -18,6 +18,13 @@ class AppConfig {
 
   static String get apiBaseUrl => '$baseUrl/api/v1';
 
+  // URL khusus untuk AI deteksi
+  // Bisa di-override dengan: --dart-define=AI_API_URL=http://...
+  static const String aiApiUrl = String.fromEnvironment(
+    'AI_API_URL',
+    defaultValue: 'https://berseka.id/api/v1/waste/detect',
+  );
+
   static const String appName = 'BERSEKA';
 
   /// Format URL gambar dari API agar selalu valid
