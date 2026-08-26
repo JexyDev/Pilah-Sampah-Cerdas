@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
@@ -45,15 +46,66 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _showPickerOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+                title: const Text('Kamera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromCameraOrGallery(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                title: const Text('Galeri Foto'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFromCameraOrGallery(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primaryGreen),
+                title: const Text('Dokumen PDF'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickFile();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickFromCameraOrGallery(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.camera,
+      source: source,
       preferredCameraDevice: CameraDevice.rear,
       imageQuality: 70,
     );
     if (picked != null) {
       setState(() => _selectedImage = File(picked.path));
+    }
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() => _selectedImage = File(result.files.single.path!));
     }
   }
   
@@ -122,7 +174,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     
     if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Foto dokumentasi wajib diambil.'),
+        content: Text('Dokumentasi wajib dilampirkan (Foto/PDF).'),
         backgroundColor: AppColors.dangerRed,
       ));
       return;
@@ -348,10 +400,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   ),
                   const SizedBox(height: 16),
 
-                  const Text('Foto Kegiatan (Wajib)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Dokumentasi Kegiatan (Wajib)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   InkWell(
-                    onTap: _pickImage,
+                    onTap: _showPickerOptions,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       height: 160,
@@ -361,17 +413,29 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                         color: AppColors.primaryGreen.withValues(alpha: 0.05),
                       ),
                       child: _selectedImage != null
-                          ? ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity))
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: _selectedImage!.path.toLowerCase().endsWith('.pdf')
+                                  ? Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.picture_as_pdf_rounded, size: 48, color: AppColors.dangerRed),
+                                        const SizedBox(height: 8),
+                                        Text(_selectedImage!.path.split('/').last, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                                      ],
+                                    )
+                                  : Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity),
+                            )
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
-                                  child: const Icon(Icons.add_a_photo_rounded, size: 32, color: AppColors.primaryGreen),
+                                  child: const Icon(Icons.upload_file_rounded, size: 32, color: AppColors.primaryGreen),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text('Ambil Foto Kegiatan (Kamera Langsung)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
+                                const Text('Pilih/Ambil Dokumentasi (Foto/PDF)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
                               ],
                             ),
                     ),

@@ -835,6 +835,7 @@ class ApiKknRepository implements KknRepository {
         String mimeType = 'image/jpeg';
         if (fileExt == 'png') mimeType = 'image/png';
         if (fileExt == 'webp') mimeType = 'image/webp';
+        if (fileExt == 'pdf') mimeType = 'application/pdf';
 
         formData = FormData.fromMap({
           ...data,

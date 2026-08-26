@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -111,9 +112,14 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     });
 
     try {
-      // 1. Siapkan direktori penyimpanan menggunakan temporary directory
-      // agar FileProvider open_filex bisa membagikannya ke PackageInstaller
-      final dir = await getTemporaryDirectory();
+      // 1. Siapkan direktori penyimpanan menggunakan external storage (Android) 
+      // agar PackageInstaller memiliki akses baca yang lebih leluasa.
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = await getExternalStorageDirectory();
+      }
+      dir ??= await getTemporaryDirectory();
+      
       final savePath = '${dir.path}/update_v${widget.latestVersion}.apk';
 
       // 2. Download menggunakan Dio
@@ -136,8 +142,11 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         _statusMessage = 'Unduhan selesai! Membuka instalasi...';
       });
 
-      // 3. Buka (Install) APK otomatis menggunakan open_filex
-      final result = await OpenFilex.open(savePath);
+      // 3. Buka (Install) APK otomatis menggunakan open_filex dengan mime type eksplisit
+      final result = await OpenFilex.open(
+        savePath, 
+        type: 'application/vnd.android.package-archive',
+      );
       if (result.type != ResultType.done && mounted) {
         // Fallback jika tidak bisa buka otomatis, lempar ke browser
         _fallbackToBrowser();
