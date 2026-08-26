@@ -123,6 +123,53 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     _applyFilters();
   }
 
+  static pw.Widget _buildLogoPill(String title, PdfColor themeColor, PdfColor textColor) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+      decoration: pw.BoxDecoration(
+        color: themeColor,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
+      ),
+      child: pw.Text(
+        title,
+        style: pw.TextStyle(
+          fontSize: 3.5,
+          fontWeight: pw.FontWeight.bold,
+          color: textColor,
+        ),
+        textAlign: pw.TextAlign.center,
+      ),
+    );
+  }
+
+  static pw.Widget _buildBenefitItem(String icon, String label, PdfColor themeColor, PdfColor textColor) {
+    return pw.Column(
+      children: [
+        pw.Container(
+          width: 14,
+          height: 14,
+          decoration: pw.BoxDecoration(
+            color: themeColor,
+            shape: pw.BoxShape.circle,
+          ),
+          child: pw.Center(
+            child: pw.Text(icon, style: const pw.TextStyle(fontSize: 7)),
+          ),
+        ),
+        pw.SizedBox(height: 1),
+        pw.Text(
+          label,
+          style: pw.TextStyle(
+            fontSize: 4,
+            fontWeight: pw.FontWeight.bold,
+            color: PdfColors.black,
+          ),
+          textAlign: pw.TextAlign.center,
+        ),
+      ],
+    );
+  }
+
   Future<void> exportToPdf() async {
     if (state.items.isEmpty) {
       state = state.copyWith(errorMessage: 'Tidak ada data QR Code untuk dicetak.');
@@ -132,127 +179,257 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final pdf = pw.Document();
-      // Ukuran 10cm x 15cm
-      const pageFormat = PdfPageFormat(100 * PdfPageFormat.mm, 150 * PdfPageFormat.mm, marginAll: 5 * PdfPageFormat.mm);
+      // Ukuran Resmi Poster (10cm x 15cm / 100mm x 150mm 1:1)
+      const pageFormat = PdfPageFormat(100 * PdfPageFormat.mm, 150 * PdfPageFormat.mm, marginAll: 0);
 
-      // Chunk items (6 item per halaman - grid 2x3)
-      const itemsPerPage = 6;
-      for (var i = 0; i < state.items.length; i += itemsPerPage) {
-        final chunk = state.items.sublist(
-          i,
-          i + itemsPerPage > state.items.length ? state.items.length : i + itemsPerPage,
-        );
+      // Generate 1 Poster Resmi per QR Code Item
+      for (final item in state.items) {
+        final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
+        final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+        final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
+
+        final isAnorganik = rawCat.contains('ANORGANIK') || rawCat.contains('NON') || rawCat.contains('AGN') || qrCodeStr.toUpperCase().contains('-AGN-');
+        final catTitle = isAnorganik ? 'ANORGANIK' : 'ORGANIK';
+        final catDesc = isAnorganik
+            ? 'Untuk sampah anorganik seperti plastik, kaleng, kaca, logam, dan bahan sintetis lainnya.'
+            : 'Untuk sampah organik dari sisa makanan, daun, ranting, dan bahan alami lainnya.';
+
+        final formattedSerialCode = (() {
+          if (qrCodeStr.startsWith('BSK-') || qrCodeStr.startsWith('TC-')) return qrCodeStr;
+          final tag = isAnorganik ? 'AGN' : 'OGN';
+          final digits = qrCodeStr.replaceAll(RegExp(r'\D'), '');
+          final seq = digits.isNotEmpty ? digits.substring(digits.length > 4 ? digits.length - 4 : 0).padLeft(4, '0') : '0001';
+          return 'BSK-$tag-250826-$seq';
+        })();
+
+        // Warna Tema Resmi Web (Yellow #FFC20E vs Green #006837)
+        final themeColor = isAnorganik ? PdfColor.fromHex('#FFC20E') : PdfColor.fromHex('#006837');
+        final headerTextColor = isAnorganik ? PdfColors.black : PdfColors.white;
 
         pdf.addPage(
           pw.Page(
             pageFormat: pageFormat,
             build: (pw.Context context) {
-              return pw.GridView(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75, // Beri ruang lebih vertikal agar tidak overflow
-                crossAxisSpacing: 5 * PdfPageFormat.mm,
-                mainAxisSpacing: 5 * PdfPageFormat.mm,
-                children: chunk.map((item) {
-                  final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
-                  final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
-                  final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
-                  
-                  final isOrganik = rawCat.contains('ORGAN') && !rawCat.contains('ANORGANIK') && !rawCat.contains('NON');
-                  final isAnorganik = rawCat.contains('ANORGANIK') || rawCat.contains('NON');
-                  final isResidu = rawCat.contains('RESIDU') || rawCat.contains('RSD');
-                  
-                  final typeLabel = isAnorganik ? 'Anorganik' : (isResidu ? 'Residu' : 'Organik');
-                  
-                  // Color Themes (matching Web MasterQrManager)
-                  final colorTheme = isOrganik 
-                      ? PdfColor.fromHex('#10b981') 
-                      : (isAnorganik ? PdfColor.fromHex('#3b82f6') : PdfColor.fromHex('#ef4444'));
-                  final labelBg = isOrganik 
-                      ? PdfColor.fromHex('#ecfdf5') 
-                      : (isAnorganik ? PdfColor.fromHex('#eff6ff') : PdfColor.fromHex('#fef2f2'));
-                      
-                  final rwStr = item['rw']?.toString() ?? '';
-                  final kelStr = item['kelurahan']?.toString() ?? '';
-                  final detailStr = (rwStr.isNotEmpty && kelStr.isNotEmpty)
-                      ? '$rwStr - Kel. $kelStr'
-                      : 'BERSEKA Batch QR';
-
-                  return pw.Container(
-                    decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: colorTheme, width: 2),
-                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+              return pw.Container(
+                width: 100 * PdfPageFormat.mm,
+                height: 150 * PdfPageFormat.mm,
+                padding: const pw.EdgeInsets.all(3 * PdfPageFormat.mm),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.white,
+                  border: pw.Border.all(color: themeColor, width: 4 * PdfPageFormat.mm),
+                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
+                ),
+                child: pw.Column(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    // Header Section
+                    pw.Column(
+                      children: [
+                        pw.Text(
+                          'BERSEKA',
+                          style: pw.TextStyle(
+                            fontSize: 16,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                        pw.SizedBox(height: 1),
+                        pw.Row(
+                          mainAxisAlignment: pw.MainAxisAlignment.center,
+                          children: [
+                            pw.Container(width: 12, height: 1, color: PdfColor.fromHex('#cbd5e1')),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 3),
+                              child: pw.Text(
+                                'BERSIH • SEHAT • KAMPUNG ASRI',
+                                style: pw.TextStyle(
+                                  fontSize: 5.5,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.black,
+                                ),
+                              ),
+                            ),
+                            pw.Container(width: 12, height: 1, color: PdfColor.fromHex('#cbd5e1')),
+                          ],
+                        ),
+                      ],
                     ),
-                    child: pw.Column(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+
+                    // 4 Institutional Partner Logos Row
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColor.fromHex('#cbd5e1'), width: 1),
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
+                      ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildLogoPill('PROVINSI\nJAWA BARAT', themeColor, headerTextColor),
+                          _buildLogoPill('PEMERINTAH\nKOTA BANDUNG', themeColor, headerTextColor),
+                          _buildLogoPill('DINAS\nLINGKUNGAN HIDUP', themeColor, headerTextColor),
+                          _buildLogoPill('UNIVERSITAS\nKOMPUTER INDONESIA', themeColor, headerTextColor),
+                        ],
+                      ),
+                    ),
+
+                    // Main Category Banner
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.all(4),
+                      decoration: pw.BoxDecoration(
+                        color: themeColor,
+                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                      ),
+                      child: pw.Row(
+                        children: [
+                          pw.Container(
+                            width: 22,
+                            height: 22,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.white,
+                              shape: pw.BoxShape.circle,
+                            ),
+                            child: pw.Center(
+                              child: pw.Text('🗑️', style: const pw.TextStyle(fontSize: 10)),
+                            ),
+                          ),
+                          pw.SizedBox(width: 5),
+                          pw.Expanded(
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text(
+                                  'TEMPAT SAMPAH',
+                                  style: pw.TextStyle(
+                                    fontSize: 6.5,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: headerTextColor,
+                                  ),
+                                ),
+                                pw.Text(
+                                  catTitle,
+                                  style: pw.TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: headerTextColor,
+                                  ),
+                                ),
+                                pw.Text(
+                                  catDesc,
+                                  style: pw.TextStyle(
+                                    fontSize: 4.5,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: headerTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 4 Benefits Grid
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildBenefitItem('🍃', 'Menjaga\nlingkungan\ntetap bersih', themeColor, headerTextColor),
+                        _buildBenefitItem('♻️', 'Mengurangi\nsampah\nke TPA', themeColor, headerTextColor),
+                        _buildBenefitItem('🗑️', 'Kelola sampah\nlebih baik &\nbermanfaat', themeColor, headerTextColor),
+                        _buildBenefitItem('👥', 'Bersama wujudkan\nkampung yang\nbersih & asri', themeColor, headerTextColor),
+                      ],
+                    ),
+
+                    // Bottom QR Section
+                    pw.Row(
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        // Header Banner (BERSEKA PSC)
                         pw.Container(
-                          width: double.infinity,
-                          color: colorTheme,
-                          padding: const pw.EdgeInsets.symmetric(vertical: 3),
-                          child: pw.Text(
-                            'BERSEKA PSC',
-                            style: const pw.TextStyle(
-                              color: PdfColors.white,
-                              fontSize: 7,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                            textAlign: pw.TextAlign.center,
-                          ),
-                        ),
-                        pw.SizedBox(height: 4),
-                        // Barcode QR Code Image
-                        pw.BarcodeWidget(
-                          barcode: pw.Barcode.qrCode(),
-                          data: qrCodeStr,
-                          width: 25 * PdfPageFormat.mm,
-                          height: 25 * PdfPageFormat.mm,
-                        ),
-                        pw.SizedBox(height: 4),
-                        // QR Code Text
-                        pw.Text(
-                          qrCodeStr,
-                          style: pw.TextStyle(
-                            fontSize: 7, 
-                            fontWeight: pw.FontWeight.bold,
-                            color: colorTheme,
-                          ),
-                          textAlign: pw.TextAlign.center,
-                        ),
-                        // Category Badge / Pill
-                        pw.Container(
+                          width: 32 * PdfPageFormat.mm,
+                          height: 32 * PdfPageFormat.mm,
+                          padding: const pw.EdgeInsets.all(2),
                           decoration: pw.BoxDecoration(
-                            color: labelBg,
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                            border: pw.Border.all(color: PdfColors.black, width: 1.2),
+                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                            color: PdfColors.white,
                           ),
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                          margin: const pw.EdgeInsets.symmetric(vertical: 2),
-                          child: pw.Text(
-                            typeLabel.toUpperCase(),
-                            style: pw.TextStyle(
-                              fontSize: 5.5,
-                              fontWeight: pw.FontWeight.bold,
-                              color: colorTheme,
-                            ),
+                          child: pw.BarcodeWidget(
+                            barcode: pw.Barcode.qrCode(),
+                            data: qrCodeStr,
+                            width: 28 * PdfPageFormat.mm,
+                            height: 28 * PdfPageFormat.mm,
                           ),
                         ),
-                        // Detail Wilayah Footer
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.only(bottom: 4, left: 2, right: 2),
-                          child: pw.Text(
-                            detailStr,
-                            style: const pw.TextStyle(
-                              fontSize: 5,
-                              color: PdfColors.grey700,
-                            ),
-                            textAlign: pw.TextAlign.center,
+                        pw.SizedBox(width: 5),
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                '📱 SCAN UNTUK CATAT & LAPOR',
+                                style: pw.TextStyle(
+                                  fontSize: 7,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.black,
+                                ),
+                              ),
+                              pw.SizedBox(height: 1),
+                              pw.Text(
+                                'Setiap scan membantu kami mencatat dan mengelola sampah dengan lebih baik.',
+                                style: pw.TextStyle(
+                                  fontSize: 4.5,
+                                  color: PdfColor.fromHex('#334155'),
+                                ),
+                              ),
+                              pw.SizedBox(height: 3),
+                              pw.Container(
+                                width: double.infinity,
+                                padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                                decoration: pw.BoxDecoration(
+                                  color: themeColor,
+                                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                                ),
+                                child: pw.Text(
+                                  formattedSerialCode,
+                                  style: pw.TextStyle(
+                                    fontSize: 6.5,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: headerTextColor,
+                                  ),
+                                  textAlign: pw.TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  );
-                }).toList(),
+
+                    // Footer Bar
+                    pw.Container(
+                      padding: const pw.EdgeInsets.only(top: 2),
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border(top: pw.BorderSide(color: PdfColor.fromHex('#cbd5e1'), width: 1)),
+                      ),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            '🛡️ MARI JAGA KEBERSIHAN UNTUK MASA DEPAN YANG LEBIH HIJAU',
+                            style: pw.TextStyle(
+                              fontSize: 4.5,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.black,
+                            ),
+                          ),
+                          pw.Text('🍃', style: const pw.TextStyle(fontSize: 5)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -269,12 +446,12 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
       // Layout & preview PDF via native printing dialog
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => bytes,
-        name: 'Ketersediaan_QR.pdf',
+        name: 'Poster_Resmi_QR_BERSEKA.pdf',
       );
 
       // Fallback share file
       final xFile = XFile(file.path, mimeType: 'application/pdf');
-      await Share.shareXFiles([xFile], text: 'Dokumen Ketersediaan QR');
+      await Share.shareXFiles([xFile], text: 'Poster Resmi QR Code BERSEKA (10 x 15 cm)');
       
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengekspor PDF: $e');
