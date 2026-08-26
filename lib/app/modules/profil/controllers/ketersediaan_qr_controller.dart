@@ -156,34 +156,98 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                   final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
                   final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
                   final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
-                  final typeLabel = rawCat.contains('ANORGANIK') || rawCat.contains('NON')
-                      ? 'Anorganik'
-                      : (rawCat.contains('RESIDU') || rawCat.contains('RSD') ? 'Residu' : 'Organik');
+                  
+                  final isOrganik = rawCat.contains('ORGAN') && !rawCat.contains('ANORGANIK') && !rawCat.contains('NON');
+                  final isAnorganik = rawCat.contains('ANORGANIK') || rawCat.contains('NON');
+                  final isResidu = rawCat.contains('RESIDU') || rawCat.contains('RSD');
+                  
+                  final typeLabel = isAnorganik ? 'Anorganik' : (isResidu ? 'Residu' : 'Organik');
+                  
+                  // Color Themes (matching Web MasterQrManager)
+                  final colorTheme = isOrganik 
+                      ? PdfColor.fromHex('#10b981') 
+                      : (isAnorganik ? PdfColor.fromHex('#3b82f6') : PdfColor.fromHex('#ef4444'));
+                  final labelBg = isOrganik 
+                      ? PdfColor.fromHex('#ecfdf5') 
+                      : (isAnorganik ? PdfColor.fromHex('#eff6ff') : PdfColor.fromHex('#fef2f2'));
+                      
+                  final rwStr = item['rw']?.toString() ?? '';
+                  final kelStr = item['kelurahan']?.toString() ?? '';
+                  final detailStr = (rwStr.isNotEmpty && kelStr.isNotEmpty)
+                      ? '$rwStr - Kel. $kelStr'
+                      : 'BERSEKA Batch QR';
+
                   return pw.Container(
                     decoration: pw.BoxDecoration(
-                      border: pw.Border.all(color: PdfColors.black, width: 1),
+                      border: pw.Border.all(color: colorTheme, width: 2),
+                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
                     ),
-                    padding: const pw.EdgeInsets.all(8),
                     child: pw.Column(
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
+                        // Header Banner (BERSEKA PSC)
+                        pw.Container(
+                          width: double.infinity,
+                          color: colorTheme,
+                          padding: const pw.EdgeInsets.symmetric(vertical: 3),
+                          child: pw.Text(
+                            'BERSEKA PSC',
+                            style: const pw.TextStyle(
+                              color: PdfColors.white,
+                              fontSize: 7,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        // Barcode QR Code Image
                         pw.BarcodeWidget(
                           barcode: pw.Barcode.qrCode(),
                           data: qrCodeStr,
-                          width: 30 * PdfPageFormat.mm,
-                          height: 30 * PdfPageFormat.mm,
+                          width: 25 * PdfPageFormat.mm,
+                          height: 25 * PdfPageFormat.mm,
                         ),
-                        pw.SizedBox(height: 8),
+                        pw.SizedBox(height: 4),
+                        // QR Code Text
                         pw.Text(
                           qrCodeStr,
-                          style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                          style: pw.TextStyle(
+                            fontSize: 7, 
+                            fontWeight: pw.FontWeight.bold,
+                            color: colorTheme,
+                          ),
                           textAlign: pw.TextAlign.center,
                         ),
-                        pw.SizedBox(height: 2),
-                        pw.Text(
-                          typeLabel,
-                          style: const pw.TextStyle(fontSize: 6),
-                          textAlign: pw.TextAlign.center,
+                        // Category Badge / Pill
+                        pw.Container(
+                          decoration: pw.BoxDecoration(
+                            color: labelBg,
+                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                          ),
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          margin: const pw.EdgeInsets.symmetric(vertical: 2),
+                          child: pw.Text(
+                            typeLabel.toUpperCase(),
+                            style: pw.TextStyle(
+                              fontSize: 5.5,
+                              fontWeight: pw.FontWeight.bold,
+                              color: colorTheme,
+                            ),
+                          ),
+                        ),
+                        // Detail Wilayah Footer
+                        pw.Padding(
+                          padding: const pw.EdgeInsets.only(bottom: 4, left: 2, right: 2),
+                          child: pw.Text(
+                            detailStr,
+                            style: const pw.TextStyle(
+                              fontSize: 5,
+                              color: PdfColors.grey700,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                          ),
                         ),
                       ],
                     ),
