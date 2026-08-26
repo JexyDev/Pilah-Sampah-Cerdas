@@ -159,7 +159,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
         pw.SizedBox(height: 1),
         pw.Text(
           label,
-          style: pw.TextStyle(
+          style: const pw.TextStyle(
             fontSize: 4,
             fontWeight: pw.FontWeight.bold,
             color: PdfColors.black,
@@ -228,7 +228,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                       children: [
                         pw.Text(
                           'BERSEKA',
-                          style: pw.TextStyle(
+                          style: const pw.TextStyle(
                             fontSize: 16,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.black,
@@ -243,7 +243,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                               padding: const pw.EdgeInsets.symmetric(horizontal: 3),
                               child: pw.Text(
                                 'BERSIH • SEHAT • KAMPUNG ASRI',
-                                style: pw.TextStyle(
+                                style: const pw.TextStyle(
                                   fontSize: 5.5,
                                   fontWeight: pw.FontWeight.bold,
                                   color: PdfColors.black,
@@ -369,7 +369,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                             children: [
                               pw.Text(
                                 '📱 SCAN UNTUK CATAT & LAPOR',
-                                style: pw.TextStyle(
+                                style: const pw.TextStyle(
                                   fontSize: 7,
                                   fontWeight: pw.FontWeight.bold,
                                   color: PdfColors.black,
@@ -418,7 +418,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                         children: [
                           pw.Text(
                             '🛡️ MARI JAGA KEBERSIHAN UNTUK MASA DEPAN YANG LEBIH HIJAU',
-                            style: pw.TextStyle(
+                            style: const pw.TextStyle(
                               fontSize: 4.5,
                               fontWeight: pw.FontWeight.bold,
                               color: PdfColors.black,

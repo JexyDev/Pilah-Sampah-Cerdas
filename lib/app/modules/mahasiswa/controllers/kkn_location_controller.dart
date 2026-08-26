@@ -174,8 +174,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   static const _prefKeyAccumulated = 'kkn_accumulated_seconds';
   static const _prefKeyDate = 'kkn_accumulated_date';
-  static const _prefKeyTarget =
-      'kkn_accumulated_target'; // ignore: unused_field
   static const _prefKeyEntryTime = 'kkn_zone_entry_time';
 
   Future<void> _loadPersistentTimer() async {
