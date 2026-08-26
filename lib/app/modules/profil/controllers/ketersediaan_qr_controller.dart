@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:printing/printing.dart';
 import '../../../../app/data/providers/repository_providers.dart';
 
 class KetersediaanQrState {
@@ -195,13 +196,19 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
       }
 
       final bytes = await pdf.save();
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/Ketersediaan_QR.pdf');
       await file.writeAsBytes(bytes);
 
       state = state.copyWith(isLoading: false);
       
-      // Share PDF
+      // Layout & preview PDF via native printing dialog
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => bytes,
+        name: 'Ketersediaan_QR.pdf',
+      );
+
+      // Fallback share file
       final xFile = XFile(file.path, mimeType: 'application/pdf');
       await Share.shareXFiles([xFile], text: 'Dokumen Ketersediaan QR');
       
