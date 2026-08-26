@@ -45,6 +45,12 @@ import {
   Users,
   ExternalLink,
   FileCheck,
+  Home,
+  Bug,
+  Recycle,
+  Sprout,
+  Layers,
+  GraduationCap,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -2054,10 +2060,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           <Link
             to="/monitoring-kegiatan/pengajuan-izin"
             className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Buka Halaman Verifikasi Pengajuan Izin"
+            title="Buka Halaman Verifikasi Pengajuan Izin & Sakit"
           >
             <FileCheck size={14} className="text-amber-600 dark:text-amber-400" />
-            <span>Pengajuan Izin</span>
+            <span>Pengajuan Izin & Sakit</span>
           </Link>
 
           <button
@@ -2477,35 +2483,50 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </MapContainer>
           </div>
 
-          {/* Interactive Map Legend */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          {/* Interactive Map Legend - Synchronized with Real Leaflet Marker Icons */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
-              <CheckCircle2 size={14} className="text-emerald-600" />
-              <span>Legenda Fasilitas & Marker Lapangan:</span>
+              <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+              <span>Legenda Fasilitas &amp; Marker Lapangan:</span>
             </div>
-            <div className="flex items-center gap-3 flex-wrap text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <div className="flex items-center gap-2.5 flex-wrap text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-indigo-200/80 dark:border-indigo-800/40 shadow-2xs">
+                <div className="w-5 h-5 rounded-md bg-[#4f46e5] text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Home size={11} strokeWidth={2.4} />
+                </div>
                 <span>Posko KKN</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-purple-200/80 dark:border-purple-800/40 shadow-2xs">
+                <div className="w-5 h-5 rounded-md bg-[#7c3aed] text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Bug size={11} strokeWidth={2.4} />
+                </div>
                 <span>Rumah Maggot</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-blue-200/80 dark:border-blue-800/40 shadow-2xs">
+                <div className="w-5 h-5 rounded-md bg-[#2563eb] text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Recycle size={11} strokeWidth={2.4} />
+                </div>
                 <span>Bank Sampah (Anorganik)</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-lime-300 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-lime-600"></span>
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-lime-300/80 dark:border-lime-800/40 shadow-2xs">
+                <div className="w-5 h-5 rounded-md bg-[#65a30d] text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Sprout size={11} strokeWidth={2.4} />
+                </div>
                 <span>Buruan SAE (Organik)</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-teal-200/80 dark:border-teal-800/40 shadow-2xs">
+                <div className="w-5 h-5 rounded-md bg-[#0d9488] text-white flex items-center justify-center shadow-2xs shrink-0">
+                  <Layers size={11} strokeWidth={2.4} />
+                </div>
                 <span>Loseda / Bata Terawang</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 shadow-2xs">
+                <div className="relative flex items-center justify-center shrink-0">
+                  <span className="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-emerald-400 opacity-75"></span>
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-500 text-white flex items-center justify-center shadow-2xs relative z-10 border border-white">
+                    <GraduationCap size={11} strokeWidth={2.4} />
+                  </div>
+                </div>
                 <span>Live Presensi Mahasiswa</span>
               </div>
             </div>
