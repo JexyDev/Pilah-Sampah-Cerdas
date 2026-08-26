@@ -72,15 +72,22 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     
     if (state.selectedCategory != 'Semua') {
       filtered = filtered.where((item) {
-        final categoryName = item['category']?['name']?.toString() ?? '';
-        return categoryName.toLowerCase() == state.selectedCategory.toLowerCase();
+        final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
+        final selUpper = state.selectedCategory.toUpperCase();
+        if (selUpper.contains('ORGANIK') || selUpper == 'ORGANIC') {
+          return rawCat.contains('ORGAN') && !rawCat.contains('ANORGANIK') && !rawCat.contains('NON');
+        }
+        if (selUpper.contains('ANORGANIK') || selUpper == 'NON_ORGANIC') {
+          return rawCat.contains('ANORGANIK') || rawCat.contains('NON');
+        }
+        return rawCat.contains(selUpper);
       }).toList();
     }
 
     if (state.selectedStatus != 'Semua Status') {
       filtered = filtered.where((item) {
         final statusBin = item['status']?.toString().toUpperCase() ?? 'PRINTED';
-        final isUsed = statusBin != 'PRINTED';
+        final isUsed = statusBin != 'PRINTED' && statusBin != 'TERSEDIA';
         if (state.selectedStatus == 'Tersedia') return !isUsed;
         if (state.selectedStatus == 'Digunakan') return isUsed;
         return true;
@@ -90,7 +97,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     if (state.searchQuery.isNotEmpty) {
       final query = state.searchQuery.toLowerCase();
       filtered = filtered.where((item) {
-        final qrCode = item['qrCode']?.toString().toLowerCase() ?? '';
+        final qrCode = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').toLowerCase();
         return qrCode.contains(query);
       }).toList();
     }
@@ -116,9 +123,12 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
   }
 
   Future<void> exportToPdf() async {
-    if (state.items.isEmpty) return;
+    if (state.items.isEmpty) {
+      state = state.copyWith(errorMessage: 'Tidak ada data QR Code untuk dicetak.');
+      return;
+    }
 
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, clearError: true);
     try {
       final pdf = pw.Document();
       // Ukuran 10cm x 15cm
@@ -142,8 +152,12 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
                 crossAxisSpacing: 5 * PdfPageFormat.mm,
                 mainAxisSpacing: 5 * PdfPageFormat.mm,
                 children: chunk.map((item) {
-                  final qrCodeStr = item['qrCode']?.toString() ?? 'UNKNOWN';
-                  final typeLabel = item['category']?['name']?.toString() ?? 'Unknown';
+                  final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
+                  final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+                  final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
+                  final typeLabel = rawCat.contains('ANORGANIK') || rawCat.contains('NON')
+                      ? 'Anorganik'
+                      : (rawCat.contains('RESIDU') || rawCat.contains('RSD') ? 'Residu' : 'Organik');
                   return pw.Container(
                     decoration: pw.BoxDecoration(
                       border: pw.Border.all(color: PdfColors.black, width: 1),

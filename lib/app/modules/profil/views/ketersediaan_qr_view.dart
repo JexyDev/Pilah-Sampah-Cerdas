@@ -347,11 +347,15 @@ class KetersediaanQrView extends ConsumerWidget {
       itemCount: state.items.length,
       itemBuilder: (context, index) {
         final item = state.items[index];
-        final qrCodeStr = item['qrCode']?.toString() ?? 'UNKNOWN';
-        final categoryName = item['category']?['name']?.toString() ?? 'Unknown';
-        final isOrganik = categoryName.toLowerCase() == 'organik';
+        final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
+        final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+        final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
+        final categoryName = rawCat.contains('ANORGANIK') || rawCat.contains('NON')
+            ? 'Anorganik'
+            : (rawCat.contains('RESIDU') || rawCat.contains('RSD') ? 'Residu' : 'Organik');
+        final isOrganik = categoryName == 'Organik';
         final statusBin = item['status']?.toString().toUpperCase() ?? 'PRINTED';
-        final isUsed = statusBin != 'PRINTED';
+        final isUsed = statusBin != 'PRINTED' && statusBin != 'TERSEDIA';
 
         return Container(
           decoration: BoxDecoration(
