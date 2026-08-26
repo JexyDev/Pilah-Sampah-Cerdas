@@ -91,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/monitoring-kegiatan/pengajuan-izin":
       case "/ajuan-absensi":
       case "/validasi-absensi":
-        return ["Monitoring Kegiatan", "Pengajuan Izin"];
+        return ["Monitoring Kegiatan", "Pengajuan Izin & Sakit"];
       case "/pelaksanaan/program-kerja":
       case "/program-kerja-kkn":
       case "/program-kerja":

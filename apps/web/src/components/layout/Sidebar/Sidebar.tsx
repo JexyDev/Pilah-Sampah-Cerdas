@@ -798,7 +798,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-kegiatan/pengajuan-izin",
-              label: "Pengajuan Izin",
+              label: "Pengajuan Izin & Sakit",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
