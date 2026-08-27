@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:printing/printing.dart';
 import '../../../../app/data/providers/repository_providers.dart';
@@ -13,6 +15,7 @@ class KetersediaanQrState {
   final String? errorMessage;
   final List<dynamic> allItems;
   final List<dynamic> items;
+  final Set<String> selectedItems;
   final String selectedCategory;
   final String selectedStatus;
   final String searchQuery;
@@ -22,6 +25,7 @@ class KetersediaanQrState {
     this.errorMessage,
     this.allItems = const [],
     this.items = const [],
+    this.selectedItems = const {},
     this.selectedCategory = 'Semua',
     this.selectedStatus = 'Semua Status',
     this.searchQuery = '',
@@ -32,6 +36,7 @@ class KetersediaanQrState {
     String? errorMessage,
     List<dynamic>? allItems,
     List<dynamic>? items,
+    Set<String>? selectedItems,
     String? selectedCategory,
     String? selectedStatus,
     String? searchQuery,
@@ -42,6 +47,7 @@ class KetersediaanQrState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       allItems: allItems ?? this.allItems,
       items: items ?? this.items,
+      selectedItems: selectedItems ?? this.selectedItems,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       searchQuery: searchQuery ?? this.searchQuery,
@@ -68,6 +74,20 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     }
   }
 
+  void toggleSelection(String qrCode) {
+    final newSelection = Set<String>.from(state.selectedItems);
+    if (newSelection.contains(qrCode)) {
+      newSelection.remove(qrCode);
+    } else {
+      newSelection.add(qrCode);
+    }
+    state = state.copyWith(selectedItems: newSelection);
+  }
+
+  void clearSelection() {
+    state = state.copyWith(selectedItems: {});
+  }
+
   void _applyFilters() {
     List<dynamic> filtered = state.allItems;
     
@@ -75,7 +95,7 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
       filtered = filtered.where((item) {
         final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
         final selUpper = state.selectedCategory.toUpperCase();
-        if (selUpper.contains('ORGANIK') || selUpper == 'ORGANIC') {
+        if (selUpper == 'ORGANIK' || selUpper == 'ORGANIC') {
           return rawCat.contains('ORGAN') && !rawCat.contains('ANORGANIK') && !rawCat.contains('NON');
         }
         if (selUpper.contains('ANORGANIK') || selUpper == 'NON_ORGANIC') {
@@ -123,76 +143,45 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
     _applyFilters();
   }
 
-  static pw.Widget _buildLogoPill(String title, PdfColor themeColor, PdfColor textColor) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-      decoration: pw.BoxDecoration(
-        color: themeColor,
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-      ),
-      child: pw.Text(
-        title,
-        style: pw.TextStyle(
-          fontSize: 3.5,
-          fontWeight: pw.FontWeight.bold,
-          color: textColor,
-        ),
-        textAlign: pw.TextAlign.center,
-      ),
-    );
-  }
-
-  static pw.Widget _buildBenefitItem(String icon, String label, PdfColor themeColor, PdfColor textColor) {
-    return pw.Column(
-      children: [
-        pw.Container(
-          width: 14,
-          height: 14,
-          decoration: pw.BoxDecoration(
-            color: themeColor,
-            shape: pw.BoxShape.circle,
-          ),
-          child: pw.Center(
-            child: pw.Text(icon, style: const pw.TextStyle(fontSize: 7)),
-          ),
-        ),
-        pw.SizedBox(height: 1),
-        pw.Text(
-          label,
-          style: const pw.TextStyle(
-            fontSize: 4,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.black,
-          ),
-          textAlign: pw.TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Future<void> exportToPdf() async {
+  Future<void> exportData({bool asImage = false}) async {
     if (state.items.isEmpty) {
       state = state.copyWith(errorMessage: 'Tidak ada data QR Code untuk dicetak.');
+      return;
+    }
+
+    final itemsToExport = state.selectedItems.isNotEmpty
+        ? state.items.where((item) {
+            final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
+            final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
+            return state.selectedItems.contains(qrCodeStr);
+          }).toList()
+        : state.items;
+
+    if (itemsToExport.isEmpty) {
+      state = state.copyWith(errorMessage: 'Tidak ada QR Code yang dipilih.');
       return;
     }
 
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final pdf = pw.Document();
-      // Ukuran Resmi Poster (10cm x 15cm / 100mm x 150mm 1:1)
-      const pageFormat = PdfPageFormat(100 * PdfPageFormat.mm, 150 * PdfPageFormat.mm, marginAll: 0);
+      // Ukuran Resolusi Asli 1182 x 1772 px -> kita set sebagai point PDF
+      const pageFormat = PdfPageFormat(1182, 1772, marginAll: 0);
+
+      // Load Template Images
+      final ByteData organicData = await rootBundle.load('assets/images/qr_template_organik.png');
+      final organicImage = pw.MemoryImage(organicData.buffer.asUint8List());
+
+      final ByteData anorganicData = await rootBundle.load('assets/images/qr_template_anorganik.png');
+      final anorganicImage = pw.MemoryImage(anorganicData.buffer.asUint8List());
 
       // Generate 1 Poster Resmi per QR Code Item
-      for (final item in state.items) {
+      for (final item in itemsToExport) {
         final rawQr = (item['qrCode']?.toString() ?? item['kode']?.toString() ?? '').trim();
         final qrCodeStr = rawQr.isNotEmpty ? rawQr : 'BSK-OGN-250826-0001';
         final rawCat = (item['category']?['name']?.toString() ?? item['jenis']?.toString() ?? '').toUpperCase();
 
         final isAnorganik = rawCat.contains('ANORGANIK') || rawCat.contains('NON') || rawCat.contains('AGN') || qrCodeStr.toUpperCase().contains('-AGN-');
-        final catTitle = isAnorganik ? 'ANORGANIK' : 'ORGANIK';
-        final catDesc = isAnorganik
-            ? 'Untuk sampah anorganik seperti plastik, kaleng, kaca, logam, dan bahan sintetis lainnya.'
-            : 'Untuk sampah organik dari sisa makanan, daun, ranting, dan bahan alami lainnya.';
 
         final formattedSerialCode = (() {
           if (qrCodeStr.startsWith('BSK-') || qrCodeStr.startsWith('TC-')) return qrCodeStr;
@@ -202,234 +191,74 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
           return 'BSK-$tag-250826-$seq';
         })();
 
-        // Warna Tema Resmi Web (Yellow #FFC20E vs Green #006837)
-        final themeColor = isAnorganik ? PdfColor.fromHex('#FFC20E') : PdfColor.fromHex('#006837');
-        final headerTextColor = isAnorganik ? PdfColors.black : PdfColors.white;
+        final bgImage = isAnorganik ? anorganicImage : organicImage;
 
         pdf.addPage(
           pw.Page(
             pageFormat: pageFormat,
             build: (pw.Context context) {
-              return pw.Container(
-                width: 100 * PdfPageFormat.mm,
-                height: 150 * PdfPageFormat.mm,
-                padding: const pw.EdgeInsets.all(3 * PdfPageFormat.mm),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.white,
-                  border: pw.Border.all(color: themeColor, width: 4 * PdfPageFormat.mm),
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
-                ),
-                child: pw.Column(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    // Header Section
-                    pw.Column(
-                      children: [
-                        pw.Text(
-                          'BERSEKA',
-                          style: const pw.TextStyle(
-                            fontSize: 16,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.black,
-                          ),
-                        ),
-                        pw.SizedBox(height: 1),
-                        pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
-                          children: [
-                            pw.Container(width: 12, height: 1, color: PdfColor.fromHex('#cbd5e1')),
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 3),
-                              child: pw.Text(
-                                'BERSIH • SEHAT • KAMPUNG ASRI',
-                                style: const pw.TextStyle(
-                                  fontSize: 5.5,
-                                  fontWeight: pw.FontWeight.bold,
-                                  color: PdfColors.black,
-                                ),
+              return pw.Stack(
+                children: [
+                  pw.Positioned.fill(
+                    child: pw.Image(bgImage, fit: pw.BoxFit.fill),
+                  ),
+                  pw.Positioned(
+                    left: 177.5,
+                    top: 1250.0,
+                    child: pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: qrCodeStr,
+                      width: 375,
+                      height: 375,
+                      color: PdfColors.black,
+                      backgroundColor: PdfColors.white,
+                    ),
+                  ),
+                  if (isAnorganik)
+                    pw.Positioned(
+                      left: 632,
+                      top: 1618,
+                      child: pw.SizedBox(
+                        width: 403,
+                        height: 47,
+                        child: pw.Center(
+                          child: pw.FittedBox(
+                            fit: pw.BoxFit.scaleDown,
+                            child: pw.Text(
+                              formattedSerialCode,
+                              style: const pw.TextStyle(
+                                fontSize: 32,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.black,
                               ),
                             ),
-                            pw.Container(width: 12, height: 1, color: PdfColor.fromHex('#cbd5e1')),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    // 4 Institutional Partner Logos Row
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 2),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border.all(color: PdfColor.fromHex('#cbd5e1'), width: 1),
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(5)),
-                      ),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildLogoPill('PROVINSI\nJAWA BARAT', themeColor, headerTextColor),
-                          _buildLogoPill('PEMERINTAH\nKOTA BANDUNG', themeColor, headerTextColor),
-                          _buildLogoPill('DINAS\nLINGKUNGAN HIDUP', themeColor, headerTextColor),
-                          _buildLogoPill('UNIVERSITAS\nKOMPUTER INDONESIA', themeColor, headerTextColor),
-                        ],
-                      ),
-                    ),
-
-                    // Main Category Banner
-                    pw.Container(
-                      width: double.infinity,
-                      padding: const pw.EdgeInsets.all(4),
-                      decoration: pw.BoxDecoration(
-                        color: themeColor,
-                        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                      ),
-                      child: pw.Row(
-                        children: [
-                          pw.Container(
-                            width: 22,
-                            height: 22,
-                            decoration: const pw.BoxDecoration(
-                              color: PdfColors.white,
-                              shape: pw.BoxShape.circle,
-                            ),
-                            child: pw.Center(
-                              child: pw.Text('🗑️', style: const pw.TextStyle(fontSize: 10)),
-                            ),
-                          ),
-                          pw.SizedBox(width: 5),
-                          pw.Expanded(
-                            child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                  'TEMPAT SAMPAH',
-                                  style: pw.TextStyle(
-                                    fontSize: 6.5,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: headerTextColor,
-                                  ),
-                                ),
-                                pw.Text(
-                                  catTitle,
-                                  style: pw.TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: headerTextColor,
-                                  ),
-                                ),
-                                pw.Text(
-                                  catDesc,
-                                  style: pw.TextStyle(
-                                    fontSize: 4.5,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: headerTextColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // 4 Benefits Grid
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildBenefitItem('🍃', 'Menjaga\nlingkungan\ntetap bersih', themeColor, headerTextColor),
-                        _buildBenefitItem('♻️', 'Mengurangi\nsampah\nke TPA', themeColor, headerTextColor),
-                        _buildBenefitItem('🗑️', 'Kelola sampah\nlebih baik &\nbermanfaat', themeColor, headerTextColor),
-                        _buildBenefitItem('👥', 'Bersama wujudkan\nkampung yang\nbersih & asri', themeColor, headerTextColor),
-                      ],
-                    ),
-
-                    // Bottom QR Section
-                    pw.Row(
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Container(
-                          width: 32 * PdfPageFormat.mm,
-                          height: 32 * PdfPageFormat.mm,
-                          padding: const pw.EdgeInsets.all(2),
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.black, width: 1.2),
-                            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-                            color: PdfColors.white,
-                          ),
-                          child: pw.BarcodeWidget(
-                            barcode: pw.Barcode.qrCode(),
-                            data: qrCodeStr,
-                            width: 28 * PdfPageFormat.mm,
-                            height: 28 * PdfPageFormat.mm,
                           ),
                         ),
-                        pw.SizedBox(width: 5),
-                        pw.Expanded(
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Text(
-                                '📱 SCAN UNTUK CATAT & LAPOR',
-                                style: const pw.TextStyle(
-                                  fontSize: 7,
-                                  fontWeight: pw.FontWeight.bold,
-                                  color: PdfColors.black,
-                                ),
-                              ),
-                              pw.SizedBox(height: 1),
-                              pw.Text(
-                                'Setiap scan membantu kami mencatat dan mengelola sampah dengan lebih baik.',
-                                style: pw.TextStyle(
-                                  fontSize: 4.5,
-                                  color: PdfColor.fromHex('#334155'),
-                                ),
-                              ),
-                              pw.SizedBox(height: 3),
-                              pw.Container(
-                                width: double.infinity,
-                                padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-                                decoration: pw.BoxDecoration(
-                                  color: themeColor,
-                                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
-                                ),
-                                child: pw.Text(
-                                  formattedSerialCode,
-                                  style: pw.TextStyle(
-                                    fontSize: 6.5,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: headerTextColor,
-                                  ),
-                                  textAlign: pw.TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Footer Bar
-                    pw.Container(
-                      padding: const pw.EdgeInsets.only(top: 2),
-                      decoration: pw.BoxDecoration(
-                        border: pw.Border(top: pw.BorderSide(color: PdfColor.fromHex('#cbd5e1'), width: 1)),
                       ),
-                      child: pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                        children: [
-                          pw.Text(
-                            '🛡️ MARI JAGA KEBERSIHAN UNTUK MASA DEPAN YANG LEBIH HIJAU',
-                            style: const pw.TextStyle(
-                              fontSize: 4.5,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.black,
+                    )
+                  else
+                    pw.Positioned(
+                      left: 648,
+                      top: 1585,
+                      child: pw.SizedBox(
+                        width: 446,
+                        height: 53,
+                        child: pw.Center(
+                          child: pw.FittedBox(
+                            fit: pw.BoxFit.scaleDown,
+                            child: pw.Text(
+                              formattedSerialCode,
+                              style: const pw.TextStyle(
+                                fontSize: 36,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.white,
+                              ),
                             ),
                           ),
-                          pw.Text('🍃', style: const pw.TextStyle(fontSize: 5)),
-                        ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               );
             },
           ),
@@ -438,23 +267,32 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
 
       final bytes = await pdf.save();
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/Ketersediaan_QR.pdf');
-      await file.writeAsBytes(bytes);
+      
+      final filesToShare = <XFile>[];
+      
+      if (asImage) {
+        var index = 0;
+        await for (final page in Printing.raster(bytes, dpi: 72)) {
+          final pngBytes = await page.toPng();
+          final file = File('${dir.path}/QR_Poster_$index.png');
+          await file.writeAsBytes(pngBytes);
+          filesToShare.add(XFile(file.path, mimeType: 'image/png'));
+          index++;
+        }
+      } else {
+        final file = File('${dir.path}/Ketersediaan_QR.pdf');
+        await file.writeAsBytes(bytes);
+        filesToShare.add(XFile(file.path, mimeType: 'application/pdf'));
+      }
 
       state = state.copyWith(isLoading: false);
       
-      // Layout & preview PDF via native printing dialog
-      await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => bytes,
-        name: 'Poster_Resmi_QR_BERSEKA.pdf',
-      );
-
-      // Fallback share file
-      final xFile = XFile(file.path, mimeType: 'application/pdf');
-      await Share.shareXFiles([xFile], text: 'Poster Resmi QR Code BERSEKA (10 x 15 cm)');
+      if (filesToShare.isNotEmpty) {
+        await Share.shareXFiles(filesToShare, text: 'Poster Resmi QR Code BERSEKA');
+      }
       
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengekspor PDF: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'Gagal mengekspor: $e');
     }
   }
 }

@@ -59,14 +59,51 @@ class KetersediaanQrView extends ConsumerWidget {
             _buildFilters(context, state, controller),
             const SizedBox(height: 16),
             Expanded(
-              child: _buildContent(state),
+              child: _buildContent(state, controller),
             ),
           ],
         ),
       ),
       floatingActionButton: state.items.isNotEmpty
           ? FloatingActionButton.extended(
-              onPressed: state.isLoading ? null : () => controller.exportToPdf(),
+              onPressed: state.isLoading ? null : () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  builder: (context) => SafeArea(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            'Pilih Format Cetak',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                          title: const Text('Export sebagai PDF'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            controller.exportData(asImage: false);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.image, color: Colors.blue),
+                          title: const Text('Export sebagai Gambar (PNG)'),
+                          onTap: () {
+                            Navigator.pop(context);
+                            controller.exportData(asImage: true);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
               backgroundColor: AppColors.primaryGreen,
               icon: state.isLoading
                   ? const SizedBox(
@@ -75,9 +112,11 @@ class KetersediaanQrView extends ConsumerWidget {
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
                   : const Icon(Icons.print, color: Colors.white),
-              label: const Text(
-                'Cetak QR',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              label: Text(
+                state.selectedItems.isNotEmpty 
+                  ? 'Cetak QR (${state.selectedItems.length})'
+                  : 'Cetak Semua QR',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             )
           : null,
@@ -302,7 +341,7 @@ class KetersediaanQrView extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(KetersediaanQrState state) {
+  Widget _buildContent(KetersediaanQrState state, KetersediaanQrController controller) {
     if (state.isLoading && state.items.isEmpty) {
       return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
     }
@@ -356,12 +395,18 @@ class KetersediaanQrView extends ConsumerWidget {
         final isOrganik = categoryName == 'Organik';
         final statusBin = item['status']?.toString().toUpperCase() ?? 'PRINTED';
         final isUsed = statusBin != 'PRINTED' && statusBin != 'TERSEDIA';
+        final isSelected = state.selectedItems.contains(qrCodeStr);
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+        return GestureDetector(
+          onTap: () => controller.toggleSelection(qrCodeStr),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.green.shade50 : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? Colors.green : Colors.grey.shade200,
+                width: isSelected ? 2 : 1,
+              ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -429,7 +474,7 @@ class KetersediaanQrView extends ConsumerWidget {
               )
             ],
           ),
-        );
+        ));
       },
     );
   }

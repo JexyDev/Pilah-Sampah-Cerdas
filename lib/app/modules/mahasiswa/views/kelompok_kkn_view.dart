@@ -439,78 +439,140 @@ class KelompokKknView extends ConsumerWidget {
     final isLeader = poskoState.poskoResponse?.isUserLeader ?? isCurrentUserLeader;
 
     if (poskoState.isLoading && posko == null) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue));
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
         boxShadow: [
-          BoxShadow(color: AppColors.primaryBlue.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppColors.primaryBlue.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.home_work_rounded, color: AppColors.primaryBlue, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Lokasi Posko KKN', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                    const SizedBox(height: 2),
-                    if (posko != null)
-                      const Text(
-                        'Posko Aktif',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryGreen,
-                        ),
-                      )
-                    else
-                      const Text('Belum Didaftarkan', style: TextStyle(fontSize: 12, color: AppColors.dangerRed, fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            ],
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.home_work_rounded,
+              size: 140,
+              color: AppColors.primaryGreen.withValues(alpha: 0.05),
+            ),
           ),
-          const SizedBox(height: 16),
-          if (posko != null) ...[
-            Row(
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.location_on_rounded, size: 16, color: AppColors.textHint),
-                const SizedBox(width: 8),
-                Expanded(child: Text(posko.alamat.isNotEmpty ? posko.alamat : 'Alamat tidak tersedia', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary))),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'LOKASI POSKO KKN',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGreen,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    if (posko != null)
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryGreen,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Aktif',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryGreen,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      const Text(
+                        'Belum Didaftarkan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.dangerRed,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Alamat Utama',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.location_on_rounded, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        posko?.alamat.isNotEmpty == true 
+                            ? posko!.alamat 
+                            : 'Alamat tidak tersedia. Silakan daftarkan lokasi posko KKN Anda.',
+                        style: const TextStyle(
+                          fontSize: 13, 
+                          color: AppColors.textSecondary, 
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (isLeader) ...[
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
+                      icon: const Icon(Icons.edit_location_alt_rounded, size: 18),
+                      label: Text(posko != null ? 'Perbarui Lokasi' : 'Daftarkan Posko'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryGreen,
+                        side: const BorderSide(color: AppColors.primaryGreen),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 16),
-          ],
-          if (isLeader)
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
-                icon: const Icon(Icons.edit_location_alt_rounded, size: 18),
-                label: Text(posko != null ? 'Perbarui Posko' : 'Daftarkan Posko'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryBlue,
-                  side: const BorderSide(color: AppColors.primaryBlue),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
+          ),
         ],
       ),
     );

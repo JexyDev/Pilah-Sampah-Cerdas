@@ -30,6 +30,8 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
   final _kapasitasController = TextEditingController();
   final _alamatController = TextEditingController();
   final MapController _mapController = MapController();
+  
+  String _kapasitasUnit = 'Kg';
 
   String? _selectedJenis;
   String? _photoPath;
@@ -580,22 +582,62 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                     // ── Kapasitas Fasilitas ───────────────────────────────────────
                     const _SectionLabel(
                       icon: Icons.people_rounded,
-                      label: 'Kapasitas (Orang/Kg/dll)',
+                      label: 'Kapasitas',
                     ),
                     const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _kapasitasController,
-                      hintText: 'Masukkan Kapasitas',
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(
-                          7,
-                        ), // Maksimal 9.999.999
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: _StyledTextField(
+                            controller: _kapasitasController,
+                            hintText: 'Masukkan Kapasitas',
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(7),
+                            ],
+                            validator: (val) => (val == null || val.isEmpty)
+                                ? 'Wajib diisi'
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 1,
+                          child: Container(
+                            height: 54,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _kapasitasUnit,
+                                isExpanded: true,
+                                icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen),
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                items: ['Kg', 'Liter', 'Orang', 'Unit']
+                                    .map((e) => DropdownMenuItem(
+                                          value: e,
+                                          child: Text(e),
+                                        ))
+                                    .toList(),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _kapasitasUnit = val);
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Kapasitas wajib diisi'
-                          : null,
                     ),
                     const SizedBox(height: AppDimensions.md),
 
