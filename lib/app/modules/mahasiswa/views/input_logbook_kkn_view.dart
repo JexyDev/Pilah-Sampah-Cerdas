@@ -277,7 +277,56 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   Widget build(BuildContext context) {
     final prokerState = ref.watch(programKerjaListProvider);
 
-    return Scaffold(
+    bool hasUnsavedChanges() {
+      return _waktuMulaiCtrl.text.isNotEmpty ||
+             _waktuSelesaiCtrl.text.isNotEmpty ||
+             _lokasiCtrl.text.isNotEmpty ||
+             _deskripsiCtrl.text.isNotEmpty ||
+             _selectedProkerId != null ||
+             _selectedFasilitasId != null ||
+             _selectedFiles.isNotEmpty;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Input Logbook?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text('Input Logbook Harian', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -586,6 +635,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -436,7 +436,57 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       }
     });
 
-    return Scaffold(
+    bool hasUnsavedChanges() {
+      return _namaController.text.isNotEmpty ||
+             _picController.text.isNotEmpty ||
+             _kontakController.text.isNotEmpty ||
+             _kapasitasController.text.isNotEmpty ||
+             _alamatController.text.isNotEmpty ||
+             _selectedJenis != null ||
+             _photoPath != null ||
+             _selectedLocation != null;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Pendaftaran?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       body: CustomScrollView(
         slivers: [
@@ -1098,6 +1148,7 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
           ),
         ],
       ),
+    ),
     );
   }
 }

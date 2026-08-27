@@ -11,6 +11,7 @@ import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/posko_kkn_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
+import '../../auth/controllers/auth_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
@@ -166,6 +167,26 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     }
   }
 
+  bool _hasUnsavedChanges(PoskoKknData? originalPosko) {
+    if (originalPosko == null) {
+      // Pendaftaran baru, jika ada field yang terisi berarti ada perubahan
+      return _namaController.text.isNotEmpty ||
+          _alamatController.text.isNotEmpty ||
+          _selectedLocation != null ||
+          _photoPath != null;
+    } else {
+      // Mode edit, jika form ditutup tidak ada perubahan
+      if (!_isEditMode) return false;
+      
+      // Jika form terbuka, bandingkan dengan data awal
+      return _namaController.text != originalPosko.nama ||
+          _alamatController.text != originalPosko.alamat ||
+          _selectedLocation?.latitude != originalPosko.latitude ||
+          _selectedLocation?.longitude != originalPosko.longitude ||
+          _photoPath != null; // _photoPath != null berarti user memilih foto baru
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -226,6 +247,18 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(poskoKknProvider);
+    final user = ref.watch(authProvider).user;
+    final kelompokState = ref.watch(kelompokKknProvider);
+    final kelompokData = kelompokState.kelompok;
+
+    bool isKetua = false;
+    if (user != null && kelompokData != null) {
+      final me = kelompokData.members.firstWhere(
+        (m) => m.userId == user.id || m.nim == user.nim, 
+        orElse: () => const KelompokMemberData(userId: '', nim: '', name: '', jurusan: '', fakultas: '', individualPoints: 0, isLeader: false, statusPenugasanRw: ''),
+      );
+      isKetua = me.isLeader;
+    }
 
     // Check if error
     if (state.error != null) {
@@ -241,8 +274,42 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
 
     final hasExistingPosko = state.poskoResponse?.posko != null;
 
-    return Scaffold(
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!_hasUnsavedChanges(state.poskoResponse?.posko)) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Keluar dari Halaman?'),
+            content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.dangerRed),
+                child: const Text('Keluar', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: Text(
           _isEditMode
               ? 'Pembaruan Posko KKN'
@@ -270,8 +337,10 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
               child: CircularProgressIndicator(color: AppColors.primaryGreen),
             )
           : (hasExistingPosko && !_isEditMode)
-          ? _buildPoskoStatus(context, state.poskoResponse!.posko!)
-          : SingleChildScrollView(
+          ? _buildPoskoStatus(context, state.poskoResponse!.posko!, isKetua, kelompokData)
+          : (!isKetua && !hasExistingPosko)
+              ? _buildNonKetuaEmptyState()
+              : SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.lg),
               child: Form(
                 key: _formKey,
@@ -549,11 +618,12 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  const Text(
-                                    'Ketuk untuk menambah foto',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
+                                  Text(
+                                    _isEditMode ? 'Pilih Foto Baru (Opsional)' : 'Pilih/Ambil Foto Posko (Wajib)',
+                                    style: const TextStyle(
+                                      color: AppColors.primaryGreen,
                                       fontWeight: FontWeight.w600,
+                                      fontSize: 13,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -592,9 +662,9 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text(
-                                'Kirim Pendaftaran Posko',
-                                style: TextStyle(
+                            : Text(
+                                _isEditMode ? 'Simpan Perubahan' : 'Kirim Pendaftaran Posko',
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -605,14 +675,12 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                   ],
                 ),
               ),
-            ),
+          ),
+      ),
     );
   }
 
-  Widget _buildPoskoStatus(BuildContext context, PoskoKknData posko) {
-    final kelompokState = ref.watch(kelompokKknProvider);
-    final kelompokData = kelompokState.kelompok;
-
+  Widget _buildPoskoStatus(BuildContext context, PoskoKknData posko, bool isKetua, KelompokKknData? kelompokData) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -680,6 +748,51 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                       color: AppColors.textSecondary,
                     ),
                   ),
+                  if (kelompokData != null && kelompokData.dosenPembimbing != '-') ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningYellow.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.school_rounded, size: 14, color: AppColors.warningYellow),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'DPL: ${kelompokData.dosenPembimbing}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (kelompokData.dplPhone != '-') ...[
+                            const SizedBox(width: 8),
+                            InkWell(
+                              onTap: () async {
+                                final rawPhone = kelompokData.dplPhone;
+                                final cleanPhone = rawPhone
+                                    .replaceAll(RegExp(r'[^0-9]'), '')
+                                    .replaceFirst(RegExp(r'^0'), '62');
+                                final waUrl = Uri.parse('https://wa.me/$cleanPhone');
+                                if (await canLaunchUrl(waUrl)) {
+                                  await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+                                }
+                              },
+                              child: const Icon(Icons.chat_bubble_rounded, size: 16, color: Color(0xFF25D366)),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Divider(),
@@ -774,6 +887,43 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
+                    height: 180,
+                    width: double.infinity,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: FlutterMap(
+                        options: MapOptions(
+                          initialCenter: LatLng(posko.latitude, posko.longitude),
+                          initialZoom: 15.0,
+                          interactionOptions: const InteractionOptions(
+                            flags: InteractiveFlag.none,
+                          ),
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            userAgentPackageName: 'com.makerindo.berseka',
+                          ),
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(posko.latitude, posko.longitude),
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: AppColors.dangerRed,
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.map_rounded, size: 18),
@@ -798,103 +948,42 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                       },
                     ),
                   ),
+                  if (isKetua) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.edit_rounded, size: 18),
+                        label: const Text('Edit Data Posko'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.warningYellow,
+                          foregroundColor: AppColors.textPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isEditMode = true;
+                            _namaController.text = posko.nama;
+                            _alamatController.text = posko.alamat;
+                            _selectedLocation = LatLng(posko.latitude, posko.longitude);
+                            _photoPath = null;
+                          });
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            _mapController.move(_selectedLocation!, 15.0);
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
 
-          if (kelompokData != null && kelompokData.dosenPembimbing != '-') ...[
-            const SizedBox(height: 16),
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(
-                          Icons.school_rounded,
-                          color: AppColors.warningYellow,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Dosen Pembimbing (DPL)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      kelompokData.dosenPembimbing,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    if (kelompokData.dplNip != '-') ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'NIP: ${kelompokData.dplNip}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                    if (kelompokData.dplPhone != '-') ...[
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          icon: Image.asset(
-                            'assets/icons/ic_whatsapp.png',
-                            width: 18,
-                            height: 18,
-                            errorBuilder: (c, e, s) =>
-                                const Icon(Icons.chat, size: 18),
-                          ),
-                          label: const Text('Hubungi via WhatsApp'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF25D366),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          onPressed: () async {
-                            final rawPhone = kelompokData.dplPhone;
-                            final cleanPhone = rawPhone
-                                .replaceAll(RegExp(r'[^0-9]'), '')
-                                .replaceFirst(RegExp(r'^0'), '62');
-                            final waUrl = Uri.parse(
-                              'https://wa.me/$cleanPhone',
-                            );
-                            if (await canLaunchUrl(waUrl)) {
-                              await launchUrl(
-                                waUrl,
-                                mode: LaunchMode.externalApplication,
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
+
           if (ref.watch(poskoKknProvider).poskoResponse?.isUserLeader == true) ...[
             const SizedBox(height: 20),
             SizedBox(
@@ -930,6 +1019,44 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     );
   }
 }
+
+Widget _buildNonKetuaEmptyState() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.domain_disabled_rounded,
+              size: 80,
+              color: AppColors.border,
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Posko Belum Didaftarkan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Harap hubungi Ketua Kelompok Anda untuk mendaftarkan dan mengatur koordinat Posko KKN.',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
 class _SectionLabel extends StatelessWidget {
   final IconData icon;

@@ -77,7 +77,52 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    bool hasUnsavedChanges() {
+      return _judulCtrl.text.isNotEmpty ||
+             _deskripsiCtrl.text.isNotEmpty ||
+             _selectedPdf != null;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Input Laporan?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Input Laporan Akhir'),
@@ -158,6 +203,7 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -183,12 +229,14 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
     String u = (statusUsulan ?? '').toUpperCase();
     final leg = (legacyStatus ?? '').toUpperCase();
     if (u.isEmpty) {
-      if (leg == 'DITERIMA' || leg == 'DISETUJUI' || leg == 'SEDANG_BERJALAN' || leg == 'SELESAI') {
+      if (leg == 'DISETUJUI') {
         u = 'DISETUJUI';
-      } else if (leg == 'DITOLAK' || leg == 'TIDAK_DISETUJUI') {
-        u = 'DITOLAK';
+      } else if (leg == 'PERLU_REVISI' || leg == 'DITOLAK') {
+        u = 'PERLU_REVISI';
+      } else if (leg == 'BELUM_UNGGAH') {
+        u = 'BELUM_UNGGAH';
       } else {
-        u = 'BELUM_DISETUJUI';
+        u = 'MENUNGGU_TELAAH';
       }
     }
 
@@ -200,13 +248,17 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
       color = AppColors.primaryGreen;
       label = 'Disetujui';
       icon = Icons.check_circle;
-    } else if (u == 'DITOLAK' || u == 'TIDAK_DISETUJUI') {
+    } else if (u == 'PERLU_REVISI' || u == 'DITOLAK') {
       color = AppColors.dangerRed;
-      label = 'Ditolak';
-      icon = Icons.cancel;
+      label = 'Perlu Revisi';
+      icon = Icons.error_outline;
+    } else if (u == 'BELUM_UNGGAH') {
+      color = Colors.grey;
+      label = 'Belum Diunggah';
+      icon = Icons.cloud_off;
     } else {
       color = AppColors.warningYellow;
-      label = 'Menunggu';
+      label = 'Menunggu Telaah';
       icon = Icons.access_time;
     }
 
@@ -288,13 +340,20 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                     final item = list[index];
                     final judulStr = item['judul']?.toString() ?? '-';
                     final deskripsi = item['deskripsi']?.toString() ?? '-';
-                    final statusUsulan = item['statusUsulan'] ?? item['status_usulan'];
+                    final statusUsulan = item['statusTelaah']?.toString() ?? item['status_telaah']?.toString() ?? item['statusUsulan']?.toString();
                     final legacyStatus = item['status']?.toString();
                     final catatanDpl = item['catatanDpl'] ?? item['catatan_dpl'];
                     final createdAtStr = item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
                     
                     final nilaiAkhir = item['nilaiAkhir'] ?? item['nilai'];
-                    final rubrikScore = item['rubrikScore'];
+                    final predikat = item['predikat'] ?? item['predikatNilai'];
+                    
+                    final rubrikObj = item['rubrikScores'] ?? item['rubrik_scores'];
+                    final rubrikSistematika = rubrikObj?['sistematika'] ?? item['rubrikSistematika'] ?? item['sistematika'];
+                    final rubrikAnalisis = rubrikObj?['analisis'] ?? item['rubrikAnalisis'] ?? item['analisis'];
+                    final rubrikCapaian = rubrikObj?['output'] ?? item['rubrikCapaian'] ?? item['capaian'];
+                    final rubrikRefleksi = rubrikObj?['refleksi'] ?? item['rubrikRefleksi'] ?? item['refleksi'];
+                    
                     final filePdfUrl = item['filePdfUrl'] ?? item['fileUrl'] ?? item['lampiranUrl'];
 
                     return Card(
@@ -349,24 +408,47 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Nilai Laporan:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
-                                    Row(
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          '$nilaiAkhir',
-                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primaryGreen),
-                                        ),
-                                        if (rubrikScore != null)
+                                        const Text('Nilai Akhir:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                                        if (predikat != null)
                                           Text(
-                                            ' ($rubrikScore)',
+                                            '$predikat',
                                             style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                                           ),
                                       ],
                                     ),
+                                    Text(
+                                      '$nilaiAkhir',
+                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: AppColors.primaryGreen),
+                                    ),
                                   ],
                                 ),
                               ),
-                            ],
+                              if (rubrikSistematika != null || rubrikAnalisis != null || rubrikCapaian != null || rubrikRefleksi != null) ...[
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Rincian Penilaian Rubrik:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 6),
+                                      if (rubrikSistematika != null) _buildRubrikRow('Sistematika Laporan (20%)', rubrikSistematika.toString()),
+                                      if (rubrikAnalisis != null) _buildRubrikRow('Analisis Data & Masalah (30%)', rubrikAnalisis.toString()),
+                                      if (rubrikCapaian != null) _buildRubrikRow('Capaian Output & Program (30%)', rubrikCapaian.toString()),
+                                      if (rubrikRefleksi != null) _buildRubrikRow('Refleksi & Rekomendasi (20%)', rubrikRefleksi.toString()),
+                                    ],
+                                  ),
+                                ),
+                                ],
+                              ],
                             if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
                               const SizedBox(height: 10),
                               Container(
@@ -411,7 +493,7 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                                   },
                                 ),
                               ),
-                            ]
+                            ],
                           ],
                         ),
                       ),
@@ -425,5 +507,17 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
       ),
     );
   }
-}
 
+  Widget _buildRubrikRow(String title, String score) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(child: Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary))),
+          Text(score, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        ],
+      ),
+    );
+  }
+}

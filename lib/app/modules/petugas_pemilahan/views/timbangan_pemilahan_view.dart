@@ -442,7 +442,52 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    bool hasUnsavedChanges() {
+      return _weightController.text.isNotEmpty ||
+             _photoPath != null ||
+             _selectedClassification != 'Pemilahan Non-B3';
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Input Timbangan?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -721,6 +766,7 @@ class _TimbanganPemilahanViewState extends ConsumerState<TimbanganPemilahanView>
           ),
         ),
       ),
+    ),
     );
   }
 }

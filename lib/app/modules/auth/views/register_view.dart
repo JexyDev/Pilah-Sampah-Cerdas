@@ -536,11 +536,65 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
   //   );
   // }
 
+  bool _hasUnsavedChanges() {
+    return _nameController.text.isNotEmpty ||
+           _phoneController.text.isNotEmpty ||
+           _passwordController.text.isNotEmpty ||
+           _confirmPasswordController.text.isNotEmpty ||
+           _alamatController.text.isNotEmpty ||
+           _nimController.text.isNotEmpty ||
+           _jurusanController.text.isNotEmpty ||
+           _fakultasController.text.isNotEmpty ||
+           _universitasController.text.isNotEmpty ||
+           _kecamatanController.text.isNotEmpty ||
+           _provinsiController.text.isNotEmpty ||
+           _kotaController.text.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!_hasUnsavedChanges()) {
+          if (context.mounted) Navigator.of(context).pop();
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Pendaftaran?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
         width: double.infinity,
@@ -1335,6 +1389,7 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
           ],
         ),
       ),
+    ),
     );
   }
 

@@ -241,13 +241,59 @@ class _ForgotPasswordViewState
     return '$start****$end';
   }
 
+  bool _hasUnsavedChanges() {
+    return _phoneController.text.isNotEmpty ||
+           _newPasswordController.text.isNotEmpty ||
+           _confirmPasswordController.text.isNotEmpty ||
+           _otpValue.isNotEmpty;
+  }
+
   // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!_hasUnsavedChanges()) {
+          if (context.mounted) Navigator.of(context).pop();
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
         width: double.infinity,
@@ -460,6 +506,7 @@ class _ForgotPasswordViewState
           ],
         ),
       ),
+    ),
     );
   }
 

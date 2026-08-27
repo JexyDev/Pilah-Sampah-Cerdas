@@ -121,11 +121,58 @@ class _ForceChangePasswordViewState
     }
   }
 
+  bool _hasUnsavedChanges() {
+    return _oldPasswordController.text.isNotEmpty ||
+           _newPasswordController.text.isNotEmpty ||
+           _confirmPasswordController.text.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoading = ref.watch(authProvider).isLoading;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!_hasUnsavedChanges()) {
+          ref.read(authProvider.notifier).logout();
+          if (context.mounted) Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          ref.read(authProvider.notifier).logout();
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        }
+      },
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
@@ -141,9 +188,9 @@ class _ForceChangePasswordViewState
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () {
-            ref.read(authProvider.notifier).logout();
-            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+          onPressed: () async {
+            final navigator = Navigator.of(context);
+            if (await navigator.maybePop()) return;
           },
         ),
       ),
@@ -419,6 +466,7 @@ class _ForceChangePasswordViewState
           ),
         ),
       ),
+    ),
     );
   }
 

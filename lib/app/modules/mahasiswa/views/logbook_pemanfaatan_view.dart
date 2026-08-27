@@ -123,8 +123,54 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
   @override
   Widget build(BuildContext context) {
     final prokerState = ref.watch(programKerjaListProvider);
+    bool hasUnsavedChanges() {
+      return _selectedProkerId != null ||
+             _selectedFasilitasId != null ||
+             _bahanBakuCtrl.text.isNotEmpty ||
+             _beratInputCtrl.text.isNotEmpty ||
+             _selectedImage != null;
+    }
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Input Laporan?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text('Laporan Kegiatan Pemanfaatan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
@@ -284,7 +330,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                 title: 'Dokumentasi',
                 icon: Icons.camera_alt_rounded,
                 children: [
-                  const Text('Foto Dokumentasi Aksi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Foto Dokumentasi Aksi (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: _pickImage,
@@ -342,6 +388,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -86,9 +86,54 @@ class _GantiPasswordWargaViewState extends ConsumerState<GantiPasswordWargaView>
     }
   }
 
+  bool _hasUnsavedChanges() {
+    return _oldPasswordController.text.isNotEmpty ||
+           _newPasswordController.text.isNotEmpty ||
+           _confirmPasswordController.text.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!_hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Keluar Halaman?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text(
@@ -101,7 +146,10 @@ class _GantiPasswordWargaViewState extends ConsumerState<GantiPasswordWargaView>
         shadowColor: Colors.black12,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryGreen),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () async {
+            final navigator = Navigator.of(context);
+            if (await navigator.maybePop()) return;
+          },
         ),
       ),
       body: SingleChildScrollView(
@@ -239,6 +287,7 @@ class _GantiPasswordWargaViewState extends ConsumerState<GantiPasswordWargaView>
           ),
         ),
       ),
+    ),
     );
   }
 }

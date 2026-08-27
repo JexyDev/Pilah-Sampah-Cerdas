@@ -71,7 +71,53 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
   Widget build(BuildContext context) {
     final unharvestedState = ref.watch(unharvestedLogbooksProvider);
 
-    return Scaffold(
+    bool hasUnsavedChanges() {
+      return _selectedPemanfaatanId != null ||
+             _beratOutputCtrl.text.isNotEmpty ||
+             _nilaiEkonomiCtrl.text.isNotEmpty ||
+             _selectedImage != null;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Catat Panen?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Catat Hasil', style: TextStyle(fontSize: 18)),
         backgroundColor: Colors.white,
@@ -176,6 +222,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
           ),
         ),
       ),
+    ),
     );
   }
 

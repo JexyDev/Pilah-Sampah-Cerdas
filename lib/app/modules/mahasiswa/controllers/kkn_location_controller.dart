@@ -245,7 +245,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         activeZone['radius'] ??= 100;
 
         await _loadPersistentTimer();
-        //penambahan untuk commit
+        //penambahan untuk commitqq
 
         // [BUGFIX] Server (sama seperti yang tampil di web) adalah sumber kebenaran durasi.
         // Sebelumnya nilai server DIABAIKAN jika selisihnya <= 60 detik (guard yang justru

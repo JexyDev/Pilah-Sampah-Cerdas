@@ -151,6 +151,18 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
     );
   }
 
+  String _formatSubtitle(String subtitle) {
+    if (subtitle == 'MENUNGGU_VERIFIKASI_DPL') return '⏳ Menunggu Verifikasi DPL';
+    if (subtitle == 'DISETUJUI') return '✅ Disetujui';
+    if (subtitle == 'DITOLAK') return '❌ Ditolak';
+    if (subtitle == 'MENUNGGU_VERIFIKASI_KETUA') return '⏳ Menunggu Verifikasi';
+    // Replace underscores with spaces for any other generic status
+    if (subtitle.contains('_')) {
+      return subtitle.replaceAll('_', ' ');
+    }
+    return subtitle;
+  }
+
   Widget _buildLogCard(KknHistoryLog log) {
     final hasPoints = log.points != null;
     
@@ -244,7 +256,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  log.subtitle,
+                  _formatSubtitle(log.subtitle),
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,

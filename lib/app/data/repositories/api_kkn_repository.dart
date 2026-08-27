@@ -249,10 +249,6 @@ class ApiKknRepository implements KknRepository {
         totalDurasiDalamZonaMenit: totalMenit,
         accumulatedSeconds: accumulatedSeconds,
         alasan: 'Presensi Selesai (Pulang)',
-        deskripsiKegiatan: deskripsiKegiatan,
-        fotoPath: fotoPath,
-        latitude: latitude,
-        longitude: longitude,
       );
       return response;
     } catch (e) {
@@ -489,7 +485,7 @@ class ApiKknRepository implements KknRepository {
     }
   }
   @override
-  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath}) async {
+  Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
       if (imagePath != null) {
         final formData = FormData.fromMap({
@@ -508,9 +504,9 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> updatePosko(Map<String, dynamic> data, {String? imagePath}) async {
+  Future<Map<String, dynamic>> updatePosko(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
-      if (imagePath != null && imagePath.isNotEmpty) {
+      if (imagePath != null) {
         final formData = FormData.fromMap({
           ...data,
           'foto': await MultipartFile.fromFile(imagePath),
@@ -585,7 +581,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath}) async {
+  Future<Map<String, dynamic>> registerFasilitas(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
       if (imagePath != null) {
         final formData = FormData.fromMap({
@@ -715,8 +711,7 @@ class ApiKknRepository implements KknRepository {
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
           if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
-          if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty)
-            'deskripsiKegiatan': deskripsiKegiatan,
+          if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty) 'deskripsiKegiatan': deskripsiKegiatan,
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
         },
@@ -858,16 +853,16 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath}) async {
+  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
-      FormData formData;
+      dynamic requestData;
       if (imagePath != null) {
         final fileExt = imagePath.split('.').last.toLowerCase();
         String mimeType = 'image/jpeg';
         if (fileExt == 'png') mimeType = 'image/png';
         if (fileExt == 'webp') mimeType = 'image/webp';
 
-        formData = FormData.fromMap({
+        requestData = FormData.fromMap({
           ...data,
           'fotoDokumentasi': await MultipartFile.fromFile(
             imagePath,
@@ -876,12 +871,12 @@ class ApiKknRepository implements KknRepository {
           ),
         });
       } else {
-        formData = FormData.fromMap(data);
+        requestData = data;
       }
 
       final response = await apiClient.dio.post(
         ApiEndpoints.kknPemanfaatanSampah,
-        data: formData,
+        data: requestData,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -895,37 +890,29 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
-      final formData = FormData.fromMap(data);
-      
-      final paths = <String>[];
-      if (imagePaths != null && imagePaths.isNotEmpty) {
-        paths.addAll(imagePaths);
-      } else if (imagePath != null && imagePath.isNotEmpty) {
-        paths.add(imagePath);
-      }
-
-      for (int i = 0; i < paths.length; i++) {
-        final p = paths[i];
-        final fileExt = p.split('.').last.toLowerCase();
+      dynamic requestData;
+      if (imagePath != null) {
+        final fileExt = imagePath.split('.').last.toLowerCase();
         String mimeType = 'image/jpeg';
         if (fileExt == 'png') mimeType = 'image/png';
         if (fileExt == 'webp') mimeType = 'image/webp';
         if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-        final fieldKey = i == 0 ? 'fotoBukti' : 'fotoBukti_$i';
-        formData.files.add(MapEntry(
-          fieldKey,
-          await MultipartFile.fromFile(
-            p,
-            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+        requestData = FormData.fromMap({
+          ...data,
+          'fotoDokumentasi': await MultipartFile.fromFile(
+            imagePath,
+            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
             contentType: MediaType.parse(mimeType),
           ),
-        ));
+        });
+      } else {
+        requestData = data;
       }
 
       final response = await apiClient.dio.post(
         ApiEndpoints.logbookMahasiswa,
-        data: formData,
+        data: requestData,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
@@ -956,7 +943,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath}) async {
+  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
       FormData formData;
       if (imagePath != null) {

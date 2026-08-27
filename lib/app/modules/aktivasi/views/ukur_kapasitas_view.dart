@@ -124,7 +124,70 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       _activateAnorganic = true;
     }
 
-    return Scaffold(
+    bool hasUnsavedChanges() {
+      if (_organicMode == 'Manual') {
+        if (_orgPanjangCtrl.text.isNotEmpty ||
+            _orgLebarCtrl.text.isNotEmpty ||
+            _orgTinggiCtrl.text.isNotEmpty) {
+          return true;
+        }
+      } else {
+        if (_organicStandardSize != '25') return true;
+      }
+      
+      if (_nonOrganicMode == 'Manual') {
+        if (_nonOrgPanjangCtrl.text.isNotEmpty ||
+            _nonOrgLebarCtrl.text.isNotEmpty ||
+            _nonOrgTinggiCtrl.text.isNotEmpty) {
+          return true;
+        }
+      } else {
+        if (_nonOrganicStandardSize != '25') return true;
+      }
+      
+      return false;
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        
+        if (!hasUnsavedChanges()) {
+          if (context.mounted) Navigator.pop(context);
+          return;
+        }
+
+        final bool? shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text('Batalkan Pengukuran?', style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.dangerRed,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Keluar'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (shouldPop == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
         title: const Text('Ukur Kapasitas Tempat Sampah'),
@@ -214,6 +277,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
           ],
         ),
       ),
+    ),
     );
   }
 
