@@ -100,3 +100,4 @@ ios/
 linux/
 macos/
 windows/
+*.xlsx
