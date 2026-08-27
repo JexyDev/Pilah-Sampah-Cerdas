@@ -430,16 +430,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     }
   }
 
-  Future<String> _getDeviceInfo() async {
-    try {
-      if (Platform.isAndroid) return 'android';
-      if (Platform.isIOS) return 'ios';
-      return Platform.operatingSystem;
-    } catch (_) {
-      return 'mobile';
-    }
-  }
-
   /// Mulai kegiatan KKN: panggil endpoint, lalu start GPS background
   Future<String?> mulaiKegiatan(
     String kegiatanId, {
@@ -762,9 +752,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   /// Helper: get basic device info string
   Future<String> _getDeviceInfo() async {
     try {
-      return 'Flutter Mobile';
+      if (Platform.isAndroid) return 'android';
+      if (Platform.isIOS) return 'ios';
+      return Platform.operatingSystem;
     } catch (_) {
-      return 'Unknown Device';
+      return 'mobile';
     }
   }
 

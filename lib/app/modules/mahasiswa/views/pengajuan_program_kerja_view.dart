@@ -75,7 +75,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 title: const Text('Dokumen PDF Proposal / Bukti'),
                 onTap: () async {
                   Navigator.pop(context);
-                  final result = await FilePicker.platform.pickFiles(
+                  final result = await FilePicker.pickFiles(
                     type: FileType.custom,
                     allowedExtensions: ['pdf'],
                   );

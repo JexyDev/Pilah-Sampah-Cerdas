@@ -128,7 +128,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
   Future<void> _pickFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf'],
         allowMultiple: true,
