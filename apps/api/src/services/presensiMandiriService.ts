@@ -19,8 +19,9 @@ export class PresensiMandiriService {
     longitude: number;
     deskripsiKegiatan: string;
     fotoUrl: string;
+    platformOs?: string;
   }) {
-    const { studentId, latitude, longitude, deskripsiKegiatan, fotoUrl } = params;
+    const { studentId, latitude, longitude, deskripsiKegiatan, fotoUrl, platformOs } = params;
 
     if (!deskripsiKegiatan || deskripsiKegiatan.trim().length === 0) {
       throw new Error("DESKRIPSI_REQUIRED");
@@ -41,13 +42,14 @@ export class PresensiMandiriService {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const existingToday = await prisma.presensiMandiri.findFirst({
+    const db = prisma as any;
+    const existingToday = await db.presensiMandiri.findFirst({
       where: { studentId, status: "AKTIF", checkInAt: { gte: todayStart, lte: todayEnd } },
     });
 
     if (existingToday) throw new Error("ALREADY_CHECKED_IN_TODAY");
 
-    const record = await prisma.presensiMandiri.create({
+    const record = await db.presensiMandiri.create({
       data: {
         studentId,
         kelompokId: student.kelompokId ?? null,
@@ -55,6 +57,7 @@ export class PresensiMandiriService {
         longitude,
         deskripsiKegiatan: deskripsiKegiatan.trim(),
         fotoUrl,
+        platformOs: platformOs || "ANDROID",
         status: "AKTIF",
       },
       include: {
@@ -83,7 +86,8 @@ export class PresensiMandiriService {
 
   async checkOut(params: { presensiId: string; studentId: string; deskripsiKegiatan?: string }) {
     const { presensiId, studentId, deskripsiKegiatan } = params;
-    const record = await prisma.presensiMandiri.findFirst({ where: { id: presensiId, studentId } });
+    const db = prisma as any;
+    const record = await db.presensiMandiri.findFirst({ where: { id: presensiId, studentId } });
     if (!record) throw new Error("PRESENSI_NOT_FOUND");
     if (record.status === "SELESAI") throw new Error("ALREADY_CHECKED_OUT");
 
@@ -98,7 +102,7 @@ export class PresensiMandiriService {
       updateData.deskripsiKegiatan = deskripsiKegiatan.trim();
     }
 
-    const updated = await prisma.presensiMandiri.update({ where: { id: presensiId }, data: updateData });
+    const updated = await db.presensiMandiri.update({ where: { id: presensiId }, data: updateData });
     return {
       presensiId: updated.id,
       status: updated.status,
@@ -115,9 +119,10 @@ export class PresensiMandiriService {
     if (deskripsiKegiatan.trim().length > MAX_DESKRIPSI_LENGTH) {
       throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
     }
-    const record = await prisma.presensiMandiri.findFirst({ where: { id: presensiId, studentId } });
+    const db = prisma as any;
+    const record = await db.presensiMandiri.findFirst({ where: { id: presensiId, studentId } });
     if (!record) throw new Error("PRESENSI_NOT_FOUND");
-    const updated = await prisma.presensiMandiri.update({
+    const updated = await db.presensiMandiri.update({
       where: { id: presensiId },
       data: { deskripsiKegiatan: deskripsiKegiatan.trim() },
     });
@@ -128,9 +133,10 @@ export class PresensiMandiriService {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(50, Math.max(1, params.limit ?? 10));
     const skip = (page - 1) * limit;
+    const db = prisma as any;
     const [total, items] = await Promise.all([
-      prisma.presensiMandiri.count({ where: { studentId } }),
-      prisma.presensiMandiri.findMany({
+      db.presensiMandiri.count({ where: { studentId } }),
+      db.presensiMandiri.findMany({
         where: { studentId },
         orderBy: { checkInAt: "desc" },
         skip,
@@ -144,7 +150,7 @@ export class PresensiMandiriService {
     ]);
     return {
       total, page, limit, totalPages: Math.ceil(total / limit),
-      items: items.map((p) => ({
+      items: items.map((p: any) => ({
         presensiId: p.id, latitude: Number(p.latitude), longitude: Number(p.longitude),
         deskripsiKegiatan: p.deskripsiKegiatan, fotoUrl: p.fotoUrl, status: p.status,
         checkInAt: p.checkInAt.toISOString(), checkOutAt: p.checkOutAt?.toISOString() ?? null,
@@ -156,7 +162,8 @@ export class PresensiMandiriService {
 
   async getLiveMap(params: { kelompokId?: string }) {
     const { kelompokId } = params;
-    const mandiriAktif = await prisma.presensiMandiri.findMany({
+    const db = prisma as any;
+    const mandiriAktif = await db.presensiMandiri.findMany({
       where: { status: "AKTIF", ...(kelompokId ? { kelompokId } : {}) },
       include: {
         student: { select: { id: true, name: true, studentProfile: { select: { nim: true } }, locations: { orderBy: { recordedAt: "desc" }, take: 1, select: { latitude: true, longitude: true, recordedAt: true } } } },
@@ -226,9 +233,10 @@ export class PresensiMandiriService {
       if (params.tanggalMulai) where.checkInAt.gte = new Date(params.tanggalMulai);
       if (params.tanggalAkhir) { const e = new Date(params.tanggalAkhir); e.setHours(23, 59, 59, 999); where.checkInAt.lte = e; }
     }
+    const db = prisma as any;
     const [total, items] = await Promise.all([
-      prisma.presensiMandiri.count({ where }),
-      prisma.presensiMandiri.findMany({
+      db.presensiMandiri.count({ where }),
+      db.presensiMandiri.findMany({
         where, orderBy: { checkInAt: "desc" }, skip, take: limit,
         include: {
           student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
@@ -238,7 +246,7 @@ export class PresensiMandiriService {
     ]);
     return {
       total, page, limit, totalPages: Math.ceil(total / limit),
-      items: items.map((p) => ({
+      items: items.map((p: any) => ({
         presensiId: p.id, studentId: p.studentId,
         nim: p.student.studentProfile?.nim ?? null, namaLengkap: p.student.name,
         kelompok: p.kelompok ? { id: p.kelompok.id, nama: p.kelompok.name, kelurahan: p.kelompok.kelurahan } : null,

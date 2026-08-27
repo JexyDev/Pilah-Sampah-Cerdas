@@ -47,9 +47,10 @@ export class BeritaService {
       ];
     }
 
+    const db = prisma as any;
     const [total, items] = await Promise.all([
-      prisma.beritaKonten.count({ where }),
-      prisma.beritaKonten.findMany({
+      db.beritaKonten.count({ where }),
+      db.beritaKonten.findMany({
         where,
         select: {
           id: true,
@@ -78,7 +79,8 @@ export class BeritaService {
    * Ambil detail satu berita berdasarkan slug (increment view count)
    */
   async getBySlug(slug: string) {
-    const berita = await prisma.beritaKonten.findUnique({
+    const db = prisma as any;
+    const berita = await db.beritaKonten.findUnique({
       where: { slug },
       include: {
         author: { select: { id: true, name: true, fotoProfil: true } },
@@ -90,7 +92,7 @@ export class BeritaService {
     }
 
     // Increment view count (fire-and-forget, tidak blocking)
-    prisma.beritaKonten
+    db.beritaKonten
       .update({
         where: { id: berita.id },
         data: { viewCount: { increment: 1 } },
@@ -125,9 +127,10 @@ export class BeritaService {
       ];
     }
 
+    const db = prisma as any;
     const [total, items] = await Promise.all([
-      prisma.beritaKonten.count({ where }),
-      prisma.beritaKonten.findMany({
+      db.beritaKonten.count({ where }),
+      db.beritaKonten.findMany({
         where,
         include: {
           author: { select: { id: true, name: true } },
@@ -145,7 +148,8 @@ export class BeritaService {
    * Ambil detail berita by ID (admin)
    */
   async getById(id: string) {
-    const berita = await prisma.beritaKonten.findUnique({
+    const db = prisma as any;
+    const berita = await db.beritaKonten.findUnique({
       where: { id },
       include: { author: { select: { id: true, name: true } } },
     });
@@ -176,7 +180,8 @@ export class BeritaService {
     const status = payload.status === "PUBLISHED" ? "PUBLISHED" : "DRAFT";
     const publishedAt = status === "PUBLISHED" ? new Date() : null;
 
-    return prisma.beritaKonten.create({
+    const db = prisma as any;
+    return db.beritaKonten.create({
       data: {
         judul: payload.judul.trim(),
         slug,
@@ -220,7 +225,8 @@ export class BeritaService {
     if (payload.tags !== undefined) data.tags = payload.tags || null;
     if (payload.kelompokId !== undefined) data.kelompokId = payload.kelompokId || null;
 
-    return prisma.beritaKonten.update({
+    const db = prisma as any;
+    return db.beritaKonten.update({
       where: { id },
       data,
       include: { author: { select: { id: true, name: true } } },
@@ -242,7 +248,8 @@ export class BeritaService {
       data.publishedAt = null;
     }
 
-    return prisma.beritaKonten.update({ where: { id }, data });
+    const db = prisma as any;
+    return db.beritaKonten.update({ where: { id }, data });
   }
 
   /**
@@ -250,7 +257,8 @@ export class BeritaService {
    */
   async delete(id: string) {
     await this.getById(id);
-    await prisma.beritaKonten.delete({ where: { id } });
+    const db = prisma as any;
+    await db.beritaKonten.delete({ where: { id } });
     return { deleted: true };
   }
 }
