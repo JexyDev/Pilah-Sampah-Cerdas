@@ -1173,8 +1173,13 @@ export class KknAttendanceService {
       const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
       const effectiveRadius = scheduleRadius + bufferMeters;
 
-      if (polygonCoords && polygonCoords.length >= 3) {
-        isInside = isPointInPolygon([latitude, longitude], polygonCoords);
+      if (polygonCoords && Array.isArray(polygonCoords) && polygonCoords.length >= 3) {
+        const polyPoints = (polygonCoords as any[]).map((p) => {
+          const pLat = Array.isArray(p) ? Number(p[0]) : Number(p.lat ?? p.latitude);
+          const pLng = Array.isArray(p) ? Number(p[1]) : Number(p.lng ?? p.longitude);
+          return { lat: pLat, lng: pLng };
+        });
+        isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters);
       } else {
         const distance = calculateDistance(latitude, longitude, scheduleLat, scheduleLng);
         isInside = distance <= effectiveRadius;
