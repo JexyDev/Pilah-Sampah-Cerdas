@@ -660,47 +660,41 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                                 {k.students?.length || 0} Mahasiswa
                               </button>
                             </td>
-                            <td className="p-4 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  onClick={() => handleOpenDetailKelompok(k)}
-                                  className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-all cursor-pointer"
-                                  title="Lihat Detail & Anggota Kelompok"
-                                >
-                                  <Eye size={16} />
-                                </button>
-
-                                {(isDpl || !isReadOnly) && (
-                                  <button
-                                    onClick={() => handleOpenSetLeaderModal(k)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 dark:hover:bg-amber-900/50 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                                    title="Klik untuk menunjuk atau melepas ketua kelompok"
-                                  >
-                                    <Crown size={13} className="text-amber-600 dark:text-amber-400" />
-                                    <span>{ketuaMhs ? "Ketua" : "Tunjuk"}</span>
-                                  </button>
-                                )}
-
-                                {!isReadOnly && (
-                                  <>
+                            {(!isReadOnly || isDpl) && (
+                              <td className="p-4 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {(isDpl || !isReadOnly) && (
                                     <button
-                                      onClick={() => handleOpenEditKelompok(k)}
-                                      className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-all cursor-pointer"
-                                      title="Edit Kelompok & DPL"
+                                      onClick={() => handleOpenSetLeaderModal(k)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 dark:hover:bg-amber-900/50 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                                      title="Klik untuk menunjuk atau melepas ketua kelompok"
                                     >
-                                      <Pencil size={15} />
+                                      <Crown size={13} className="text-amber-600 dark:text-amber-400" />
+                                      <span>{ketuaMhs ? "Ketua" : "Tunjuk"}</span>
                                     </button>
-                                    <button
-                                      onClick={() => handleDeleteKelompok(k.id)}
-                                      className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-all cursor-pointer"
-                                      title="Hapus Kelompok"
-                                    >
-                                      <Trash2 size={15} />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
+                                  )}
+
+                                  {!isReadOnly && (
+                                    <>
+                                      <button
+                                        onClick={() => handleOpenEditKelompok(k)}
+                                        className="p-1.5 text-slate-500 hover:text-emerald-700 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-all cursor-pointer"
+                                        title="Edit Kelompok & DPL"
+                                      >
+                                        <Pencil size={15} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteKelompok(k.id)}
+                                        className="p-1.5 text-slate-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-all cursor-pointer"
+                                        title="Hapus Kelompok"
+                                      >
+                                        <Trash2 size={15} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         );
                       })}
