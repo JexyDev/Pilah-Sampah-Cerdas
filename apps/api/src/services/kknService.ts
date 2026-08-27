@@ -1966,7 +1966,7 @@ export class KknService {
       longitude: poskoLng,
       poskoLatitude: poskoLat,
       poskoLongitude: poskoLng,
-      radiusMeter: 100,
+      radiusMeter: 200,
       totalGroupPoints,
       members,
     };
