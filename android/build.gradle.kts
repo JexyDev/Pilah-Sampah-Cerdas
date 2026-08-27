@@ -23,7 +23,7 @@ subprojects {
     val configureAndroid = Action<Project> {
         if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
             val android = extensions.findByName("android") as? com.android.build.gradle.BaseExtension
-            android?.buildToolsVersion = "35.0.0"
+            android?.buildToolsVersion = "36.0.0"
         }
     }
     if (state.executed) {
