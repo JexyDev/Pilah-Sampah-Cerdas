@@ -58,37 +58,57 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 /**
  * Helper: Calculate live in-zone minutes based on check-in time and jedaLogs
  * without counting any time spent while paused/jeda.
+ * Includes strict sanity check & max daily cap (max 8 hours / 480 mins)
+ * to prevent runaway 24h+ zombie durations.
  */
 export function calculateLiveInZoneMinutes(att: {
   attendedAt: Date | string;
   actualInZoneMinutes?: number | null;
   jedaLogs?: any;
+  status?: string;
 }): number {
-  const storedMins = att.actualInZoneMinutes ?? 0;
+  const storedMins = Math.max(0, att.actualInZoneMinutes ?? 0);
   if (!att.attendedAt) return storedMins;
+
+  // Max daily limit cap (8 hours = 480 minutes) to prevent non-sensical multi-day accumulations
+  const MAX_DAILY_MINUTES_CAP = 480;
+
+  const attendedDate = new Date(att.attendedAt);
+  const now = new Date();
+
+  // If attendedAt is from a previous calendar day (in WIB +7), don't use live Date.now()
+  const attendedWibDay = new Date(attendedDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const isPastDay = attendedWibDay < nowWibDay;
+
+  // If session is from a past day or status is TERJEDA, use stored in-zone minutes (or capped value)
+  if (isPastDay || att.status === "TERJEDA") {
+    return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
+  }
 
   const jedaLogsArray = (att.jedaLogs as any[]) || [];
   if (jedaLogsArray.length === 0) {
-    const elapsed = Math.floor((Date.now() - new Date(att.attendedAt).getTime()) / 60000);
-    return Math.max(storedMins, elapsed);
+    const elapsed = Math.floor((now.getTime() - attendedDate.getTime()) / 60000);
+    const computed = Math.max(storedMins, elapsed);
+    return Math.min(computed, MAX_DAILY_MINUTES_CAP);
   }
 
   const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
-  if (!lastLog) return storedMins;
+  if (!lastLog) return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
 
   if (lastLog.waktuResume) {
     const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
     const baseMins = Number(lastLog.durasiSebelumResumeMenit) || storedMins;
-    const elapsedSinceResume = Math.max(0, Math.floor((Date.now() - resumeTimeMs) / 60000));
-    return Math.max(storedMins, baseMins + elapsedSinceResume);
+    const elapsedSinceResume = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 60000));
+    return Math.min(Math.max(storedMins, baseMins + elapsedSinceResume), MAX_DAILY_MINUTES_CAP);
   }
 
   if (lastLog.waktuJeda) {
     const baseMins = Number(lastLog.durasiSebelumJedaMenit) || storedMins;
-    return Math.max(storedMins, baseMins);
+    return Math.min(Math.max(storedMins, baseMins), MAX_DAILY_MINUTES_CAP);
   }
 
-  return storedMins;
+  return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
 }
 
 export function calculateInZoneDurationMinutes(
@@ -3080,6 +3100,253 @@ export class KknAttendanceService {
       isHadir: ["HADIR", "SELESAI", "SELESAI_TELAT", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI"].includes(attendance.status) || Boolean(jamPulang),
       isBerlangsung: attendance.status === "BERLANGSUNG",
       method: attendance.method,
+    };
+  }
+
+  /**
+   * Laporan Rekap Presensi Komprehensif (untuk Web Dashboard Admin & DPL)
+   * Menyediakan filter lengkap, paginasi, pencarian, ringkasan capaian jam, foto bukti, dan deskripsi kegiatan.
+   */
+  async getLaporanPresensi(params: {
+    kelompokId?: string;
+    dplUserId?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(100, Math.max(1, params.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    // Filter DPL scope
+    let dplStudentUserIds: string[] | undefined;
+    if (params.dplUserId) {
+      const dplGroups = await prisma.kelompokKkn.findMany({
+        where: { OR: [{ dplId: params.dplUserId }, { dpl: { id: params.dplUserId } }] },
+        include: { students: { select: { userId: true } } },
+      });
+      dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
+    }
+
+    const where: any = {};
+
+    // 1. Filter Student IDs (by DPL or by Kelompok)
+    if (dplStudentUserIds) {
+      where.studentId = { in: dplStudentUserIds };
+    }
+
+    if (params.kelompokId && params.kelompokId !== "ALL") {
+      const kelompokStudents = await prisma.studentKkn.findMany({
+        where: { kelompokId: params.kelompokId },
+        select: { userId: true },
+      });
+      const ids = kelompokStudents.map((s) => s.userId);
+      if (where.studentId?.in) {
+        where.studentId = { in: where.studentId.in.filter((id: string) => ids.includes(id)) };
+      } else {
+        where.studentId = { in: ids };
+      }
+    }
+
+    // 2. Filter Tanggal (WIB)
+    if (params.startDate || params.endDate) {
+      where.attendedAt = {};
+      if (params.startDate) {
+        where.attendedAt.gte = new Date(`${params.startDate}T00:00:00+07:00`);
+      }
+      if (params.endDate) {
+        where.attendedAt.lte = new Date(`${params.endDate}T23:59:59.999+07:00`);
+      }
+    }
+
+    // 3. Filter Status
+    if (params.status && params.status !== "ALL") {
+      if (params.status === "HADIR_MEMENUHI") {
+        where.status = { in: ["HADIR_MEMENUHI", "HADIR", "SELESAI"] };
+      } else if (params.status === "HADIR_TIDAK_MEMENUHI") {
+        where.status = { in: ["HADIR_TIDAK_MEMENUHI", "SELESAI_TELAT"] };
+      } else if (params.status === "IZIN_SAKIT") {
+        where.OR = [
+          { status: { in: ["IZIN", "SAKIT"] } },
+          { method: { in: ["IZIN_DPL", "SAKIT_DPL"] } },
+        ];
+      } else {
+        where.status = params.status;
+      }
+    }
+
+    // 4. Search Filter (Nama / NIM)
+    if (params.search && params.search.trim().length > 0) {
+      const q = params.search.trim();
+      where.student = {
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { studentProfile: { nim: { contains: q, mode: "insensitive" } } },
+        ],
+      };
+    }
+
+    const [total, records, allSummaryRecords] = await Promise.all([
+      prisma.activityAttendance.count({ where }),
+      prisma.activityAttendance.findMany({
+        where,
+        orderBy: { attendedAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          schedule: {
+            select: {
+              id: true,
+              title: true,
+              date: true,
+              time: true,
+              kelompok: { select: { id: true, name: true, kelurahan: true } },
+            },
+          },
+          student: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              fotoProfil: true,
+              studentProfile: {
+                select: {
+                  nim: true,
+                  jurusan: true,
+                  isKetua: true,
+                  kelompok: {
+                    select: {
+                      id: true,
+                      name: true,
+                      kelurahan: true,
+                      dpl: { select: { id: true, name: true, phone: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      // Query aggregated stats without pagination
+      prisma.activityAttendance.findMany({
+        where,
+        select: {
+          status: true,
+          actualInZoneMinutes: true,
+          attendedAt: true,
+          checkOutAt: true,
+        },
+      }),
+    ]);
+
+    // Calculate aggregated summary
+    let hadirMemenuhiCount = 0;
+    let hadirKurangCount = 0;
+    let berlangsungCount = 0;
+    let terjedaCount = 0;
+    let izinSakitCount = 0;
+    let totalMenitKumulatif = 0;
+
+    for (const r of allSummaryRecords) {
+      const st = String(r.status || "").toUpperCase();
+      const mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
+      totalMenitKumulatif += mins;
+
+      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 120)) {
+        hadirMemenuhiCount++;
+      } else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < 120)) {
+        hadirKurangCount++;
+      } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") {
+        berlangsungCount++;
+      } else if (st === "TERJEDA") {
+        terjedaCount++;
+      } else if (st.includes("IZIN") || st.includes("SAKIT")) {
+        izinSakitCount++;
+      }
+    }
+
+    const items = records.map((att) => {
+      const st = String(att.status || "").toUpperCase();
+      let actualMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+
+      if (st === "BERLANGSUNG" && !att.checkOutAt) {
+        actualMins = calculateLiveInZoneMinutes(att);
+      } else if (actualMins === 0 && att.attendedAt && att.checkOutAt) {
+        const diff = Math.floor((att.checkOutAt.getTime() - att.attendedAt.getTime()) / 60000);
+        actualMins = Math.min(480, Math.max(0, diff));
+      }
+
+      const isMemenuhi = st === "HADIR_MEMENUHI" || (["HADIR", "SELESAI"].includes(st) && actualMins >= 120);
+
+      let statusDisplay = att.status;
+      if (st === "HADIR_MEMENUHI") statusDisplay = "Hadir & Memenuhi";
+      else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT") statusDisplay = "Hadir & Tidak Memenuhi";
+      else if (st === "BERLANGSUNG") statusDisplay = "Sedang di Lapangan";
+      else if (st === "TERJEDA") statusDisplay = "Terjeda";
+      else if (st.includes("SAKIT")) statusDisplay = "Sakit (Disetujui)";
+      else if (st.includes("IZIN")) statusDisplay = "Izin (Disetujui)";
+      else if (st.includes("ALPA") || st.includes("ALPHA")) statusDisplay = "Tanpa Keterangan";
+
+      const hours = Math.floor(actualMins / 60);
+      const mins = actualMins % 60;
+      const durasiFormatted = hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
+
+      const kknGroup = att.student.studentProfile?.kelompok || att.schedule?.kelompok;
+
+      return {
+        id: att.id,
+        studentId: att.studentId,
+        namaMahasiswa: att.student.name,
+        nim: att.student.studentProfile?.nim ?? "-",
+        jurusan: att.student.studentProfile?.jurusan ?? "-",
+        fotoProfil: att.student.fotoProfil ?? null,
+        isKetua: att.student.studentProfile?.isKetua ?? false,
+        kelompok: kknGroup ? {
+          id: kknGroup.id,
+          name: kknGroup.name,
+          kelurahan: kknGroup.kelurahan,
+          dplName: (kknGroup as any).dpl?.name ?? "-",
+        } : null,
+        scheduleId: att.scheduleId,
+        namaKegiatan: att.schedule?.title ?? "Kegiatan Harian Lapangan",
+        tanggal: att.attendedAt ? new Date(att.attendedAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10) : "-",
+        jamMasuk: att.attendedAt ? new Date(att.attendedAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16) : "-",
+        jamPulang: att.checkOutAt ? new Date(att.checkOutAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16) : "-",
+        durasiMenit: actualMins,
+        durasiFormatted,
+        status: att.status,
+        statusDisplay,
+        isMemenuhiDurasi: isMemenuhi,
+        deskripsiKegiatan: (att as any).deskripsiKegiatan ?? null,
+        fotoUrl: (att as any).fotoUrl ?? null,
+        latitude: att.latitude ? Number(att.latitude) : null,
+        longitude: att.longitude ? Number(att.longitude) : null,
+        method: att.method,
+      };
+    });
+
+    return {
+      summary: {
+        totalPresensi: total,
+        hadirMemenuhi: hadirMemenuhiCount,
+        hadirKurang: hadirKurangCount,
+        berlangsung: berlangsungCount,
+        terjeda: terjedaCount,
+        izinSakit: izinSakitCount,
+        totalJamKumulatif: Math.round((totalMenitKumulatif / 60) * 10) / 10,
+        totalMenitKumulatif,
+      },
+      items,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

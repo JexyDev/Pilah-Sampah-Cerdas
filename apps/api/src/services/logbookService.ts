@@ -287,6 +287,8 @@ export class LogbookService {
       tempat: string;
       deskripsi: string;
       fotoBuktiUrl?: string | null;
+      attachmentUrls?: string[];
+      platformOs?: string;
       tipeAktivitas?: TipeAktivitasKkn;
       programKerjaId?: string;
       fasilitasId?: string;
@@ -353,6 +355,8 @@ export class LogbookService {
         tempat: payload.tempat.trim(),
         deskripsi: payload.deskripsi.trim(),
         fotoBuktiUrl: payload.fotoBuktiUrl || null,
+        attachmentUrls: payload.attachmentUrls || (payload.fotoBuktiUrl ? [payload.fotoBuktiUrl] : null),
+        platformOs: payload.platformOs || "ANDROID",
         tipeAktivitas: payload.tipeAktivitas || TipeAktivitasKkn.KELOMPOK,
         programKerjaId: payload.programKerjaId || null,
         fasilitasId: payload.fasilitasId || null,

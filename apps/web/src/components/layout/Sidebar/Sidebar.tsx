@@ -26,6 +26,7 @@ import {
   Recycle,
   Sparkles,
   Globe,
+  Coins,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -652,12 +653,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "WARGA",
   ];
 
-  const hasAccess = (allowed?: UserRole[]) =>
-    !allowed ||
-    userRole === "DEVELOPER" ||
-    userRole === "SUPER_USER" ||
-    userRole === "PEMIMPIN" ||
-    allowed.includes(userRole);
+  const hasAccess = (allowed?: UserRole[]) => {
+    if (!allowed) return true;
+    // Pengecekan ketat: jika menu dikunci khusus DEVELOPER, role lain tidak boleh melihat
+    if (allowed.length === 1 && allowed[0] === "DEVELOPER") {
+      return userRole === "DEVELOPER";
+    }
+    if (allowed.includes("DEVELOPER") && !allowed.includes("SUPER_USER") && !allowed.includes("PEMIMPIN")) {
+      return userRole === "DEVELOPER";
+    }
+    return (
+      userRole === "DEVELOPER" ||
+      userRole === "SUPER_USER" ||
+      userRole === "PEMIMPIN" ||
+      allowed.includes(userRole)
+    );
+  };
 
   const getFilteredGroupChildren = (
     groupLabel: string,
@@ -691,13 +702,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/kurasi-landing",
           icon: Sparkles,
           label: "Kurasi Kegiatan Landing",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[],
+          allowed: ["DEVELOPER"] as UserRole[],
         },
         {
           to: "/manajemen-berita",
           icon: Globe,
           label: "Manajemen Berita",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "DPL"] as UserRole[],
+          allowed: ["DEVELOPER"] as UserRole[],
         },
       ],
     },
@@ -1228,7 +1239,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/kurasi-landing",
           icon: Sparkles,
           label: "Kurasi Landing Page",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[],
+          allowed: ["DEVELOPER"] as UserRole[],
+        },
+        {
+          to: "/kelola-poin",
+          icon: Coins,
+          label: "Kelola Poin Pengguna",
+          allowed: ["DEVELOPER"] as UserRole[],
         },
         {
           to: "/pengguna-daring",

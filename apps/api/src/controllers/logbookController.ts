@@ -61,18 +61,31 @@ export const logbookController = {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl;
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl || null;
+      const uploadedFileUrls: string[] = [];
+
       if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
+        uploadedFileUrls.push(fotoBuktiUrl);
       } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.fotoBukti?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
+        if (Array.isArray(req.files)) {
+          for (const f of req.files) {
+            if (f && f.filename) uploadedFileUrls.push(`/uploads/${f.filename}`);
+          }
+        } else {
+          const filesObj = req.files as { [fieldname: string]: Express.Multer.File[] };
+          for (const key of Object.keys(filesObj)) {
+            const arr = filesObj[key];
+            if (Array.isArray(arr)) {
+              for (const f of arr) {
+                if (f && f.filename) uploadedFileUrls.push(`/uploads/${f.filename}`);
+              }
+            }
+          }
+        }
+        if (uploadedFileUrls.length > 0 && !fotoBuktiUrl) {
+          fotoBuktiUrl = uploadedFileUrls[0];
+        }
       }
 
       const payload = {
@@ -81,7 +94,9 @@ export const logbookController = {
         waktuSelesai: req.body.waktuSelesai,
         tempat: req.body.tempat,
         deskripsi: req.body.deskripsi,
-        fotoBuktiUrl,
+        fotoBuktiUrl: fotoBuktiUrl || null,
+        attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : undefined,
+        platformOs: req.body.platformOs || "ANDROID",
         tipeAktivitas: req.body.tipeAktivitas,
         programKerjaId: req.body.programKerjaId || undefined,
         fasilitasId: req.body.fasilitasId || undefined,

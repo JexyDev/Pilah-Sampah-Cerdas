@@ -84,6 +84,8 @@ import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
 import LogAktivitasDpl from "../pages/dpl/LogAktivitasDpl";
 import KurasiLandingPage from "../pages/SuperUser/KurasiLandingPage";
 import ManajemenBeritaPage from "../pages/ManajemenBerita/ManajemenBeritaPage";
+import KelolaPoinPengguna from "../pages/KelolaPoinPengguna/KelolaPoinPengguna";
+
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -796,7 +798,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/manajemen-berita"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <ManajemenBeritaPage />
             </ProtectedRoute>
           }
@@ -916,7 +918,24 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/kelola-poin"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
+              <KelolaPoinPengguna />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master-data/poin-pengguna"
+          element={<Navigate to="/kelola-poin" replace />}
+        />
+        <Route
+          path="/master-data/kelola-poin"
+          element={<Navigate to="/kelola-poin" replace />}
+        />
         <Route path="/notifikasi" element={<Notifikasi />} />
+
         <Route
           path="/profil"
           element={
@@ -992,7 +1011,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/kurasi-landing"
           element={
-            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"]}>
+            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
               <KurasiLandingPage />
             </ProtectedRoute>
           }

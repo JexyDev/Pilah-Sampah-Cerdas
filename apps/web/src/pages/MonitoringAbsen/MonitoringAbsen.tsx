@@ -394,10 +394,26 @@ const parseTimeString = (timeStr?: string) => {
 
 const calculateDurationMinutes = (tmStr?: string, tsStr?: string) => {
   if (!tmStr) return 0;
-  const tm = new Date(tmStr).getTime();
-  const ts = tsStr ? new Date(tsStr).getTime() : new Date().getTime();
-  if (isNaN(tm) || isNaN(ts)) return 0;
-  return Math.max(0, Math.floor((ts - tm) / (1000 * 60)));
+  const tmDate = new Date(tmStr);
+  const tm = tmDate.getTime();
+  if (isNaN(tm)) return 0;
+
+  if (tsStr) {
+    const ts = new Date(tsStr).getTime();
+    if (isNaN(ts)) return 0;
+    return Math.max(0, Math.min(480, Math.floor((ts - tm) / (1000 * 60))));
+  }
+
+  // Check if tmStr is from previous days (WIB)
+  const tmWibDay = new Date(tm + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nowWibDay = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (tmWibDay < nowWibDay) {
+    return 0; // Don't calculate runaway live time across days
+  }
+
+  const ts = new Date().getTime();
+  const diffMins = Math.floor((ts - tm) / (1000 * 60));
+  return Math.max(0, Math.min(480, diffMins));
 };
 
 const formatDurationText = (minutes: number) => {
@@ -2751,15 +2767,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
                       
-                      const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
-                      const isTerjeda = statusUpper === "TERJEDA";
-                      const isBerlangsung = statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA";
+                      const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
+                      const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
                       const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
                       const recAny = rec as any;
                       const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
                       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
                       const durationMins = isLeaveOrPending 
                         ? 0 
+                        : isTerjeda
+                        ? storedMins
                         : isBerlangsung
                         ? Math.max(storedMins, liveElapsedMins)
                         : (storedMins > 0 ? storedMins : liveElapsedMins);

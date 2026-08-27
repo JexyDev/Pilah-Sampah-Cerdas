@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export interface CuratedActivityItem {
   id: string;
@@ -35,6 +36,9 @@ export interface CuratedActivityItem {
 }
 
 export const KurasiLandingPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const isDeveloper = user?.peran === "DEVELOPER" || (user as any)?.role === "DEVELOPER";
+
   const [activities, setActivities] = useState<CuratedActivityItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -236,6 +240,20 @@ export const KurasiLandingPage: React.FC = () => {
       });
     }
   };
+
+  if (!isDeveloper) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/40 my-6 shadow-sm">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shadow-xs">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">Akses Terbatas: Khusus Developer</h2>
+        <p className="text-xs sm:text-sm text-slate-500 max-w-md leading-relaxed font-medium">
+          Halaman kurasi konten dan kegiatan Landing Page diproteksi ketat dan hanya dapat diakses serta di-CRUD oleh akun dengan peran <strong>DEVELOPER</strong>.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">

@@ -27,14 +27,14 @@ const router = Router();
 // PUBLIC — Tidak butuh auth (landing page)
 // ─────────────────────────────────────────────
 router.get("/", beritaController.getPublishedList);
-router.get("/admin/list", authMiddleware, roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]), beritaController.getAdminList);
-router.get("/admin/:id", authMiddleware, roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]), beritaController.getById);
+router.get("/admin/list", authMiddleware, roleMiddleware(["DEVELOPER"]), beritaController.getAdminList);
+router.get("/admin/:id", authMiddleware, roleMiddleware(["DEVELOPER"]), beritaController.getById);
 router.get("/:slug", beritaController.getBySlug);
 
 // ─────────────────────────────────────────────
 // ADMIN — Butuh auth + role
 // ─────────────────────────────────────────────
-const adminRoles = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"];
+const adminRoles = ["DEVELOPER"];
 
 router.post(
   "/",
@@ -62,7 +62,7 @@ router.patch(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  roleMiddleware(["DEVELOPER"]),
   beritaController.delete
 );
 

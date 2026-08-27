@@ -195,10 +195,10 @@ router.get(
 );
 
 router.get(
-  "/kkn/attendance/timesheet-summary",
+  ["/laporan-rekap", "/kkn/attendance/laporan-rekap", "/laporan-presensi"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
-  kknAttendanceController.getTimesheetSummary
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "DEVELOPER"]),
+  kknAttendanceController.getLaporanPresensi
 );
 
 

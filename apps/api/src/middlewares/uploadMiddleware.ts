@@ -94,13 +94,7 @@ export const uploadResiduImage = uploadSingleImage.fields([
   { name: "evidencePhotoUrl", maxCount: 1 },
 ]);
 
-export const uploadPemanfaatanImage = uploadSingleImage.fields([
-  { name: "fotoDokumentasi", maxCount: 1 },
-  { name: "fotoBukti", maxCount: 1 },
-  { name: "image", maxCount: 1 },
-  { name: "foto", maxCount: 1 },
-  { name: "file", maxCount: 1 },
-]);
+export const uploadPemanfaatanImage = uploadSingleImage.any();
 
 export const safeUploadPemanfaatanImage = (req: Request, res: Response, next: NextFunction) => {
   uploadPemanfaatanImage(req, res, (err: any) => {

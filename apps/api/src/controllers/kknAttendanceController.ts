@@ -333,6 +333,48 @@ export const kknAttendanceController = {
     }
   },
 
+  getLaporanPresensi: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const rawRole = (req as any).user?.role;
+      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const isStudent = roleName === "MAHASISWA_KKN";
+
+      const currentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const dplUserId = isDpl ? currentUserId : undefined;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const status = req.query.status as string | undefined;
+      const search = req.query.search as string | undefined;
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+
+      const result = await kknAttendanceService.getLaporanPresensi({
+        kelompokId,
+        dplUserId,
+        startDate,
+        endDate,
+        status,
+        search,
+        page,
+        limit,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] getLaporanPresensi error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal mendapatkan data laporan presensi",
+      });
+    }
+  },
+
   getKegiatanAktif: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;

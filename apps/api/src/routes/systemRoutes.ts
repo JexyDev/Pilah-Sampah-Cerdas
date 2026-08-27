@@ -82,13 +82,13 @@ router.get("/landing-curated", systemController.getCuratedActivities);
 router.post(
   "/landing-curated",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"]),
+  roleMiddleware(["DEVELOPER"]),
   systemController.saveCuratedActivities
 );
 router.get(
   "/landing-curated/logbook-sources",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"]),
+  roleMiddleware(["DEVELOPER"]),
   systemController.getApprovedLogbookSources
 );
 
