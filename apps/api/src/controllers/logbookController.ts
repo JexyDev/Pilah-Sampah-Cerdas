@@ -73,7 +73,7 @@ export const logbookController = {
             if (f && f.filename) uploadedFileUrls.push(`/uploads/${f.filename}`);
           }
         } else {
-          const filesObj = req.files as { [fieldname: string]: Express.Multer.File[] };
+          const filesObj = req.files as { [fieldname: string]: any[] };
           for (const key of Object.keys(filesObj)) {
             const arr = filesObj[key];
             if (Array.isArray(arr)) {
