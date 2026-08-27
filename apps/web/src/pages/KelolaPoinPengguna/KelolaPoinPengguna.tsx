@@ -113,7 +113,7 @@ export const KelolaPoinPengguna: React.FC = () => {
 
   // Pagination for Global Ledger Tab
   const [ledgerPage, setLedgerPage] = useState(1);
-  const [ledgerLimit] = useState(15);
+  const [ledgerLimit, setLedgerLimit] = useState(15);
   const [ledgerTotalPages, setLedgerTotalPages] = useState(1);
   const [ledgerTotalRecords, setLedgerTotalRecords] = useState(0);
 
