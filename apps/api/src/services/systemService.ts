@@ -56,11 +56,11 @@ export const systemService = {
   getDefaultCuratedActivities: () => [
     {
       id: "curated-1",
-      title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
+      title: "Training of Educator Pemilahan Sampah bersama DLH di RW 05",
       date: "2026-08-27",
-      location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
+      location: "RW 05 Panglawungan Titiran Dalam, Kelurahan Sadang Serang, Kec. Coblong",
       category: "Edukasi & Sosialisasi",
-      imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
+      imageUrl: "/uploads/1787810701895-def26cdf-d7bf-46cc-a0e3-1deab9158f16.jpg",
       description:
         "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
       sdgTags: ["#11", "#12", "#13"],
@@ -68,7 +68,7 @@ export const systemService = {
     },
     {
       id: "curated-2",
-      title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
+      title: "Sosialisasi Pengelolaan & Pemilahan Sampah ke Sekolah Dasar",
       date: "2026-08-27",
       location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
       category: "Edukasi Pemilahan",
@@ -80,26 +80,50 @@ export const systemService = {
     },
     {
       id: "curated-3",
-      title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
-      date: "2026-08-27",
-      location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
-      category: "Pengolahan & Pemanfaatan",
-      imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
-      description:
-        "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
-      sdgTags: ["#12", "#13", "#15"],
-      isPublished: true,
-    },
-    {
-      id: "curated-4",
       title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
       date: "2026-08-27",
       location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
       category: "Aksi Bersih Lingkungan",
-      imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
+      imageUrl: "/uploads/1787805342899-bfdb89dd-4f7a-455f-b45f-8968382dd74a.jpg",
       description:
         "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
       sdgTags: ["#3", "#11", "#12"],
+      isPublished: true,
+    },
+    {
+      id: "curated-4",
+      title: "Sosialisasi dan Pembentukan Bank Sampah Mandiri RW 08",
+      date: "2026-08-27",
+      location: "RW 08, Kelurahan Sekeloa, Kec. Coblong",
+      category: "Pemanfaatan Daur Ulang",
+      imageUrl: "/uploads/1787803196878-2ddb10ac-c7e0-4421-a226-8fe33d4d9dc0.jpg",
+      description:
+        "Sosialisasi pembentukan unit Bank Sampah terpadu bersama pengurus RW 08 Sekeloa untuk mendorong pemilahan sampah plastik dan anorganik bernilai ekonomis.",
+      sdgTags: ["#11", "#12", "#13"],
+      isPublished: true,
+    },
+    {
+      id: "curated-5",
+      title: "Edukasi Pemilahan Sampah Mandiri di RW 09 Lebak Gede",
+      date: "2026-08-27",
+      location: "Taman Fitnes RW 09, Kelurahan Lebak Gede, Kec. Coblong",
+      category: "Edukasi Pemilahan",
+      imageUrl: "/uploads/1787805778293-1be1be12-4830-424e-aac0-c4af2a5862b6.jpg",
+      description:
+        "Gerakan edukasi pemilahan sampah rumah tangga dan monitoring kebersihan fasilitas umum bersama pengurus RW 09 dan warga setempat.",
+      sdgTags: ["#3", "#11", "#12"],
+      isPublished: true,
+    },
+    {
+      id: "curated-6",
+      title: "Silaturahmi dan Pemetaan Titik Pemilahan Sampah di RW 07",
+      date: "2026-08-27",
+      location: "RW 07 RT 05, Kelurahan Lebak Siliwangi, Kec. Coblong",
+      category: "Sosialisasi & Pemetaan",
+      imageUrl: "/uploads/1787794346929-1f5c46d7-9119-4620-ade4-d03453eb2d00.jpg",
+      description:
+        "Koordinasi dan pemetaan rute pemilahan sampah organik dan anorganik bersama ketua RT 05 dan pengurus RW 07 Lebak Siliwangi.",
+      sdgTags: ["#11", "#12", "#13"],
       isPublished: true,
     },
   ],
@@ -219,20 +243,41 @@ export const systemService = {
   },
 
   /**
-   * Automatically sync real student prokers from database into curated activities
+   * Automatically sync real student prokers & logbooks from database into curated activities
    */
   syncRealProkersToLanding: async (updatedBy: string = "Developer") => {
+    const db = prisma as any;
     const prokers = await systemService.getRealProkerSources();
     if (!prokers || prokers.length === 0) {
       return systemService.getCuratedLandingActivities();
     }
 
-    const defaultImages = [
-      "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
-      "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
-      "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
-      "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
-    ];
+    let realPhotos: string[] = [];
+    try {
+      const logs = await db.$queryRawUnsafe(`
+        SELECT foto_bukti_url as "fotoBuktiUrl"
+        FROM logbook_kkn
+        WHERE foto_bukti_url IS NOT NULL AND length(foto_bukti_url) > 3
+        ORDER BY tanggal_kegiatan DESC
+        LIMIT 30
+      `);
+      if (logs && logs.length > 0) {
+        realPhotos = logs.map((l: any) => l.fotoBuktiUrl).filter(Boolean);
+      }
+    } catch {
+      // fallback
+    }
+
+    if (realPhotos.length === 0) {
+      realPhotos = [
+        "/uploads/1787810701895-def26cdf-d7bf-46cc-a0e3-1deab9158f16.jpg",
+        "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+        "/uploads/1787805342899-bfdb89dd-4f7a-455f-b45f-8968382dd74a.jpg",
+        "/uploads/1787803196878-2ddb10ac-c7e0-4421-a226-8fe33d4d9dc0.jpg",
+        "/uploads/1787805778293-1be1be12-4830-424e-aac0-c4af2a5862b6.jpg",
+        "/uploads/1787794346929-1f5c46d7-9119-4620-ade4-d03453eb2d00.jpg",
+      ];
+    }
 
     const curatedFromProkers = prokers.slice(0, 6).map((p: any, idx: number) => {
       let rawTitle = p.judul;
@@ -258,7 +303,7 @@ export const systemService = {
         date: d,
         location: locStr || "Kecamatan Coblong, Kota Bandung",
         category: p.kategori || "Aksi Lingkungan",
-        imageUrl: defaultImages[idx % defaultImages.length],
+        imageUrl: realPhotos[idx % realPhotos.length],
         description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${p.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
         sdgTags: ["#11", "#12", "#13"],
         isPublished: true,
