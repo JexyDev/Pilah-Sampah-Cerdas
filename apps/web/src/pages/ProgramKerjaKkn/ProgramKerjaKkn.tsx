@@ -628,15 +628,15 @@ export const ProgramKerjaKkn: React.FC = () => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
-        item.deskripsi.toLowerCase().includes(q) ||
+        (item.deskripsi || "").toLowerCase().includes(q) ||
         (item.judul || "").toLowerCase().includes(q) ||
-        item.kelompokName.toLowerCase().includes(q) ||
-        item.kelurahan.toLowerCase().includes(q) ||
+        (item.kelompokName || "").toLowerCase().includes(q) ||
+        (item.kelurahan || "").toLowerCase().includes(q) ||
         (item.penginput?.nama || "").toLowerCase().includes(q) ||
         (item.penginput?.nim || "").toLowerCase().includes(q) ||
         (item.dplName || "").toLowerCase().includes(q) ||
         (item.mahasiswaList || []).some(
-          (m) => m.nama.toLowerCase().includes(q) || m.nim.toLowerCase().includes(q)
+          (m) => (m.nama || "").toLowerCase().includes(q) || (m.nim || "").toLowerCase().includes(q)
         );
 
       const matchesCategory =

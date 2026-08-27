@@ -1636,7 +1636,7 @@ export const dplService = {
           select: {
             id: true,
             nim: true,
-            prodi: true,
+            jurusan: true,
             isKetua: true,
             noWa: true,
             user: {
@@ -1671,7 +1671,7 @@ export const dplService = {
             select: {
               id: true,
               nim: true,
-              prodi: true,
+              jurusan: true,
               isKetua: true,
               noWa: true,
               user: {
@@ -1790,7 +1790,7 @@ export const dplService = {
           select: {
             id: true,
             nim: true,
-            prodi: true,
+            jurusan: true,
             isKetua: true,
             noWa: true,
             user: {
@@ -1847,7 +1847,7 @@ export const dplService = {
         id: s.id,
         nama: s.user?.name || "-",
         nim: s.nim || "-",
-        prodi: s.prodi || "-",
+        prodi: s.jurusan || s.prodi || "-",
         isKetua: s.isKetua || false,
         phone: s.user?.phone || s.noWa || "-",
       }));
@@ -1871,7 +1871,7 @@ export const dplService = {
             id: p.student.id,
             nama: p.student.user?.name || "Mahasiswa",
             nim: p.student.nim || null,
-            prodi: p.student.prodi || null,
+            prodi: (p.student as any).jurusan || (p.student as any).prodi || null,
             role: "MAHASISWA",
             isKetua: p.student.isKetua || false,
             telepon: p.student.user?.phone || p.student.noWa || null,
@@ -1881,7 +1881,7 @@ export const dplService = {
             id: ketuaMhs.id,
             nama: ketuaMhs.user?.name ? `${ketuaMhs.user.name} (Ketua)` : "Mahasiswa (Ketua)",
             nim: ketuaMhs.nim || null,
-            prodi: ketuaMhs.prodi || null,
+            prodi: (ketuaMhs as any).jurusan || (ketuaMhs as any).prodi || null,
             role: "MAHASISWA",
             isKetua: true,
             telepon: ketuaMhs.user?.phone || ketuaMhs.noWa || null,

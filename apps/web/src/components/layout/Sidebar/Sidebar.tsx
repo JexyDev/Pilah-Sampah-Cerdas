@@ -716,7 +716,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       ],
     },
     {
-      header: "KULIAH KERJA NYATA",
+      header: "PROGRAM KKN",
       items: [
         {
           type: "group",
