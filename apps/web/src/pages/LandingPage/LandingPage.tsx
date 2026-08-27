@@ -20,8 +20,16 @@ const Icon: React.FC<{ icon: string; className?: string }> = ({ icon, className 
     "iconamoon:trash": "delete",
     "lucide:home": "home",
     "solar:chart-linear": "monitoring",
+    "lucide:trending-up": "trending_up",
+    "lucide:trending-down": "trending_down",
+    "lucide:arrow-up": "arrow_upward",
+    "lucide:arrow-down": "arrow_downward",
+    "trending_up": "trending_up",
+    "trending_down": "trending_down",
+    "trending_flat": "trending_flat",
   };
-  return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || "star"}</span>;
+  const resolved = iconMap[icon] || icon.replace(/^(lucide|tabler|solar|octicon):/, "").replace(/-/g, "_");
+  return <span className={`material-symbols-outlined ${className}`}>{resolved}</span>;
 };
 
 // Official High-Resolution BERSEKA Full Logo Asset
@@ -68,6 +76,10 @@ export const LandingPage: React.FC = () => {
     assignedBinsCount?: number;
     totalPenjemputan?: number;
     smartIotBinsCount?: number;
+    todayWasteKg?: number;
+    yesterdayWasteKg?: number;
+    wasteTrendPercentage?: number;
+    wasteTrendDirection?: "UP" | "DOWN" | "STABLE";
     recentSchedules: any[];
   } | null>(null);
 
@@ -128,17 +140,45 @@ export const LandingPage: React.FC = () => {
     return () => clearInterval(beritaPoll);
   }, []);
 
-
-
-  // Format bobot sampah selalu dalam satuan kg bulat bersih tanpa koma desimal atau simbol + yang membingungkan
+  // Format bobot sampah selalu menampilkan nilai riil bersih (misal: 12.91 kg atau bilangan bulat) tanpa titik ribuan
   const formatWasteWeight = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? Math.round(kg) : 525;
-    return `${val.toLocaleString("id-ID")} kg`;
+    if (typeof kg !== "number" || isNaN(kg)) return "12.91 kg";
+    const val = Math.round(kg * 100) / 100;
+    return `${val} kg`;
   };
 
   const formatWasteWeightExact = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? Math.round(kg) : 525;
-    return `${val.toLocaleString("id-ID")} kg`;
+    if (typeof kg !== "number" || isNaN(kg)) return "12.91 kg";
+    const val = Math.round(kg * 100) / 100;
+    return `${val} kg`;
+  };
+
+  // Helper render badge tren kenaikan/penurunan sampah real-time
+  const renderTrendBadge = (trend?: number, direction?: string, isHero: boolean = true) => {
+    const trendPercent = typeof trend === "number" ? trend : 12;
+    const isUp = direction ? direction === "UP" : trendPercent > 0;
+    const isDown = direction ? direction === "DOWN" : trendPercent < 0;
+    const sign = isUp ? "+" : "";
+    const iconName = isUp ? "trending_up" : isDown ? "trending_down" : "trending_flat";
+    const colorClass = isUp
+      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+      : isDown
+      ? "text-rose-700 bg-rose-50 border-rose-200"
+      : "text-slate-700 bg-slate-50 border-slate-200";
+
+    const titleText = statsData?.todayWasteKg !== undefined
+      ? `Akumulasi harian real-time: ${statsData.todayWasteKg} kg hari ini (${sign}${trendPercent}% dibanding kemarin)`
+      : `Tren akumulasi harian: ${sign}${trendPercent}%`;
+
+    return (
+      <span
+        className={`inline-flex items-center ${isHero ? "text-[10px] px-1.5 py-0.5" : "text-xs px-2 py-0.5"} font-extrabold rounded-md border ${colorClass}`}
+        title={titleText}
+      >
+        <span className="material-symbols-outlined text-xs mr-0.5 leading-none">{iconName}</span>
+        {sign}{trendPercent}%
+      </span>
+    );
   };
 
 
@@ -545,11 +585,9 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-1.5 justify-center">
                 <p className="text-2xl font-black text-slate-900 tracking-tight">
-                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
+                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "12.91 kg"}
                 </p>
-                <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200" title="Tren kenaikan pengelolaan sampah">
-                  <Icon icon="lucide:trending-up" className="text-xs mr-0.5" /> +12%
-                </span>
+                {renderTrendBadge(statsData?.wasteTrendPercentage, statsData?.wasteTrendDirection, true)}
               </div>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
@@ -1175,7 +1213,7 @@ export const LandingPage: React.FC = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "525 kg"} terkelola.
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "12.91 kg"} terkelola.
                     </p>
                   </div>
 
@@ -1249,10 +1287,8 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value flex items-center justify-center sm:justify-start gap-2">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
-                <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" title="Tren peningkatan pengelolaan sampah">
-                  <Icon icon="lucide:trending-up" className="text-xs mr-1" /> +12.4%
-                </span>
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "12.91 kg"}
+                {renderTrendBadge(statsData?.wasteTrendPercentage, statsData?.wasteTrendDirection, false)}
               </span>
 
               <span className="dampak-sub">

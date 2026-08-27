@@ -80,11 +80,11 @@ const DownloadPage: React.FC = () => {
   });
 
   const [stats, setStats] = useState<LandingStats>({
-    wargaCount: 85,
-    totalSampahKg: 4056,
+    wargaCount: 725,
+    totalSampahKg: 12.91,
     kelurahanCount: 6,
-    totalPenjemputan: 468,
-    totalPoin: 6987,
+    totalPenjemputan: 25,
+    totalPoin: 10564,
   });
 
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>("");
@@ -347,7 +347,7 @@ const DownloadPage: React.FC = () => {
                 <Layers size={20} />
               </div>
               <div className="space-y-0.5">
-                <p className="text-2xl sm:text-3xl font-black text-[#0468BF] tracking-tight">{stats.totalSampahKg.toLocaleString("id-ID")} Kg</p>
+                <p className="text-2xl sm:text-3xl font-black text-[#0468BF] tracking-tight">{Math.round(stats.totalSampahKg)} kg</p>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sampah Terdata</p>
               </div>
             </div>
