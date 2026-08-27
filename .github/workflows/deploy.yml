@@ -85,9 +85,24 @@ jobs:
           yes | $SDK_MANAGER --licenses || true
           $SDK_MANAGER "cmake;3.22.1"
 
+      - name: Setup CI Release Keystore
+        run: |
+          mkdir -p android/app
+          if [ ! -f "android/app/berseka-release.keystore" ]; then
+            echo "Generating CI signing keystore for release build..."
+            keytool -genkey -v -keystore android/app/berseka-release.keystore \
+              -alias bersekakey -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass bersekarelease2026 -keypass bersekarelease2026 \
+              -dname "CN=BERSEKA CI, OU=Engineering, O=UNIKOM, L=Bandung, ST=Jawa Barat, C=ID"
+          fi
+          echo "storePassword=bersekarelease2026" > android/key.properties
+          echo "keyPassword=bersekarelease2026" >> android/key.properties
+          echo "keyAlias=bersekakey" >> android/key.properties
+          echo "storeFile=berseka-release.keystore" >> android/key.properties
+
       - name: Build Android Release APK (Universal Build)
         run: |
-          flutter build apk --release --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }}
+          flutter build apk --release --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }} --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
       - name: Install sshpass

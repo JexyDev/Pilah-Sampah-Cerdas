@@ -37,23 +37,27 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            val keyAliasVal = keystoreProperties.getProperty("keyAlias") ?: "bersekakey"
-            val keyPasswordVal = keystoreProperties.getProperty("keyPassword") ?: "bersekarelease2026"
-            val storePasswordVal = keystoreProperties.getProperty("storePassword") ?: "bersekarelease2026"
-            val storeFileVal = keystoreProperties.getProperty("storeFile") ?: "berseka-release.keystore"
-            
-            keyAlias = keyAliasVal
-            keyPassword = keyPasswordVal
-            storePassword = storePasswordVal
-            storeFile = file(storeFileVal)
+        val storeFileProp = keystoreProperties.getProperty("storeFile") ?: "berseka-release.keystore"
+        val keystoreFile = file(storeFileProp)
+        
+        if (keystoreFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias") ?: "bersekakey"
+                keyPassword = keystoreProperties.getProperty("keyPassword") ?: "bersekarelease2026"
+                storePassword = keystoreProperties.getProperty("storePassword") ?: "bersekarelease2026"
+                storeFile = keystoreFile
+            }
         }
     }
 
     buildTypes {
         release {
             val releaseSigning = signingConfigs.findByName("release")
-            signingConfig = releaseSigning ?: signingConfigs.getByName("debug")
+            signingConfig = if (releaseSigning?.storeFile?.exists() == true) {
+                releaseSigning
+            } else {
+                signingConfigs.getByName("debug")
+            }
             
             // Enable R8/ProGuard and apply rules
             isMinifyEnabled = true
