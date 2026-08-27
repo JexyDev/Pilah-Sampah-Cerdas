@@ -831,12 +831,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               label: "Laporan Presensi",
               allowed: [
                 "DEVELOPER",
-                "SUPER_USER",
-                "ADMIN_DLH",
-                "DPL",
-                "DOSEN_PEMBIMBING",
-                "PANITIA_TASKFORCE",
-                "PEMIMPIN",
               ] as UserRole[],
             },
             {

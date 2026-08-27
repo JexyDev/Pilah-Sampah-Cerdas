@@ -3256,9 +3256,9 @@ export class KknAttendanceService {
       const mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
       totalMenitKumulatif += mins;
 
-      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 120)) {
+      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 240)) {
         hadirMemenuhiCount++;
-      } else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < 120)) {
+      } else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < 240)) {
         hadirKurangCount++;
       } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") {
         berlangsungCount++;
@@ -3280,7 +3280,7 @@ export class KknAttendanceService {
         actualMins = Math.min(480, Math.max(0, diff));
       }
 
-      const isMemenuhi = st === "HADIR_MEMENUHI" || (["HADIR", "SELESAI"].includes(st) && actualMins >= 120);
+      const isMemenuhi = st === "HADIR_MEMENUHI" || (["HADIR", "SELESAI"].includes(st) && actualMins >= 240);
 
       let statusDisplay = att.status;
       if (st === "HADIR_MEMENUHI") statusDisplay = "Hadir & Memenuhi";
