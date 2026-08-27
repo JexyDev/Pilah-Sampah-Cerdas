@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 
 // Load environment variables from apps/api/.env with root .env fallback
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 dotenv.config();
 
 import { prisma } from "./lib/prisma.js";
@@ -61,6 +63,8 @@ import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
 import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
 import timelineKknRouter from "./routes/timelineKknRoutes.js";
 import logbookRouter from "./routes/logbookRoutes.js";
+import beritaRouter from "./routes/beritaRoutes.js";
+import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 
 import { setupSwagger } from "./swagger.js";
@@ -168,11 +172,14 @@ app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
 app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
 app.use("/api/v1/timeline-kkn", timelineKknRouter);
 app.use("/api/v1/logbook", logbookRouter);
+app.use("/api/v1/berita", beritaRouter);
+app.use("/api/v1/presensi", presensiMandiriRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
 app.use("/api/logbook", logbookRouter);
+app.use("/api/berita", beritaRouter);
 app.use("/api/kkn-attendance", kknAttendanceRouter);
 app.use("/api", kknAttendanceRouter);
 app.use("/api/residu", residuRouter);

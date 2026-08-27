@@ -82,6 +82,8 @@ import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
 import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
 import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
 import LogAktivitasDpl from "../pages/dpl/LogAktivitasDpl";
+import KurasiLandingPage from "../pages/SuperUser/KurasiLandingPage";
+import ManajemenBeritaPage from "../pages/ManajemenBerita/ManajemenBeritaPage";
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -789,6 +791,17 @@ const AppRoutes: React.FC = () => {
         <Route path="/validasi-absensi" element={<Navigate to="/ajuan-absensi" replace />} />
         <Route path="/penilaian-kkn" element={<Navigate to="/penilaian-kkn/mahasiswa" replace />} />
         <Route path="/program-kerja" element={<Navigate to="/program-kerja-kkn" replace />} />
+
+        {/* CMS Berita Kegiatan Mahasiswa KKN */}
+        <Route
+          path="/manajemen-berita"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "PANITIA_TASKFORCE", "PEMIMPIN"]}>
+              <ManajemenBeritaPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/pengelolaan-sampah"
           element={
@@ -976,6 +989,16 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/kurasi-landing"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"]}>
+              <KurasiLandingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/master-data/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />
+        <Route path="/superUser/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/master-data/histori-sistem" element={<Navigate to="/histori-sistem" replace />} />
         <Route path="/log-aktivitas" element={<Navigate to="/histori-sistem" replace />} />
         <Route path="/superUser/audit" element={<Navigate to="/histori-sistem" replace />} />

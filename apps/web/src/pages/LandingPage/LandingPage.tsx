@@ -51,6 +51,8 @@ export const LandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>("");
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
+  const [showAllActivitiesModal, setShowAllActivitiesModal] = useState<boolean>(false);
 
   // Live database stats fetched from Express Backend API
   const [statsData, setStatsData] = useState<{
@@ -58,7 +60,7 @@ export const LandingPage: React.FC = () => {
     wargaCount: number;
     totalSampahKg: number;
     kelurahanCount: number;
-    tingkatPemilahanPercent: number;
+    tingkatPemilahanPercent?: number;
     totalPoin?: number;
     approvedIdeasCount?: number;
     poinRewardIde?: number;
@@ -86,6 +88,55 @@ export const LandingPage: React.FC = () => {
     const pollInterval = setInterval(fetchLandingStats, 10000);
     return () => clearInterval(pollInterval);
   }, []);
+
+  // Berita Kegiatan Mahasiswa KKN — real-time dari CMS
+  const [beritaList, setBeritaList] = useState<Array<{
+    id: string;
+    judul: string;
+    ringkasan?: string | null;
+    gambarUrl?: string | null;
+    kategori: string;
+    publishedAt?: string | null;
+    createdAt: string;
+    author?: { name: string } | null;
+  }>>([]);
+
+  useEffect(() => {
+    const fetchBerita = async () => {
+      try {
+        const res = await api.get("/api/v1/berita?limit=6");
+        if (res.data?.data) {
+          setBeritaList(res.data.data);
+        }
+      } catch {
+        // Berita tidak krusial — silent fallback
+      }
+    };
+    fetchBerita();
+    const beritaPoll = setInterval(fetchBerita, 30000);
+    return () => clearInterval(beritaPoll);
+  }, []);
+
+
+
+  // Format bobot sampah dengan 2 desimal / 3 angka ringkas (misal: 4,06 Ton+ atau 850 kg)
+  const formatWasteWeight = (kg: number | undefined) => {
+    if (kg === undefined || kg === null) return "4,06 Ton+";
+    if (kg >= 1000) {
+      const ton = kg / 1000;
+      return `${ton.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton+`;
+    }
+    return `${kg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg+`;
+  };
+
+  const formatWasteWeightExact = (kg: number | undefined) => {
+    if (kg === undefined || kg === null) return "4,06 Ton";
+    if (kg >= 1000) {
+      const ton = kg / 1000;
+      return `${ton.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`;
+    }
+    return `${kg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+  };
 
 
   const scrollToSection = (id: string) => {
@@ -463,14 +514,14 @@ export const LandingPage: React.FC = () => {
 
         {/* Quick Stat Highlights (Connected to Live Database API) */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-12">
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-lg shadow-slate-200/50 p-6 sm:p-8 grid grid-cols-2 lg:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
               <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#035941] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="tabler:activity" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? `${statsData.kegiatanCount}+` : "25+"}
+                {statsData ? `${statsData.kegiatanCount}+` : "28+"}
               </p>
               <p className="text-xs font-bold text-slate-500">Kegiatan Terlaksana</p>
             </div>
@@ -480,9 +531,9 @@ export const LandingPage: React.FC = () => {
                 <Icon icon="octicon:people-16" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? `${statsData.wargaCount}+` : "500+"}
+                {statsData ? `${statsData.wargaCount}+` : "722+"}
               </p>
-              <p className="text-xs font-bold text-slate-500">Warga Terlibat</p>
+              <p className="text-xs font-bold text-slate-500">Pengguna Terlibat</p>
             </div>
 
             <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4">
@@ -490,7 +541,7 @@ export const LandingPage: React.FC = () => {
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")}+ kg` : "1.250+ kg"}
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4,06 Ton+"}
               </p>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
@@ -503,16 +554,6 @@ export const LandingPage: React.FC = () => {
                 {statsData ? statsData.kelurahanCount : 6}
               </p>
               <p className="text-xs font-bold text-slate-500">Kelurahan Terlibat</p>
-            </div>
-
-            <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2 sm:pt-0 sm:px-4 col-span-2 sm:col-span-1">
-              <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#5d8d83] border border-[#7dae62]/40 flex items-center justify-center">
-                <Icon icon="solar:chart-linear" className="text-xl" />
-              </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"}
-              </p>
-              <p className="text-xs font-bold text-slate-500">Tingkat Pemilahan</p>
             </div>
 
           </div>
@@ -644,7 +685,14 @@ export const LandingPage: React.FC = () => {
                   <div>
                     <p className="eyebrow">Kegiatan Terbaru</p>
                   </div>
-                  <Link to="/login" className="link-more">Lihat Semua →</Link>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllActivitiesModal(true)}
+                    className="link-more inline-flex items-center gap-1.5 cursor-pointer bg-transparent border-0 font-extrabold text-[#035941] hover:text-[#024633] transition"
+                  >
+                    <span>Lihat Semua</span>
+                    <span>→</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="kegiatan">
@@ -653,27 +701,36 @@ export const LandingPage: React.FC = () => {
                     : [
                         {
                           id: "1",
-                          title: "Edukasi Pemilahan Sampah Mandiri di RW 03",
+                          title: "Edukasi Pemilahan Sampah Mandiri dan Aktivasi Kode QR di RW 03",
                           date: "2026-05-24",
-                          location: "Kel. Lebak Gede, Kec. Coblong",
+                          location: "Balai RW 03, Kel. Lebak Gede, Kec. Coblong",
                           category: "Edukasi Pemilahan",
-                          imageUrl: "/image/activity-1.png?v=2",
+                          imageUrl: "/image/activity-1.png",
+                          description:
+                            "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
+                          sdgTags: ["#3", "#11", "#12"],
                         },
                         {
                           id: "2",
-                          title: "Pengolahan Kompos Sampah Organik BSF",
+                          title: "Pengolahan Kompos Dapur & Budidaya Larva Maggot BSF Terpadu",
                           date: "2026-05-20",
-                          location: "Kel. Dago, Kec. Coblong",
-                          category: "Pengolahan Kompos",
-                          imageUrl: "/image/activity-2.png?v=2",
+                          location: "Rumah Kompos, Kel. Dago, Kec. Coblong",
+                          category: "Pengolahan Kompos & Maggot",
+                          imageUrl: "/image/activity-2.png",
+                          description:
+                            "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
+                          sdgTags: ["#12", "#13", "#15"],
                         },
                         {
                           id: "3",
-                          title: "Aksi Bersih Sungai Cikapundung Bersama Mahasiswa KKN",
+                          title: "Aksi Bersih Sungai Cikapundung dan Audit Sampah Plastik",
                           date: "2026-05-18",
-                          location: "Kel. Sekeloa, Kec. Coblong",
-                          category: "Aksi Bersih",
-                          imageUrl: "/image/activity-3.png?v=2",
+                          location: "Bantaran Sungai, Kel. Sekeloa, Kec. Coblong",
+                          category: "Aksi Bersih Lingkungan",
+                          imageUrl: "/image/activity-3.png",
+                          description:
+                            "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
+                          sdgTags: ["#3", "#11", "#15"],
                         },
                       ]
                   ).map((item: any, idx: number) => {
@@ -681,13 +738,21 @@ export const LandingPage: React.FC = () => {
                     const day = isNaN(d.getDate()) ? "24" : String(d.getDate()).padStart(2, "0");
                     const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
                     const month = isNaN(d.getMonth()) ? "Mei" : monthNames[d.getMonth()];
-                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png?v=2`;
+                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png`;
 
                     return (
-                      <Link
+                      <div
                         key={item.id || idx}
-                        to="/login"
-                        className="block text-left"
+                        onClick={() => setSelectedActivity(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedActivity(item);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        className="block text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-3xl"
                       >
                         <article
                           className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
@@ -712,7 +777,7 @@ export const LandingPage: React.FC = () => {
 
                             {/* Category Badge */}
                             <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
-                              {item.category || "Kegiatan KKN"}
+                              {item.category || "Aksi Lingkungan"}
                             </div>
                           </div>
 
@@ -722,12 +787,17 @@ export const LandingPage: React.FC = () => {
                               <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-snug group-hover:text-emerald-600 transition-colors line-clamp-2 text-left">
                                 {item.title}
                               </h3>
+                              {item.description && (
+                                <p className="text-xs text-slate-500 line-clamp-2 font-normal leading-relaxed">
+                                  {item.description}
+                                </p>
+                              )}
                             </div>
 
                             <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
                               <span className="flex items-center gap-1.5 text-slate-600 font-medium text-xs leading-normal">
                                 <span className="material-symbols-outlined text-base text-[#035941] shrink-0">location_on</span>
-                                <span>{item.location || "Kec. Coblong"}</span>
+                                <span className="truncate max-w-[180px]">{item.location || "Kec. Coblong"}</span>
                               </span>
                               <span className="text-emerald-600 font-extrabold flex items-center gap-1 text-[11px] group-hover:translate-x-1 transition-transform shrink-0">
                                 Detail <span>→</span>
@@ -735,7 +805,7 @@ export const LandingPage: React.FC = () => {
                             </div>
                           </div>
                         </article>
-                      </Link>
+                      </div>
                     );
                   })}
                 </div>
@@ -747,8 +817,100 @@ export const LandingPage: React.FC = () => {
       </section>
 
 
+      {/* ----------------- BERITA KEGIATAN KKN (Real-time CMS) ----------------- */}
+      {beritaList.length > 0 && (
+        <section id="berita-kkn" className="py-20 bg-white border-b border-slate-100">
+          <div className="container-custom space-y-10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow text-emerald-600 font-extrabold text-xs uppercase tracking-widest mb-2">
+                  📰 Berita Terkini
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                  Kegiatan Mahasiswa KKN
+                </h2>
+                <p className="text-sm text-slate-500 mt-2 max-w-lg">
+                  Liputan langsung kegiatan lingkungan dan sosial mahasiswa KKN yang diperbarui secara real-time.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {beritaList.map((berita) => {
+                const tanggal = berita.publishedAt || berita.createdAt;
+                const d = new Date(tanggal);
+                const day = d.getDate();
+                const month = d.toLocaleDateString("id-ID", { month: "short" });
+
+                const KATEGORI_LABEL: Record<string, string> = {
+                  KEGIATAN: "Kegiatan KKN",
+                  PENGUMUMAN: "Pengumuman",
+                  PRESTASI: "Prestasi",
+                  LINGKUNGAN: "Lingkungan",
+                  UMUM: "Umum",
+                };
+
+                return (
+                  <article
+                    key={berita.id}
+                    className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
+                  >
+                    {/* Cover Image */}
+                    <div className="relative h-44 w-full overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100">
+                      {berita.gambarUrl ? (
+                        <img
+                          src={berita.gambarUrl}
+                          alt={berita.judul}
+                          className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-5xl opacity-20">🌿</span>
+                        </div>
+                      )}
+                      {/* Date Badge */}
+                      <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center text-center">
+                        <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
+                        <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
+                      </div>
+                      {/* Category Badge */}
+                      <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        {KATEGORI_LABEL[berita.kategori] || berita.kategori}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                      <div className="space-y-2">
+                        <h3 className="text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
+                          {berita.judul}
+                        </h3>
+                        {berita.ringkasan && (
+                          <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
+                            {berita.ringkasan}
+                          </p>
+                        )}
+                      </div>
+                      {berita.author && (
+                        <p className="text-[11px] text-slate-400 font-semibold">
+                          oleh {berita.author.name}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ----------------- 02. WHY US ----------------- */}
       <section id="why-us" className="py-24 bg-[#f0fdf4] border-b border-[#dcfce7]">
+
         <div className="container-custom space-y-12">
 
           <div className="text-center">
@@ -832,10 +994,10 @@ export const LandingPage: React.FC = () => {
 
                   <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
-                      Warga Terdaftar
+                      Pengguna Terdaftar
                     </span>
                     <p className="text-xl sm:text-2xl font-black text-emerald-600">
-                      {statsData ? `${statsData.wargaCount} Akun` : "83 Akun"}
+                      {statsData ? `${statsData.wargaCount} Akun` : "722+ Akun"}
                     </p>
                   </div>
 
@@ -980,16 +1142,16 @@ export const LandingPage: React.FC = () => {
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
                       <span className="material-symbols-outlined">
-                        monitoring
+                        location_city
                       </span>
                     </div>
 
                     <p className="text-sm font-black text-slate-900">
-                      Tingkat Pemilahan
+                      Kelurahan Binaan
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"} terukur.
+                      {statsData ? `${statsData.kelurahanCount} Kelurahan` : "6 Kelurahan"} terintegrasi.
                     </p>
                   </div>
 
@@ -1005,7 +1167,7 @@ export const LandingPage: React.FC = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")} kg` : "4.056 kg"} terkelola.
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "4,06 Ton"} terkelola.
                     </p>
                   </div>
 
@@ -1079,7 +1241,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                {statsData ? `${statsData.totalSampahKg.toLocaleString("id-ID")}+ kg` : "1.250+ kg"}
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4,06 Ton+"}
               </span>
 
               <span className="dampak-sub">
@@ -1090,15 +1252,15 @@ export const LandingPage: React.FC = () => {
             {/* Statistik 2 */}
             <div className="dampak-card dampak-card-2">
               <span className="dampak-label">
-                Warga Terlibat
+                Pengguna Terlibat
               </span>
 
               <span className="dampak-value">
-                {statsData ? `${statsData.wargaCount}+` : "500+"}
+                {statsData ? `${statsData.wargaCount}+` : "722+"}
               </span>
 
               <span className="dampak-sub">
-                Orang
+                Pengguna Terdaftar
               </span>
             </div>
 
@@ -1109,26 +1271,26 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                {statsData ? `${statsData.kegiatanCount}+` : "25+"}
+                {statsData ? `${statsData.kegiatanCount}+` : "28+"}
               </span>
 
               <span className="dampak-sub">
-                Kegiatan
+                Aksi & Edukasi
               </span>
             </div>
 
             {/* Statistik 4 */}
             <div className="dampak-card dampak-card-4">
               <span className="dampak-label">
-                Tingkat Pemilahan
+                Kelurahan Terbina
               </span>
 
               <span className="dampak-value">
-                {statsData ? `${statsData.tingkatPemilahanPercent}%` : "35%"}
+                {statsData ? `${statsData.kelurahanCount}` : "6"}
               </span>
 
               <span className="dampak-sub">
-                Rata-rata
+                Kelurahan di Kec. Coblong
               </span>
             </div>
 
@@ -1675,6 +1837,207 @@ export const LandingPage: React.FC = () => {
           </div>
         )
       }
+
+      {/* ----------------- INTERACTIVE PUBLIC ACTIVITY DETAIL MODAL ----------------- */}
+      {selectedActivity && (
+        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl border border-slate-100 my-8 max-h-[90vh] flex flex-col justify-between">
+            <div>
+              {/* Photo & Header */}
+              <div className="relative h-60 w-full bg-slate-900 overflow-hidden">
+                <img
+                  src={selectedActivity.imageUrl || "/image/activity-1.png"}
+                  alt={selectedActivity.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+
+                {/* Close Button */}
+                <button
+                  onClick={() => setSelectedActivity(null)}
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 text-white hover:bg-black/60 flex items-center justify-center transition backdrop-blur-md cursor-pointer z-10"
+                  aria-label="Tutup"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+
+                {/* Badges on Banner */}
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-emerald-600 text-white text-[11px] font-black uppercase px-3 py-1 rounded-full shadow-md tracking-wider">
+                      {selectedActivity.category || "Aksi Pemilahan Sampah"}
+                    </span>
+                    {selectedActivity.sdgTags?.map((tag: string) => (
+                      <span
+                        key={tag}
+                        className="bg-white/90 text-slate-800 text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <span className="bg-white/90 text-slate-900 text-xs font-black px-3 py-1 rounded-xl shadow-xs backdrop-blur-xs flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-emerald-600">calendar_today</span>
+                    {selectedActivity.date || "2026-05-24"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Body Details */}
+              <div className="p-6 sm:p-7 space-y-4 overflow-y-auto max-h-[40vh]">
+                <h3 className="font-black text-slate-900 text-lg sm:text-xl leading-snug">
+                  {selectedActivity.title}
+                </h3>
+
+                <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="material-symbols-outlined text-base text-[#035941] shrink-0">location_on</span>
+                  <span>{selectedActivity.location || "Kecamatan Coblong, Kota Bandung"}</span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Deskripsi & Narasi Kegiatan
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line">
+                    {selectedActivity.description ||
+                      "Kegiatan kolaborasi pengelolaan lingkungan hidup dan edukasi pemilahan sampah mandiri bersama warga, aparat kewilayahan, serta mahasiswa KKN di Kecamatan Coblong, Kota Bandung."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedActivity(null)}
+                className="px-5 py-2.5 rounded-2xl border border-slate-200 bg-white text-slate-700 font-extrabold text-xs hover:bg-slate-100 transition cursor-pointer"
+              >
+                Tutup
+              </button>
+
+              <Link
+                to="/login"
+                className="px-6 py-2.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-md shadow-[#035941]/20"
+              >
+                <span>Masuk ke Aplikasi</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL KATALOG SEMUA KEGIATAN PUBLIK ----------------- */}
+      {showAllActivitiesModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 my-8 max-h-[90vh] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#035941]">local_activity</span>
+                    Semua Kegiatan Lingkungan & Pemilahan
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Dokumentasi aksi lapangan mahasiswa KKN dan masyarakat di Kecamatan Coblong
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowAllActivitiesModal(false)}
+                  className="text-slate-400 hover:text-slate-600 transition p-1"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div className="py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[55vh] pr-1">
+                {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
+                  ? statsData.recentSchedules
+                  : [
+                      {
+                        id: "1",
+                        title: "Edukasi Pemilahan Sampah Mandiri dan Aktivasi Kode QR di RW 03",
+                        date: "2026-05-24",
+                        location: "Balai RW 03, Kel. Lebak Gede, Kec. Coblong",
+                        category: "Edukasi Pemilahan",
+                        imageUrl: "/image/activity-1.png",
+                        description:
+                          "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
+                      },
+                      {
+                        id: "2",
+                        title: "Pengolahan Kompos Dapur & Budidaya Larva Maggot BSF Terpadu",
+                        date: "2026-05-20",
+                        location: "Rumah Kompos, Kel. Dago, Kec. Coblong",
+                        category: "Pengolahan Kompos & Maggot",
+                        imageUrl: "/image/activity-2.png",
+                        description:
+                          "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
+                      },
+                      {
+                        id: "3",
+                        title: "Aksi Bersih Sungai Cikapundung dan Audit Sampah Plastik",
+                        date: "2026-05-18",
+                        location: "Bantaran Sungai, Kel. Sekeloa, Kec. Coblong",
+                        category: "Aksi Bersih Lingkungan",
+                        imageUrl: "/image/activity-3.png",
+                        description:
+                          "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
+                      },
+                    ]
+                ).map((act: any, aIdx: number) => (
+                  <div
+                    key={act.id || aIdx}
+                    onClick={() => {
+                      setSelectedActivity(act);
+                    }}
+                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-3 text-left"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                          {act.category || "Aksi Lingkungan"}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-semibold">
+                          {act.date}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-black text-slate-900 line-clamp-2 leading-snug">
+                        {act.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-500 line-clamp-2 font-normal">
+                        {act.description || "Aksi lapangan pemilahan sampah dan konservasi lingkungan."}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                      <span className="truncate max-w-[170px]">{act.location}</span>
+                      <span className="text-emerald-600 font-extrabold flex items-center gap-0.5">
+                        Buka <span>→</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowAllActivitiesModal(false)}
+                className="px-6 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-extrabold text-xs hover:bg-slate-200 transition cursor-pointer"
+              >
+                Tutup Katalog
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Action Button: Download Aplikasi Mobile APK */}
       <div className="fixed bottom-6 right-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">

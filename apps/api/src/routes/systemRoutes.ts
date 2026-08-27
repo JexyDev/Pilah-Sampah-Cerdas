@@ -76,6 +76,23 @@ router.get(
 router.get("/landing-stats", systemController.getLandingStats);
 
 /**
+ * Curated Landing Page Activities Management
+ */
+router.get("/landing-curated", systemController.getCuratedActivities);
+router.post(
+  "/landing-curated",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"]),
+  systemController.saveCuratedActivities
+);
+router.get(
+  "/landing-curated/logbook-sources",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN"]),
+  systemController.getApprovedLogbookSources
+);
+
+/**
  * Social Feed management
  */
 router.post("/social-feed", authMiddleware, systemController.createSocialFeed);

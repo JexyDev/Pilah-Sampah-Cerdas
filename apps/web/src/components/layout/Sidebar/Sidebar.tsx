@@ -24,6 +24,7 @@ import {
   Bot,
   Truck,
   Recycle,
+  Sparkles,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -1207,6 +1208,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: FileText,
           label: "Histori Sistem",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/kurasi-landing",
+          icon: Sparkles,
+          label: "Kurasi Landing Page",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[],
         },
         {
           to: "/pengguna-daring",
