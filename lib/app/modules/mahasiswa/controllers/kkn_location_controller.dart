@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -426,6 +427,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isLoadingKegiatan: false,
         error: NetworkExceptionHelper.getErrorMessage(e),
       );
+    }
+  }
+
+  Future<String> _getDeviceInfo() async {
+    try {
+      if (Platform.isAndroid) return 'android';
+      if (Platform.isIOS) return 'ios';
+      return Platform.operatingSystem;
+    } catch (_) {
+      return 'mobile';
     }
   }
 

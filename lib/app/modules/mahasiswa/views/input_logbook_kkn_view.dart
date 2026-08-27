@@ -172,14 +172,6 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (!_formKey.currentState!.validate()) return;
     
-    if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Dokumentasi wajib dilampirkan (Foto/PDF).'),
-        backgroundColor: AppColors.dangerRed,
-      ));
-      return;
-    }
-    
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -400,7 +392,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   ),
                   const SizedBox(height: 16),
 
-                  const Text('Dokumentasi Kegiatan (Wajib)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const Text('Dokumentasi Kegiatan (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: _showPickerOptions,
@@ -435,7 +427,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                                   child: const Icon(Icons.upload_file_rounded, size: 32, color: AppColors.primaryGreen),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text('Pilih/Ambil Dokumentasi (Foto/PDF)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
+                                const Text('Pilih/Ambil Dokumentasi (Opsional)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
                               ],
                             ),
                     ),

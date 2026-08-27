@@ -74,6 +74,36 @@ class PoskoKknController extends StateNotifier<PoskoKknState> {
       return false;
     }
   }
+
+  Future<bool> updatePosko({
+    required double latitude,
+    required double longitude,
+    required String nama,
+    required String alamat,
+    String? imagePath,
+  }) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repository = ref.read(kknRepositoryProvider);
+      final payload = <String, dynamic>{
+        'latitude': latitude,
+        'longitude': longitude,
+      };
+      
+      if (nama.isNotEmpty) payload['nama'] = nama;
+      if (alamat.isNotEmpty) payload['alamat'] = alamat;
+
+      await repository.updatePosko(payload, imagePath: imagePath);
+      
+      state = state.copyWith(isLoading: false);
+      // Refresh data
+      await fetchPosko();
+      return true;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      return false;
+    }
+  }
 }
 
 final poskoKknProvider = StateNotifierProvider<PoskoKknController, PoskoKknState>((ref) {

@@ -502,6 +502,25 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> updatePosko(Map<String, dynamic> data, {String? imagePath}) async {
+    try {
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final formData = FormData.fromMap({
+          ...data,
+          'foto': await MultipartFile.fromFile(imagePath),
+        });
+        final response = await apiClient.dio.put(ApiEndpoints.kknPoskoMe, data: formData);
+        return response.data as Map<String, dynamic>;
+      } else {
+        final response = await apiClient.dio.put(ApiEndpoints.kknPoskoMe, data: data);
+        return response.data as Map<String, dynamic>;
+      }
+    } catch (e) {
+      throw Exception('Gagal memperbarui posko: $e');
+    }
+  }
+
+  @override
   Future<PoskoKknResponse?> getPoskoMe() async {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknPoskoMe);

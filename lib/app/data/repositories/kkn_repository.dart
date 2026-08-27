@@ -90,6 +90,9 @@ abstract class KknRepository {
   /// Mendaftarkan lokasi posko KKN
   Future<Map<String, dynamic>> registerPosko(Map<String, dynamic> data, {String? imagePath});
 
+  /// Memperbarui data lokasi posko KKN (PUT /kkn/posko/me)
+  Future<Map<String, dynamic>> updatePosko(Map<String, dynamic> data, {String? imagePath});
+
   /// Mendapatkan detail posko me
   Future<PoskoKknResponse?> getPoskoMe();
 

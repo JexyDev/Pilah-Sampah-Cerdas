@@ -30,7 +30,21 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
   String? _photoPath;
   LatLng? _selectedLocation;
   bool _isGettingLocation = false;
+  bool _isEditMode = false;
+  bool _hasTriggeredAutoGps = false;
   final MapController _mapController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final posko = ref.read(poskoKknProvider).poskoResponse?.posko;
+      if (posko == null && !_hasTriggeredAutoGps) {
+        _hasTriggeredAutoGps = true;
+        _getLocation();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -158,41 +172,54 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     if (_selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap tentukan lokasi posko di peta.'),
+          content: Text('Harap tentukan lokasi posko dari GPS atau peta.'),
           backgroundColor: AppColors.dangerRed,
         ),
       );
       return;
     }
 
-    if (_photoPath == null) {
+    if (!_isEditMode && _photoPath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Harap lampirkan foto posko.'),
+          content: Text('Harap lampirkan foto posko tampak depan.'),
           backgroundColor: AppColors.dangerRed,
         ),
       );
       return;
     }
 
-    final success = await ref
-        .read(poskoKknProvider.notifier)
-        .registerPosko(
-          latitude: _selectedLocation!.latitude,
-          longitude: _selectedLocation!.longitude,
-          nama: _namaController.text,
-          alamat: _alamatController.text,
-          imagePath: _photoPath!,
-        );
+    bool success = false;
+    if (_isEditMode) {
+      success = await ref.read(poskoKknProvider.notifier).updatePosko(
+            latitude: _selectedLocation!.latitude,
+            longitude: _selectedLocation!.longitude,
+            nama: _namaController.text.trim(),
+            alamat: _alamatController.text.trim(),
+            imagePath: _photoPath,
+          );
+    } else {
+      success = await ref.read(poskoKknProvider.notifier).registerPosko(
+            latitude: _selectedLocation!.latitude,
+            longitude: _selectedLocation!.longitude,
+            nama: _namaController.text.trim(),
+            alamat: _alamatController.text.trim(),
+            imagePath: _photoPath!,
+          );
+    }
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Berhasil mendaftarkan posko KKN!'),
+        SnackBar(
+          content: Text(
+            _isEditMode
+                ? 'Berhasil memperbarui data posko KKN!'
+                : 'Berhasil mendaftarkan posko KKN!',
+          ),
           backgroundColor: AppColors.primaryGreen,
         ),
       );
-      Navigator.pop(context);
+      setState(() => _isEditMode = false);
     }
   }
 
@@ -212,15 +239,26 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
       });
     }
 
+    final hasExistingPosko = state.poskoResponse?.posko != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Daftar Posko KKN',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          _isEditMode
+              ? 'Pembaruan Posko KKN'
+              : (hasExistingPosko ? 'Detail Posko KKN' : 'Daftar Posko KKN'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          if (_isEditMode && hasExistingPosko)
+            TextButton(
+              onPressed: () => setState(() => _isEditMode = false),
+              child: const Text('Batal', style: TextStyle(color: AppColors.dangerRed)),
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: Colors.grey.shade200, height: 1),
@@ -231,7 +269,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.primaryGreen),
             )
-          : (state.poskoResponse?.posko != null)
+          : (hasExistingPosko && !_isEditMode)
           ? _buildPoskoStatus(context, state.poskoResponse!.posko!)
           : SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.lg),
@@ -854,6 +892,36 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                     ],
                   ],
                 ),
+              ),
+            ),
+          ],
+          if (ref.watch(poskoKknProvider).poskoResponse?.isUserLeader == true) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.edit_location_alt_rounded, size: 20),
+                label: const Text(
+                  'Perbarui Data & Lokasi Posko',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryGreen,
+                  side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isEditMode = true;
+                    _namaController.text = posko.nama;
+                    _alamatController.text = posko.alamat;
+                    _selectedLocation = LatLng(posko.latitude, posko.longitude);
+                    _photoPath = null;
+                  });
+                },
               ),
             ),
           ],
