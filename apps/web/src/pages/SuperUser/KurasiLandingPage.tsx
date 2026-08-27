@@ -127,7 +127,7 @@ export const KurasiLandingPage: React.FC = () => {
       date: new Date().toISOString().slice(0, 10),
       location: "Kelurahan Lebak Gede, Kec. Coblong",
       category: "Edukasi Pemilahan",
-      imageUrl: "/image/activity-1.png",
+      imageUrl: "/uploads/default-pemanfaatan.jpg",
       description: "",
       sdgTags: ["#3", "#11", "#12"],
       isPublished: true,
@@ -886,7 +886,7 @@ export const KurasiLandingPage: React.FC = () => {
                             alt="Bukti"
                             className="w-14 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                              (e.target as HTMLImageElement).src = "/uploads/default-pemanfaatan.jpg";
                             }}
                           />
                         ) : (

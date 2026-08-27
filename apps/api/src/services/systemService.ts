@@ -149,6 +149,50 @@ export const systemService = {
     }
 
     if (!activities || activities.length === 0) {
+      try {
+        const rawReal = await systemService.getRealProkerSources();
+        if (rawReal && rawReal.length > 0) {
+          activities = rawReal.slice(0, 6).map((p: any) => {
+            let rawTitle = p.judul;
+            let rawDesc = p.deskripsi || "";
+            if (!rawTitle && rawDesc.startsWith("**")) {
+              const match = rawDesc.match(/^\*\*(.*?)\*\*/);
+              if (match && match[1]) {
+                rawTitle = match[1];
+                rawDesc = rawDesc.replace(/^\*\*.*?\*\*\s*/, "").trim();
+              }
+            }
+            if (!rawTitle) {
+              rawTitle = p.deskripsi ? p.deskripsi.substring(0, 60) : `Program Kerja ${p.kategori || "KKN"}`;
+            }
+
+            const rwStr = Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0 ? `RW ${p.cakupanRw.join(", RW ")}` : "";
+            const locStr = [rwStr, p.kelurahan ? `Kelurahan ${p.kelurahan}` : "Kecamatan Coblong"].filter(Boolean).join(", ");
+            const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : "2026-08-27";
+
+            return {
+              id: `proker-${p.id}`,
+              prokerId: p.id,
+              kelompokId: p.kelompokId || null,
+              kelompokNama: p.kelompokNama || null,
+              title: rawTitle,
+              date: d,
+              location: locStr || "Kecamatan Coblong, Kota Bandung",
+              category: p.kategori || "Aksi Lingkungan",
+              imageUrl: p.fotoBuktiUrl || "/uploads/default-pemanfaatan.jpg",
+              description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${p.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
+              sdgTags: ["#11", "#12", "#13"],
+              isPublished: true,
+              isStrictRelation: true,
+            };
+          });
+        }
+      } catch (e) {
+        console.warn("[systemService] Dynamic fallback to real prokers failed:", e);
+      }
+    }
+
+    if (!activities || activities.length === 0) {
       activities = systemService.getDefaultCuratedActivities();
     }
 
