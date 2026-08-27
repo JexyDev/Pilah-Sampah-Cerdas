@@ -74,9 +74,21 @@ class WasteLogEntry extends Equatable {
   bool get isCorrect => discrepancyStatus.toUpperCase() == 'NONE';
 
   factory WasteLogEntry.fromJson(Map<String, dynamic> json) {
+    String extractedCategory = 'UNKNOWN';
+    if (json['category'] is Map) {
+      extractedCategory = json['category']['name']?.toString() ?? 'UNKNOWN';
+    } else {
+      extractedCategory = json['category']?.toString() ?? 
+                          json['kategori']?.toString() ?? 
+                          json['wasteCategory']?.toString() ?? 
+                          json['type']?.toString() ?? 
+                          json['binType']?.toString() ?? 
+                          'UNKNOWN';
+    }
+
     return WasteLogEntry(
       weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0.0,
-      category: json['category']?.toString() ?? 'UNKNOWN',
+      category: extractedCategory,
       aiConfidence: (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
       discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
