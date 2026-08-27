@@ -682,98 +682,70 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="kegiatan">
-                  {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
-                    ? statsData.recentSchedules
-                    : [
-                        {
-                          id: "1",
-                          title: "Training of Educator Pemilahan Sampah bersama DLH di RW 05",
-                          date: "2026-08-27",
-                          location: "RW 05 Panglawungan Titiran Dalam, Kel. Sadang Serang, Kec. Coblong",
-                          category: "Edukasi & Sosialisasi",
-                          imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
-                          description:
-                            "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
-                          sdgTags: ["#11", "#12", "#13"],
-                        },
-                        {
-                          id: "2",
-                          title: "Sosialisasi Pengelolaan & Pemilahan Sampah ke Sekolah Dasar",
-                          date: "2026-08-27",
-                          location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
-                          category: "Edukasi Pemilahan",
-                          imageUrl: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
-                          description:
-                            "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
-                          sdgTags: ["#4", "#12", "#15"],
-                        },
-                        {
-                          id: "3",
-                          title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
-                          date: "2026-08-27",
-                          location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
-                          category: "Aksi Bersih Lingkungan",
-                          imageUrl: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
-                          description:
-                            "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
-                          sdgTags: ["#3", "#11", "#12"],
-                        },
-                      ]
-                  ).map((item: any, idx: number) => {
-                    const d = new Date(item.date);
-                    const day = isNaN(d.getDate()) ? "27" : String(d.getDate()).padStart(2, "0");
-                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-                    const month = isNaN(d.getMonth()) ? "Agu" : monthNames[d.getMonth()];
-                    const realPhotoList = [
-                      "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
-                      "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
-                      "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
-                      "/uploads/1785123612417-edd7a1ac-083e-459d-aaa6-de15ebfc0cab.png",
-                      "/uploads/1785123377311-20f5cc0e-06ec-4257-a48d-57bf9093526e.png",
-                      "/uploads/default-pemanfaatan.jpg",
-                    ];
-                    const fallbackImg = realPhotoList[idx % realPhotoList.length];
+                  {(!statsData?.recentSchedules || statsData.recentSchedules.length === 0) ? (
+                    <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-xs">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                        <span className="material-symbols-outlined text-2xl">event_available</span>
+                      </div>
+                      <h3 className="font-extrabold text-slate-800 text-base">Dokumentasi Kegiatan Mahasiswa</h3>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 font-medium leading-relaxed">
+                        Program kerja dan logbook kegiatan riil mahasiswa KKN yang divalidasi akan otomatis tampil pada etalase ini.
+                      </p>
+                    </div>
+                  ) : (
+                    statsData.recentSchedules.map((item: any, idx: number) => {
+                      const d = item.date ? new Date(item.date) : new Date();
+                      const day = isNaN(d.getDate()) ? "27" : String(d.getDate()).padStart(2, "0");
+                      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+                      const month = isNaN(d.getMonth()) ? "Agu" : monthNames[d.getMonth()];
 
-                    return (
-                      <div
-                        key={item.id || idx}
-                        onClick={() => setSelectedActivity(item)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedActivity(item);
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                        className="block text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-3xl"
-                      >
-                        <article
-                          className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
+                      return (
+                        <div
+                          key={item.id || idx}
+                          onClick={() => setSelectedActivity(item)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedActivity(item);
+                            }
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          className="block text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-3xl"
                         >
-                          {/* Thumbnail Photo Container */}
-                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
-                            <img
-                              src={item.imageUrl || fallbackImg}
-                              alt={item.title}
-                              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = fallbackImg;
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                          <article
+                            className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
+                          >
+                            {/* Thumbnail Photo Container */}
+                            <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+                              {item.imageUrl ? (
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.title}
+                                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100/50 text-emerald-700">
+                                  <span className="material-symbols-outlined text-4xl opacity-60">photo_camera</span>
+                                  <span className="text-[11px] font-bold mt-1 text-emerald-800/80">Dokumentasi Mahasiswa</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
-                            {/* Floating Date Badge */}
-                            <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
-                              <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
-                              <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
-                            </div>
+                              {/* Floating Date Badge */}
+                              <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
+                                <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
+                                <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
+                              </div>
 
-                            {/* Category Badge */}
-                            <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
-                              {item.category || "Aksi Lingkungan"}
+                              {/* Category Badge */}
+                              <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                                {item.category || "Aksi Lingkungan"}
+                              </div>
                             </div>
-                          </div>
 
                           {/* Content Body */}
                           <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
@@ -801,7 +773,8 @@ export const LandingPage: React.FC = () => {
                         </article>
                       </div>
                     );
-                  })}
+                  })
+                )}
                 </div>
               </div>
             </div>
@@ -1855,41 +1828,12 @@ export const LandingPage: React.FC = () => {
 
             {/* Modal Body - Grid List */}
             <div className="p-6 overflow-y-auto max-h-[60vh] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
-                ? statsData.recentSchedules
-                : [
-                    {
-                      id: "1",
-                      title: "Training of Educator Pemilahan Sampah bersama DLH di RW 05",
-                      date: "2026-08-27",
-                      location: "RW 05 Panglawungan Titiran Dalam, Kel. Sadang Serang, Kec. Coblong",
-                      category: "Edukasi & Sosialisasi",
-                      imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
-                      description:
-                        "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
-                    },
-                    {
-                      id: "2",
-                      title: "Sosialisasi Pengelolaan & Pemilahan Sampah ke Sekolah Dasar",
-                      date: "2026-08-27",
-                      location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
-                      category: "Edukasi Pemilahan",
-                      imageUrl: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
-                      description:
-                        "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
-                    },
-                    {
-                      id: "3",
-                      title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
-                      date: "2026-08-27",
-                      location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
-                      category: "Aksi Bersih Lingkungan",
-                      imageUrl: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
-                      description:
-                        "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
-                    },
-                  ]
-                ).map((act: any, aIdx: number) => (
+              {(!statsData?.recentSchedules || statsData.recentSchedules.length === 0) ? (
+                <div className="col-span-full text-center py-10 text-slate-400 text-xs font-semibold">
+                  Belum ada kegiatan yang dipublikasikan.
+                </div>
+              ) : (
+                statsData.recentSchedules.map((act: any, aIdx: number) => (
                   <div
                     key={act.id || aIdx}
                     onClick={() => {
@@ -1921,8 +1865,9 @@ export const LandingPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
 
             <div className="pt-3 border-t border-slate-100 flex justify-end">
               <button

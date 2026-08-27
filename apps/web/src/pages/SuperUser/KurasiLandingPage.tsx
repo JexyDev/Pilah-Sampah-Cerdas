@@ -61,7 +61,7 @@ export const KurasiLandingPage: React.FC = () => {
     date: new Date().toISOString().slice(0, 10),
     location: "Kecamatan Coblong, Kota Bandung",
     category: "Edukasi Pemilahan",
-    imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
+    imageUrl: "/uploads/default-pemanfaatan.jpg",
     description: "",
     sdgTags: ["#3", "#11"],
     isPublished: true,
@@ -73,13 +73,6 @@ export const KurasiLandingPage: React.FC = () => {
   const [prokerCandidates, setProkerCandidates] = useState<any[]>([]);
   const [logbookCandidates, setLogbookCandidates] = useState<any[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
-
-  const presetImages = [
-    { label: "Bank Sampah RW (Sadang Serang)", url: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg" },
-    { label: "Sosialisasi Posko (Lebak Siliwangi)", url: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg" },
-    { label: "Pilah Sampah Lapangan (Cipaganti)", url: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg" },
-    { label: "Pengolahan Kompos & Daur Ulang", url: "/uploads/default-pemanfaatan.jpg" },
-  ];
 
   const categoryOptions = [
     "Edukasi Pemilahan",
@@ -655,34 +648,39 @@ export const KurasiLandingPage: React.FC = () => {
               {/* Foto Dokumentasi */}
               <div className="space-y-1.5">
                 <label className="font-extrabold text-slate-700 dark:text-slate-300">
-                  URL Foto Dokumentasi HD
+                  URL Foto Dokumentasi HD Mahasiswa
                 </label>
                 <input
                   type="text"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="URL Foto (misal: /image/activity-1.png atau https://...)"
+                  placeholder="URL Foto unggahan mahasiswa (misal: /uploads/... atau https://...)"
                   className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
                 />
 
-                {/* Preset Image Options */}
-                <div className="flex items-center gap-2 pt-1 flex-wrap">
-                  <span className="text-[11px] text-slate-400 font-bold">Preset Foto:</span>
-                  {presetImages.map((p) => (
-                    <button
-                      key={p.url}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, imageUrl: p.url })}
-                      className={`text-[10px] font-extrabold px-2.5 py-1 rounded-xl border transition cursor-pointer ${
-                        formData.imageUrl === p.url
-                          ? "bg-emerald-600 text-white border-emerald-600"
-                          : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
+                {/* Candidate Photos from Real Logbooks */}
+                {logbookCandidates.filter((l) => l.fotoBuktiUrl && l.fotoBuktiUrl.length > 5).length > 0 && (
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    <span className="text-[11px] text-slate-400 font-bold">Foto Logbook Riil:</span>
+                    {logbookCandidates
+                      .filter((l) => l.fotoBuktiUrl && l.fotoBuktiUrl.length > 5)
+                      .slice(0, 6)
+                      .map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, imageUrl: p.fotoBuktiUrl })}
+                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-xl border transition cursor-pointer ${
+                            formData.imageUrl === p.fotoBuktiUrl
+                              ? "bg-emerald-600 text-white border-emerald-600"
+                              : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                          }`}
+                        >
+                          {p.kelompokNama || p.tempat || "Foto Logbook"}
+                        </button>
+                      ))}
+                  </div>
+                )}
               </div>
 
               {/* Deskripsi / Narasi Lengkap */}

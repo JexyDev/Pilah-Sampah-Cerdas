@@ -51,82 +51,9 @@ export const systemService = {
   },
 
   /**
-   * Default verified real activities for public landing page showcase (Based on Real KKN Prokers & Activities)
+   * Default verified real activities fallback (Empty if no real data)
    */
-  getDefaultCuratedActivities: () => [
-    {
-      id: "curated-1",
-      title: "Training of Educator Pemilahan Sampah bersama DLH di RW 05",
-      date: "2026-08-27",
-      location: "RW 05 Panglawungan Titiran Dalam, Kelurahan Sadang Serang, Kec. Coblong",
-      category: "Edukasi & Sosialisasi",
-      imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
-      description:
-        "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
-      sdgTags: ["#11", "#12", "#13"],
-      isPublished: true,
-    },
-    {
-      id: "curated-2",
-      title: "Sosialisasi Pengelolaan & Pemilahan Sampah ke Sekolah Dasar",
-      date: "2026-08-27",
-      location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
-      category: "Edukasi Pemilahan",
-      imageUrl: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
-      description:
-        "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
-      sdgTags: ["#4", "#12", "#15"],
-      isPublished: true,
-    },
-    {
-      id: "curated-3",
-      title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
-      date: "2026-08-27",
-      location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
-      category: "Aksi Bersih Lingkungan",
-      imageUrl: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
-      description:
-        "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
-      sdgTags: ["#3", "#11", "#12"],
-      isPublished: true,
-    },
-    {
-      id: "curated-4",
-      title: "Sosialisasi dan Pembentukan Bank Sampah Mandiri RW 08",
-      date: "2026-08-27",
-      location: "RW 08, Kelurahan Sekeloa, Kec. Coblong",
-      category: "Pemanfaatan Daur Ulang",
-      imageUrl: "/uploads/1785123612417-edd7a1ac-083e-459d-aaa6-de15ebfc0cab.png",
-      description:
-        "Sosialisasi pembentukan unit Bank Sampah terpadu bersama pengurus RW 08 Sekeloa untuk mendorong pemilahan sampah plastik dan anorganik bernilai ekonomis.",
-      sdgTags: ["#11", "#12", "#13"],
-      isPublished: true,
-    },
-    {
-      id: "curated-5",
-      title: "Edukasi Pemilahan Sampah Mandiri di RW 09 Lebak Gede",
-      date: "2026-08-27",
-      location: "Taman Fitnes RW 09, Kelurahan Lebak Gede, Kec. Coblong",
-      category: "Edukasi Pemilahan",
-      imageUrl: "/uploads/1785123377311-20f5cc0e-06ec-4257-a48d-57bf9093526e.png",
-      description:
-        "Gerakan edukasi pemilahan sampah rumah tangga dan monitoring kebersihan fasilitas umum bersama pengurus RW 09 dan warga setempat.",
-      sdgTags: ["#3", "#11", "#12"],
-      isPublished: true,
-    },
-    {
-      id: "curated-6",
-      title: "Silaturahmi dan Pemetaan Titik Pemilahan Sampah di RW 07",
-      date: "2026-08-27",
-      location: "RW 07 RT 05, Kelurahan Lebak Siliwangi, Kec. Coblong",
-      category: "Sosialisasi & Pemetaan",
-      imageUrl: "/uploads/default-pemanfaatan.jpg",
-      description:
-        "Koordinasi dan pemetaan rute pemilahan sampah organik dan anorganik bersama ketua RT 05 dan pengurus RW 07 Lebak Siliwangi.",
-      sdgTags: ["#11", "#12", "#13"],
-      isPublished: true,
-    },
-  ],
+  getDefaultCuratedActivities: () => [],
 
   /**
    * Get curated activities for landing page strictly from developer curation CRUD and enriched by real proker ID
@@ -141,7 +68,14 @@ export const systemService = {
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          activities = parsed;
+          // Filter out any legacy dummy records
+          activities = parsed.filter(
+            (item: any) =>
+              item &&
+              !item.title?.toLowerCase().includes("training of educator") &&
+              !item.description?.toLowerCase().includes("training of educator") &&
+              !item.title?.toLowerCase().includes("dummy")
+          );
         }
       }
     } catch (err) {
@@ -168,7 +102,7 @@ export const systemService = {
 
             const rwStr = Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0 ? `RW ${p.cakupanRw.join(", RW ")}` : "";
             const locStr = [rwStr, p.kelurahan ? `Kelurahan ${p.kelurahan}` : "Kecamatan Coblong"].filter(Boolean).join(", ");
-            const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : "2026-08-27";
+            const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
 
             return {
               id: `proker-${p.id}`,
@@ -193,7 +127,7 @@ export const systemService = {
     }
 
     if (!activities || activities.length === 0) {
-      activities = systemService.getDefaultCuratedActivities();
+      return [];
     }
 
     // 2. Strict Enrichment by Proker ID: Pastikan data terikat ketat ke entitas program_kerja_kkn
@@ -223,7 +157,7 @@ export const systemService = {
               LIMIT 1
             ) as "fotoBuktiUrl"
           FROM program_kerja_kkn p
-          LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
+          INNER JOIN kelompok_kkn k ON p.id_kelompok = k.id
           WHERE p.id IN (${formattedIds})
         `);
 
@@ -295,10 +229,14 @@ export const systemService = {
           p.deskripsi as "prokerDeskripsi", 
           p.kategori as "prokerKategori"
         FROM logbook_kkn l
-        LEFT JOIN kelompok_kkn k ON l.id_kelompok = k.id
-        LEFT JOIN pengguna u ON l.id_penulis = u.id
+        INNER JOIN kelompok_kkn k ON l.id_kelompok = k.id
+        INNER JOIN pengguna u ON l.id_penulis = u.id
         LEFT JOIN program_kerja_kkn p ON l.id_program_kerja = p.id
-        WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 5
+        WHERE l.deskripsi IS NOT NULL 
+          AND length(l.deskripsi) > 5
+          AND l.deskripsi NOT ILIKE '%training of educator%'
+          AND l.deskripsi NOT ILIKE '%dummy%'
+          AND (l.tempat IS NULL OR l.tempat NOT ILIKE '%dummy%')
         ORDER BY l.tanggal_kegiatan DESC
         LIMIT 40
       `);
@@ -339,6 +277,8 @@ export const systemService = {
             WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
               AND l.foto_bukti_url IS NOT NULL 
               AND length(l.foto_bukti_url) > 3 
+              AND l.deskripsi NOT ILIKE '%training of educator%'
+              AND l.deskripsi NOT ILIKE '%dummy%'
             ORDER BY l.tanggal_kegiatan DESC 
             LIMIT 1
           ) as "fotoBuktiUrl",
@@ -347,11 +287,13 @@ export const systemService = {
             FROM logbook_kkn l 
             WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
               AND l.tempat IS NOT NULL 
+              AND l.tempat NOT ILIKE '%dummy%'
             ORDER BY l.tanggal_kegiatan DESC 
             LIMIT 1
           ) as "logbookTempat"
         FROM program_kerja_kkn p
-        LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
+        INNER JOIN kelompok_kkn k ON p.id_kelompok = k.id
+        WHERE p.deskripsi NOT ILIKE '%dummy%' AND (p.judul IS NULL OR p.judul NOT ILIKE '%dummy%')
         ORDER BY p.dibuat_pada DESC
         LIMIT 50
       `);
@@ -378,6 +320,8 @@ export const systemService = {
         SELECT foto_bukti_url as "fotoBuktiUrl"
         FROM logbook_kkn
         WHERE foto_bukti_url IS NOT NULL AND length(foto_bukti_url) > 3
+          AND deskripsi NOT ILIKE '%training of educator%'
+          AND deskripsi NOT ILIKE '%dummy%'
         ORDER BY tanggal_kegiatan DESC
         LIMIT 30
       `);
@@ -386,17 +330,6 @@ export const systemService = {
       }
     } catch {
       // fallback
-    }
-
-    if (realPhotos.length === 0) {
-      realPhotos = [
-        "/uploads/1787810701895-def26cdf-d7bf-46cc-a0e3-1deab9158f16.jpg",
-        "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
-        "/uploads/1787805342899-bfdb89dd-4f7a-455f-b45f-8968382dd74a.jpg",
-        "/uploads/1787803196878-2ddb10ac-c7e0-4421-a226-8fe33d4d9dc0.jpg",
-        "/uploads/1787805778293-1be1be12-4830-424e-aac0-c4af2a5862b6.jpg",
-        "/uploads/1787794346929-1f5c46d7-9119-4620-ade4-d03453eb2d00.jpg",
-      ];
     }
 
     const curatedFromProkers = prokers.slice(0, 6).map((p: any, idx: number) => {
@@ -415,7 +348,7 @@ export const systemService = {
 
       const rwStr = Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0 ? `RW ${p.cakupanRw.join(", RW ")}` : "";
       const locStr = [rwStr, p.kelurahan ? `Kelurahan ${p.kelurahan}` : "Kecamatan Coblong"].filter(Boolean).join(", ");
-      const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : "2026-08-27";
+      const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
 
       return {
         id: `proker-${p.id}`,
@@ -426,7 +359,7 @@ export const systemService = {
         date: d,
         location: locStr || "Kecamatan Coblong, Kota Bandung",
         category: p.kategori || "Aksi Lingkungan",
-        imageUrl: p.fotoBuktiUrl || realPhotos[idx % realPhotos.length],
+        imageUrl: p.fotoBuktiUrl || (realPhotos.length > 0 ? realPhotos[idx % realPhotos.length] : "/uploads/default-pemanfaatan.jpg"),
         description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${p.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
         sdgTags: ["#11", "#12", "#13"],
         isPublished: true,
@@ -529,7 +462,7 @@ export const systemService = {
       prisma.ideDaurUlang
         .count({ where: { statusApproval: "APPROVED" } })
         .catch(() => 0),
-      systemService.getCuratedLandingActivities().catch(() => systemService.getDefaultCuratedActivities()),
+      systemService.getCuratedLandingActivities().catch(() => []),
     ]);
 
     const manualKg = Number(setoranManualAggregate._sum?.berat || 0);
@@ -561,7 +494,7 @@ export const systemService = {
       assignedBinsCount: assignedBinsCount > 0 ? assignedBinsCount : 95,
       totalPenjemputan: totalPenjemputan > 0 ? totalPenjemputan : 142,
       smartIotBinsCount: totalBinsCount > 0 ? Math.round(totalBinsCount * 0.4) : 48,
-      recentSchedules: publishedActivities.length > 0 ? publishedActivities : systemService.getDefaultCuratedActivities(),
+      recentSchedules: publishedActivities,
     };
   },
 
