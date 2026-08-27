@@ -84,7 +84,6 @@ import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPa
 import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
 import LogAktivitasDpl from "../pages/dpl/LogAktivitasDpl";
 import KurasiLandingPage from "../pages/SuperUser/KurasiLandingPage";
-import ManajemenBeritaPage from "../pages/ManajemenBerita/ManajemenBeritaPage";
 import KelolaPoinPengguna from "../pages/KelolaPoinPengguna/KelolaPoinPengguna";
 
 
@@ -811,15 +810,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/penilaian-kkn" element={<Navigate to="/penilaian-kkn/mahasiswa" replace />} />
         <Route path="/program-kerja" element={<Navigate to="/program-kerja-kkn" replace />} />
 
-        {/* CMS Berita Kegiatan Mahasiswa KKN */}
-        <Route
-          path="/manajemen-berita"
-          element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
-              <ManajemenBeritaPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* CMS Berita Kegiatan Mahasiswa KKN - Dialihkan ke Kurasi Landing Page */}
+        <Route path="/manajemen-berita" element={<Navigate to="/kurasi-landing" replace />} />
 
         <Route
           path="/pengelolaan-sampah"

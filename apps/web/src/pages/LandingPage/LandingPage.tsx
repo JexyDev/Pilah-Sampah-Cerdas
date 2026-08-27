@@ -104,9 +104,20 @@ export const LandingPage: React.FC = () => {
   useEffect(() => {
     const fetchBerita = async () => {
       try {
-        const res = await api.get("/api/v1/berita?limit=6");
-        if (res.data?.data) {
-          setBeritaList(res.data.data);
+        const res = await api.get("/system/landing-curated");
+        if (res.data?.success && Array.isArray(res.data?.data)) {
+          setBeritaList(
+            res.data.data.map((act: any) => ({
+              id: act.id,
+              judul: act.title,
+              ringkasan: act.description,
+              gambarUrl: act.imageUrl,
+              kategori: act.category,
+              publishedAt: act.date,
+              createdAt: act.date,
+              author: { name: "Tim KKN & DLH" },
+            }))
+          );
         }
       } catch {
         // Berita tidak krusial — silent fallback
