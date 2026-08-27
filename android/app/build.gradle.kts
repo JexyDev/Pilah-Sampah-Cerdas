@@ -1,13 +1,22 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.example.mobile_app_sampah"
     compileSdk = flutter.compileSdkVersion
-    buildToolsVersion = "35.0.0"
+    buildToolsVersion = "36.0.0"
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -27,9 +36,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val keyAliasVal = keystoreProperties.getProperty("keyAlias") ?: "bersekakey"
+            val keyPasswordVal = keystoreProperties.getProperty("keyPassword") ?: "bersekarelease2026"
+            val storePasswordVal = keystoreProperties.getProperty("storePassword") ?: "bersekarelease2026"
+            val storeFileVal = keystoreProperties.getProperty("storeFile") ?: "berseka-release.keystore"
+            
+            keyAlias = keyAliasVal
+            keyPassword = keyPasswordVal
+            storePassword = storePasswordVal
+            storeFile = file(storeFileVal)
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            val releaseSigning = signingConfigs.findByName("release")
+            signingConfig = releaseSigning ?: signingConfigs.getByName("debug")
             
             // Enable R8/ProGuard and apply rules
             isMinifyEnabled = true
