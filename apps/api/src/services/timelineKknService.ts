@@ -1188,6 +1188,64 @@ export const timelineKknService = {
   },
 
   /**
+   * Mengambil HANYA tahapan linimasa yang SEDANG BERLANGSUNG saat ini (Active / Current Stage)
+   * Khusus untuk widget / kartu dashboard mobile mahasiswa
+   */
+  getActiveTimelineMahasiswa: async (params: TimelineQueryParams, userId?: string, userRole?: string) => {
+    const fullResult = await timelineKknService.getTimelineMahasiswa(params, userId, userRole);
+    const items = fullResult.data;
+    const summary = fullResult.summary;
+    const fases = fullResult.fases;
+
+    // Cari item yang sedang berjalan
+    let activeIndex = items.findIndex((i) => i.statusPelaksanaan === "SEDANG_BERJALAN");
+    if (activeIndex === -1) {
+      // Jika tidak ada yang sedang berjalan, ambil item pertama yang belum dimulai
+      activeIndex = items.findIndex((i) => i.statusPelaksanaan === "BELUM_DIMULAI");
+    }
+    if (activeIndex === -1 && items.length > 0) {
+      // Jika semua sudah selesai, ambil item terakhir
+      activeIndex = items.length - 1;
+    }
+
+    const activeItem = activeIndex !== -1 ? items[activeIndex] : null;
+    const nextItem = activeIndex !== -1 && activeIndex + 1 < items.length ? items[activeIndex + 1] : null;
+    const prevItem = activeIndex > 0 ? items[activeIndex - 1] : null;
+
+    return {
+      summary,
+      activeFaseSummary: fases.find((f) => f.fase === activeItem?.fase) || null,
+      data: activeItem
+        ? {
+            ...activeItem,
+            stageIndex: activeIndex + 1,
+            totalStages: items.length,
+            nextStage: nextItem
+              ? {
+                  id: nextItem.id,
+                  tahapMinggu: nextItem.tahapMinggu,
+                  tanggal: nextItem.tanggal,
+                  fase: nextItem.fase,
+                  kegiatanUtama: nextItem.kegiatanUtama,
+                  statusPelaksanaan: nextItem.statusPelaksanaan,
+                }
+              : null,
+            prevStage: prevItem
+              ? {
+                  id: prevItem.id,
+                  tahapMinggu: prevItem.tahapMinggu,
+                  tanggal: prevItem.tanggal,
+                  fase: prevItem.fase,
+                  kegiatanUtama: prevItem.kegiatanUtama,
+                  statusPelaksanaan: prevItem.statusPelaksanaan,
+                }
+              : null,
+          }
+        : null,
+    };
+  },
+
+  /**
    * Membuat item linimasa baru
    */
   create: async (data: {

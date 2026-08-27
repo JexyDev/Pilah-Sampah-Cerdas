@@ -22,6 +22,7 @@ const ALLOWED_MANAGERS = ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE"];
  */
 
 // Read endpoints
+router.get(["/active", "/aktif"], authMiddleware, timelineKknController.getActiveTimelineMahasiswa);
 router.get("/mahasiswa", authMiddleware, timelineKknController.getTimelineMahasiswa);
 router.get("/", authMiddleware, timelineKknController.getAll);
 router.get("/:id", authMiddleware, timelineKknController.getById);

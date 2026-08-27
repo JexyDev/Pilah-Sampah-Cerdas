@@ -192,25 +192,81 @@ export const systemService = {
       const db = prisma as any;
       const prokers = await db.$queryRawUnsafe(`
         SELECT 
-          p.id, 
-          p.deskripsi, 
-          p.kategori, 
+          p.id,
+          p.judul,
+          p.deskripsi,
+          p.kategori,
           p.status,
-          p.sumber,
+          p.status_usulan as "statusUsulan",
+          p.status_pelaksanaan as "statusPelaksanaan",
           p.waktu_pelaksanaan as "waktuPelaksanaan",
+          p.lampiran_file as "lampiranFile",
+          p.link_google_drive as "linkGoogleDrive",
+          p.dibuat_pada as "dibuatPada",
           k.nama as "kelompokNama", 
-          k.kelurahan,
-          k.kecamatan
+          k.kelurahan as "kelurahan",
+          k.cakupan_rw as "cakupanRw"
         FROM program_kerja_kkn p
         LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
         ORDER BY p.dibuat_pada DESC
-        LIMIT 40
+        LIMIT 50
       `);
       return prokers || [];
     } catch (err) {
       console.warn("[systemService] Error fetching real prokers:", err);
       return [];
     }
+  },
+
+  /**
+   * Automatically sync real student prokers from database into curated activities
+   */
+  syncRealProkersToLanding: async (updatedBy: string = "Developer") => {
+    const prokers = await systemService.getRealProkerSources();
+    if (!prokers || prokers.length === 0) {
+      return systemService.getCuratedLandingActivities();
+    }
+
+    const defaultImages = [
+      "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
+      "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+      "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
+      "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
+    ];
+
+    const curatedFromProkers = prokers.slice(0, 6).map((p: any, idx: number) => {
+      let rawTitle = p.judul;
+      let rawDesc = p.deskripsi || "";
+      if (!rawTitle && rawDesc.startsWith("**")) {
+        const match = rawDesc.match(/^\*\*(.*?)\*\*/);
+        if (match && match[1]) {
+          rawTitle = match[1];
+          rawDesc = rawDesc.replace(/^\*\*.*?\*\*\s*/, "").trim();
+        }
+      }
+      if (!rawTitle) {
+        rawTitle = p.deskripsi ? p.deskripsi.substring(0, 60) : `Program Kerja ${p.kategori || "KKN"}`;
+      }
+
+      const rwStr = Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0 ? `RW ${p.cakupanRw.join(", RW ")}` : "";
+      const locStr = [rwStr, p.kelurahan ? `Kelurahan ${p.kelurahan}` : "Kecamatan Coblong"].filter(Boolean).join(", ");
+      const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : "2026-08-27";
+
+      return {
+        id: `curated-proker-${p.id || idx}`,
+        title: rawTitle,
+        date: d,
+        location: locStr || "Kecamatan Coblong, Kota Bandung",
+        category: p.kategori || "Aksi Lingkungan",
+        imageUrl: defaultImages[idx % defaultImages.length],
+        description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${p.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
+        sdgTags: ["#11", "#12", "#13"],
+        isPublished: true,
+      };
+    });
+
+    await systemService.saveCuratedLandingActivities(curatedFromProkers, updatedBy);
+    return curatedFromProkers;
   },
 
   /**

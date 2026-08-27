@@ -891,6 +891,36 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/timeline/active:
+ *   get:
+ *     summary: Mengambil HANYA tahapan linimasa KKN yang sedang berlangsung (Active Stage) untuk widget mobile
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat tahapan yang sedang berlangsung beserta rekomendasi aksi & pertanyaan kritis
+ */
+router.get(
+  ["/timeline/active", "/timeline/aktif", "/linimasa/active", "/linimasa/aktif"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "CAMAT",
+    "LURAH",
+    "RW",
+  ]),
+  kknController.getActiveTimelineMahasiswa
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/timeline:
  *   get:
  *     summary: Linimasa resmi KKN Mahasiswa beserta Rekomendasi Aksi & Pertanyaan Kritis

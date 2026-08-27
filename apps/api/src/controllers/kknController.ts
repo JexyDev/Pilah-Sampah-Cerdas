@@ -798,6 +798,37 @@ export class KknController {
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
     }
   }
+
+  async getActiveTimelineMahasiswa(req: Request, res: Response): Promise<void> {
+    try {
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+      const { kelompokId, kelurahan, bidangKegiatan, fase, search } = req.query;
+
+      const result = await timelineKknService.getActiveTimelineMahasiswa(
+        {
+          kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
+          fase: fase ? String(fase) : undefined,
+          search: search ? String(search) : undefined,
+        },
+        userId,
+        userRole
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat tahapan linimasa KKN yang sedang berlangsung",
+        summary: result.summary,
+        activeFaseSummary: result.activeFaseSummary,
+        data: result.data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getActiveTimelineMahasiswa error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  }
 }
 
 export const kknController = new KknController();

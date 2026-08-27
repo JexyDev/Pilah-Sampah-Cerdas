@@ -210,50 +210,61 @@ export const KurasiLandingPage: React.FC = () => {
   };
 
   const handleImportProker = (proker: any) => {
-    const rawDesc = proker.deskripsi || "";
-    // Bersihkan judul markdown (misal **Bakti Sosial**)
-    const lines = rawDesc.split("\n").map((l: string) => l.trim()).filter(Boolean);
-    let title = lines[0] || "Program Kerja Mahasiswa KKN";
-    title = title.replace(/\*\*/g, "").replace(/^#+\s*/, "");
-    if (proker.kelompokNama) {
-      title += ` - ${proker.kelompokNama}`;
+    let rawTitle = proker.judul;
+    let rawDesc = proker.deskripsi || "";
+
+    if (!rawTitle && rawDesc.startsWith("**")) {
+      const match = rawDesc.match(/^\*\*(.*?)\*\*/);
+      if (match && match[1]) {
+        rawTitle = match[1];
+        rawDesc = rawDesc.replace(/^\*\*.*?\*\*\s*/, "").trim();
+      }
+    }
+    if (!rawTitle) {
+      const lines = rawDesc.split("\n").map((l: string) => l.trim()).filter(Boolean);
+      rawTitle = lines[0] ? lines[0].replace(/\*\*/g, "").replace(/^#+\s*/, "") : "Program Kerja Mahasiswa KKN";
+      if (lines.length > 1) {
+        rawDesc = lines.slice(1).join("\n\n");
+      }
     }
 
-    const cleanDesc = lines.slice(1).join("\n\n") || rawDesc.replace(/\*\*/g, "");
-    const locationText = proker.kelurahan
-      ? `Kelurahan ${proker.kelurahan}, Kec. Coblong`
-      : "Kecamatan Coblong, Kota Bandung";
+    if (proker.kelompokNama && !rawTitle.includes(proker.kelompokNama)) {
+      rawTitle += ` (${proker.kelompokNama})`;
+    }
 
-    let category = "Aksi Bersih Lingkungan";
-    let img = "/image/activity-1.png";
-    let sdgTags = ["#11", "#12"];
+    const rwStr = Array.isArray(proker.cakupanRw) && proker.cakupanRw.length > 0 ? `RW ${proker.cakupanRw.join(", RW ")}` : "";
+    const locationText = [rwStr, proker.kelurahan ? `Kelurahan ${proker.kelurahan}` : "Kecamatan Coblong"].filter(Boolean).join(", ");
+
+    let category = proker.kategori || "Aksi Lingkungan";
+    let img = "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg";
+    let sdgTags = ["#11", "#12", "#13"];
 
     const catLower = (proker.kategori || "").toLowerCase();
-    const descLower = rawDesc.toLowerCase();
+    const descLower = (rawDesc + " " + rawTitle).toLowerCase();
 
     if (catLower.includes("pengolahan") || descLower.includes("kompos") || descLower.includes("maggot")) {
       category = "Pengolahan Kompos & Maggot";
-      img = "/image/activity-2.png";
+      img = "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg";
       sdgTags = ["#12", "#13", "#15"];
     } else if (catLower.includes("pemilahan") || descLower.includes("pilah") || descLower.includes("edukasi")) {
       category = "Edukasi Pemilahan";
-      img = "/image/activity-1.png";
+      img = "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg";
       sdgTags = ["#3", "#11", "#12"];
     } else if (catLower.includes("pemanfaatan") || descLower.includes("daur ulang") || descLower.includes("bank sampah")) {
       category = "Pemanfaatan Daur Ulang";
-      img = "/image/activity-3.png";
+      img = "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg";
       sdgTags = ["#11", "#12", "#13"];
     }
 
     setEditingIndex(null);
     setFormData({
       id: `curated-proker-${proker.id || Date.now()}`,
-      title,
-      date: new Date().toISOString().slice(0, 10),
-      location: locationText,
+      title: rawTitle,
+      date: proker.dibuatPada ? new Date(proker.dibuatPada).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      location: locationText || "Kecamatan Coblong, Kota Bandung",
       category,
       imageUrl: img,
-      description: cleanDesc,
+      description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${proker.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
       sdgTags,
       isPublished: true,
     });
@@ -276,7 +287,7 @@ export const KurasiLandingPage: React.FC = () => {
       ? logbook.deskripsi.split("\n")[0].replace(/\*\*/g, "").slice(0, 75)
       : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Coblong"}`;
 
-    let img = logbook.fotoBuktiUrl || "/image/activity-1.png";
+    let img = logbook.fotoBuktiUrl || "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg";
 
     setEditingIndex(null);
     setFormData({
@@ -295,62 +306,24 @@ export const KurasiLandingPage: React.FC = () => {
   };
 
   const handleResetToRealProkerDefaults = async () => {
-    if (!window.confirm("Muat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil?")) {
+    if (!window.confirm("Sinkronkan otomatis daftar kurasi kegiatan Landing Page langsung dari data Program Kerja riil mahasiswa di database?")) {
       return;
     }
-    const realDefaults: CuratedActivityItem[] = [
-      {
-        id: "curated-1",
-        title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
-        date: "2026-08-27",
-        location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
-        category: "Edukasi & Sosialisasi",
-        imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
-        description:
-          "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
-        sdgTags: ["#11", "#12", "#13"],
-        isPublished: true,
-      },
-      {
-        id: "curated-2",
-        title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
-        date: "2026-08-27",
-        location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
-        category: "Edukasi Pemilahan",
-        imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
-        description:
-          "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
-        sdgTags: ["#4", "#12", "#15"],
-        isPublished: true,
-      },
-      {
-        id: "curated-3",
-        title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
-        date: "2026-08-27",
-        location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
-        category: "Pengolahan & Pemanfaatan",
-        imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
-        description:
-          "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
-        sdgTags: ["#12", "#13", "#15"],
-        isPublished: true,
-      },
-      {
-        id: "curated-4",
-        title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
-        date: "2026-08-27",
-        location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
-        category: "Aksi Bersih Lingkungan",
-        imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
-        description:
-          "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
-        sdgTags: ["#3", "#11", "#12"],
-        isPublished: true,
-      },
-    ];
-
-    setActivities(realDefaults);
-    await saveActivitiesToServer(realDefaults, true);
+    setSaving(true);
+    try {
+      const res = await api.post("/system/landing-curated/sync-prokers");
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        setActivities(res.data.data);
+        showToast.success("Berhasil menyinkronkan kegiatan dari Program Kerja riil mahasiswa");
+      } else {
+        fetchCuratedActivities();
+      }
+    } catch (err) {
+      console.error("[KurasiLandingPage] Failed syncing real prokers:", err);
+      showToast.error("Gagal menyinkronkan data proker riil");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleSdgTag = (tag: string) => {
