@@ -1011,7 +1011,7 @@ export class KknAttendanceService {
 
     const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-    const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 100;
+    const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200;
     
     // Always fetch target duration from Rule Engine or schedule duration as the single source of truth!
     let scheduleDurationMinutes = 0;
