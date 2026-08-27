@@ -623,6 +623,7 @@ export class KknAttendanceService {
     const bins = await prisma.bin.findMany({
       where: whereCondition,
       include: {
+        category: true,
         user: {
           include: { households: true },
         },
@@ -633,12 +634,45 @@ export class KknAttendanceService {
       },
     });
 
-    return bins.map((b: any) => ({
-      binId: b.id,
-      wargaName: b.user?.name || "Unknown",
-      address: b.user?.households?.[0]?.address || "-",
-      recentLogs: b.setoranOtomatis,
-    }));
+    const usersMap = new Map<string, any>();
+    
+    for (const b of bins) {
+      if (!b.user) continue;
+      const userId = b.user.id;
+      if (!usersMap.has(userId)) {
+        usersMap.set(userId, {
+          user: b.user,
+          bins: [],
+          recentLogs: []
+        });
+      }
+      const u = usersMap.get(userId);
+      u.bins.push(b);
+      if (b.setoranOtomatis) {
+        u.recentLogs.push(...b.setoranOtomatis);
+      }
+    }
+
+    return Array.from(usersMap.values()).map((u: any) => {
+      u.recentLogs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      const binOrganik = u.bins.find((b: any) => b.category?.name === "ORGANIC" || b.qrCode?.toLowerCase().includes("org") || b.qrCode?.toLowerCase().includes("1"));
+      const binAnorganik = u.bins.find((b: any) => b.category?.name === "NON_ORGANIC" || b.qrCode?.toLowerCase().includes("anorg") || b.qrCode?.toLowerCase().includes("2"));
+      const primaryBin = u.bins[0];
+
+      return {
+        binId: primaryBin?.qrCode || primaryBin?.id || "",
+        binOrganikId: binOrganik?.qrCode || binOrganik?.id || null,
+        binAnorganikId: binAnorganik?.qrCode || binAnorganik?.id || null,
+        wargaName: u.user.name || "Unknown",
+        address: u.user.households?.[0]?.address || "-",
+        recentLogs: u.recentLogs.slice(0, 10).map((log: any) => ({
+          ...log,
+          weightKg: Number(log.berat || 0),
+          category: (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik"
+        }))
+      };
+    });
   }
 
   /**
