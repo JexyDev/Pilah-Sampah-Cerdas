@@ -94,6 +94,8 @@ class WargaDampingan extends Equatable {
   const WargaDampingan({
     required this.wargaId,
     required this.binId,
+    this.binOrganikId,
+    this.binAnorganikId,
     required this.wargaName,
     required this.address,
     this.kecamatan = '',
@@ -111,6 +113,8 @@ class WargaDampingan extends Equatable {
 
   final String wargaId;
   final String binId;
+  final String? binOrganikId;
+  final String? binAnorganikId;
   final String wargaName;
   final String address;
   final String kecamatan;
@@ -244,6 +248,8 @@ class WargaDampingan extends Equatable {
     return WargaDampingan(
       wargaId: extractedWargaId,
       binId: extractedBinId,
+      binOrganikId: json['binOrganikId']?.toString(),
+      binAnorganikId: json['binAnorganikId']?.toString(),
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
       address: rawAddr,
       kecamatan: parsedKecamatan,

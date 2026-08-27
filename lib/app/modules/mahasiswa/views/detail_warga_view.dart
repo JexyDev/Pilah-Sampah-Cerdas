@@ -204,9 +204,21 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          warga.binId.isEmpty || warga.binId == 'Belum Ada Tempat Sampah'
-                                              ? 'Belum Ada Tempat Sampah'
-                                              : 'ID Tempat Sampah: ${warga.binId}',
+                                          (() {
+                                            final org = warga.binOrganikId;
+                                            final anorg = warga.binAnorganikId;
+                                            final hasOrg = org != null && org.trim().isNotEmpty;
+                                            final hasAnorg = anorg != null && anorg.trim().isNotEmpty;
+                                            if (hasOrg && hasAnorg && org != anorg) {
+                                              return 'ID: $org / $anorg';
+                                            }
+                                            if (hasOrg) return 'ID: $org';
+                                            if (hasAnorg) return 'ID: $anorg';
+                                            if (warga.binId.isEmpty || warga.binId == 'Belum Ada Tempat Sampah') {
+                                              return 'Belum Ada Tempat Sampah';
+                                            }
+                                            return 'ID: ${warga.binId}';
+                                          })(),
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Colors.white,
