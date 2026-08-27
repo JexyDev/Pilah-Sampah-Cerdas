@@ -827,11 +827,12 @@ export class KknAttendanceService {
           } else if (isFutureDate) {
              // Masih di masa depan
           } else {
-             isExpired = currentMinutesTotal > endMinutesTotal;
+             isExpired = currentMinutesTotal > (endMinutesTotal + 180);
           }
         } else {
           if (isSchedDateToday) {
-             isExpired = currentMinutesTotal > endMinutesTotal;
+             const graceMinutes = (existingAtt && (existingAtt.status === "BERLANGSUNG" || existingAtt.status === "TERJEDA")) ? 180 : 60;
+             isExpired = currentMinutesTotal > (endMinutesTotal + graceMinutes);
           } else if (!isFutureDate) {
              isExpired = true;
           }
@@ -941,7 +942,16 @@ export class KknAttendanceService {
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
           if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
             const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
-            durationInZone = Math.max(existingAtt.actualInZoneMinutes ?? 0, liveCalculatedMins);
+            let durationFromMobile = 0;
+            const lastLoc = locations[locations.length - 1] as any;
+            const inZoneSec = lastLoc?.inZoneSeconds ?? lastLoc?.accumulatedDuration ?? lastLoc?.accumulatedDurationSeconds;
+            if (inZoneSec !== undefined && !isNaN(Number(inZoneSec))) {
+              durationFromMobile = Math.max(0, Math.floor(Number(inZoneSec) / 60));
+              if (durationFromMobile > liveCalculatedMins + 2) {
+                durationFromMobile = liveCalculatedMins;
+              }
+            }
+            durationInZone = Math.max(existingAtt.actualInZoneMinutes ?? 0, liveCalculatedMins, durationFromMobile);
 
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
@@ -1388,8 +1398,9 @@ export class KknAttendanceService {
     longitude?: number;
     deskripsiKegiatan?: string;
     fotoUrl?: string;
+    totalDurasiDalamZonaMenit?: number;
   }) {
-    const { studentId, scheduleId, latitude, longitude, deskripsiKegiatan, fotoUrl } = params;
+    const { studentId, scheduleId, latitude, longitude, deskripsiKegiatan, fotoUrl, totalDurasiDalamZonaMenit } = params;
 
     const nowForCheckout = new Date();
     const nowWibCheckout = new Date(nowForCheckout.getTime() + 7 * 60 * 60 * 1000);
@@ -1404,7 +1415,7 @@ export class KknAttendanceService {
         ...(scheduleId ? { scheduleId } : {}),
         attendedAt: { gte: startOfDay },
         checkOutAt: null,
-        status: { in: ["BERLANGSUNG", "HADIR"] },
+        status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA"] },
       },
       orderBy: { attendedAt: "desc" },
     });
@@ -1417,7 +1428,7 @@ export class KknAttendanceService {
           ...(scheduleId ? { scheduleId } : {}),
           attendedAt: undefined,   // prisma will not filter on this field
           checkOutAt: null,
-          status: { in: ["BERLANGSUNG", "HADIR"] },
+          status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA"] },
         },
         orderBy: { id: "desc" },
       });
@@ -1461,9 +1472,7 @@ export class KknAttendanceService {
     const checkoutRuleConfigs = await configService.getRuleEngineConfigs();
     const checkoutBufferMeters = (checkoutRuleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
 
-    let actualInZoneMins = rawDurationMinutes; // Fallback to raw if no schedule/logs
-    let checkoutFinalStatus = "SELESAI";
-
+    let logsCalculatedMins = 0;
     if (schedule && todayLogsForCheckout.length >= 2) {
       const checkoutGeofence = {
         latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
@@ -1471,7 +1480,16 @@ export class KknAttendanceService {
         radius: schedule.radius ? Number(schedule.radius) : 200,
         polygon: schedule.polygon,
       };
-      actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
+      logsCalculatedMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
+    }
+
+    const storedMins = attendance.actualInZoneMinutes ?? 0;
+    const liveMins = (attendance.status === "BERLANGSUNG" && attendance.attendedAt) ? calculateLiveInZoneMinutes(attendance) : storedMins;
+    const payloadMins = (totalDurasiDalamZonaMenit && !isNaN(Number(totalDurasiDalamZonaMenit))) ? Number(totalDurasiDalamZonaMenit) : 0;
+
+    let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, payloadMins, logsCalculatedMins));
+    if (actualInZoneMins === 0 && rawDurationMinutes > 0) {
+      actualInZoneMins = Math.min(480, rawDurationMinutes);
     }
 
     // Determine final status: HADIR_MEMENUHI or HADIR_TIDAK_MEMENUHI
@@ -1483,7 +1501,7 @@ export class KknAttendanceService {
         isMemenuhi = false;
       }
     }
-    checkoutFinalStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+    const checkoutFinalStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
     const statusDisplay = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
 
     const durationMinutes = actualInZoneMins;
@@ -2920,6 +2938,7 @@ export class KknAttendanceService {
       longitude: payload?.longitude,
       deskripsiKegiatan: payload?.deskripsiKegiatan,
       fotoUrl: payload?.fotoUrl,
+      totalDurasiDalamZonaMenit: payload?.totalDurasiDalamZonaMenit,
     });
     return {
       ...result,

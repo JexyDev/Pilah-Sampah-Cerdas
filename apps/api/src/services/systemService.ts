@@ -283,8 +283,21 @@ export const systemService = {
         .aggregate({ _sum: { berat: true } })
         .catch(() => ({ _sum: { berat: null } })),
       prisma.pemanfaatan
-        .aggregate({ _sum: { volumeBahanBaku: true } })
-        .catch(() => ({ _sum: { volumeBahanBaku: null } })),
+        .findMany({
+          where: {
+            volumeBahanBaku: { lt: 10000 },
+          },
+          select: { volumeBahanBaku: true, unitBahanBaku: true },
+        })
+        .then((items) => {
+          const validSum = items.reduce((acc, curr) => {
+            const unit = (curr.unitBahanBaku || "").toLowerCase();
+            if (unit.includes("rp") || unit.includes("uang") || unit.includes("kegiatan")) return acc;
+            return acc + Number(curr.volumeBahanBaku || 0);
+          }, 0);
+          return { sum: validSum };
+        })
+        .catch(() => ({ sum: 0 })),
       prisma.pointHistory
         .aggregate({ _sum: { points: true } })
         .catch(() => ({ _sum: { points: null } })),
@@ -296,7 +309,7 @@ export const systemService = {
 
     const manualKg = Number(setoranManualAggregate._sum?.berat || 0);
     const otomatisKg = Number(setoranOtomatisAggregate._sum?.berat || 0);
-    const pemanfaatanKg = Number(pemanfaatanAggregate._sum?.volumeBahanBaku || 0);
+    const pemanfaatanKg = Number(pemanfaatanAggregate.sum || 0);
     const rawTotalKg = Math.round(manualKg + otomatisKg + pemanfaatanKg);
 
     // If database tables have records, use exact real sums

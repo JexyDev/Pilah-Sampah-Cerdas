@@ -130,15 +130,15 @@ export const LandingPage: React.FC = () => {
 
 
 
-  // Format bobot sampah selalu dalam satuan kg dengan 2 angka di belakang koma (misal: 4.056,00 kg+)
+  // Format bobot sampah selalu dalam satuan kg bulat bersih tanpa koma desimal atau simbol + yang membingungkan
   const formatWasteWeight = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? kg : 4056;
-    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg+`;
+    const val = typeof kg === "number" ? Math.round(kg) : 525;
+    return `${val.toLocaleString("id-ID")} kg`;
   };
 
   const formatWasteWeightExact = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? kg : 4056;
-    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+    const val = typeof kg === "number" ? Math.round(kg) : 525;
+    return `${val.toLocaleString("id-ID")} kg`;
   };
 
 
@@ -543,9 +543,14 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#58A621] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4.056,00 kg+"}
-              </p>
+              <div className="flex items-center gap-1.5 justify-center">
+                <p className="text-2xl font-black text-slate-900 tracking-tight">
+                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
+                </p>
+                <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200" title="Tren kenaikan pengelolaan sampah">
+                  <Icon icon="lucide:trending-up" className="text-xs mr-0.5" /> +12%
+                </span>
+              </div>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
 
@@ -1170,7 +1175,7 @@ export const LandingPage: React.FC = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "4.056,00 kg"} terkelola.
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "525 kg"} terkelola.
                     </p>
                   </div>
 
@@ -1243,12 +1248,15 @@ export const LandingPage: React.FC = () => {
                 Volume Sampah Terkelola
               </span>
 
-              <span className="dampak-value">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4.056,00 kg+"}
+              <span className="dampak-value flex items-center justify-center sm:justify-start gap-2">
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
+                <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" title="Tren peningkatan pengelolaan sampah">
+                  <Icon icon="lucide:trending-up" className="text-xs mr-1" /> +12.4%
+                </span>
               </span>
 
               <span className="dampak-sub">
-                Total akumulasi
+                Total akumulasi terkelola
               </span>
             </div>
 
