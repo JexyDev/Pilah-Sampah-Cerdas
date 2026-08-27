@@ -197,7 +197,7 @@ router.get(
 router.get(
   ["/laporan-rekap", "/kkn/attendance/laporan-rekap", "/laporan-presensi"],
   authMiddleware,
-  roleMiddleware(["DEVELOPER"]),
+  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
   kknAttendanceController.getLaporanPresensi
 );
 
@@ -216,6 +216,7 @@ router.post(
   ["/kkn/kegiatan/:id/mulai", "/kegiatan/:id/mulai"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.mulaiKegiatan
 );
 

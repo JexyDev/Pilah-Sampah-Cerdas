@@ -1118,8 +1118,10 @@ export class KknAttendanceService {
     nim?: string;
     namaMahasiswa?: string;
     kodeZona?: string;
+    deskripsiKegiatan?: string;
+    fotoUrl?: string;
   }) {
-    const { studentId, scheduleId, latitude, longitude, method, nim: inputNim, namaMahasiswa: inputNama, kodeZona: inputKodeZona } = params;
+    const { studentId, scheduleId, latitude, longitude, method, nim: inputNim, namaMahasiswa: inputNama, kodeZona: inputKodeZona, deskripsiKegiatan, fotoUrl } = params;
     const isAutoAlpa = method?.toUpperCase() === "ALPA_AUTO" || method?.toUpperCase() === "ALPA";
 
     // 0. Validate operational hours berdasarkan jam jadwal (bukan hardcoded)
@@ -1132,8 +1134,9 @@ export class KknAttendanceService {
       // Ambil jam jadwal dari DB untuk menentukan window yang valid
       let scheduleStartTotal = 0;       // default: 00:00
       let scheduleEndTotal = 24 * 60;   // default: 24:00 (allow all day)
+      let sched: any = null;
       try {
-        const sched = await prisma.schedule.findUnique({ where: { id: scheduleId }, select: { time: true } });
+        sched = await prisma.schedule.findUnique({ where: { id: scheduleId }, select: { time: true } });
         if (sched?.time) {
           const range = parseScheduleTimeRange(sched.time);
           scheduleStartTotal = range.startMinutesTotal;
@@ -1150,32 +1153,31 @@ export class KknAttendanceService {
         const fmtStart = `${String(Math.floor(scheduleStartTotal / 60)).padStart(2, "0")}:${String(scheduleStartTotal % 60).padStart(2, "0")}`;
         const fmtEnd = `${String(Math.floor(scheduleEndTotal / 60)).padStart(2, "0")}:${String(scheduleEndTotal % 60).padStart(2, "0")}`;
         throw new Error(
-          `OUT_OF_OPERATIONAL_HOURS: Presensi kegiatan KKN hanya dapat dilakukan pada jam ${fmtStart} - ${fmtEnd} WIB (±60 menit toleransi).`
+          `OPERATIONAL_HOURS_VIOLATION: Absensi untuk kegiatan '${sched?.time || ""}' hanya dapat dilakukan pada rentang operasional jadwal (${fmtStart} - ${fmtEnd} WIB). Jam saat ini: ${String(wibHours).padStart(2, "0")}:${String(wibMinutes).padStart(2, "0")} WIB.`
         );
       }
     }
 
+    // 1. Fetch schedule to get geofence configs and buffer
+    const actLoc = await this.getActivityLocation(scheduleId, studentId);
+    let isInside = false;
 
-    // 1. Get activity location configuration if exists
-    let actLoc: any = null;
-    try {
-      actLoc = await this.getActivityLocation(scheduleId);
-    } catch (e) {
-      actLoc = null;
-    }
+    if (!isAutoAlpa) {
+      // 2. Validate backend geofence distance with buffer
+      const scheduleLat = actLoc.latitude;
+      const scheduleLng = actLoc.longitude;
+      const scheduleRadius = actLoc.radius;
+      const polygonCoords = actLoc.polygon as any;
 
-    // 2. Validate radius on backend if configured (skip for ALPA_AUTO)
-    let isInside = true;
-    if (!isAutoAlpa && actLoc && actLoc.isConfigured) {
-      if (actLoc.polygon && Array.isArray(actLoc.polygon) && actLoc.polygon.length >= 3) {
-        const polyPoints = (actLoc.polygon as any[]).map((p) => ({
-          lat: Number(p[0]),
-          lng: Number(p[1]),
-        }));
-        isInside = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, 15);
+      const ruleConfigs = await configService.getRuleEngineConfigs();
+      const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+      const effectiveRadius = scheduleRadius + bufferMeters;
+
+      if (polygonCoords && polygonCoords.length >= 3) {
+        isInside = isPointInPolygon([latitude, longitude], polygonCoords);
       } else {
-        const distance = calculateDistance(latitude, longitude, actLoc.latitude, actLoc.longitude);
-        isInside = distance <= (actLoc.radius + 15);
+        const distance = calculateDistance(latitude, longitude, scheduleLat, scheduleLng);
+        isInside = distance <= effectiveRadius;
       }
     }
 
@@ -1245,6 +1247,8 @@ export class KknAttendanceService {
             status: recordStatus,
             checkOutAt: new Date(),
             attendedAt: existing.attendedAt || new Date(),
+            ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+            ...(fotoUrl ? { fotoUrl } : {}),
           },
         });
 
@@ -1298,6 +1302,8 @@ export class KknAttendanceService {
           longitude,
           status: "ALPA",
           checkOutAt: new Date(),
+          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(fotoUrl ? { fotoUrl } : {}),
         },
       });
 
@@ -2506,9 +2512,15 @@ export class KknAttendanceService {
   async mulaiKegiatan(
     studentUserId: string,
     scheduleId: string,
-    payload: { latitude: number; longitude: number; deviceInfo?: string }
+    payload: {
+      latitude: number;
+      longitude: number;
+      deviceInfo?: string;
+      deskripsiKegiatan?: string;
+      fotoUrl?: string;
+    }
   ) {
-    const { latitude, longitude, deviceInfo } = payload;
+    const { latitude, longitude, deviceInfo, deskripsiKegiatan, fotoUrl } = payload;
 
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -2647,6 +2659,8 @@ export class KknAttendanceService {
           latitude,
           longitude,
           method: "GPS_ACTIVITY",
+          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(fotoUrl ? { fotoUrl } : {}),
         },
       });
     } else {
@@ -2675,6 +2689,8 @@ export class KknAttendanceService {
           checkOutAt: null,
           actualInZoneMinutes: existingSession?.actualInZoneMinutes || 0,
           jedaLogs: currentLogs,
+          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(fotoUrl ? { fotoUrl } : {}),
         },
         create: {
           studentId: studentUserId,
@@ -2685,6 +2701,8 @@ export class KknAttendanceService {
           longitude,
           method: "GPS_ACTIVITY",
           jedaLogs: currentLogs,
+          ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+          ...(fotoUrl ? { fotoUrl } : {}),
         },
       });
     }

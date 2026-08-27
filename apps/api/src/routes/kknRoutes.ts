@@ -591,6 +591,7 @@ router.post(
   "/kegiatan/:id/mulai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.mulaiKegiatan
 );
 
@@ -605,6 +606,7 @@ router.post(
   "/kegiatan/:id/selesai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.selesaiKegiatan
 );
 
@@ -612,6 +614,7 @@ router.post(
   ["/absen", "/kegiatan/:id/absen"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.absenAlias
 );
 

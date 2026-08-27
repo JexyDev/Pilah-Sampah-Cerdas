@@ -17,26 +17,36 @@ export const presensiMandiriController = {
   checkIn: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentId = req.user!.userId;
-      const { latitude, longitude, deskripsiKegiatan, platformOs } = req.body;
+      const { latitude, longitude, lat, lng, platformOs } = req.body;
       const file = (req as any).file;
 
-      if (!file) {
+      const deskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      let fotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        fotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
+
+      if (!fotoUrl) {
         res.status(400).json({ success: false, error: "FOTO_REQUIRED", message: "Foto bukti kegiatan wajib diunggah." });
         return;
       }
 
-      const lat = parseFloat(latitude);
-      const lng = parseFloat(longitude);
-      if (isNaN(lat) || isNaN(lng)) {
+      const finalLat = parseFloat(latitude !== undefined ? latitude : lat);
+      const finalLng = parseFloat(longitude !== undefined ? longitude : lng);
+      if (isNaN(finalLat) || isNaN(finalLng)) {
         res.status(400).json({ success: false, error: "INVALID_COORDINATES", message: "Koordinat latitude dan longitude wajib disertakan." });
         return;
       }
 
-      const baseUrl = process.env.BASE_URL ?? "";
-      const fotoUrl = `${baseUrl}/uploads/${file.filename}`;
-
       const result = await presensiMandiriService.checkIn({
-        studentId, latitude: lat, longitude: lng, deskripsiKegiatan, fotoUrl, platformOs: platformOs || "ANDROID",
+        studentId,
+        latitude: finalLat,
+        longitude: finalLng,
+        deskripsiKegiatan: deskripsi || "Kegiatan Mandiri Lapangan",
+        fotoUrl,
+        platformOs: platformOs || "ANDROID",
       });
 
       res.status(200).json({ success: true, message: "Presensi mandiri berhasil dicatat.", data: result });
@@ -59,7 +69,7 @@ export const presensiMandiriController = {
     try {
       const studentId = req.user!.userId;
       const presensiId = req.params.id;
-      const { deskripsiKegiatan } = req.body;
+      const deskripsiKegiatan = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
 
       const result = await presensiMandiriService.checkOut({ presensiId, studentId, deskripsiKegiatan });
       res.status(200).json({ success: true, message: "Check-out presensi mandiri berhasil.", data: result });

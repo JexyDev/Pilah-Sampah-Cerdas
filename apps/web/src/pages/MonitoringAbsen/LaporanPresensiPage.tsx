@@ -112,11 +112,22 @@ export const LaporanPresensiPage: React.FC = () => {
     try {
       const res = await api.get("/kelompok");
       const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
-      setGroups(list);
+      if (isDpl && user?.id) {
+        // Strict scope to DPL's assigned groups
+        const dplGroups = list.filter((g: any) => 
+          g.dplId === user.id || 
+          g.dpl?.id === user.id || 
+          g.dpl?.userId === user.id || 
+          (user.email && g.dpl?.email === user.email)
+        );
+        setGroups(dplGroups.length > 0 ? dplGroups : list);
+      } else {
+        setGroups(list);
+      }
     } catch (_err) {
       // silent fallback
     }
-  }, []);
+  }, [isDpl, user]);
 
   // Fetch report data
   const fetchLaporan = useCallback(async () => {
@@ -281,6 +292,31 @@ export const LaporanPresensiPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* DPL Mode Active Banner */}
+      {isDpl && (
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <Users size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Mode Dosen Pembimbing Lapangan (DPL)</span>
+                <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  Strict Scoped
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Menampilkan data mahasiswa bimbingan KKN Anda secara terisolasi. Data kelompok lain tidak akan tampil.
+              </p>
+            </div>
+          </div>
+          <div className="hidden sm:flex text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+            {groups.length} Kelompok Binaan
+          </div>
+        </div>
+      )}
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">

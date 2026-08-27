@@ -134,6 +134,14 @@ export const kknAttendanceController = {
       const { latitude, longitude, lat, lng, method, scheduleId: bodyScheduleId, nim, namaMahasiswa, kodeZona } = req.body;
       const id = paramId || bodyScheduleId || req.body.id || "kkn-main-posko";
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let rawFoto = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        rawFoto = `${baseUrl}/uploads/${file.filename}`;
+      }
+
       const finalLat =
         latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
       const finalLng =
@@ -167,6 +175,8 @@ export const kknAttendanceController = {
         nim,
         namaMahasiswa,
         kodeZona,
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: rawFoto,
       });
 
       res.status(200).json({
@@ -204,11 +214,12 @@ export const kknAttendanceController = {
     try {
       const studentId = req.user!.userId;
       const { id: paramId } = req.params;
-      const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId, deskripsiKegiatan, deskripsi, fotoUrl: bodyFotoUrl } = req.body;
+      const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId } = req.body;
       const id = paramId || bodyScheduleId || req.body.id;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = bodyFotoUrl;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
@@ -224,7 +235,7 @@ export const kknAttendanceController = {
         scheduleId: id,
         latitude: finalLat,
         longitude: finalLng,
-        deskripsiKegiatan: deskripsiKegiatan || deskripsi,
+        deskripsiKegiatan: rawDeskripsi,
         fotoUrl: finalFotoUrl,
       });
 
@@ -411,6 +422,14 @@ export const kknAttendanceController = {
       const { id } = req.params;
       const { latitude, longitude, deviceInfo } = req.body;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
+
       if (!id) {
         res.status(400).json({
           success: false,
@@ -433,6 +452,8 @@ export const kknAttendanceController = {
         latitude: Number(latitude),
         longitude: Number(longitude),
         deviceInfo,
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: finalFotoUrl,
       });
 
       res.status(200).json({
@@ -471,10 +492,11 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
-      const { sessionId, totalDurasiDalamZonaMenit, alasan, deskripsiKegiatan, deskripsi, fotoUrl: bodyFotoUrl, latitude, longitude } = req.body;
+      const { sessionId, totalDurasiDalamZonaMenit, alasan, latitude, longitude } = req.body;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = bodyFotoUrl;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
@@ -484,7 +506,7 @@ export const kknAttendanceController = {
         sessionId,
         totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit ? Number(totalDurasiDalamZonaMenit) : undefined,
         alasan,
-        deskripsiKegiatan: deskripsiKegiatan || deskripsi,
+        deskripsiKegiatan: rawDeskripsi,
         fotoUrl: finalFotoUrl,
         latitude: latitude ? parseFloat(latitude) : undefined,
         longitude: longitude ? parseFloat(longitude) : undefined,
@@ -509,10 +531,11 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const id = req.params.id || req.body.scheduleId;
-      const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan, deskripsiKegiatan, deskripsi, fotoUrl: bodyFotoUrl } = req.body;
+      const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan } = req.body;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = bodyFotoUrl;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
@@ -524,7 +547,7 @@ export const kknAttendanceController = {
         sessionId: sessionId || `SES-${id}`,
         totalDurasiDalamZonaMenit: mins,
         alasan: alasan || "Presensi Selesai",
-        deskripsiKegiatan: deskripsiKegiatan || deskripsi,
+        deskripsiKegiatan: rawDeskripsi,
         fotoUrl: finalFotoUrl,
       });
 
