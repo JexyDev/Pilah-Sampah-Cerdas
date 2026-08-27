@@ -61,7 +61,7 @@ export const KurasiLandingPage: React.FC = () => {
     date: new Date().toISOString().slice(0, 10),
     location: "Kecamatan Coblong, Kota Bandung",
     category: "Edukasi Pemilahan",
-    imageUrl: "/image/activity-1.png",
+    imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
     description: "",
     sdgTags: ["#3", "#11"],
     isPublished: true,
@@ -75,10 +75,10 @@ export const KurasiLandingPage: React.FC = () => {
   const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
 
   const presetImages = [
-    { label: "Edukasi & Sosialisasi", url: "/image/activity-1.png" },
-    { label: "Kompos & Maggot BSF", url: "/image/activity-2.png" },
-    { label: "Aksi Bersih Sungai", url: "/image/activity-3.png" },
-    { label: "Aksi Lapangan Mahasiswa", url: "/image/landingpage.png" },
+    { label: "Bank Sampah RW (Sadang Serang)", url: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg" },
+    { label: "Sosialisasi Posko (Lebak Siliwangi)", url: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg" },
+    { label: "Pilah Sampah Lapangan (Cipaganti)", url: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg" },
+    { label: "Pengolahan Kompos & Daur Ulang", url: "/uploads/default-pemanfaatan.jpg" },
   ];
 
   const categoryOptions = [
@@ -462,11 +462,11 @@ export const KurasiLandingPage: React.FC = () => {
                 {/* Photo Header */}
                 <div className="relative h-44 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                   <img
-                    src={item.imageUrl || "/image/activity-1.png"}
+                    src={item.imageUrl || "/uploads/default-pemanfaatan.jpg"}
                     alt={item.title}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                      (e.target as HTMLImageElement).src = "/uploads/default-pemanfaatan.jpg";
                     }}
                   />
                   <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-xl text-[11px] font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 shadow-sm">

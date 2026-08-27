@@ -691,7 +691,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-08-27",
                           location: "RW 05 Panglawungan Titiran Dalam, Kel. Sadang Serang, Kec. Coblong",
                           category: "Edukasi & Sosialisasi",
-                          imageUrl: "/uploads/1787810701895-def26cdf-d7bf-46cc-a0e3-1deab9158f16.jpg",
+                          imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
                           description:
                             "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
                           sdgTags: ["#11", "#12", "#13"],
@@ -702,7 +702,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-08-27",
                           location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
                           category: "Edukasi Pemilahan",
-                          imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+                          imageUrl: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
                           description:
                             "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
                           sdgTags: ["#4", "#12", "#15"],
@@ -713,7 +713,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-08-27",
                           location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
                           category: "Aksi Bersih Lingkungan",
-                          imageUrl: "/uploads/1787805342899-bfdb89dd-4f7a-455f-b45f-8968382dd74a.jpg",
+                          imageUrl: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
                           description:
                             "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
                           sdgTags: ["#3", "#11", "#12"],
@@ -721,10 +721,18 @@ export const LandingPage: React.FC = () => {
                       ]
                   ).map((item: any, idx: number) => {
                     const d = new Date(item.date);
-                    const day = isNaN(d.getDate()) ? "24" : String(d.getDate()).padStart(2, "0");
+                    const day = isNaN(d.getDate()) ? "27" : String(d.getDate()).padStart(2, "0");
                     const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-                    const month = isNaN(d.getMonth()) ? "Mei" : monthNames[d.getMonth()];
-                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png`;
+                    const month = isNaN(d.getMonth()) ? "Agu" : monthNames[d.getMonth()];
+                    const realPhotoList = [
+                      "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
+                      "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
+                      "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
+                      "/uploads/1785123612417-edd7a1ac-083e-459d-aaa6-de15ebfc0cab.png",
+                      "/uploads/1785123377311-20f5cc0e-06ec-4257-a48d-57bf9093526e.png",
+                      "/uploads/default-pemanfaatan.jpg",
+                    ];
+                    const fallbackImg = realPhotoList[idx % realPhotoList.length];
 
                     return (
                       <div
@@ -1746,11 +1754,11 @@ export const LandingPage: React.FC = () => {
               {/* Photo & Header */}
               <div className="relative h-60 w-full bg-slate-900 overflow-hidden">
                 <img
-                  src={selectedActivity.imageUrl || "/image/activity-1.png"}
+                  src={selectedActivity.imageUrl || "/uploads/default-pemanfaatan.jpg"}
                   alt={selectedActivity.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                    (e.target as HTMLImageElement).src = "/uploads/default-pemanfaatan.jpg";
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
@@ -1763,133 +1771,124 @@ export const LandingPage: React.FC = () => {
                 >
                   <span className="material-symbols-outlined text-lg">close</span>
                 </button>
+              </div>
 
-                {/* Badges on Banner */}
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-emerald-600 text-white text-[11px] font-black uppercase px-3 py-1 rounded-full shadow-md tracking-wider">
-                      {selectedActivity.category || "Aksi Pemilahan Sampah"}
-                    </span>
-                    {selectedActivity.sdgTags?.map((tag: string) => (
+              {/* Body Info */}
+              <div className="p-6 space-y-4 text-left">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                    {selectedActivity.category || "Aksi Lingkungan"}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
+                    <span className="material-symbols-outlined text-sm text-emerald-600">calendar_today</span>
+                    <span>{selectedActivity.date || "2026-08-27"}</span>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-black text-slate-900 leading-tight">
+                  {selectedActivity.title}
+                </h3>
+
+                {/* Location */}
+                <div className="flex items-start gap-2 text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">location_on</span>
+                  <span>{selectedActivity.location || "Kecamatan Coblong, Kota Bandung"}</span>
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Deskripsi & Narasi Kegiatan</p>
+                  <div className="text-xs text-slate-600 leading-relaxed max-h-48 overflow-y-auto pr-1">
+                    {selectedActivity.description || "Kegiatan kolaborasi pengelolaan lingkungan hidup dan edukasi pemilahan sampah mandiri bersama warga dan mahasiswa KKN."}
+                  </div>
+                </div>
+
+                {/* SDG Tags */}
+                {selectedActivity.sdgTags && selectedActivity.sdgTags.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
+                    <span className="text-[11px] font-bold text-slate-400">Pilar SDG:</span>
+                    {selectedActivity.sdgTags.map((tag: string, tIdx: number) => (
                       <span
-                        key={tag}
-                        className="bg-white/90 text-slate-800 text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs"
+                        key={tIdx}
+                        className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                       >
                         {tag}
                       </span>
                     ))}
                   </div>
-
-                  <span className="bg-white/90 text-slate-900 text-xs font-black px-3 py-1 rounded-xl shadow-xs backdrop-blur-xs flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm text-emerald-600">calendar_today</span>
-                    {selectedActivity.date || "2026-05-24"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Body Details */}
-              <div className="p-6 sm:p-7 space-y-4 overflow-y-auto max-h-[40vh]">
-                <h3 className="font-black text-slate-900 text-lg sm:text-xl leading-snug">
-                  {selectedActivity.title}
-                </h3>
-
-                <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                  <span className="material-symbols-outlined text-base text-[#035941] shrink-0">location_on</span>
-                  <span>{selectedActivity.location || "Kecamatan Coblong, Kota Bandung"}</span>
-                </div>
-
-                <div className="space-y-2 pt-1">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                    Deskripsi & Narasi Kegiatan
-                  </h4>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line">
-                    {selectedActivity.description ||
-                      "Kegiatan kolaborasi pengelolaan lingkungan hidup dan edukasi pemilahan sampah mandiri bersama warga, aparat kewilayahan, serta mahasiswa KKN di Kecamatan Coblong, Kota Bandung."}
-                  </p>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
               <button
-                type="button"
                 onClick={() => setSelectedActivity(null)}
-                className="px-5 py-2.5 rounded-2xl border border-slate-200 bg-white text-slate-700 font-extrabold text-xs hover:bg-slate-100 transition cursor-pointer"
+                className="px-5 py-2 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs transition cursor-pointer"
               >
                 Tutup
               </button>
-
-              <Link
-                to="/login"
-                className="px-6 py-2.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-md shadow-[#035941]/20"
-              >
-                <span>Masuk ke Aplikasi</span>
-                <span>→</span>
-              </Link>
             </div>
           </div>
         </div>
       )}
 
-      {/* ----------------- MODAL KATALOG SEMUA KEGIATAN PUBLIK ----------------- */}
+      {/* ----------------- MODAL LIHAT SEMUA KEGIATAN ----------------- */}
       {showAllActivitiesModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 my-8 max-h-[90vh] flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="space-y-1">
-                  <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#035941]">local_activity</span>
-                    Semua Kegiatan Lingkungan & Pemilahan
-                  </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Dokumentasi aksi lapangan mahasiswa KKN dan masyarakat di Kecamatan Coblong
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowAllActivitiesModal(false)}
-                  className="text-slate-400 hover:text-slate-600 transition p-1"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-100 my-8 max-h-[90vh] flex flex-col justify-between">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-700">Arsip Dokumentasi</span>
+                <h3 className="text-xl font-black text-slate-900">
+                  Semua Kegiatan Lingkungan & Pemilahan
+                </h3>
               </div>
+              <button
+                onClick={() => setShowAllActivitiesModal(false)}
+                className="w-9 h-9 rounded-full bg-white hover:bg-slate-100 text-slate-500 flex items-center justify-center border border-slate-200 shadow-xs cursor-pointer transition"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
 
-              <div className="py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[55vh] pr-1">
-                {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
-                  ? statsData.recentSchedules
-                  : [
-                      {
-                        id: "1",
-                        title: "Training of Educator Pemilahan Sampah bersama DLH di RW 05",
-                        date: "2026-08-27",
-                        location: "RW 05 Panglawungan Titiran Dalam, Kel. Sadang Serang, Kec. Coblong",
-                        category: "Edukasi & Sosialisasi",
-                        imageUrl: "/uploads/1787810701895-def26cdf-d7bf-46cc-a0e3-1deab9158f16.jpg",
-                        description:
-                          "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
-                      },
-                      {
-                        id: "2",
-                        title: "Sosialisasi Pengelolaan & Pemilahan Sampah ke Sekolah Dasar",
-                        date: "2026-08-27",
-                        location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
-                        category: "Edukasi Pemilahan",
-                        imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
-                        description:
-                          "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
-                      },
-                      {
-                        id: "3",
-                        title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
-                        date: "2026-08-27",
-                        location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
-                        category: "Aksi Bersih Lingkungan",
-                        imageUrl: "/uploads/1787805342899-bfdb89dd-4f7a-455f-b45f-8968382dd74a.jpg",
-                        description:
-                          "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
-                      },
-                    ]
+            {/* Modal Body - Grid List */}
+            <div className="p-6 overflow-y-auto max-h-[60vh] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
+                ? statsData.recentSchedules
+                : [
+                    {
+                      id: "1",
+                      title: "Training of Educator Pemilahan Sampah bersama DLH di RW 05",
+                      date: "2026-08-27",
+                      location: "RW 05 Panglawungan Titiran Dalam, Kel. Sadang Serang, Kec. Coblong",
+                      category: "Edukasi & Sosialisasi",
+                      imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
+                      description:
+                        "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
+                    },
+                    {
+                      id: "2",
+                      title: "Sosialisasi Pengelolaan & Pemilahan Sampah ke Sekolah Dasar",
+                      date: "2026-08-27",
+                      location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
+                      category: "Edukasi Pemilahan",
+                      imageUrl: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
+                      description:
+                        "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
+                    },
+                    {
+                      id: "3",
+                      title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
+                      date: "2026-08-27",
+                      location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
+                      category: "Aksi Bersih Lingkungan",
+                      imageUrl: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
+                      description:
+                        "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
+                    },
+                  ]
                 ).map((act: any, aIdx: number) => (
                   <div
                     key={act.id || aIdx}
@@ -1924,7 +1923,6 @@ export const LandingPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </div>
 
             <div className="pt-3 border-t border-slate-100 flex justify-end">
               <button

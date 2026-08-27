@@ -60,7 +60,7 @@ export const systemService = {
       date: "2026-08-27",
       location: "RW 05 Panglawungan Titiran Dalam, Kelurahan Sadang Serang, Kec. Coblong",
       category: "Edukasi & Sosialisasi",
-      imageUrl: "/uploads/1787810701895-def26cdf-d7bf-46cc-a0e3-1deab9158f16.jpg",
+      imageUrl: "/uploads/1784126106535-e7921818-d47e-46d6-a2ac-2fad4b409d75.jpg",
       description:
         "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
       sdgTags: ["#11", "#12", "#13"],
@@ -72,7 +72,7 @@ export const systemService = {
       date: "2026-08-27",
       location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
       category: "Edukasi Pemilahan",
-      imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+      imageUrl: "/uploads/1784126138653-dbab424c-fabb-458d-9ced-4ec3b236f025.jpg",
       description:
         "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
       sdgTags: ["#4", "#12", "#15"],
@@ -84,7 +84,7 @@ export const systemService = {
       date: "2026-08-27",
       location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
       category: "Aksi Bersih Lingkungan",
-      imageUrl: "/uploads/1787805342899-bfdb89dd-4f7a-455f-b45f-8968382dd74a.jpg",
+      imageUrl: "/uploads/1784126255129-e1dc664c-73f4-45d6-9ec8-8b42d038ef2e.jpg",
       description:
         "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
       sdgTags: ["#3", "#11", "#12"],
@@ -96,7 +96,7 @@ export const systemService = {
       date: "2026-08-27",
       location: "RW 08, Kelurahan Sekeloa, Kec. Coblong",
       category: "Pemanfaatan Daur Ulang",
-      imageUrl: "/uploads/1787803196878-2ddb10ac-c7e0-4421-a226-8fe33d4d9dc0.jpg",
+      imageUrl: "/uploads/1785123612417-edd7a1ac-083e-459d-aaa6-de15ebfc0cab.png",
       description:
         "Sosialisasi pembentukan unit Bank Sampah terpadu bersama pengurus RW 08 Sekeloa untuk mendorong pemilahan sampah plastik dan anorganik bernilai ekonomis.",
       sdgTags: ["#11", "#12", "#13"],
@@ -108,7 +108,7 @@ export const systemService = {
       date: "2026-08-27",
       location: "Taman Fitnes RW 09, Kelurahan Lebak Gede, Kec. Coblong",
       category: "Edukasi Pemilahan",
-      imageUrl: "/uploads/1787805778293-1be1be12-4830-424e-aac0-c4af2a5862b6.jpg",
+      imageUrl: "/uploads/1785123377311-20f5cc0e-06ec-4257-a48d-57bf9093526e.png",
       description:
         "Gerakan edukasi pemilahan sampah rumah tangga dan monitoring kebersihan fasilitas umum bersama pengurus RW 09 dan warga setempat.",
       sdgTags: ["#3", "#11", "#12"],
@@ -120,7 +120,7 @@ export const systemService = {
       date: "2026-08-27",
       location: "RW 07 RT 05, Kelurahan Lebak Siliwangi, Kec. Coblong",
       category: "Sosialisasi & Pemetaan",
-      imageUrl: "/uploads/1787794346929-1f5c46d7-9119-4620-ade4-d03453eb2d00.jpg",
+      imageUrl: "/uploads/default-pemanfaatan.jpg",
       description:
         "Koordinasi dan pemetaan rute pemilahan sampah organik dan anorganik bersama ketua RT 05 dan pengurus RW 07 Lebak Siliwangi.",
       sdgTags: ["#11", "#12", "#13"],
@@ -194,7 +194,7 @@ export const systemService = {
                 prokerId: rp.prokerId,
                 kelompokId: rp.kelompokId,
                 kelompokNama: rp.kelompokNama || act.kelompokNama,
-                imageUrl: act.imageUrl || rp.fotoBuktiUrl,
+                imageUrl: rp.fotoBuktiUrl || act.imageUrl || "/uploads/default-pemanfaatan.jpg",
                 isStrictRelation: true,
               };
             }
