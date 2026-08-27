@@ -1786,17 +1786,6 @@ export const dplService = {
       where: prokerWhere,
       include: {
         reviewedBy: { select: { id: true, name: true } },
-        logbooks: {
-          select: {
-            id: true,
-            deskripsi: true,
-            fotoBuktiUrl: true,
-            tempat: true,
-            tanggalKegiatan: true,
-          },
-          orderBy: { tanggalKegiatan: "desc" },
-          take: 5,
-        },
         student: {
           select: {
             id: true,
@@ -1944,12 +1933,9 @@ export const dplService = {
         reviewedAt: p.reviewedAt,
         skorPenilaian: skorNum,
         predikat: (p as any).predikat || calculatedPredikat,
+        statusPenilaian: (p as any).statusPenilaian || (skorNum !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"),
         aspekPenilaian: (p as any).aspekPenilaian || null,
         evaluasiDpl: p.evaluasiDpl,
-        fotoBuktiUrl: (p as any).logbooks?.[0]?.fotoBuktiUrl || null,
-        logbooks: (p as any).logbooks || [],
-        attachmentFile: p.attachmentFile || null,
-        attachmentUrls: p.attachmentUrls || null,
         createdAt: p.createdAt,
       };
     });

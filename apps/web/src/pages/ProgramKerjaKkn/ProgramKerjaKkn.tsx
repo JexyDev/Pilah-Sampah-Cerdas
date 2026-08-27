@@ -1946,25 +1946,6 @@ export const ProgramKerjaKkn: React.FC = () => {
               </div>
             </div>
 
-            {/* Foto Dokumentasi Lapangan Riil Mahasiswa */}
-            {detailModal.proker.fotoBuktiUrl && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
-                  Foto Dokumentasi Lapangan Riil Mahasiswa
-                </label>
-                <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-64 bg-slate-950 flex items-center justify-center">
-                  <img
-                    src={detailModal.proker.fotoBuktiUrl.startsWith("http") ? detailModal.proker.fotoBuktiUrl : `${import.meta.env.VITE_API_URL || ""}${detailModal.proker.fotoBuktiUrl}`}
-                    alt="Foto Kegiatan Mahasiswa"
-                    className="max-h-64 w-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Deskripsi Kegiatan */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">

@@ -213,10 +213,6 @@ export interface ProgramKerjaItem {
   predikat?: string | null;
   statusPenilaian?: "BELUM_DINILAI" | "SEDANG_DINILAI" | "SUDAH_DINILAI" | string;
   evaluasiDpl?: string | null;
-  fotoBuktiUrl?: string | null;
-  logbooks?: any[];
-  attachmentFile?: string | null;
-  attachmentUrls?: any;
   createdAt: string;
 }
 

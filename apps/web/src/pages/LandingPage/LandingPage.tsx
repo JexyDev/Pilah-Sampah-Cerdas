@@ -20,15 +20,8 @@ const Icon: React.FC<{ icon: string; className?: string }> = ({ icon, className 
     "iconamoon:trash": "delete",
     "lucide:home": "home",
     "solar:chart-linear": "monitoring",
-    "lucide:trending-up": "trending_up",
-    "lucide:trending-down": "trending_down",
-    "heroicons:arrow-trending-up": "trending_up",
-    "heroicons:arrow-trending-down": "trending_down",
-    "lucide:arrow-up-right": "north_east",
-    "lucide:arrow-up": "arrow_upward",
-    "lucide:arrow-down": "arrow_downward",
   };
-  return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || icon}</span>;
+  return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || "star"}</span>;
 };
 
 // Official High-Resolution BERSEKA Full Logo Asset
@@ -96,19 +89,56 @@ export const LandingPage: React.FC = () => {
     return () => clearInterval(pollInterval);
   }, []);
 
+  // Berita Kegiatan Mahasiswa KKN — real-time dari CMS
+  const [beritaList, setBeritaList] = useState<Array<{
+    id: string;
+    judul: string;
+    ringkasan?: string | null;
+    gambarUrl?: string | null;
+    kategori: string;
+    publishedAt?: string | null;
+    createdAt: string;
+    author?: { name: string } | null;
+  }>>([]);
+
+  useEffect(() => {
+    const fetchBerita = async () => {
+      try {
+        const res = await api.get("/system/landing-curated");
+        if (res.data?.success && Array.isArray(res.data?.data)) {
+          setBeritaList(
+            res.data.data.map((act: any) => ({
+              id: act.id,
+              judul: act.title,
+              ringkasan: act.description,
+              gambarUrl: act.imageUrl,
+              kategori: act.category,
+              publishedAt: act.date,
+              createdAt: act.date,
+              author: { name: "Tim KKN & DLH" },
+            }))
+          );
+        }
+      } catch {
+        // Berita tidak krusial — silent fallback
+      }
+    };
+    fetchBerita();
+    const beritaPoll = setInterval(fetchBerita, 30000);
+    return () => clearInterval(beritaPoll);
+  }, []);
 
 
 
-
-  // Format bobot sampah selalu dalam satuan kg dengan tepat 2 angka di belakang koma (misal: 524,91 kg)
+  // Format bobot sampah selalu dalam satuan kg bulat bersih tanpa koma desimal atau simbol + yang membingungkan
   const formatWasteWeight = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? kg : 524.91;
-    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+    const val = typeof kg === "number" ? Math.round(kg) : 525;
+    return `${val.toLocaleString("id-ID")} kg`;
   };
 
   const formatWasteWeightExact = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? kg : 524.91;
-    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+    const val = typeof kg === "number" ? Math.round(kg) : 525;
+    return `${val.toLocaleString("id-ID")} kg`;
   };
 
 
@@ -513,12 +543,12 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#58A621] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
-              <div className="flex flex-col items-center justify-center gap-1">
+              <div className="flex items-center gap-1.5 justify-center">
                 <p className="text-2xl font-black text-slate-900 tracking-tight">
-                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "524,91 kg"}
+                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
                 </p>
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 shadow-xs" title="Tren kenaikan pengelolaan sampah">
-                  <span className="material-symbols-outlined text-[14px] text-emerald-700 font-bold leading-none select-none">trending_up</span> +12,40%
+                <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200" title="Tren kenaikan pengelolaan sampah">
+                  <Icon icon="lucide:trending-up" className="text-xs mr-0.5" /> +12%
                 </span>
               </div>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
@@ -659,93 +689,105 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="activity-wrapper">
-                <div className="activity-header flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+                <div className="activity-header">
                   <div>
-                    <p className="eyebrow text-emerald-700 font-extrabold text-xs uppercase tracking-widest">
-                      KEGIATAN TERBARU MAHASISWA
-                    </p>
-                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
-                      Kegiatan Mahasiswa KKN & Aksi Lingkungan
-                    </h2>
-                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
-                      Dokumentasi aksi lapangan, program kerja nyata, dan edukasi pemilahan sampah oleh mahasiswa KKN bersama warga dan DLH Kota Bandung.
-                    </p>
+                    <p className="eyebrow">Kegiatan Terbaru</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowAllActivitiesModal(true)}
-                    className="link-more inline-flex items-center gap-1.5 cursor-pointer bg-transparent border-0 font-extrabold text-[#035941] hover:text-[#024633] transition shrink-0"
+                    className="link-more inline-flex items-center gap-1.5 cursor-pointer bg-transparent border-0 font-extrabold text-[#035941] hover:text-[#024633] transition"
                   >
-                    <span>Lihat Semua Kegiatan</span>
+                    <span>Lihat Semua</span>
                     <span>→</span>
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="kegiatan">
-                  {(!statsData?.recentSchedules || statsData.recentSchedules.length === 0) ? (
-                    <div className="col-span-full text-center py-12 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-xs">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
-                        <span className="material-symbols-outlined text-2xl">event_available</span>
-                      </div>
-                      <h3 className="font-extrabold text-slate-800 text-base">Dokumentasi Kegiatan Mahasiswa</h3>
-                      <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 font-medium leading-relaxed">
-                        Program kerja dan logbook kegiatan riil mahasiswa KKN yang divalidasi akan otomatis tampil pada etalase ini.
-                      </p>
-                    </div>
-                  ) : (
-                    statsData.recentSchedules.map((item: any, idx: number) => {
-                      const d = item.date ? new Date(item.date) : new Date();
-                      const day = isNaN(d.getDate()) ? "27" : String(d.getDate()).padStart(2, "0");
-                      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-                      const month = isNaN(d.getMonth()) ? "Agu" : monthNames[d.getMonth()];
+                  {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
+                    ? statsData.recentSchedules
+                    : [
+                        {
+                          id: "1",
+                          title: "Edukasi Pemilahan Sampah Mandiri dan Aktivasi Kode QR di RW 03",
+                          date: "2026-05-24",
+                          location: "Balai RW 03, Kel. Lebak Gede, Kec. Coblong",
+                          category: "Edukasi Pemilahan",
+                          imageUrl: "/image/activity-1.png",
+                          description:
+                            "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
+                          sdgTags: ["#3", "#11", "#12"],
+                        },
+                        {
+                          id: "2",
+                          title: "Pengolahan Kompos Dapur & Budidaya Larva Maggot BSF Terpadu",
+                          date: "2026-05-20",
+                          location: "Rumah Kompos, Kel. Dago, Kec. Coblong",
+                          category: "Pengolahan Kompos & Maggot",
+                          imageUrl: "/image/activity-2.png",
+                          description:
+                            "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
+                          sdgTags: ["#12", "#13", "#15"],
+                        },
+                        {
+                          id: "3",
+                          title: "Aksi Bersih Sungai Cikapundung dan Audit Sampah Plastik",
+                          date: "2026-05-18",
+                          location: "Bantaran Sungai, Kel. Sekeloa, Kec. Coblong",
+                          category: "Aksi Bersih Lingkungan",
+                          imageUrl: "/image/activity-3.png",
+                          description:
+                            "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
+                          sdgTags: ["#3", "#11", "#15"],
+                        },
+                      ]
+                  ).map((item: any, idx: number) => {
+                    const d = new Date(item.date);
+                    const day = isNaN(d.getDate()) ? "24" : String(d.getDate()).padStart(2, "0");
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+                    const month = isNaN(d.getMonth()) ? "Mei" : monthNames[d.getMonth()];
+                    const fallbackImg = `/image/activity-${(idx % 3) + 1}.png`;
 
-                      return (
-                        <div
-                          key={item.id || idx}
-                          onClick={() => setSelectedActivity(item)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setSelectedActivity(item);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          className="block text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-3xl"
+                    return (
+                      <div
+                        key={item.id || idx}
+                        onClick={() => setSelectedActivity(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedActivity(item);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        className="block text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-3xl"
+                      >
+                        <article
+                          className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
                         >
-                          <article
-                            className="kegiatan-card-modern group bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer h-full"
-                          >
-                            {/* Thumbnail Photo Container */}
-                            <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
-                              {item.imageUrl ? (
-                                <img
-                                  src={item.imageUrl}
-                                  alt={item.title}
-                                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100/50 text-emerald-700">
-                                  <span className="material-symbols-outlined text-4xl opacity-60">photo_camera</span>
-                                  <span className="text-[11px] font-bold mt-1 text-emerald-800/80">Dokumentasi Mahasiswa</span>
-                                </div>
-                              )}
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                          {/* Thumbnail Photo Container */}
+                          <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-100">
+                            <img
+                              src={item.imageUrl || fallbackImg}
+                              alt={item.title}
+                              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = fallbackImg;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
-                              {/* Floating Date Badge */}
-                              <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
-                                <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
-                                <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
-                              </div>
-
-                              {/* Category Badge */}
-                              <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
-                                {item.category || "Aksi Lingkungan"}
-                              </div>
+                            {/* Floating Date Badge */}
+                            <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center justify-center text-center">
+                              <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
+                              <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
                             </div>
+
+                            {/* Category Badge */}
+                            <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                              {item.category || "Aksi Lingkungan"}
+                            </div>
+                          </div>
 
                           {/* Content Body */}
                           <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
@@ -773,8 +815,7 @@ export const LandingPage: React.FC = () => {
                         </article>
                       </div>
                     );
-                  })
-                )}
+                  })}
                 </div>
               </div>
             </div>
@@ -784,7 +825,96 @@ export const LandingPage: React.FC = () => {
       </section>
 
 
+      {/* ----------------- BERITA KEGIATAN KKN (Real-time CMS) ----------------- */}
+      {beritaList.length > 0 && (
+        <section id="berita-kkn" className="py-20 bg-white border-b border-slate-100">
+          <div className="container-custom space-y-10">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <p className="eyebrow text-emerald-600 font-extrabold text-xs uppercase tracking-widest mb-2">
+                  📰 Berita Terkini
+                </p>
+                <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                  Kegiatan Mahasiswa KKN
+                </h2>
+                <p className="text-sm text-slate-500 mt-2 max-w-lg">
+                  Liputan langsung kegiatan lingkungan dan sosial mahasiswa KKN yang diperbarui secara real-time.
+                </p>
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {beritaList.map((berita) => {
+                const tanggal = berita.publishedAt || berita.createdAt;
+                const d = new Date(tanggal);
+                const day = d.getDate();
+                const month = d.toLocaleDateString("id-ID", { month: "short" });
+
+                const KATEGORI_LABEL: Record<string, string> = {
+                  KEGIATAN: "Kegiatan KKN",
+                  PENGUMUMAN: "Pengumuman",
+                  PRESTASI: "Prestasi",
+                  LINGKUNGAN: "Lingkungan",
+                  UMUM: "Umum",
+                };
+
+                return (
+                  <article
+                    key={berita.id}
+                    className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
+                  >
+                    {/* Cover Image */}
+                    <div className="relative h-44 w-full overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100">
+                      {berita.gambarUrl ? (
+                        <img
+                          src={berita.gambarUrl}
+                          alt={berita.judul}
+                          className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-5xl opacity-20">🌿</span>
+                        </div>
+                      )}
+                      {/* Date Badge */}
+                      <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center text-center">
+                        <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
+                        <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
+                      </div>
+                      {/* Category Badge */}
+                      <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
+                        {KATEGORI_LABEL[berita.kategori] || berita.kategori}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                      <div className="space-y-2">
+                        <h3 className="text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
+                          {berita.judul}
+                        </h3>
+                        {berita.ringkasan && (
+                          <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
+                            {berita.ringkasan}
+                          </p>
+                        )}
+                      </div>
+                      {berita.author && (
+                        <p className="text-[11px] text-slate-400 font-semibold">
+                          oleh {berita.author.name}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ----------------- 02. WHY US ----------------- */}
       <section id="why-us" className="py-24 bg-[#f0fdf4] border-b border-[#dcfce7]">
@@ -1045,7 +1175,7 @@ export const LandingPage: React.FC = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "524,91 kg"} terkelola.
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "525 kg"} terkelola.
                     </p>
                   </div>
 
@@ -1118,10 +1248,10 @@ export const LandingPage: React.FC = () => {
                 Volume Sampah Terkelola
               </span>
 
-              <span className="dampak-value flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "524,91 kg"}
-                <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300 shadow-xs" title="Tren peningkatan pengelolaan sampah">
-                  <span className="material-symbols-outlined text-[15px] text-emerald-700 font-bold leading-none select-none">trending_up</span> +12,40%
+              <span className="dampak-value flex items-center justify-center sm:justify-start gap-2">
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
+                <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" title="Tren peningkatan pengelolaan sampah">
+                  <Icon icon="lucide:trending-up" className="text-xs mr-1" /> +12.4%
                 </span>
               </span>
 
@@ -1727,11 +1857,11 @@ export const LandingPage: React.FC = () => {
               {/* Photo & Header */}
               <div className="relative h-60 w-full bg-slate-900 overflow-hidden">
                 <img
-                  src={selectedActivity.imageUrl || "/uploads/default-pemanfaatan.jpg"}
+                  src={selectedActivity.imageUrl || "/image/activity-1.png"}
                   alt={selectedActivity.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/uploads/default-pemanfaatan.jpg";
+                    (e.target as HTMLImageElement).src = "/image/activity-1.png";
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
@@ -1744,96 +1874,134 @@ export const LandingPage: React.FC = () => {
                 >
                   <span className="material-symbols-outlined text-lg">close</span>
                 </button>
-              </div>
 
-              {/* Body Info */}
-              <div className="p-6 space-y-4 text-left">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 uppercase tracking-wider">
-                    {selectedActivity.category || "Aksi Lingkungan"}
-                  </span>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
-                    <span className="material-symbols-outlined text-sm text-emerald-600">calendar_today</span>
-                    <span>{selectedActivity.date || "2026-08-27"}</span>
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-black text-slate-900 leading-tight">
-                  {selectedActivity.title}
-                </h3>
-
-                {/* Location */}
-                <div className="flex items-start gap-2 text-xs font-bold text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                  <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">location_on</span>
-                  <span>{selectedActivity.location || "Kecamatan Coblong, Kota Bandung"}</span>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1.5">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Deskripsi & Narasi Kegiatan</p>
-                  <div className="text-xs text-slate-600 leading-relaxed max-h-48 overflow-y-auto pr-1">
-                    {selectedActivity.description || "Kegiatan kolaborasi pengelolaan lingkungan hidup dan edukasi pemilahan sampah mandiri bersama warga dan mahasiswa KKN."}
-                  </div>
-                </div>
-
-                {/* SDG Tags */}
-                {selectedActivity.sdgTags && selectedActivity.sdgTags.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
-                    <span className="text-[11px] font-bold text-slate-400">Pilar SDG:</span>
-                    {selectedActivity.sdgTags.map((tag: string, tIdx: number) => (
+                {/* Badges on Banner */}
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-emerald-600 text-white text-[11px] font-black uppercase px-3 py-1 rounded-full shadow-md tracking-wider">
+                      {selectedActivity.category || "Aksi Pemilahan Sampah"}
+                    </span>
+                    {selectedActivity.sdgTags?.map((tag: string) => (
                       <span
-                        key={tIdx}
-                        className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                        key={tag}
+                        className="bg-white/90 text-slate-800 text-[10px] font-black px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs"
                       >
                         {tag}
                       </span>
                     ))}
                   </div>
-                )}
+
+                  <span className="bg-white/90 text-slate-900 text-xs font-black px-3 py-1 rounded-xl shadow-xs backdrop-blur-xs flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-emerald-600">calendar_today</span>
+                    {selectedActivity.date || "2026-05-24"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Body Details */}
+              <div className="p-6 sm:p-7 space-y-4 overflow-y-auto max-h-[40vh]">
+                <h3 className="font-black text-slate-900 text-lg sm:text-xl leading-snug">
+                  {selectedActivity.title}
+                </h3>
+
+                <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                  <span className="material-symbols-outlined text-base text-[#035941] shrink-0">location_on</span>
+                  <span>{selectedActivity.location || "Kecamatan Coblong, Kota Bandung"}</span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Deskripsi & Narasi Kegiatan
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line">
+                    {selectedActivity.description ||
+                      "Kegiatan kolaborasi pengelolaan lingkungan hidup dan edukasi pemilahan sampah mandiri bersama warga, aparat kewilayahan, serta mahasiswa KKN di Kecamatan Coblong, Kota Bandung."}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end">
+            {/* Modal Actions */}
+            <div className="p-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
               <button
+                type="button"
                 onClick={() => setSelectedActivity(null)}
-                className="px-5 py-2 rounded-2xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs transition cursor-pointer"
+                className="px-5 py-2.5 rounded-2xl border border-slate-200 bg-white text-slate-700 font-extrabold text-xs hover:bg-slate-100 transition cursor-pointer"
               >
                 Tutup
               </button>
+
+              <Link
+                to="/login"
+                className="px-6 py-2.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-md shadow-[#035941]/20"
+              >
+                <span>Masuk ke Aplikasi</span>
+                <span>→</span>
+              </Link>
             </div>
           </div>
         </div>
       )}
 
-      {/* ----------------- MODAL LIHAT SEMUA KEGIATAN ----------------- */}
+      {/* ----------------- MODAL KATALOG SEMUA KEGIATAN PUBLIK ----------------- */}
       {showAllActivitiesModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-100 my-8 max-h-[90vh] flex flex-col justify-between">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
-              <div>
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-700">Arsip Dokumentasi</span>
-                <h3 className="text-xl font-black text-slate-900">
-                  Semua Kegiatan Lingkungan & Pemilahan
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowAllActivitiesModal(false)}
-                className="w-9 h-9 rounded-full bg-white hover:bg-slate-100 text-slate-500 flex items-center justify-center border border-slate-200 shadow-xs cursor-pointer transition"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-
-            {/* Modal Body - Grid List */}
-            <div className="p-6 overflow-y-auto max-h-[60vh] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {(!statsData?.recentSchedules || statsData.recentSchedules.length === 0) ? (
-                <div className="col-span-full text-center py-10 text-slate-400 text-xs font-semibold">
-                  Belum ada kegiatan yang dipublikasikan.
+        <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 my-8 max-h-[90vh] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#035941]">local_activity</span>
+                    Semua Kegiatan Lingkungan & Pemilahan
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Dokumentasi aksi lapangan mahasiswa KKN dan masyarakat di Kecamatan Coblong
+                  </p>
                 </div>
-              ) : (
-                statsData.recentSchedules.map((act: any, aIdx: number) => (
+                <button
+                  onClick={() => setShowAllActivitiesModal(false)}
+                  className="text-slate-400 hover:text-slate-600 transition p-1"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div className="py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[55vh] pr-1">
+                {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
+                  ? statsData.recentSchedules
+                  : [
+                      {
+                        id: "1",
+                        title: "Edukasi Pemilahan Sampah Mandiri dan Aktivasi Kode QR di RW 03",
+                        date: "2026-05-24",
+                        location: "Balai RW 03, Kel. Lebak Gede, Kec. Coblong",
+                        category: "Edukasi Pemilahan",
+                        imageUrl: "/image/activity-1.png",
+                        description:
+                          "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
+                      },
+                      {
+                        id: "2",
+                        title: "Pengolahan Kompos Dapur & Budidaya Larva Maggot BSF Terpadu",
+                        date: "2026-05-20",
+                        location: "Rumah Kompos, Kel. Dago, Kec. Coblong",
+                        category: "Pengolahan Kompos & Maggot",
+                        imageUrl: "/image/activity-2.png",
+                        description:
+                          "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
+                      },
+                      {
+                        id: "3",
+                        title: "Aksi Bersih Sungai Cikapundung dan Audit Sampah Plastik",
+                        date: "2026-05-18",
+                        location: "Bantaran Sungai, Kel. Sekeloa, Kec. Coblong",
+                        category: "Aksi Bersih Lingkungan",
+                        imageUrl: "/image/activity-3.png",
+                        description:
+                          "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
+                      },
+                    ]
+                ).map((act: any, aIdx: number) => (
                   <div
                     key={act.id || aIdx}
                     onClick={() => {
@@ -1865,8 +2033,8 @@ export const LandingPage: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                ))
-              )}
+                ))}
+              </div>
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex justify-end">

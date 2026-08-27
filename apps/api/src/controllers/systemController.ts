@@ -150,25 +150,6 @@ export class SystemController {
   }
 
   /**
-   * Sync and automatically seed real student Program Kerja into landing curated activities
-   */
-  async syncRealProkers(req: Request, res: Response): Promise<void> {
-    try {
-      const updatedBy = (req.user as any)?.name || "Developer";
-      const synced = await systemService.syncRealProkersToLanding(updatedBy);
-      res.status(200).json({
-        success: true,
-        message: "Kurasi kegiatan berhasil disinkronkan langsung dari data Program Kerja riil mahasiswa",
-        data: synced,
-      });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
-    }
-  }
-
-  /**
    * Publish new APK release (SUPER_USER only)
    */
   async publishRelease(req: Request, res: Response): Promise<void> {

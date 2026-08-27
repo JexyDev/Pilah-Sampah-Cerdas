@@ -97,12 +97,6 @@ router.get(
   roleMiddleware(["DEVELOPER"]),
   systemController.getRealProkerSources
 );
-router.post(
-  "/landing-curated/sync-prokers",
-  authMiddleware,
-  roleMiddleware(["DEVELOPER"]),
-  systemController.syncRealProkers
-);
 
 /**
  * Social Feed management
