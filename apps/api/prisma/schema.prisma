@@ -984,7 +984,7 @@ model Schedule {
   latitude    Decimal?             @db.Decimal(11, 8)
   longitude   Decimal?             @db.Decimal(11, 8)
   polygon     Json?
-  radius      Int?                 @default(100)
+  radius      Int?                 @default(200)
   kelompokId  String?              @map("id_kelompok")
   isActive    Boolean              @default(true) @map("is_aktif")
   kelompok    KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)

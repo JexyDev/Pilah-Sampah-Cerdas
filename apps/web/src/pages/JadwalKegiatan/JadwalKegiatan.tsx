@@ -574,29 +574,26 @@ const JadwalKegiatan: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Validasi: title dan date wajib diisi
-    if (!formData.title.trim()) {
-      toast.error("Nama kegiatan wajib diisi");
+    if (!formData.title || !formData.date || !timeStart || !timeEnd) {
+      toast.error("Mohon lengkapi judul, tanggal, dan rentang waktu kegiatan!");
       return;
     }
-    if (!formData.date) {
-      toast.error("Tanggal wajib diisi");
+
+    if (geofenceMode === "POLYGON" && formData.polygon.length < 3) {
+      toast.error("Mode Area Polygon mewajibkan minimal 3 titik batas koordinat pada peta!");
       return;
     }
-    // Validasi format tanggal
-    const testDate = new Date(formData.date);
-    if (isNaN(testDate.getTime())) {
-      toast.error("Format tanggal tidak valid");
+
+    if (geofenceMode === "CIRCLE" && formData.polygon.length < 1 && (!formData.latitude || !formData.longitude)) {
+      toast.error("Mohon tentukan titik lokasi presensi pada peta!");
       return;
     }
-    if (formData.latitude && formData.longitude) {
-      const lat = parseFloat(String(formData.latitude));
-      const lng = parseFloat(String(formData.longitude));
-      
-      // Bounding box Coblong: lat [-6.9100, -6.8600], lng [107.6000, 107.6500]
-      // Bounding box Makerindo (Pesona Ciganitri): lat [-6.9900, -6.9500], lng [107.6400, 107.6800]
-      const isInCoblong = (lat >= -6.9100 && lat <= -6.8600 && lng >= 107.6000 && lng <= 107.6500);
-      const isInMakerindo = (lat >= -6.9900 && lat <= -6.9500 && lng >= 107.6400 && lng <= 107.6800);
+
+    // Validasi area geofence
+    if (formData.polygon.length > 0) {
+      const [lat, lng] = formData.polygon[0];
+      const isInCoblong = lat >= -6.905 && lat <= -6.870 && lng >= 107.595 && lng <= 107.630;
+      const isInMakerindo = lat >= -6.980 && lat <= -6.960 && lng >= 107.540 && lng <= 107.560;
       if (!isInCoblong && !isInMakerindo) {
         toast.error("Lokasi koordinat berada di luar wilayah operasional yang terdaftar!");
         return;
@@ -631,7 +628,7 @@ const JadwalKegiatan: React.FC = () => {
         time: timeFormatted,
         latitude: calcLat,
         longitude: calcLng,
-        radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 100,
+        radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 200,
         polygon: !isCircle && formData.polygon.length >= 3 ? formData.polygon : null,
       };
 
@@ -640,18 +637,15 @@ const JadwalKegiatan: React.FC = () => {
         toast.success("Jadwal berhasil diperbarui!");
       } else {
         await api.post("/schedules", payload);
-        toast.success("Jadwal berhasil ditambahkan!");
+        toast.success("Jadwal kegiatan berhasil ditambahkan!");
       }
-      
+
       setIsModalOpen(false);
-      setEditId(null);
       fetchSchedules();
-      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 100, polygon: [], kelompokId: "" });
+      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 200, polygon: [], kelompokId: "" });
       setTimeStart("08:00");
       setTimeEnd("16:00");
-      setGeofenceMode("CIRCLE");
-      setManualLat("");
-      setManualLng("");
+      setEditId(null);
     } catch (err: any) {
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Gagal menyimpan jadwal";
       toast.error(errMsg);
@@ -682,7 +676,7 @@ const JadwalKegiatan: React.FC = () => {
       location: schedule.location || "",
       latitude: schedule.latitude || "",
       longitude: schedule.longitude || "",
-      radius: schedule.radius || 100,
+      radius: schedule.radius || 200,
       polygon: schedule.polygon || (schedule.latitude && schedule.longitude ? [[Number(schedule.latitude), Number(schedule.longitude)]] : []),
       kelompokId: schedule.kelompokId || "",
     });
@@ -1986,7 +1980,7 @@ const JadwalKegiatan: React.FC = () => {
                           onChange={(pts) =>
                             setFormData((prev: any) => ({ ...prev, polygon: pts }))
                           }
-                          radius={Number(formData.radius) || 100}
+                          radius={Number(formData.radius) || 200}
                         />
                       </MapContainer>
 
@@ -2030,7 +2024,7 @@ const JadwalKegiatan: React.FC = () => {
                                 min={30}
                                 max={10000}
                                 step={50}
-                                value={formData.radius || 100}
+                                value={formData.radius || 200}
                                 onChange={(e) =>
                                   setFormData((prev: any) => ({ ...prev, radius: Math.max(30, Number(e.target.value)) }))
                                 }
@@ -2038,9 +2032,9 @@ const JadwalKegiatan: React.FC = () => {
                               />
                               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Meter</span>
                               <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-md text-[11px] font-mono font-bold shadow-2xs">
-                                {Number(formData.radius || 100) >= 1000
-                                  ? `${(Number(formData.radius || 100) / 1000).toFixed(2)} km`
-                                  : `${formData.radius || 100} m`}
+                                {Number(formData.radius || 200) >= 1000
+                                  ? `${(Number(formData.radius || 200) / 1000).toFixed(2)} km`
+                                  : `${formData.radius || 200} m`}
                               </span>
                             </div>
                           </div>
@@ -2056,7 +2050,7 @@ const JadwalKegiatan: React.FC = () => {
                             min="50"
                             max="5000"
                             step="50"
-                            value={formData.radius || 100}
+                            value={formData.radius || 200}
                             onChange={(e) =>
                               setFormData((prev: any) => ({ ...prev, radius: e.target.value }))
                             }

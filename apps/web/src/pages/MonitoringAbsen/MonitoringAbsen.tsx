@@ -1774,7 +1774,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       title: defaultTitle,
       category: "Sosialisasi",
       location: locInfo.fullAddress,
-      radius: 100,
+      radius: 200,
       kelompokId: defaultKelompokId,
     });
     setSelectedPos([]);
@@ -1815,7 +1815,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       title: schedule.title,
       category: cat,
       location: schedule.location || "",
-      radius: schedule.radius || 100,
+      radius: schedule.radius || 200,
       kelompokId: defaultKelompokId,
     });
     if (
@@ -1949,7 +1949,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       time: timeFormatted,
       location: (formData.location || "").trim(),
       kelompokId: targetKelompokId,
-      radius: Number(formData.radius) || 100,
+      radius: Number(formData.radius) || 200,
       latitude: calcLat,
       longitude: calcLng,
       polygon:
@@ -2445,7 +2445,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <Marker position={[lat, lng]} icon={createActivityMarkerIcon()} />
                           <Circle
                             center={[lat, lng]}
-                            radius={Number(activeSchedule.radius || 100)}
+                            radius={Number(activeSchedule.radius || 200)}
                             pathOptions={{
                               color: "#3b82f6",
                               fillColor: "#3b82f6",
@@ -3736,7 +3736,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             mode={geofenceMode}
                             points={selectedPos || []}
                             onChange={(pts) => setSelectedPos(pts)}
-                            radius={Number(formData.radius) || 100}
+                            radius={Number(formData.radius) || 200}
                           />
                         </MapContainer>
                       </div>
@@ -3753,7 +3753,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           type="number"
                           min={30}
                           max={5000}
-                          value={formData.radius || 100}
+                          value={formData.radius || 200}
                           onChange={(e) =>
                             setFormData({
                               ...formData,

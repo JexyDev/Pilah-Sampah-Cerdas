@@ -88,10 +88,10 @@ export const scheduleService = {
       try {
         const ruleConfigs = await configService.getRuleEngineConfigs();
         data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
-          ? 100 + (ruleConfigs as any).attendanceGeofenceBufferMeters
-          : 100;
+          ? 200 + (ruleConfigs as any).attendanceGeofenceBufferMeters
+          : 200;
       } catch (_err) {
-        data.radius = 100;
+        data.radius = 200;
       }
     }
     const schedule = await prisma.schedule.create({

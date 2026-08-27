@@ -1457,7 +1457,7 @@ export class KknAttendanceService {
       const checkoutGeofence = {
         latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
         longitude: schedule.longitude ? Number(schedule.longitude) : 107.6107,
-        radius: schedule.radius ? Number(schedule.radius) : 150,
+        radius: schedule.radius ? Number(schedule.radius) : 200,
         polygon: schedule.polygon,
       };
       actualInZoneMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
@@ -2466,7 +2466,7 @@ export class KknAttendanceService {
           alamat: sch.location || "Lokasi Kegiatan KKN",
           latitude: latNum,
           longitude: lngNum,
-          radiusMeter: sch.radius || 150,
+          radiusMeter: sch.radius || 200,
           polygon: sch.polygon || null,
         },
         status: scheduleStatus,
@@ -2779,7 +2779,7 @@ export class KknAttendanceService {
         alamat: schedule.location || "Lokasi Kegiatan KKN",
         latitude: schedule.latitude ? Number(schedule.latitude) : latitude,
         longitude: schedule.longitude ? Number(schedule.longitude) : longitude,
-        radiusMeter: schedule.radius || 150,
+        radiusMeter: schedule.radius || 200,
         polygon: schedule.polygon || null,
       },
       geofenceBufferMeters: (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15,
