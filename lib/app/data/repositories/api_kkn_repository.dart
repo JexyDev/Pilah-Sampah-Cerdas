@@ -671,7 +671,6 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude}) async {
     try {
-      // Jika ada foto, kirim sebagai multipart/form-data
       if (fotoPath != null && fotoPath.isNotEmpty) {
         final fileExt = fotoPath.split('.').last.toLowerCase();
         String mimeType = 'image/jpeg';
