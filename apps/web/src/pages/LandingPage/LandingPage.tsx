@@ -119,23 +119,15 @@ export const LandingPage: React.FC = () => {
 
 
 
-  // Format bobot sampah dengan 2 desimal / 3 angka ringkas (misal: 4,06 Ton+ atau 850 kg)
+  // Format bobot sampah selalu dalam satuan kg dengan 2 angka di belakang koma (misal: 4.056,00 kg+)
   const formatWasteWeight = (kg: number | undefined) => {
-    if (kg === undefined || kg === null) return "4,06 Ton+";
-    if (kg >= 1000) {
-      const ton = kg / 1000;
-      return `${ton.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton+`;
-    }
-    return `${kg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg+`;
+    const val = typeof kg === "number" ? kg : 4056;
+    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg+`;
   };
 
   const formatWasteWeightExact = (kg: number | undefined) => {
-    if (kg === undefined || kg === null) return "4,06 Ton";
-    if (kg >= 1000) {
-      const ton = kg / 1000;
-      return `${ton.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`;
-    }
-    return `${kg.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+    const val = typeof kg === "number" ? kg : 4056;
+    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
   };
 
 
@@ -541,7 +533,7 @@ export const LandingPage: React.FC = () => {
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
               <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4,06 Ton+"}
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4.056,00 kg+"}
               </p>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
@@ -1167,7 +1159,7 @@ export const LandingPage: React.FC = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "4,06 Ton"} terkelola.
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "4.056,00 kg"} terkelola.
                     </p>
                   </div>
 
@@ -1241,7 +1233,7 @@ export const LandingPage: React.FC = () => {
               </span>
 
               <span className="dampak-value">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4,06 Ton+"}
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "4.056,00 kg+"}
               </span>
 
               <span className="dampak-sub">
