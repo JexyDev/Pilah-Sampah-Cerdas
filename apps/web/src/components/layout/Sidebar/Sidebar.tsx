@@ -960,8 +960,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
-            "DPL",
-            "DOSEN_PEMBIMBING",
             "PANITIA_TASKFORCE",
             "PEMIMPIN",
             "ADMIN_DLH",
@@ -975,8 +973,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "ADMIN_DLH",
@@ -990,8 +986,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "ADMIN_DLH",
@@ -1005,8 +999,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "ADMIN_DLH",
