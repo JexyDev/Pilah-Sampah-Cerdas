@@ -27,6 +27,9 @@ import { useAuthStore } from "../../store/useAuthStore";
 
 export interface CuratedActivityItem {
   id: string;
+  prokerId?: string | null;
+  kelompokId?: string | null;
+  kelompokNama?: string | null;
   title: string;
   date: string;
   location: string;
@@ -35,6 +38,7 @@ export interface CuratedActivityItem {
   description: string;
   sdgTags: string[];
   isPublished: boolean;
+  isStrictRelation?: boolean;
 }
 
 export const KurasiLandingPage: React.FC = () => {
@@ -50,6 +54,9 @@ export const KurasiLandingPage: React.FC = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<CuratedActivityItem>({
     id: "",
+    prokerId: null,
+    kelompokId: null,
+    kelompokNama: null,
     title: "",
     date: new Date().toISOString().slice(0, 10),
     location: "Kecamatan Coblong, Kota Bandung",
@@ -258,15 +265,19 @@ export const KurasiLandingPage: React.FC = () => {
 
     setEditingIndex(null);
     setFormData({
-      id: `curated-proker-${proker.id || Date.now()}`,
+      id: `proker-${proker.id || Date.now()}`,
+      prokerId: proker.id,
+      kelompokId: proker.kelompokId,
+      kelompokNama: proker.kelompokNama,
       title: rawTitle,
       date: proker.dibuatPada ? new Date(proker.dibuatPada).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
       location: locationText || "Kecamatan Coblong, Kota Bandung",
       category,
-      imageUrl: img,
+      imageUrl: proker.fotoBuktiUrl || img,
       description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${proker.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
       sdgTags,
       isPublished: true,
+      isStrictRelation: true,
     });
     setShowCandidateModal(false);
     setShowModal(true);
@@ -478,7 +489,16 @@ export const KurasiLandingPage: React.FC = () => {
 
                 {/* Body Content */}
                 <div className="p-5 space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-1.5">
+                    {item.prokerId ? (
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                        Proker #{item.prokerId.slice(0, 8)}
+                      </span>
+                    ) : item.kelompokNama ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                        {item.kelompokNama}
+                      </span>
+                    ) : null}
                     <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
                       {item.category}
                     </span>

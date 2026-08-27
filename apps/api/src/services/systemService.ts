@@ -129,9 +129,10 @@ export const systemService = {
   ],
 
   /**
-   * Get curated activities for landing page strictly from developer curation CRUD
+   * Get curated activities for landing page strictly from developer curation CRUD and enriched by real proker ID
    */
   getCuratedLandingActivities: async () => {
+    let activities: any[] = [];
     // 1. Ambil data kurasi kegiatan yang telah divalidasi/di-CRUD oleh Developer
     try {
       const config = await prisma.systemConfig.findUnique({
@@ -140,16 +141,72 @@ export const systemService = {
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Hanya tampilkan yang isPublished: true
-          return parsed.filter((item: any) => item.isPublished !== false);
+          activities = parsed;
         }
       }
     } catch (err) {
       console.warn("[systemService] Failed parsing landing_curated_activities:", err);
     }
 
-    // 2. Fallback aman ke curated default terstruktur berbasis proker riil
-    return systemService.getDefaultCuratedActivities();
+    if (!activities || activities.length === 0) {
+      activities = systemService.getDefaultCuratedActivities();
+    }
+
+    // 2. Strict Enrichment by Proker ID: Pastikan data terikat ketat ke entitas program_kerja_kkn
+    const prokerIds = activities.map((a: any) => a.prokerId || (a.id && !a.id.startsWith("curated-") ? a.id : null)).filter(Boolean);
+    if (prokerIds.length > 0) {
+      try {
+        const db = prisma as any;
+        const formattedIds = prokerIds.map((id: string) => `'${String(id).replace(/'/g, "")}'`).join(",");
+        const realProkers = await db.$queryRawUnsafe(`
+          SELECT 
+            p.id as "prokerId",
+            p.judul,
+            p.deskripsi,
+            p.kategori,
+            p.waktu_pelaksanaan as "waktuPelaksanaan",
+            k.id as "kelompokId",
+            k.nama as "kelompokNama",
+            k.kelurahan,
+            k.cakupan_rw as "cakupanRw",
+            (
+              SELECT l.foto_bukti_url 
+              FROM logbook_kkn l 
+              WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+                AND l.foto_bukti_url IS NOT NULL 
+                AND length(l.foto_bukti_url) > 3 
+              ORDER BY l.tanggal_kegiatan DESC 
+              LIMIT 1
+            ) as "fotoBuktiUrl"
+          FROM program_kerja_kkn p
+          LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
+          WHERE p.id IN (${formattedIds})
+        `);
+
+        if (Array.isArray(realProkers) && realProkers.length > 0) {
+          const prokerMap = new Map(realProkers.map((rp: any) => [rp.prokerId, rp]));
+          activities = activities.map((act: any) => {
+            const targetId = act.prokerId || act.id;
+            if (targetId && prokerMap.has(targetId)) {
+              const rp: any = prokerMap.get(targetId);
+              return {
+                ...act,
+                prokerId: rp.prokerId,
+                kelompokId: rp.kelompokId,
+                kelompokNama: rp.kelompokNama || act.kelompokNama,
+                imageUrl: act.imageUrl || rp.fotoBuktiUrl,
+                isStrictRelation: true,
+              };
+            }
+            return act;
+          });
+        }
+      } catch (enrichErr) {
+        console.warn("[systemService] Strict proker enrichment warning:", enrichErr);
+      }
+    }
+
+    return activities.filter((item: any) => item.isPublished !== false);
   },
 
   /**
@@ -217,6 +274,7 @@ export const systemService = {
       const prokers = await db.$queryRawUnsafe(`
         SELECT 
           p.id,
+          p.id as "prokerId",
           p.judul,
           p.deskripsi,
           p.kategori,
@@ -227,9 +285,27 @@ export const systemService = {
           p.lampiran_file as "lampiranFile",
           p.link_google_drive as "linkGoogleDrive",
           p.dibuat_pada as "dibuatPada",
+          k.id as "kelompokId",
           k.nama as "kelompokNama", 
           k.kelurahan as "kelurahan",
-          k.cakupan_rw as "cakupanRw"
+          k.cakupan_rw as "cakupanRw",
+          (
+            SELECT l.foto_bukti_url 
+            FROM logbook_kkn l 
+            WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+              AND l.foto_bukti_url IS NOT NULL 
+              AND length(l.foto_bukti_url) > 3 
+            ORDER BY l.tanggal_kegiatan DESC 
+            LIMIT 1
+          ) as "fotoBuktiUrl",
+          (
+            SELECT l.tempat 
+            FROM logbook_kkn l 
+            WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+              AND l.tempat IS NOT NULL 
+            ORDER BY l.tanggal_kegiatan DESC 
+            LIMIT 1
+          ) as "logbookTempat"
         FROM program_kerja_kkn p
         LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
         ORDER BY p.dibuat_pada DESC
@@ -243,7 +319,7 @@ export const systemService = {
   },
 
   /**
-   * Automatically sync real student prokers & logbooks from database into curated activities
+   * Automatically sync real student prokers & logbooks from database into curated activities strictly by ID
    */
   syncRealProkersToLanding: async (updatedBy: string = "Developer") => {
     const db = prisma as any;
@@ -298,15 +374,19 @@ export const systemService = {
       const d = p.dibuatPada ? new Date(p.dibuatPada).toISOString().split("T")[0] : "2026-08-27";
 
       return {
-        id: `curated-proker-${p.id || idx}`,
+        id: `proker-${p.id}`,
+        prokerId: p.id,
+        kelompokId: p.kelompokId || null,
+        kelompokNama: p.kelompokNama || null,
         title: rawTitle,
         date: d,
         location: locStr || "Kecamatan Coblong, Kota Bandung",
         category: p.kategori || "Aksi Lingkungan",
-        imageUrl: realPhotos[idx % realPhotos.length],
+        imageUrl: p.fotoBuktiUrl || realPhotos[idx % realPhotos.length],
         description: rawDesc || `Program kerja ${rawTitle} yang diinisiasi oleh ${p.kelompokNama || "Mahasiswa KKN"} bersama warga setempat.`,
         sdgTags: ["#11", "#12", "#13"],
         isPublished: true,
+        isStrictRelation: true,
       };
     });
 
