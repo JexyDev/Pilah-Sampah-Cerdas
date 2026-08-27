@@ -493,6 +493,7 @@ class KelompokMemberData extends Equatable {
     this.fakultas = '',
     required this.individualPoints,
     this.isLeader = false,
+    this.statusPenugasanRw = '-',
   });
 
   final String userId;
@@ -502,6 +503,7 @@ class KelompokMemberData extends Equatable {
   final String fakultas;
   final int individualPoints;
   final bool isLeader;
+  final String statusPenugasanRw;
 
   factory KelompokMemberData.fromJson(Map<String, dynamic> json) {
     return KelompokMemberData(
@@ -512,11 +514,12 @@ class KelompokMemberData extends Equatable {
       fakultas: json['fakultas']?.toString() ?? '',
       individualPoints: (json['individualPoints'] as num?)?.toInt() ?? (json['points'] as num?)?.toInt() ?? 0,
       isLeader: json['isLeader'] as bool? ?? (json['role']?.toString().toUpperCase() == 'KETUA'),
+      statusPenugasanRw: json['statusPenugasanRw']?.toString() ?? json['assignedRw']?.toString() ?? json['rw']?.toString() ?? '-',
     );
   }
 
   @override
-  List<Object?> get props => [userId, nim, individualPoints, fakultas, isLeader, name, jurusan];
+  List<Object?> get props => [userId, nim, individualPoints, fakultas, isLeader, name, jurusan, statusPenugasanRw];
 
   KelompokMemberData copyWith({
     String? userId,
@@ -526,6 +529,7 @@ class KelompokMemberData extends Equatable {
     String? fakultas,
     int? individualPoints,
     bool? isLeader,
+    String? statusPenugasanRw,
   }) {
     return KelompokMemberData(
       userId: userId ?? this.userId,
@@ -535,6 +539,7 @@ class KelompokMemberData extends Equatable {
       fakultas: fakultas ?? this.fakultas,
       individualPoints: individualPoints ?? this.individualPoints,
       isLeader: isLeader ?? this.isLeader,
+      statusPenugasanRw: statusPenugasanRw ?? this.statusPenugasanRw,
     );
   }
 }
@@ -544,6 +549,8 @@ class KelompokKknData extends Equatable {
     required this.groupId,
     required this.groupName,
     required this.dosenPembimbing,
+    this.dplNip = '-',
+    this.dplPhone = '-',
     required this.poskoLocation,
     required this.totalGroupPoints,
     required this.members,
@@ -552,6 +559,8 @@ class KelompokKknData extends Equatable {
   final String groupId;
   final String groupName;
   final String dosenPembimbing;
+  final String dplNip;
+  final String dplPhone;
   final String poskoLocation;
   final int totalGroupPoints;
   final List<KelompokMemberData> members;
@@ -596,10 +605,28 @@ class KelompokKknData extends Equatable {
 
     if (dpl.isEmpty || dpl == 'null') dpl = '-';
 
+    String nip = '-';
+    String phone = '-';
+    
+    // Parse nip
+    nip = json['dplNip']?.toString() ?? json['dpl']?['nip']?.toString() ?? json['dplObj']?['nip']?.toString() ?? '-';
+    
+    // Parse phone (fallback logic provided by backend spec)
+    final rawPhone = json['dpl']?['phone'] ?? 
+                     json['dpl']?['nomorWa'] ?? 
+                     json['dplPhone'] ?? 
+                     json['dplObj']?['phone'] ?? 
+                     json['dplObj']?['nomorWa'];
+    if (rawPhone != null && rawPhone.toString().trim().isNotEmpty) {
+      phone = rawPhone.toString();
+    }
+
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
       groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
       dosenPembimbing: dpl,
+      dplNip: nip,
+      dplPhone: phone,
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
       members: membersList,
@@ -607,7 +634,7 @@ class KelompokKknData extends Equatable {
   }
 
   @override
-  List<Object?> get props => [groupId, groupName, totalGroupPoints, members];
+  List<Object?> get props => [groupId, groupName, totalGroupPoints, members, dosenPembimbing, dplNip, dplPhone];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────

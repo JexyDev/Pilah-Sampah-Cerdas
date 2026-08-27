@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 
@@ -26,8 +27,17 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
       allowedExtensions: ['pdf'],
     );
     if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      if (file.lengthSync() > 15 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ukuran PDF melebihi batas maksimal 15MB!'), backgroundColor: AppColors.dangerRed),
+          );
+        }
+        return;
+      }
       setState(() {
-        _selectedPdf = File(result.files.single.path!);
+        _selectedPdf = file;
       });
     }
   }
@@ -282,6 +292,10 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                     final legacyStatus = item['status']?.toString();
                     final catatanDpl = item['catatanDpl'] ?? item['catatan_dpl'];
                     final createdAtStr = item['createdAt']?.toString() ?? item['dibuat_pada']?.toString();
+                    
+                    final nilaiAkhir = item['nilaiAkhir'] ?? item['nilai'];
+                    final rubrikScore = item['rubrikScore'];
+                    final filePdfUrl = item['filePdfUrl'] ?? item['fileUrl'] ?? item['lampiranUrl'];
 
                     return Card(
                       elevation: 1.5,
@@ -323,30 +337,81 @@ class _RiwayatLaporanAkhirSheet extends ConsumerWidget {
                                   ),
                                 ],
                               ),
+                            if (nilaiAkhir != null) ...[
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.2)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Nilai Laporan:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '$nilaiAkhir',
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primaryGreen),
+                                        ),
+                                        if (rubrikScore != null)
+                                          Text(
+                                            ' ($rubrikScore)',
+                                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             if (catatanDpl != null && catatanDpl.toString().trim().isNotEmpty) ...[
                               const SizedBox(height: 10),
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.backgroundCanvas,
+                                  color: AppColors.warningYellow.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.border),
+                                  border: Border.all(color: AppColors.warningYellow.withValues(alpha: 0.4)),
                                 ),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.feedback_outlined, size: 16, color: AppColors.dangerRed),
+                                    const Icon(Icons.feedback_outlined, size: 16, color: Colors.orange),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        'Catatan DPL: $catatanDpl',
-                                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                        'Ulasan DPL: $catatanDpl',
+                                        style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w500),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ],
+                            if (filePdfUrl != null && filePdfUrl.toString().isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  icon: const Icon(Icons.picture_as_pdf_rounded, size: 16, color: Colors.redAccent),
+                                  label: const Text('Lihat Dokumen Laporan'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                    side: BorderSide(color: Colors.grey.shade300),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () async {
+                                    final url = Uri.parse(filePdfUrl.toString());
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ]
                           ],
                         ),
                       ),

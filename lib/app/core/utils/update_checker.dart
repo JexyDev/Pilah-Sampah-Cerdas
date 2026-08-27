@@ -104,6 +104,12 @@ class _UpdateDialogState extends State<_UpdateDialog> {
   double _progress = 0.0;
   String _statusMessage = '';
 
+  String get _absoluteDownloadUrl {
+    final url = widget.downloadUrl;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return '${AppConfig.baseUrl}${url.startsWith('/') ? '' : '/'}$url';
+  }
+
   Future<void> _startDownload() async {
     setState(() {
       _isDownloading = true;
@@ -125,7 +131,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       // 2. Download menggunakan Dio
       final dio = Dio();
       await dio.download(
-        widget.downloadUrl,
+        _absoluteDownloadUrl,
         savePath,
         onReceiveProgress: (received, total) {
           if (total != -1) {
@@ -164,7 +170,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
   }
 
   void _fallbackToBrowser() async {
-    final uri = Uri.parse(widget.downloadUrl);
+    final uri = Uri.parse(_absoluteDownloadUrl);
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {

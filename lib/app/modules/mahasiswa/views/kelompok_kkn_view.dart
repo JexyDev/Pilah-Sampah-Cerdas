@@ -4,6 +4,7 @@ import '../../../core/values/app_colors.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../controllers/posko_kkn_controller.dart';
 import '../../../routes/app_routes.dart';
 
@@ -198,24 +199,68 @@ class KelompokKknView extends ConsumerWidget {
                           child: Divider(color: Colors.white24, height: 1),
                         ),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.school_rounded, color: Colors.white, size: 20),
-                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.school_rounded, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
                                     'Dosen Pembimbing Lapangan (DPL):',
-                                    style: TextStyle(fontSize: 11, color: Colors.white60),
+                                    style: TextStyle(fontSize: 11, color: Colors.white70),
                                   ),
                                   Text(
                                     kelompokData.dosenPembimbing,
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                                   ),
+                                  if (kelompokData.dplNip != '-') ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'NIP: ${kelompokData.dplNip}',
+                                      style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                    ),
+                                  ]
                                 ],
                               ),
                             ),
+                            if (kelompokData.dplPhone != '-')
+                              InkWell(
+                                onTap: () async {
+                                  final rawPhone = kelompokData.dplPhone;
+                                  final cleanPhone = rawPhone.replaceAll(RegExp(r'[^0-9]'), '').replaceFirst(RegExp(r'^0'), '62');
+                                  final waUrl = Uri.parse('https://wa.me/$cleanPhone');
+                                  if (await canLaunchUrl(waUrl)) {
+                                    await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(30),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Image.asset('assets/icons/ic_whatsapp.png', width: 16, height: 16, errorBuilder: (c, e, s) => const Icon(Icons.chat, size: 16, color: Colors.green)),
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'Hubungi DPL',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ],
@@ -376,9 +421,19 @@ class KelompokKknView extends ConsumerWidget {
                               ),
                           ],
                         ),
-                        subtitle: Text(
-                          member.nim.isNotEmpty ? member.nim : '-',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              member.nim.isNotEmpty ? member.nim : '-',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                            ),
+                            if (member.statusPenugasanRw != '-')
+                              Text(
+                                'Penugasan: RW ${member.statusPenugasanRw}',
+                                style: const TextStyle(fontSize: 11, color: AppColors.primaryBlue),
+                              ),
+                          ],
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
