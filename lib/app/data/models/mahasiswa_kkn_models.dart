@@ -83,13 +83,24 @@ class WasteLogEntry extends Equatable {
                           json['wasteCategory']?.toString() ?? 
                           json['type']?.toString() ?? 
                           json['binType']?.toString() ?? 
+                          json['kategoriAktual']?.toString() ?? 
+                          json['kategori_aktual']?.toString() ?? 
+                          json['hasilKlasifikasiAi']?.toString() ?? 
+                          json['hasil_klasifikasi_ai']?.toString() ?? 
                           'UNKNOWN';
     }
 
+    // Ubah hasilKlasifikasiAi "organik" / "anorganik" menjadi huruf kapital awal agar konsisten
+    if (extractedCategory.toLowerCase() == 'organik') {
+      extractedCategory = 'Organik';
+    } else if (extractedCategory.toLowerCase() == 'anorganik' || extractedCategory.toLowerCase() == 'non_organic') {
+      extractedCategory = 'Anorganik';
+    }
+
     return WasteLogEntry(
-      weightKg: (json['weightKg'] as num?)?.toDouble() ?? 0.0,
+      weightKg: (json['weightKg'] as num?)?.toDouble() ?? (json['berat'] as num?)?.toDouble() ?? 0.0,
       category: extractedCategory,
-      aiConfidence: (json['aiConfidence'] as num?)?.toDouble() ?? 0.0,
+      aiConfidence: (json['aiConfidence'] as num?)?.toDouble() ?? (json['confidenceAi'] as num?)?.toDouble() ?? 0.0,
       discrepancyStatus: json['discrepancyStatus']?.toString() ?? 'NONE',
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
