@@ -166,6 +166,8 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         return WargaDampingan(
           wargaId: w.wargaId,
           binId: w.binId,
+          binOrganikId: w.binOrganikId,
+          binAnorganikId: w.binAnorganikId,
           wargaName: w.wargaName,
           address: formattedAddr,
           kelurahan: targetKel,

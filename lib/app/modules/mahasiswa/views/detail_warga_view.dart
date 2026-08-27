@@ -203,28 +203,34 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                           size: 14, color: Colors.white70),
                                       const SizedBox(width: 4),
                                       Expanded(
-                                        child: Text(
-                                          (() {
+                                        child: Builder(
+                                          builder: (_) {
                                             final org = warga.binOrganikId;
                                             final anorg = warga.binAnorganikId;
                                             final hasOrg = org != null && org.trim().isNotEmpty;
                                             final hasAnorg = anorg != null && anorg.trim().isNotEmpty;
+                                            const defaultStyle = TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            );
+
                                             if (hasOrg && hasAnorg && org != anorg) {
-                                              return 'ID: $org / $anorg';
+                                              return Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text('Organik: $org', style: defaultStyle, overflow: TextOverflow.ellipsis),
+                                                  Text('Non Organik: $anorg', style: defaultStyle, overflow: TextOverflow.ellipsis),
+                                                ],
+                                              );
                                             }
-                                            if (hasOrg) return 'ID: $org';
-                                            if (hasAnorg) return 'ID: $anorg';
+                                            if (hasOrg) return Text('Organik: $org', style: defaultStyle, overflow: TextOverflow.ellipsis);
+                                            if (hasAnorg) return Text('Non Organik: $anorg', style: defaultStyle, overflow: TextOverflow.ellipsis);
                                             if (warga.binId.isEmpty || warga.binId == 'Belum Ada Tempat Sampah') {
-                                              return 'Belum Ada Tempat Sampah';
+                                              return const Text('Belum Ada Tempat Sampah', style: defaultStyle, overflow: TextOverflow.ellipsis);
                                             }
-                                            return 'ID: ${warga.binId}';
-                                          })(),
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
+                                            return Text('ID: ${warga.binId}', style: defaultStyle, overflow: TextOverflow.ellipsis);
+                                          },
                                         ),
                                       ),
                                     ],

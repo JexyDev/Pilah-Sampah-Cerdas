@@ -81,6 +81,7 @@ class WasteLogEntry extends Equatable {
       extractedCategory = json['category']?.toString() ?? 
                           json['kategori']?.toString() ?? 
                           json['wasteCategory']?.toString() ?? 
+                          json['wasteType']?.toString() ??
                           json['type']?.toString() ?? 
                           json['binType']?.toString() ?? 
                           json['kategoriAktual']?.toString() ?? 
@@ -93,8 +94,8 @@ class WasteLogEntry extends Equatable {
     // Ubah hasilKlasifikasiAi "organik" / "anorganik" menjadi huruf kapital awal agar konsisten
     if (extractedCategory.toLowerCase() == 'organik') {
       extractedCategory = 'Organik';
-    } else if (extractedCategory.toLowerCase() == 'anorganik' || extractedCategory.toLowerCase() == 'non_organic') {
-      extractedCategory = 'Anorganik';
+    } else if (extractedCategory.toLowerCase() == 'anorganik' || extractedCategory.toLowerCase() == 'non_organic' || extractedCategory.toLowerCase() == 'non organik') {
+      extractedCategory = 'Non Organik';
     }
 
     return WasteLogEntry(

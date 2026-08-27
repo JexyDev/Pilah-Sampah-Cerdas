@@ -51,6 +51,8 @@ class _DaftarWargaViewState extends ConsumerState<DaftarWargaView> {
       return WargaDampingan(
         wargaId: w.wargaId,
         binId: w.binId,
+        binOrganikId: w.binOrganikId,
+        binAnorganikId: w.binAnorganikId,
         wargaName: w.wargaName,
         address: displayAddr,
         kelurahan: targetKel,
