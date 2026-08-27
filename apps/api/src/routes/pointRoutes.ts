@@ -89,7 +89,7 @@ router.get("/leaderboard", pointController.getLeaderboard);
  * @swagger
  * /api/v1/points/admin/users:
  *   get:
- *     summary: [DEVELOPER ONLY] Get all users with points ledger, search, filter, and server pagination
+ *     summary: "[DEVELOPER ONLY] Get all users with points ledger, search, filter, and server pagination"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -105,7 +105,7 @@ router.get(
  * @swagger
  * /api/v1/points/admin/stats:
  *   get:
- *     summary: [DEVELOPER ONLY] Get system-wide points summary statistics
+ *     summary: "[DEVELOPER ONLY] Get system-wide points summary statistics"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -121,7 +121,7 @@ router.get(
  * @swagger
  * /api/v1/points/admin/ledger:
  *   get:
- *     summary: [DEVELOPER ONLY] Get global ledger transactions feed with pagination
+ *     summary: "[DEVELOPER ONLY] Get global ledger transactions feed with pagination"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -137,7 +137,7 @@ router.get(
  * @swagger
  * /api/v1/points/admin/user/{userId}:
  *   get:
- *     summary: [DEVELOPER ONLY] Get single user ledger details
+ *     summary: "[DEVELOPER ONLY] Get single user ledger details"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -153,7 +153,7 @@ router.get(
  * @swagger
  * /api/v1/points/admin/adjust:
  *   post:
- *     summary: [DEVELOPER ONLY] Adjust (+/-) points for single user
+ *     summary: "[DEVELOPER ONLY] Adjust (+/-) points for single user"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -169,7 +169,7 @@ router.post(
  * @swagger
  * /api/v1/points/admin/set-balance:
  *   post:
- *     summary: [DEVELOPER ONLY] Set exact balance for a user with auto-calculated delta
+ *     summary: "[DEVELOPER ONLY] Set exact balance for a user with auto-calculated delta"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -185,7 +185,7 @@ router.post(
  * @swagger
  * /api/v1/points/admin/bulk-adjust:
  *   post:
- *     summary: [DEVELOPER ONLY] Bulk adjust points for multiple users
+ *     summary: "[DEVELOPER ONLY] Bulk adjust points for multiple users"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -201,7 +201,7 @@ router.post(
  * @swagger
  * /api/v1/points/admin/transaction/{id}:
  *   put:
- *     summary: [DEVELOPER ONLY] Edit point transaction description or category
+ *     summary: "[DEVELOPER ONLY] Edit point transaction description or category"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
@@ -217,7 +217,7 @@ router.put(
  * @swagger
  * /api/v1/points/admin/transaction/{id}:
  *   delete:
- *     summary: [DEVELOPER ONLY] Void / Reversal a transaction
+ *     summary: "[DEVELOPER ONLY] Void / Reversal a transaction"
  *     tags: [Points]
  *     security:
  *       - bearerAuth: []
