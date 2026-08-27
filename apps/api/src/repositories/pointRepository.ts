@@ -430,7 +430,7 @@ export class PointRepository {
         createdAt: true,
         role: { select: { name: true } },
         rw: { select: { name: true, kelurahan: { select: { name: true } } } },
-        studentProfile: { select: { nim: true, jurusan: true, kelompok: { select: { nomorKelompok: true } } } },
+        studentProfile: { select: { nim: true, jurusan: true, kelompok: { select: { id: true, name: true } } } },
       },
     });
 
@@ -463,7 +463,7 @@ export class PointRepository {
         kelurahan: user.rw?.kelurahan?.name || null,
         nim: user.studentProfile?.nim || null,
         jurusan: user.studentProfile?.jurusan || null,
-        kelompok: user.studentProfile?.kelompok ? `Kelompok ${user.studentProfile.kelompok.nomorKelompok}` : null,
+        kelompok: user.studentProfile?.kelompok?.name || null,
         createdAt: user.createdAt,
         totalPoints,
         totalTransactions: total,

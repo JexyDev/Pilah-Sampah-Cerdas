@@ -51,43 +51,55 @@ export const systemService = {
   },
 
   /**
-   * Default verified real activities for public landing page showcase
+   * Default verified real activities for public landing page showcase (Based on Real KKN Prokers & Activities)
    */
   getDefaultCuratedActivities: () => [
     {
       id: "curated-1",
-      title: "Edukasi Pemilahan Sampah Mandiri dan Aktivasi Kode QR di RW 03",
-      date: "2026-05-24",
-      location: "Balai RW 03, Kelurahan Lebak Gede, Kec. Coblong",
-      category: "Edukasi Pemilahan",
-      imageUrl: "/image/activity-1.png",
+      title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
+      date: "2026-08-27",
+      location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
+      category: "Edukasi & Sosialisasi",
+      imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
       description:
-        "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
-      sdgTags: ["#3", "#11", "#12"],
+        "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
+      sdgTags: ["#11", "#12", "#13"],
       isPublished: true,
     },
     {
       id: "curated-2",
-      title: "Pengolahan Kompos Dapur & Budidaya Larva Maggot BSF Terpadu",
-      date: "2026-05-20",
-      location: "Rumah Kompos, Kelurahan Dago, Kec. Coblong",
-      category: "Pengolahan Kompos & Maggot",
-      imageUrl: "/image/activity-2.png",
+      title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
+      date: "2026-08-27",
+      location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
+      category: "Edukasi Pemilahan",
+      imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
       description:
-        "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
-      sdgTags: ["#12", "#13", "#15"],
+        "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
+      sdgTags: ["#4", "#12", "#15"],
       isPublished: true,
     },
     {
       id: "curated-3",
-      title: "Aksi Bersih Sungai Cikapundung dan Audit Sampah Plastik",
-      date: "2026-05-18",
-      location: "Bantaran Sungai, Kelurahan Sekeloa, Kec. Coblong",
-      category: "Aksi Bersih Lingkungan",
-      imageUrl: "/image/activity-3.png",
+      title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
+      date: "2026-08-27",
+      location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
+      category: "Pengolahan & Pemanfaatan",
+      imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
       description:
-        "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
-      sdgTags: ["#3", "#11", "#15"],
+        "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
+      sdgTags: ["#12", "#13", "#15"],
+      isPublished: true,
+    },
+    {
+      id: "curated-4",
+      title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
+      date: "2026-08-27",
+      location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
+      category: "Aksi Bersih Lingkungan",
+      imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
+      description:
+        "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
+      sdgTags: ["#3", "#11", "#12"],
       isPublished: true,
     },
   ],
@@ -96,7 +108,7 @@ export const systemService = {
    * Get curated activities for landing page strictly from developer curation CRUD
    */
   getCuratedLandingActivities: async () => {
-    // 1. Ambil data kurasi kegiatan yang telah divalidasi/di-CRUD oleh Developer / Admin
+    // 1. Ambil data kurasi kegiatan yang telah divalidasi/di-CRUD oleh Developer
     try {
       const config = await prisma.systemConfig.findUnique({
         where: { key: "landing_curated_activities" },
@@ -112,14 +124,14 @@ export const systemService = {
       console.warn("[systemService] Failed parsing landing_curated_activities:", err);
     }
 
-    // 2. Fallback aman ke curated default terstruktur (tidak auto-dump jadwal mentah mahasiswa tanpa validasi developer)
+    // 2. Fallback aman ke curated default terstruktur berbasis proker riil
     return systemService.getDefaultCuratedActivities();
   },
 
   /**
    * Save / Update curated landing activities (Super User / Developer)
    */
-  saveCuratedLandingActivities: async (activities: any[], updatedBy: string = "Admin") => {
+  saveCuratedLandingActivities: async (activities: any[], updatedBy: string = "Developer") => {
     const jsonStr = JSON.stringify(activities);
     await prisma.systemConfig.upsert({
       where: { key: "landing_curated_activities" },
@@ -139,25 +151,64 @@ export const systemService = {
   },
 
   /**
-   * Get approved KKN logbooks with photos to use as candidate sources for curation
+   * Get real KKN logbooks with photos from database as candidates for curation
    */
   getApprovedLogbookSources: async () => {
     try {
-      const logbooks = await prisma.logbookKkn.findMany({
-        where: {
-          statusApproval: "DISETUJUI_DPL",
-          fotoBuktiUrl: { not: "" },
-        },
-        take: 20,
-        orderBy: { tanggalKegiatan: "desc" },
-        include: {
-          penulis: { select: { name: true } },
-          kelompok: { select: { name: true, kelurahan: true } },
-          programKerja: { select: { deskripsi: true, kategori: true } },
-        },
-      });
-      return logbooks;
-    } catch {
+      const db = prisma as any;
+      const logbooks = await db.$queryRawUnsafe(`
+        SELECT 
+          l.id, 
+          l.tempat, 
+          l.deskripsi, 
+          l.foto_bukti_url as "fotoBuktiUrl", 
+          l.tanggal_kegiatan as "tanggalKegiatan", 
+          l.status_persetujuan as "statusApproval", 
+          k.nama as "kelompokNama", 
+          k.kelurahan as kelurahan, 
+          u.nama as "penulisNama", 
+          p.deskripsi as "prokerDeskripsi", 
+          p.kategori as "prokerKategori"
+        FROM logbook_kkn l
+        LEFT JOIN kelompok_kkn k ON l.id_kelompok = k.id
+        LEFT JOIN pengguna u ON l.id_penulis = u.id
+        LEFT JOIN program_kerja_kkn p ON l.id_program_kerja = p.id
+        WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 5
+        ORDER BY l.tanggal_kegiatan DESC
+        LIMIT 40
+      `);
+      return logbooks || [];
+    } catch (err) {
+      console.warn("[systemService] Error fetching real logbooks:", err);
+      return [];
+    }
+  },
+
+  /**
+   * Get real student Program Kerja (Proker) from database as candidates for curation
+   */
+  getRealProkerSources: async () => {
+    try {
+      const db = prisma as any;
+      const prokers = await db.$queryRawUnsafe(`
+        SELECT 
+          p.id, 
+          p.deskripsi, 
+          p.kategori, 
+          p.status,
+          p.sumber,
+          p.waktu_pelaksanaan as "waktuPelaksanaan",
+          k.nama as "kelompokNama", 
+          k.kelurahan,
+          k.kecamatan
+        FROM program_kerja_kkn p
+        LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
+        ORDER BY p.dibuat_pada DESC
+        LIMIT 40
+      `);
+      return prokers || [];
+    } catch (err) {
+      console.warn("[systemService] Error fetching real prokers:", err);
       return [];
     }
   },

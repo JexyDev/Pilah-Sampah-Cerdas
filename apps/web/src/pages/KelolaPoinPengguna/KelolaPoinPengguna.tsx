@@ -1289,29 +1289,48 @@ export const KelolaPoinPengguna: React.FC = () => {
             </div>
 
             {/* Ledger Pagination */}
-            <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+            <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
               <span className="text-slate-500">
                 Menampilkan {(ledgerPage - 1) * ledgerLimit + 1} -{" "}
                 {Math.min(ledgerPage * ledgerLimit, ledgerTotalRecords)} dari {ledgerTotalRecords} mutasi
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setLedgerPage((p) => Math.max(1, p - 1))}
-                  disabled={ledgerPage <= 1}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 disabled:opacity-40"
-                >
-                  Prev
-                </button>
-                <span className="font-bold">
-                  {ledgerPage} / {ledgerTotalPages || 1}
-                </span>
-                <button
-                  onClick={() => setLedgerPage((p) => Math.min(ledgerTotalPages, p + 1))}
-                  disabled={ledgerPage >= ledgerTotalPages}
-                  className="px-2.5 py-1 rounded-lg border border-slate-200 disabled:opacity-40"
-                >
-                  Next
-                </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-500 text-[11px]">Baris:</span>
+                  <select
+                    value={ledgerLimit}
+                    onChange={(e) => {
+                      setLedgerLimit(Number(e.target.value));
+                      setLedgerPage(1);
+                    }}
+                    aria-label="Jumlah baris per halaman buku besar"
+                    className="px-2 py-1 text-xs border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none"
+                  >
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setLedgerPage((p) => Math.max(1, p - 1))}
+                    disabled={ledgerPage <= 1}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Prev
+                  </button>
+                  <span className="font-bold px-1 text-slate-700 dark:text-slate-200">
+                    {ledgerPage} / {ledgerTotalPages || 1}
+                  </span>
+                  <button
+                    onClick={() => setLedgerPage((p) => Math.min(ledgerTotalPages, p + 1))}
+                    disabled={ledgerPage >= ledgerTotalPages}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </div>

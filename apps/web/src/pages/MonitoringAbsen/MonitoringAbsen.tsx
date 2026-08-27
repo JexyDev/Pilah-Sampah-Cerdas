@@ -2763,6 +2763,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isCancelRequested = statusUpper === "CANCEL_REQUESTED" || currentStatusUpper === "PENGAJUAN_BATAL_IZIN";
                       const isSakit = (statusUpper.includes("SAKIT") || statusUpper === "SAKIT") && !isSakitPending;
                       const isIzin = (statusUpper.includes("IZIN") || statusUpper === "IZIN") && !isIzinPending;
+                      const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
                       const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
                       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
