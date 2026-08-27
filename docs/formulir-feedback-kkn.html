@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Formulir Feedback Mahasiswa KKN - BERSEKA</title>
+<meta name="description" content="Formulir resmi feedback mahasiswa KKN untuk Aplikasi BERSEKA"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --g50:#f0fdf4;--g100:#dcfce7;--g200:#bbf7d0;--g400:#4ade80;--g500:#22c55e;--g600:#16a34a;--g700:#15803d;
+  --s50:#f8fafc;--s100:#f1f5f9;--s200:#e2e8f0;--s300:#cbd5e1;--s400:#94a3b8;--s500:#64748b;--s600:#475569;--s700:#334155;--s800:#1e293b;--s900:#0f172a;
+  --a400:#fbbf24;--r500:#ef4444;--w:#fff;
+  --rsm:8px;--rmd:12px;--rlg:16px;--rxl:24px;
+  --shmd:0 4px 16px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --tr:.2s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--s50);color:var(--s800);min-height:100vh;line-height:1.6}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(34,197,94,.12) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 110%,rgba(34,197,94,.08) 0%,transparent 50%);pointer-events:none;z-index:0}
+.pw{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:32px 20px 80px}
+.hero{text-align:center;margin-bottom:40px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--g100);color:var(--g700);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:100px;margin-bottom:18px}
+.hero h1{font-size:clamp(26px,5vw,38px);font-weight:800;color:var(--s900);line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+.hero h1 span{color:var(--g600)}
+.hero>p{font-size:15px;color:var(--s500);max-width:520px;margin:0 auto 20px}
+.meta{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--s500)}
+.prw{background:var(--w);border-radius:var(--rxl);box-shadow:var(--shmd);padding:20px 28px;margin-bottom:28px;display:flex;align-items:center;gap:16px}
+.prl{font-size:12px;font-weight:600;color:var(--s500);white-space:nowrap}
+.prt{flex:1;height:6px;background:var(--s100);border-radius:100px;overflow:hidden}
+.prf{height:100%;width:0%;background:linear-gradient(90deg,var(--g500),var(--g400));border-radius:100px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.prp{font-size:13px;font-weight:700;color:var(--g600);min-width:36px;text-align:right}
+.sc{background:var(--w);border-radius:var(--rxl);box-shadow:var(--shmd);border:1px solid rgba(0,0,0,.04);overflow:hidden;margin-bottom:20px}
+.sh{display:flex;align-items:center;gap:14px;padding:22px 28px;cursor:pointer;user-select:none;transition:background var(--tr)}
+.sh:hover{background:var(--s50)}
+.sc.open .sh{background:var(--g50);border-bottom:1px solid var(--s100)}
+.si{width:42px;height:42px;border-radius:var(--rmd);background:var(--g50);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
+.sc.open .si{background:var(--g100)}
+.stw{flex:1}
+.sn{font-size:11px;font-weight:600;color:var(--g600);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.st{font-size:16px;font-weight:700;color:var(--s800)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--s200);flex-shrink:0;transition:background var(--tr)}
+.chev{color:var(--s400);transition:transform var(--tr);flex-shrink:0}
+.sc.open .chev{transform:rotate(180deg)}
+.sb{display:none;padding:28px}
+.sc.open .sb{display:block}
+.fg{display:grid;gap:18px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:560px){.fr{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:7px}
+.f label{font-size:13px;font-weight:600;color:var(--s700);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.req{color:var(--r500)}
+.hint{font-size:12px;color:var(--s400);margin-top:-4px}
+.f input,.f select,.f textarea{font-family:inherit;font-size:14px;color:var(--s800);background:var(--s50);border:1.5px solid var(--s200);border-radius:var(--rmd);padding:11px 14px;outline:none;transition:border-color var(--tr),box-shadow var(--tr),background var(--tr);width:100%}
+.f input::placeholder,.f textarea::placeholder{color:var(--s400)}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--g500);box-shadow:0 0 0 3px rgba(34,197,94,.12);background:var(--w)}
+.f input.err,.f select.err,.f textarea.err{border-color:var(--r500);box-shadow:0 0 0 3px rgba(239,68,68,.10)}
+.f textarea{resize:vertical;min-height:90px}
+.emsg{font-size:12px;color:var(--r500);font-weight:500;display:none}
+.f.he .emsg{display:block}
+.cc{font-size:11px;color:var(--s400);text-align:right;margin-top:-4px}
+.cg{display:grid;gap:10px}
+.c2{grid-template-columns:1fr 1fr}
+.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:480px){.c2,.c3{grid-template-columns:1fr}}
+.ci{position:relative}
+.ci input{position:absolute;opacity:0;width:0;height:0}
+.ci label{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--s50);border:1.5px solid var(--s200);border-radius:var(--rmd);cursor:pointer;font-size:13.5px;font-weight:500;color:var(--s700);transition:all var(--tr);user-select:none}
+.ci label:hover{border-color:var(--g400);background:var(--g50);color:var(--g700)}
+.ci input:not(:checked)+label::before{content:'';width:20px;height:20px;border:2px solid var(--s300);border-radius:50%;display:block;flex-shrink:0}
+.ci input[type=checkbox]:not(:checked)+label::before{border-radius:5px}
+.ci input:checked+label{border-color:var(--g500);background:var(--g50);color:var(--g700)}
+.ci input:checked+label::before{content:'\2713';width:20px;height:20px;background:var(--g500);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.ci input[type=checkbox]:checked+label::before{border-radius:5px}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:420px){.dg{grid-template-columns:1fr}}
+.dc{position:relative}
+.dc input{position:absolute;opacity:0;width:0;height:0}
+.dc label{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px 16px;background:var(--s50);border:2px solid var(--s200);border-radius:var(--rlg);cursor:pointer;text-align:center;transition:all var(--tr)}
+.dc label:hover,.dc input:checked+label{border-color:var(--g500);background:var(--g50);transform:translateY(-2px)}
+.dc input:checked+label{box-shadow:0 0 0 3px rgba(34,197,94,.14)}
+.dem{font-size:36px;line-height:1}
+.dnm{font-size:14px;font-weight:700;color:var(--s800)}
+.dsb{font-size:11px;color:var(--s400);line-height:1.4}
+.dc input:checked+label .dnm{color:var(--g700)}
+.ss{margin-bottom:20px}
+.ss:last-child{margin-bottom:0}
+.sq{font-size:13.5px;font-weight:600;color:var(--s700);margin-bottom:10px}
+.stars{display:flex;gap:6px}
+.sbtn{background:none;border:none;font-size:28px;cursor:pointer;color:var(--s200);transition:color var(--tr),transform var(--tr);padding:2px;line-height:1}
+.sbtn:hover{color:var(--a400);transform:scale(1.15)}
+.stars[data-v="1"] .sbtn:nth-child(-n+1),.stars[data-v="2"] .sbtn:nth-child(-n+2),.stars[data-v="3"] .sbtn:nth-child(-n+3),.stars[data-v="4"] .sbtn:nth-child(-n+4),.stars[data-v="5"] .sbtn:nth-child(-n+5){color:var(--a400)}
+.sdesc{font-size:12px;color:var(--s400);margin-top:6px;min-height:18px}
+.sr{display:flex;align-items:center;gap:10px}
+.sll,.slr{font-size:11px;color:var(--s400);white-space:nowrap}
+input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:100px;background:linear-gradient(90deg,var(--g500) 0%,var(--g500) var(--pct,50%),var(--s200) var(--pct,50%),var(--s200) 100%);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--g600);box-shadow:0 2px 6px rgba(22,163,74,.4);cursor:pointer}
+.sv{min-width:32px;text-align:center;font-size:15px;font-weight:700;color:var(--g600)}
+.npt{display:flex;gap:4px}
+.nbt{flex:1;min-width:0;height:44px;border:1.5px solid var(--s200);background:var(--s50);border-radius:var(--rsm);font-size:13px;font-weight:600;cursor:pointer;color:var(--s500);transition:all var(--tr)}
+.nbt:hover{border-color:var(--g400);color:var(--g600);background:var(--g50)}
+.nbt.sel{background:var(--g500);border-color:var(--g500);color:#fff}
+.nlb{display:flex;justify-content:space-between;font-size:11px;color:var(--s400);margin-top:6px}
+.divider{height:1px;background:var(--s100);margin:22px 0}
+.callout{background:var(--g50);border:1px solid var(--g200);border-radius:var(--rmd);padding:14px 16px;font-size:13px;color:#166534;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start}
+.callout svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.clbl{background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 8px;border-radius:100px}
+.fsep{font-size:12px;font-weight:700;color:var(--g600);text-transform:uppercase;letter-spacing:.06em;border-left:3px solid var(--g400);padding-left:10px;margin:6px 0 14px}
+.sub-area{text-align:center;padding:32px 28px 28px;background:var(--w);border-radius:var(--rxl);box-shadow:var(--shmd);border:1px solid rgba(0,0,0,.04)}
+.sub-area>p{font-size:13px;color:var(--s500);margin-bottom:18px}
+.btn-sub{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,var(--g600),var(--g500));color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:15px 40px;border:none;border-radius:100px;cursor:pointer;box-shadow:0 4px 18px rgba(22,163,74,.35);transition:all var(--tr);width:100%;max-width:400px}
+.btn-sub:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(22,163,74,.45)}
+.sov{display:none;position:fixed;inset:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px}
+.sov.show{display:flex}
+.sico{width:80px;height:80px;background:var(--g100);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:40px;animation:pop .4s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.sov h2{font-size:26px;font-weight:800;color:var(--s900);margin-bottom:10px}
+.sov p{font-size:15px;color:var(--s500);max-width:360px}
+</style>
+</head>
+<body>
+<div class="sov" id="sov">
+  <div class="sico">&#127881;</div>
+  <h2>Terima Kasih!</h2>
+  <p>Feedback kamu sudah kami terima. Masukan ini sangat berharga untuk pengembangan BERSEKA ke depannya. &#128591;</p>
+</div>
+<div class="pw">
+<div class="hero">
+  <div class="badge">&#127807; Formulir Resmi BERSEKA</div>
+  <h1>Feedback &amp; Saran<br/><span>Mahasiswa KKN</span></h1>
+  <p>Bantu kami menjadikan BERSEKA lebih baik! Butuh sekitar <strong>5&#8211;8 menit</strong>. Setiap pendapatmu sangat berharga.</p>
+  <div class="meta"><span>&#9203; 5&#8211;8 menit</span><span>&#128274; Data Aman</span><span>&#9989; 8 Bagian</span></div>
+</div>
+<div class="prw">
+  <span class="prl">Progress</span>
+  <div class="prt"><div class="prf" id="pf"></div></div>
+  <span class="prp" id="pp">0%</span>
+</div>
+<form id="mf" novalidate>
+<!-- SEC 1 -->
+<div class="sc" id="s1">
+<div class="sh" onclick="tog('s1')">
+  <div class="si">&#128100;</div>
+  <div class="stw"><div class="sn">Bagian 1 &middot; Wajib</div><div class="st">Data Diri Mahasiswa</div></div>
+  <div class="dot" id="d1"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="callout">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <div>Data ini hanya digunakan untuk pengelompokan feedback berdasarkan kelompok KKN. Tidak dibagikan ke pihak ketiga.</div>
+  </div>
+  <div class="fg">
+    <div class="fr">
+      <div class="f" id="f-nama"><label for="nama">Nama Lengkap <span class="req">*</span></label><input type="text" id="nama" placeholder="contoh: Andi Pratama" autocomplete="name"/><span class="emsg">Wajib diisi</span></div>
+      <div class="f" id="f-nim"><label for="nim">NIM <span class="req">*</span></label><input type="text" id="nim" placeholder="2021310001" inputmode="numeric"/><span class="emsg">Wajib diisi</span></div>
+    </div>
+    <div class="fr">
+      <div class="f" id="f-prodi"><label for="prodi">Program Studi <span class="req">*</span></label>
+        <select id="prodi"><option value="">- Pilih Prodi -</option>
+          <optgroup label="Teknik"><option>Teknik Informatika</option><option>Sistem Informasi</option><option>Teknik Sipil</option><option>Teknik Lingkungan</option><option>Teknik Industri</option></optgroup>
+          <optgroup label="Kesehatan"><option>Kesehatan Masyarakat</option><option>Keperawatan</option><option>Farmasi</option></optgroup>
+          <optgroup label="Sosial &amp; Humaniora"><option>Ilmu Komunikasi</option><option>Sosiologi</option><option>Hukum</option><option>Akuntansi</option><option>Manajemen</option></optgroup>
+          <option>Lainnya</option></select>
+        <span class="emsg">Wajib dipilih</span></div>
+      <div class="f" id="f-fak"><label for="fak">Fakultas <span class="req">*</span></label><input type="text" id="fak" placeholder="Fakultas Teknik"/><span class="emsg">Wajib diisi</span></div>
+    </div>
+    <div class="fr">
+      <div class="f" id="f-kel"><label for="kel">Kelompok KKN <span class="req">*</span></label><input type="text" id="kel" placeholder="KKN-123 / Desa Suka Maju"/><span class="emsg">Wajib diisi</span></div>
+      <div class="f" id="f-lok"><label for="lok">Lokasi KKN <span class="req">*</span></label><input type="text" id="lok" placeholder="Desa X, Kec. Y, Kab. Z"/><span class="emsg">Wajib diisi</span></div>
+    </div>
+    <div class="fr">
+      <div class="f"><label for="dpl">Nama DPL <span style="font-weight:400;color:var(--s400)">(opsional)</span></label><input type="text" id="dpl" placeholder="Dosen Pembimbing Lapangan"/></div>
+      <div class="f" id="f-hp"><label for="hp">Nomor HP / WA <span class="req">*</span></label><input type="tel" id="hp" placeholder="+62 8xx xxxx xxxx" inputmode="tel" autocomplete="tel"/><p class="hint">Untuk konfirmasi lanjutan jika diperlukan</p><span class="emsg">Wajib diisi</span></div>
+    </div>
+    <div class="fr">
+      <div class="f"><label for="ang">Angkatan</label>
+        <select id="ang"><option value="">- Pilih -</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option><option>2019 ke bawah</option></select></div>
+      <div class="f" id="f-dur"><label for="dur">Sudah berapa lama KKN? <span class="req">*</span></label>
+        <select id="dur"><option value="">- Pilih -</option><option>Baru mulai (kurang 1 minggu)</option><option>1-2 minggu</option><option>3-4 minggu</option><option>1-2 bulan</option><option>Lebih dari 2 bulan</option></select>
+        <span class="emsg">Wajib dipilih</span></div>
+    </div>
+  </div>
+</div>
+</div>
+<!-- SEC 2 -->
+<div class="sc" id="s2">
+<div class="sh" onclick="tog('s2')">
+  <div class="si">&#128241;</div>
+  <div class="stw"><div class="sn">Bagian 2 &middot; Wajib</div><div class="st">Informasi Perangkat Mobile</div></div>
+  <div class="dot" id="d2"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="fg">
+    <div class="f">
+      <label>Sistem Operasi HP Kamu <span class="req">*</span></label>
+      <div class="dg">
+        <div class="dc"><input type="radio" name="os" id="os-a" value="Android"/><label for="os-a"><span class="dem">&#129302;</span><span class="dnm">Android</span><span class="dsb">Samsung, Xiaomi, OPPO, Vivo, Realme, dll.</span></label></div>
+        <div class="dc"><input type="radio" name="os" id="os-i" value="iPhone (iOS)"/><label for="os-i"><span class="dem">&#127822;</span><span class="dnm">iPhone (iOS)</span><span class="dsb">iPhone 8 ke atas, iOS 15+</span></label></div>
+      </div>
+      <span class="emsg" id="os-e">Perangkat wajib dipilih</span>
+    </div>
+    <div class="fr">
+      <div class="f"><label for="merek">Merek &amp; Tipe HP</label><input type="text" id="merek" placeholder="Samsung Galaxy A54"/></div>
+      <div class="f"><label for="vos">Versi OS</label><input type="text" id="vos" placeholder="Android 14 / iOS 17"/></div>
+    </div>
+    <div class="f">
+      <label>Kondisi sinyal internet di lokasi KKN <span class="req">*</span></label>
+      <div class="cg c2">
+        <div class="ci"><input type="radio" name="sinyal" id="sn1" value="Sangat Bagus"/><label for="sn1">Sangat Bagus</label></div>
+        <div class="ci"><input type="radio" name="sinyal" id="sn2" value="Cukup Stabil"/><label for="sn2">Cukup Stabil</label></div>
+        <div class="ci"><input type="radio" name="sinyal" id="sn3" value="Sering Putus-putus"/><label for="sn3">Sering Putus-putus</label></div>
+        <div class="ci"><input type="radio" name="sinyal" id="sn4" value="Hampir Tidak Ada"/><label for="sn4">Hampir Tidak Ada Sinyal</label></div>
+      </div>
+      <span class="emsg" id="sn-e">Wajib dipilih</span>
+    </div>
+    <div class="f"><label for="prov">Provider Seluler</label>
+      <select id="prov"><option value="">- Pilih -</option><option>Telkomsel</option><option>Indosat Ooredoo</option><option>XL Axiata</option><option>Tri (3)</option><option>Smartfren</option><option>Axis</option><option>Lainnya</option></select>
+    </div>
+  </div>
+</div>
+</div>
+<!-- SEC 3 -->
+<div class="sc" id="s3">
+<div class="sh" onclick="tog('s3')">
+  <div class="si">&#128269;</div>
+  <div class="stw"><div class="sn">Bagian 3</div><div class="st">Pengalaman Menggunakan BERSEKA</div></div>
+  <div class="dot" id="d3"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="fg">
+    <div class="f">
+      <label>Fitur yang pernah kamu gunakan <span class="req">*</span></label>
+      <p class="hint">Pilih semua yang pernah dipakai</p>
+      <div class="cg c2">
+        <div class="ci"><input type="checkbox" name="fitur" id="ft1" value="Laporan Sampah"/><label for="ft1">Laporan Sampah</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft2" value="Jadwal Pengambilan"/><label for="ft2">Jadwal Pengambilan</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft3" value="Peta Tempat Sampah"/><label for="ft3">Peta Tempat Sampah</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft4" value="Scan QR"/><label for="ft4">Scan QR</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft5" value="Notifikasi"/><label for="ft5">Notifikasi</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft6" value="Presensi KKN"/><label for="ft6">Presensi KKN</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft7" value="Dashboard Statistik"/><label for="ft7">Dashboard Statistik</label></div>
+        <div class="ci"><input type="checkbox" name="fitur" id="ft8" value="Profil Akun"/><label for="ft8">Profil &amp; Akun</label></div>
+      </div>
+      <span class="emsg" id="ft-e">Pilih minimal 1 fitur</span>
+    </div>
+    <div class="f">
+      <label>Seberapa sering membuka BERSEKA? <span class="req">*</span></label>
+      <div class="cg c2">
+        <div class="ci"><input type="radio" name="frq" id="fq1" value="Setiap hari"/><label for="fq1">Setiap hari</label></div>
+        <div class="ci"><input type="radio" name="frq" id="fq2" value="3-5x seminggu"/><label for="fq2">3-5x seminggu</label></div>
+        <div class="ci"><input type="radio" name="frq" id="fq3" value="1-2x seminggu"/><label for="fq3">1-2x seminggu</label></div>
+        <div class="ci"><input type="radio" name="frq" id="fq4" value="Jarang / baru coba"/><label for="fq4">Jarang / baru coba</label></div>
+      </div>
+      <span class="emsg" id="fq-e">Wajib dipilih</span>
+    </div>
+    <div class="f"><label for="fbest">Fitur yang paling berguna untukmu</label><input type="text" id="fbest" placeholder="contoh: Scan QR karena cepat dan mudah"/></div>
+  </div>
+</div>
+</div>
+<!-- SEC 4 -->
+<div class="sc" id="s4">
+<div class="sh" onclick="tog('s4')">
+  <div class="si">&#11088;</div>
+  <div class="stw"><div class="sn">Bagian 4</div><div class="st">Penilaian Aspek Aplikasi</div></div>
+  <div class="dot" id="d4"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <p class="hint" style="margin-bottom:20px">1 = Buruk sekali, 5 = Sempurna!</p>
+  <div class="ss"><div class="sq">&#127912; Tampilan &amp; Desain Aplikasi</div>
+    <div class="stars" id="st1" data-v="0">
+      <button type="button" class="sbtn" onclick="star('st1',1)">&#9733;</button><button type="button" class="sbtn" onclick="star('st1',2)">&#9733;</button><button type="button" class="sbtn" onclick="star('st1',3)">&#9733;</button><button type="button" class="sbtn" onclick="star('st1',4)">&#9733;</button><button type="button" class="sbtn" onclick="star('st1',5)">&#9733;</button>
+    </div><div class="sdesc" id="sd-st1">Tap bintang untuk memberi nilai</div></div>
+  <div class="divider"></div>
+  <div class="ss"><div class="sq">&#9889; Kecepatan &amp; Performa</div>
+    <div class="stars" id="st2" data-v="0">
+      <button type="button" class="sbtn" onclick="star('st2',1)">&#9733;</button><button type="button" class="sbtn" onclick="star('st2',2)">&#9733;</button><button type="button" class="sbtn" onclick="star('st2',3)">&#9733;</button><button type="button" class="sbtn" onclick="star('st2',4)">&#9733;</button><button type="button" class="sbtn" onclick="star('st2',5)">&#9733;</button>
+    </div><div class="sdesc" id="sd-st2">Tap bintang untuk memberi nilai</div></div>
+  <div class="divider"></div>
+  <div class="ss"><div class="sq">Kemudahan Navigasi &amp; Penggunaan</div>
+    <div class="stars" id="st3" data-v="0">
+      <button type="button" class="sbtn" onclick="star('st3',1)">&#9733;</button><button type="button" class="sbtn" onclick="star('st3',2)">&#9733;</button><button type="button" class="sbtn" onclick="star('st3',3)">&#9733;</button><button type="button" class="sbtn" onclick="star('st3',4)">&#9733;</button><button type="button" class="sbtn" onclick="star('st3',5)">&#9733;</button>
+    </div><div class="sdesc" id="sd-st3">Tap bintang untuk memberi nilai</div></div>
+  <div class="divider"></div>
+  <div class="ss"><div class="sq">Stabilitas (Tidak Crash / Error)</div>
+    <div class="stars" id="st4" data-v="0">
+      <button type="button" class="sbtn" onclick="star('st4',1)">&#9733;</button><button type="button" class="sbtn" onclick="star('st4',2)">&#9733;</button><button type="button" class="sbtn" onclick="star('st4',3)">&#9733;</button><button type="button" class="sbtn" onclick="star('st4',4)">&#9733;</button><button type="button" class="sbtn" onclick="star('st4',5)">&#9733;</button>
+    </div><div class="sdesc" id="sd-st4">Tap bintang untuk memberi nilai</div></div>
+  <div class="divider"></div>
+  <div class="ss"><div class="sq">&#127919; Relevansi dengan Kebutuhan KKN</div>
+    <div class="stars" id="st5" data-v="0">
+      <button type="button" class="sbtn" onclick="star('st5',1)">&#9733;</button><button type="button" class="sbtn" onclick="star('st5',2)">&#9733;</button><button type="button" class="sbtn" onclick="star('st5',3)">&#9733;</button><button type="button" class="sbtn" onclick="star('st5',4)">&#9733;</button><button type="button" class="sbtn" onclick="star('st5',5)">&#9733;</button>
+    </div><div class="sdesc" id="sd-st5">Tap bintang untuk memberi nilai</div></div>
+</div>
+</div>
+<!-- SEC 5 -->
+<div class="sc" id="s5">
+<div class="sh" onclick="tog('s5')">
+  <div class="si">&#128027;</div>
+  <div class="stw"><div class="sn">Bagian 5</div><div class="st">Bug &amp; Masalah yang Ditemukan</div></div>
+  <div class="dot" id="d5"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="fg">
+    <div class="f">
+      <label>Pernah menemukan bug atau error? <span class="req">*</span></label>
+      <div class="cg c2">
+        <div class="ci"><input type="radio" name="bug" id="bg1" value="Ya" onchange="showBug(true)"/><label for="bg1">Ya, pernah</label></div>
+        <div class="ci"><input type="radio" name="bug" id="bg2" value="Tidak" onchange="showBug(false)"/><label for="bg2">Tidak, lancar</label></div>
+      </div>
+      <span class="emsg" id="bg-e">Wajib dipilih</span>
+    </div>
+    <div id="bugd" style="display:none">
+      <div class="fsep">Detail Bug / Masalah</div>
+      <div class="fg">
+        <div class="f"><label for="bft">Bug terjadi di fitur mana?</label>
+          <select id="bft"><option value="">- Pilih -</option><option>Login / Registrasi</option><option>Laporan Sampah</option><option>Peta / GPS / Geofencing</option><option>Scan QR</option><option>Jadwal Pengambilan</option><option>Notifikasi</option><option>Presensi KKN</option><option>Upload Foto</option><option>Profil Akun</option><option>Loading / Sinkronisasi</option><option>Lainnya</option></select>
+        </div>
+        <div class="f"><label for="bdesc">Ceritakan bug-nya secara detail <span class="clbl">KRITIS</span></label>
+          <p class="hint">Langkah apa yang kamu lakukan sebelum bug terjadi? Apa yang muncul di layar?</p>
+          <textarea id="bdesc" rows="4" maxlength="500" placeholder="contoh: Klik tombol Kirim Laporan lalu app force close. HP Samsung A54, Android 14..."></textarea>
+          <div class="cc"><span id="bc">0</span>/500</div></div>
+        <div class="f"><label>Seberapa sering bug ini terjadi?</label>
+          <div class="cg c3">
+            <div class="ci"><input type="radio" name="bfrq" id="bf1" value="Sekali"/><label for="bf1">Sekali</label></div>
+            <div class="ci"><input type="radio" name="bfrq" id="bf2" value="Beberapa kali"/><label for="bf2">Beberapa kali</label></div>
+            <div class="ci"><input type="radio" name="bfrq" id="bf3" value="Selalu terjadi"/><label for="bf3">Selalu terjadi</label></div>
+          </div>
+        </div>
+        <div class="f"><label>Dampak bug pada pekerjaanmu</label>
+          <div class="sr"><span class="sll">Tidak Ganggu</span><input type="range" id="bimpc" min="1" max="10" value="5" oninput="updSlider(this,'bimp')"/><span class="sv" id="bimp">5</span><span class="slr">Sangat Mengganggu</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<!-- SEC 6 -->
+<div class="sc" id="s6">
+<div class="sh" onclick="tog('s6')">
+  <div class="si">&#128293;</div>
+  <div class="stw"><div class="sn">Bagian 6 &middot; Paling Penting</div><div class="st">Pertanyaan Kritis &amp; Jujur</div></div>
+  <div class="dot" id="d6"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><div>Bagian ini paling berharga untuk tim developer. Jawaban jujur, bahkan yang negatif, adalah yang paling kami butuhkan untuk berkembang.</div></div>
+  <div class="fg">
+    <div class="f"><label for="pain">Apa yang paling sering bikin kamu FRUSTRASI saat pakai BERSEKA? <span class="clbl">KRITIS</span></label>
+      <p class="hint">Ceritakan apa adanya. Tidak ada jawaban yang salah.</p>
+      <textarea id="pain" rows="4" maxlength="600" placeholder="contoh: App lambat saat upload foto, harus nunggu 30 detik lebih. Atau tombol Submit sering tidak responsif..."></textarea>
+      <div class="cc"><span id="pc">0</span>/600</div></div>
+    <div class="f"><label for="fhilang">Fitur apa yang KAMU BUTUHKAN tapi belum ada di BERSEKA? <span class="clbl">KRITIS</span></label>
+      <p class="hint">Bayangkan versi BERSEKA yang sempurna untukmu, apa yang ada di sana?</p>
+      <textarea id="fhilang" rows="4" maxlength="600" placeholder="contoh: Chat grup antar mahasiswa KKN, atau export laporan ke PDF langsung dari HP..."></textarea>
+      <div class="cc"><span id="fhc">0</span>/600</div></div>
+    <div class="f"><label>Jika kamu jadi developer, apa yang PERTAMA KALI kamu perbaiki? <span class="clbl">KRITIS</span></label>
+      <div class="cg c2">
+        <div class="ci"><input type="radio" name="pfix" id="pf1" value="Kecepatan &amp; Performa"/><label for="pf1">&#9889; Kecepatan &amp; Performa</label></div>
+        <div class="ci"><input type="radio" name="pfix" id="pf2" value="Stabilitas (Anti Crash)"/><label for="pf2">Stabilitas (Anti Crash)</label></div>
+        <div class="ci"><input type="radio" name="pfix" id="pf3" value="Tampilan / UI"/><label for="pf3">&#127912; Tampilan / UI</label></div>
+        <div class="ci"><input type="radio" name="pfix" id="pf4" value="Fitur Belum Lengkap"/><label for="pf4">Fitur Belum Lengkap</label></div>
+        <div class="ci"><input type="radio" name="pfix" id="pf5" value="Mode Offline / Sinkronisasi"/><label for="pf5">Mode Offline / Sinkronisasi</label></div>
+        <div class="ci"><input type="radio" name="pfix" id="pf6" value="Kemudahan Onboarding"/><label for="pf6">Kemudahan Onboarding</label></div>
+      </div>
+    </div>
+    <div class="f"><label for="offline">SKENARIO: HP kehabisan data saat di lapangan. Fitur BERSEKA apa yang harus tetap bisa dipakai offline? <span class="clbl">KRITIS</span></label>
+      <textarea id="offline" rows="3" maxlength="400" placeholder="contoh: Harap bisa tetap input laporan lalu sinkronisasi otomatis saat ada sinyal kembali..."></textarea>
+      <div class="cc"><span id="ofc">0</span>/400</div></div>
+    <div class="f"><label for="bandingan">Pernah pakai app serupa lain? Bandingkan BERSEKA dengannya.</label>
+      <textarea id="bandingan" rows="3" maxlength="400" placeholder="contoh: Dibanding Gober, BERSEKA lebih mudah dipakai tapi lebih lambat..."></textarea></div>
+  </div>
+</div>
+</div>
+<!-- SEC 7 -->
+<div class="sc" id="s7">
+<div class="sh" onclick="tog('s7')">
+  <div class="si">&#128227;</div>
+  <div class="stw"><div class="sn">Bagian 7</div><div class="st">Skor Rekomendasi &amp; Kepuasan</div></div>
+  <div class="dot" id="d7"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="fg">
+    <div class="f"><label>Seberapa besar kemungkinan kamu <strong>merekomendasikan BERSEKA</strong> ke sesama mahasiswa KKN?</label>
+      <p class="hint">0 = Tidak mungkin, 10 = Pasti rekomendasikan</p>
+      <div class="npt" id="npt"></div>
+      <div class="nlb"><span>Tidak rekomendasikan</span><span>Sangat rekomendasikan</span></div>
+    </div>
+    <div class="divider"></div>
+    <div class="f"><label>Seberapa besar BERSEKA MEMBANTU pekerjaanmu selama KKN?</label>
+      <div class="sr"><span class="sll">Tidak Membantu</span><input type="range" id="hlpc" min="1" max="10" value="5" oninput="updSlider(this,'hlp')"/><span class="sv" id="hlp">5</span><span class="slr">Sangat Membantu</span></div>
+    </div>
+    <div class="f"><label for="alasan">Mengapa memberi skor itu? (Opsional tapi berharga)</label>
+      <textarea id="alasan" rows="3" maxlength="400" placeholder="contoh: Saya beri 8 karena sudah sangat membantu, tapi masih ada bug kecil di presensi..."></textarea></div>
+    <div class="f"><label>BERSEKA sekarang vs ekspektasimu sebelum pakai?</label>
+      <div class="cg c2">
+        <div class="ci"><input type="radio" name="eksp" id="ek1" value="Jauh Lebih Baik"/><label for="ek1">&#128640; Jauh Lebih Baik</label></div>
+        <div class="ci"><input type="radio" name="eksp" id="ek2" value="Sesuai Ekspektasi"/><label for="ek2">&#128077; Sesuai Ekspektasi</label></div>
+        <div class="ci"><input type="radio" name="eksp" id="ek3" value="Kurang dari Ekspektasi"/><label for="ek3">&#128533; Kurang dari Ekspektasi</label></div>
+        <div class="ci"><input type="radio" name="eksp" id="ek4" value="Jauh di Bawah Ekspektasi"/><label for="ek4">&#128542; Jauh di Bawah Ekspektasi</label></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<!-- SEC 8 -->
+<div class="sc" id="s8">
+<div class="sh" onclick="tog('s8')">
+  <div class="si">&#128161;</div>
+  <div class="stw"><div class="sn">Bagian 8 &middot; Penutup</div><div class="st">Saran, Ide &amp; Harapan</div></div>
+  <div class="dot" id="d8"></div>
+  <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+<div class="sb">
+  <div class="fg">
+    <div class="f"><label for="idegila">Ide "gila" / out-of-the-box yang bisa membuat BERSEKA jauh lebih keren?</label>
+      <p class="hint">Tidak perlu realistis dulu, tuangkan semua ide! Siapa tahu jadi fitur nyata.</p>
+      <textarea id="idegila" rows="4" maxlength="600" placeholder="contoh: Sistem reward point bagi warga aktif lapor sampah? Gamifikasi leaderboard desa terbersih?..."></textarea>
+      <div class="cc"><span id="igc">0</span>/600</div></div>
+    <div class="f"><label>Aspek yang <strong>sudah bagus</strong> dan perlu dipertahankan:</label>
+      <div class="cg c2">
+        <div class="ci"><input type="checkbox" name="pert" id="pt1" value="Desain Visual"/><label for="pt1">&#127912; Desain Visual</label></div>
+        <div class="ci"><input type="checkbox" name="pert" id="pt2" value="Alur Laporan Sampah"/><label for="pt2">Alur Laporan Sampah</label></div>
+        <div class="ci"><input type="checkbox" name="pert" id="pt3" value="Fitur Peta"/><label for="pt3">Fitur Peta</label></div>
+        <div class="ci"><input type="checkbox" name="pert" id="pt4" value="Kecepatan Loading"/><label for="pt4">&#9889; Kecepatan Loading</label></div>
+        <div class="ci"><input type="checkbox" name="pert" id="pt5" value="Sistem Notifikasi"/><label for="pt5">Sistem Notifikasi</label></div>
+        <div class="ci"><input type="checkbox" name="pert" id="pt6" value="Kemudahan Onboarding"/><label for="pt6">Onboarding</label></div>
+      </div>
+    </div>
+    <div class="f"><label for="pesdev">Pesan langsung untuk tim developer BERSEKA</label>
+      <textarea id="pesdev" rows="4" maxlength="500" placeholder="Tulis apa saja, pujian, kritik, harapan, atau sekadar semangat! Kami baca semuanya..."></textarea>
+      <div class="cc"><span id="pdc">0</span>/500</div></div>
+    <div class="f"><label>Bersedia dihubungi untuk wawancara/interview lebih lanjut?</label>
+      <div class="cg c2">
+        <div class="ci"><input type="radio" name="intv" id="iv1" value="Ya, boleh hubungi"/><label for="iv1">&#9989; Ya, boleh hubungi</label></div>
+        <div class="ci"><input type="radio" name="intv" id="iv2" value="Tidak perlu"/><label for="iv2">Tidak perlu</label></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<!-- SUBMIT -->
+<div class="sub-area">
+  <p>Dengan mengirim formulir ini, kamu menyetujui bahwa data digunakan untuk keperluan pengembangan Aplikasi BERSEKA.</p>
+  <button type="button" class="btn-sub" onclick="doSubmit()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    Kirim Feedback Sekarang
+  </button>
+</div>
+</form>
+</div>
+<script>
+var SD={0:'Tap bintang untuk memberi nilai',1:'Buruk sekali',2:'Kurang memuaskan',3:'Cukup lumayan',4:'Bagus!',5:'Sempurna!'};
+['s1','s2','s3','s4','s5','s6','s7','s8'].forEach(function(id){document.getElementById(id).classList.add('open')});
+function tog(id){document.getElementById(id).classList.toggle('open')}
+(function(){
+  var npt=document.getElementById('npt');
+  for(var i=0;i<=10;i++){
+    (function(n){var b=document.createElement('button');b.type='button';b.className='nbt';b.textContent=n;b.onclick=function(){document.querySelectorAll('.nbt').forEach(function(x){x.classList.remove('sel')});b.classList.add('sel');upd()};npt.appendChild(b)})(i);
+  }
+})();
+function star(id,v){document.getElementById(id).setAttribute('data-v',v);var d=document.getElementById('sd-'+id);if(d)d.textContent=SD[v];upd()}
+function updSlider(el,vid){var p=((+el.value-+el.min)/(+el.max-+el.min))*100;el.style.setProperty('--pct',p+'%');document.getElementById(vid).textContent=el.value}
+document.querySelectorAll('input[type=range]').forEach(function(el){var id=el.id.replace('c','');if(document.getElementById(id))updSlider(el,id)});
+[['bdesc','bc'],['pain','pc'],['fhilang','fhc'],['offline','ofc'],['idegila','igc'],['pesdev','pdc']].forEach(function(pair){
+  var ta=document.getElementById(pair[0]),ct=document.getElementById(pair[1]);
+  if(ta&&ct)ta.addEventListener('input',function(){ct.textContent=ta.value.length;upd()});
+});
+function showBug(show){document.getElementById('bugd').style.display=show?'block':'none';upd()}
+function setDot(id,arr){var d=document.getElementById(id);if(!d)return;d.style.background=arr.every(Boolean)?'var(--g500)':arr.some(Boolean)?'var(--a400)':'var(--s200)'}
+function gv(id){var e=document.getElementById(id);return e?e.value:''}
+function rad(n){return!!document.querySelector('input[name="'+n+'"]:checked')}
+function chk(n){return document.querySelectorAll('input[name="'+n+'"]:checked').length>0}
+function sv(id){var e=document.getElementById(id);return e&&e.getAttribute('data-v')!=='0'}
+function nps(){return!!document.querySelector('.nbt.sel')}
+function upd(){
+  var done=[!!gv('nama').trim(),!!gv('hp').trim(),!!gv('prodi'),!!gv('kel').trim(),rad('os'),rad('sinyal'),chk('fitur'),rad('frq'),sv('st1'),sv('st2'),sv('st3'),sv('st4'),sv('st5'),rad('bug'),nps(),!!gv('pain').trim()].filter(Boolean).length;
+  var pct=Math.round(done/16*100);
+  document.getElementById('pf').style.width=pct+'%';
+  document.getElementById('pp').textContent=pct+'%';
+  setDot('d1',[!!gv('nama').trim(),!!gv('hp').trim(),!!gv('prodi')]);
+  setDot('d2',[rad('os'),rad('sinyal')]);
+  setDot('d3',[chk('fitur'),rad('frq')]);
+  setDot('d4',[sv('st1'),sv('st2')]);
+  setDot('d5',[rad('bug')]);
+  setDot('d6',[!!gv('pain').trim()]);
+  setDot('d7',[nps()]);
+  setDot('d8',[!!gv('pesdev').trim()||rad('intv')]);
+}
+document.querySelectorAll('input,select,textarea').forEach(function(el){el.addEventListener('change',upd);el.addEventListener('input',upd)});
+function validate(){
+  var ok=true;
+  [['nama','f-nama'],['nim','f-nim'],['prodi','f-prodi'],['fak','f-fak'],['kel','f-kel'],['lok','f-lok'],['hp','f-hp'],['dur','f-dur']].forEach(function(p){
+    var el=document.getElementById(p[0]),fi=document.getElementById(p[1]);
+    if(!el||!fi)return;
+    if(!el.value.trim()){el.classList.add('err');fi.classList.add('he');ok=false}
+    else{el.classList.remove('err');fi.classList.remove('he')}
+  });
+  var osc=document.querySelector('input[name="os"]:checked');document.getElementById('os-e').style.display=osc?'none':'block';if(!osc)ok=false;
+  var snc=document.querySelector('input[name="sinyal"]:checked');document.getElementById('sn-e').style.display=snc?'none':'block';if(!snc)ok=false;
+  var ftc=document.querySelectorAll('input[name="fitur"]:checked').length>0;document.getElementById('ft-e').style.display=ftc?'none':'block';if(!ftc)ok=false;
+  var fqc=document.querySelector('input[name="frq"]:checked');document.getElementById('fq-e').style.display=fqc?'none':'block';if(!fqc)ok=false;
+  var bgc=document.querySelector('input[name="bug"]:checked');document.getElementById('bg-e').style.display=bgc?'none':'block';if(!bgc)ok=false;
+  return ok;
+}
+function doSubmit(){
+  if(!validate()){var first=document.querySelector('.err,.he');if(first)first.scrollIntoView({behavior:'smooth',block:'center'});alert('Masih ada field wajib yang belum diisi. Mohon lengkapi terlebih dahulu!');return}
+  var G=function(id){var e=document.getElementById(id);return e?e.value:''};
+  var R=function(n){var e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:''};
+  var CB=function(n){return Array.from(document.querySelectorAll('input[name="'+n+'"]:checked')).map(function(e){return e.value})};
+  var SV=function(id){var e=document.getElementById(id);return e?+(e.getAttribute('data-v')||0):0};
+  var NPS=function(){var s=document.querySelector('.nbt.sel');return s?+s.textContent:null};
+  var data={submitted_at:new Date().toISOString(),
+    data_diri:{nama:G('nama'),nim:G('nim'),prodi:G('prodi'),fakultas:G('fak'),angkatan:G('ang'),kelompok:G('kel'),lokasi:G('lok'),dpl:G('dpl'),no_hp:G('hp'),durasi_kkn:G('dur')},
+    perangkat:{os:R('os'),merek:G('merek'),versi_os:G('vos'),sinyal:R('sinyal'),provider:G('prov')},
+    penggunaan:{fitur_dipakai:CB('fitur'),frekuensi:R('frq'),fitur_terbaik:G('fbest')},
+    rating:{tampilan:SV('st1'),performa:SV('st2'),navigasi:SV('st3'),stabilitas:SV('st4'),relevansi:SV('st5')},
+    bug:{ada_bug:R('bug'),fitur_bug:G('bft'),deskripsi:G('bdesc'),frekuensi:R('bfrq'),dampak:G('bimpc')},
+    kritis:{pain_point:G('pain'),fitur_hilang:G('fhilang'),prioritas_fix:R('pfix'),offline_mode:G('offline'),perbandingan:G('bandingan')},
+    nps:{skor:NPS(),helpfulness:G('hlpc'),alasan:G('alasan'),vs_ekspektasi:R('eksp')},
+    saran:{ide_gila:G('idegila'),pertahankan:CB('pert'),pesan_dev:G('pesdev'),bersedia_interview:R('intv')}
+  };
+  console.log('[BERSEKA Feedback]',JSON.stringify(data,null,2));
+  document.getElementById('sov').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+upd();
+</script>
+</body>
+</html>

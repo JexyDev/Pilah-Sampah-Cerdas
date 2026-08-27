@@ -462,6 +462,34 @@ export class KknController {
     }
   }
 
+  async updateMyPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload = {
+        ...req.body,
+        foto: fotoUrl,
+        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
+        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
+        rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
+      };
+
+      const data = await kknService.updatePoskoKkn(kknUserId, payload);
+      res.status(200).json({
+        success: true,
+        message: "Data Posko KKN berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] updatePosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
   async getMyPosko(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
@@ -489,7 +517,9 @@ export class KknController {
     try {
       const kelurahan = req.query.kelurahan as string | undefined;
       const search = req.query.search as string | undefined;
-      const data = await kknService.getAllPoskoKkn({ kelurahan, search });
+      const userId = (req as any).user?.userId;
+      const role = (req as any).user?.role || (req as any).user?.peran;
+      const data = await kknService.getAllPoskoKkn({ kelurahan, search, userId, role });
       res.status(200).json({
         success: true,
         message: "Data posko KKN berhasil dimuat",
@@ -596,7 +626,10 @@ export class KknController {
     try {
       const payload = { ...req.body };
       if (req.file) {
-        payload.linkGoogleDrive = `/uploads/${req.file.filename}`;
+        const fileUrl = `/uploads/${req.file.filename}`;
+        payload.attachmentFile = fileUrl;
+        payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
+        payload.attachmentUrls = [fileUrl];
       }
       const data = await kknService.createProgramKerja(req.user!.userId, payload);
       

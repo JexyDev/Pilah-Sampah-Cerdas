@@ -1,18 +1,10 @@
 import { Queue } from 'bullmq';
 
 const getRedisConfig = () => {
-  const redisUrl = process.env.REDIS_URL;
-  if (redisUrl) {
-    try {
-      const parsed = new URL(redisUrl);
-      return { host: parsed.hostname, port: parseInt(parsed.port || '6379', 10) };
-    } catch {
-      // fallback
-    }
-  }
   return {
-    host: process.env.REDIS_HOST || (process.env.NODE_ENV === 'production' ? 'redis' : '127.0.0.1'),
+    host: process.env.REDIS_HOST || '127.0.0.1',
     port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    maxRetriesPerRequest: null,
   };
 };
 

@@ -25,6 +25,7 @@ import {
   Truck,
   Recycle,
   Sparkles,
+  Globe,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -644,6 +645,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "MAHASISWA_KKN",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "TASK_FORCE",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
     "WARGA",
@@ -683,6 +686,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: LayoutDashboard,
           label: "Dasbor",
           allowed: ALL_ROLES,
+        },
+        {
+          to: "/kurasi-landing",
+          icon: Sparkles,
+          label: "Kurasi Kegiatan Landing",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN"] as UserRole[],
+        },
+        {
+          to: "/manajemen-berita",
+          icon: Globe,
+          label: "Manajemen Berita",
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "DPL"] as UserRole[],
         },
       ],
     },

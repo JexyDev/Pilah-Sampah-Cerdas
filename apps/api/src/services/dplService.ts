@@ -1620,13 +1620,71 @@ export const dplService = {
 
     let groups = await prisma.kelompokKkn.findMany({
       where: whereGroup,
-      select: { id: true, name: true, kelurahan: true, cakupanRw: true },
+      select: {
+        id: true,
+        name: true,
+        kelurahan: true,
+        cakupanRw: true,
+        dpl: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        students: {
+          select: {
+            id: true,
+            nim: true,
+            prodi: true,
+            isKetua: true,
+            noWa: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+              },
+            },
+          },
+          orderBy: [{ isKetua: "desc" }, { nim: "asc" }],
+        },
+      },
     });
 
     if (groups.length === 0) {
       groups = await prisma.kelompokKkn.findMany({
         where: groupId && groupId !== "ALL" ? { id: groupId } : undefined,
-        select: { id: true, name: true, kelurahan: true, cakupanRw: true },
+        select: {
+          id: true,
+          name: true,
+          kelurahan: true,
+          cakupanRw: true,
+          dpl: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+          students: {
+            select: {
+              id: true,
+              nim: true,
+              prodi: true,
+              isKetua: true,
+              noWa: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  phone: true,
+                },
+              },
+            },
+            orderBy: [{ isKetua: "desc" }, { nim: "asc" }],
+          },
+        },
       });
     }
 
@@ -1728,6 +1786,22 @@ export const dplService = {
       where: prokerWhere,
       include: {
         reviewedBy: { select: { id: true, name: true } },
+        student: {
+          select: {
+            id: true,
+            nim: true,
+            prodi: true,
+            isKetua: true,
+            noWa: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [{ kelompokId: "asc" }, { nomor: "asc" }, { createdAt: "asc" }],
     });
@@ -1768,11 +1842,81 @@ export const dplService = {
       }
 
       const parsedDesc = parseProkerDeskripsi(p.deskripsi);
+      const grp = groupMap.get(p.kelompokId) as any;
+      const mhsList = (grp?.students || []).map((s: any) => ({
+        id: s.id,
+        nama: s.user?.name || "-",
+        nim: s.nim || "-",
+        prodi: s.prodi || "-",
+        isKetua: s.isKetua || false,
+        phone: s.user?.phone || s.noWa || "-",
+      }));
+      const ketuaMhs = grp?.students?.find((s: any) => s.isKetua);
+
+      // Tentukan Penginput / Pengusul Proker
+      let penginputInfo: any = null;
+      const sumberUpper = String(p.sumber || "").toUpperCase();
+      if (sumberUpper === "DPL") {
+        penginputInfo = {
+          nama: grp?.dpl?.name || "Dosen Pembimbing Lapangan",
+          role: "DPL",
+          nim: null,
+          prodi: null,
+          telepon: grp?.dpl?.phone || null,
+        };
+      } else {
+        // Sumber Mahasiswa
+        if (p.student) {
+          penginputInfo = {
+            id: p.student.id,
+            nama: p.student.user?.name || "Mahasiswa",
+            nim: p.student.nim || null,
+            prodi: p.student.prodi || null,
+            role: "MAHASISWA",
+            isKetua: p.student.isKetua || false,
+            telepon: p.student.user?.phone || p.student.noWa || null,
+          };
+        } else if (ketuaMhs) {
+          penginputInfo = {
+            id: ketuaMhs.id,
+            nama: ketuaMhs.user?.name ? `${ketuaMhs.user.name} (Ketua)` : "Mahasiswa (Ketua)",
+            nim: ketuaMhs.nim || null,
+            prodi: ketuaMhs.prodi || null,
+            role: "MAHASISWA",
+            isKetua: true,
+            telepon: ketuaMhs.user?.phone || ketuaMhs.noWa || null,
+          };
+        } else if (mhsList.length > 0) {
+          penginputInfo = {
+            id: mhsList[0].id,
+            nama: mhsList[0].nama,
+            nim: mhsList[0].nim,
+            prodi: mhsList[0].prodi,
+            role: "MAHASISWA",
+            isKetua: false,
+            telepon: mhsList[0].phone,
+          };
+        } else {
+          penginputInfo = {
+            nama: "Mahasiswa Kelompok",
+            role: "MAHASISWA",
+            nim: null,
+            prodi: null,
+            telepon: null,
+          };
+        }
+      }
+
       return {
         id: p.id,
         kelompokId: p.kelompokId,
-        kelompokName: (groupMap.get(p.kelompokId) as any)?.name || "-",
-        kelurahan: (groupMap.get(p.kelompokId) as any)?.kelurahan || "-",
+        kelompokName: grp?.name || "-",
+        kelurahan: grp?.kelurahan || "-",
+        cakupanRw: grp?.cakupanRw || [],
+        dplName: grp?.dpl?.name || "-",
+        totalMahasiswa: mhsList.length,
+        penginput: penginputInfo,
+        mahasiswaList: mhsList,
         nomor: p.nomor || 1,
         judul: parsedDesc.judul,
         deskripsi: parsedDesc.deskripsi,
@@ -2134,14 +2278,17 @@ export const dplService = {
       throw new Error("PROKER_NOT_APPROVED");
     }
 
-    // BUGFIX: Validasi status pelaksanaan sebelum penilaian — harus sudah SELESAI
-    const statusPelaksanaanStr = String((prokerExisting as any).statusPelaksanaan || "").toUpperCase();
-    if (statusPelaksanaanStr && statusPelaksanaanStr !== "SELESAI" && !statusPelaksanaan) {
-      // Hanya tolak jika statusPelaksanaan ada di DB dan bukan SELESAI
-      // statusPelaksanaan param boleh override (DPL tandai selesai sekaligus)
-      if (statusPelaksanaanStr === "BELUM_MULAI") {
-        throw new Error("PROKER_NOT_COMPLETED");
-      }
+    // Evaluasi 26-08-2026: Proker bisa dinilai sejak awal kegiatan, namun WAJIB memiliki lampiran file
+    // Belum ada file = Belum bisa dinilai (penilaian disabled/locked)
+    const hasFile = Boolean(
+      (prokerExisting as any).attachmentFile ||
+      (prokerExisting as any).hasAttachment ||
+      prokerExisting.linkGoogleDrive ||
+      ((prokerExisting as any).attachmentUrls && Array.isArray((prokerExisting as any).attachmentUrls) && (prokerExisting as any).attachmentUrls.length > 0)
+    );
+
+    if (!hasFile) {
+      throw new Error("PROKER_ATTACHMENT_REQUIRED: File lampiran bukti program kerja belum diunggah oleh ketua kelompok. Penilaian belum dapat dilakukan.");
     }
 
     const groups = await prisma.kelompokKkn.findMany({

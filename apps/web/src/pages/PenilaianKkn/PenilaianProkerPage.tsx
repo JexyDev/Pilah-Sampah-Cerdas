@@ -37,6 +37,7 @@ import {
 } from "../../services/dplService";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { getMediaPhotoUrl, formatGoogleDriveUrl } from "../../utils/photoUtils";
+import { useAuthStore } from "../../store/useAuthStore";
 
 // 7 Standar Aspek Rubrik Penilaian Program Kerja KKN
 const ASPEK_RUBRIK_PROKER: Array<{ no: number; aspek: string; bobot: number }> = [
@@ -50,6 +51,10 @@ const ASPEK_RUBRIK_PROKER: Array<{ no: number; aspek: string; bobot: number }> =
 ];
 
 export const PenilaianProkerPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = userRole === "PEMIMPIN" || userRole === "PIMPINAN";
+
   // State Data Master
   const [loading, setLoading] = useState(true);
   const [prokerList, setProkerList] = useState<ProgramKerjaItem[]>([]);
@@ -954,6 +959,27 @@ export const PenilaianProkerPage: React.FC = () => {
                 </span>
               </div>
 
+              {/* Guard Notulensi Item 15: Belum ada file = Belum bisa dinilai (file == false => locked) */}
+              {!Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0)) && (
+                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <strong className="block font-bold">Lampiran Berkas Belum Diunggah</strong>
+                    <span>Berdasarkan panduan evaluasi KKN 2026, penilaian program kerja terkunci/disabled hingga Ketua Kelompok mengunggah berkas lampiran bukti kegiatan.</span>
+                  </div>
+                </div>
+              )}
+
+              {isPimpinan && (
+                <div className="p-3.5 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 rounded-xl flex items-start gap-2.5 text-xs text-purple-800 dark:text-purple-300">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
+                  <div>
+                    <strong className="block font-bold">Mode Akses View-Only</strong>
+                    <span>Sebagai Pimpinan, Anda memiliki hak akses pemantauan (monitoring & evaluasi) secara penuh tanpa hak mengubah nilai.</span>
+                  </div>
+                </div>
+              )}
+
               {/* Rubrik Penilaian Aspek */}
               <div>
                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">
@@ -978,73 +1004,44 @@ export const PenilaianProkerPage: React.FC = () => {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {calculatedRubrik.rubrik.map((r) => (
                         <tr key={r.no} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/30">
-                          <td className="py-2.5 px-2 text-center font-bold text-slate-400">
-                            {r.no}
-                          </td>
-                          <td className="py-2.5 px-3 font-medium text-slate-800 dark:text-slate-200">
+                          <td className="py-2 px-2 text-center text-slate-400 font-medium">{r.no}</td>
+                          <td className="py-2 px-3 text-slate-800 dark:text-slate-200 font-medium">
                             {r.aspek}
                           </td>
-                          <td className="py-2.5 px-2 text-center font-semibold text-slate-600 dark:text-slate-300">
-                            {r.bobot}%
+                          <td className="py-2 px-2 text-center text-slate-500 font-semibold">{r.bobot}%</td>
+                          <td className="py-2 px-2 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              disabled={isPimpinan || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                              placeholder="0"
+                              value={inputNilai[r.no] ?? ""}
+                              onChange={(e) => handleScoreChange(r.no, e.target.value)}
+                              className="w-20 px-2 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-center font-bold text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-slate-800"
+                            />
                           </td>
-                          <td className="py-1.5 px-2 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                placeholder="0-100"
-                                value={r.nilai}
-                                onChange={(e) => handleScoreChange(r.no, e.target.value)}
-                                className="w-20 px-2 py-1 text-center font-bold text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                              />
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-3 text-right font-bold text-slate-800 dark:text-slate-200">
-                            {r.skor.toFixed(2)}
+                          <td className="py-2 px-3 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                            {r.skor.toFixed(1)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-800 dark:text-slate-200">
-                        <td colSpan={2} className="py-2.5 px-3 text-left">
-                          Total Bobot & Nilai
+                      <tr className="bg-emerald-50/50 dark:bg-emerald-950/20 font-bold border-t border-slate-200 dark:border-slate-800">
+                        <td colSpan={2} className="py-2.5 px-3 text-slate-900 dark:text-slate-100">
+                          Total Nilai Akhir Proker
                         </td>
-                        <td className="py-2.5 px-2 text-center">100%</td>
-                        <td></td>
-                        <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-400 text-xs">
-                          {calculatedRubrik.totalScore.toFixed(2)}
+                        <td className="py-2.5 px-2 text-center text-slate-700 dark:text-slate-300">100%</td>
+                        <td className="py-2.5 px-2 text-center text-slate-500 font-normal text-[11px]">
+                          Predikat: <span className="font-bold text-slate-800 dark:text-slate-200">{calculatedRubrik.predikat}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right text-emerald-700 dark:text-emerald-400 font-extrabold text-sm">
+                          {calculatedRubrik.totalScore.toFixed(1)}
                         </td>
                       </tr>
                     </tfoot>
                   </table>
-                </div>
-              </div>
-
-              {/* Summary Box Nilai Akhir & Predikat */}
-              <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-700 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shrink-0">
-                    <Award size={22} />
-                  </div>
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
-                      Nilai Akhir
-                    </span>
-                    <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                      {calculatedRubrik.totalScore.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border-l border-emerald-200 dark:border-emerald-800/80 pl-4 text-right">
-                  <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">
-                    Predikat:
-                  </span>
-                  <span className="text-base font-extrabold text-emerald-700 dark:text-emerald-400">
-                    {calculatedRubrik.predikat}
-                  </span>
                 </div>
               </div>
 
@@ -1055,10 +1052,11 @@ export const PenilaianProkerPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
+                  disabled={isPimpinan || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
                   placeholder="Tuliskan evaluasi, feedback, atau rekomendasi perbaikan program kerja ini..."
                   value={catatanDpl}
                   onChange={(e) => setCatatanDpl(e.target.value)}
-                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 resize-none"
+                  className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 resize-none disabled:opacity-50"
                 />
               </div>
             </div>
@@ -1068,8 +1066,8 @@ export const PenilaianProkerPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleResetForm}
-                disabled={isSaving}
-                className="px-3.5 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+                disabled={isSaving || isPimpinan || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                className="px-3.5 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40"
               >
                 Reset Nilai
               </button>
@@ -1081,27 +1079,30 @@ export const PenilaianProkerPage: React.FC = () => {
                   disabled={isSaving}
                   className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
                 >
-                  Batal
+                  Tutup
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleSimpanNilai}
-                  disabled={isSaving}
-                  className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      <span>Menyimpan...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={14} />
-                      <span>Simpan Penilaian</span>
-                    </>
-                  )}
-                </button>
+                {!isPimpinan && (
+                  <button
+                    type="button"
+                    onClick={handleSimpanNilai}
+                    disabled={isSaving || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                    className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                    title={!Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0)) ? "Penilaian terkunci: Berkas lampiran belum diunggah" : "Simpan Penilaian"}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={14} />
+                        <span>Simpan Penilaian</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>

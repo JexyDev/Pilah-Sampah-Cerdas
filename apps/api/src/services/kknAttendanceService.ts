@@ -1355,8 +1355,10 @@ export class KknAttendanceService {
     scheduleId?: string;
     latitude?: number;
     longitude?: number;
+    deskripsiKegiatan?: string;
+    fotoUrl?: string;
   }) {
-    const { studentId, scheduleId, latitude, longitude } = params;
+    const { studentId, scheduleId, latitude, longitude, deskripsiKegiatan, fotoUrl } = params;
 
     const nowForCheckout = new Date();
     const nowWibCheckout = new Date(nowForCheckout.getTime() + 7 * 60 * 60 * 1000);
@@ -1463,6 +1465,8 @@ export class KknAttendanceService {
         actualInZoneMinutes: actualInZoneMins,
         ...(latitude !== undefined && !isNaN(Number(latitude)) ? { latitude: Number(latitude) } : {}),
         ...(longitude !== undefined && !isNaN(Number(longitude)) ? { longitude: Number(longitude) } : {}),
+        ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
+        ...(fotoUrl ? { fotoUrl } : {}),
       },
       include: {
         schedule: true,
@@ -2086,8 +2090,21 @@ export class KknAttendanceService {
     kelompokId?: string;
     dplUserId?: string;
     studentId?: string;
+    startDate?: string;
+    endDate?: string;
   }) {
-    const { kelompokId, dplUserId, studentId } = params;
+    const { kelompokId, dplUserId, studentId, startDate, endDate } = params;
+
+    let attendanceDateFilter: any = undefined;
+    if (startDate || endDate) {
+      attendanceDateFilter = {};
+      if (startDate) {
+        attendanceDateFilter.gte = new Date(`${startDate}T00:00:00+07:00`);
+      }
+      if (endDate) {
+        attendanceDateFilter.lte = new Date(`${endDate}T23:59:59.999+07:00`);
+      }
+    }
 
     let whereStudent: any = {};
     if (studentId) {
@@ -2111,6 +2128,7 @@ export class KknAttendanceService {
             name: true,
             phone: true,
             attendances: {
+              where: attendanceDateFilter ? { attendedAt: attendanceDateFilter } : undefined,
               include: {
                 schedule: {
                   select: { id: true, title: true, date: true },
@@ -2764,11 +2782,23 @@ export class KknAttendanceService {
   async selesaiKegiatan(
     studentUserId: string,
     scheduleId: string,
-    payload?: { sessionId?: string; totalDurasiDalamZonaMenit?: number; alasan?: string }
+    payload?: {
+      sessionId?: string;
+      totalDurasiDalamZonaMenit?: number;
+      alasan?: string;
+      deskripsiKegiatan?: string;
+      fotoUrl?: string;
+      latitude?: number;
+      longitude?: number;
+    }
   ) {
     const result = await this.checkOutAttendance({
       studentId: studentUserId,
       scheduleId,
+      latitude: payload?.latitude,
+      longitude: payload?.longitude,
+      deskripsiKegiatan: payload?.deskripsiKegiatan,
+      fotoUrl: payload?.fotoUrl,
     });
     return {
       ...result,

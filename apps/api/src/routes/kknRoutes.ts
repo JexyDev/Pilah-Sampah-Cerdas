@@ -470,6 +470,58 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/posko/me:
+ *   put:
+ *     summary: Pembaruan data Posko KKN kelompok (Khusus Ketua Kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data Posko KKN berhasil diperbarui
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ *       404:
+ *         description: Posko belum terdaftar
+ */
+router.put(
+  "/posko/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updateMyPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/update:
+ *   put:
+ *     summary: Alias pembaruan data Posko KKN kelompok (Khusus Ketua Kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data Posko KKN berhasil diperbarui
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ *       404:
+ *         description: Posko belum terdaftar
+ */
+router.put(
+  "/posko/update",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updateMyPosko
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/posko:
  *   get:
  *     summary: Mendapatkan seluruh daftar Posko KKN di seluruh kelurahan

@@ -29,6 +29,7 @@ import {
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { dplService, type RekapNilaiStudent, type RekapNilaiResponse } from "../../services/dplService";
+import { useAuthStore } from "../../store/useAuthStore";
 
 // Fallback demo data jika offline
 const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
@@ -165,6 +166,10 @@ const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
 ];
 
 export const RekapNilaiKknPage: React.FC = () => {
+  const { user } = useAuthStore();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
+
   const [loading, setLoading] = useState(false);
   const [students, setStudents] = useState<RekapNilaiStudent[]>(DEFAULT_STUDENTS);
 
@@ -516,9 +521,16 @@ export const RekapNilaiKknPage: React.FC = () => {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full min-w-0">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
-            Rekap & Nilai Akhir
-          </h1>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#0f172a] dark:text-slate-100 tracking-tight">
+              Rekap & Nilai Akhir
+            </h1>
+            {isPimpinan && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+                Mode Pemimpin: View-Only
+              </span>
+            )}
+          </div>
           <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
             Rekapitulasi nilai berdasarkan data otomatis serta penilaian DPL dan MPL
           </p>

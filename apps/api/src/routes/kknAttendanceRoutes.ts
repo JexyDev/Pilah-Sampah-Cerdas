@@ -9,6 +9,7 @@ import { Router } from "express";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -104,6 +105,7 @@ router.post(
   "/kegiatan/:id/absen",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.recordAttendance
 );
 
@@ -129,6 +131,7 @@ router.post(
   ["/kegiatan/:id/check-out", "/kegiatan/:id/checkout"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.checkOutAttendance
 );
 
@@ -136,6 +139,7 @@ router.post(
   ["/kkn/attendance/check-out", "/kkn/attendance/checkout"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.checkOutAttendance
 );
 
@@ -219,6 +223,7 @@ router.post(
   ["/kkn/kegiatan/:id/selesai", "/kegiatan/:id/selesai"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.selesaiKegiatan
 );
 

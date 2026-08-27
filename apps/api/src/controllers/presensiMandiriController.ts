@@ -17,7 +17,7 @@ export const presensiMandiriController = {
   checkIn: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentId = req.user!.userId;
-      const { latitude, longitude, deskripsiKegiatan } = req.body;
+      const { latitude, longitude, deskripsiKegiatan, platformOs } = req.body;
       const file = (req as any).file;
 
       if (!file) {
@@ -36,7 +36,7 @@ export const presensiMandiriController = {
       const fotoUrl = `${baseUrl}/uploads/${file.filename}`;
 
       const result = await presensiMandiriService.checkIn({
-        studentId, latitude: lat, longitude: lng, deskripsiKegiatan, fotoUrl,
+        studentId, latitude: lat, longitude: lng, deskripsiKegiatan, fotoUrl, platformOs: platformOs || "ANDROID",
       });
 
       res.status(200).json({ success: true, message: "Presensi mandiri berhasil dicatat.", data: result });

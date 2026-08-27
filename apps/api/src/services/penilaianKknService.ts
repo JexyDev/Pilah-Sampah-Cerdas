@@ -347,8 +347,14 @@ export const penilaianKknService = {
       throw new Error("Data mahasiswa tidak ditemukan");
     }
 
-    const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(evaluatorRole);
-    const isMitra = ["RW", "MITRA", "ADMIN_DLH", "DLH", "LURAH", "KELURAHAN"].includes(evaluatorRole);
+    const normRole = String(evaluatorRole || "").toUpperCase();
+    if (normRole === "PEMIMPIN" || normRole === "PIMPINAN") {
+      throw new Error("FORBIDDEN_ROLE: Role Pimpinan hanya memiliki akses View-Only dan tidak dapat menginput/mengubah penilaian.");
+    }
+
+    const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING"].includes(normRole);
+    const isMpl = ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(normRole);
+    const isMitra = isMpl || ["RW", "MITRA", "ADMIN_DLH", "DLH", "LURAH", "KELURAHAN"].includes(normRole);
 
     // Strict Scope: DPL hanya dapat menilai mahasiswa di bawah dampingannya
     if (isDpl && evaluatorId) {
@@ -360,7 +366,7 @@ export const penilaianKknService = {
       }
     }
 
-    if (studentUser.penilaianKkn?.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(evaluatorRole)) {
+    if (studentUser.penilaianKkn?.isFinalized && !["SUPER_USER", "DEVELOPER"].includes(normRole)) {
       throw new Error("Penilaian telah difinalisasi dan dikunci. Hubungi Administrator untuk pembukaan kunci.");
     }
 
@@ -807,17 +813,6 @@ export const penilaianKknService = {
         ? Number(primaryProker.skorPenilaian)
         : null;
 
-      let statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH" | "BELUM_UNGGAH" = "MENUNGGU_TELAAH";
-      if (primaryProker?.statusPenilaian === "DISETUJUI") {
-        statusTelaah = "DISETUJUI";
-      } else if (primaryProker?.statusPenilaian === "PERLU_REVISI") {
-        statusTelaah = "PERLU_REVISI";
-      } else if (primaryProker?.statusPenilaian === "BELUM_UNGGAH") {
-        statusTelaah = "BELUM_UNGGAH";
-      } else if (scoreVal !== null) {
-        statusTelaah = "DISETUJUI";
-      }
-
       const groupName = k.name || `Kelompok ${index + 1}`;
       const judulLaporan = primaryProker?.deskripsi
         ? `Laporan Akhir KKN: ${primaryProker.deskripsi}`
@@ -825,6 +820,21 @@ export const penilaianKknService = {
 
       const fileUrl = primaryProker?.linkGoogleDrive || null;
       const fileName = fileUrl ? `Laporan_Akhir_${groupName.replace(/\s+/g, "_")}.pdf` : null;
+
+      let statusTelaah: "DISETUJUI" | "PERLU_REVISI" | "MENUNGGU_TELAAH" | "BELUM_UNGGAH" = "MENUNGGU_TELAAH";
+      if (!fileUrl) {
+        statusTelaah = "BELUM_UNGGAH";
+      } else if (primaryProker?.statusPenilaian === "DISETUJUI") {
+        statusTelaah = "DISETUJUI";
+      } else if (primaryProker?.statusPenilaian === "PERLU_REVISI") {
+        statusTelaah = "PERLU_REVISI";
+      } else if (primaryProker?.statusPenilaian === "BELUM_UNGGAH") {
+        statusTelaah = "BELUM_UNGGAH";
+      } else if (scoreVal !== null) {
+        statusTelaah = "DISETUJUI";
+      } else {
+        statusTelaah = "MENUNGGU_TELAAH";
+      }
 
       let predikat = "Belum Dinilai";
       if (scoreVal !== null) {

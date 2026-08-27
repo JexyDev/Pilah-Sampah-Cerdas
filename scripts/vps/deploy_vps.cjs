@@ -13,8 +13,9 @@ npx prisma generate
 npx prisma migrate deploy || true
 npm run build
 
-echo "=== 3. Restarting PM2 Backend ==="
-pm2 restart psc-backend || pm2 restart 0
+echo "=== 3. Reloading PM2 Backend (Cluster Mode Zero-Downtime) ==="
+pm2 reload ecosystem.config.cjs || pm2 restart ecosystem.config.cjs || pm2 start ecosystem.config.cjs
+pm2 save
 
 echo "=== 4. Checking PM2 Status ==="
 pm2 status

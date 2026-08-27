@@ -478,6 +478,8 @@ const MonitoringAbsen: React.FC = () => {
     "ALL" | "ACTIVE" | "COMPLETED" | "IZIN_SAKIT" | "NOT_ATTENDED"
   >("ALL");
   const [studentSearch, setStudentSearch] = useState<string>("");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [displayMode] = useState<"table" | "cards">("table");
   const [showMap, setShowMap] = useState<boolean>(false);
 
@@ -790,11 +792,30 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [mapZoom, setMapZoom] = useState<number>(15);
 
   const visibleSchedules = useMemo(() => {
-    if (!selectedKelompokId) return schedules;
-    return schedules.filter(
-      (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
-    );
-  }, [schedules, selectedKelompokId]);
+    let list = schedules;
+    if (selectedKelompokId) {
+      list = list.filter(
+        (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
+      );
+    }
+    if (startDateFilter) {
+      const start = new Date(startDateFilter);
+      start.setHours(0, 0, 0, 0);
+      list = list.filter((s) => {
+        const d = new Date(s.date);
+        return d >= start;
+      });
+    }
+    if (endDateFilter) {
+      const end = new Date(endDateFilter);
+      end.setHours(23, 59, 59, 999);
+      list = list.filter((s) => {
+        const d = new Date(s.date);
+        return d <= end;
+      });
+    }
+    return list;
+  }, [schedules, selectedKelompokId, startDateFilter, endDateFilter]);
 
   const activeSchedule = useMemo(() => {
     return visibleSchedules.find((s) => s.id === selectedScheduleId);
@@ -2539,7 +2560,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {/* Toolbar: Search, Filter Tabs, View Switcher */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative min-w-[240px] flex-1 max-w-md">
+          <div className="relative min-w-[220px] flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
@@ -2555,6 +2576,43 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
                 <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Date Range Filter Controls (Notulensi Item 12: Filter Tanggal) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+              <Calendar size={13} className="text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400">Dari:</span>
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+              <Calendar size={13} className="text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400">Sampai:</span>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+            {(startDateFilter || endDateFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDateFilter("");
+                  setEndDateFilter("");
+                }}
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                title="Reset Filter Tanggal"
+              >
+                <X size={13} />
               </button>
             )}
           </div>

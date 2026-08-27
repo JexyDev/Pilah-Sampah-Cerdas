@@ -319,7 +319,10 @@ archiveAuditLogsCron.start();
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
+      'ALTER TABLE "kegiatan_harian_kkn" ALTER COLUMN "foto_bukti_url" DROP NOT NULL;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "judul" TEXT;',
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "nomor" INTEGER;',
+      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "id_mahasiswa" TEXT;',
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "kategori" TEXT DEFAULT \'LAINNYA\';',
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "sumber" TEXT DEFAULT \'MAHASISWA\';',
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "waktu_pelaksanaan" TEXT;',

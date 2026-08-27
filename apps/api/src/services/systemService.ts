@@ -93,10 +93,10 @@ export const systemService = {
   ],
 
   /**
-   * Get curated activities for landing page directly from database relations
+   * Get curated activities for landing page strictly from developer curation CRUD
    */
   getCuratedLandingActivities: async () => {
-    // 1. Check if admin has saved custom curated activities in SystemConfig
+    // 1. Ambil data kurasi kegiatan yang telah divalidasi/di-CRUD oleh Developer / Admin
     try {
       const config = await prisma.systemConfig.findUnique({
         where: { key: "landing_curated_activities" },
@@ -104,104 +104,15 @@ export const systemService = {
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Hanya tampilkan yang isPublished: true
+          return parsed.filter((item: any) => item.isPublished !== false);
         }
       }
     } catch (err) {
       console.warn("[systemService] Failed parsing landing_curated_activities:", err);
     }
 
-    // 2. Dynamic Database Relational Source: Query real approved LogbookKkn with photos and relations
-    try {
-      const approvedLogbooks = await prisma.logbookKkn.findMany({
-        where: {
-          statusApproval: "DISETUJUI_DPL",
-          fotoBuktiUrl: { not: "" },
-        },
-        take: 6,
-        orderBy: { tanggalKegiatan: "desc" },
-        include: {
-          penulis: { select: { name: true } },
-          kelompok: { select: { name: true, kelurahan: true } },
-          programKerja: { select: { deskripsi: true, kategori: true } },
-        },
-      });
-
-      if (approvedLogbooks && approvedLogbooks.length > 0) {
-        return approvedLogbooks.map((log) => {
-          const rawDate = log.tanggalKegiatan
-            ? new Date(log.tanggalKegiatan).toISOString().slice(0, 10)
-            : new Date().toISOString().slice(0, 10);
-
-          const locationText = log.tempat
-            ? `${log.tempat}, Kelurahan ${log.kelompok?.kelurahan || "Coblong"}`
-            : `Kelurahan ${log.kelompok?.kelurahan || "Lebak Gede"}, Kec. Coblong`;
-
-          const cleanTitle = log.programKerja?.deskripsi
-            ? `${log.programKerja.deskripsi} (${log.kelompok?.name || "KKN"})`
-            : `Aksi Lingkungan di ${log.tempat || "Coblong"}`;
-
-          return {
-            id: `logbook-${log.id}`,
-            title: cleanTitle,
-            date: rawDate,
-            location: locationText,
-            category: log.programKerja?.kategori || "Aksi Lingkungan",
-            imageUrl: log.fotoBuktiUrl || "/image/activity-1.png",
-            description:
-              log.deskripsi ||
-              "Dokumentasi kegiatan lapangan mahasiswa KKN terpadu bersama masyarakat.",
-            sdgTags: ["#3", "#11", "#12"],
-            isPublished: true,
-          };
-        });
-      }
-    } catch (err) {
-      console.warn("[systemService] Failed querying approved logbooks:", err);
-    }
-
-    // 3. Dynamic Database Relational Source: Query real Schedule (excluding internal test / simulation)
-    try {
-      const realSchedules = await prisma.schedule.findMany({
-        where: {
-          isActive: true,
-          NOT: [
-            { title: { contains: "TEST", mode: "insensitive" } },
-            { title: { contains: "SIMULASI", mode: "insensitive" } },
-            { title: { contains: "DUMMY", mode: "insensitive" } },
-            { title: { contains: "ABSEN", mode: "insensitive" } },
-          ],
-        },
-        take: 6,
-        orderBy: { date: "desc" },
-        include: {
-          kelompok: { select: { name: true, kelurahan: true } },
-        },
-      });
-
-      if (realSchedules && realSchedules.length > 0) {
-        return realSchedules.map((s, idx) => ({
-          id: s.id,
-          title: s.title,
-          date: new Date(s.date).toISOString().slice(0, 10),
-          location:
-            s.location ||
-            (s.kelompok?.kelurahan
-              ? `Kelurahan ${s.kelompok.kelurahan}, Kec. Coblong`
-              : "Kecamatan Coblong, Kota Bandung"),
-          category: s.category || "Aksi Lingkungan",
-          imageUrl: `/image/activity-${(idx % 3) + 1}.png`,
-          description: `Jadwal aksi lingkungan dan pendampingan pengelolaan sampah bersama kelompok ${
-            s.kelompok?.name || "KKN"
-          } di ${s.location || "Kecamatan Coblong"}.`,
-          sdgTags: ["#3", "#11", "#12"],
-          isPublished: true,
-        }));
-      }
-    } catch (err) {
-      console.warn("[systemService] Failed querying real schedules:", err);
-    }
-
+    // 2. Fallback aman ke curated default terstruktur (tidak auto-dump jadwal mentah mahasiswa tanpa validasi developer)
     return systemService.getDefaultCuratedActivities();
   },
 

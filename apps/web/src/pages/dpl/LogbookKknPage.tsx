@@ -122,6 +122,7 @@ export const LogbookKknPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isDeveloper = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(userRole);
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
 
   const [loading, setLoading] = useState(true);
 
@@ -131,6 +132,8 @@ export const LogbookKknPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedKategori, setSelectedKategori] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
 
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
   const [toleranceDays, setToleranceDays] = useState<number>(1);
@@ -195,7 +198,7 @@ export const LogbookKknPage: React.FC = () => {
     }
   }, [selectedItemDetail?.id]);
 
-  // Filtered logbooks by category & search
+  // Filtered logbooks by category & search & date range
   const filteredLogbooks = useMemo(() => {
     return logbooks.filter((item) => {
       if (selectedKategori !== "ALL") {
@@ -210,9 +213,21 @@ export const LogbookKknPage: React.FC = () => {
         const matchGroup = (item.kelompokNama || "").toLowerCase().includes(q);
         if (!matchName && !matchPlace && !matchDesc && !matchGroup) return false;
       }
+      if (startDateFilter) {
+        const start = new Date(startDateFilter);
+        start.setHours(0, 0, 0, 0);
+        const itemDate = new Date(item.tanggalKegiatan || item.createdAt);
+        if (itemDate < start) return false;
+      }
+      if (endDateFilter) {
+        const end = new Date(endDateFilter);
+        end.setHours(23, 59, 59, 999);
+        const itemDate = new Date(item.tanggalKegiatan || item.createdAt);
+        if (itemDate > end) return false;
+      }
       return true;
     });
-  }, [logbooks, selectedKategori, searchQuery]);
+  }, [logbooks, selectedKategori, searchQuery, startDateFilter, endDateFilter]);
 
   // Statistics KPI
   const stats = useMemo(() => {
@@ -546,6 +561,46 @@ export const LogbookKknPage: React.FC = () => {
                   <option value="DISETUJUI_DPL">Tervalidasi</option>
                   <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
                 </select>
+
+                {/* Date Range Inputs (Notulensi Item 12: Filter Tanggal) */}
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
+                  <span className="text-[10px] font-bold text-slate-400">Dari:</span>
+                  <input
+                    type="date"
+                    value={startDateFilter}
+                    onChange={(e) => {
+                      setStartDateFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
+                  <span className="text-[10px] font-bold text-slate-400">Sampai:</span>
+                  <input
+                    type="date"
+                    value={endDateFilter}
+                    onChange={(e) => {
+                      setEndDateFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                  />
+                </div>
+                {(startDateFilter || endDateFilter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDateFilter("");
+                      setEndDateFilter("");
+                      setCurrentPage(1);
+                    }}
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                    title="Reset Filter Tanggal"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
 
                 {/* Button Ekspor */}
                 <button
@@ -908,39 +963,58 @@ export const LogbookKknPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Bukti Lampiran Foto (Kosong jika tidak ada foto / null) */}
-            {selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== "" && (
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Bukti Lampiran Foto:</span>
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-60 bg-slate-900 flex items-center justify-center min-h-[140px]">
-                  <img
-                    src={resolveImageUrl(selectedItemDetail.fotoBuktiUrl)}
-                    alt="Bukti Aktivitas"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                      const parent = (e.target as HTMLElement).parentElement;
-                      if (parent) {
-                        const fallback = document.createElement("div");
-                        fallback.className = "text-slate-400 text-xs italic p-4 text-center";
-                        fallback.innerText = "Foto bukti tidak dapat dimuat atau belum diunggah.";
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                    className="w-full h-full object-contain max-h-60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreviewPhotoUrl(resolveImageUrl(selectedItemDetail.fotoBuktiUrl));
-                      setPreviewTitle(`Bukti: ${selectedItemDetail.tempat}`);
-                    }}
-                    className="absolute bottom-2 right-2 px-3 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Buka Fullsize
-                  </button>
+            {/* Bukti Lampiran Foto (Multi-Foto Gallery) */}
+            {(() => {
+              const allPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
+                ? (selectedItemDetail as any).attachmentUrls
+                : selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== ""
+                ? [selectedItemDetail.fotoBuktiUrl]
+                : [];
+
+              if (allPhotos.length === 0) return null;
+
+              return (
+                <div className="space-y-1.5">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    Bukti Lampiran Foto ({allPhotos.length} Foto):
+                  </span>
+                  <div className={`grid gap-2.5 ${allPhotos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
+                    {allPhotos.map((photoUrl, pIdx) => (
+                      <div
+                        key={pIdx}
+                        className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-52 bg-slate-900 flex items-center justify-center min-h-[120px] group"
+                      >
+                        <img
+                          src={resolveImageUrl(photoUrl)}
+                          alt={`Bukti Aktivitas ${pIdx + 1}`}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                            const parent = (e.target as HTMLElement).parentElement;
+                            if (parent) {
+                              const fallback = document.createElement("div");
+                              fallback.className = "text-slate-400 text-xs italic p-4 text-center";
+                              fallback.innerText = "Foto tidak dapat dimuat.";
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                          className="w-full h-full object-contain max-h-52 group-hover:scale-105 transition duration-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewPhotoUrl(resolveImageUrl(photoUrl));
+                            setPreviewTitle(`Bukti #${pIdx + 1}: ${selectedItemDetail.tempat}`);
+                          }}
+                          className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
+                        >
+                          <Eye className="w-3 h-3" /> Fullsize
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Catatan Sebelumnya */}
             {(selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl) && (
@@ -954,52 +1028,67 @@ export const LogbookKknPage: React.FC = () => {
               </div>
             )}
 
-            {/* Section Form Validasi DPL */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
-              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                Form Validasi DPL
-              </h4>
-
-              <textarea
-                rows={2}
-                value={validationCatatan}
-                onChange={(e) => setValidationCatatan(e.target.value)}
-                placeholder="Tambahkan catatan masukan, evaluasi, atau rekomendasi perbaikan untuk kelompok..."
-                className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
-              />
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
-                >
-                  Tutup
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSubmittingQuickVerif}
-                  onClick={() => handleVerifikasiDpl("REVISI")}
-                  className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                  Minta Perbaikan
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSubmittingQuickVerif}
-                  onClick={() => handleVerifikasiDpl("APPROVE")}
-                  className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                >
-                  {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Validasi Aktivitas
-                </button>
+            {/* Section Form Validasi DPL / Mode Pimpinan View-Only */}
+            {isPimpinan ? (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
+                  <span className="font-semibold">Mode Pemimpin: View-Only (Hanya Memantau Data Supervisi & Logbook)</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailModalOpen(false)}
+                    className="py-1.5 px-3 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-100 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                  Form Validasi DPL
+                </h4>
+
+                <textarea
+                  rows={2}
+                  value={validationCatatan}
+                  onChange={(e) => setValidationCatatan(e.target.value)}
+                  placeholder="Tambahkan catatan masukan, evaluasi, atau rekomendasi perbaikan untuk kelompok..."
+                  className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                />
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailModalOpen(false)}
+                    className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSubmittingQuickVerif}
+                    onClick={() => handleVerifikasiDpl("REVISI")}
+                    className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                    Minta Perbaikan
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSubmittingQuickVerif}
+                    onClick={() => handleVerifikasiDpl("APPROVE")}
+                    className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  >
+                    {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Validasi Aktivitas
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

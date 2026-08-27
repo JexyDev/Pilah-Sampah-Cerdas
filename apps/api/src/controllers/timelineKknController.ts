@@ -31,9 +31,13 @@ export const timelineKknController = {
         userRole
       );
 
+      const activeItem = items.find((i: any) => i.statusPelaksanaan === "SEDANG_BERJALAN");
+
       res.status(200).json({
         success: true,
         data: items,
+        activeWeek: activeItem ? activeItem.tahapMinggu : (items[0]?.tahapMinggu || "Minggu 1"),
+        activeFase: activeItem ? activeItem.fase : (items[0]?.fase || "Tahap Pelaksanaan"),
       });
     } catch (error: any) {
       console.error("[timelineKknController.getAll] error:", error);

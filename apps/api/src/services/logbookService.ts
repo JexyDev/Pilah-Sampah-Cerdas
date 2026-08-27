@@ -286,7 +286,7 @@ export class LogbookService {
       waktuSelesai?: string;
       tempat: string;
       deskripsi: string;
-      fotoBuktiUrl: string;
+      fotoBuktiUrl?: string | null;
       tipeAktivitas?: TipeAktivitasKkn;
       programKerjaId?: string;
       fasilitasId?: string;
@@ -296,9 +296,6 @@ export class LogbookService {
     if (!payload.tanggalKegiatan) throw new Error("Tanggal kegiatan wajib diisi");
     if (!payload.tempat || payload.tempat.trim() === "") throw new Error("Tempat kegiatan wajib diisi");
     if (!payload.deskripsi || payload.deskripsi.trim() === "") throw new Error("Deskripsi kegiatan wajib diisi");
-    if (!payload.fotoBuktiUrl || payload.fotoBuktiUrl.trim() === "") {
-      throw new Error("Foto bukti kegiatan wajib diambil melalui kamera dan diunggah.");
-    }
 
     const activityDate = new Date(payload.tanggalKegiatan);
     if (isNaN(activityDate.getTime())) {
@@ -332,24 +329,19 @@ export class LogbookService {
     }
 
     const kelompok = student.kelompok;
-    const isUserKetua = Boolean(student.isKetua);
 
     const pekanKe = payload.pekanKe && payload.pekanKe >= 1 && payload.pekanKe <= 4
       ? payload.pekanKe
       : this.calculatePekanKe(activityDate, student.startDate);
 
-    // 3. Tentukan Status Approval Awal
-    // Jika diinput Ketua Kelompok -> Langsung MENUNGGU_VERIFIKASI_DPL
-    // Jika diinput Anggota/Perwakilan -> MENUNGGU_PERSETUJUAN_KETUA
-    let statusApproval: StatusLogbookKkn = StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA;
-    let disetujuiKetuaOlehId: string | null = null;
-    let disetujuiKetuaPada: Date | null = null;
+    // 3. Status Approval — Langsung ke DPL (Skip ketua sesuai keputusan rapat 27 Agustus 2026)
+    // Semua mahasiswa (ketua maupun anggota) langsung MENUNGGU_VERIFIKASI_DPL
+    const statusApproval: StatusLogbookKkn = StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
+    const isUserKetua = Boolean(student.isKetua);
 
-    if (isUserKetua) {
-      statusApproval = StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
-      disetujuiKetuaOlehId = userId;
-      disetujuiKetuaPada = new Date();
-    }
+    // Auto-set disetujuiKetua fields agar data terstruktur (ketua-nya adalah si penulis sendiri jika ketua, atau null)
+    const disetujuiKetuaOlehId: string | null = isUserKetua ? userId : null;
+    const disetujuiKetuaPada: Date | null = isUserKetua ? new Date() : null;
 
     const logbook = await prisma.logbookKkn.create({
       data: {
@@ -360,7 +352,7 @@ export class LogbookService {
         waktuSelesai: payload.waktuSelesai || null,
         tempat: payload.tempat.trim(),
         deskripsi: payload.deskripsi.trim(),
-        fotoBuktiUrl: payload.fotoBuktiUrl,
+        fotoBuktiUrl: payload.fotoBuktiUrl || null,
         tipeAktivitas: payload.tipeAktivitas || TipeAktivitasKkn.KELOMPOK,
         programKerjaId: payload.programKerjaId || null,
         fasilitasId: payload.fasilitasId || null,
@@ -375,43 +367,16 @@ export class LogbookService {
       },
     });
 
-    // 4. Notifikasi Otomatis
-    if (isUserKetua) {
-      // Notifikasi ke DPL
-      if (kelompok.dplId) {
-        await prisma.notification.create({
-          data: {
-            userId: kelompok.dplId,
-            title: "Logbook Aktivitas Baru",
-            message: `Ketua ${user.name} (${kelompok.name}) telah mengajukan logbook aktivitas untuk pekan ke-${pekanKe}. Silakan tinjau dan verifikasi.`,
-            isRead: false,
-          },
-        }).catch(() => {});
-      }
-    } else {
-      // Cari ketua kelompok untuk dikirimi notifikasi persetujuan
-      const ketua = kelompok.students.find((s) => s.isKetua);
-      if (ketua) {
-        await prisma.notification.create({
-          data: {
-            userId: ketua.userId,
-            title: "Persetujuan Logbook Kelompok",
-            message: `Anggota ${user.name} telah mencatat aktivitas: "${payload.deskripsi.slice(0, 50)}...". Mohon persetujuan Ketua Kelompok sebelum diteruskan ke DPL.`,
-            isRead: false,
-          },
-        }).catch(() => {});
-      }
-      // Informasikan juga ke DPL
-      if (kelompok.dplId) {
-        await prisma.notification.create({
-          data: {
-            userId: kelompok.dplId,
-            title: "Pengajuan Logbook Baru (Anggota)",
-            message: `Anggota ${user.name} (${kelompok.name}) mencatat logbook aktivitas baru untuk pekan ke-${pekanKe}. Menunggu persetujuan Ketua Kelompok.`,
-            isRead: false,
-          },
-        }).catch(() => {});
-      }
+    // 4. Notifikasi Langsung ke DPL (tanpa melalui ketua)
+    if (kelompok.dplId) {
+      await prisma.notification.create({
+        data: {
+          userId: kelompok.dplId,
+          title: "Logbook Aktivitas Baru — Perlu Verifikasi",
+          message: `${user.name} (${kelompok.name}) mengajukan logbook aktivitas untuk pekan ke-${pekanKe}: "${payload.deskripsi.slice(0, 60)}...". Silakan tinjau dan verifikasi.`,
+          isRead: false,
+        },
+      }).catch(() => {});
     }
 
     return logbook;

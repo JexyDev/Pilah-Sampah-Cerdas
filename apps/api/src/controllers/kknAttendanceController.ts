@@ -204,8 +204,15 @@ export const kknAttendanceController = {
     try {
       const studentId = req.user!.userId;
       const { id: paramId } = req.params;
-      const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId } = req.body;
+      const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId, deskripsiKegiatan, deskripsi, fotoUrl: bodyFotoUrl } = req.body;
       const id = paramId || bodyScheduleId || req.body.id;
+
+      const file = (req as any).file;
+      let finalFotoUrl = bodyFotoUrl;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
 
       const finalLat =
         latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : undefined;
@@ -217,6 +224,8 @@ export const kknAttendanceController = {
         scheduleId: id,
         latitude: finalLat,
         longitude: finalLng,
+        deskripsiKegiatan: deskripsiKegiatan || deskripsi,
+        fotoUrl: finalFotoUrl,
       });
 
       res.status(200).json(result);
@@ -299,11 +308,15 @@ export const kknAttendanceController = {
       const kelompokId = req.query.kelompokId as string | undefined;
       const studentId = isStudent ? currentUserId : (req.query.studentId as string | undefined);
       const dplUserId = isDpl ? currentUserId : undefined;
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
 
       const result = await kknAttendanceService.getTimesheetSummary({
         kelompokId,
         studentId,
         dplUserId,
+        startDate,
+        endDate,
       });
 
       res.status(200).json({
@@ -416,12 +429,23 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
-      const { sessionId, totalDurasiDalamZonaMenit, alasan } = req.body;
+      const { sessionId, totalDurasiDalamZonaMenit, alasan, deskripsiKegiatan, deskripsi, fotoUrl: bodyFotoUrl, latitude, longitude } = req.body;
+
+      const file = (req as any).file;
+      let finalFotoUrl = bodyFotoUrl;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
 
       const result = await kknAttendanceService.selesaiKegiatan(studentUserId, id, {
         sessionId,
-        totalDurasiDalamZonaMenit,
+        totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit ? Number(totalDurasiDalamZonaMenit) : undefined,
         alasan,
+        deskripsiKegiatan: deskripsiKegiatan || deskripsi,
+        fotoUrl: finalFotoUrl,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
       });
 
       res.status(200).json({
@@ -443,7 +467,14 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const id = req.params.id || req.body.scheduleId;
-      const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan } = req.body;
+      const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan, deskripsiKegiatan, deskripsi, fotoUrl: bodyFotoUrl } = req.body;
+
+      const file = (req as any).file;
+      let finalFotoUrl = bodyFotoUrl;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
 
       const mins = totalDurasiDalamZonaMenit ?? durationMinutes ?? Math.ceil(((accumulatedDuration || accumulatedSeconds || 0) / 60));
 
@@ -451,6 +482,8 @@ export const kknAttendanceController = {
         sessionId: sessionId || `SES-${id}`,
         totalDurasiDalamZonaMenit: mins,
         alasan: alasan || "Presensi Selesai",
+        deskripsiKegiatan: deskripsiKegiatan || deskripsi,
+        fotoUrl: finalFotoUrl,
       });
 
       res.status(200).json({

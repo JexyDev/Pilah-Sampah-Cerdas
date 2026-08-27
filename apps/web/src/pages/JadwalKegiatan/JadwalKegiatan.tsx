@@ -921,20 +921,21 @@ const JadwalKegiatan: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleExportTimelineExcel}
-                  className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Unduh Linimasa dalam format Excel (.xlsx)"
+                  className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/60 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-2xs"
+                  title="Unduh Linimasa KKN dalam format Excel (.xlsx)"
                 >
-                  <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>Excel (.xlsx)</span>
+                  <FileSpreadsheet size={15} className="text-emerald-600 dark:text-emerald-400" />
+                  <span>Export Excel (.xlsx)</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={handleExportTimelineCsv}
-                  className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Unduh Linimasa dalam format CSV"
+                  className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Unduh Linimasa KKN dalam format CSV"
                 >
-                  <Download size={14} className="text-slate-500" />
-                  <span>CSV</span>
+                  <Download size={14} className="text-slate-500 dark:text-slate-400" />
+                  <span>Export CSV</span>
                 </button>
 
                 {canManageTimeline && (
@@ -984,7 +985,6 @@ const JadwalKegiatan: React.FC = () => {
               const belum = timelineList.filter(
                 (t) => !t.statusPelaksanaan || t.statusPelaksanaan === "BELUM_DIMULAI"
               ).length;
-              const pctSelesai = total > 0 ? Math.round((selesai / total) * 100) : 0;
 
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -1004,7 +1004,7 @@ const JadwalKegiatan: React.FC = () => {
                       Selesai Dilaksanakan
                     </span>
                     <span className="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1 block">
-                      {selesai} ({pctSelesai}%)
+                      {selesai} Tahapan
                     </span>
                     <span className="text-[10.5px] text-blue-600/80 dark:text-blue-400 font-semibold">
                       Tahapan rampung

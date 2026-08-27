@@ -165,9 +165,13 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
   // Open Assessment Modal (Rincian Penilaian Laporan Akhir)
   const handleOpenAssessment = (student: LaporanAkhirItem, editMode: boolean = false) => {
+    if (!student.fileUrl && editMode && student.status !== "Sudah Dinilai") {
+      toast.error("Laporan akhir belum diunggah oleh mahasiswa. Penilaian belum dapat dilakukan.");
+      return;
+    }
     setSelectedStudent(student);
     setIsEditMode(editMode || student.status === "Belum Dinilai");
-    const currentScore = student.nilai ?? (student.rubrikScores ? Math.round((student.rubrikScores.sistematika + student.rubrikScores.analisis + (student.rubrikScores.dampak || student.rubrikScores.output || 85) + (student.rubrikScores.rekomendasi || student.rubrikScores.refleksi || 85)) / 4) : 100);
+    const currentScore = student.nilai ?? (student.rubrikScores ? Math.round((student.rubrikScores.sistematika + student.rubrikScores.analisis + (student.rubrikScores.dampak || student.rubrikScores.output || 85) + (student.rubrikScores.rekomendasi || student.rubrikScores.refleksi || 85)) / 4) : 85);
     setScoreInput(currentScore);
     setAspectScores({
       sistematika: student.rubrikScores?.sistematika ?? currentScore,
@@ -653,10 +657,15 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                             <CheckCircle2 size={12} />
                             <span>Sudah Dinilai</span>
                           </span>
+                        ) : !item.fileUrl ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            <AlertCircle size={12} />
+                            <span>Belum Diunggah</span>
+                          </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                             <Clock size={12} />
-                            <span>Belum Dinilai</span>
+                            <span>Menunggu Nilai</span>
                           </span>
                         )}
                       </td>
@@ -683,11 +692,21 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                             <Eye size={14} />
                             <span>Lihat Nilai</span>
                           </button>
+                        ) : !item.fileUrl ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed w-28 border border-slate-200 dark:border-slate-700 opacity-80"
+                            title="Laporan akhir belum diunggah oleh mahasiswa"
+                          >
+                            <AlertCircle size={13} />
+                            <span>Belum Ada File</span>
+                          </button>
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleOpenAssessment(item, true)}
-                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white transition cursor-pointer w-28 shadow-2xs"
+                            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#009966] hover:bg-[#008055] text-white transition cursor-pointer w-28 shadow-2xs active:scale-95"
                           >
                             <Edit3 size={14} />
                             <span>Beri Nilai</span>

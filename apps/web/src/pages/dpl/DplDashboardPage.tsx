@@ -39,7 +39,138 @@ import {
   type ProgramKerjaItem,
 } from "../../services/dplService";
 
+// ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
+type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
+type PoskoData = { id?: string; nama?: string; alamat?: string; latitude?: number | null; longitude?: number | null };
+
+const PoskoFasilitasSection: React.FC<{ posko?: PoskoData | null; facilities: FasilitasItem[] }> = ({ posko, facilities }) => {
+  const [tab, setTab] = useState<"posko" | "fasilitas">("posko");
+  const hasFasilitas = facilities && facilities.length > 0;
+  const hasPosko = !!posko;
+
+  if (!hasPosko && !hasFasilitas) return null;
+
+  // Auto-switch to fasilitas if no posko
+  const activeTab = !hasPosko && hasFasilitas ? "fasilitas" : tab;
+
+  return (
+    <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+      {/* Tab Header */}
+      <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
+        {hasPosko && (
+          <button
+            type="button"
+            onClick={() => setTab("posko")}
+            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer ${
+              activeTab === "posko"
+                ? "border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            <MapPin size={12} />
+            Posko KKN
+          </button>
+        )}
+        {hasFasilitas && (
+          <button
+            type="button"
+            onClick={() => setTab("fasilitas")}
+            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer ${
+              activeTab === "fasilitas"
+                ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            <FileCheck size={12} />
+            Fasilitas Kebersihan
+            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[9.5px] font-extrabold">
+              {facilities.length}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Tab Content */}
+      <div className="p-4 bg-white dark:bg-slate-900">
+        {/* POSKO TAB */}
+        {activeTab === "posko" && posko && (
+          <div className="space-y-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="block font-extrabold text-slate-800 dark:text-slate-100 text-sm">{posko.nama || "Nama Posko Belum Diisi"}</span>
+                {posko.alamat && <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{posko.alamat}</span>}
+              </div>
+              {posko.latitude && posko.longitude && (
+                <a
+                  href={`https://www.google.com/maps?q=${posko.latitude},${posko.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-lg text-[10.5px] font-bold flex items-center gap-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition"
+                >
+                  <MapPin size={11} /> Buka di Google Maps
+                </a>
+              )}
+            </div>
+            {posko.latitude && posko.longitude && (
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                Koordinat: {posko.latitude}, {posko.longitude}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FASILITAS TAB */}
+        {activeTab === "fasilitas" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {facilities.map((f, i) => {
+              const statusColor =
+                f.statusApproval === "APPROVED" || f.statusApproval === "DISETUJUI"
+                  ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-700/40"
+                  : f.statusApproval === "REJECTED" || f.statusApproval === "DITOLAK"
+                  ? "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-700/40"
+                  : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700";
+              return (
+                <div key={i} className={`p-2.5 rounded-xl border text-xs ${statusColor}`}>
+                  <span className="block font-bold text-slate-800 dark:text-slate-100">{f.nama}</span>
+                  <span className="block text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {f.jenis.replace(/_/g, " ")}
+                  </span>
+                  <div className="flex items-center justify-between mt-1.5 gap-1">
+                    <span className={`text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                      f.statusApproval === "APPROVED" || f.statusApproval === "DISETUJUI"
+                        ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300"
+                        : f.statusApproval === "REJECTED" || f.statusApproval === "DITOLAK"
+                        ? "bg-rose-100 dark:bg-rose-900 text-rose-700 dark:text-rose-300"
+                        : "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
+                    }`}>
+                      {f.statusApproval === "APPROVED" || f.statusApproval === "DISETUJUI" ? "✓ Disetujui"
+                       : f.statusApproval === "REJECTED" || f.statusApproval === "DITOLAK" ? "✕ Ditolak"
+                       : "⏳ Menunggu"}
+                    </span>
+                    {f.latitude && f.longitude && (
+                      <a
+                        href={`https://www.google.com/maps?q=${f.latitude},${f.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:underline"
+                      >
+                        <MapPin size={9} /> Lokasi
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const DplDashboardPage: React.FC = () => {
+
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
 
@@ -568,24 +699,14 @@ export const DplDashboardPage: React.FC = () => {
                   </div>
                 </div>
 
-                {selectedGroupForDetail.facilities && selectedGroupForDetail.facilities.length > 0 && (
-                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <h4 className="text-[10.5px] font-bold text-slate-400 uppercase mb-2">Fasilitas Kelompok (Bata Terawang, Loseda, Dll)</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {selectedGroupForDetail.facilities.map((f, i) => (
-                        <div key={i} className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
-                          <span className="block font-bold text-slate-700 dark:text-slate-300">{f.nama}</span>
-                          <span className="block text-[10px] text-slate-500 dark:text-slate-400">{f.jenis.replace(/_/g, " ")} • {f.statusApproval}</span>
-                          {f.latitude && f.longitude && (
-                            <a href={`https://www.google.com/maps?q=${f.latitude},${f.longitude}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex text-[10px] items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline">
-                              <MapPin size={10} /> Lokasi Map
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {/* Posko & Fasilitas — Unified Tabbed Section */}
+                {(selectedGroupForDetail.posko || (selectedGroupForDetail.facilities && selectedGroupForDetail.facilities.length > 0)) && (
+                  <PoskoFasilitasSection
+                    posko={selectedGroupForDetail.posko}
+                    facilities={selectedGroupForDetail.facilities || []}
+                  />
                 )}
+
 
                 {/* Filter & Pencarian Mahasiswa dalam Kelompok */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
@@ -1307,8 +1428,20 @@ export const DplDashboardPage: React.FC = () => {
               <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
                 Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
               </div>
+            ) : effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length === 0 ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+                Belum ada program kerja disetujui.{" "}
+                {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length > 0 && (
+                  <Link to="/program-kerja-kkn?statusUsulan=BELUM_DISETUJUI" className="text-amber-600 dark:text-amber-400 font-semibold hover:underline">
+                    {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length} proker menunggu persetujuan DPL →
+                  </Link>
+                )}
+              </div>
             ) : (
-              effectiveProkers.slice(0, 4).map((p: any) => {
+              effectiveProkers
+                .filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI")
+                .slice(0, 4).map((p: any) => {
+
                 const normU = normalizeStatusUsulan(p.statusUsulan, p.status);
                 const normP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
                 return (
@@ -1550,11 +1683,12 @@ export const DplDashboardPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-xs pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Rerata Presensi Kelompok</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Rerata Presensi Lapangan</span>
                     <strong className="text-emerald-700 dark:text-emerald-400 font-black text-sm bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-200/80 dark:border-emerald-700/40">
                       {g.avgAttendanceRate || 0}%
                     </strong>
                   </div>
+
 
                   <div className="flex items-center gap-2 pt-1">
                     <button
