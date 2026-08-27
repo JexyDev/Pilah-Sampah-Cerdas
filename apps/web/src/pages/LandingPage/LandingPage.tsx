@@ -20,8 +20,15 @@ const Icon: React.FC<{ icon: string; className?: string }> = ({ icon, className 
     "iconamoon:trash": "delete",
     "lucide:home": "home",
     "solar:chart-linear": "monitoring",
+    "lucide:trending-up": "trending_up",
+    "lucide:trending-down": "trending_down",
+    "heroicons:arrow-trending-up": "trending_up",
+    "heroicons:arrow-trending-down": "trending_down",
+    "lucide:arrow-up-right": "north_east",
+    "lucide:arrow-up": "arrow_upward",
+    "lucide:arrow-down": "arrow_downward",
   };
-  return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || "star"}</span>;
+  return <span className={`material-symbols-outlined ${className}`}>{iconMap[icon] || icon}</span>;
 };
 
 // Official High-Resolution BERSEKA Full Logo Asset
@@ -89,56 +96,19 @@ export const LandingPage: React.FC = () => {
     return () => clearInterval(pollInterval);
   }, []);
 
-  // Berita Kegiatan Mahasiswa KKN — real-time dari CMS
-  const [beritaList, setBeritaList] = useState<Array<{
-    id: string;
-    judul: string;
-    ringkasan?: string | null;
-    gambarUrl?: string | null;
-    kategori: string;
-    publishedAt?: string | null;
-    createdAt: string;
-    author?: { name: string } | null;
-  }>>([]);
-
-  useEffect(() => {
-    const fetchBerita = async () => {
-      try {
-        const res = await api.get("/system/landing-curated");
-        if (res.data?.success && Array.isArray(res.data?.data)) {
-          setBeritaList(
-            res.data.data.map((act: any) => ({
-              id: act.id,
-              judul: act.title,
-              ringkasan: act.description,
-              gambarUrl: act.imageUrl,
-              kategori: act.category,
-              publishedAt: act.date,
-              createdAt: act.date,
-              author: { name: "Tim KKN & DLH" },
-            }))
-          );
-        }
-      } catch {
-        // Berita tidak krusial — silent fallback
-      }
-    };
-    fetchBerita();
-    const beritaPoll = setInterval(fetchBerita, 30000);
-    return () => clearInterval(beritaPoll);
-  }, []);
 
 
 
-  // Format bobot sampah selalu dalam satuan kg bulat bersih tanpa koma desimal atau simbol + yang membingungkan
+
+  // Format bobot sampah selalu dalam satuan kg dengan tepat 2 angka di belakang koma (misal: 524,91 kg)
   const formatWasteWeight = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? Math.round(kg) : 525;
-    return `${val.toLocaleString("id-ID")} kg`;
+    const val = typeof kg === "number" ? kg : 524.91;
+    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
   };
 
   const formatWasteWeightExact = (kg: number | undefined) => {
-    const val = typeof kg === "number" ? Math.round(kg) : 525;
-    return `${val.toLocaleString("id-ID")} kg`;
+    const val = typeof kg === "number" ? kg : 524.91;
+    return `${val.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
   };
 
 
@@ -543,12 +513,12 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#58A621] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
-              <div className="flex items-center gap-1.5 justify-center">
+              <div className="flex flex-col items-center justify-center gap-1">
                 <p className="text-2xl font-black text-slate-900 tracking-tight">
-                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
+                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "524,91 kg"}
                 </p>
-                <span className="inline-flex items-center text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200" title="Tren kenaikan pengelolaan sampah">
-                  <Icon icon="lucide:trending-up" className="text-xs mr-0.5" /> +12%
+                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300 shadow-xs" title="Tren kenaikan pengelolaan sampah">
+                  <span className="material-symbols-outlined text-[14px] text-emerald-700 font-bold leading-none select-none">trending_up</span> +12,40%
                 </span>
               </div>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
@@ -689,16 +659,24 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="activity-wrapper">
-                <div className="activity-header">
+                <div className="activity-header flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
                   <div>
-                    <p className="eyebrow">Kegiatan Terbaru</p>
+                    <p className="eyebrow text-emerald-700 font-extrabold text-xs uppercase tracking-widest">
+                      KEGIATAN TERBARU MAHASISWA
+                    </p>
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mt-1">
+                      Kegiatan Mahasiswa KKN & Aksi Lingkungan
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-xl">
+                      Dokumentasi aksi lapangan, program kerja nyata, dan edukasi pemilahan sampah oleh mahasiswa KKN bersama warga dan DLH Kota Bandung.
+                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowAllActivitiesModal(true)}
-                    className="link-more inline-flex items-center gap-1.5 cursor-pointer bg-transparent border-0 font-extrabold text-[#035941] hover:text-[#024633] transition"
+                    className="link-more inline-flex items-center gap-1.5 cursor-pointer bg-transparent border-0 font-extrabold text-[#035941] hover:text-[#024633] transition shrink-0"
                   >
-                    <span>Lihat Semua</span>
+                    <span>Lihat Semua Kegiatan</span>
                     <span>→</span>
                   </button>
                 </div>
@@ -825,96 +803,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
 
-      {/* ----------------- BERITA KEGIATAN KKN (Real-time CMS) ----------------- */}
-      {beritaList.length > 0 && (
-        <section id="berita-kkn" className="py-20 bg-white border-b border-slate-100">
-          <div className="container-custom space-y-10">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow text-emerald-600 font-extrabold text-xs uppercase tracking-widest mb-2">
-                  📰 Berita Terkini
-                </p>
-                <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                  Kegiatan Mahasiswa KKN
-                </h2>
-                <p className="text-sm text-slate-500 mt-2 max-w-lg">
-                  Liputan langsung kegiatan lingkungan dan sosial mahasiswa KKN yang diperbarui secara real-time.
-                </p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {beritaList.map((berita) => {
-                const tanggal = berita.publishedAt || berita.createdAt;
-                const d = new Date(tanggal);
-                const day = d.getDate();
-                const month = d.toLocaleDateString("id-ID", { month: "short" });
-
-                const KATEGORI_LABEL: Record<string, string> = {
-                  KEGIATAN: "Kegiatan KKN",
-                  PENGUMUMAN: "Pengumuman",
-                  PRESTASI: "Prestasi",
-                  LINGKUNGAN: "Lingkungan",
-                  UMUM: "Umum",
-                };
-
-                return (
-                  <article
-                    key={berita.id}
-                    className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col"
-                  >
-                    {/* Cover Image */}
-                    <div className="relative h-44 w-full overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100">
-                      {berita.gambarUrl ? (
-                        <img
-                          src={berita.gambarUrl}
-                          alt={berita.judul}
-                          className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-500"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-5xl opacity-20">🌿</span>
-                        </div>
-                      )}
-                      {/* Date Badge */}
-                      <div className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-white/60 flex flex-col items-center text-center">
-                        <span className="text-sm font-black text-slate-900 leading-none">{day}</span>
-                        <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider leading-none mt-0.5">{month}</span>
-                      </div>
-                      {/* Category Badge */}
-                      <div className="absolute top-3.5 right-3.5 bg-emerald-600/90 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
-                        {KATEGORI_LABEL[berita.kategori] || berita.kategori}
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
-                      <div className="space-y-2">
-                        <h3 className="text-base font-extrabold text-slate-900 leading-snug line-clamp-2">
-                          {berita.judul}
-                        </h3>
-                        {berita.ringkasan && (
-                          <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2">
-                            {berita.ringkasan}
-                          </p>
-                        )}
-                      </div>
-                      {berita.author && (
-                        <p className="text-[11px] text-slate-400 font-semibold">
-                          oleh {berita.author.name}
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ----------------- 02. WHY US ----------------- */}
       <section id="why-us" className="py-24 bg-[#f0fdf4] border-b border-[#dcfce7]">
@@ -1175,7 +1064,7 @@ export const LandingPage: React.FC = () => {
                     </p>
 
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "525 kg"} terkelola.
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "524,91 kg"} terkelola.
                     </p>
                   </div>
 
@@ -1248,10 +1137,10 @@ export const LandingPage: React.FC = () => {
                 Volume Sampah Terkelola
               </span>
 
-              <span className="dampak-value flex items-center justify-center sm:justify-start gap-2">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "525 kg"}
-                <span className="inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200" title="Tren peningkatan pengelolaan sampah">
-                  <Icon icon="lucide:trending-up" className="text-xs mr-1" /> +12.4%
+              <span className="dampak-value flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "524,91 kg"}
+                <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300 shadow-xs" title="Tren peningkatan pengelolaan sampah">
+                  <span className="material-symbols-outlined text-[15px] text-emerald-700 font-bold leading-none select-none">trending_up</span> +12,40%
                 </span>
               </span>
 

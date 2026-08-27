@@ -889,4 +889,50 @@ router.get(
   kknController.getDampakKelurahan
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/timeline:
+ *   get:
+ *     summary: Linimasa resmi KKN Mahasiswa beserta Rekomendasi Aksi & Pertanyaan Kritis
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: fase
+ *         schema:
+ *           type: string
+ *         description: Filter fase KKN (e.g. Pra-Kegiatan, Fase 1, Fase 2, Fase 3, Fase 4)
+ *       - in: query
+ *         name: statusPelaksanaan
+ *         schema:
+ *           type: string
+ *         description: Filter status pelaksanaan (BELUM_DIMULAI, SEDANG_BERJALAN, SELESAI)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Pencarian teks kegiatan atau rekomendasi
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat linimasa KKN, rekomendasi aksi, dan pertanyaan kritis
+ */
+router.get(
+  ["/timeline", "/linimasa"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "CAMAT",
+    "LURAH",
+    "RW",
+  ]),
+  kknController.getTimelineMahasiswa
+);
+
 export default router;

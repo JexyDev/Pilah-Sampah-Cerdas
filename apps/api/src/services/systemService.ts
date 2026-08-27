@@ -310,10 +310,10 @@ export const systemService = {
     const manualKg = Number(setoranManualAggregate._sum?.berat || 0);
     const otomatisKg = Number(setoranOtomatisAggregate._sum?.berat || 0);
     const pemanfaatanKg = Number(pemanfaatanAggregate.sum || 0);
-    const rawTotalKg = Math.round(manualKg + otomatisKg + pemanfaatanKg);
+    const rawTotalKg = Number((manualKg + otomatisKg + pemanfaatanKg).toFixed(2));
 
     // If database tables have records, use exact real sums
-    const totalSampahKg = rawTotalKg > 0 ? rawTotalKg : (manualKg + otomatisKg + pemanfaatanKg);
+    const totalSampahKg = rawTotalKg > 0 ? rawTotalKg : Number((manualKg + otomatisKg + pemanfaatanKg).toFixed(2));
     const totalPoin = Number(totalPoinAggregate._sum?.points || 0);
     const totalPenjemputan = manualPenjemputanCount + otomatisPenjemputanCount;
     const finalKegiatanCount = scheduleCount + approvedLogbookCount;

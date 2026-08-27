@@ -48,6 +48,47 @@ export const timelineKknController = {
     }
   },
 
+  /**
+   * Endpoint Terstruktur Mobile Mahasiswa: Linimasa dengan Rekomendasi Aksi & Pertanyaan Kritis
+   */
+  getTimelineMahasiswa: async (req: Request, res: Response) => {
+    try {
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+
+      const result = await timelineKknService.getTimelineMahasiswa(
+        {
+          kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
+          fase: fase ? String(fase) : undefined,
+          statusPelaksanaan: statusPelaksanaan ? String(statusPelaksanaan) : undefined,
+          search: search ? String(search) : undefined,
+          startDate: startDate ? String(startDate) : undefined,
+          endDate: endDate ? String(endDate) : undefined,
+        },
+        userId,
+        userRole
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat linimasa program KKN beserta rekomendasi dan pertanyaan kritis",
+        summary: result.summary,
+        fases: result.fases,
+        data: result.data,
+      });
+    } catch (error: any) {
+      console.error("[timelineKknController.getTimelineMahasiswa] error:", error);
+      res.status(500).json({
+        success: false,
+        message: error?.message || "Internal server error",
+      });
+    }
+  },
+
   getById: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
