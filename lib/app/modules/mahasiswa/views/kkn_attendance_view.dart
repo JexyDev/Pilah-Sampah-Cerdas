@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 
@@ -148,144 +150,335 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
   ) async {
     final user = ref.read(authProvider).user;
     if (user == null) return;
-
     final kelompokState = ref.read(kelompokKknProvider);
-    final kelompokName =
-        (kelompokState.kelompok?.groupName != null &&
-            kelompokState.kelompok!.groupName.isNotEmpty)
+    final kelompokName = kelompokState.kelompok?.groupName.isNotEmpty == true
         ? kelompokState.kelompok!.groupName
-        : (user.kelompokName.isNotEmpty
-              ? user.kelompokName
-              : 'Kelompok 1 Cipaganti');
-    final dplName =
-        (kelompokState.kelompok?.dosenPembimbing != null &&
-            kelompokState.kelompok!.dosenPembimbing.isNotEmpty)
+        : (user.kelompokName.isNotEmpty ? user.kelompokName : '-');
+    final dplName = kelompokState.kelompok?.dosenPembimbing.isNotEmpty == true
         ? kelompokState.kelompok!.dosenPembimbing
-        : (user.dplName.isNotEmpty ? user.dplName : 'DPL KKN');
+        : (user.dplName.isNotEmpty ? user.dplName : '-');
+    final namaKegiatan =
+        state.activeActivity?['namaKegiatan'] ??
+        state.activeActivity?['nama'] ??
+        '-';
 
-    final bool confirm =
-        await showDialog<bool>(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: const Row(
-                children: [
-                  Icon(
-                    Icons.assignment_turned_in_rounded,
-                    color: AppColors.primaryGreen,
-                    size: 28,
+    File? fotoFile;
+    final picker = ImagePicker();
+    bool isLoading = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final deskripsiCtrl = TextEditingController();
+
+          Future<void> pickImage(ImageSource source) async {
+            final picked = await picker.pickImage(
+              source: source,
+              imageQuality: 70,
+              maxWidth: 1280,
+            );
+            if (picked != null) {
+              setModalState(() => fotoFile = File(picked.path));
+            }
+          }
+
+          Future<void> submit() async {
+            if (fotoFile == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Foto dokumentasi wajib diisi.'),
+                  backgroundColor: AppColors.dangerRed,
+                ),
+              );
+              return;
+            }
+            final deskripsi = deskripsiCtrl.text.trim();
+            if (deskripsi.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Deskripsi kegiatan wajib diisi.'),
+                  backgroundColor: AppColors.dangerRed,
+                ),
+              );
+              return;
+            }
+            setModalState(() => isLoading = true);
+            Navigator.pop(ctx);
+            final success = await notifier.recordAttendance(
+              method: 'GPS_VALIDATED',
+              kodeZona: _kodeZonaCtrl.text.trim(),
+              rw: _rtRwCtrl.text.trim(),
+              kelurahan: _selectedKelurahan,
+              deskripsiKegiatan: deskripsi,
+              fotoPath: fotoFile!.path,
+            );
+            if (mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Presensi Selesai Kegiatan berhasil!'),
+                    backgroundColor: AppColors.primaryGreen,
+                    behavior: SnackBarBehavior.floating,
                   ),
-                  SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      'Konfirmasi Kehadiran',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                );
+              } else {
+                final err = ref.read(kknLocationProvider).error ??
+                    'Gagal melakukan presensi. Periksa GPS & koneksi internet.';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(err),
+                    backgroundColor: AppColors.dangerRed,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
+          }
+
+          final durasiMenit = state.inZoneDurationSeconds ~/ 60;
+          final durasiDetik = state.inZoneDurationSeconds % 60;
+          final waktu = DateTime.now().toLocal().toString().substring(0, 16);
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 16,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                  ),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildPopupRow(
-                    'Kegiatan',
-                    state.activeActivity?['namaKegiatan'] ??
-                        state.activeActivity?['nama'] ??
-                        '',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildPopupRow(
-                    'Waktu',
-                    DateTime.now().toLocal().toString().substring(0, 16),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildPopupRow('Nama', user.name),
-                  const SizedBox(height: 8),
-                  _buildPopupRow('NIM', user.nim.isNotEmpty ? user.nim : '-'),
-                  const SizedBox(height: 8),
-                  _buildPopupRow('Kelompok', kelompokName),
-                  const SizedBox(height: 8),
-                  _buildPopupRow('DPL', dplName),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Apakah Anda yakin ingin melakukan absensi sekarang?',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text(
-                    'Batal',
-                    style: TextStyle(color: AppColors.textHint),
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Selesai Kegiatan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
                   ),
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text(
-                    'Absen',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildInfoRow('Kegiatan', namaKegiatan),
+                      const SizedBox(height: 6),
+                      _buildInfoRow('Waktu', waktu),
+                      const SizedBox(height: 6),
+                      _buildInfoRow('Nama', user.name),
+                      const SizedBox(height: 6),
+                      _buildInfoRow('NIM', user.nim.isNotEmpty ? user.nim : '-'),
+                      const SizedBox(height: 6),
+                      _buildInfoRow('Kelompok', kelompokName),
+                      const SizedBox(height: 6),
+                      _buildInfoRow('DPL', dplName),
+                      const SizedBox(height: 6),
+                      _buildInfoRow(
+                        'Durasi di Zona',
+                        '$durasiMenit mnt $durasiDetik dtk',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Foto Dokumentasi *',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (fotoFile != null) ...[
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          fotoFile!,
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: GestureDetector(
+                          onTap: () => setModalState(() => fotoFile = null),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => pickImage(ImageSource.camera),
+                          icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                          label: const Text('Kamera'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryGreen,
+                            side: const BorderSide(color: AppColors.primaryGreen),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => pickImage(ImageSource.gallery),
+                          icon: const Icon(Icons.photo_library_outlined, size: 18),
+                          label: const Text('Galeri'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryGreen,
+                            side: const BorderSide(color: AppColors.primaryGreen),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Deskripsi Kegiatan *',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: deskripsiCtrl,
+                  maxLength: 500,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Ceritakan kegiatan yang telah dilakukan...',
+                    hintStyle: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textHint,
                     ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: AppColors.primaryGreen),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Selesaikan Kegiatan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
                   ),
                 ),
               ],
-            );
-          },
-        ) ??
-        false;
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-    if (confirm) {
-      final success = await notifier.recordAttendance(
-        method: 'GPS_VALIDATED',
-        kodeZona: _kodeZonaCtrl.text.trim(),
-        rw: _rtRwCtrl.text.trim(),
-        kelurahan: _selectedKelurahan,
-      );
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Presensi Mulai Kegiatan berhasil! (+10 Poin)'),
-              backgroundColor: AppColors.primaryGreen,
-              behavior: SnackBarBehavior.floating,
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
             ),
-          );
-        } else {
-          final err =
-              ref.read(kknLocationProvider).error ??
-              'Gagal melakukan presensi. Silakan periksa GPS & koneksi internet Anda.';
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(err),
-              backgroundColor: AppColors.dangerRed,
-              behavior: SnackBarBehavior.floating,
+          ),
+        ),
+        const Text(': ', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
-          );
-        }
-      }
-    }
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildPopupRow(String label, String value) {

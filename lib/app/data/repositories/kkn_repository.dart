@@ -47,6 +47,8 @@ abstract class KknRepository {
     int? durationMinutes,
     int? accumulatedSeconds,
     String? timestamp,
+    String? deskripsiKegiatan,
+    String? fotoPath,
   });
 
   /// Mengambil daftar warga (untuk fitur aktivasi)
@@ -122,9 +124,9 @@ abstract class KknRepository {
   Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo});
 
   /// Akhiri kegiatan KKN
-  /// POST /api/v1/kkn/kegiatan/{id}/selesai
+  /// POST /api/v1/kkn/kegiatan/{id}/selesai (multipart/form-data)
   Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan});
-  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan});
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude});
 
   /// Catat pelanggaran keluar zona (penalti poin)
   /// POST /api/v1/kkn/out-of-zone-violation

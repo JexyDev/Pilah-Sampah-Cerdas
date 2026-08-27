@@ -236,6 +236,8 @@ class ApiKknRepository implements KknRepository {
     int? durationMinutes,
     int? accumulatedSeconds,
     String? timestamp,
+    String? deskripsiKegiatan,
+    String? fotoPath,
   }) async {
     try {
       final totalMenit = (durationMinutes != null && durationMinutes > 0)
@@ -247,6 +249,10 @@ class ApiKknRepository implements KknRepository {
         totalDurasiDalamZonaMenit: totalMenit,
         accumulatedSeconds: accumulatedSeconds,
         alasan: 'Presensi Selesai (Pulang)',
+        deskripsiKegiatan: deskripsiKegiatan,
+        fotoPath: fotoPath,
+        latitude: latitude,
+        longitude: longitude,
       );
       return response;
     } catch (e) {
@@ -663,8 +669,46 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan}) async {
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude}) async {
     try {
+      // Jika ada foto, kirim sebagai multipart/form-data
+      if (fotoPath != null && fotoPath.isNotEmpty) {
+        final fileExt = fotoPath.split('.').last.toLowerCase();
+        String mimeType = 'image/jpeg';
+        if (fileExt == 'png') mimeType = 'image/png';
+        if (fileExt == 'webp') mimeType = 'image/webp';
+
+        final formData = FormData.fromMap({
+          'sessionId': sessionId,
+          'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
+          if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
+          'alasan': alasan,
+          if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty)
+            'deskripsiKegiatan': deskripsiKegiatan,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+          'foto': await MultipartFile.fromFile(
+            fotoPath,
+            filename: 'dokumentasi_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+            contentType: MediaType.parse(mimeType),
+          ),
+        });
+
+        final response = await apiClient.dio.post(
+          ApiEndpoints.kknSelesaiKegiatan(id),
+          data: formData,
+          options: Options(
+            sendTimeout: const Duration(seconds: 120),
+            receiveTimeout: const Duration(seconds: 120),
+          ),
+        );
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          return response.data as Map<String, dynamic>? ?? {'success': true};
+        }
+        throw Exception('Gagal mengakhiri kegiatan');
+      }
+
+      // Tanpa foto — JSON biasa (fallback)
       final response = await apiClient.dio.post(
         ApiEndpoints.kknSelesaiKegiatan(id),
         data: {
@@ -672,6 +716,10 @@ class ApiKknRepository implements KknRepository {
           'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
           if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
+          if (deskripsiKegiatan != null && deskripsiKegiatan.isNotEmpty)
+            'deskripsiKegiatan': deskripsiKegiatan,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {

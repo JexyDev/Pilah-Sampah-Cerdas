@@ -577,7 +577,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   /// Selesai kegiatan: panggil endpoint, lalu stop GPS background
-  Future<bool> selesaiKegiatan({String alasan = 'SELESAI'}) async {
+  Future<bool> selesaiKegiatan({String alasan = 'SELESAI', String? deskripsiKegiatan, String? fotoPath}) async {
     final scheduleId =
         _currentTargetScheduleId ??
         state.activeActivity?['scheduleId']?.toString() ??
@@ -594,12 +594,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     try {
       final repo = ref.read(kknRepositoryProvider);
       final totalMenit = (_accumulatedSeconds / 60).ceil();
+      final pos = state.currentPosition;
       await repo.selesaiKegiatan(
         scheduleId,
         sessionId: sessionId,
         totalDurasiDalamZonaMenit: totalMenit,
         accumulatedSeconds: _accumulatedSeconds,
         alasan: alasan,
+        deskripsiKegiatan: deskripsiKegiatan,
+        fotoPath: fotoPath,
+        latitude: pos?.latitude,
+        longitude: pos?.longitude,
       );
       isSuccess = true;
       // Segarkan data dashboard (Poin) & Notifikasi
@@ -1848,6 +1853,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     required String kodeZona,
     required String rw,
     required String kelurahan,
+    String? deskripsiKegiatan,
+    String? fotoPath,
   }) async {
     // Bug #6 fix: guard null scheduleId — jangan fallback ke ID fiktif 'SCH-TODAY'
     if (_currentTargetScheduleId == null) {
@@ -1891,6 +1898,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         durationMinutes: durationMinutes,
         accumulatedSeconds: accumulatedSeconds,
         timestamp: DateTime.now().toUtc().toIso8601String(),
+        deskripsiKegiatan: deskripsiKegiatan,
+        fotoPath: fotoPath,
       );
 
       final isSuccess = response.containsKey('success')
