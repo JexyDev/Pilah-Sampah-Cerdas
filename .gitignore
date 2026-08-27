@@ -73,6 +73,7 @@ deploy_*.cjs
 check_*.js
 sync_*.js
 scripts/vps/
+scripts/tools/
 *.tmp.*
 
 # Logs & Temporary files
