@@ -142,6 +142,9 @@ const checkRouteActive = (
     const presensiAliases = ["/monitoring-kegiatan/presensi", "/monitoring-absen"];
     if (presensiAliases.includes(tPath) && presensiAliases.includes(cPath)) return true;
 
+    const laporanPresensiAliases = ["/monitoring-kegiatan/laporan-presensi", "/laporan-presensi"];
+    if (laporanPresensiAliases.includes(tPath) && laporanPresensiAliases.includes(cPath)) return true;
+
     const izinAliases = ["/monitoring-kegiatan/pengajuan-izin", "/ajuan-absensi", "/validasi-absensi"];
     if (izinAliases.includes(tPath) && izinAliases.includes(cPath)) return true;
 
@@ -821,6 +824,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
+              ] as UserRole[],
+            },
+            {
+              to: "/monitoring-kegiatan/laporan-presensi",
+              label: "Laporan Presensi",
+              allowed: [
+                "DEVELOPER",
+                "SUPER_USER",
+                "ADMIN_DLH",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
               ] as UserRole[],
             },
             {

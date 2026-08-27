@@ -136,6 +136,20 @@ export class SystemController {
   }
 
   /**
+   * Get real student Program Kerja sources as candidates for curation
+   */
+  async getRealProkerSources(req: Request, res: Response): Promise<void> {
+    try {
+      const prokers = await systemService.getRealProkerSources();
+      res.status(200).json({ success: true, data: prokers });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
    * Publish new APK release (SUPER_USER only)
    */
   async publishRelease(req: Request, res: Response): Promise<void> {

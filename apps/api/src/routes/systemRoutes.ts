@@ -91,6 +91,12 @@ router.get(
   roleMiddleware(["DEVELOPER"]),
   systemController.getApprovedLogbookSources
 );
+router.get(
+  "/landing-curated/proker-sources",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  systemController.getRealProkerSources
+);
 
 /**
  * Social Feed management

@@ -18,6 +18,8 @@ import {
   Save,
   RefreshCw,
   Image as ImageIcon,
+  BookOpen,
+  Layers,
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -58,10 +60,12 @@ export const KurasiLandingPage: React.FC = () => {
     isPublished: true,
   });
 
-  // Logbook candidate import modal state
-  const [showLogbookModal, setShowLogbookModal] = useState<boolean>(false);
+  // Candidate import modal state (Proker & Logbook)
+  const [showCandidateModal, setShowCandidateModal] = useState<boolean>(false);
+  const [candidateTab, setCandidateTab] = useState<"proker" | "logbook">("proker");
+  const [prokerCandidates, setProkerCandidates] = useState<any[]>([]);
   const [logbookCandidates, setLogbookCandidates] = useState<any[]>([]);
-  const [loadingLogbooks, setLoadingLogbooks] = useState<boolean>(false);
+  const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
 
   const presetImages = [
     { label: "Edukasi & Sosialisasi", url: "/image/activity-1.png" },
@@ -82,6 +86,7 @@ export const KurasiLandingPage: React.FC = () => {
 
   const sdgOptions = [
     { tag: "#3", label: "SDG 3: Kehidupan Sehat & Sejahtera" },
+    { tag: "#4", label: "SDG 4: Pendidikan Berkualitas" },
     { tag: "#11", label: "SDG 11: Kota & Permukiman Berkelanjutan" },
     { tag: "#12", label: "SDG 12: Konsumsi & Produksi Bertanggung Jawab" },
     { tag: "#13", label: "SDG 13: Penanganan Perubahan Iklim" },
@@ -182,20 +187,78 @@ export const KurasiLandingPage: React.FC = () => {
     }
   };
 
-  const fetchLogbookCandidates = async () => {
-    setLoadingLogbooks(true);
-    setShowLogbookModal(true);
+  const fetchCandidateSources = async () => {
+    setLoadingCandidates(true);
+    setShowCandidateModal(true);
     try {
-      const res = await api.get("/system/landing-curated/logbook-sources");
-      if (res.data?.success && Array.isArray(res.data?.data)) {
-        setLogbookCandidates(res.data.data);
+      const [resLogbook, resProker] = await Promise.all([
+        api.get("/system/landing-curated/logbook-sources"),
+        api.get("/system/landing-curated/proker-sources"),
+      ]);
+      if (resLogbook.data?.success && Array.isArray(resLogbook.data?.data)) {
+        setLogbookCandidates(resLogbook.data.data);
+      }
+      if (resProker.data?.success && Array.isArray(resProker.data?.data)) {
+        setProkerCandidates(resProker.data.data);
       }
     } catch (err) {
-      console.warn("[KurasiLandingPage] Failed fetching logbooks:", err);
-      showToast.error("Gagal memuat logbook KKN");
+      console.warn("[KurasiLandingPage] Failed fetching candidate sources:", err);
+      showToast.error("Gagal memuat kandidat kegiatan KKN");
     } finally {
-      setLoadingLogbooks(false);
+      setLoadingCandidates(false);
     }
+  };
+
+  const handleImportProker = (proker: any) => {
+    const rawDesc = proker.deskripsi || "";
+    // Bersihkan judul markdown (misal **Bakti Sosial**)
+    const lines = rawDesc.split("\n").map((l: string) => l.trim()).filter(Boolean);
+    let title = lines[0] || "Program Kerja Mahasiswa KKN";
+    title = title.replace(/\*\*/g, "").replace(/^#+\s*/, "");
+    if (proker.kelompokNama) {
+      title += ` - ${proker.kelompokNama}`;
+    }
+
+    const cleanDesc = lines.slice(1).join("\n\n") || rawDesc.replace(/\*\*/g, "");
+    const locationText = proker.kelurahan
+      ? `Kelurahan ${proker.kelurahan}, Kec. Coblong`
+      : "Kecamatan Coblong, Kota Bandung";
+
+    let category = "Aksi Bersih Lingkungan";
+    let img = "/image/activity-1.png";
+    let sdgTags = ["#11", "#12"];
+
+    const catLower = (proker.kategori || "").toLowerCase();
+    const descLower = rawDesc.toLowerCase();
+
+    if (catLower.includes("pengolahan") || descLower.includes("kompos") || descLower.includes("maggot")) {
+      category = "Pengolahan Kompos & Maggot";
+      img = "/image/activity-2.png";
+      sdgTags = ["#12", "#13", "#15"];
+    } else if (catLower.includes("pemilahan") || descLower.includes("pilah") || descLower.includes("edukasi")) {
+      category = "Edukasi Pemilahan";
+      img = "/image/activity-1.png";
+      sdgTags = ["#3", "#11", "#12"];
+    } else if (catLower.includes("pemanfaatan") || descLower.includes("daur ulang") || descLower.includes("bank sampah")) {
+      category = "Pemanfaatan Daur Ulang";
+      img = "/image/activity-3.png";
+      sdgTags = ["#11", "#12", "#13"];
+    }
+
+    setEditingIndex(null);
+    setFormData({
+      id: `curated-proker-${proker.id || Date.now()}`,
+      title,
+      date: new Date().toISOString().slice(0, 10),
+      location: locationText,
+      category,
+      imageUrl: img,
+      description: cleanDesc,
+      sdgTags,
+      isPublished: true,
+    });
+    setShowCandidateModal(false);
+    setShowModal(true);
   };
 
   const handleImportLogbook = (logbook: any) => {
@@ -204,12 +267,16 @@ export const KurasiLandingPage: React.FC = () => {
       : new Date().toISOString().slice(0, 10);
 
     const locationText = logbook.tempat
-      ? `${logbook.tempat}, Kelurahan ${logbook.kelompok?.kelurahan || "Coblong"}`
-      : `Kelurahan ${logbook.kelompok?.kelurahan || "Lebak Gede"}, Kec. Coblong`;
+      ? `${logbook.tempat}, Kelurahan ${logbook.kelurahan || "Coblong"}`
+      : `Kelurahan ${logbook.kelurahan || "Lebak Gede"}, Kec. Coblong`;
 
-    const cleanTitle = logbook.programKerja?.deskripsi
-      ? `${logbook.programKerja.deskripsi} (${logbook.kelompok?.name || "KKN"})`
-      : `Aksi Lingkungan di ${logbook.tempat || "Coblong"}`;
+    const cleanTitle = logbook.prokerDeskripsi
+      ? `${logbook.prokerDeskripsi.replace(/\*\*/g, "").slice(0, 60)} (${logbook.kelompokNama || "KKN"})`
+      : logbook.deskripsi
+      ? logbook.deskripsi.split("\n")[0].replace(/\*\*/g, "").slice(0, 75)
+      : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Coblong"}`;
+
+    let img = logbook.fotoBuktiUrl || "/image/activity-1.png";
 
     setEditingIndex(null);
     setFormData({
@@ -217,14 +284,73 @@ export const KurasiLandingPage: React.FC = () => {
       title: cleanTitle,
       date: rawDate,
       location: locationText,
-      category: logbook.programKerja?.kategori || "Aksi Bersih Lingkungan",
-      imageUrl: logbook.fotoBuktiUrl || "/image/activity-1.png",
+      category: logbook.prokerKategori || "Edukasi & Sosialisasi",
+      imageUrl: img,
       description: logbook.deskripsi || "Dokumentasi kegiatan lapangan mahasiswa KKN terpadu bersama masyarakat.",
       sdgTags: ["#3", "#11", "#12"],
       isPublished: true,
     });
-    setShowLogbookModal(false);
+    setShowCandidateModal(false);
     setShowModal(true);
+  };
+
+  const handleResetToRealProkerDefaults = async () => {
+    if (!window.confirm("Muat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil?")) {
+      return;
+    }
+    const realDefaults: CuratedActivityItem[] = [
+      {
+        id: "curated-1",
+        title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
+        date: "2026-08-27",
+        location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
+        category: "Edukasi & Sosialisasi",
+        imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
+        description:
+          "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
+        sdgTags: ["#11", "#12", "#13"],
+        isPublished: true,
+      },
+      {
+        id: "curated-2",
+        title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
+        date: "2026-08-27",
+        location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
+        category: "Edukasi Pemilahan",
+        imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+        description:
+          "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
+        sdgTags: ["#4", "#12", "#15"],
+        isPublished: true,
+      },
+      {
+        id: "curated-3",
+        title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
+        date: "2026-08-27",
+        location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
+        category: "Pengolahan & Pemanfaatan",
+        imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
+        description:
+          "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
+        sdgTags: ["#12", "#13", "#15"],
+        isPublished: true,
+      },
+      {
+        id: "curated-4",
+        title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
+        date: "2026-08-27",
+        location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
+        category: "Aksi Bersih Lingkungan",
+        imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
+        description:
+          "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
+        sdgTags: ["#3", "#11", "#12"],
+        isPublished: true,
+      },
+    ];
+
+    setActivities(realDefaults);
+    await saveActivitiesToServer(realDefaults, true);
   };
 
   const toggleSdgTag = (tag: string) => {
@@ -277,11 +403,20 @@ export const KurasiLandingPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
             <button
-              onClick={fetchLogbookCandidates}
+              onClick={handleResetToRealProkerDefaults}
+              className="px-4 py-2.5 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-2xs"
+              title="Reset dan isi otomatis kurasi dengan program kerja mahasiswa KKN riil"
+            >
+              <Sparkles size={15} />
+              <span>Sinkronkan Sorotan Proker Real</span>
+            </button>
+
+            <button
+              onClick={fetchCandidateSources}
               className="px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-2xs"
             >
               <Download size={15} />
-              <span>Tarik dari Logbook KKN</span>
+              <span>Tarik dari Proker / Logbook Real</span>
             </button>
 
             <button
@@ -638,43 +773,112 @@ export const KurasiLandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* ----------------- MODAL IMPOR DARI LOGBOOK KKN ----------------- */}
-      {showLogbookModal && (
+      {/* ----------------- MODAL IMPOR DARI PROKER & LOGBOOK KKN RIIL ----------------- */}
+      {showCandidateModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 dark:border-slate-800 my-8 max-h-[85vh] flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 dark:border-slate-800 my-8 max-h-[88vh] flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Download size={16} />
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+                    <Download size={18} />
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">
-                      Pilih dari Logbook KKN Lapangan
+                      Tarik dari Data Mahasiswa KKN (Riil)
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Menampilkan kegiatan mahasiswa KKN yang telah berfoto bukti dan disetujui DPL.
+                      Pilih program kerja atau logbook mahasiswa KKN dari database untuk dijadikan sorotan Landing Page.
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowLogbookModal(false)}
-                  className="text-slate-400 hover:text-slate-700 transition"
+                  onClick={() => setShowCandidateModal(false)}
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition text-lg"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="py-4 space-y-3 overflow-y-auto max-h-[50vh] pr-1">
-                {loadingLogbooks ? (
+              {/* Tabs Switcher */}
+              <div className="flex items-center gap-2 pt-4 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setCandidateTab("proker")}
+                  className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-2 transition cursor-pointer ${
+                    candidateTab === "proker"
+                      ? "bg-[#035941] text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                  }`}
+                >
+                  <BookOpen size={14} />
+                  <span>Program Kerja Mahasiswa ({prokerCandidates.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCandidateTab("logbook")}
+                  className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-2 transition cursor-pointer ${
+                    candidateTab === "logbook"
+                      ? "bg-[#035941] text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                  }`}
+                >
+                  <Layers size={14} />
+                  <span>Logbook Lapangan ({logbookCandidates.length})</span>
+                </button>
+              </div>
+
+              <div className="py-2 space-y-3 overflow-y-auto max-h-[48vh] pr-1">
+                {loadingCandidates ? (
                   <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
                     <RefreshCw size={24} className="animate-spin text-emerald-600" />
-                    <span className="text-xs">Memeriksa logbook terverifikasi...</span>
+                    <span className="text-xs">Memuat data riil dari database...</span>
                   </div>
+                ) : candidateTab === "proker" ? (
+                  prokerCandidates.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 text-xs font-semibold">
+                      Belum ada data Program Kerja Mahasiswa KKN di database.
+                    </div>
+                  ) : (
+                    prokerCandidates.map((proker) => (
+                      <div
+                        key={proker.id}
+                        className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-emerald-500 transition"
+                      >
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                              {proker.kelompokNama || "Kelompok KKN"}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/40">
+                              {proker.kategori || "Program Kerja"}
+                            </span>
+                            {proker.kelurahan && (
+                              <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                                <MapPin size={11} />
+                                Kel. {proker.kelurahan}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug">
+                            {(proker.deskripsi || "").replace(/\*\*/g, "")}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleImportProker(proker)}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shrink-0 cursor-pointer shadow-xs"
+                        >
+                          Impor Proker →
+                        </button>
+                      </div>
+                    ))
+                  )
                 ) : logbookCandidates.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-xs font-semibold">
-                    Belum ada logbook KKN dengan foto yang disetujui DPL.
+                    Belum ada logbook KKN lapangan di database.
                   </div>
                 ) : (
                   logbookCandidates.map((log) => (
@@ -682,32 +886,32 @@ export const KurasiLandingPage: React.FC = () => {
                       key={log.id}
                       className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-emerald-500 transition"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
                         {log.fotoBuktiUrl ? (
                           <img
                             src={log.fotoBuktiUrl}
                             alt="Bukti"
-                            className="w-16 h-16 rounded-xl object-cover shrink-0 border border-slate-200"
+                            className="w-14 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/image/activity-1.png";
                             }}
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-xl bg-slate-200 flex items-center justify-center shrink-0">
-                            <ImageIcon size={20} className="text-slate-400" />
+                          <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                            <ImageIcon size={18} className="text-slate-400" />
                           </div>
                         )}
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                              {log.kelompok?.name || "KKN"}
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                              {log.kelompokNama || "KKN"}
                             </span>
                             <span className="text-[11px] text-slate-400 font-semibold">
                               {log.tanggalKegiatan ? new Date(log.tanggalKegiatan).toLocaleDateString("id-ID") : "-"}
                             </span>
                           </div>
                           <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200 line-clamp-1">
-                            {log.tempat ? `Kegiatan di ${log.tempat}` : log.deskripsi}
+                            {log.tempat ? `Kegiatan di ${log.tempat}` : log.prokerDeskripsi ? log.prokerDeskripsi.replace(/\*\*/g, "") : log.deskripsi}
                           </p>
                           <p className="text-[11px] text-slate-500 line-clamp-1">
                             {log.deskripsi}
@@ -720,7 +924,7 @@ export const KurasiLandingPage: React.FC = () => {
                         onClick={() => handleImportLogbook(log)}
                         className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shrink-0 cursor-pointer shadow-xs"
                       >
-                        Pilih Kegiatan →
+                        Impor Logbook →
                       </button>
                     </div>
                   ))
@@ -731,8 +935,8 @@ export const KurasiLandingPage: React.FC = () => {
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowLogbookModal(false)}
-                className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs"
+                onClick={() => setShowCandidateModal(false)}
+                className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs cursor-pointer hover:bg-slate-200"
               >
                 Tutup
               </button>

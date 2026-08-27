@@ -53,6 +53,7 @@ import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
 import { AuditTrailList } from "../pages/SuperUser/AuditTrailList";
 import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
+import LaporanPresensiPage from "../pages/MonitoringAbsen/LaporanPresensiPage";
 import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
 import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
 import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
@@ -183,6 +184,22 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
               <MonitoringAbsen />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/monitoring-kegiatan/laporan-presensi"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+              <LaporanPresensiPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/laporan-presensi"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL", "DOSEN_PEMBIMBING"]}>
+              <LaporanPresensiPage />
             </ProtectedRoute>
           }
         />
