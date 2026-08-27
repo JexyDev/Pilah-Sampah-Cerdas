@@ -2338,20 +2338,98 @@ export class KknAttendanceService {
       orderBy: { createdAt: "desc" },
     });
 
-    if (schedules.length === 0) {
-      schedules = await prisma.schedule.findMany({
-        where: {
-          date: { gte: yesterdayStart, lte: endOfDay },
-          isActive: true,
-        },
+    if (schedules.length === 0 && student?.kelompokId) {
+      // Look up group & registered Posko
+      const group = await prisma.kelompokKkn.findUnique({
+        where: { id: student.kelompokId },
         include: {
-          kelompok: true,
-          attendances: {
-            where: { studentId: userId },
+          facilities: {
+            where: { jenis: "posko_kkn" },
+            orderBy: { createdAt: "desc" },
+            take: 1,
           },
         },
-        orderBy: { createdAt: "desc" },
       });
+
+      const registeredPosko = group?.facilities?.[0];
+      let poskoLat = -6.8915; // default Coblong
+      let poskoLng = 107.6107;
+      let poskoName = `Posko KKN ${group?.name || "Mahasiswa"}`;
+      const poskoRadius = 200;
+
+      if (registeredPosko) {
+        poskoLat = Number(registeredPosko.latitude);
+        poskoLng = Number(registeredPosko.longitude);
+        poskoName = registeredPosko.nama || poskoName;
+      } else {
+        // Fallback berdasarkan kelurahan resmi
+        const kel = (group?.kelurahan || group?.name || "").toLowerCase();
+        if (kel.includes("dago")) {
+          poskoLat = -6.8833;
+          poskoLng = 107.6167;
+          poskoName = `Posko KKN ${group?.name || "Dago"} - Kel. Dago`;
+        } else if (kel.includes("cipaganti")) {
+          poskoLat = -6.8912;
+          poskoLng = 107.6035;
+          poskoName = `Posko KKN ${group?.name || "Cipaganti"} - Kel. Cipaganti`;
+        } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
+          poskoLat = -6.8875;
+          poskoLng = 107.6133;
+          poskoName = `Posko KKN ${group?.name || "Lebak Gede"} - Kel. Lebak Gede`;
+        } else if (kel.includes("lebak siliwangi")) {
+          poskoLat = -6.8892;
+          poskoLng = 107.6083;
+          poskoName = `Posko KKN ${group?.name || "Lebak Siliwangi"} - Kel. Lebak Siliwangi`;
+        } else if (kel.includes("sadang serang")) {
+          poskoLat = -6.8917;
+          poskoLng = 107.6250;
+          poskoName = `Posko KKN ${group?.name || "Sadang Serang"} - Kel. Sadang Serang`;
+        } else if (kel.includes("sekeloa")) {
+          poskoLat = -6.8900;
+          poskoLng = 107.6200;
+          poskoName = `Posko KKN ${group?.name || "Sekeloa"} - Kel. Sekeloa`;
+        }
+      }
+
+      // Upsert automatic daily schedule in database for today
+      try {
+        const defaultDailySchedule = await prisma.schedule.create({
+          data: {
+            title: `Kegiatan Harian ${poskoName}`,
+            date: startOfDay,
+            time: "08:00 - 16:00",
+            category: "POSKO_KKN",
+            location: poskoName,
+            latitude: poskoLat,
+            longitude: poskoLng,
+            radius: poskoRadius,
+            kelompokId: student.kelompokId,
+            isActive: true,
+          },
+          include: {
+            kelompok: true,
+            attendances: {
+              where: { studentId: userId },
+            },
+          },
+        });
+        schedules = [defaultDailySchedule];
+      } catch (_createErr) {
+        // Fallback query jika sudah dibuat secara concurrent oleh rekan sekelompok
+        schedules = await prisma.schedule.findMany({
+          where: {
+            date: { gte: startOfDay, lte: endOfDay },
+            kelompokId: student.kelompokId,
+            isActive: true,
+          },
+          include: {
+            kelompok: true,
+            attendances: {
+              where: { studentId: userId },
+            },
+          },
+        });
+      }
     }
 
     const now = new Date();
