@@ -37,7 +37,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   
-  File? _selectedImage;
+  final List<File> _selectedFiles = [];
   bool _isLoading = false;
 
   @override
@@ -58,23 +58,26 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
             children: [
               ListTile(
                 leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
-                title: const Text('Kamera'),
+                title: const Text('Kamera (Foto Baru)'),
+                subtitle: const Text('Ambil foto langsung dari kamera'),
                 onTap: () {
                   Navigator.pop(context);
-                  _pickFromCameraOrGallery(ImageSource.camera);
+                  _pickFromCamera();
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
-                title: const Text('Galeri Foto'),
+                title: const Text('Galeri Foto (Pilih Banyak)'),
+                subtitle: const Text('Pilih satu atau beberapa foto sekaligus'),
                 onTap: () {
                   Navigator.pop(context);
-                  _pickFromCameraOrGallery(ImageSource.gallery);
+                  _pickFromGallery();
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primaryGreen),
                 title: const Text('Dokumen PDF'),
+                subtitle: const Text('Pilih file dokumen PDF'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickFile();
@@ -87,26 +90,69 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     );
   }
 
-  Future<void> _pickFromCameraOrGallery(ImageSource source) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: source,
-      preferredCameraDevice: CameraDevice.rear,
-      imageQuality: 70,
-    );
-    if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+  Future<void> _pickFromCamera() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        imageQuality: 75,
+        maxWidth: 1600,
+        maxHeight: 1600,
+      );
+      if (picked != null) {
+        setState(() => _selectedFiles.add(File(picked.path)));
+      }
+    } catch (e) {
+      debugPrint('Error pick camera: $e');
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final pickedList = await picker.pickMultiImage(
+        imageQuality: 75,
+        maxWidth: 1600,
+        maxHeight: 1600,
+      );
+      if (pickedList.isNotEmpty) {
+        setState(() {
+          _selectedFiles.addAll(pickedList.map((p) => File(p.path)));
+        });
+      }
+    } catch (e) {
+      debugPrint('Error pick gallery: $e');
     }
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-    if (result != null && result.files.single.path != null) {
-      setState(() => _selectedImage = File(result.files.single.path!));
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: true,
+      );
+      if (result != null && result.paths.isNotEmpty) {
+        setState(() {
+          for (final path in result.paths) {
+            if (path != null) {
+              _selectedFiles.add(File(path));
+            }
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error pick file: $e');
     }
+  }
+
+  void _removeFile(int index) {
+    setState(() {
+      if (index >= 0 && index < _selectedFiles.length) {
+        _selectedFiles.removeAt(index);
+      }
+    });
   }
   
   Future<void> _selectDate() async {
@@ -175,15 +221,18 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
+      final platformStr = Platform.isIOS ? 'IOS' : Platform.isAndroid ? 'ANDROID' : 'WEB';
+      
       await repo.submitLogbookHarian({
         'tanggalKegiatan': _tanggalCtrl.text,
         'waktuMulai': _waktuMulaiCtrl.text,
         'waktuSelesai': _waktuSelesaiCtrl.text,
         'tempat': _lokasiCtrl.text.trim(),
         'deskripsi': _deskripsiCtrl.text.trim(),
+        'platformOs': platformStr,
         if (_selectedProkerId != null) 'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
-      }, imagePath: _selectedImage?.path);
+      }, imagePaths: _selectedFiles.map((f) => f.path).toList());
       
       if (mounted) {
         NotificationEngine().showGenericNotification(
@@ -392,46 +441,121 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   ),
                   const SizedBox(height: 16),
 
-                  const Text('Dokumentasi Kegiatan (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _showPickerOptions,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      height: 160,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5), width: 1.5, style: BorderStyle.solid),
-                        borderRadius: BorderRadius.circular(12),
-                        color: AppColors.primaryGreen.withValues(alpha: 0.05),
-                      ),
-                      child: _selectedImage != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: _selectedImage!.path.toLowerCase().endsWith('.pdf')
-                                  ? Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.picture_as_pdf_rounded, size: 48, color: AppColors.dangerRed),
-                                        const SizedBox(height: 8),
-                                        Text(_selectedImage!.path.split('/').last, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                                      ],
-                                    )
-                                  : Image.file(_selectedImage!, fit: BoxFit.cover, width: double.infinity),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
-                                  child: const Icon(Icons.upload_file_rounded, size: 32, color: AppColors.primaryGreen),
-                                ),
-                                const SizedBox(height: 12),
-                                const Text('Pilih/Ambil Dokumentasi (Opsional)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
-                              ],
-                            ),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Dokumentasi Kegiatan (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                      if (_selectedFiles.isNotEmpty)
+                        Text('${_selectedFiles.length} file dipilih', style: const TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  if (_selectedFiles.isEmpty)
+                    InkWell(
+                      onTap: _showPickerOptions,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 140,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5), width: 1.5, style: BorderStyle.solid),
+                          borderRadius: BorderRadius.circular(12),
+                          color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
+                              child: const Icon(Icons.add_photo_alternate_rounded, size: 32, color: AppColors.primaryGreen),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text('Pilih / Ambil Foto atau PDF', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(height: 4),
+                            const Text('Mendukung multi-foto & dokumen PDF', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: 120,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _selectedFiles.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: 10),
+                            itemBuilder: (context, idx) {
+                              final file = _selectedFiles[idx];
+                              final isPdf = file.path.toLowerCase().endsWith('.pdf');
+                              return Stack(
+                                children: [
+                                  Container(
+                                    width: 110,
+                                    height: 120,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: AppColors.border),
+                                      color: Colors.grey[100],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(9),
+                                      child: isPdf
+                                          ? Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(Icons.picture_as_pdf_rounded, size: 36, color: AppColors.dangerRed),
+                                                const SizedBox(height: 4),
+                                                Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                  child: Text(
+                                                    file.path.split('/').last,
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Image.file(file, fit: BoxFit.cover, width: 110, height: 120),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () => _removeFile(idx),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _showPickerOptions,
+                          icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
+                          label: const Text('Tambah Foto / Dokumen Lainnya'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryGreen,
+                            side: const BorderSide(color: AppColors.primaryGreen),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
 

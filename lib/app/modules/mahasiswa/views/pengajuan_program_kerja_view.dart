@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -21,6 +24,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
   final _linkDriveCtrl = TextEditingController();
   
   String? _kategori;
+  File? _attachmentFile;
   bool _isLoading = false;
 
   final List<Map<String, dynamic>> _kategoriList = [
@@ -56,6 +60,65 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     },
   ];
 
+  Future<void> _showAttachmentPicker() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primaryGreen),
+                title: const Text('Dokumen PDF Proposal / Bukti'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf'],
+                  );
+                  if (result != null && result.files.single.path != null) {
+                    setState(() => _attachmentFile = File(result.files.single.path!));
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                title: const Text('Foto Galeri'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await ImagePicker().pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 75,
+                  );
+                  if (picked != null) {
+                    setState(() => _attachmentFile = File(picked.path));
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
+                title: const Text('Kamera Langsung'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await ImagePicker().pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 75,
+                  );
+                  if (picked != null) {
+                    setState(() => _attachmentFile = File(picked.path));
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_kategori == null) {
@@ -73,6 +136,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
         'targetTanggal': '${_tanggalMulaiCtrl.text.trim()} s/d ${_tanggalSelesaiCtrl.text.trim()}', 
         'deskripsi': _deskripsiCtrl.text.trim(),
         'linkGoogleDrive': _linkDriveCtrl.text.trim(),
+        if (_attachmentFile != null) 'filePdfPath': _attachmentFile!.path,
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil diajukan!')));
@@ -451,6 +515,55 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 controller: _linkDriveCtrl,
                 keyboardType: TextInputType.url,
                 decoration: _buildInputDecoration(hintText: 'https://drive.google.com/...'),
+              ),
+              const SizedBox(height: 16),
+              const Text('Unggah Berkas Bukti / Proposal (PDF/Foto)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: _showAttachmentPicker,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _attachmentFile != null ? AppColors.primaryGreen : Colors.grey.shade300,
+                      width: _attachmentFile != null ? 1.5 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _attachmentFile != null ? Icons.check_circle_rounded : Icons.attach_file_rounded,
+                        color: _attachmentFile != null ? AppColors.primaryGreen : AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _attachmentFile != null
+                              ? _attachmentFile!.path.split('/').last.split('\\').last
+                              : 'Pilih Berkas Lampiran (Opsional)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: _attachmentFile != null ? FontWeight.w600 : FontWeight.normal,
+                            color: _attachmentFile != null ? AppColors.textPrimary : AppColors.textHint,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (_attachmentFile != null)
+                        GestureDetector(
+                          onTap: () => setState(() => _attachmentFile = null),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4.0),
+                            child: Icon(Icons.close_rounded, size: 20, color: Colors.grey),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(

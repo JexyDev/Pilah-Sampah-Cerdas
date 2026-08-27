@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/values/app_colors.dart';
 import '../../routes/app_routes.dart';
 import '../auth/controllers/auth_controller.dart';
@@ -383,6 +384,29 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           const Divider(height: 1, indent: 56),
                         ],
+                        // Form Evaluasi & Masukan Pengguna (Google Form)
+                        _MenuTile(
+                          icon: Icons.rate_review_outlined,
+                          iconColor: AppColors.primaryGreen,
+                          iconBgColor: AppColors.primaryGreen.withValues(
+                            alpha: 0.1,
+                          ),
+                          label: 'Kuesioner Evaluasi & Feedback',
+                          onTap: () async {
+                            final Uri url = Uri.parse('https://forms.gle/berseka-evaluasi-sistem');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Tidak dapat membuka tautan kuesioner.')),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        const Divider(height: 1, indent: 56),
+
                         // Tentang Aplikasi
                         _MenuTile(
                           icon: Icons.info_outline_rounded,

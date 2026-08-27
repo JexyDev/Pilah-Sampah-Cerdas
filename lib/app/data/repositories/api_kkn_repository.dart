@@ -846,26 +846,34 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath}) async {
+  Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
-      FormData formData;
-      if (imagePath != null) {
-        final fileExt = imagePath.split('.').last.toLowerCase();
+      final formData = FormData.fromMap(data);
+      
+      final paths = <String>[];
+      if (imagePaths != null && imagePaths.isNotEmpty) {
+        paths.addAll(imagePaths);
+      } else if (imagePath != null && imagePath.isNotEmpty) {
+        paths.add(imagePath);
+      }
+
+      for (int i = 0; i < paths.length; i++) {
+        final p = paths[i];
+        final fileExt = p.split('.').last.toLowerCase();
         String mimeType = 'image/jpeg';
         if (fileExt == 'png') mimeType = 'image/png';
         if (fileExt == 'webp') mimeType = 'image/webp';
         if (fileExt == 'pdf') mimeType = 'application/pdf';
 
-        formData = FormData.fromMap({
-          ...data,
-          'fotoBukti': await MultipartFile.fromFile(
-            imagePath,
-            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+        final fieldKey = i == 0 ? 'fotoBukti' : 'fotoBukti_$i';
+        formData.files.add(MapEntry(
+          fieldKey,
+          await MultipartFile.fromFile(
+            p,
+            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
             contentType: MediaType.parse(mimeType),
           ),
-        });
-      } else {
-        formData = FormData.fromMap(data);
+        ));
       }
 
       final response = await apiClient.dio.post(
