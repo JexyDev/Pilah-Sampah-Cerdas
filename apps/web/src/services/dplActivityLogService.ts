@@ -37,6 +37,7 @@ export interface DplActivityLogItem {
   status: "DRAF" | "TERKIRIM" | "TERVERIFIKASI" | string;
   pekanKe: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface DplActivityStats {

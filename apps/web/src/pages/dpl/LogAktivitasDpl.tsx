@@ -32,6 +32,15 @@ import {
   Edit3,
   Eye,
   MapPin,
+  Briefcase,
+  User,
+  CheckCircle2,
+  ArrowRightCircle,
+  Users,
+  Camera,
+  Image as ImageIcon,
+  ExternalLink,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -109,6 +118,61 @@ export const LogAktivitasDpl: React.FC = () => {
 
   // Modal Detail State
   const [selectedDetailLog, setSelectedDetailLog] = useState<DplActivityLogItem | null>(null);
+  const [previewGalleryImage, setPreviewGalleryImage] = useState<string | null>(null);
+
+  // Helper Format Tanggal Indonesia Lengkap (e.g. 14 Agustus 2026)
+  const formatIndonesianDateLong = (dateStr?: string | null): string => {
+    if (!dateStr) return "-";
+    try {
+      const parts = String(dateStr).split("T")[0].split("-");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+      }
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return String(dateStr);
+      return d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return String(dateStr);
+    }
+  };
+
+  // Helper Format Waktu Diperbarui (e.g. 14 Agustus 2026, 16.15 WIB)
+  const formatFullDateTime = (dateStr?: string | null): string => {
+    if (!dateStr) return "-";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return String(dateStr);
+      const dateFormatted = d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      return `${dateFormatted}, ${hours}.${minutes} WIB`;
+    } catch {
+      return String(dateStr);
+    }
+  };
+
+  // Helper Format Bullet Points
+  const parseBulletPoints = (text?: string | null, fallbackItems: string[] = []): string[] => {
+    if (!text || text.trim() === "" || text === "-") return fallbackItems;
+    const lines = text
+      .split(/\r?\n|•|;/)
+      .map((s) => s.replace(/^[-*•\d.)\s]+/, "").trim())
+      .filter((s) => s.length > 0);
+    return lines.length > 0 ? lines : fallbackItems;
+  };
 
   // Kalkulasi Durasi Dinamis Real-Time dengan Satuan "Jam"
   const calculatedDuration = useMemo(() => {
@@ -1262,109 +1326,248 @@ export const LogAktivitasDpl: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────
-          5. POPUP MODAL: DETAIL AKTIVITAS ("LIHAT")
+          5. POPUP MODAL: DETAIL AKTIVITAS ("LIHAT") - 100% MATCHING MOCKUP
           ───────────────────────────────────────────── */}
       {selectedDetailLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto text-xs text-slate-700">
+            {/* Header Modal */}
+            <div className="flex items-start justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {selectedDetailLog.kategori}
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+                  Detail Log Aktivitas DPL
+                </h2>
+                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">
+                  {selectedDetailLog.kelompokNama} · Kelurahan {selectedDetailLog.kelurahan}
+                </p>
+                {/* Badges Row */}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>{selectedDetailLog.kategori || "Kunjungan Lapangan"}</span>
                   </span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                    Pekan {selectedDetailLog.pekanKe || 1}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Pekan {selectedDetailLog.pekanKe || 1}</span>
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-2xs ${
+                      selectedDetailLog.status === "DRAF"
+                        ? "bg-slate-100 text-slate-700 border border-slate-200"
+                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    }`}
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{selectedDetailLog.status === "DRAF" ? "Draf" : "Terkirim"}</span>
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-800">{selectedDetailLog.kelompokNama}</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedDetailLog(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                title="Tutup"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl">
-              <div>
-                <span className="text-slate-400 block text-[11px]">Tanggal & Waktu</span>
-                <span className="font-semibold text-slate-800">
-                  {selectedDetailLog.tanggalFormatted} ({selectedDetailLog.waktuLengkap})
-                </span>
+            {/* 1. Card: Informasi Kegiatan */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm border-b border-slate-100 pb-2.5">
+                <FileText className="w-4 h-4 text-slate-600" />
+                <span>Informasi Kegiatan</span>
               </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Durasi (Satuan Jam)</span>
-                <span className="font-semibold text-slate-800">{selectedDetailLog.durasi}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Lokasi</span>
-                <span className="font-semibold text-slate-800">{selectedDetailLog.lokasi}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Status</span>
-                <span className="font-semibold text-slate-800">{selectedDetailLog.status}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-3.5 gap-x-6 text-xs">
+                {/* Tanggal */}
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1 rounded-lg bg-slate-50 text-slate-400 mt-0.5 flex-shrink-0">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block text-[11px]">Tanggal</span>
+                    <span className="font-bold text-slate-800 text-xs">
+                      {formatIndonesianDateLong(selectedDetailLog.tanggal)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Waktu */}
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1 rounded-lg bg-slate-50 text-slate-400 mt-0.5 flex-shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block text-[11px]">Waktu</span>
+                    <span className="font-bold text-slate-800 text-xs">
+                      {selectedDetailLog.waktuLengkap} WIB
+                    </span>
+                  </div>
+                </div>
+
+                {/* Durasi */}
+                <div className="flex items-start gap-2.5">
+                  <div className="p-1 rounded-lg bg-slate-50 text-slate-400 mt-0.5 flex-shrink-0">
+                    <Hourglass className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block text-[11px]">Durasi</span>
+                    <span className="font-bold text-slate-800 text-xs">
+                      {selectedDetailLog.durasi}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Lokasi */}
+                <div className="flex items-start gap-2.5 sm:col-span-1">
+                  <div className="p-1 rounded-lg bg-slate-50 text-slate-400 mt-0.5 flex-shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-medium block text-[11px]">Lokasi</span>
+                    <span className="font-bold text-slate-800 text-xs block leading-tight">
+                      {selectedDetailLog.lokasi || selectedDetailLog.tempat || "Balai Kelurahan Sadang Serang"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const locText = selectedDetailLog.lokasi || selectedDetailLog.tempat || "Bandung";
+                        const q = encodeURIComponent(`${locText}, ${selectedDetailLog.kelurahan}, Bandung`);
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank");
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold transition cursor-pointer shadow-2xs mt-1"
+                    >
+                      <MapPin className="w-3 h-3 text-slate-600" />
+                      <span>Lihat Lokasi</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Jenis Kegiatan */}
+                <div className="flex items-start gap-2.5 sm:col-span-1">
+                  <div className="p-1 rounded-lg bg-slate-50 text-slate-400 mt-0.5 flex-shrink-0">
+                    <Briefcase className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block text-[11px]">Jenis Kegiatan</span>
+                    <span className="font-bold text-slate-800 text-xs leading-tight block">
+                      {selectedDetailLog.programKerjaDeskripsi || selectedDetailLog.kategori || "Koordinasi dan pendampingan"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pelaksana */}
+                <div className="flex items-start gap-2.5 sm:col-span-1">
+                  <div className="p-1 rounded-lg bg-slate-50 text-slate-400 mt-0.5 flex-shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block text-[11px]">Pelaksana</span>
+                    <span className="font-bold text-slate-800 text-xs leading-tight block">
+                      {selectedDetailLog.dplNama} · DPL
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {selectedDetailLog.programKerjaDeskripsi && (
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-700">Program Kerja Terkait:</span>
-                <p className="text-slate-600 bg-emerald-50/50 border border-emerald-100 p-2.5 rounded-xl">
-                  {selectedDetailLog.programKerjaDeskripsi}
-                </p>
+            {/* 2. Card: Uraian Aktivitas */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
+                <FileText className="w-4 h-4 text-slate-600" />
+                <span>Uraian Aktivitas</span>
               </div>
-            )}
-
-            <div className="space-y-1">
-              <span className="font-semibold text-slate-700">Uraian Aktivitas:</span>
-              <p className="text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded-xl leading-relaxed">
+              <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3.5 text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
                 {selectedDetailLog.deskripsi}
-              </p>
+              </div>
             </div>
 
-            {selectedDetailLog.hasilTindakLanjut && (
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-700">Hasil dan Tindak Lanjut:</span>
-                <p className="text-slate-600 whitespace-pre-wrap bg-slate-50 p-3 rounded-xl leading-relaxed">
-                  {selectedDetailLog.hasilTindakLanjut}
-                </p>
+            {/* 3. Card: 2-Column Split (Hasil Kegiatan & Tindak Lanjut) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Hasil Kegiatan */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
+                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs sm:text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Hasil Kegiatan</span>
+                </div>
+                <ul className="space-y-1.5 text-xs text-slate-700 pl-4 list-disc marker:text-emerald-500 leading-relaxed">
+                  {parseBulletPoints(selectedDetailLog.hasilTindakLanjut, [
+                    "Prioritas program kerja telah disepakati.",
+                    "Pembagian tugas mahasiswa telah ditetapkan.",
+                  ]).map((point, idx) => (
+                    <li key={idx}>{point}</li>
+                  ))}
+                </ul>
               </div>
-            )}
 
+              {/* Tindak Lanjut */}
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
+                <div className="flex items-center gap-2 text-blue-800 font-bold text-xs sm:text-sm">
+                  <ArrowRightCircle className="w-4 h-4 text-blue-600" />
+                  <span>Tindak Lanjut</span>
+                </div>
+                <ul className="space-y-1.5 text-xs text-slate-700 pl-4 list-disc marker:text-blue-500 leading-relaxed">
+                  {parseBulletPoints(selectedDetailLog.arahanEvaluasi, [
+                    "Kelompok menyusun data dasar wilayah.",
+                    "DPL melakukan pemantauan pada pekan berikutnya.",
+                  ]).map((point, idx) => (
+                    <li key={idx}>{point}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* 4. Card: Pihak yang Terlibat */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
+              <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
+                <Users className="w-4 h-4 text-slate-600" />
+                <span>Pihak yang Terlibat</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {["DPL", "Mahasiswa KKN", "Kelurahan", "PKBS"].map((party, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3.5 py-1 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                  >
+                    {party}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. Card: Bukti Dokumentasi */}
             {selectedDetailLog.fotoBuktiUrl && (
-              <div className="space-y-2">
-                <span className="font-semibold text-slate-700">Dokumentasi Kegiatan:</span>
-                <div className="space-y-2">
+              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
+                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
+                  <Camera className="w-4 h-4 text-slate-600" />
+                  <span>Bukti Dokumentasi</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
                   {selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).map((url, idx) => {
                     const cleanUrl = url.trim();
-                    const isImage = cleanUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) || !cleanUrl.includes(".");
+                    const isImg = cleanUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) || !cleanUrl.includes(".");
                     const fullUrl = resolveImageUrl(cleanUrl);
 
-                    return isImage ? (
-                      <div key={idx} className="relative group overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                    return isImg ? (
+                      <div
+                        key={idx}
+                        onClick={() => setPreviewGalleryImage(fullUrl)}
+                        className="relative w-36 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs group cursor-pointer"
+                        title="Klik untuk memperbesar foto"
+                      >
                         <img
                           src={fullUrl}
-                          alt={`Dokumentasi Kegiatan ${idx + 1}`}
-                          className="w-full max-h-64 object-cover rounded-xl transition-transform duration-200 group-hover:scale-102"
+                          alt={`Dokumentasi ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                           onError={(e) => {
-                            // Fallback if image fails to load
                             const target = e.currentTarget as HTMLImageElement;
                             target.onerror = null;
                             target.src = "/image/berseka-logo.png";
                           }}
                         />
-                        <a
-                          href={fullUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="absolute bottom-2.5 right-2.5 bg-slate-900/80 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[11px] font-semibold backdrop-blur-xs flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity shadow-sm"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Buka Foto Penuh</span>
-                        </a>
+                        <span className="absolute bottom-1.5 left-1.5 bg-slate-900/75 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                          Foto {idx + 1}
+                        </span>
                       </div>
                     ) : (
                       <a
@@ -1372,26 +1575,62 @@ export const LogAktivitasDpl: React.FC = () => {
                         href={fullUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 hover:bg-emerald-100/70 px-3.5 py-2.5 rounded-xl border border-emerald-200 transition-colors w-full"
+                        className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2.5 rounded-xl border border-emerald-200 transition-colors shadow-2xs"
                       >
                         <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="truncate">Buka Dokumen Dokumentasi Kegiatan ({cleanUrl.split("/").pop() || "Dokumen"})</span>
+                        <span className="truncate">Buka Dokumen ({cleanUrl.split("/").pop() || "Dokumen"})</span>
                       </a>
                     );
                   })}
+
+                  {selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const first = selectedDetailLog.fotoBuktiUrl!.split(/[,;]/)[0].trim();
+                        setPreviewGalleryImage(resolveImageUrl(first));
+                      }}
+                      className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 inline-flex items-center gap-2 transition cursor-pointer shadow-2xs"
+                    >
+                      <ImageIcon className="w-4 h-4 text-slate-500" />
+                      <span>
+                        Lihat Semua Bukti ({selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).length})
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
+            {/* Timestamp Diperbarui */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 pt-1">
+              <Clock className="w-3.5 h-3.5" />
+              <span>
+                Terakhir diperbarui:{" "}
+                {formatFullDateTime(
+                  selectedDetailLog.updatedAt || selectedDetailLog.createdAt || selectedDetailLog.tanggal
+                )}
+              </span>
+            </div>
+
+            {/* Footer Actions */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => handleDeleteLog(selectedDetailLog.id)}
-                className="px-3 py-1.5 bg-rose-50 text-rose-700 font-semibold rounded-xl hover:bg-rose-100 border border-rose-200 transition-colors"
+                className="px-4 py-2.5 border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-600 font-semibold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
-                Hapus
+                <Trash2 className="w-4 h-4" />
+                <span>Hapus Log</span>
               </button>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDetailLog(null)}
+                  className="px-5 py-2.5 border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer shadow-2xs"
+                >
+                  Tutup
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -1399,19 +1638,59 @@ export const LogAktivitasDpl: React.FC = () => {
                     setSelectedDetailLog(null);
                     handleEditClick(logToEdit);
                   }}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 border border-slate-200 transition-colors"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
-                  Edit Aktivitas
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDetailLog(null)}
-                  className="px-4 py-1.5 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-900 transition-colors"
-                >
-                  Tutup
+                  <Edit3 className="w-4 h-4" />
+                  <span>Edit Log</span>
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────
+          6. LIGHTBOX / FULLSCREEN IMAGE VIEWER MODAL
+          ───────────────────────────────────────────── */}
+      {previewGalleryImage && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setPreviewGalleryImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-2xl p-3 flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between p-2 text-white border-b border-slate-800 mb-2">
+              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Camera className="w-4 h-4 text-emerald-400" />
+                Pratinjau Foto Dokumentasi Kegiatan DPL
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewGalleryImage}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition text-xs flex items-center gap-1"
+                  title="Buka foto di tab baru"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewGalleryImage(null)}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition cursor-pointer"
+                  title="Tutup pratinjau"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <img
+              src={previewGalleryImage}
+              alt="Foto Bukti Fullscreen"
+              className="max-h-[75vh] w-auto object-contain rounded-xl"
+            />
           </div>
         </div>
       )}

@@ -3686,6 +3686,7 @@ export const dplService = {
           status: st,
           pekanKe: item.pekanKe || 1,
           createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
         };
       }),
       pagination: {
