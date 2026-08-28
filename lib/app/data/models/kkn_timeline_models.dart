@@ -25,6 +25,7 @@ class ActiveTimelineResponse extends Equatable {
         data: json['data'] != null ? ActiveStageData.fromJson(json['data']) : null,
       );
     } catch (e, st) {
+      // ignore: avoid_print
       print('Error parsing ActiveTimelineResponse: $e\n$st');
       rethrow;
     }
