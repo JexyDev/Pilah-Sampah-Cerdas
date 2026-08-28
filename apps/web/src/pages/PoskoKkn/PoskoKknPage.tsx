@@ -6,7 +6,6 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
 import {
   MapContainer,
   Marker,
@@ -87,6 +86,15 @@ export interface KelompokOption {
     user?: { id: string; name: string; phone?: string };
   }>;
 }
+
+// Helper Format URL WhatsApp (Standard International 62)
+const formatWhatsAppUrl = (phone?: string | null): string => {
+  if (!phone || phone === "-" || phone.trim() === "") return "";
+  const cleaned = phone.replace(/[^0-9]/g, "");
+  if (!cleaned) return "";
+  const formatted = cleaned.startsWith("0") ? `62${cleaned.slice(1)}` : cleaned.startsWith("62") ? cleaned : `62${cleaned}`;
+  return `https://wa.me/${formatted}`;
+};
 
 // Custom Marker Pin Icon untuk Posko KKN (Indigo Theme)
 const createPoskoMarkerIcon = (nama?: string) => {
@@ -568,9 +576,9 @@ export const PoskoKknPage: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                      {ketuaPhone && (
+                      {formatWhatsAppUrl(ketuaPhone) && (
                         <a
-                          href={`https://wa.me/${ketuaPhone.replace(/[^0-9]/g, "").replace(/^0/, "62")}`}
+                          href={formatWhatsAppUrl(ketuaPhone)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
@@ -624,9 +632,9 @@ export const PoskoKknPage: React.FC = () => {
                             <p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
                               {ketuaName}
                             </p>
-                            {ketuaPhone ? (
+                            {formatWhatsAppUrl(ketuaPhone) ? (
                               <a
-                                href={`https://wa.me/${ketuaPhone.replace(/[^0-9]/g, "").replace(/^0/, "62")}`}
+                                href={formatWhatsAppUrl(ketuaPhone)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline mt-0.5"
@@ -642,19 +650,15 @@ export const PoskoKknPage: React.FC = () => {
                           <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
                             <div>
                               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                                Total Mahasiswa
+                                Total Mahasiswa Binaan
                               </span>
                               <p className="font-black text-slate-800 dark:text-slate-200 text-sm mt-0.5">
                                 {totalAnggota} Mahasiswa
                               </p>
                             </div>
-                            <Link
-                              to="/manajemen-mahasiswa"
-                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold flex items-center gap-1"
-                            >
-                              <Users size={12} />
-                              <span>Daftar Anggota</span>
-                            </Link>
+                            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                              <Users size={16} />
+                            </div>
                           </div>
                         </div>
 
@@ -799,9 +803,9 @@ export const PoskoKknPage: React.FC = () => {
                         <span className="text-base font-black text-slate-900 dark:text-slate-100 mt-1 block">
                           {posko.pic || "Ketua Kelompok"}
                         </span>
-                        {posko.kontak && posko.kontak !== "-" ? (
+                        {formatWhatsAppUrl(posko.kontak) ? (
                           <a
-                            href={`https://wa.me/${posko.kontak.replace(/[^0-9]/g, "").replace(/^0/, "62")}`}
+                            href={formatWhatsAppUrl(posko.kontak)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 mt-1"
@@ -821,13 +825,10 @@ export const PoskoKknPage: React.FC = () => {
                         <span className="text-base font-black text-slate-900 dark:text-slate-100 mt-1 block">
                           {posko.totalAnggota || 0} Mahasiswa Aktif
                         </span>
-                        <Link
-                          to="/manajemen-mahasiswa"
-                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 mt-1"
-                        >
+                        <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-1">
                           <Users size={12} />
-                          <span>Lihat Daftar Anggota</span>
-                        </Link>
+                          <span>Anggota Kelompok KKN</span>
+                        </p>
                       </div>
 
                       <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
@@ -1244,9 +1245,9 @@ export const PoskoKknPage: React.FC = () => {
                           >
                             <Info size={12} /> Detail
                           </button>
-                          {item.kontak && item.kontak !== "-" && (
+                          {formatWhatsAppUrl(item.kontak) && (
                             <a
-                              href={`https://wa.me/${item.kontak.replace(/\D/g, "")}`}
+                              href={formatWhatsAppUrl(item.kontak)}
                               target="_blank"
                               rel="noreferrer"
                               className="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-1"
@@ -1444,10 +1445,10 @@ export const PoskoKknPage: React.FC = () => {
                             <span className="text-[10px] text-slate-400 font-semibold block">
                               Ketua Kelompok
                             </span>
-                            {item.kontak && item.kontak !== "-" && (
+                            {formatWhatsAppUrl(item.kontak) && (
                               <div className="pt-0.5">
                                 <a
-                                  href={`https://wa.me/${item.kontak.replace(/\D/g, "")}`}
+                                  href={formatWhatsAppUrl(item.kontak)}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 hover:underline"
@@ -1691,9 +1692,9 @@ export const PoskoKknPage: React.FC = () => {
                   <p className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
                     {detailModalPosko.pic}
                   </p>
-                  {detailModalPosko.kontak && detailModalPosko.kontak !== "-" ? (
+                  {formatWhatsAppUrl(detailModalPosko.kontak) ? (
                     <a
-                      href={`https://wa.me/${detailModalPosko.kontak.replace(/\D/g, "")}`}
+                      href={formatWhatsAppUrl(detailModalPosko.kontak)}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 mt-1"

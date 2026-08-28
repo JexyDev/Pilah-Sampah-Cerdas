@@ -44,7 +44,6 @@ import {
   Settings,
   Users,
   ExternalLink,
-  FileCheck,
   Home,
   Bug,
   Recycle,
@@ -2178,15 +2177,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <MapIcon size={14} className={showMap ? "text-emerald-600" : "text-slate-500"} />
             <span>{showMap ? "Sembunyikan Peta" : "Buka Peta GPS"}</span>
           </button>
-
-          <Link
-            to="/monitoring-kegiatan/pengajuan-izin"
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Buka Halaman Verifikasi Pengajuan Izin & Sakit"
-          >
-            <FileCheck size={14} className="text-amber-600 dark:text-amber-400" />
-            <span>Pengajuan Izin & Sakit</span>
-          </Link>
 
           {isSuperUserOrDev && (
             <button
