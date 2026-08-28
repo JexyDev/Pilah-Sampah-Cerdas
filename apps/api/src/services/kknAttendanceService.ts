@@ -18,17 +18,7 @@ import { notificationIntegrationService } from "./notificationIntegrationService
  * FEATURE 2: Ensures consistent geofence configuration across all location tracking methods.
  */
 async function buildGeofence(schedule: any): Promise<{ latitude: number; longitude: number; radius: number; polygon?: any }> {
-  // 1. Prioritas Utama: Koordinat langsung pada Jadwal Kegiatan
-  if (schedule.latitude && schedule.longitude) {
-    return {
-      latitude: Number(schedule.latitude),
-      longitude: Number(schedule.longitude),
-      radius: schedule.radius ? Number(schedule.radius) : 200,
-      polygon: schedule.polygon,
-    };
-  }
-
-  // 2. Prioritas Kedua: Titik Posko KKN resmi milik kelompok
+  // 1. Prioritas Utama: Titik Posko KKN resmi milik kelompok
   if (schedule.kelompokId) {
     try {
       const posko = await prisma.poskoKkn.findUnique({
@@ -45,6 +35,16 @@ async function buildGeofence(schedule: any): Promise<{ latitude: number; longitu
     } catch (_err) {
       // Ignored
     }
+  }
+
+  // 2. Prioritas Kedua: Koordinat langsung pada Jadwal Kegiatan
+  if (schedule.latitude && schedule.longitude) {
+    return {
+      latitude: Number(schedule.latitude),
+      longitude: Number(schedule.longitude),
+      radius: schedule.radius ? Number(schedule.radius) : 200,
+      polygon: schedule.polygon,
+    };
   }
 
   // 3. Fallback: Default sistem dari Rule Engine / Config
@@ -1037,11 +1037,18 @@ export class KknAttendanceService {
   async getActivityLocation(scheduleId: string, studentId?: string) {
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
+      include: {
+        kelompok: {
+          include: { poskoKkn: true },
+        },
+      },
     });
 
     if (!schedule) {
       throw new Error("SCHEDULE_NOT_FOUND");
     }
+
+    const officialPosko = (schedule as any).kelompok?.poskoKkn;
 
     // Default configuration from system configs or fallback
     const configLatStr = await configService.getConfig("default_activity_latitude");
@@ -1051,6 +1058,17 @@ export class KknAttendanceService {
     const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
     const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200;
+
+    const effectiveLat = officialPosko?.latitude
+      ? Number(officialPosko.latitude)
+      : schedule.latitude
+      ? Number(schedule.latitude)
+      : defaultLat;
+    const effectiveLng = officialPosko?.longitude
+      ? Number(officialPosko.longitude)
+      : schedule.longitude
+      ? Number(schedule.longitude)
+      : defaultLng;
     
     // Always fetch target duration from Rule Engine or schedule duration as the single source of truth!
     let scheduleDurationMinutes = 0;
@@ -1119,9 +1137,9 @@ export class KknAttendanceService {
 
     return {
       scheduleId: schedule.id,
-      title: schedule.title,
-      latitude: schedule.latitude ? Number(schedule.latitude) : defaultLat,
-      longitude: schedule.longitude ? Number(schedule.longitude) : defaultLng,
+      title: officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : schedule.title,
+      latitude: effectiveLat,
+      longitude: effectiveLng,
       radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
       targetDurationMinutes,
       durationMinutes: targetDurationMinutes,
@@ -2377,7 +2395,9 @@ export class KknAttendanceService {
         ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
       },
       include: {
-        kelompok: true,
+        kelompok: {
+          include: { poskoKkn: true },
+        },
         attendances: {
           where: { studentId: userId },
         },
@@ -2390,6 +2410,7 @@ export class KknAttendanceService {
       const group = await prisma.kelompokKkn.findUnique({
         where: { id: student.kelompokId },
         include: {
+          poskoKkn: true,
           facilities: {
             where: { jenis: "posko_kkn" },
             orderBy: { createdAt: "desc" },
@@ -2398,7 +2419,7 @@ export class KknAttendanceService {
         },
       });
 
-      const registeredPosko = group?.facilities?.[0];
+      const registeredPosko = group?.poskoKkn || group?.facilities?.[0];
       let poskoLat = -6.8915; // default Coblong
       let poskoLng = 107.6107;
       let poskoName = `Posko KKN ${group?.name || "Mahasiswa"}`;
@@ -2454,7 +2475,9 @@ export class KknAttendanceService {
             isActive: true,
           },
           include: {
-            kelompok: true,
+            kelompok: {
+              include: { poskoKkn: true },
+            },
             attendances: {
               where: { studentId: userId },
             },
@@ -2470,7 +2493,9 @@ export class KknAttendanceService {
             isActive: true,
           },
           include: {
-            kelompok: true,
+            kelompok: {
+              include: { poskoKkn: true },
+            },
             attendances: {
               where: { studentId: userId },
             },
@@ -2569,8 +2594,21 @@ export class KknAttendanceService {
         statusKehadiran = "ALPA";
       }
 
-      const latNum = sch.latitude ? Number(sch.latitude) : -6.8906;
-      const lngNum = sch.longitude ? Number(sch.longitude) : 107.615;
+      const officialPosko = (sch.kelompok as any)?.poskoKkn;
+      const latNum = officialPosko?.latitude
+        ? Number(officialPosko.latitude)
+        : sch.latitude
+        ? Number(sch.latitude)
+        : -6.8906;
+      const lngNum = officialPosko?.longitude
+        ? Number(officialPosko.longitude)
+        : sch.longitude
+        ? Number(sch.longitude)
+        : 107.615;
+      const titleStr = officialPosko?.nama
+        ? `Kegiatan Harian ${officialPosko.nama}`
+        : sch.title;
+      const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
 
       // Hitung actualInZoneSeconds real-time dari record attendance
       let actualInZoneSeconds = 0;
@@ -2593,13 +2631,13 @@ export class KknAttendanceService {
 
       return {
         id: sch.id,
-        namaKegiatan: sch.title,
+        namaKegiatan: titleStr,
         tanggal: targetDate.toISOString().slice(0, 10),
         jamMulai,
         jamSelesai,
         durasiWajibMenit,
         lokasi: {
-          alamat: sch.location || "Lokasi Kegiatan KKN",
+          alamat: locationStr,
           latitude: latNum,
           longitude: lngNum,
           radiusMeter: sch.radius || 200,

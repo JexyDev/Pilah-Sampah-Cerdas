@@ -51,6 +51,7 @@ import {
   Layers,
   GraduationCap,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -481,8 +482,27 @@ const MonitoringAbsen: React.FC = () => {
     user?.peran || (user as any)?.role || ""
   ).toUpperCase();
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
+  const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "DEV";
 
-  const [selectedKelompokId, setSelectedKelompokId] = useState<string>("");
+  const [selectedKelompokId, setSelectedKelompokId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("berseka_dev_selected_kelompok");
+        if (saved !== null) return saved;
+      } catch {}
+    }
+    return "";
+  });
+
+  const handleSelectKelompok = (id: string) => {
+    setSelectedKelompokId(id);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("berseka_dev_selected_kelompok", id);
+      } catch {}
+    }
+  };
+
   const [schedules, setSchedules] = useState<ScheduleActivity[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -916,6 +936,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       setGroups(list);
       if (isDpl && list.length > 0) {
         setSelectedKelompokId(list[0].id);
+      } else if (list.length > 0) {
+        try {
+          const saved = localStorage.getItem("berseka_dev_selected_kelompok");
+          if (saved && (saved === "" || list.some((g: any) => g.id === saved))) {
+            setSelectedKelompokId(saved);
+          }
+        } catch {}
       }
     } catch (_e) {
       // Ignored
@@ -1283,7 +1310,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       clearInterval(decayInterval);
       clearInterval(fallbackPollingInterval);
     };
-  }, [selectedScheduleId]);
+  }, [selectedScheduleId, selectedKelompokId, wsStatus]);
 
   // Export Attendance Rekap to CSV
   const handleExportCSV = () => {
@@ -2200,7 +2227,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <span className="text-[11px] font-bold text-slate-500 shrink-0">Kelompok:</span>
               <select
                 value={selectedKelompokId}
-                onChange={(e) => setSelectedKelompokId(e.target.value)}
+                onChange={(e) => handleSelectKelompok(e.target.value)}
                 className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[220px] truncate"
               >
                 <option value="">Semua Kelompok (Seluruh Wilayah)</option>
@@ -2258,6 +2285,64 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           )}
         </div>
       </div>
+
+      {/* Quick Group Switcher Pill Bar (Eksklusif Role Developer / Super User / Admin) */}
+      {!isDpl && groups.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 shadow-xs space-y-2">
+          <div className="flex items-center justify-between gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-black">
+              <Zap size={14} className="text-amber-500 fill-amber-400" />
+              <span>Pilih Cepat Kelompok (Developer Quick Switcher)</span>
+              {selectedKelompokId && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  Aktif: {groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+              Pilihan tersimpan otomatis di browser & real-time sync aktif
+            </span>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <button
+              type="button"
+              onClick={() => handleSelectKelompok("")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                selectedKelompokId === ""
+                  ? "bg-emerald-600 text-white shadow-xs scale-100 ring-2 ring-emerald-400/50"
+                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700"
+              }`}
+            >
+              <Users size={13} />
+              <span>Semua Wilayah ({groups.length} Kelompok)</span>
+            </button>
+            {groups.map((g, idx) => {
+              const isSelected = selectedKelompokId === g.id;
+              const shortName = g.name || `Kelompok ${idx + 1}`;
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => handleSelectKelompok(g.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-emerald-600 text-white shadow-xs font-black ring-2 ring-emerald-400/50"
+                      : "bg-slate-50 hover:bg-emerald-50 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-300"
+                  }`}
+                  title={`${g.name} - ${g.kelurahan || "Wilayah KKN"}`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isSelected ? "bg-white" : "bg-emerald-500"
+                    }`}
+                  />
+                  <span>{shortName}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Hero Banner: Info Kegiatan Terpilih & Switcher Kegiatan */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">

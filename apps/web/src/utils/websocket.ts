@@ -59,7 +59,8 @@ class BERSEKAWebSocketClient {
         const apiUrl = new URL(envApi);
         const wsProto = apiUrl.protocol === "https:" ? "wss:" : "ws:";
         const path = apiUrl.pathname && apiUrl.pathname !== "/" ? apiUrl.pathname : "/api";
-        return `${wsProto}//${apiUrl.host}${path}`;
+        const normalizedPath = path.endsWith("/") ? path : `${path}/`;
+        return `${wsProto}//${apiUrl.host}${normalizedPath}`;
       } catch (_e) {
         // Fallback below
       }
@@ -71,12 +72,20 @@ class BERSEKAWebSocketClient {
     const port = window.location.port;
 
     // In local dev (Vite running on port 5173/5174/etc, backend on port 3000):
-    if (port && port !== "3000" && (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.") || hostname.startsWith("172."))) {
+    if (
+      port &&
+      port !== "3000" &&
+      (hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname.startsWith("192.168.") ||
+        hostname.startsWith("10.") ||
+        hostname.startsWith("172."))
+    ) {
       return `${protocol}//${hostname}:3000`;
     }
 
-    // Default: use window host + /api path to match Nginx proxy_pass location block
-    return `${protocol}//${window.location.host}/api`;
+    // Default: use window host + /api/ path with trailing slash to match Nginx proxy_pass location block without 301 redirects
+    return `${protocol}//${window.location.host}/api/`;
   }
 
   private startHeartbeat() {
