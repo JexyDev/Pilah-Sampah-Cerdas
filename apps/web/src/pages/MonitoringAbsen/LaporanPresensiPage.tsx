@@ -252,6 +252,7 @@ export const LaporanPresensiPage: React.FC = () => {
       const type = msg.type;
       if (
         type === "STUDENT_ATTENDANCE" ||
+        type === "STUDENT_ATTENDANCE_UPDATE" ||
         type === "STUDENT_CHECKOUT" ||
         type === "STUDENT_PAUSE" ||
         type === "STUDENT_RESUME" ||
