@@ -108,3 +108,57 @@ export const safeUploadPemanfaatanImage = (req: Request, res: Response, next: Ne
     next();
   });
 };
+
+/**
+ * Ekstraksi aman untuk seluruh URL file yang diunggah dari req.file atau req.files
+ * Mendukung format Multer: .single(), .array(), .fields(), dan .any()
+ */
+export function extractUploadedFileUrls(req: Request): string[] {
+  const urls: string[] = [];
+  if (req.file && req.file.filename) {
+    urls.push(`/uploads/${req.file.filename}`);
+  }
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      for (const f of req.files) {
+        if (f && f.filename) {
+          urls.push(`/uploads/${f.filename}`);
+        }
+      }
+    } else if (typeof req.files === "object") {
+      const filesObj = req.files as { [fieldname: string]: Express.Multer.File[] };
+      for (const key of Object.keys(filesObj)) {
+        const arr = filesObj[key];
+        if (Array.isArray(arr)) {
+          for (const f of arr) {
+            if (f && f.filename) {
+              urls.push(`/uploads/${f.filename}`);
+            }
+          }
+        }
+      }
+    }
+  }
+  return urls;
+}
+
+/**
+ * Mengambil URL file pertama yang diunggah, atau fallback dari body jika tidak ada file fisik
+ */
+export function extractFirstUploadedFileUrl(
+  req: Request,
+  fallbackUrls?: Array<string | undefined | null>
+): string | undefined {
+  const uploaded = extractUploadedFileUrls(req);
+  if (uploaded.length > 0) {
+    return uploaded[0];
+  }
+  if (fallbackUrls) {
+    for (const u of fallbackUrls) {
+      if (u && typeof u === "string" && u.trim() !== "" && u !== "null" && u !== "undefined") {
+        return u.trim();
+      }
+    }
+  }
+  return undefined;
+}

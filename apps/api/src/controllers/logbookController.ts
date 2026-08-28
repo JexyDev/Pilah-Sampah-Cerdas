@@ -9,6 +9,7 @@
 import { Request, Response } from "express";
 import { logbookService } from "../services/logbookService.js";
 import { prisma } from "../lib/prisma.js";
+import { extractUploadedFileUrls } from "../middlewares/uploadMiddleware.js";
 
 function getUserId(req: Request): string {
   return req.user?.userId || (req.user as any)?.id || "";
@@ -234,18 +235,20 @@ export const logbookController = {
       const dplUserId = getUserId(req);
       const userRole = getUserRole(req);
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl;
-      if (req.file) {
-        fotoBuktiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoBukti?.[0] ||
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoBuktiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoBuktiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl ||
+          req.body.evidencePhotoUrl ||
+          req.body.fotoDokumentasiUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoBuktiUrl = bodyFoto.trim();
+        }
       }
 
       const payload = {

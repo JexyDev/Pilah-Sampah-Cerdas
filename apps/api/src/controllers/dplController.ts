@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { dplService } from "../services/dplService.js";
+import { extractUploadedFileUrls } from "../middlewares/uploadMiddleware.js";
 
 function getUserId(req: Request): string {
   return req.user!.userId || (req.user as any).id;
@@ -470,18 +471,22 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl;
-      if (req.file) {
-        fotoBuktiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoBukti?.[0] ||
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoBuktiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoBuktiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl ||
+          req.body.evidencePhotoUrl ||
+          req.body.fotoDokumentasiUrl ||
+          req.body.fileUrl ||
+          req.body.buktiUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoBuktiUrl = bodyFoto.trim();
+        }
       }
 
       const {
@@ -536,18 +541,23 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl;
-      if (req.file) {
-        fotoBuktiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoBukti?.[0] ||
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoBuktiUrl = `/uploads/${f.filename}`;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoBuktiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoBuktiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else if (req.body.fotoBuktiUrl !== undefined) {
+        fotoBuktiUrl = req.body.fotoBuktiUrl ? String(req.body.fotoBuktiUrl).trim() : "";
+      } else {
+        const bodyFoto =
+          req.body.fotoUrl ||
+          req.body.evidencePhotoUrl ||
+          req.body.fotoDokumentasiUrl ||
+          req.body.fileUrl ||
+          req.body.buktiUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoBuktiUrl = bodyFoto.trim();
+        }
       }
 
       const {

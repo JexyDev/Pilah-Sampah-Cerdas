@@ -365,6 +365,11 @@ export const LogAktivitasDpl: React.FC = () => {
 
       if (selectedFile) {
         formData.append("file", selectedFile);
+        formData.append("fotoBukti", selectedFile);
+      } else if (filePreview && !filePreview.startsWith("blob:") && !filePreview.startsWith("data:")) {
+        formData.append("fotoBuktiUrl", filePreview);
+      } else if (!filePreview && !selectedFile && editingLogId) {
+        formData.append("fotoBuktiUrl", "");
       }
 
       if (editingLogId) {
@@ -700,9 +705,11 @@ export const LogAktivitasDpl: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedDetailLog(item)}
-                          className="text-emerald-700 hover:text-emerald-800 hover:underline font-semibold cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+                          title="Klik untuk melihat bukti foto/dokumen"
                         >
-                          {item.bukti}
+                          <Eye className="w-3 h-3" />
+                          <span>{item.bukti}</span>
                         </button>
                       ) : (
                         <span className="text-slate-400">-</span>
@@ -1161,6 +1168,41 @@ export const LogAktivitasDpl: React.FC = () => {
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
+                  ) : filePreview ? (
+                    <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-emerald-200 shadow-xs">
+                      <div className="flex items-center gap-2.5 truncate">
+                        {filePreview.match(/\.(jpeg|jpg|png|webp|gif)$/i) || !filePreview.includes(".") ? (
+                          <img
+                            src={resolveImageUrl(filePreview)}
+                            alt="Bukti Eksisting"
+                            className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-slate-100"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-emerald-600" />
+                          </div>
+                        )}
+                        <div className="text-left truncate">
+                          <span className="block truncate text-slate-800 font-semibold text-xs">
+                            Berkas Bukti Terlampir
+                          </span>
+                          <span className="block text-[10px] text-emerald-600 font-medium">
+                            Klik untuk mengganti dengan berkas baru
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleClearFile();
+                        }}
+                        className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Hapus berkas lampiran"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-1 text-slate-500 py-1">
                       <UploadCloud className="w-6 h-6 text-slate-400" />
@@ -1293,24 +1335,51 @@ export const LogAktivitasDpl: React.FC = () => {
             )}
 
             {selectedDetailLog.fotoBuktiUrl && (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <span className="font-semibold text-slate-700">Dokumentasi Kegiatan:</span>
-                {selectedDetailLog.fotoBuktiUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) ? (
-                  <img
-                    src={resolveImageUrl(selectedDetailLog.fotoBuktiUrl)}
-                    alt="Dokumentasi Kegiatan"
-                    className="w-full max-h-56 object-cover rounded-xl border border-slate-200"
-                  />
-                ) : (
-                  <a
-                    href={resolveImageUrl(selectedDetailLog.fotoBuktiUrl)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 px-3 py-2 rounded-xl"
-                  >
-                    <FileText className="w-4 h-4" /> Buka Dokumen Dokumentasi Kegiatan
-                  </a>
-                )}
+                <div className="space-y-2">
+                  {selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).map((url, idx) => {
+                    const cleanUrl = url.trim();
+                    const isImage = cleanUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) || !cleanUrl.includes(".");
+                    const fullUrl = resolveImageUrl(cleanUrl);
+
+                    return isImage ? (
+                      <div key={idx} className="relative group overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                        <img
+                          src={fullUrl}
+                          alt={`Dokumentasi Kegiatan ${idx + 1}`}
+                          className="w-full max-h-64 object-cover rounded-xl transition-transform duration-200 group-hover:scale-102"
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = "/image/berseka-logo.png";
+                          }}
+                        />
+                        <a
+                          href={fullUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="absolute bottom-2.5 right-2.5 bg-slate-900/80 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[11px] font-semibold backdrop-blur-xs flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity shadow-sm"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Buka Foto Penuh</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <a
+                        key={idx}
+                        href={fullUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 hover:bg-emerald-100/70 px-3.5 py-2.5 rounded-xl border border-emerald-200 transition-colors w-full"
+                      >
+                        <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <span className="truncate">Buka Dokumen Dokumentasi Kegiatan ({cleanUrl.split("/").pop() || "Dokumen"})</span>
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

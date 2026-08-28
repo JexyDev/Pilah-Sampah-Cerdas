@@ -10,6 +10,7 @@ import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
 import { facilityService } from "../services/facilityService.js";
 import { timelineKknService } from "../services/timelineKknService.js";
+import { extractUploadedFileUrls } from "../middlewares/uploadMiddleware.js";
 
 
 export class KknController {
@@ -339,18 +340,20 @@ export class KknController {
     try {
       const kknUserId = req.user!.userId;
 
-      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBukti || req.body.evidencePhotoUrl;
-      if (req.file) {
-        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.fotoBukti?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl ||
+          req.body.fotoBukti ||
+          req.body.fotoUrl ||
+          req.body.evidencePhotoUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
       }
 
       const data = await kknService.createPemanfaatanSampah(kknUserId, {
@@ -678,18 +681,19 @@ export class KknController {
 
   async createLogbookPemanfaatan(req: Request, res: Response) {
     try {
-      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
-      if (req.file) {
-        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.fotoBukti?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl ||
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
       }
 
       const payload = { ...req.body, fotoDokumentasiUrl };
@@ -713,18 +717,19 @@ export class KknController {
 
   async createPanenHasil(req: Request, res: Response) {
     try {
-      let fotoDokumentasiUrl = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
-      if (req.file) {
-        fotoDokumentasiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        const filesObj = req.files as any;
-        const f =
-          filesObj.fotoDokumentasi?.[0] ||
-          filesObj.fotoBukti?.[0] ||
-          filesObj.image?.[0] ||
-          filesObj.foto?.[0] ||
-          filesObj.file?.[0];
-        if (f) fotoDokumentasiUrl = `/uploads/${f.filename}`;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl ||
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
       }
 
       const payload = { ...req.body, fotoDokumentasiUrl };
