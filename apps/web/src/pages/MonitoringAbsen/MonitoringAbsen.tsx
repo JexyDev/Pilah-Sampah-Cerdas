@@ -837,7 +837,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         return d <= end;
       });
     }
-    return list;
+    // Urutkan jadwal terbaru (hari ini) di paling atas
+    return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [schedules, selectedKelompokId, startDateFilter, endDateFilter]);
 
   const activeSchedule = useMemo(() => {
@@ -925,13 +926,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     try {
       const res = await api.get("/schedules");
       const list = res.data.data || [];
-      setSchedules(list);
-      if (list.length > 0) {
+      // Urutkan jadwal terbaru di paling atas
+      const sorted = [...list].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setSchedules(sorted);
+      if (sorted.length > 0) {
         setSelectedScheduleId((prev) => {
-          if (prev && list.some((s: any) => s.id === prev)) return prev;
-          const initialCenter = getCenterFromSchedule(list[0]);
+          const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+          const todayWibStr = nowWib.toISOString().slice(0, 10);
+          
+          if (prev) {
+            const currentSelected = sorted.find((s: any) => s.id === prev);
+            if (currentSelected && currentSelected.date) {
+              const curWib = new Date(new Date(currentSelected.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+              if (curWib === todayWibStr) return prev;
+            }
+          }
+
+          const todaySched = sorted.find((s: any) => {
+            if (!s.date) return false;
+            const sWib = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            return sWib === todayWibStr;
+          });
+
+          const defaultSched = todaySched || sorted[0];
+          const initialCenter = getCenterFromSchedule(defaultSched);
           setMapCenter(initialCenter);
-          return list[0].id;
+          return defaultSched.id;
         });
       } else {
         setMapCenter([-6.8915, 107.6107]);
@@ -1045,10 +1065,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   useEffect(() => {
     if (visibleSchedules.length > 0) {
       setSelectedScheduleId((prev) => {
-        if (prev && visibleSchedules.some((s) => s.id === prev)) return prev;
-        
+        const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+        const todayWibStr = nowWib.toISOString().slice(0, 10);
+
+        if (prev) {
+          const currentSelected = visibleSchedules.find((s) => s.id === prev);
+          if (currentSelected && currentSelected.date) {
+            const curWib = new Date(new Date(currentSelected.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            if (curWib === todayWibStr && (!selectedKelompokId || currentSelected.kelompokId === selectedKelompokId)) {
+              return prev;
+            }
+          }
+        }
+
         // Utamakan jadwal hari ini (WIB / Asia/Jakarta)
-        const todayWibStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         const todaySched = visibleSchedules.find((s) => {
           if (!s.date) return false;
           const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
