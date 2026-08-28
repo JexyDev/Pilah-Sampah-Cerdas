@@ -24,6 +24,7 @@ export type UserRole =
   | "DOSEN_PENDAMPING"
   | "DOSEN_PENDAMPING_LAPANGAN"
   | "MPL"
+  | "MITRA_PENDAMPING_LAPANGAN"
   | "PEMIMPIN"
   | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
@@ -72,7 +73,7 @@ const normalizeRole = (role: string): UserRole => {
   if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(role)) return "CAMAT";
   if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
   if (["DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN", "DPL"].includes(role)) return "DPL";
-  if (["MPL", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(role)) return "MPL";
+  if (["MPL", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING"].includes(role)) return "MPL";
   if (["PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PEMIMPIN";
   if (["TASKFORCE", "Panitia", "TASK_FORCE", "Panitia/Taskforce", "PANITIA_TASKFORCE"].includes(role)) return "TASK_FORCE";
   return role as UserRole;
@@ -99,6 +100,8 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
       return { avatarBg: "bg-green-100", avatarColor: "text-green-700" };
     case "MAHASISWA_KKN":
       return { avatarBg: "bg-amber-100", avatarColor: "text-amber-700" };
+    case "MPL":
+      return { avatarBg: "bg-violet-100", avatarColor: "text-violet-700" };
     default:
       return { avatarBg: "bg-gray-100", avatarColor: "text-gray-700" };
   }
@@ -124,6 +127,8 @@ const getWilayahByRole = (role: string): string => {
       return "RW 06 Dago";
     case "MAHASISWA_KKN":
       return "Area KKN Dago";
+    case "MPL":
+      return "Kelurahan Dago";
     default:
       return "Kecamatan Coblong";
   }
@@ -141,6 +146,9 @@ export const computeAvatarInitials = (name: string = "User"): string => {
 };
 
 export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "MAHASISWA_KKN", "PETUGAS_RESIDU"];
+
+// MPL (Mitra Pendamping Lapangan) — role versi kelurahan dari DPL
+// Scope: strict by kelurahan id, akses sama persis dengan DPL
 
 // ─── Helper: Storage abstraction (localStorage vs sessionStorage) ─────────────
 const TOKEN_KEYS = ["psc_access_token", "psc_refresh_token", "psc_user"] as const;
