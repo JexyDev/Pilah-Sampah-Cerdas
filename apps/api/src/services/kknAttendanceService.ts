@@ -18,18 +18,47 @@ import { notificationIntegrationService } from "./notificationIntegrationService
  * FEATURE 2: Ensures consistent geofence configuration across all location tracking methods.
  */
 async function buildGeofence(schedule: any): Promise<{ latitude: number; longitude: number; radius: number; polygon?: any }> {
-  // Load system defaults from config
+  // 1. Prioritas Utama: Koordinat langsung pada Jadwal Kegiatan
+  if (schedule.latitude && schedule.longitude) {
+    return {
+      latitude: Number(schedule.latitude),
+      longitude: Number(schedule.longitude),
+      radius: schedule.radius ? Number(schedule.radius) : 200,
+      polygon: schedule.polygon,
+    };
+  }
+
+  // 2. Prioritas Kedua: Titik Posko KKN resmi milik kelompok
+  if (schedule.kelompokId) {
+    try {
+      const posko = await prisma.poskoKkn.findUnique({
+        where: { kelompokId: schedule.kelompokId },
+      });
+      if (posko && posko.latitude && posko.longitude) {
+        return {
+          latitude: Number(posko.latitude),
+          longitude: Number(posko.longitude),
+          radius: schedule.radius ? Number(schedule.radius) : 200,
+          polygon: schedule.polygon,
+        };
+      }
+    } catch (_err) {
+      // Ignored
+    }
+  }
+
+  // 3. Fallback: Default sistem dari Rule Engine / Config
   const configLatStr = await configService.getConfig("default_activity_latitude");
   const configLngStr = await configService.getConfig("default_activity_longitude");
   const configRadiusStr = await configService.getConfig("default_activity_radius");
 
   const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
   const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 100;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200;
 
   return {
-    latitude: schedule.latitude ? Number(schedule.latitude) : defaultLat,
-    longitude: schedule.longitude ? Number(schedule.longitude) : defaultLng,
+    latitude: defaultLat,
+    longitude: defaultLng,
     radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
     polygon: schedule.polygon,
   };
