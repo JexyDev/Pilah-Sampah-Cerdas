@@ -2817,6 +2817,32 @@ export class KknAttendanceService {
       throw new Error("FORBIDDEN: Kegiatan ini sudah selesai.");
     }
 
+    // Validasi Geofence: Mahasiswa WAJIB berada di dalam radius zona kegiatan / posko KKN saat memulai presensi
+    const geofence = await buildGeofence(schedule);
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 25;
+    const distToZone = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
+
+    let isInsideOnStart = false;
+    if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+      const polyPoints = (geofence.polygon as any[]).map((p) => {
+        const val0 = Number(p[0]);
+        const val1 = Number(p[1]);
+        return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
+      });
+      isInsideOnStart = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) || (distToZone <= geofence.radius + bufferMeters);
+    } else {
+      isInsideOnStart = distToZone <= (geofence.radius + bufferMeters);
+    }
+
+    if (!isInsideOnStart) {
+      const allowedRadius = geofence.radius + bufferMeters;
+      const distanceInt = Math.round(distToZone);
+      throw new Error(
+        `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona Posko KKN (Jarak: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di lokasi Posko/Wilayah KKN.`
+      );
+    }
+
     // Pengecekan apakah user SUDAH menyelesaikan kegiatan ini (untuk mencegah overwrite status HADIR)
     const existingSession = await prisma.activityAttendance.findUnique({
       where: {
@@ -2999,7 +3025,6 @@ export class KknAttendanceService {
       });
     }
 
-    const ruleConfigs = await configService.getRuleEngineConfigs();
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
       ruleConfigs.attendanceMinDurationMinutes +

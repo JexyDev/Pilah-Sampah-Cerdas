@@ -1806,7 +1806,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const recordedTime = new Date(loc.recordedAt).getTime();
       const isRecentLocation = !isNaN(recordedTime) && (Date.now() - recordedTime) < 30 * 60 * 1000;
 
-      const isActivePresence = isAttended || isInsideZone || (isRecentLocation && Boolean(activeSchedule));
+      const isActivePresence = isInsideZone && (isAttended || isRecentLocation);
 
       // Smart zoom-aware grid key: if zoomed in close (zoom >= 17), do not cluster unless exactly same coordinates
       const gridKey = mapZoom >= 17 ? `${loc.studentId || idx}` : `${lat.toFixed(4)}_${lng.toFixed(4)}`;
@@ -1835,20 +1835,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       if (count === 1) {
         const s = grp.students[0];
-        const isHadir = Boolean(s.record && (s.record.status === "HADIR" || s.record.attendedAt));
+        const statusUpper = String(s.record?.status || "").toUpperCase();
+        const isFinished = Boolean(s.record?.checkOutAt || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI");
+        const isPaused = statusUpper === "TERJEDA";
+        const isOngoing = statusUpper === "BERLANGSUNG" || statusUpper === "DI_ZONA" || statusUpper === "DALAM_RADIUS";
 
         let badgeText = "STANDBY";
         let badgeColorClass = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200";
 
-        if (isHadir) {
-          badgeText = "HADIR";
+        if (isFinished) {
+          badgeText = statusUpper === "HADIR_MEMENUHI" ? "SELESAI (MEMENUHI)" : "SELESAI";
+          badgeColorClass = "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
+        } else if (!s.isInsideZone) {
+          badgeText = isOngoing || isPaused ? "DI LUAR ZONA (TERJEDA)" : "DI LUAR ZONA";
+          badgeColorClass = "bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700";
+        } else if (isOngoing) {
+          badgeText = "DI ZONA (AKTIF)";
           badgeColorClass = "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
         } else if (s.isInsideZone) {
-          badgeText = "DI ZONA (PRESENSI)";
+          badgeText = "DI ZONA (STANDBY)";
           badgeColorClass = "bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300 border-teal-300 dark:border-teal-700";
-        } else if (s.isActivePresence) {
-          badgeText = "AKTIF LAPANGAN";
-          badgeColorClass = "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
         }
 
         items.push(
@@ -1856,9 +1862,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             key={`student-single-${s.loc.studentId}`}
             position={[grp.centerLat, grp.centerLng]}
             icon={
-              s.isActivePresence
-                ? createActivePresenceIcon(s.loc.student.name)
-                : createStudentIcon("in_radius")
+              !s.isInsideZone
+                ? createStudentIcon("outside_radius")
+                : s.isActivePresence
+                  ? createActivePresenceIcon(s.loc.student.name)
+                  : createStudentIcon("in_radius")
             }
           >
             <Popup>
@@ -1878,8 +1886,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   Update GPS: {new Date(s.loc.recordedAt).toLocaleTimeString("id-ID")}
                 </p>
                 {s.record?.attendedAt && (
-                  <div className="mt-1.5 p-1.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg border border-emerald-200 dark:border-emerald-800/60 text-[10px] text-emerald-800 dark:text-emerald-300 font-bold">
-                    Waktu Masuk: {new Date(s.record.attendedAt).toLocaleTimeString("id-ID")} | Durasi: {formatDurationText(calculateDurationMinutes(s.record.attendedAt))}
+                  <div className={`mt-1.5 p-1.5 rounded-lg border text-[10px] font-bold ${
+                    !s.isInsideZone 
+                      ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300"
+                      : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300"
+                  }`}>
+                    Waktu Masuk: {new Date(s.record.attendedAt).toLocaleTimeString("id-ID")} | Durasi di Posko: {s.record.actualInZoneMinutes || 0} Menit {!s.isInsideZone && "(Di Luar Posko)"}
                   </div>
                 )}
               </div>
@@ -1910,23 +1922,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <div className="space-y-1.5 divide-y divide-slate-100 dark:divide-slate-800">
                   {grp.students.map((s, sIdx) => {
                     const statusUpper = String(s.record?.status || "").toUpperCase();
-                    const isHadir = Boolean(s.record && (statusUpper === "HADIR" || statusUpper === "SELESAI"));
-                    const isBerlangsung = Boolean(s.record && (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA"));
+                    const isFinished = Boolean(s.record?.checkOutAt || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI");
+                    const isOngoing = statusUpper === "BERLANGSUNG" || statusUpper === "DI_ZONA" || statusUpper === "DALAM_RADIUS";
                     let badgeText = "Standby";
                     let badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-500 text-[8.5px] px-1 py-0.2 rounded";
 
-                    if (isHadir) {
-                      badgeText = "Hadir";
+                    if (isFinished) {
+                      badgeText = "Selesai";
                       badgeClass = "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800";
-                    } else if (isBerlangsung) {
-                      badgeText = "Berlangsung";
-                      badgeClass = "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-amber-200 dark:border-amber-850";
+                    } else if (!s.isInsideZone) {
+                      badgeText = "Di Luar Zona";
+                      badgeClass = "bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-rose-200 dark:border-rose-800";
+                    } else if (isOngoing) {
+                      badgeText = "Di Zona";
+                      badgeClass = "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-teal-200 dark:border-teal-800";
                     } else if (s.isInsideZone) {
                       badgeText = "Di Zona";
                       badgeClass = "bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-teal-200 dark:border-teal-800";
-                    } else if (s.isActivePresence) {
-                      badgeText = "Aktif";
-                      badgeClass = "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 font-bold text-[8.5px] px-1 py-0.2 rounded border border-emerald-200 dark:border-emerald-800";
                     }
 
                     return (
