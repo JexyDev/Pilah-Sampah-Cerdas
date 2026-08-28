@@ -52,6 +52,9 @@ import {
   GraduationCap,
   Sparkles,
   Zap,
+  Globe,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -456,12 +459,20 @@ const getCenterFromSchedule = (sched?: ScheduleActivity): [number, number] => {
 const ChangeMapView: React.FC<{
   center: [number, number];
   zoom: number;
-}> = ({ center, zoom }) => {
+  manualTriggerId?: number;
+  isDeveloper?: boolean;
+}> = ({ center, zoom, manualTriggerId, isDeveloper }) => {
   const map = useMap();
+  const lastTriggerRef = React.useRef(manualTriggerId);
 
   useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
+    if (manualTriggerId && manualTriggerId !== lastTriggerRef.current) {
+      lastTriggerRef.current = manualTriggerId;
+      map.flyTo(center, zoom, { duration: 1.2 });
+    } else if (!isDeveloper) {
+      map.setView(center, zoom);
+    }
+  }, [center, zoom, manualTriggerId, isDeveloper, map]);
 
   useEffect(() => {
     map.invalidateSize();
@@ -500,6 +511,35 @@ const MonitoringAbsen: React.FC = () => {
       try {
         localStorage.setItem("berseka_dev_selected_kelompok", id);
       } catch {}
+    }
+    if (!id && !isDpl) {
+      setSelectedScheduleId("ALL_TODAY");
+      setMapCenter([-6.8906, 107.6150]);
+      setMapZoom(13.5);
+    } else if (id) {
+      // Cari jadwal kelompok ini hari ini
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      const todayWibStr = nowWib.toISOString().slice(0, 10);
+      const kelScheds = schedules.filter((s) => s.kelompokId === id);
+      const todaySched = kelScheds.find((s) => {
+        if (!s.date) return false;
+        const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return sWibStr === todayWibStr;
+      }) || kelScheds[0];
+      if (todaySched) {
+        setSelectedScheduleId(todaySched.id);
+        const center = getCenterFromSchedule(todaySched);
+        setMapCenter(center);
+        setMapZoom(15);
+      } else {
+        setSelectedScheduleId("");
+        const grp = groups.find((g) => g.id === id);
+        if (grp) {
+          const loc = getKelompokLocationInfo(grp);
+          setMapCenter(loc.centroid);
+          setMapZoom(14);
+        }
+      }
     }
   };
 
@@ -831,8 +871,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   };
 
   // Map settings
-  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8915, 107.6107]);
-  const [mapZoom, setMapZoom] = useState<number>(15);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-6.8906, 107.6150]);
+  const [mapZoom, setMapZoom] = useState<number>(13.5);
+  const [manualMapTrigger, setManualMapTrigger] = useState<number>(0);
+  const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
+
+  const handleFitFullCoblong = () => {
+    setMapCenter([-6.8906, 107.6150]);
+    setMapZoom(13.5);
+    setManualMapTrigger(Date.now());
+    toast.success("Menampilkan seluruh wilayah & sebaran posko KKN");
+  };
 
   const visibleSchedules = useMemo(() => {
     let list = schedules;
@@ -861,9 +910,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [schedules, selectedKelompokId, startDateFilter, endDateFilter]);
 
+  const isAllTodayMode = !selectedKelompokId && selectedScheduleId === "ALL_TODAY";
+
   const activeSchedule = useMemo(() => {
+    if (isAllTodayMode) return null;
     return visibleSchedules.find((s) => s.id === selectedScheduleId);
-  }, [visibleSchedules, selectedScheduleId]);
+  }, [visibleSchedules, selectedScheduleId, isAllTodayMode]);
 
   const scheduleTargetHours = useMemo(() => {
     const h = Number(configTargets.attendanceMinDurationHours || 0);
@@ -958,27 +1010,33 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       setSchedules(sorted);
       if (sorted.length > 0) {
         setSelectedScheduleId((prev) => {
+          if (!selectedKelompokId && !isDpl) {
+            return "ALL_TODAY";
+          }
           const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
           const todayWibStr = nowWib.toISOString().slice(0, 10);
           
-          if (prev) {
+          if (prev && prev !== "ALL_TODAY") {
             const currentSelected = sorted.find((s: any) => s.id === prev);
             if (currentSelected && currentSelected.date) {
               const curWib = new Date(new Date(currentSelected.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-              if (curWib === todayWibStr) return prev;
+              if (curWib === todayWibStr && (!selectedKelompokId || currentSelected.kelompokId === selectedKelompokId)) return prev;
             }
           }
 
           const todaySched = sorted.find((s: any) => {
             if (!s.date) return false;
             const sWib = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-            return sWib === todayWibStr;
+            return sWib === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
           });
 
-          const defaultSched = todaySched || sorted[0];
-          const initialCenter = getCenterFromSchedule(defaultSched);
-          setMapCenter(initialCenter);
-          return defaultSched.id;
+          const defaultSched = todaySched || sorted.find((s: any) => !selectedKelompokId || s.kelompokId === selectedKelompokId) || sorted[0];
+          if (defaultSched) {
+            const initialCenter = getCenterFromSchedule(defaultSched);
+            setMapCenter(initialCenter);
+            return defaultSched.id;
+          }
+          return "";
         });
       } else {
         setMapCenter([-6.8915, 107.6107]);
@@ -990,54 +1048,90 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   };
 
+  const mapTimesheetToAttendance = (studentList: any[]): AttendanceRecord[] => {
+    return studentList.map((s: any) => ({
+      id: `roster-${s.studentId}`,
+      studentId: s.studentId,
+      scheduleId: "",
+      attendedAt: "",
+      completedAt: "",
+      method: "MANUAL",
+      latitude: "0",
+      longitude: "0",
+      status: "BELUM_ADA_JADWAL",
+      currentStatus: "BELUM_ABSEN",
+      student: {
+        id: s.studentId,
+        name: s.studentName,
+        studentProfile: {
+          nim: s.nim,
+          jurusan: s.jurusan,
+          isKetua: s.isKetua,
+          kelompok: {
+            id: s.kelompokId,
+            name: s.kelompokName,
+            kelurahan: s.kelurahan,
+          },
+        },
+      },
+      kelompokName: s.kelompokName,
+      totalHours: s.totalHours,
+      totalMinutes: s.totalMinutes,
+    }));
+  };
+
   const fetchAttendanceAndLocations = async (
     scheduleId?: string,
     kelompokId?: string
   ) => {
     try {
-      if (scheduleId) {
+      if (scheduleId === "ALL_TODAY") {
+        // Ambil data agregat absensi seluruh kelompok hari ini secara paralel
+        const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+        const todayWibStr = nowWib.toISOString().slice(0, 10);
+        let activeSchedList = schedules;
+        if (activeSchedList.length === 0) {
+          try {
+            const sRes = await api.get("/schedules");
+            activeSchedList = sRes.data?.data || [];
+          } catch {}
+        }
+        const todaySchedules = activeSchedList.filter((s: any) => {
+          if (!s.date) return false;
+          const sWib = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          return sWib === todayWibStr;
+        });
+
+        if (todaySchedules.length > 0) {
+          const results = await Promise.allSettled(
+            todaySchedules.map((s) => api.get(`/kegiatan/${s.id}/absen`))
+          );
+          const combinedAtt: AttendanceRecord[] = [];
+          results.forEach((res) => {
+            if (res.status === "fulfilled" && res.value.data?.data) {
+              combinedAtt.push(...res.value.data.data);
+            }
+          });
+
+          if (combinedAtt.length > 0) {
+            setAttendance(combinedAtt);
+            return;
+          }
+        }
+        const tsRes = await api.get("/timesheet/summary");
+        const studentList = tsRes.data?.data?.students || [];
+        setAttendance(mapTimesheetToAttendance(studentList));
+      } else if (scheduleId) {
         const attRes = await api.get(`/kegiatan/${scheduleId}/absen`);
         setAttendance(attRes.data.data || []);
       } else {
-        // Fallback: Jika belum ada kegiatan terjadwal, ambil timesheet/roster mahasiswa agar halaman tidak kosong
         try {
           const tsRes = await api.get("/timesheet/summary", {
             params: { kelompokId: kelompokId || undefined },
           });
           const studentList = tsRes.data?.data?.students || [];
           if (studentList.length > 0) {
-            const mappedAttendance: AttendanceRecord[] = studentList.map(
-              (s: any) => ({
-                id: `roster-${s.studentId}`,
-                studentId: s.studentId,
-                scheduleId: "",
-                attendedAt: "",
-                completedAt: "",
-                method: "MANUAL",
-                latitude: "0",
-                longitude: "0",
-                status: "BELUM_ADA_JADWAL",
-                currentStatus: "BELUM_ABSEN",
-                student: {
-                  id: s.studentId,
-                  name: s.studentName,
-                  studentProfile: {
-                    nim: s.nim,
-                    jurusan: s.jurusan,
-                    isKetua: s.isKetua,
-                    kelompok: {
-                      id: s.kelompokId,
-                      name: s.kelompokName,
-                      kelurahan: s.kelurahan,
-                    },
-                  },
-                },
-                kelompokName: s.kelompokName,
-                totalHours: s.totalHours,
-                totalMinutes: s.totalMinutes,
-              })
-            );
-            setAttendance(mappedAttendance);
+            setAttendance(mapTimesheetToAttendance(studentList));
           } else {
             setAttendance([]);
           }
@@ -1090,8 +1184,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   };
 
   useEffect(() => {
-    if (visibleSchedules.length > 0) {
+    if (!selectedKelompokId && !isDpl) {
+      // Ketika developer memilih "Semua Wilayah", default selalu ke mode agregat ALL_TODAY
+      setSelectedScheduleId("ALL_TODAY");
+    } else if (visibleSchedules.length > 0) {
       setSelectedScheduleId((prev) => {
+        if (prev === "ALL_TODAY") {
+          const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+          const todayWibStr = nowWib.toISOString().slice(0, 10);
+          const todaySched = visibleSchedules.find((s) => {
+            if (!s.date) return false;
+            const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            return sWibStr === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
+          }) || visibleSchedules[0];
+          return todaySched?.id || "";
+        }
+
         const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
         const todayWibStr = nowWib.toISOString().slice(0, 10);
 
@@ -1117,31 +1225,38 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         });
 
         if (todaySched) return todaySched.id;
-        return visibleSchedules[0].id;
+        return visibleSchedules[0]?.id || "";
       });
     } else {
-      setSelectedScheduleId("");
+      setSelectedScheduleId(!selectedKelompokId && !isDpl ? "ALL_TODAY" : "");
     }
-  }, [selectedKelompokId, visibleSchedules]);
+  }, [selectedKelompokId, visibleSchedules, isDpl]);
 
   useEffect(() => {
     fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
   }, [selectedScheduleId, selectedKelompokId]);
 
   useEffect(() => {
-    if (activeSchedule) {
-      const center = getCenterFromSchedule(activeSchedule);
-      setMapCenter(center);
-    } else if (selectedKelompokId) {
-      const grp = groups.find((g) => g.id === selectedKelompokId);
-      if (grp) {
-        const loc = getKelompokLocationInfo(grp);
-        setMapCenter(loc.centroid);
+    // Untuk role non-developer (misal DPL): sinkronkan center ke kegiatan atau posko
+    // Untuk role Developer: jangan paksa auto-snap agar developer bebas pan, zoom, dan melihat seluruh peta tanpa reset
+    if (!isDeveloper) {
+      if (activeSchedule) {
+        const center = getCenterFromSchedule(activeSchedule);
+        setMapCenter(center);
+        setMapZoom(15);
+      } else if (selectedKelompokId) {
+        const grp = groups.find((g) => g.id === selectedKelompokId);
+        if (grp) {
+          const loc = getKelompokLocationInfo(grp);
+          setMapCenter(loc.centroid);
+          setMapZoom(14);
+        }
+      } else {
+        setMapCenter([-6.8906, 107.6150]);
+        setMapZoom(13.5);
       }
-    } else {
-      setMapCenter([-6.8906, 107.6150]);
     }
-  }, [selectedKelompokId, activeSchedule, groups]);
+  }, [selectedKelompokId, activeSchedule, groups, isDeveloper]);
 
   // Reset page when filter or search changes
   useEffect(() => {
@@ -1512,6 +1627,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
       setMapCenter([lat, lng]);
       setMapZoom(18);
+      setManualMapTrigger(Date.now());
       setShowMap(true);
       
       const mapElement = document.getElementById("monitoring-map-section");
@@ -2355,33 +2471,67 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                  {activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-")}
+                  {selectedScheduleId === "ALL_TODAY"
+                    ? "Semua Kegiatan Hari Ini (Global Overview Seluruh Posko)"
+                    : activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-")}
                 </h2>
-                {activeSchedule?.category && (
-                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    {activeSchedule.category}
-                  </span>
-                )}
-                {/* Dynamic Status Badge calculated by Dates & Times */}
-                {activeSchedule && (
-                  <span
-                    className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
-                      getScheduleStatus(activeSchedule).color
-                    }`}
-                    title={getScheduleStatus(activeSchedule).tooltip}
-                  >
-                    {getScheduleStatus(activeSchedule).label}
-                  </span>
-                )}
-                {!activeSchedule && selectedKelompokId && (
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                    {groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok KKN"}
-                  </span>
+                {selectedScheduleId === "ALL_TODAY" ? (
+                  <>
+                    <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      {groups.length} Kelompok Terdaftar
+                    </span>
+                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 shadow-2xs">
+                      🌟 Mode Agregat Global
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {activeSchedule?.category && (
+                      <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {activeSchedule.category}
+                      </span>
+                    )}
+                    {activeSchedule && (
+                      <span
+                        className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                          getScheduleStatus(activeSchedule).color
+                        }`}
+                        title={getScheduleStatus(activeSchedule).tooltip}
+                      >
+                        {getScheduleStatus(activeSchedule).label}
+                      </span>
+                    )}
+                    {!activeSchedule && selectedKelompokId && (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok KKN"}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
 
               <div className="flex items-center gap-4 text-xs text-slate-500 font-semibold mt-1 flex-wrap">
-                {activeSchedule ? (
+                {selectedScheduleId === "ALL_TODAY" ? (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <Calendar size={14} className="text-emerald-600" />
+                      {new Date().toLocaleDateString("id-ID", {
+                        timeZone: "Asia/Jakarta",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Users size={14} className="text-emerald-600" />
+                      Menampilkan agregat {attendance.length} mahasiswa dari seluruh posko KKN
+                    </span>
+                    <span className="flex items-center gap-1.5 truncate max-w-sm">
+                      <MapPin size={14} className="text-emerald-600 shrink-0" />
+                      <span>Seluruh Wilayah Kecamatan Coblong (Bandung)</span>
+                    </span>
+                  </>
+                ) : activeSchedule ? (
                   <>
                     <span className="flex items-center gap-1.5">
                       <Calendar size={14} className="text-emerald-600" />
@@ -2427,13 +2577,63 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </button>
             )}
 
-            <div className="relative min-w-[260px]">
+            <div className="relative min-w-[280px]">
               <select
                 value={selectedScheduleId}
-                onChange={(e) => setSelectedScheduleId(e.target.value)}
+                onChange={(e) => {
+                  const newSchedId = e.target.value;
+                  setSelectedScheduleId(newSchedId);
+                  if (newSchedId === "ALL_TODAY") {
+                    setSelectedKelompokId("");
+                    if (typeof window !== "undefined") {
+                      try {
+                        localStorage.setItem("berseka_dev_selected_kelompok", "");
+                      } catch {}
+                    }
+                    setMapCenter([-6.8906, 107.6150]);
+                    setMapZoom(13.5);
+                  } else {
+                    const sched = schedules.find((s) => s.id === newSchedId);
+                    if (sched && sched.kelompokId) {
+                      setSelectedKelompokId(sched.kelompokId);
+                      if (typeof window !== "undefined") {
+                        try {
+                          localStorage.setItem("berseka_dev_selected_kelompok", sched.kelompokId);
+                        } catch {}
+                      }
+                      const center = getCenterFromSchedule(sched);
+                      setMapCenter(center);
+                      setMapZoom(15);
+                    }
+                  }
+                }}
                 className="w-full h-11 pl-3.5 pr-8 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
               >
-                {visibleSchedules.length === 0 ? (
+                {!selectedKelompokId && !isDpl ? (
+                  <>
+                    <option value="ALL_TODAY">
+                      🌟 Semua Kegiatan Hari Ini (Global View Seluruh Kelompok)
+                    </option>
+                    {Object.entries(
+                      visibleSchedules.reduce((acc: Record<string, ScheduleActivity[]>, s) => {
+                        const groupKey = s.kelompok?.name
+                          ? `${s.kelompok.name} (${s.kelompok.kelurahan || "Wilayah KKN"})`
+                          : "Jadwal Bersama / Umum";
+                        if (!acc[groupKey]) acc[groupKey] = [];
+                        acc[groupKey].push(s);
+                        return acc;
+                      }, {})
+                    ).map(([groupLabel, groupScheds]) => (
+                      <optgroup key={groupLabel} label={groupLabel}>
+                        {groupScheds.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </>
+                ) : visibleSchedules.length === 0 ? (
                   <option value="">Belum ada jadwal {selectedKelompokId ? "pada kelompok ini" : ""}</option>
                 ) : (
                   visibleSchedules.map((s) => (
@@ -2592,7 +2792,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Peta Interaktif Geofence & Lokasi GPS Mahasiswa (Dapat Ditutup / Dibuka) */}
       {showMap && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs animate-in fade-in duration-200">
-          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/70">
+          <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/70 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <MapIcon size={16} className="text-emerald-600" />
               <span className="text-xs font-black text-slate-800 dark:text-slate-100">
@@ -2604,16 +2804,55 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowMap(false)}
-              className="text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
-            >
-              <X size={14} /> Tutup Peta
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Tinjau Seluruh Wilayah / Full Bounds Button */}
+              <button
+                type="button"
+                onClick={handleFitFullCoblong}
+                className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Tinjau Seluruh Wilayah Kecamatan & Sebaran 8 Posko KKN"
+              >
+                <Globe size={13} className="text-emerald-600" />
+                <span>Lihat Seluruh Wilayah</span>
+              </button>
+
+              {/* Perluas / Standar Tinggi Peta */}
+              <button
+                type="button"
+                onClick={() => setIsMapExpanded(!isMapExpanded)}
+                className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title={isMapExpanded ? "Kecilkan Peta ke Ukuran Standar" : "Perbesar Peta (Tampilan Luas)"}
+              >
+                {isMapExpanded ? (
+                  <>
+                    <Minimize2 size={13} className="text-slate-500" />
+                    <span>Peta Standar</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 size={13} className="text-slate-500" />
+                    <span>Perluas Peta</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowMap(false)}
+                className="text-slate-400 hover:text-slate-600 text-xs font-bold flex items-center gap-1 cursor-pointer pl-2 border-l border-slate-200 dark:border-slate-700"
+              >
+                <X size={14} /> Tutup Peta
+              </button>
+            </div>
           </div>
 
-          <div className="h-[340px] relative z-0">
+          <div
+            id="monitoring-map-section"
+            className={`w-full relative z-0 transition-all duration-300 ${
+              isMapExpanded ? "h-[580px]" : "h-[400px]"
+            }`}
+          >
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -2621,7 +2860,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               minZoom={11}
               className="w-full h-full"
             >
-              <ChangeMapView center={mapCenter} zoom={mapZoom} />
+              <ChangeMapView
+                center={mapCenter}
+                zoom={mapZoom}
+                manualTriggerId={manualMapTrigger}
+                isDeveloper={isDeveloper}
+              />
               <MapZoomEvents onZoom={(z) => setMapZoom(z)} />
               <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
 
