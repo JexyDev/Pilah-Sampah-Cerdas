@@ -165,6 +165,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     File? fotoFile;
     final picker = ImagePicker();
     bool isLoading = false;
+    final deskripsiCtrl = TextEditingController();
 
     await showModalBottomSheet(
       context: context,
@@ -175,7 +176,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          final deskripsiCtrl = TextEditingController();
 
           Future<void> pickImage(ImageSource source) async {
             final picked = await picker.pickImage(
