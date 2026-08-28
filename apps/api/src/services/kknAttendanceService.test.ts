@@ -52,6 +52,10 @@ vi.mock("../lib/prisma.js", () => {
       notification: {
         create: vi.fn(),
       },
+      studentLeaveRequest: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
       $transaction: vi.fn(async (cb) => cb(prisma)),
     },
   };
@@ -697,4 +701,57 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.data.inZoneMinutes).toBe(20);
     });
   });
+
+  describe("getKegiatanAktif", () => {
+    it("should return only today's schedule and filter out yesterday finished schedule", async () => {
+      const studentId = "student-test-active";
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: studentId,
+        nim: "12345678",
+        kelompokId: "kelompok-1",
+      } as any);
+
+      const now = new Date();
+      const nowWib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const todayStr = nowWib.toISOString().slice(0, 10);
+      const yesterdayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      vi.mocked(prisma.schedule.findMany).mockResolvedValue([
+        {
+          id: "sch-today",
+          title: "Kegiatan Harian Posko KKN Hari Ini",
+          date: now,
+          time: "08:00 - 16:00",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          isActive: true,
+          kelompok: { poskoKkn: null },
+          attendances: [],
+          createdAt: new Date(),
+        } as any,
+        {
+          id: "sch-yesterday",
+          title: "Kegiatan Harian Posko KKN Kemarin",
+          date: yesterdayDate,
+          time: "08:00 - 16:00",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          isActive: true,
+          kelompok: { poskoKkn: null },
+          attendances: [],
+          createdAt: yesterdayDate,
+        } as any,
+      ]);
+
+      const result = await service.getKegiatanAktif(studentId);
+
+      expect(result.length).toBe(1);
+      expect(result[0].id).toBe("sch-today");
+      expect(result[0].tanggal).toBe(todayStr);
+      expect(result[0].status).toBe("AKTIF");
+    });
+  });
 });
+

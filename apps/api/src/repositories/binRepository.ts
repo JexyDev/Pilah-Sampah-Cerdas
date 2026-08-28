@@ -212,9 +212,14 @@ export class BinRepository {
         data: {
           wargaId: userId,
           fotoSampahUrl: evidencePhotoUrl!,
-          hasilKlasifikasiAi: categoryName.toLowerCase().includes("organik")
-            ? "organik"
-            : "anorganik",
+          hasilKlasifikasiAi:
+            categoryName.toLowerCase().includes("anorganik") ||
+            categoryName.toLowerCase().includes("non") ||
+            categoryName.toLowerCase().includes("anorg") ||
+            categoryName.toLowerCase().includes("ano") ||
+            categoryName.toLowerCase().includes("agn")
+              ? "anorganik"
+              : "organik",
           confidenceAi: aiConfidence!,
           berat: weightKg,
           unit: "Kg",
@@ -318,11 +323,17 @@ export class BinRepository {
       }
 
       // Broadcast real-time live event to monitoring dashboard
-      const isOrgRaw = categoryName.toLowerCase().includes("organik");
+      const isAnorgRaw =
+        categoryName.toLowerCase().includes("anorganik") ||
+        categoryName.toLowerCase().includes("non") ||
+        categoryName.toLowerCase().includes("anorg") ||
+        categoryName.toLowerCase().includes("ano") ||
+        categoryName.toLowerCase().includes("agn");
+      const isOrgRaw = !isAnorgRaw;
       const confVal = aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : 95;
       const organikPercent = isOrgRaw ? confVal : (100 - confVal);
       const anorganikPercent = 100 - organikPercent;
-      const isOrg = organikPercent >= anorganikPercent;
+      const isOrg = isOrgRaw;
 
       tx.user
         .findUnique({

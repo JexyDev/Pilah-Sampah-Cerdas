@@ -2679,7 +2679,7 @@ export class KknAttendanceService {
       return {
         id: sch.id,
         namaKegiatan: titleStr,
-        tanggal: targetDate.toISOString().slice(0, 10),
+        tanggal: schDateStr,
         jamMulai,
         jamSelesai,
         durasiWajibMenit,
@@ -2707,14 +2707,15 @@ export class KknAttendanceService {
       };
     });
 
-    // Bug #4 fix: filter jadwal kemarin yang sudah SELESAI dan tidak ada attendance-nya
-    // Jadwal kemarin hanya tampil jika: (1) overnight (masih aktif) ATAU (2) sudah ada statusKehadiran
+    // Filter: Halaman kegiatan aktif hanya menampilkan jadwal hari ini (atau jadwal kemarin yang shift-nya masih AKTIF / overnight).
+    // Jadwal kemarin yang sudah SELESAI tidak boleh tampil di daftar kegiatan aktif hari ini.
     const filtered = result.filter((r) => {
-      if (r.status === "SELESAI") {
-        // Kegiatan sudah lewat — tampilkan hanya jika mahasiswa sudah punya catatan kehadiran
-        return r.statusKehadiran !== null;
+      // Jika jadwal adalah tanggal target hari ini, selalu tampilkan
+      if (r.tanggal === todayWibDateStr) {
+        return true;
       }
-      return true;
+      // Jika jadwal kemarin, hanya tampilkan jika statusnya masih AKTIF (overnight)
+      return r.status === "AKTIF";
     });
 
     return filtered;

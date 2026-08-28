@@ -413,6 +413,21 @@ export class KknService {
           ? Number(warga.rw.longitude)
           : 107.610123;
 
+    const totalSetoranAgg = await prisma.setoranOtomatis.aggregate({
+      where: { wargaId: warga.id },
+      _sum: { berat: true, poin: true },
+    });
+    const totalKg = Math.round(Number(totalSetoranAgg._sum.berat || 0) * 10) / 10;
+
+    const pointsSum = await prisma.pointHistory.aggregate({
+      where: { userId: warga.id },
+      _sum: { points: true },
+    });
+    const totalPoin =
+      pointsSum._sum.points !== null && pointsSum._sum.points !== undefined
+        ? Number(pointsSum._sum.points)
+        : Math.round(totalKg * 10);
+
     const recentLogs =
       warga.setoranOtomatis?.map((log: any) => ({
         id: log.id,
@@ -435,6 +450,9 @@ export class KknService {
       longitude: lng,
       lat: lat,
       lng: lng,
+      totalKg,
+      totalPoin,
+      totalPoints: totalPoin,
       binOrganikId: binOrganik?.qrCode || null,
       binAnorganikId: binAnorganik?.qrCode || null,
       binId: primaryBin?.qrCode || "",
@@ -565,7 +583,7 @@ export class KknService {
         rw: { include: { kelurahan: true } },
         households: { include: { rw: { include: { kelurahan: true } } } },
         binOwnerships: { include: { bin: { include: { category: true, qrBatch: true } } } },
-        setoranOtomatis: { take: 5, orderBy: { createdAt: "desc" } },
+        setoranOtomatis: { orderBy: { createdAt: "desc" } },
         pointHistory: true,
       },
       orderBy: { createdAt: "desc" },
@@ -598,7 +616,7 @@ export class KknService {
         binAnorganik?.registeredByStudentId ||
         null;
 
-      const recentLogs = w.setoranOtomatis.map((log: any) => ({
+      const recentLogs = (w.setoranOtomatis || []).slice(0, 5).map((log: any) => ({
         date: new Date(log.createdAt).toISOString().split("T")[0],
         wasteType: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
         weightKg: Number(log.berat),
