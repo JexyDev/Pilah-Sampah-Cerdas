@@ -38,6 +38,7 @@ import {
   type ApprovalHistoryLog,
   type ProgramKerjaItem,
 } from "../../services/dplService";
+import { mplService } from "../../services/mplService";
 
 // ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
 type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
@@ -174,6 +175,13 @@ export const DplDashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
 
+  // MPL menggunakan mplService (scope by kelurahan via mplId),
+  // DPL dan role lain menggunakan dplService (scope by kecamatan via dplId)
+  const IS_MPL = userRole === "MPL" ||
+    userRole === "MITRA_PENDAMPING_LAPANGAN" ||
+    userRole === "MITRA_PEMBIMBING_LAPANGAN";
+  const activeService = IS_MPL ? mplService : dplService;
+
   const location = useLocation();
   const navigate = useNavigate();
   const isAjuanAbsensiPage =
@@ -214,11 +222,11 @@ export const DplDashboardPage: React.FC = () => {
     setLoading(true);
     try {
       const [groupsData, studentsData, alertsData, historyData, prokersData] = await Promise.all([
-        dplService.getGroupSummary(),
-        dplService.getStudents(),
-        dplService.getAlerts(),
-        dplService.getApprovalHistory(),
-        dplService.getProgramKerja(),
+        activeService.getGroupSummary(),
+        activeService.getStudents(),
+        activeService.getAlerts(),
+        activeService.getApprovalHistory(),
+        activeService.getProgramKerja(),
       ]);
 
       setGroups(groupsData || []);
@@ -246,7 +254,7 @@ export const DplDashboardPage: React.FC = () => {
   ) => {
     setDecidingLeaveId(requestId);
     try {
-      await dplService.decideLeaveRequest(requestId, status, note);
+      await activeService.decideLeaveRequest(requestId, status, note);
       if (status === "APPROVED") {
         toast.success("Pengajuan izin berhasil disetujui");
       } else if (status === "ESCALATED") {
@@ -257,8 +265,8 @@ export const DplDashboardPage: React.FC = () => {
       setRejectingRequestId(null);
       setRejectionReasonInput("");
       const [updatedAlerts, updatedHistory] = await Promise.all([
-        dplService.getAlerts(),
-        dplService.getApprovalHistory(),
+        activeService.getAlerts(),
+        activeService.getApprovalHistory(),
       ]);
       setAlerts(updatedAlerts);
       setApprovalHistory(updatedHistory);
@@ -276,15 +284,15 @@ export const DplDashboardPage: React.FC = () => {
   ) => {
     setDecidingLeaveId(requestId);
     try {
-      await dplService.decideCancelLeaveRequest(requestId, action, note);
+      await activeService.decideCancelLeaveRequest(requestId, action, note);
       toast.success(
         action === "APPROVE_HADIR"
           ? "Permohonan pembatalan disetujui! Status presensi diubah menjadi Hadir."
           : "Permohonan pembatalan ditolak. Status izin tetap berlaku."
       );
       const [updatedAlerts, updatedHistory] = await Promise.all([
-        dplService.getAlerts(),
-        dplService.getApprovalHistory(),
+        activeService.getAlerts(),
+        activeService.getApprovalHistory(),
       ]);
       setAlerts(updatedAlerts);
       setApprovalHistory(updatedHistory);

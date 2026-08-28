@@ -585,6 +585,21 @@ export const penilaianKknService = {
       };
     } else if (groupId) {
       whereCondition.studentProfile = { kelompokId: groupId };
+    } else if (
+      evaluatorRole &&
+      ["MPL", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN", "MITRA_PENDAMPING"].includes(evaluatorRole.toUpperCase()) &&
+      evaluatorId
+    ) {
+      // MPL scope: kelompok yang mplId-nya sama dengan evaluatorId
+      whereCondition.studentProfile = {
+        kelompok: {
+          id: groupId || undefined,
+          OR: [
+            { mplId: evaluatorId },
+            { mpl: { id: evaluatorId } },
+          ],
+        },
+      };
     } else if (evaluatorRole === "RW" && evaluatorId) {
       const userRw = await prisma.user.findUnique({
         where: { id: evaluatorId },

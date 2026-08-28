@@ -19,7 +19,7 @@ export const dplScopeMiddleware = async (
 
     const roleName = String(user.role || "").toUpperCase();
 
-    const allowedRoles = [
+const allowedRoles = [
       "DEVELOPER",
       "SUPER_USER",
       "superUser",
@@ -32,6 +32,11 @@ export const dplScopeMiddleware = async (
       "DOSEN_PEMBIMBING",
       "DOSEN_PENDAMPING",
       "DOSEN_PENDAMPING_LAPANGAN",
+      "MPL",
+      "MITRA_PENDAMPING_LAPANGAN",
+      "MITRA_PEMBIMBING_LAPANGAN",
+      "MITRA_PENDAMPING",
+      "MITRA",
     ];
     const isAllowed = allowedRoles.some((r) => roleName.includes(r));
 
