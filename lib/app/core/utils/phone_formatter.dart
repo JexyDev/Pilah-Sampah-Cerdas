@@ -44,6 +44,20 @@ class PhoneFormatter {
 
     return phone;
   }
+
+  /// Memformat input untuk tampilan awal di UI (dari format internasional kembali ke format lokal '08').
+  static String convertToLocalFormat(String raw) {
+    if (raw.isEmpty) return raw;
+    String phone = raw.trim().replaceAll(RegExp(r'[^\d\+]'), '');
+    
+    if (phone.startsWith('+62')) {
+      return '0${phone.substring(3)}';
+    } else if (phone.startsWith('62')) {
+      return '0${phone.substring(2)}';
+    }
+    
+    return phone;
+  }
 }
 
 /// TextInputFormatter untuk menghapus awalan '0' atau '62' secara otomatis saat user mengetik,

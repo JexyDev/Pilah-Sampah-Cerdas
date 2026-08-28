@@ -1,4 +1,5 @@
 class ApiEndpoints {
+  static const String kknActiveTimeline = '/kkn/timeline/active';
   ApiEndpoints._();
 
   // Auth

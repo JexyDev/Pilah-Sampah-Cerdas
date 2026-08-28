@@ -92,6 +92,8 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                       delegate: SliverChildListDelegate([
                         _buildTargetKegiatan(state, locationState, kknLocationState),
                         const SizedBox(height: AppDimensions.md),
+                        _buildActiveTimelineCard(),
+                        const SizedBox(height: AppDimensions.md),
                         _buildSummaryCards(state),
                         const SizedBox(height: AppDimensions.lg),
                         _buildQuickActions(kknLocationState),
@@ -1194,6 +1196,218 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Linimasa KKN Aktif
+  // ═══════════════════════════════════════════════════════════════════════════
+  Widget _buildActiveTimelineCard() {
+    final activeTimelineAsync = ref.watch(activeTimelineProvider);
+
+    return activeTimelineAsync.when(
+      data: (response) {
+        if (!response.success || response.data == null) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text(
+                'Tidak ada tahapan KKN yang sedang berlangsung saat ini.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+            ),
+          );
+        }
+
+        final data = response.data!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Linimasa Saat Ini',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: Minggu & Fase
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${data.tahapMinggu} • ${data.fase}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Berlangsung',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    data.tanggal,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // Progress Bar Fase
+                  if (response.activeFaseSummary != null) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Progress Fase',
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                        Text(
+                          '${response.activeFaseSummary!.progressPercentage}%',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: response.activeFaseSummary!.progressPercentage / 100,
+                        backgroundColor: AppColors.border,
+                        color: AppColors.primaryGreen,
+                        minHeight: 6,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Kegiatan Utama
+                  const Text(
+                    'Kegiatan Utama',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    data.kegiatanUtama,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Rekomendasi Aksi
+                  if (data.rekomendasiAksi.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.lightbulb_outline, size: 16, color: AppColors.primaryGreen),
+                              SizedBox(width: 6),
+                              Text(
+                                'Rekomendasi Aksi',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ...data.rekomendasiAksi.map((aksi) => Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('•', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        aksi,
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (e, st) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text(
+            'Gagal memuat linimasa: ${e.toString()}',
+            style: const TextStyle(color: AppColors.dangerRed, fontSize: 12),
+          ),
         ),
       ),
     );

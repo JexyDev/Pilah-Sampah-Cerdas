@@ -1,4 +1,5 @@
 import '../models/mahasiswa_kkn_models.dart';
+import '../models/kkn_timeline_models.dart';
 
 /// Interface repository untuk fitur Mahasiswa KKN.
 ///
@@ -11,6 +12,9 @@ abstract class KknRepository {
   /// Mengambil data dashboard statistik KKN mahasiswa.
   Future<KknDashboardData?> getCachedDashboard();
   Future<KknDashboardData> getDashboard();
+
+  /// Mengambil data linimasa/timeline KKN aktif
+  Future<ActiveTimelineResponse> getActiveTimeline();
 
   Future<List<WargaDampingan>?> getCachedWargaDampingan();
   Future<List<WargaDampingan>> getWargaDampingan();

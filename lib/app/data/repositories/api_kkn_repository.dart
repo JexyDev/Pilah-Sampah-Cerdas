@@ -5,6 +5,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mahasiswa_kkn_models.dart';
+import '../models/kkn_timeline_models.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
 import 'kkn_repository.dart';
@@ -64,6 +65,23 @@ class ApiKknRepository implements KknRepository {
         } catch (e) { debugPrint('Silenced error: $e'); }
       }
       throw Exception('Gagal memuat data dashboard KKN');
+    }
+  }
+
+  @override
+  Future<ActiveTimelineResponse> getActiveTimeline() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknActiveTimeline);
+      if (response.statusCode == 200) {
+        return ActiveTimelineResponse.fromJson(response.data as Map<String, dynamic>);
+      }
+      throw Exception('Status ${response.statusCode}: ${response.data}');
+    } catch (e) {
+      if (e is DioException) {
+        final msg = _extractError(e.response?.data, 'Dio Error [${e.response?.statusCode}]: ${e.message}');
+        throw Exception(msg);
+      }
+      throw Exception('Error tak terduga: $e');
     }
   }
 

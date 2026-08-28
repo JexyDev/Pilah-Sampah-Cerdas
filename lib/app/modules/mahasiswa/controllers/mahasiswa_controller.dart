@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../../data/models/kkn_timeline_models.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../core/utils/network_exception_helper.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -133,4 +134,9 @@ final mahasiswaControllerProvider =
     StateNotifierProvider<MahasiswaNotifier, MahasiswaState>((ref) {
   ref.watch(authProvider.select((s) => s.user?.id));
   return MahasiswaNotifier(ref);
+});
+
+final activeTimelineProvider = FutureProvider.autoDispose<ActiveTimelineResponse>((ref) async {
+  final repo = ref.read(kknRepositoryProvider);
+  return repo.getActiveTimeline();
 });

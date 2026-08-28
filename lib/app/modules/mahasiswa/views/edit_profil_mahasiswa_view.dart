@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../core/utils/phone_formatter.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../controllers/mahasiswa_controller.dart';
 
@@ -35,12 +36,29 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
   bool _obscureConfirm = true;
   bool _isPasswordSectionExpanded = false;
 
+  bool _isLength8 = false;
+  bool _hasUpper = false;
+  bool _hasLower = false;
+  bool _hasDigit = false;
+  bool _hasSpecial = false;
+
+  void _checkPassword(String value) {
+    setState(() {
+      _isLength8 = value.length >= 8;
+      _hasUpper = value.contains(RegExp(r'[A-Z]'));
+      _hasLower = value.contains(RegExp(r'[a-z]'));
+      _hasDigit = value.contains(RegExp(r'[0-9]'));
+      _hasSpecial = value.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>\-\_]'));
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     final user = ref.read(authProvider).user;
     _nameController.text = user?.name ?? '';
-    _phoneController.text = user?.phone ?? '';
+    final rawPhone = user?.phone ?? '';
+    _phoneController.text = PhoneFormatter.convertToLocalFormat(rawPhone);
   }
 
   @override
@@ -61,19 +79,9 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
       if (mounted) {
         if (success) {
           ref.read(authProvider.notifier).fetchProfile();
-          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Foto profil berhasil diperbarui!'),
-              backgroundColor: AppColors.primaryGreen,
-            ),
-          );
+          _showPopup('Foto profil berhasil diperbarui!', true);
         } else {
-          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Gagal mengunggah foto profil.'),
-              backgroundColor: AppColors.dangerRed,
-            ),
-          );
+          _showPopup('Gagal mengunggah foto profil.', false);
         }
       }
     }
@@ -81,6 +89,18 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
 
   Future<void> _submitChangePassword() async {
     if (!_passwordFormKey.currentState!.validate()) return;
+
+    int fulfilled = 0;
+    if (_isLength8) fulfilled++;
+    if (_hasUpper) fulfilled++;
+    if (_hasLower) fulfilled++;
+    if (_hasDigit) fulfilled++;
+    if (_hasSpecial) fulfilled++;
+
+    if (fulfilled < 3) {
+      _showPopup('Kata sandi terlalu lemah. Penuhi kriteria minimal.', false);
+      return;
+    }
 
     setState(() => _isSubmittingPassword = true);
 
@@ -96,25 +116,40 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
 
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kata sandi berhasil diperbarui!'),
-            backgroundColor: AppColors.primaryGreen,
-          ),
-        );
+        _showPopup('Kata sandi berhasil diperbarui!', true);
         _oldPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
         setState(() => _isPasswordSectionExpanded = false);
       } else {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal mengubah kata sandi. Periksa kata sandi lama Anda.'),
-            backgroundColor: AppColors.dangerRed,
-          ),
-        );
+        _showPopup('Gagal mengubah kata sandi. Periksa kata sandi lama Anda.', false);
       }
     }
+  }
+
+  void _showPopup(String message, bool isSuccess) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            isSuccess ? 'Berhasil' : 'Gagal',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isSuccess ? AppColors.primaryGreen : AppColors.dangerRed,
+            ),
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _submitProfile() async {
@@ -127,22 +162,12 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     );
 
     setState(() => _isSubmittingProfile = false);
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil berhasil diperbarui!'),
-          backgroundColor: AppColors.primaryGreen,
-        ),
-      );
-    } else if (!success && mounted) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gagal memperbarui profil.'),
-          backgroundColor: AppColors.dangerRed,
-        ),
-      );
+    if (mounted) {
+      if (success) {
+        _showPopup('Profil berhasil diperbarui!', true);
+      } else {
+        _showPopup('Gagal memperbarui profil.', false);
+      }
     }
   }
 
@@ -454,6 +479,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                           TextFormField(
                             controller: _newPasswordController,
                             obscureText: _obscureNew,
+                            onChanged: _checkPassword,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.lock_rounded, color: AppColors.primaryGreen),
                               suffixIcon: IconButton(
@@ -464,6 +490,8 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
                             ),
                             validator: (v) => (v != null && v.length < 6) ? 'Minimal 6 karakter' : null,
                           ),
+                          const SizedBox(height: 12),
+                          _buildPasswordStrength(),
                           const SizedBox(height: 14),
                           const Text('Konfirmasi Kata Sandi Baru', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           const SizedBox(height: 6),
@@ -542,6 +570,120 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPasswordStrength() {
+    int fulfilled = 0;
+    if (_isLength8) fulfilled++;
+    if (_hasUpper) fulfilled++;
+    if (_hasLower) fulfilled++;
+    if (_hasDigit) fulfilled++;
+    if (_hasSpecial) fulfilled++;
+
+    String text = 'Sangat Lemah';
+    Color color = Colors.red;
+    int segmentsActive = 0;
+
+    if (fulfilled == 0) {
+      text = '';
+      segmentsActive = 0;
+    } else if (fulfilled <= 2) {
+      text = 'Lemah';
+      color = Colors.red;
+      segmentsActive = 1;
+    } else if (fulfilled == 3) {
+      text = 'Sedang';
+      color = Colors.orange;
+      segmentsActive = 2;
+    } else if (fulfilled == 4) {
+      text = 'Kuat';
+      color = Colors.blue;
+      segmentsActive = 3;
+    } else {
+      text = 'Sangat Kuat';
+      color = AppColors.primaryGreen;
+      segmentsActive = 4;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (fulfilled > 0) ...[
+          Row(
+            children: List.generate(4, (index) {
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.only(right: index < 3 ? 4 : 0),
+                  decoration: BoxDecoration(
+                    color: index < segmentsActive
+                        ? color
+                        : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.blueGrey.shade50.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildReqItem('Minimal 8 karakter', _isLength8),
+              const SizedBox(height: 8),
+              _buildReqItem('Mengandung huruf besar (A-Z)', _hasUpper),
+              const SizedBox(height: 8),
+              _buildReqItem('Mengandung huruf kecil (a-z)', _hasLower),
+              const SizedBox(height: 8),
+              _buildReqItem('Mengandung angka (0-9)', _hasDigit),
+              const SizedBox(height: 8),
+              _buildReqItem(
+                'Mengandung karakter khusus (!@#\$...)',
+                _hasSpecial,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReqItem(String text, bool met) {
+    return Row(
+      children: [
+        Icon(
+          met ? Icons.check_circle : Icons.cancel,
+          size: 16,
+          color: met ? AppColors.primaryGreen : Colors.grey.shade400,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            color: met ? AppColors.primaryGreen : Colors.grey.shade600,
+            fontWeight: met ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+      ],
     );
   }
 }
