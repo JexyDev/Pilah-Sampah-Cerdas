@@ -16,7 +16,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string) {
           if (id.includes('node_modules')) {
             if (id.includes('leaflet')) return 'vendor-leaflet';
             if (id.includes('lucide-react')) return 'vendor-lucide';

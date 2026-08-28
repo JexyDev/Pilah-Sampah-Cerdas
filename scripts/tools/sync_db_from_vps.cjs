@@ -13,68 +13,46 @@ const conn = new Client();
 
 conn.on('ready', () => {
   console.log('✓ Terhubung ke VPS (157.10.252.252).');
-  console.log('1. Membuat dump PostgreSQL di server VPS...');
+  console.log('1. Mengambil dump PostgreSQL dari VPS secara real-time streaming...');
 
-  const dumpCmd = `echo 'Makerdotindo2026' | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges -f /tmp/psc_db_dump.sql && echo 'Makerdotindo2026' | sudo -S chmod 666 /tmp/psc_db_dump.sql`;
+  const dumpCmd = `echo 'Makerdotindo2026' | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges`;
+
+  const writeStream = fs.createWriteStream(SQL_OUTPUT_PATH);
+  let downloadedBytes = 0;
 
   conn.exec(dumpCmd, (err, stream) => {
     if (err) {
-      console.error('Error executing pg_dump:', err);
+      console.error('Error executing pg_dump on VPS:', err);
       conn.end();
       process.exit(1);
     }
 
-    stream.on('close', (code) => {
-      if (code !== 0) {
-        console.error(`Dump di VPS gagal dengan code: ${code}`);
-        conn.end();
-        process.exit(1);
-      }
-      console.log('✓ Dump file di VPS berhasil dibuat (/tmp/psc_db_dump.sql).');
-      console.log('2. Mengunduh dump file via SFTP Stream...');
+    stream.on('data', (chunk) => {
+      downloadedBytes += chunk.length;
+      writeStream.write(chunk);
+      process.stdout.write(`\r  Unduh & Dump: ${(downloadedBytes / (1024 * 1024)).toFixed(2)} MB`);
+    });
 
-      conn.sftp((err, sftp) => {
-        if (err) {
-          console.error('SFTP Error:', err);
-          conn.end();
-          process.exit(1);
-        }
-
-        const readStream = sftp.createReadStream('/tmp/psc_db_dump.sql');
-        const writeStream = fs.createWriteStream(SQL_OUTPUT_PATH);
-
-        let downloadedBytes = 0;
-        readStream.on('data', (chunk) => {
-          downloadedBytes += chunk.length;
-          process.stdout.write(`\r  Unduh: ${(downloadedBytes / (1024 * 1024)).toFixed(2)} MB`);
-        });
-
-        readStream.on('end', () => {
-          console.log('\n✓ Unduhan selesai!');
-          writeStream.end();
-          fs.copyFileSync(SQL_OUTPUT_PATH, BACKUP_PATH);
-
-          // Cleanup remote dump
-          conn.exec('rm -f /tmp/psc_db_dump.sql', () => {
-            conn.end();
-            restoreLocal();
-          });
-        });
-
-        readStream.on('error', (err) => {
-          console.error('\nError stream SFTP:', err);
-          writeStream.end();
-          conn.end();
-          process.exit(1);
-        });
-
-        readStream.pipe(writeStream);
-      });
-    }).stderr.on('data', (data) => {
+    stream.stderr.on('data', (data) => {
       const errStr = data.toString();
-      if (!errStr.includes('[sudo] password for maker:')) {
+      if (!errStr.includes('[sudo] password for maker:') && !errStr.includes('NOTICE:')) {
         process.stderr.write(errStr);
       }
+    });
+
+    stream.on('close', (code) => {
+      writeStream.end(() => {
+        conn.end();
+        if (downloadedBytes < 1000) {
+          console.error(`\nDump terlalu kecil atau gagal (hanya ${downloadedBytes} bytes). Kode: ${code}`);
+          process.exit(1);
+        }
+        console.log(`\n✓ Unduhan & dump VPS selesai (${(downloadedBytes / (1024 * 1024)).toFixed(2)} MB)!`);
+        try {
+          fs.copyFileSync(SQL_OUTPUT_PATH, BACKUP_PATH);
+        } catch (_) {}
+        restoreLocal();
+      });
     });
   });
 }).on('error', (err) => {
@@ -86,7 +64,7 @@ conn.on('ready', () => {
   username: 'maker',
   password: 'Makerdotindo2026',
   readyTimeout: 60000,
-  keepaliveInterval: 0,
+  keepaliveInterval: 10000,
 });
 
 function restoreLocal() {
@@ -96,7 +74,9 @@ function restoreLocal() {
     if (dockerCheck.includes('psc-postgres')) {
       console.log('✓ Container psc-postgres aktif. Memulai import...');
       execSync(`docker exec -i psc-postgres psql -U psc_user -d psc_db < "${SQL_OUTPUT_PATH}"`, { stdio: 'inherit', shell: true });
-      console.log('\n✓ SUKSES: Database lokal telah 100% sinkron dan identik dengan database VPS!');
+      console.log('\n=============================================================');
+      console.log('✓ SUKSES: Database lokal telah 100% sinkron dan identik dengan VPS!');
+      console.log('=============================================================');
     } else {
       console.log('Container psc-postgres belum berjalan. Jalankan "docker compose up -d postgres".');
     }

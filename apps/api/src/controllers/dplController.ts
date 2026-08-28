@@ -59,7 +59,7 @@ export const dplController = {
           .status(403)
           .json({
             error: "FORBIDDEN",
-            message: "Mahasiswa tidak ditemukan atau bukan bimbingan Anda",
+            message: "Mahasiswa tidak ditemukan atau bukan dampingan Anda",
           });
         return;
       }
@@ -125,7 +125,7 @@ export const dplController = {
           .status(403)
           .json({
             error: "FORBIDDEN",
-            message: "Mahasiswa tidak ditemukan atau bukan bimbingan Anda",
+            message: "Mahasiswa tidak ditemukan atau bukan dampingan Anda",
           });
         return;
       }
@@ -155,7 +155,7 @@ export const dplController = {
           .status(403)
           .json({
             error: "FORBIDDEN",
-            message: "Pengajuan izin ini bukan milik mahasiswa bimbingan Anda",
+            message: "Pengajuan izin ini bukan milik mahasiswa dampingan Anda",
           });
         return;
       }

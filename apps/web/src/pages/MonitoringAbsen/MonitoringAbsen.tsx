@@ -44,7 +44,6 @@ import {
   Settings,
   Users,
   ExternalLink,
-  FileCheck,
   Home,
   Bug,
   Recycle,
@@ -394,10 +393,26 @@ const parseTimeString = (timeStr?: string) => {
 
 const calculateDurationMinutes = (tmStr?: string, tsStr?: string) => {
   if (!tmStr) return 0;
-  const tm = new Date(tmStr).getTime();
-  const ts = tsStr ? new Date(tsStr).getTime() : new Date().getTime();
-  if (isNaN(tm) || isNaN(ts)) return 0;
-  return Math.max(0, Math.floor((ts - tm) / (1000 * 60)));
+  const tmDate = new Date(tmStr);
+  const tm = tmDate.getTime();
+  if (isNaN(tm)) return 0;
+
+  if (tsStr) {
+    const ts = new Date(tsStr).getTime();
+    if (isNaN(ts)) return 0;
+    return Math.max(0, Math.min(480, Math.floor((ts - tm) / (1000 * 60))));
+  }
+
+  // Check if tmStr is from previous days (WIB)
+  const tmWibDay = new Date(tm + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nowWibDay = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  if (tmWibDay < nowWibDay) {
+    return 0; // Don't calculate runaway live time across days
+  }
+
+  const ts = new Date().getTime();
+  const diffMins = Math.floor((ts - tm) / (1000 * 60));
+  return Math.max(0, Math.min(480, diffMins));
 };
 
 const formatDurationText = (minutes: number) => {
@@ -478,6 +493,8 @@ const MonitoringAbsen: React.FC = () => {
     "ALL" | "ACTIVE" | "COMPLETED" | "IZIN_SAKIT" | "NOT_ATTENDED"
   >("ALL");
   const [studentSearch, setStudentSearch] = useState<string>("");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [displayMode] = useState<"table" | "cards">("table");
   const [showMap, setShowMap] = useState<boolean>(false);
 
@@ -576,9 +593,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
   const ALL_DAYS_LIST = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
+  const sanitizeDisplayDash = (text?: string): string => {
+    if (!text) return "";
+    return text.replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
+  };
+
   const parseDaysFromString = (str?: string): string[] => {
     if (!str) return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
-    const s = str.toLowerCase();
+    const sanitized = str.replace(/\?{2,3}|â€“|–|—/g, " - ");
+    const s = sanitized.toLowerCase();
     if (s.includes("senin") && s.includes("jumat")) {
       return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
     }
@@ -594,20 +617,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
   const formatDaysToString = (days: string[]): string => {
     if (days.length === 5 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].every((d) => days.includes(d))) {
-      return "Senin – Jumat";
+      return "Senin - Jumat";
     }
     if (days.length === 6 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].every((d) => days.includes(d))) {
-      return "Senin – Sabtu";
+      return "Senin - Sabtu";
     }
     if (days.length === 7) {
-      return "Setiap Hari (Senin – Minggu)";
+      return "Setiap Hari (Senin - Minggu)";
     }
     return days.join(", ");
   };
 
   const parseTimeRange = (timeStr?: string): { start: string; end: string } => {
     if (!timeStr) return { start: "08:00", end: "16:00" };
-    const matches = timeStr.match(/(\d{1,2}[:.]\d{2})\s*(?:-|–|s\/d|sampai)\s*(\d{1,2}[:.]\d{2})/i);
+    const sanitized = timeStr.replace(/\?{2,3}|â€“|–|—/g, "-");
+    const matches = sanitized.match(/(\d{1,2}[:.]\d{2})\s*(?:-|\/|s\/d|sampai)\s*(\d{1,2}[:.]\d{2})/i);
     if (matches) {
       return {
         start: matches[1].replace(".", ":").padStart(5, "0"),
@@ -625,8 +649,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     attendanceMinDurationHours: 4,
     attendanceMinDurationMinutes: 0,
     attendanceMinDurationSeconds: 0,
-    hariKerja: "Senin – Jumat",
-    jamKerja: "08:00 – 16:00 WIB",
+    hariKerja: "Senin - Jumat",
+    jamKerja: "08:00 - 16:00 WIB",
     targetPekan: 10,
     targetTotalHari: 50,
   });
@@ -762,7 +786,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     try {
       const payload: Partial<ConfigTargets> = {
         hariKerja: formatDaysToString(formDays),
-        jamKerja: `${formStartTime} – ${formEndTime} WIB`,
+        jamKerja: `${formStartTime} - ${formEndTime} WIB`,
         targetPekan: Number(formTargetPekan),
         targetTotalHari: Number(formTotalHari),
         targetHarianJam: durasiTotalHarian,
@@ -790,11 +814,30 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const [mapZoom, setMapZoom] = useState<number>(15);
 
   const visibleSchedules = useMemo(() => {
-    if (!selectedKelompokId) return schedules;
-    return schedules.filter(
-      (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
-    );
-  }, [schedules, selectedKelompokId]);
+    let list = schedules;
+    if (selectedKelompokId) {
+      list = list.filter(
+        (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
+      );
+    }
+    if (startDateFilter) {
+      const start = new Date(startDateFilter);
+      start.setHours(0, 0, 0, 0);
+      list = list.filter((s) => {
+        const d = new Date(s.date);
+        return d >= start;
+      });
+    }
+    if (endDateFilter) {
+      const end = new Date(endDateFilter);
+      end.setHours(23, 59, 59, 999);
+      list = list.filter((s) => {
+        const d = new Date(s.date);
+        return d <= end;
+      });
+    }
+    return list;
+  }, [schedules, selectedKelompokId, startDateFilter, endDateFilter]);
 
   const activeSchedule = useMemo(() => {
     return visibleSchedules.find((s) => s.id === selectedScheduleId);
@@ -984,20 +1027,38 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     fetchConfigTargets();
   }, []);
 
+  const [syncingSchedules, setSyncingSchedules] = useState(false);
+  const handleSyncTodaySchedules = async () => {
+    setSyncingSchedules(true);
+    try {
+      const res = await api.post("/schedules/sync-today");
+      toast.success(res.data?.message || "Jadwal kegiatan hari ini berhasil disinkronkan untuk semua kelompok!");
+      await fetchSchedules();
+    } catch (err: any) {
+      toast.error("Gagal sinkronisasi jadwal harian");
+    } finally {
+      setSyncingSchedules(false);
+    }
+  };
+
   useEffect(() => {
     if (visibleSchedules.length > 0) {
       setSelectedScheduleId((prev) => {
         if (prev && visibleSchedules.some((s) => s.id === prev)) return prev;
         
-        // Utamakan jadwal hari ini (WIB)
-        const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
+        // Utamakan jadwal hari ini (WIB / Asia/Jakarta)
+        const todayWibStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         const todaySched = visibleSchedules.find((s) => {
           if (!s.date) return false;
-          const dStr = new Date(new Date(s.date).toISOString()).toISOString().split("T")[0];
-          return dStr === todayStr;
+          const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          return sWibStr === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
+        }) || visibleSchedules.find((s) => {
+          if (!s.date) return false;
+          const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          return sWibStr === todayWibStr;
         });
-        if (todaySched) return todaySched.id;
 
+        if (todaySched) return todaySched.id;
         return visibleSchedules[0].id;
       });
     } else {
@@ -1296,6 +1357,91 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setIsExportModalOpen(false);
     toast.success(
       `Laporan Presensi (${filtered.length} baris) berhasil diunduh`
+    );
+  };
+
+  // Export CSV langsung dari data tabel yang tersaring (Filtered Table Export)
+  const handleExportFilteredAttendanceCSV = () => {
+    if (!filteredAttendance || filteredAttendance.length === 0) {
+      toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Nama Mahasiswa",
+      "NIM",
+      "Kelompok",
+      "Jadwal Kegiatan",
+      "Status Presensi",
+      "Waktu Masuk",
+      "Waktu Pulang",
+      "Durasi (Menit)",
+      "Target (Jam)",
+      "Pemenuhan Target",
+    ];
+
+    const rows = filteredAttendance.map((rec, index) => {
+      const isAttended = Boolean(rec.attendedAt);
+      const isCompleted = Boolean(rec.completedAt);
+      const statusUpper = String(rec.status || "").toUpperCase();
+      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
+      const recAny = rec as any;
+      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
+      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+
+      let statusStr = "Belum Absen";
+      if (statusUpper.includes("SAKIT")) {
+        statusStr = "Sakit (Disetujui)";
+      } else if (statusUpper.includes("IZIN")) {
+        statusStr = "Izin (Disetujui)";
+      } else if (statusUpper.includes("ALPA") || statusUpper.includes("ALPHA")) {
+        statusStr = "Alpa";
+      } else if (isAttended && !isFinished) {
+        statusStr = "Sedang di Lapangan";
+      } else if (isFinished) {
+        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
+          ? rec.isMemenuhiDurasi
+          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+        statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+      }
+
+      const kelompokName = groups.find((g) => g.id === (recAny.groupId || rec.student?.groupId || selectedKelompokId))?.name || (selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId)?.name : "-");
+      const kegiatanTitle = activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-");
+      const isTargetMet = durationMins >= (scheduleTargetHours * 60);
+
+      return [
+        index + 1,
+        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
+        `"${rec.student?.studentProfile?.nim || "-"}"`,
+        `"${(kelompokName || "-").replace(/"/g, '""')}"`,
+        `"${(kegiatanTitle || "-").replace(/"/g, '""')}"`,
+        `"${statusStr}"`,
+        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
+        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        durationMins,
+        scheduleTargetHours,
+        `"${isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-"}"`,
+      ].join(",");
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
+    link.setAttribute(
+      "download",
+      `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(
+      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor`
     );
   };
 
@@ -1737,7 +1883,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       title: defaultTitle,
       category: "Sosialisasi",
       location: locInfo.fullAddress,
-      radius: 100,
+      radius: 200,
       kelompokId: defaultKelompokId,
     });
     setSelectedPos([]);
@@ -1778,7 +1924,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       title: schedule.title,
       category: cat,
       location: schedule.location || "",
-      radius: schedule.radius || 100,
+      radius: schedule.radius || 200,
       kelompokId: defaultKelompokId,
     });
     if (
@@ -1912,7 +2058,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       time: timeFormatted,
       location: (formData.location || "").trim(),
       kelompokId: targetKelompokId,
-      radius: Number(formData.radius) || 100,
+      radius: Number(formData.radius) || 200,
       latitude: calcLat,
       longitude: calcLng,
       polygon:
@@ -2057,25 +2203,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <span>{showMap ? "Sembunyikan Peta" : "Buka Peta GPS"}</span>
           </button>
 
-          <Link
-            to="/monitoring-kegiatan/pengajuan-izin"
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Buka Halaman Verifikasi Pengajuan Izin & Sakit"
-          >
-            <FileCheck size={14} className="text-amber-600 dark:text-amber-400" />
-            <span>Pengajuan Izin & Sakit</span>
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setIsExportModalOpen(true)}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Ekspor Rekap Presensi format CSV"
-          >
-            <Download size={14} className="text-emerald-600" />
-            <span>Ekspor CSV</span>
-          </button>
-
           {isSuperUserOrDev && (
             <button
               type="button"
@@ -2143,6 +2270,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     <span className="flex items-center gap-1.5">
                       <Calendar size={14} className="text-emerald-600" />
                       {new Date(activeSchedule.date).toLocaleDateString("id-ID", {
+                        timeZone: "Asia/Jakarta",
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -2150,7 +2278,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Clock size={14} className="text-emerald-600" />
-                      {activeSchedule.time || configTargets.jamKerja || "08:00 – 16:00 WIB"} (Target Minimal {formatHoursToUnits(scheduleTargetHours)})
+                      {sanitizeDisplayDash(activeSchedule.time || configTargets.jamKerja) || "08:00 - 16:00 WIB"} (Target Minimal {formatHoursToUnits(scheduleTargetHours)})
                     </span>
                     <span className="flex items-center gap-1.5 truncate max-w-sm">
                       <MapPin size={14} className="text-emerald-600 shrink-0" />
@@ -2170,6 +2298,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
           {/* Quick Schedule Selector & Manager */}
           <div className="flex items-center gap-2 shrink-0">
+            {canManageSchedules && (
+              <button
+                type="button"
+                onClick={handleSyncTodaySchedules}
+                disabled={syncingSchedules}
+                className="h-11 px-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+                title="Sinkronkan / Buat Otomatis Jadwal Seluruh Kelompok Hari Ini"
+              >
+                <Sparkles size={14} className={syncingSchedules ? "animate-spin text-emerald-500" : "text-emerald-600"} />
+                <span>{syncingSchedules ? "Sinkron..." : "Sinkron Hari Ini"}</span>
+              </button>
+            )}
+
             <div className="relative min-w-[260px]">
               <select
                 value={selectedScheduleId}
@@ -2182,7 +2323,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   visibleSchedules.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.kelompok ? `[${s.kelompok.name}] ` : "[Bersama] "}
-                      {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })})
+                      {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
                     </option>
                   ))
                 )}
@@ -2263,7 +2404,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Calendar size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Hari Kerja Operasional
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.hariKerja || "Senin – Jumat"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{sanitizeDisplayDash(configTargets.hariKerja) || "Senin - Jumat"}</span>
               </div>
 
               <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60 text-xs">
@@ -2271,7 +2412,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Jam Kerja Operasional
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.jamKerja || "08:00 – 16:00"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{sanitizeDisplayDash(configTargets.jamKerja) || "08:00 - 16:00 WIB"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -2408,7 +2549,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <Marker position={[lat, lng]} icon={createActivityMarkerIcon()} />
                           <Circle
                             center={[lat, lng]}
-                            radius={Number(activeSchedule.radius || 100)}
+                            radius={Number(activeSchedule.radius || 200)}
                             pathOptions={{
                               color: "#3b82f6",
                               fillColor: "#3b82f6",
@@ -2539,7 +2680,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {/* Toolbar: Search, Filter Tabs, View Switcher */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative min-w-[240px] flex-1 max-w-md">
+          <div className="relative min-w-[220px] flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
@@ -2559,9 +2700,46 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
 
-          {/* Filter Status Chips & Mode Switcher (Disembunyikan untuk role DPL) */}
-          {!isDpl && (
-            <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+          {/* Date Range Filter Controls (Notulensi Item 12: Filter Tanggal) */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+              <Calendar size={13} className="text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400">Dari:</span>
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+              <Calendar size={13} className="text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400">Sampai:</span>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+            {(startDateFilter || endDateFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDateFilter("");
+                  setEndDateFilter("");
+                }}
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                title="Reset Filter Tanggal"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Filter Status Chips & Export Button */}
+          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+            {!isDpl && (
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
                 <button
                   type="button"
@@ -2619,8 +2797,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   ⚪ Belum ({attendanceStats.notAttended})
                 </button>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Tombol Ekspor CSV dekat tabel setelah seleksi filter */}
+            <button
+              type="button"
+              onClick={handleExportFilteredAttendanceCSV}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+              title={`Ekspor ${filteredAttendance.length} data presensi terfilter ke format CSV`}
+            >
+              <Download size={14} />
+              <span>Ekspor CSV</span>
+              <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
+                {filteredAttendance.length}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Info Banner when viewing Roster mode (no schedule active) */}
@@ -2689,19 +2881,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       const isCancelRequested = statusUpper === "CANCEL_REQUESTED" || currentStatusUpper === "PENGAJUAN_BATAL_IZIN";
                       const isSakit = (statusUpper.includes("SAKIT") || statusUpper === "SAKIT") && !isSakitPending;
                       const isIzin = (statusUpper.includes("IZIN") || statusUpper === "IZIN") && !isIzinPending;
+                      const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
                       const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
                       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
                       
-                      const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
-                      const isTerjeda = statusUpper === "TERJEDA";
-                      const isBerlangsung = statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA";
+                      const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
+                      const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
                       const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
                       const recAny = rec as any;
                       const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
                       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
                       const durationMins = isLeaveOrPending 
                         ? 0 
+                        : isTerjeda
+                        ? storedMins
                         : isBerlangsung
                         ? Math.max(storedMins, liveElapsedMins)
                         : (storedMins > 0 ? storedMins : liveElapsedMins);
@@ -3660,7 +3854,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             mode={geofenceMode}
                             points={selectedPos || []}
                             onChange={(pts) => setSelectedPos(pts)}
-                            radius={Number(formData.radius) || 100}
+                            radius={Number(formData.radius) || 200}
                           />
                         </MapContainer>
                       </div>
@@ -3677,7 +3871,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           type="number"
                           min={30}
                           max={5000}
-                          value={formData.radius || 100}
+                          value={formData.radius || 200}
                           onChange={(e) =>
                             setFormData({
                               ...formData,
@@ -3911,7 +4105,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
                     }`}
                   >
-                    Senin – Jumat (5 Hari)
+                    Senin - Jumat (5 Hari)
                   </button>
                   <button
                     type="button"
@@ -3922,7 +4116,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
                     }`}
                   >
-                    Senin – Sabtu (6 Hari)
+                    Senin - Sabtu (6 Hari)
                   </button>
                   <button
                     type="button"
@@ -3994,7 +4188,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
                   <span className="block text-[10px] text-slate-500 font-medium">
-                    Format: {formStartTime} – {formEndTime} WIB
+                    Format: {formStartTime} - {formEndTime} WIB
                   </span>
                 </div>
 

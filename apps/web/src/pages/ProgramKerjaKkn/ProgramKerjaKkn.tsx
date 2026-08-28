@@ -23,6 +23,11 @@ import {
   Check,
   AlertCircle,
   ListFilter,
+  Users,
+  GraduationCap,
+  Phone,
+  Eye,
+  Building2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -48,8 +53,11 @@ export const ProgramKerjaKkn: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || "").toUpperCase();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
-  const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER"].includes(userRole);
-  const canModifyProker = isManagement || isDpl;
+  const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
+  const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"].includes(userRole);
+  const isStudent = ["MAHASISWA_KKN", "MAHASISWA", "STUDENT"].includes(userRole);
+  const isKetua = Boolean((user as any)?.isKetua || (user as any)?.studentProfile?.isKetua || (user as any)?.isLeader);
+  const canModifyProker = isManagement || isDpl || (isStudent && isKetua);
 
   const [searchParams] = useSearchParams();
 
@@ -161,6 +169,41 @@ export const ProgramKerjaKkn: React.FC = () => {
     deskripsi: "",
     catatanDpl: "",
     isSubmitting: false,
+  });
+
+  // Modal Roster Mahasiswa Kelompok (Khusus Developer / Super User)
+  const [rosterModal, setRosterModal] = useState<{
+    isOpen: boolean;
+    kelompokName: string;
+    kelurahan?: string;
+    cakupanRw?: any;
+    dplName?: string;
+    mahasiswa: Array<{
+      id: string;
+      nama: string;
+      nim: string;
+      prodi?: string;
+      isKetua?: boolean;
+      phone?: string;
+    }>;
+    search: string;
+  }>({
+    isOpen: false,
+    kelompokName: "",
+    kelurahan: "",
+    cakupanRw: [],
+    dplName: "",
+    mahasiswa: [],
+    search: "",
+  });
+
+  // Modal Detail Lengkap Program Kerja KKN
+  const [detailModal, setDetailModal] = useState<{
+    isOpen: boolean;
+    proker: ProgramKerjaItem | null;
+  }>({
+    isOpen: false,
+    proker: null,
   });
 
   // Date Pickers
@@ -582,10 +625,19 @@ export const ProgramKerjaKkn: React.FC = () => {
   // Filtered proker data
   const filteredProkers = useMemo(() => {
     return prokerList.filter((item) => {
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        item.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.kelompokName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.kelurahan.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        (item.deskripsi || "").toLowerCase().includes(q) ||
+        (item.judul || "").toLowerCase().includes(q) ||
+        (item.kelompokName || "").toLowerCase().includes(q) ||
+        (item.kelurahan || "").toLowerCase().includes(q) ||
+        (item.penginput?.nama || "").toLowerCase().includes(q) ||
+        (item.penginput?.nim || "").toLowerCase().includes(q) ||
+        (item.dplName || "").toLowerCase().includes(q) ||
+        (item.mahasiswaList || []).some(
+          (m) => (m.nama || "").toLowerCase().includes(q) || (m.nim || "").toLowerCase().includes(q)
+        );
 
       const matchesCategory =
         categoryFilter === "ALL" ||
@@ -633,34 +685,84 @@ export const ProgramKerjaKkn: React.FC = () => {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
-    const headers = [
-      "No",
-      "Kelompok",
-      "Kategori",
-      "Sumber",
-      "Deskripsi",
-      "Waktu Dibuat",
-      "Waktu Pelaksanaan",
-      "Biaya (Rp)",
-      "Status Usulan",
-      "Status Pelaksanaan",
-      "Catatan DPL",
-      "Bukti Google Drive",
-    ];
-    const rows = filteredProkers.map((p, idx) => [
-      p.nomor || idx + 1,
-      `"${p.kelompokName || "-"}"`,
-      `"${p.kategori || "Pemilahan"}"`,
-      `"${p.sumber || "Mahasiswa"}"`,
-      `"${p.deskripsi.replace(/"/g, '""')}"`,
-      `"${formatIndonesianTimestamp(p.createdAt).full}"`,
-      `"${p.waktuPelaksanaan || "-"}"`,
-      p.kebutuhanBiaya,
-      `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
-      `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
-      `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
-      `"${p.linkGoogleDrive || "-"}"`,
-    ]);
+
+    const headers = isDeveloper
+      ? [
+          "No",
+          "Waktu Dibuat",
+          "Kelompok",
+          "Kelurahan",
+          "RW",
+          "DPL Pembimbing",
+          "Pengisi Data / Mahasiswa",
+          "NIM Pengisi Data",
+          "Kategori",
+          "Sumber",
+          "Judul Program",
+          "Deskripsi Kegiatan",
+          "Waktu Pelaksanaan",
+          "Estimasi Biaya (Rp)",
+          "Status Usulan",
+          "Status Pelaksanaan",
+          "Catatan DPL",
+          "Bukti Google Drive",
+        ]
+      : [
+          "No",
+          "Kelompok",
+          "Kategori",
+          "Sumber",
+          "Deskripsi",
+          "Waktu Dibuat",
+          "Waktu Pelaksanaan",
+          "Biaya (Rp)",
+          "Status Usulan",
+          "Status Pelaksanaan",
+          "Catatan DPL",
+          "Bukti Google Drive",
+        ];
+
+    const rows = filteredProkers.map((p, idx) => {
+      const rwText = Array.isArray(p.cakupanRw) ? p.cakupanRw.join(", ") : "-";
+      if (isDeveloper) {
+        return [
+          p.nomor || idx + 1,
+          `"${formatIndonesianTimestamp(p.createdAt).full}"`,
+          `"${p.kelompokName || "-"}"`,
+          `"${p.kelurahan || "-"}"`,
+          `"${rwText}"`,
+          `"${p.dplName || "-"}"`,
+          `"${p.penginput?.nama || (p.sumber === "DPL" ? "DPL" : "Mahasiswa")}"`,
+          `"${p.penginput?.nim || "-"}"`,
+          `"${p.kategori || "Pemilahan"}"`,
+          `"${p.sumber || "Mahasiswa"}"`,
+          `"${(p.judul || "-").replace(/"/g, '""')}"`,
+          `"${p.deskripsi.replace(/"/g, '""')}"`,
+          `"${p.waktuPelaksanaan || "-"}"`,
+          p.kebutuhanBiaya,
+          `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
+          `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
+          `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
+          `"${p.linkGoogleDrive || "-"}"`,
+        ];
+      }
+
+      return [
+        p.nomor || idx + 1,
+        `"${p.kelompokName || "-"}"`,
+        `"${p.kategori || "Pemilahan"}"`,
+        `"${p.sumber || "Mahasiswa"}"`,
+        `"${p.deskripsi.replace(/"/g, '""')}"`,
+        `"${formatIndonesianTimestamp(p.createdAt).full}"`,
+        `"${p.waktuPelaksanaan || "-"}"`,
+        p.kebutuhanBiaya,
+        `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
+        `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
+        `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
+        `"${p.linkGoogleDrive || "-"}"`,
+      ];
+    });
+
     const csvContent =
       "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -1029,6 +1131,8 @@ export const ProgramKerjaKkn: React.FC = () => {
                 <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-3 w-12 text-center">No</th>
                   <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
+                  {isDeveloper && <th className="py-3.5 px-3 min-w-[170px] text-left">Kelompok & Wilayah</th>}
+                  {isDeveloper && <th className="py-3.5 px-3 min-w-[190px] text-left">Pengisi Data / Mahasiswa</th>}
                   <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                   <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
@@ -1038,7 +1142,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
                   <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
                   <th className="py-3.5 px-3 w-28 text-center">Bukti</th>
-                  {canModifyProker && <th className="py-3.5 px-4 w-48 text-center">Aksi DPL</th>}
+                  {canModifyProker && <th className="py-3.5 px-4 w-48 text-center">Aksi / Tindakan</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -1064,6 +1168,84 @@ export const ProgramKerjaKkn: React.FC = () => {
                           </span>
                         </div>
                       </td>
+                      {isDeveloper && (
+                        <td className="py-3.5 px-3">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                              {p.kelompokName || "Kelompok KKN"}
+                            </span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                              {p.kelurahan ? `Kel. ${p.kelurahan}` : "-"}
+                              {p.cakupanRw && Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0
+                                ? ` • RW ${p.cakupanRw.join(", ")}`
+                                : ""}
+                            </span>
+                            {p.dplName && (
+                              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1 mt-0.5">
+                                <GraduationCap size={11} className="shrink-0 text-indigo-500" />
+                                <span>DPL: {p.dplName}</span>
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                      {isDeveloper && (
+                        <td className="py-3.5 px-3">
+                          <div className="flex flex-col gap-1">
+                            {p.penginput ? (
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                                    {p.penginput.nama}
+                                  </span>
+                                  {p.penginput.isKetua && (
+                                    <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded text-[9px] font-bold">
+                                      Ketua Kelompok
+                                    </span>
+                                  )}
+                                  {p.penginput.role === "DPL" && (
+                                    <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 rounded text-[9px] font-bold">
+                                      DPL
+                                    </span>
+                                  )}
+                                </div>
+                                {p.penginput.nim && (
+                                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    NIM: {p.penginput.nim} {p.penginput.prodi ? `• ${p.penginput.prodi}` : ""}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-500 font-medium">
+                                {p.sumber === "DPL" ? "DPL" : "Mahasiswa"}
+                              </span>
+                            )}
+
+                            {p.mahasiswaList && p.mahasiswaList.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setRosterModal({
+                                    isOpen: true,
+                                    kelompokName: p.kelompokName,
+                                    kelurahan: p.kelurahan,
+                                    cakupanRw: p.cakupanRw,
+                                    dplName: p.dplName,
+                                    mahasiswa: p.mahasiswaList || [],
+                                    search: "",
+                                  })
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/50 text-[10px] font-semibold transition-all cursor-pointer w-fit mt-0.5 active:scale-95 shadow-2xs"
+                                title="Buka daftar lengkap mahasiswa dalam kelompok ini"
+                              >
+                                <Users size={11} />
+                                <span>{p.mahasiswaList.length} Mahasiswa Kelompok</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td className="py-3.5 px-3 text-center">
                         {renderKategoriBadge(p.kategori)}
                       </td>
@@ -1107,6 +1289,15 @@ export const ProgramKerjaKkn: React.FC = () => {
                       {canModifyProker && (
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-2 flex-wrap">
+                            {/* Quick Details Inspection */}
+                            <button
+                              onClick={() => setDetailModal({ isOpen: true, proker: p })}
+                              title="Lihat Detail Program Kerja & Pengusul"
+                              className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                            >
+                              <Eye size={13} />
+                            </button>
+
                             {/* Decision Actions when Menunggu Persetujuan */}
                             {normalizedU === "BELUM_DISETUJUI" && (
                               <div className="flex items-center gap-1.5">
@@ -1513,6 +1704,318 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Roster Mahasiswa Kelompok (Khusus Developer / Super User) */}
+      {rosterModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4 max-h-[85vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">
+                      Daftar Mahasiswa KKN
+                    </h3>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">
+                      {rosterModal.kelompokName}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 pt-1 flex-wrap">
+                  {rosterModal.kelurahan && (
+                    <span className="flex items-center gap-1">
+                      <Building2 size={12} className="text-slate-400" />
+                      Kel. {rosterModal.kelurahan}
+                    </span>
+                  )}
+                  {rosterModal.cakupanRw && Array.isArray(rosterModal.cakupanRw) && rosterModal.cakupanRw.length > 0 && (
+                    <span>• RW {rosterModal.cakupanRw.join(", ")}</span>
+                  )}
+                  {rosterModal.dplName && (
+                    <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-semibold">
+                      <GraduationCap size={12} />
+                      DPL: {rosterModal.dplName}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  setRosterModal({
+                    isOpen: false,
+                    kelompokName: "",
+                    kelurahan: "",
+                    cakupanRw: [],
+                    dplName: "",
+                    mahasiswa: [],
+                    search: "",
+                  })
+                }
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Search & Filter */}
+            <div className="flex items-center justify-between gap-3 shrink-0">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Cari nama atau NIM mahasiswa..."
+                  value={rosterModal.search}
+                  onChange={(e) => setRosterModal({ ...rosterModal, search: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white"
+                />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
+              <span className="text-xs font-bold text-slate-500 shrink-0 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
+                {rosterModal.mahasiswa.length} Mahasiswa
+              </span>
+            </div>
+
+            {/* Student List Grid */}
+            <div className="overflow-y-auto pr-1 space-y-2 flex-1">
+              {rosterModal.mahasiswa.filter((m) => {
+                const q = rosterModal.search.toLowerCase().trim();
+                return !q || m.nama.toLowerCase().includes(q) || m.nim.includes(q) || (m.prodi || "").toLowerCase().includes(q);
+              }).length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  Tidak ada mahasiswa yang sesuai dengan pencarian.
+                </div>
+              ) : (
+                rosterModal.mahasiswa
+                  .filter((m) => {
+                    const q = rosterModal.search.toLowerCase().trim();
+                    return !q || m.nama.toLowerCase().includes(q) || m.nim.includes(q) || (m.prodi || "").toLowerCase().includes(q);
+                  })
+                  .map((m, idx) => (
+                    <div
+                      key={m.id || idx}
+                      className="p-3 bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl flex items-center justify-between gap-3 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                          m.isKetua
+                            ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                            : "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
+                        }`}>
+                          {m.nama.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                              {m.nama}
+                            </span>
+                            {m.isKetua && (
+                              <span className="px-1.5 py-0.5 bg-amber-500 text-white rounded-md text-[9px] font-extrabold uppercase tracking-wider">
+                                Ketua
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                            NIM: {m.nim} {m.prodi ? `• ${m.prodi}` : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      {m.phone && m.phone !== "-" && (
+                        <a
+                          href={`https://wa.me/${m.phone.replace(/[^0-9]/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-bold shadow-2xs transition-colors shrink-0"
+                          title="Hubungi via WhatsApp"
+                        >
+                          <Phone size={11} />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
+                    </div>
+                  ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  setRosterModal({
+                    isOpen: false,
+                    kelompokName: "",
+                    kelurahan: "",
+                    cakupanRw: [],
+                    dplName: "",
+                    mahasiswa: [],
+                    search: "",
+                  })
+                }
+                className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Lengkap Program Kerja KKN */}
+      {detailModal.isOpen && detailModal.proker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-2xl shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase">
+                  Program Kerja #{detailModal.proker.nomor}
+                </span>
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 mt-1">
+                  {detailModal.proker.judul || "Detail Program Kerja KKN"}
+                </h3>
+              </div>
+              <button
+                onClick={() => setDetailModal({ isOpen: false, proker: null })}
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Quick Badges Info */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Kategori</span>
+                <div>{renderKategoriBadge(detailModal.proker.kategori)}</div>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Sumber</span>
+                <div>{renderSumberBadge(detailModal.proker.sumber)}</div>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Status Usulan</span>
+                <div>{renderStatusUsulanBadge(detailModal.proker.statusUsulan, detailModal.proker.status, detailModal.proker.catatanDpl)}</div>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-0.5">Pelaksanaan</span>
+                <div>{renderStatusPelaksanaanBadge(detailModal.proker.statusPelaksanaan, detailModal.proker.status)}</div>
+              </div>
+            </div>
+
+            {/* Kelompok & Pengisi Data Overview */}
+            <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 space-y-2">
+              <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 size={13} />
+                Informasi Kelompok & Pengusul
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Nama Kelompok:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                    {detailModal.proker.kelompokName}
+                  </span>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {detailModal.proker.kelurahan ? `Kelurahan ${detailModal.proker.kelurahan}` : ""}
+                    {detailModal.proker.cakupanRw && Array.isArray(detailModal.proker.cakupanRw) && detailModal.proker.cakupanRw.length > 0
+                      ? ` • RW ${detailModal.proker.cakupanRw.join(", ")}`
+                      : ""}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Dosen Pembimbing (DPL):</span>
+                  <span className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+                    <GraduationCap size={13} />
+                    {detailModal.proker.dplName || "-"}
+                  </span>
+                  {detailModal.proker.penginput && (
+                    <div className="mt-1 pt-1 border-t border-emerald-200/40 dark:border-emerald-800/40">
+                      <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Pengisi Data Proker:</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {detailModal.proker.penginput.nama} {detailModal.proker.penginput.nim ? `(${detailModal.proker.penginput.nim})` : ""}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Deskripsi Kegiatan */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                Deskripsi Kegiatan
+              </label>
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                {detailModal.proker.deskripsi}
+              </div>
+            </div>
+
+            {/* Waktu & Biaya & Bukti */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1">
+                  <Calendar size={11} /> Waktu Pelaksanaan
+                </span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {formatWaktuPelaksanaanDisplay(detailModal.proker.waktuPelaksanaan)}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-bold block mb-1 flex items-center gap-1">
+                  <Coins size={11} /> Estimasi Biaya
+                </span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  Rp {Number(detailModal.proker.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-800 flex flex-col justify-between">
+                <span className="text-[10px] text-slate-400 font-bold block mb-1">
+                  Dokumen Bukti
+                </span>
+                <a
+                  href={detailModal.proker.linkGoogleDrive || "https://drive.google.com"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs transition-colors"
+                >
+                  <GoogleDriveIcon />
+                  <span>Buka Google Drive</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Catatan DPL if exists */}
+            {detailModal.proker.catatanDpl && (
+              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-2xl text-xs">
+                <span className="font-bold text-amber-900 dark:text-amber-300 block mb-0.5 flex items-center gap-1">
+                  <AlertCircle size={13} />
+                  Catatan / Evaluasi DPL
+                </span>
+                <p className="text-amber-800 dark:text-amber-200">
+                  {detailModal.proker.catatanDpl}
+                </p>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">
+                Dibuat pada: {formatIndonesianTimestamp(detailModal.proker.createdAt).full}
+              </span>
+              <button
+                type="button"
+                onClick={() => setDetailModal({ isOpen: false, proker: null })}
+                className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

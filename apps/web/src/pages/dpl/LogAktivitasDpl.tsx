@@ -400,7 +400,7 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  const displayName = user?.name || (user as any)?.nama || user?.email?.split("@")[0] || "Dosen Pembimbing Lapangan";
+  const displayName = user?.name || (user as any)?.nama || user?.email?.split("@")[0] || "Dosen Pendamping Lapangan";
 
   return (
     <div className="min-h-screen bg-slate-50/60 p-4 md:p-6 lg:p-8 space-y-6">
@@ -1294,11 +1294,11 @@ export const LogAktivitasDpl: React.FC = () => {
 
             {selectedDetailLog.fotoBuktiUrl && (
               <div className="space-y-1">
-                <span className="font-semibold text-slate-700">Bukti Lampiran:</span>
+                <span className="font-semibold text-slate-700">Dokumentasi Kegiatan:</span>
                 {selectedDetailLog.fotoBuktiUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) ? (
                   <img
                     src={resolveImageUrl(selectedDetailLog.fotoBuktiUrl)}
-                    alt="Bukti Aktivitas"
+                    alt="Dokumentasi Kegiatan"
                     className="w-full max-h-56 object-cover rounded-xl border border-slate-200"
                   />
                 ) : (
@@ -1308,7 +1308,7 @@ export const LogAktivitasDpl: React.FC = () => {
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 px-3 py-2 rounded-xl"
                   >
-                    <FileText className="w-4 h-4" /> Buka Dokumen Bukti Lampiran
+                    <FileText className="w-4 h-4" /> Buka Dokumen Dokumentasi Kegiatan
                   </a>
                 )}
               </div>

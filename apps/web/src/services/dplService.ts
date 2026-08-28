@@ -165,11 +165,35 @@ export interface AspekPenilaianItem {
   skor: number;
 }
 
+export interface MahasiswaKelompokInfo {
+  id: string;
+  nama: string;
+  nim: string;
+  prodi?: string;
+  isKetua?: boolean;
+  phone?: string;
+}
+
+export interface PenginputInfo {
+  id?: string;
+  nama?: string;
+  nim?: string | null;
+  prodi?: string | null;
+  role?: string;
+  isKetua?: boolean;
+  telepon?: string | null;
+}
+
 export interface ProgramKerjaItem {
   id: string;
   kelompokId: string;
   kelompokName: string;
   kelurahan: string;
+  cakupanRw?: any;
+  dplName?: string;
+  totalMahasiswa?: number;
+  penginput?: PenginputInfo | null;
+  mahasiswaList?: MahasiswaKelompokInfo[];
   nomor: number;
   judul?: string;
   deskripsi: string;

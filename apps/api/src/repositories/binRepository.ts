@@ -610,7 +610,7 @@ export class BinRepository {
         evidencePhotoUrl,
         petugasId: petugasId ?? null,
         jenisSampah: jenisSampah ?? null,
-        status: "PENDING",
+        status: "COMPLETED",
       },
       include: {
         bin: { include: { rw: true } },

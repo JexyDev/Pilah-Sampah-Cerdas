@@ -9,7 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { Router } from "express";
 import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage, upload } from "../middlewares/uploadMiddleware.js";
 
@@ -470,6 +470,58 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/posko/me:
+ *   put:
+ *     summary: Pembaruan data Posko KKN kelompok (Khusus Ketua Kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data Posko KKN berhasil diperbarui
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ *       404:
+ *         description: Posko belum terdaftar
+ */
+router.put(
+  "/posko/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updateMyPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/update:
+ *   put:
+ *     summary: Alias pembaruan data Posko KKN kelompok (Khusus Ketua Kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data Posko KKN berhasil diperbarui
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ *       404:
+ *         description: Posko belum terdaftar
+ */
+router.put(
+  "/posko/update",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updateMyPosko
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/posko:
  *   get:
  *     summary: Mendapatkan seluruh daftar Posko KKN di seluruh kelurahan
@@ -484,6 +536,29 @@ router.get(
   "/posko",
   authMiddleware,
   kknController.getAllPosko
+);
+
+router.post(
+  "/posko",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  safeUploadSingleImage("foto"),
+  kknController.createPosko
+);
+
+router.put(
+  "/posko/:id",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updatePosko
+);
+
+router.delete(
+  "/posko/:id",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknController.deletePosko
 );
 
 /**
@@ -516,6 +591,7 @@ router.post(
   "/kegiatan/:id/mulai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.mulaiKegiatan
 );
 
@@ -530,6 +606,7 @@ router.post(
   "/kegiatan/:id/selesai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.selesaiKegiatan
 );
 
@@ -537,6 +614,7 @@ router.post(
   ["/absen", "/kegiatan/:id/absen"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
   kknAttendanceController.absenAlias
 );
 
@@ -809,6 +887,58 @@ router.get(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]),
   kknController.getDampakKelurahan
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/timeline/active:
+ *   get:
+ *     summary: Mengambil HANYA tahapan linimasa KKN yang sedang berlangsung (Active Stage) untuk widget mobile
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat tahapan yang sedang berlangsung beserta rekomendasi aksi & pertanyaan kritis
+ */
+router.get(
+  ["/timeline/active", "/timeline/aktif", "/linimasa/active", "/linimasa/aktif"],
+  optionalAuthMiddleware,
+  kknController.getActiveTimelineMahasiswa
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/timeline:
+ *   get:
+ *     summary: Linimasa resmi KKN Mahasiswa beserta Rekomendasi Aksi & Pertanyaan Kritis
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: fase
+ *         schema:
+ *           type: string
+ *         description: Filter fase KKN (e.g. Pra-Kegiatan, Fase 1, Fase 2, Fase 3, Fase 4)
+ *       - in: query
+ *         name: statusPelaksanaan
+ *         schema:
+ *           type: string
+ *         description: Filter status pelaksanaan (BELUM_DIMULAI, SEDANG_BERJALAN, SELESAI)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Pencarian teks kegiatan atau rekomendasi
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat linimasa KKN, rekomendasi aksi, dan pertanyaan kritis
+ */
+router.get(
+  ["/timeline", "/linimasa"],
+  optionalAuthMiddleware,
+  kknController.getTimelineMahasiswa
 );
 
 export default router;

@@ -144,7 +144,7 @@ Tidak boleh ada komponen yang langsung asumsikan data selalu ada.
 - NIM (Mahasiswa) dan NIP (DPL) dapat ditampilkan pada Profil User / Badge UI.
 
 ### 7.2 Cakupan Dashboard Web (`apps/web`)
-1. **DPL (Dosen Pembimbing Lapangan):** Dashboard monitoring progres mahasiswa KKN bimbingan, verifikasi logbook, dan statistik dampingan warga.
+1. **DPL (Dosen Pendamping Lapangan):** Dashboard monitoring progres mahasiswa KKN dampingan, verifikasi logbook, dan statistik dampingan warga.
 2. **Petugas Residu:** Portal Web Monitoring timbulan residu, log hasil timbangan manual, dan monitoring pengaduan/eskalasi penjemputan.
 3. **Admin DLH & Camat & Lurah:** Portal Web Monitoring (Read-Only) berbasis scoping wilayah (Kota, Kecamatan, Kelurahan) + Modal Approval Diskrepansi AI khusus DLH.
 4. **RW & Mahasiswa KKN:** Portal pengelolaan aktivasi tempat sampah (QR Bins) & pendaftaran warga.

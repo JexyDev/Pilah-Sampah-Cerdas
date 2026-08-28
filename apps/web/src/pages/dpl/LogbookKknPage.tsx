@@ -28,6 +28,9 @@ import {
   Settings,
   Smartphone,
   X,
+  CheckCheck,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -122,6 +125,7 @@ export const LogbookKknPage: React.FC = () => {
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
   const isDeveloper = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(userRole);
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
 
   const [loading, setLoading] = useState(true);
 
@@ -131,6 +135,8 @@ export const LogbookKknPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedKategori, setSelectedKategori] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
 
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
   const [toleranceDays, setToleranceDays] = useState<number>(1);
@@ -144,6 +150,12 @@ export const LogbookKknPage: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [validationCatatan, setValidationCatatan] = useState("");
   const [isSubmittingQuickVerif, setIsSubmittingQuickVerif] = useState(false);
+
+  // Multi-Select & Validasi Semua (Batch Validation) State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [batchCatatan, setBatchCatatan] = useState("");
+  const [isSubmittingBatch, setIsSubmittingBatch] = useState(false);
 
   // Lightbox Preview Foto
   const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string | null>(null);
@@ -195,7 +207,7 @@ export const LogbookKknPage: React.FC = () => {
     }
   }, [selectedItemDetail?.id]);
 
-  // Filtered logbooks by category & search
+  // Filtered logbooks by category & search & date range
   const filteredLogbooks = useMemo(() => {
     return logbooks.filter((item) => {
       if (selectedKategori !== "ALL") {
@@ -210,9 +222,21 @@ export const LogbookKknPage: React.FC = () => {
         const matchGroup = (item.kelompokNama || "").toLowerCase().includes(q);
         if (!matchName && !matchPlace && !matchDesc && !matchGroup) return false;
       }
+      if (startDateFilter) {
+        const start = new Date(startDateFilter);
+        start.setHours(0, 0, 0, 0);
+        const itemDate = new Date(item.tanggalKegiatan || item.createdAt);
+        if (itemDate < start) return false;
+      }
+      if (endDateFilter) {
+        const end = new Date(endDateFilter);
+        end.setHours(23, 59, 59, 999);
+        const itemDate = new Date(item.tanggalKegiatan || item.createdAt);
+        if (itemDate > end) return false;
+      }
       return true;
     });
-  }, [logbooks, selectedKategori, searchQuery]);
+  }, [logbooks, selectedKategori, searchQuery, startDateFilter, endDateFilter]);
 
   // Statistics KPI
   const stats = useMemo(() => {
@@ -225,6 +249,21 @@ export const LogbookKknPage: React.FC = () => {
     return { total, pendingDpl, approved, revisi };
   }, [logbooks]);
 
+  // Target Validasi Serentak / Batch Approval
+  const pendingLogbooks = useMemo(() => {
+    return filteredLogbooks.filter((item) => item.statusApproval === "MENUNGGU_VERIFIKASI_DPL");
+  }, [filteredLogbooks]);
+
+  const selectedLogbooks = useMemo(() => {
+    return filteredLogbooks.filter((item) => selectedIds.includes(item.id));
+  }, [filteredLogbooks, selectedIds]);
+
+  const selectedPendingLogbooks = useMemo(() => {
+    return filteredLogbooks.filter(
+      (item) => selectedIds.includes(item.id) && item.statusApproval === "MENUNGGU_VERIFIKASI_DPL"
+    );
+  }, [filteredLogbooks, selectedIds]);
+
   // Pagination Logic
   const totalPages = Math.max(1, Math.ceil(filteredLogbooks.length / pageSize));
   const paginatedLogbooks = useMemo(() => {
@@ -232,10 +271,114 @@ export const LogbookKknPage: React.FC = () => {
     return filteredLogbooks.slice(start, start + pageSize);
   }, [filteredLogbooks, currentPage, pageSize]);
 
+  // Pending logbooks on current active page
+  const paginatedPendingLogbooks = useMemo(() => {
+    return paginatedLogbooks.filter((item) => item.statusApproval === "MENUNGGU_VERIFIKASI_DPL");
+  }, [paginatedLogbooks]);
+
+  // Checkbox Multi-Selection Helpers (Smart Select: memprioritaskan item yang butuh validasi)
+  const isAllCurrentPageSelected = useMemo(() => {
+    if (paginatedLogbooks.length === 0) return false;
+    if (paginatedPendingLogbooks.length > 0) {
+      return paginatedPendingLogbooks.every((item) => selectedIds.includes(item.id));
+    }
+    return paginatedLogbooks.every((item) => selectedIds.includes(item.id));
+  }, [paginatedLogbooks, paginatedPendingLogbooks, selectedIds]);
+
+  const handleToggleSelectAllPage = () => {
+    const targetList = paginatedPendingLogbooks.length > 0 ? paginatedPendingLogbooks : paginatedLogbooks;
+    if (isAllCurrentPageSelected) {
+      const pageIds = new Set(targetList.map((p) => p.id));
+      setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
+    } else {
+      const pageIds = targetList.map((p) => p.id);
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
+    }
+  };
+
+  const handleToggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  // Validasi Filter & Gating Aturan Ekspor
+  const isDateRangePartial = useMemo(() => {
+    return (startDateFilter && !endDateFilter) || (!startDateFilter && endDateFilter);
+  }, [startDateFilter, endDateFilter]);
+
+  const isDateRangeInvalid = useMemo(() => {
+    if (!startDateFilter || !endDateFilter) return false;
+    return new Date(startDateFilter) > new Date(endDateFilter);
+  }, [startDateFilter, endDateFilter]);
+
+  const hasExplicitFilter = useMemo(() => {
+    const hasCategory = selectedKategori !== "ALL";
+    const hasGroup = selectedGroup !== "ALL";
+    const hasStatus = selectedStatus !== "ALL";
+    const hasSearch = searchQuery.trim().length > 0;
+    const hasCompleteDate = Boolean(startDateFilter && endDateFilter && !isDateRangeInvalid);
+    return hasCompleteDate || hasCategory || hasGroup || hasStatus || hasSearch;
+  }, [selectedKategori, selectedGroup, selectedStatus, searchQuery, startDateFilter, endDateFilter, isDateRangeInvalid]);
+
+  const isExportReady = useMemo(() => {
+    if (isDateRangePartial || isDateRangeInvalid) return false;
+    if (!hasExplicitFilter) return false;
+    return filteredLogbooks.length > 0;
+  }, [isDateRangePartial, isDateRangeInvalid, hasExplicitFilter, filteredLogbooks.length]);
+
+  const exportTooltipMessage = useMemo(() => {
+    if (isDateRangePartial) {
+      return "Lengkapi kedua kolom tanggal (Dari dan Sampai) terlebih dahulu.";
+    }
+    if (isDateRangeInvalid) {
+      return "Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'.";
+    }
+    if (!hasExplicitFilter) {
+      return "Tentukan rentang tanggal (Dari & Sampai) atau filter seleksi di sebelah kiri terlebih dahulu untuk mengekspor.";
+    }
+    if (filteredLogbooks.length === 0) {
+      return "Tidak ada data logbook yang sesuai filter untuk diekspor.";
+    }
+    return `Ekspor ${filteredLogbooks.length} baris data logbook terfilter ke CSV`;
+  }, [isDateRangePartial, isDateRangeInvalid, hasExplicitFilter, filteredLogbooks.length]);
+
   // Open Detail Modal
   const handleOpenDetailModal = (item: LogbookMahasiswaItem) => {
     setSelectedItemDetail(item);
     setIsDetailModalOpen(true);
+  };
+
+  // Batch Verification Handler (Validasi Semua / Validasi Terpilih)
+  const handleBatchVerifikasi = async () => {
+    const targets = selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks;
+    if (targets.length === 0) {
+      toast.error("Tidak ada aktivitas berstatus Menunggu Validasi untuk divalidasi.");
+      return;
+    }
+    setIsSubmittingBatch(true);
+    try {
+      const targetIds = targets.map((t) => t.id);
+      const res = await logbookApiService.batchVerifikasiByDpl(
+        targetIds,
+        "APPROVE",
+        batchCatatan.trim() || undefined
+      );
+      const successCount = Array.isArray(res?.data)
+        ? res.data.filter((r: any) => r.success).length
+        : targetIds.length;
+
+      toast.success(
+        `Berhasil memvalidasi ${successCount} aktivitas logbook kelompok sekaligus! 🎉`
+      );
+      setIsBatchModalOpen(false);
+      setSelectedIds([]);
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal memproses validasi serentak");
+    } finally {
+      setIsSubmittingBatch(false);
+    }
   };
 
   // Quick Verification from Modal
@@ -284,9 +427,10 @@ export const LogbookKknPage: React.FC = () => {
     }
   };
 
-  // Export CSV
-  const handleExportCsv = () => {
-    if (filteredLogbooks.length === 0) {
+  // Export CSV (Mendukung Ekspor Data Terfilter atau Ekspor Data Terpilih)
+  const handleExportCsv = (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
+    const itemsToExport = customItems || filteredLogbooks;
+    if (itemsToExport.length === 0) {
       toast.error("Tidak ada data logbook untuk diekspor");
       return;
     }
@@ -304,7 +448,7 @@ export const LogbookKknPage: React.FC = () => {
       "Status",
       "Catatan Validasi DPL",
     ];
-    const rows = filteredLogbooks.map((item, index) => [
+    const rows = itemsToExport.map((item, index) => [
       index + 1,
       item.tanggalKegiatan,
       item.waktuMulai,
@@ -324,11 +468,12 @@ export const LogbookKknPage: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Rekap_Logbook_Mahasiswa_${new Date().toISOString().split("T")[0]}.csv`);
+    const filenamePrefix = labelPrefix ? `Rekap_Logbook_${labelPrefix}` : "Rekap_Logbook_Mahasiswa";
+    link.setAttribute("download", `${filenamePrefix}_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("File CSV berhasil diekspor");
+    toast.success(`File CSV (${itemsToExport.length} data) berhasil diekspor`);
   };
 
   // Render Status Badge
@@ -547,25 +692,206 @@ export const LogbookKknPage: React.FC = () => {
                   <option value="PERLU_REVISI_DPL">Perlu Perbaikan</option>
                 </select>
 
-                {/* Button Ekspor */}
+                {/* Date Range Inputs (Notulensi Item 12: Filter Tanggal) */}
+                <div
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs shadow-2xs transition-colors ${
+                    isDateRangeInvalid
+                      ? "bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700"
+                      : isDateRangePartial
+                      ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+                      : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                  }`}
+                  title={
+                    isDateRangeInvalid
+                      ? "Tanggal 'Dari' tidak boleh melebihi 'Sampai'"
+                      : isDateRangePartial
+                      ? "Lengkapi tanggal 'Sampai'"
+                      : "Filter Rentang Tanggal Kegiatan"
+                  }
+                >
+                  <span className="text-[10px] font-bold text-slate-400">Dari:</span>
+                  <input
+                    type="date"
+                    value={startDateFilter}
+                    onChange={(e) => {
+                      setStartDateFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                  />
+                </div>
+                <div
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs shadow-2xs transition-colors ${
+                    isDateRangeInvalid
+                      ? "bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700"
+                      : isDateRangePartial
+                      ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+                      : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                  }`}
+                  title={
+                    isDateRangeInvalid
+                      ? "Tanggal 'Sampai' harus setelah tanggal 'Dari'"
+                      : isDateRangePartial
+                      ? "Lengkapi rentang tanggal"
+                      : "Filter Rentang Tanggal Kegiatan"
+                  }
+                >
+                  <span className="text-[10px] font-bold text-slate-400">Sampai:</span>
+                  <input
+                    type="date"
+                    value={endDateFilter}
+                    onChange={(e) => {
+                      setEndDateFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                  />
+                </div>
+                {(startDateFilter || endDateFilter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDateFilter("");
+                      setEndDateFilter("");
+                      setCurrentPage(1);
+                    }}
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                    title="Reset Filter Tanggal"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                {/* Button Ekspor (Gated: Aktif Jika Filter & Rentang Waktu Terisi Valid) */}
                 <button
-                  onClick={handleExportCsv}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition-colors shadow-2xs cursor-pointer"
+                  type="button"
+                  onClick={() => handleExportCsv()}
+                  disabled={!isExportReady}
+                  title={exportTooltipMessage}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs ${
+                    isExportReady
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95 shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-60"
+                  }`}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Ekspor
+                  <span>Ekspor {isExportReady ? `(${filteredLogbooks.length})` : ""}</span>
                 </button>
+
+                {/* Button Validasi Semua / Validasi Terpilih (DPL & Admin) */}
+                {!isPimpinan && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBatchCatatan("");
+                      setIsBatchModalOpen(true);
+                    }}
+                    disabled={selectedIds.length > 0 ? selectedPendingLogbooks.length === 0 : pendingLogbooks.length === 0}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs ${
+                      (selectedIds.length > 0 ? selectedPendingLogbooks.length > 0 : pendingLogbooks.length > 0)
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 hover:shadow-md cursor-pointer"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-70"
+                    }`}
+                    title={
+                      selectedIds.length > 0
+                        ? selectedPendingLogbooks.length > 0
+                          ? `Validasi & setujui ${selectedPendingLogbooks.length} aktivitas terpilih yang menunggu validasi`
+                          : "Semua aktivitas terpilih sudah berstatus tervalidasi atau perlu perbaikan"
+                        : pendingLogbooks.length > 0
+                        ? `Validasi semua ${pendingLogbooks.length} aktivitas yang menunggu validasi`
+                        : "Tidak ada aktivitas yang berstatus menunggu validasi"
+                    }
+                  >
+                    <CheckCheck className="w-4 h-4" />
+                    <span>
+                      {selectedIds.length > 0
+                        ? selectedPendingLogbooks.length > 0
+                          ? `Validasi Terpilih (${selectedPendingLogbooks.length})`
+                          : `Validasi Terpilih (0 Siap)`
+                        : `Validasi Semua (${pendingLogbooks.length})`}
+                    </span>
+                  </button>
+                )}
               </div>
+
+              {/* Banner Pilihan Multi-Select */}
+              {selectedIds.length > 0 && (
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2.5 rounded-xl text-xs">
+                  <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-semibold">
+                    <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{selectedIds.length} aktivitas dipilih</span>
+                    {selectedPendingLogbooks.length > 0 ? (
+                      <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                        • {selectedPendingLogbooks.length} siap divalidasi
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
+                        • (Semua yang dipilih sudah tervalidasi / perlu revisi)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Tombol Ekspor Khusus Baris Terpilih */}
+                    <button
+                      type="button"
+                      onClick={() => handleExportCsv(selectedLogbooks, `${selectedIds.length}_Aktivitas`)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 rounded-lg font-semibold text-xs transition cursor-pointer shadow-2xs"
+                      title={`Ekspor ${selectedIds.length} data aktivitas terpilih ke format CSV`}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Ekspor Terpilih ({selectedIds.length})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIds([])}
+                      className="px-2.5 py-1 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40 rounded-lg font-medium transition cursor-pointer"
+                    >
+                      Batalkan Pilihan
+                    </button>
+
+                    {!isPimpinan && selectedPendingLogbooks.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBatchCatatan("");
+                          setIsBatchModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-xs cursor-pointer transition text-xs"
+                      >
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        <span>Validasi Terpilih ({selectedPendingLogbooks.length})</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Full-Width Table Component (11 Kolom) */}
+            {/* Full-Width Table Component (12 Kolom) */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/70 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold">
+                    <th className="p-3.5 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllCurrentPageSelected}
+                        onChange={handleToggleSelectAllPage}
+                        title={
+                          isAllCurrentPageSelected
+                            ? "Batalkan pilih di halaman ini"
+                            : paginatedPendingLogbooks.length > 0
+                            ? `Pilih semua ${paginatedPendingLogbooks.length} aktivitas yang menunggu validasi di halaman ini`
+                            : "Pilih semua baris di halaman ini"
+                        }
+                        className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                      />
+                    </th>
                     <th className="p-3.5 whitespace-nowrap">Tanggal & Waktu</th>
                     <th className="p-3.5 whitespace-nowrap">Kelompok</th>
-                    <th className="p-3.5 whitespace-nowrap">Diinput Oleh</th>
+                    <th className="p-3.5 whitespace-nowrap">Pengisi Data</th>
                     <th className="p-3.5 whitespace-nowrap">Kategori</th>
                     <th className="p-3.5 min-w-[220px]">Ringkasan Aktivitas Kelompok</th>
                     <th className="p-3.5 whitespace-nowrap">Lokasi / GPS</th>
@@ -579,7 +905,7 @@ export const LogbookKknPage: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
                   {loading ? (
                     <tr>
-                      <td colSpan={11} className="p-12 text-center text-slate-500">
+                      <td colSpan={12} className="p-12 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
                           <span>Memuat rekap aktivitas kelompok mahasiswa...</span>
@@ -588,7 +914,7 @@ export const LogbookKknPage: React.FC = () => {
                     </tr>
                   ) : paginatedLogbooks.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="p-12 text-center text-slate-500">
+                      <td colSpan={12} className="p-12 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">Tidak ada data aktivitas</p>
@@ -603,12 +929,26 @@ export const LogbookKknPage: React.FC = () => {
                       const durasi = formatDuration(item.waktuMulai, item.waktuSelesai);
                       const kategori = resolveKategori(item);
                       const memberCount = item.anggotaKelompok?.length || 0;
+                      const isSelected = selectedIds.includes(item.id);
 
                       return (
                         <tr
                           key={item.id}
-                          className="hover:bg-slate-50/80 dark:hover:bg-slate-750/50 transition-colors"
+                          className={`transition-colors ${
+                            isSelected
+                              ? "bg-emerald-50/70 dark:bg-emerald-950/30"
+                              : "hover:bg-slate-50/80 dark:hover:bg-slate-750/50"
+                          }`}
                         >
+                          {/* 0. Checkbox Multi-Select */}
+                          <td className="p-3.5 align-top text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectRow(item.id)}
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
+                            />
+                          </td>
                           {/* 1. Tanggal & Waktu */}
                           <td className="p-3.5 align-top whitespace-nowrap">
                             <div className="font-bold text-slate-800 dark:text-slate-200">
@@ -801,7 +1141,7 @@ export const LogbookKknPage: React.FC = () => {
             {/* Grid 2 Kolom Ringkasan */}
             <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-750">
               <div>
-                <span className="text-slate-400 block text-[11px]">Diinput Oleh</span>
+                <span className="text-slate-400 block text-[11px]">Pengisi Data</span>
                 <span className="font-bold text-slate-800 dark:text-slate-100">
                   {selectedItemDetail.penulisNama}
                   {selectedItemDetail.penulisNim && (
@@ -875,8 +1215,8 @@ export const LogbookKknPage: React.FC = () => {
                         key={st.id}
                         title={
                           st.name +
-                          (st.isKetua ? " (Ketua)" : "") +
-                          (isPenulis ? " (Penginput)" : "")
+                          (st.isKetua ? " (Ketua Kelompok)" : "") +
+                          (isPenulis ? " (Pengisi Data)" : "")
                         }
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                           isPenulis
@@ -887,60 +1227,79 @@ export const LogbookKknPage: React.FC = () => {
                         }`}
                       >
                         <span>{st.name}</span>
-                        {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua)</span>}
+                        {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua Kelompok)</span>}
                         {isPenulis && !st.isKetua && (
-                          <span className="text-[10px] text-emerald-700 font-bold">(Penginput)</span>
+                          <span className="text-[10px] text-emerald-700 font-bold">(Pengisi Data)</span>
                         )}
                       </span>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-slate-500 italic">Diinput oleh {selectedItemDetail.penulisNama}</p>
+                <p className="text-slate-500 italic">Diisi oleh {selectedItemDetail.penulisNama}</p>
               )}
             </div>
 
-            {/* Hasil / Output */}
+            {/* Capaian Kegiatan */}
             <div className="space-y-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Hasil / Output Capaian:</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Capaian Kegiatan:</span>
               <p className="text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-750 font-medium">
                 {resolveHasilOutput(selectedItemDetail)}
               </p>
             </div>
 
-            {/* Bukti Lampiran Foto (Kosong jika tidak ada foto / null) */}
-            {selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== "" && (
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Bukti Lampiran Foto:</span>
-                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-60 bg-slate-900 flex items-center justify-center min-h-[140px]">
-                  <img
-                    src={resolveImageUrl(selectedItemDetail.fotoBuktiUrl)}
-                    alt="Bukti Aktivitas"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                      const parent = (e.target as HTMLElement).parentElement;
-                      if (parent) {
-                        const fallback = document.createElement("div");
-                        fallback.className = "text-slate-400 text-xs italic p-4 text-center";
-                        fallback.innerText = "Foto bukti tidak dapat dimuat atau belum diunggah.";
-                        parent.appendChild(fallback);
-                      }
-                    }}
-                    className="w-full h-full object-contain max-h-60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPreviewPhotoUrl(resolveImageUrl(selectedItemDetail.fotoBuktiUrl));
-                      setPreviewTitle(`Bukti: ${selectedItemDetail.tempat}`);
-                    }}
-                    className="absolute bottom-2 right-2 px-3 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Buka Fullsize
-                  </button>
+            {/* Dokumentasi Kegiatan (Multi-Foto Gallery) */}
+            {(() => {
+              const allPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
+                ? (selectedItemDetail as any).attachmentUrls
+                : selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== ""
+                ? [selectedItemDetail.fotoBuktiUrl]
+                : [];
+
+              if (allPhotos.length === 0) return null;
+
+              return (
+                <div className="space-y-1.5">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    Dokumentasi Kegiatan ({allPhotos.length} foto):
+                  </span>
+                  <div className={`grid gap-2.5 ${allPhotos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
+                    {allPhotos.map((photoUrl, pIdx) => (
+                      <div
+                        key={pIdx}
+                        className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-52 bg-slate-900 flex items-center justify-center min-h-[120px] group"
+                      >
+                        <img
+                          src={resolveImageUrl(photoUrl)}
+                          alt={`Dokumentasi Kegiatan ${pIdx + 1}`}
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                            const parent = (e.target as HTMLElement).parentElement;
+                            if (parent) {
+                              const fallback = document.createElement("div");
+                              fallback.className = "text-slate-400 text-xs italic p-4 text-center";
+                              fallback.innerText = "Foto tidak dapat dimuat.";
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                          className="w-full h-full object-contain max-h-52 group-hover:scale-105 transition duration-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewPhotoUrl(resolveImageUrl(photoUrl));
+                            setPreviewTitle(`Dokumentasi #${pIdx + 1}: ${selectedItemDetail.tempat}`);
+                          }}
+                          className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
+                        >
+                          <Eye className="w-3 h-3" /> Perbesar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Catatan Sebelumnya */}
             {(selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl) && (
@@ -954,51 +1313,184 @@ export const LogbookKknPage: React.FC = () => {
               </div>
             )}
 
-            {/* Section Form Validasi DPL */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
-              <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                Form Validasi DPL
-              </h4>
+            {/* Section Catatan dan Validasi DPL / Mode Pimpinan View-Only */}
+            {isPimpinan ? (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
+                  <span className="font-semibold">Mode Pemimpin: View-Only (Hanya Memantau Data Supervisi & Logbook)</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailModalOpen(false)}
+                    className="py-1.5 px-3 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-100 rounded-lg text-xs font-bold transition cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                  Catatan & Validasi DPL
+                </h4>
 
+                <textarea
+                  rows={2}
+                  value={validationCatatan}
+                  onChange={(e) => setValidationCatatan(e.target.value)}
+                  placeholder="Tambahkan catatan masukan, evaluasi, atau rekomendasi perbaikan untuk kelompok..."
+                  className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                />
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDetailModalOpen(false)}
+                    className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSubmittingQuickVerif}
+                    onClick={() => handleVerifikasiDpl("REVISI")}
+                    className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                    Minta Perbaikan
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={isSubmittingQuickVerif}
+                    onClick={() => handleVerifikasiDpl("APPROVE")}
+                    className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                  >
+                    {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Setujui Kegiatan
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────
+          5. MODAL: KONFIRMASI VALIDASI SEMUA / SERENTAK DPL
+          ───────────────────────────────────────────── */}
+      {isBatchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
+            
+            {/* Header Modal */}
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
+                  <CheckCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    {selectedIds.length > 0
+                      ? "Setujui Kegiatan Terpilih"
+                      : "Setujui Semua Kegiatan"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Persetujuan serentak kegiatan mahasiswa KKN
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Target Summary Card */}
+            <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-emerald-900 dark:text-emerald-200">
+                  Jumlah yang akan disetujui:
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-600 text-white">
+                  {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length} Kegiatan
+                </span>
+              </div>
+              <p className="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                Semua logbook berstatus <span className="font-bold">Menunggu Validasi</span> pada daftar ini akan otomatis disetujui, poin kehadiran/aktivitas dikreditkan ke mahasiswa, dan notifikasi persetujuan akan dikirim.
+              </p>
+            </div>
+
+            {/* Preview List (Up to 5 items) */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-slate-500 block">
+                Daftar Kegiatan yang Akan Disetujui:
+              </span>
+              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).slice(0, 5).map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2"
+                  >
+                    <div className="truncate flex-1">
+                      <p className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                        {item.kelompokNama} • {item.penulisNama}
+                      </p>
+                      <p className="text-[10px] text-slate-500 truncate">{item.deskripsi}</p>
+                    </div>
+                    <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                      {formatDateShort(item.tanggalKegiatan)}
+                    </span>
+                  </div>
+                ))}
+                {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length > 5 && (
+                  <p className="text-center text-[10px] text-slate-400 italic">
+                    ... dan {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length - 5} kegiatan lainnya
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Input Catatan Batch */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                Catatan & Validasi DPL (Opsional):
+              </label>
               <textarea
                 rows={2}
-                value={validationCatatan}
-                onChange={(e) => setValidationCatatan(e.target.value)}
-                placeholder="Tambahkan catatan masukan, evaluasi, atau rekomendasi perbaikan untuk kelompok..."
-                className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                value={batchCatatan}
+                onChange={(e) => setBatchCatatan(e.target.value)}
+                placeholder="Contoh: Disetujui serentak oleh DPL, dokumentasi foto dan GPS terverifikasi."
+                className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
               />
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
-                >
-                  Tutup
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSubmittingQuickVerif}
-                  onClick={() => handleVerifikasiDpl("REVISI")}
-                  className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                  Minta Perbaikan
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSubmittingQuickVerif}
-                  onClick={() => handleVerifikasiDpl("APPROVE")}
-                  className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                >
-                  {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Validasi Aktivitas
-                </button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setIsBatchModalOpen(false)}
+                className="py-2 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingBatch}
+                onClick={handleBatchVerifikasi}
+                className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              >
+                {isSubmittingBatch && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>
+                  Ya, Setujui {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length} Kegiatan
+                </span>
+              </button>
             </div>
           </div>
         </div>

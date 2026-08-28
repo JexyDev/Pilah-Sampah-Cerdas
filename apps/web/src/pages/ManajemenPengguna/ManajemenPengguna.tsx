@@ -26,7 +26,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   RW: "Rukun Warga",
   PEMIMPIN: "Pimpinan",
   PANITIA_TASKFORCE: "Task Force",
-  DPL: "Dosen Pembimbing Lapangan",
+  DPL: "Dosen Pendamping Lapangan",
   PETUGAS_RESIDU: "Petugas Pemilah",
   MAHASISWA_KKN: "Mahasiswa",
   WARGA: "Warga",
@@ -1286,7 +1286,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">NAMA LENGKAP</th>
                     <th className="py-3 px-4">NIP</th>
                     <th className="py-3 px-4">NO. HP</th>
-                    <th className="py-3 px-4">PEMBIMBING KELOMPOK</th>
+                    <th className="py-3 px-4">PENDAMPING KELOMPOK</th>
                     <th className="py-3 px-4">MENGAJAR JENJANG</th>
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
@@ -1352,7 +1352,7 @@ const ManajemenPengguna: React.FC = () => {
                     <th className="py-3 px-4">PROGRAM STUDI</th>
                     <th className="py-3 px-4">NO. HP</th>
                     <th className="py-3 px-4">KELOMPOK KKN</th>
-                    <th className="py-3 px-4">DOSEN PEMBIMBING</th>
+                    <th className="py-3 px-4">DOSEN PENDAMPING</th>
                     <th className="py-3 px-4">WILAYAH PENUGASAN</th>
                     <th className="py-3 px-4 text-center">STATUS</th>
                     {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
@@ -2001,7 +2001,7 @@ const ManajemenPengguna: React.FC = () => {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pembimbing Kelompok</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pendamping Kelompok</label>
                             <select
                               value={formData.dplKelompokIds?.[0] || ""}
                               onChange={(e) => {
@@ -2010,7 +2010,7 @@ const ManajemenPengguna: React.FC = () => {
                               }}
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
                             >
-                               <option value="">-- Tidak Membimbing Kelompok --</option>
+                               <option value="">-- Tidak Mendampingi Kelompok --</option>
                               {kelompokList.map((k: any) => (
                                 <option key={k.id} value={k.id}>
                                   {cleanKknDisplayName(k.name)}
@@ -2064,7 +2064,7 @@ const ManajemenPengguna: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pembimbing Lapangan</label>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pendamping Lapangan</label>
                             <input
                               type="text"
                               readOnly
@@ -2072,10 +2072,10 @@ const ManajemenPengguna: React.FC = () => {
                               value={
                                 (() => {
                                   const selectedKelId = formData.dplKelompokIds?.[0];
-                                  if (!selectedKelId) return "Belum Ada Dosen Pembimbing";
+                                  if (!selectedKelId) return "Belum Ada Dosen Pendamping";
                                   const foundKel = kelompokList.find((k: any) => k.id === selectedKelId);
                                   const dplObj = foundKel?.dpl || dplList.find((d: any) => d.id === (foundKel?.dplId || formData.dplId));
-                                  return dplObj?.name || foundKel?.dplName || foundKel?.dplNamaMentah || "Belum Ada Dosen Pembimbing";
+                                  return dplObj?.name || foundKel?.dplName || foundKel?.dplNamaMentah || "Belum Ada Dosen Pendamping";
                                 })()
                               }
                               className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none select-none opacity-90"

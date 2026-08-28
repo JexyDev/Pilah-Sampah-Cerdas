@@ -386,7 +386,7 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
             <span>Penilaian Individu Mahasiswa</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Evaluasi capaian 6 aspek akademik bimbingan Dosen Pendamping Lapangan (DPL) mahasiswa KKN
+            Evaluasi capaian 6 aspek akademik pendampingan Dosen Pendamping Lapangan (DPL) mahasiswa KKN
           </p>
         </div>
       </div>

@@ -31,12 +31,95 @@ export const timelineKknController = {
         userRole
       );
 
+      const activeItem = items.find((i: any) => i.statusPelaksanaan === "SEDANG_BERJALAN");
+
       res.status(200).json({
         success: true,
         data: items,
+        activeWeek: activeItem ? activeItem.tahapMinggu : (items[0]?.tahapMinggu || "Minggu 1"),
+        activeFase: activeItem ? activeItem.fase : (items[0]?.fase || "Tahap Pelaksanaan"),
       });
     } catch (error: any) {
       console.error("[timelineKknController.getAll] error:", error);
+      res.status(500).json({
+        success: false,
+        message: error?.message || "Internal server error",
+      });
+    }
+  },
+
+  /**
+   * Endpoint Terstruktur Mobile Mahasiswa: Linimasa dengan Rekomendasi Aksi & Pertanyaan Kritis
+   */
+  getTimelineMahasiswa: async (req: Request, res: Response) => {
+    try {
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+
+      const result = await timelineKknService.getTimelineMahasiswa(
+        {
+          kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
+          fase: fase ? String(fase) : undefined,
+          statusPelaksanaan: statusPelaksanaan ? String(statusPelaksanaan) : undefined,
+          search: search ? String(search) : undefined,
+          startDate: startDate ? String(startDate) : undefined,
+          endDate: endDate ? String(endDate) : undefined,
+        },
+        userId,
+        userRole
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat linimasa program KKN beserta rekomendasi dan pertanyaan kritis",
+        summary: result.summary,
+        fases: result.fases,
+        data: result.data,
+      });
+    } catch (error: any) {
+      console.error("[timelineKknController.getTimelineMahasiswa] error:", error);
+      res.status(500).json({
+        success: false,
+        message: error?.message || "Internal server error",
+      });
+    }
+  },
+
+  /**
+   * Endpoint Khusus Mobile: Hanya Mengambil Tahapan yang SEDANG BERLANGSUNG
+   */
+  getActiveTimelineMahasiswa: async (req: Request, res: Response) => {
+    try {
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+
+      const { kelompokId, kelurahan, bidangKegiatan, fase, search } = req.query;
+
+      const result = await timelineKknService.getActiveTimelineMahasiswa(
+        {
+          kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
+          fase: fase ? String(fase) : undefined,
+          search: search ? String(search) : undefined,
+        },
+        userId,
+        userRole
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat tahapan linimasa KKN yang sedang berlangsung",
+        summary: result.summary,
+        activeFaseSummary: result.activeFaseSummary,
+        data: result.data,
+      });
+    } catch (error: any) {
+      console.error("[timelineKknController.getActiveTimelineMahasiswa] error:", error);
       res.status(500).json({
         success: false,
         message: error?.message || "Internal server error",

@@ -264,8 +264,23 @@ export class KknService {
         isCorrect: true,
       }));
       
-      const binOrganik = userBins.find((b: any) => b.category?.name === "ORGANIC" || b.qrCode?.toLowerCase().includes("org") || b.qrCode?.toLowerCase().includes("1"));
-      const binAnorganik = userBins.find((b: any) => b.category?.name === "NON_ORGANIC" || b.qrCode?.toLowerCase().includes("anorg") || b.qrCode?.toLowerCase().includes("2"));
+      const binOrganik = userBins.find(
+        (b: any) =>
+          b.category?.name === "ORGANIC" ||
+          b.category?.name === "ORGANIK" ||
+          b.qrCode?.toLowerCase().includes("org") ||
+          b.qrCode?.toLowerCase().includes("ogn") ||
+          b.qrCode?.toLowerCase().includes("1")
+      );
+      const binAnorganik = userBins.find(
+        (b: any) =>
+          b.category?.name === "NON_ORGANIC" ||
+          b.category?.name === "ANORGANIK" ||
+          b.category?.name === "NON_ORGANIK" ||
+          b.qrCode?.toLowerCase().includes("anorg") ||
+          b.qrCode?.toLowerCase().includes("non") ||
+          b.qrCode?.toLowerCase().includes("2")
+      );
 
       return {
         id: u.id,
@@ -317,7 +332,9 @@ export class KknService {
     const warga = (await prisma.user.findUnique({
       where: { id: wargaId },
       include: {
-        rw: true,
+        rw: { include: { kelurahan: true } },
+        households: { include: { rw: { include: { kelurahan: true } } } },
+        pointHistory: true,
         setoranOtomatis: {
           take: 5,
           orderBy: { createdAt: "desc" },
@@ -356,24 +373,44 @@ export class KknService {
     }
 
     const household = warga.households?.[0];
-    const defaultBin = warga.binOwnerships[0]?.bin;
+    const defaultBin = warga.binOwnerships?.[0]?.bin;
+    const allBins = warga.binOwnerships?.map((bo: any) => bo.bin).filter(Boolean) || [];
+    const binOrganik = allBins.find(
+      (b: any) =>
+        b.category?.name === "ORGANIC" ||
+        b.category?.name === "ORGANIK" ||
+        b.qrCode?.toLowerCase().includes("ogn") ||
+        b.qrCode?.toLowerCase().includes("org") ||
+        b.qrCode?.toLowerCase().includes("1")
+    );
+    const binAnorganik = allBins.find(
+      (b: any) =>
+        b.category?.name === "NON_ORGANIC" ||
+        b.category?.name === "ANORGANIK" ||
+        b.category?.name === "NON_ORGANIK" ||
+        b.qrCode?.toLowerCase().includes("non") ||
+        b.qrCode?.toLowerCase().includes("anorg") ||
+        b.qrCode?.toLowerCase().includes("2")
+    );
+    const primaryBin = binOrganik || binAnorganik || defaultBin;
+
     const lat = household?.latitude
       ? Number(household.latitude)
-      : defaultBin?.latitude
-        ? Number(defaultBin.latitude)
+      : primaryBin?.latitude
+        ? Number(primaryBin.latitude)
         : warga.rw?.latitude
           ? Number(warga.rw.latitude)
           : -6.891234;
     const lng = household?.longitude
       ? Number(household.longitude)
-      : defaultBin?.longitude
-        ? Number(defaultBin.longitude)
+      : primaryBin?.longitude
+        ? Number(primaryBin.longitude)
         : warga.rw?.longitude
           ? Number(warga.rw.longitude)
           : 107.610123;
 
     const recentLogs =
-      warga.setoranOtomatis.map((log: any) => ({
+      warga.setoranOtomatis?.map((log: any) => ({
         id: log.id,
         weightKg: Number(log.berat),
         volumeLiter: 0,
@@ -394,13 +431,23 @@ export class KknService {
       longitude: lng,
       lat: lat,
       lng: lng,
-      bin: defaultBin
+      binOrganikId: binOrganik?.qrCode || null,
+      binAnorganikId: binAnorganik?.qrCode || null,
+      binId: primaryBin?.qrCode || "",
+      binCode: primaryBin?.qrCode || "",
+      bin: primaryBin
         ? {
-            qrCode: defaultBin.qrCode,
-            category: defaultBin.category?.name || "UMUM",
-            capacity: `${defaultBin.currentVolumeLiter}L / ${defaultBin.maxCapacityLiter}L`,
+            qrCode: primaryBin.qrCode,
+            category: primaryBin.category?.name || "UMUM",
+            capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`,
           }
         : null,
+      bins: allBins.map((b: any) => ({
+        id: b.id,
+        qrCode: b.qrCode,
+        category: b.category?.name || "UMUM",
+        capacity: `${b.currentVolumeLiter || 0}L / ${b.maxCapacityLiter || 25}L`,
+      })),
       recentLogs,
     };
   }
@@ -533,6 +580,8 @@ export class KknService {
       const binOrganik = w.binOwnerships?.find(
         (bo: any) =>
           bo.bin?.category?.name === "ORGANIC" ||
+          bo.bin?.category?.name === "ORGANIK" ||
+          bo.bin?.qrCode?.toLowerCase().includes("ogn") ||
           bo.bin?.qrCode?.toLowerCase().includes("org") ||
           bo.bin?.qrCode?.toLowerCase().includes("1")
       )?.bin;
@@ -540,6 +589,9 @@ export class KknService {
       const binAnorganik = w.binOwnerships?.find(
         (bo: any) =>
           bo.bin?.category?.name === "NON_ORGANIC" ||
+          bo.bin?.category?.name === "ANORGANIK" ||
+          bo.bin?.category?.name === "NON_ORGANIK" ||
+          bo.bin?.qrCode?.toLowerCase().includes("non") ||
           bo.bin?.qrCode?.toLowerCase().includes("anorg") ||
           bo.bin?.qrCode?.toLowerCase().includes("2")
       )?.bin;
@@ -757,8 +809,8 @@ export class KknService {
 
         for (const mCode of missing) {
           const lower = mCode.toLowerCase();
-          const isAnorg = lower.includes("anorganik") || lower.includes("anorg");
-          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org"));
+          const isAnorg = lower.includes("anorganik") || lower.includes("anorg") || lower.includes("non");
+          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org") || lower.includes("ogn"));
           let category = await tx.wasteCategory.findFirst({
             where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
           });
@@ -766,7 +818,7 @@ export class KknService {
 
           const newBin = await tx.bin.create({
             data: {
-              qrCode: mCode.startsWith("TS-") ? mCode : `TS-${mCode}`,
+              qrCode: mCode.startsWith("TS-") || mCode.startsWith("BSK-") ? mCode : `TS-${mCode}`,
               status: "ACTIVE_BOUND",
               categoryId: category?.id,
               userId: wargaId,
@@ -1344,43 +1396,35 @@ export class KknService {
       },
     });
 
-    const poskoName = payload.nama || `Posko KKN ${student.kelompok.name}`;
-    const picName = `${student.user.name} (${student.nim || "Ketua Kelompok"})`;
-    const kontak = student.noWa || student.user.phone || "-";
-
-    let posko;
     if (existingPosko) {
-      posko = await prisma.facility.update({
-        where: { id: existingPosko.id },
-        data: {
-          nama: poskoName,
-          alamat: payload.alamat || existingPosko.alamat,
-          rwId: targetRwId,
-          latitude: lat,
-          longitude: lng,
-          foto: payload.foto || existingPosko.foto,
-          pic: picName,
-          kontak,
-          statusApproval: "APPROVED",
-        },
-      });
-    } else {
-      posko = await prisma.facility.create({
-        data: {
-          nama: poskoName,
-          jenis: "posko_kkn",
-          alamat: payload.alamat,
-          rwId: targetRwId,
-          kelompokId: student.kelompokId,
-          latitude: lat,
-          longitude: lng,
-          foto: payload.foto,
-          pic: picName,
-          kontak,
-          statusApproval: "APPROVED",
-        },
-      });
+      const err: any = new Error("Posko KKN untuk kelompok ini sudah terdaftar. Silakan gunakan fitur edit/pembaruan posko.");
+      err.statusCode = 409;
+      throw err;
     }
+
+    const ketuaStudent = student.isKetua
+      ? student
+      : (student.kelompok.students?.find((s) => s.isKetua) || student);
+
+    const poskoName = payload.nama || `Posko KKN ${student.kelompok.name}`;
+    const picName = `${ketuaStudent.user.name} (${ketuaStudent.nim || "Ketua Kelompok"})`;
+    const kontak = ketuaStudent.noWa || ketuaStudent.user.phone || "-";
+
+    const posko = await prisma.facility.create({
+      data: {
+        nama: poskoName,
+        jenis: "posko_kkn",
+        alamat: payload.alamat,
+        rwId: targetRwId,
+        kelompokId: student.kelompokId,
+        latitude: lat,
+        longitude: lng,
+        foto: payload.foto,
+        pic: picName,
+        kontak,
+        statusApproval: "APPROVED",
+      },
+    });
 
     await prisma.auditTrail.create({
       data: {
@@ -1391,6 +1435,153 @@ export class KknService {
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
+          status: "APPROVED",
+        },
+      },
+    });
+
+    return posko;
+  }
+
+  async updatePoskoKkn(
+    userId: string,
+    payload: {
+      nama?: string;
+      alamat?: string;
+      rwId?: number;
+      latitude?: number;
+      longitude?: number;
+      foto?: string;
+    }
+  ) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        assignedRw: true,
+        kelompok: {
+          include: {
+            dpl: true,
+            students: { include: { user: true } },
+          },
+        },
+      },
+    });
+
+    if (!student || !student.kelompokId || !student.kelompok) {
+      const err: any = new Error("Mahasiswa belum terdaftar dalam kelompok KKN.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (!student.isKetua) {
+      const err: any = new Error("Akses ditolak: Hanya Ketua Kelompok KKN yang berhak memperbarui data posko.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const existingPosko = await prisma.facility.findFirst({
+      where: {
+        kelompokId: student.kelompokId,
+        jenis: "posko_kkn",
+      },
+    });
+
+    if (!existingPosko) {
+      const err: any = new Error("Posko KKN belum didaftarkan untuk kelompok ini. Silakan daftarkan posko terlebih dahulu.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const lat = payload.latitude !== undefined && !isNaN(Number(payload.latitude)) && Number(payload.latitude) !== 0
+      ? Number(payload.latitude)
+      : Number(existingPosko.latitude);
+    const lng = payload.longitude !== undefined && !isNaN(Number(payload.longitude)) && Number(payload.longitude) !== 0
+      ? Number(payload.longitude)
+      : Number(existingPosko.longitude);
+
+    // Overlap Proximity Check: Tidak boleh berdekatan < 30 meter dari posko kelompok lain
+    const otherPoskos = await prisma.facility.findMany({
+      where: {
+        jenis: "posko_kkn",
+        kelompokId: { not: student.kelompokId },
+        id: { not: existingPosko.id },
+        statusApproval: { in: ["APPROVED", "PENDING"] },
+      },
+    });
+
+    const R = 6371e3;
+    for (const op of otherPoskos) {
+      const phi1 = (lat * Math.PI) / 180;
+      const phi2 = (Number(op.latitude) * Math.PI) / 180;
+      const deltaPhi = ((Number(op.latitude) - lat) * Math.PI) / 180;
+      const deltaLambda = ((Number(op.longitude) - lng) * Math.PI) / 180;
+      const a =
+        Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+        Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      if (dist < 30) {
+        const err: any = new Error(
+          `Titik lokasi Posko bertabrakan dengan ${op.nama} (jarak hanya ${Math.round(dist)} meter). Mohon geser titik koordinat agar tidak menumpuk antar kelompok.`
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+    }
+
+    let targetRwId = payload.rwId || existingPosko.rwId || student.assignedRwId || student.user.rwId;
+    if (!targetRwId && student.kelompok.cakupanRw) {
+      try {
+        const parsed = typeof student.kelompok.cakupanRw === "string" ? JSON.parse(student.kelompok.cakupanRw) : student.kelompok.cakupanRw;
+        if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
+      } catch (_) {}
+    }
+    if (!targetRwId) {
+      targetRwId = 1;
+    }
+
+    const ketuaStudentUpdate = student.isKetua
+      ? student
+      : (student.kelompok.students?.find((s) => s.isKetua) || student);
+
+    const poskoName = payload.nama || existingPosko.nama || `Posko KKN ${student.kelompok.name}`;
+    const picName = `${ketuaStudentUpdate.user.name} (${ketuaStudentUpdate.nim || "Ketua Kelompok"})`;
+    const kontak = ketuaStudentUpdate.noWa || ketuaStudentUpdate.user.phone || existingPosko.kontak || "-";
+
+    const posko = await prisma.facility.update({
+      where: { id: existingPosko.id },
+      data: {
+        nama: poskoName,
+        alamat: payload.alamat !== undefined ? payload.alamat : existingPosko.alamat,
+        rwId: targetRwId,
+        latitude: lat,
+        longitude: lng,
+        foto: payload.foto || existingPosko.foto,
+        pic: picName,
+        kontak,
+        statusApproval: "APPROVED",
+      },
+    });
+
+    await prisma.auditTrail.create({
+      data: {
+        userId,
+        action: "UPDATE_POSKO_KKN",
+        oldValue: {
+          poskoId: existingPosko.id,
+          latitude: existingPosko.latitude,
+          longitude: existingPosko.longitude,
+          nama: existingPosko.nama,
+          alamat: existingPosko.alamat,
+        },
+        newValue: {
+          poskoId: posko.id,
+          kelompokId: student.kelompokId,
+          latitude: lat,
+          longitude: lng,
+          nama: posko.nama,
+          alamat: posko.alamat,
           status: "APPROVED",
         },
       },
@@ -1425,16 +1616,49 @@ export class KknService {
     };
   }
 
-  async getAllPoskoKkn(filters?: { kelurahan?: string; search?: string }) {
+  async getAllPoskoKkn(filters?: { kelurahan?: string; search?: string; userId?: string; role?: string }) {
     const where: any = {
       jenis: "posko_kkn",
     };
 
+    if (filters?.userId && filters?.role) {
+      const normalizedRole = String(filters.role).toUpperCase();
+      const isAdmin = ["DEVELOPER", "ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some(r => normalizedRole.includes(r));
+      if (!isAdmin) {
+        if (normalizedRole.includes("MAHASISWA")) {
+          where.kelompok = { students: { some: { userId: filters.userId } } };
+        } else if (normalizedRole.includes("DPL") || normalizedRole.includes("DOSEN")) {
+          const userDpl = await prisma.user.findUnique({
+            where: { id: filters.userId },
+            select: { id: true, name: true, nip: true },
+          });
+          const orConditions: any[] = [
+            { kelompok: { dplId: filters.userId } },
+            { kelompok: { dpl: { id: filters.userId } } },
+          ];
+          if (userDpl?.name) {
+            orConditions.push({ kelompok: { dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" } } });
+            orConditions.push({ kelompok: { dpl: { name: { equals: userDpl.name.trim(), mode: "insensitive" } } } });
+          }
+          if (userDpl?.nip) {
+            orConditions.push({ kelompok: { dpl: { nip: userDpl.nip } } });
+          }
+          where.OR = orConditions;
+        }
+      }
+    }
+
     if (filters?.kelurahan && filters.kelurahan !== "ALL") {
-      where.OR = [
+      const kelurahanOr = [
         { rw: { kelurahan: { name: { contains: filters.kelurahan, mode: "insensitive" } } } },
         { kelompok: { kelurahan: { contains: filters.kelurahan, mode: "insensitive" } } },
       ];
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: kelurahanOr }];
+        delete where.OR;
+      } else {
+        where.OR = kelurahanOr;
+      }
     }
 
     const poskos = await prisma.facility.findMany({
@@ -1458,8 +1682,8 @@ export class KknService {
 
     return poskos.map((p) => {
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
-      const ketuaName = ketua?.user?.name || p.pic || "Ketua Kelompok KKN";
-      const kontak = ketua?.user?.phone || ketua?.noWa || p.kontak || "-";
+      const ketuaName = p.pic || ketua?.user?.name || "Ketua Kelompok KKN";
+      const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || ketua?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
       const kelurahan = p.rw?.kelurahan?.name || p.kelompok?.kelurahan || "Coblong";
 
@@ -1470,6 +1694,7 @@ export class KknService {
         kelompokId: p.kelompokId,
         kelompokName: p.kelompok?.name || "Kelompok KKN",
         kelurahan,
+        rwId: p.rwId,
         rwName: p.rw?.name || "-",
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
@@ -1482,6 +1707,212 @@ export class KknService {
         createdAt: p.createdAt,
       };
     });
+  }
+
+  async createPoskoAdmin(
+    userId: string,
+    payload: {
+      nama: string;
+      alamat?: string;
+      kelompokId?: string;
+      rwId?: number;
+      latitude: number;
+      longitude: number;
+      foto?: string;
+      pic?: string;
+      kontak?: string;
+      statusApproval?: string;
+    }
+  ) {
+    if (!payload.nama || !payload.nama.trim()) {
+      throw new Error("Nama Posko wajib diisi.");
+    }
+    const lat = Number(payload.latitude);
+    const lng = Number(payload.longitude);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+      throw new Error("Koordinat GPS (latitude & longitude) wajib valid dan tidak boleh kosong.");
+    }
+
+    let targetRwId = payload.rwId ? Number(payload.rwId) : undefined;
+    let targetKelompokId = payload.kelompokId || undefined;
+    let resolvedPic = payload.pic?.trim();
+    let resolvedKontak = payload.kontak?.trim();
+
+    if (targetKelompokId) {
+      const kelompok = await prisma.kelompokKkn.findUnique({
+        where: { id: targetKelompokId },
+        include: {
+          dpl: true,
+          students: {
+            include: { user: true },
+          },
+        },
+      });
+
+      if (kelompok) {
+        if (!targetRwId && kelompok.cakupanRw) {
+          try {
+            const parsed = typeof kelompok.cakupanRw === "string" ? JSON.parse(kelompok.cakupanRw) : kelompok.cakupanRw;
+            if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
+          } catch (_) {}
+        }
+        if (!resolvedPic) {
+          const ketua = kelompok.students.find((s) => s.isKetua) || kelompok.students[0];
+          resolvedPic = ketua?.user?.name || "Ketua Kelompok KKN";
+        }
+        if (!resolvedKontak) {
+          const ketua = kelompok.students.find((s) => s.isKetua) || kelompok.students[0];
+          resolvedKontak = ketua?.user?.phone || ketua?.noWa || "-";
+        }
+      }
+    }
+
+    if (!targetRwId) {
+      const firstRw = await prisma.rw.findFirst();
+      targetRwId = firstRw?.id || 1;
+    }
+
+    const posko = await prisma.facility.create({
+      data: {
+        nama: payload.nama.trim(),
+        jenis: "posko_kkn",
+        alamat: payload.alamat?.trim() || "-",
+        rwId: targetRwId,
+        kelompokId: targetKelompokId || null,
+        latitude: lat,
+        longitude: lng,
+        foto: payload.foto || null,
+        pic: resolvedPic || "Ketua Posko",
+        kontak: resolvedKontak || "-",
+        statusApproval: payload.statusApproval || "APPROVED",
+        registeredByUserId: userId || null,
+      },
+      include: {
+        rw: { include: { kelurahan: true } },
+        kelompok: { include: { dpl: true, students: { include: { user: true } } } },
+      },
+    });
+
+    try {
+      await prisma.auditTrail.create({
+        data: {
+          userId: userId || undefined,
+          action: "CREATE_POSKO_KKN",
+          newValue: {
+            poskoId: posko.id,
+            nama: posko.nama,
+            kelompokId: posko.kelompokId,
+            latitude: lat,
+            longitude: lng,
+            status: posko.statusApproval,
+          },
+        },
+      });
+    } catch (_) {}
+
+    return posko;
+  }
+
+  async updatePoskoAdmin(
+    id: string,
+    userId: string,
+    payload: {
+      nama?: string;
+      alamat?: string;
+      kelompokId?: string | null;
+      rwId?: number | null;
+      latitude?: number;
+      longitude?: number;
+      foto?: string;
+      pic?: string;
+      kontak?: string;
+      statusApproval?: string;
+    }
+  ) {
+    const existing = await prisma.facility.findFirst({
+      where: { id, jenis: "posko_kkn" },
+    });
+
+    if (!existing) {
+      const err: any = new Error("Data Posko KKN tidak ditemukan.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const updateData: any = {};
+    if (payload.nama !== undefined) updateData.nama = payload.nama.trim();
+    if (payload.alamat !== undefined) updateData.alamat = payload.alamat.trim();
+    if (payload.kelompokId !== undefined) updateData.kelompokId = payload.kelompokId || null;
+    if (payload.rwId !== undefined && payload.rwId !== null && !isNaN(Number(payload.rwId))) updateData.rwId = Number(payload.rwId);
+    if (payload.latitude !== undefined && !isNaN(Number(payload.latitude))) updateData.latitude = Number(payload.latitude);
+    if (payload.longitude !== undefined && !isNaN(Number(payload.longitude))) updateData.longitude = Number(payload.longitude);
+    if (payload.foto !== undefined) updateData.foto = payload.foto;
+    if (payload.pic !== undefined) updateData.pic = payload.pic.trim();
+    if (payload.kontak !== undefined) updateData.kontak = payload.kontak.trim();
+    if (payload.statusApproval !== undefined) updateData.statusApproval = payload.statusApproval;
+
+    const updated = await prisma.facility.update({
+      where: { id },
+      data: updateData,
+      include: {
+        rw: { include: { kelurahan: true } },
+        kelompok: { include: { dpl: true, students: { include: { user: true } } } },
+      },
+    });
+
+    try {
+      await prisma.auditTrail.create({
+        data: {
+          userId: userId || undefined,
+          action: "UPDATE_POSKO_KKN",
+          oldValue: {
+            nama: existing.nama,
+            alamat: existing.alamat,
+            latitude: Number(existing.latitude),
+            longitude: Number(existing.longitude),
+            status: existing.statusApproval,
+          },
+          newValue: {
+            poskoId: id,
+            ...updateData,
+          },
+        },
+      });
+    } catch (_) {}
+
+    return updated;
+  }
+
+  async deletePoskoAdmin(id: string, userId?: string) {
+    const existing = await prisma.facility.findFirst({
+      where: { id, jenis: "posko_kkn" },
+    });
+
+    if (!existing) {
+      const err: any = new Error("Data Posko KKN tidak ditemukan.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    await prisma.facility.delete({
+      where: { id },
+    });
+
+    try {
+      await prisma.auditTrail.create({
+        data: {
+          userId: userId || undefined,
+          action: "DELETE_POSKO_KKN",
+          oldValue: {
+            poskoId: id,
+            nama: existing.nama,
+            kelompokId: existing.kelompokId,
+          },
+        },
+      });
+    } catch (_) {}
+
+    return { success: true, message: "Posko KKN berhasil dihapus." };
   }
 
   async getMyGroup(userId: string) {
@@ -1563,7 +1994,20 @@ export class KknService {
     return {
       groupId: group.id,
       groupName: group.name,
-      dosenPembimbing: group.dpl?.name || "Dr. Ir. Ahmad Sudrajat, M.T.",
+      dosenPembimbing: group.dpl?.name || group.dplNamaMentah || "Dosen Pendamping Lapangan",
+      dplName: group.dpl?.name || group.dplNamaMentah || "Dosen Pendamping Lapangan",
+      dplNip: group.dpl?.nip || "-",
+      dplPhone: group.dpl?.phone || null,
+      dpl: group.dpl
+        ? {
+            id: group.dpl.id,
+            name: group.dpl.name,
+            nip: group.dpl.nip || "-",
+            phone: group.dpl.phone || null,
+            nomorWa: group.dpl.phone || null,
+            fotoProfil: group.dpl.fotoProfil || null,
+          }
+        : null,
       poskoLocation: poskoLocationName,
       poskoAlamat: registeredPosko?.alamat || student.assignedRw?.name || "-",
       poskoFoto: registeredPosko?.foto || null,
@@ -1574,7 +2018,7 @@ export class KknService {
       longitude: poskoLng,
       poskoLatitude: poskoLat,
       poskoLongitude: poskoLng,
-      radiusMeter: 100,
+      radiusMeter: 200,
       totalGroupPoints,
       members,
     };
@@ -1938,7 +2382,7 @@ export class KknService {
         data: {
           userId: dplUser.id,
           title: `Tembusan ${laporanLabel}`,
-          message: `Mahasiswa bimbingan Anda (${studentName}) menginput ${laporanLabel.toLowerCase()} ${laporanDesc} untuk ${rwName}.`,
+          message: `Mahasiswa dampingan Anda (${studentName}) menginput ${laporanLabel.toLowerCase()} ${laporanDesc} untuk ${rwName}.`,
           isRead: false,
         },
       });
@@ -2547,10 +2991,17 @@ export class KknService {
       throw new Error("User belum terdaftar di kelompok KKN");
     }
 
-    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive } = payload;
+    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive, attachmentFile, attachmentUrls } = payload;
     
     if (!judul || judul.trim() === "") {
       throw new Error("Judul program kerja wajib diisi");
+    }
+
+    const finalKategori = normalizeProkerKategori(kategori);
+
+    // Evaluasi 26-08-2026: Lapor/Pengajuan Program Kerja Kelompok hanya oleh Ketua Kelompok
+    if (!student.isKetua && finalKategori !== "LAPORAN_AKHIR") {
+      throw new Error("Akses ditolak: Pengajuan Program Kerja Kelompok hanya dapat dilakukan oleh Ketua Kelompok.");
     }
 
     // Validasi waktu pelaksanaan tidak boleh masa lampau dan minimal 3 hari dari pengajuan
@@ -2571,9 +3022,14 @@ export class KknService {
       }
     }
 
-    const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || null;
+    const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || attachmentFile || null;
     const finalWaktuPelaksanaan = executionDateRaw ? String(executionDateRaw) : null;
-    const finalKategori = normalizeProkerKategori(kategori);
+
+    const finalAttachmentUrls = Array.isArray(attachmentUrls) && attachmentUrls.length > 0
+      ? attachmentUrls
+      : (finalGoogleDriveUrl ? [finalGoogleDriveUrl] : []);
+
+    const hasAttachment = Boolean(attachmentFile || finalGoogleDriveUrl || finalAttachmentUrls.length > 0);
 
     let finalJudul = judul.trim();
     if (finalKategori === "LAPORAN_AKHIR") {
@@ -2589,11 +3045,15 @@ export class KknService {
     const proker = await prisma.programKerjaKkn.create({
       data: {
         kelompokId: student.kelompok.id,
+        studentId: student.id,
         nomor: existingCount + 1,
         kategori: finalKategori,
         deskripsi: combinedDeskripsi,
         waktuPelaksanaan: finalWaktuPelaksanaan,
         linkGoogleDrive: finalGoogleDriveUrl,
+        attachmentFile: attachmentFile || finalGoogleDriveUrl || null,
+        attachmentUrls: finalAttachmentUrls,
+        hasAttachment,
         kebutuhanBiaya: Number(rencanaAnggaran) || 0,
         status: "BELUM_DISETUJUI",
         statusUsulan: "BELUM_DISETUJUI",
@@ -2677,7 +3137,7 @@ export class KknService {
       }
       if (targetGroupId && targetGroupId !== "ALL") {
         if (!dplGroupIds.includes(targetGroupId)) {
-          throw new Error("Akses ditolak: Anda hanya dapat melihat program kerja kelompok bimbingan Anda.");
+          throw new Error("Akses ditolak: Anda hanya dapat melihat program kerja kelompok dampingan Anda.");
         }
         whereClause.kelompokId = targetGroupId;
       } else {

@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
 import { facilityService } from "../services/facilityService.js";
+import { timelineKknService } from "../services/timelineKknService.js";
 
 
 export class KknController {
@@ -462,6 +463,34 @@ export class KknController {
     }
   }
 
+  async updateMyPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const kknUserId = req.user!.userId;
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload = {
+        ...req.body,
+        foto: fotoUrl,
+        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
+        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
+        rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
+      };
+
+      const data = await kknService.updatePoskoKkn(kknUserId, payload);
+      res.status(200).json({
+        success: true,
+        message: "Data Posko KKN berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] updatePosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
   async getMyPosko(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
@@ -489,7 +518,9 @@ export class KknController {
     try {
       const kelurahan = req.query.kelurahan as string | undefined;
       const search = req.query.search as string | undefined;
-      const data = await kknService.getAllPoskoKkn({ kelurahan, search });
+      const userId = (req as any).user?.userId;
+      const role = (req as any).user?.role || (req as any).user?.peran;
+      const data = await kknService.getAllPoskoKkn({ kelurahan, search, userId, role });
       res.status(200).json({
         success: true,
         message: "Data posko KKN berhasil dimuat",
@@ -501,6 +532,93 @@ export class KknController {
     }
   }
 
+  async createPosko(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.userId;
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload = {
+        nama: req.body.nama,
+        alamat: req.body.alamat,
+        kelompokId: req.body.kelompokId || undefined,
+        rwId: req.body.rwId != null && req.body.rwId !== "" ? Number(req.body.rwId) : undefined,
+        latitude: req.body.latitude != null ? Number(req.body.latitude) : 0,
+        longitude: req.body.longitude != null ? Number(req.body.longitude) : 0,
+        foto: fotoUrl,
+        pic: req.body.pic,
+        kontak: req.body.kontak,
+        statusApproval: req.body.statusApproval || "APPROVED",
+      };
+
+      const data = await kknService.createPoskoAdmin(userId, payload);
+      res.status(201).json({
+        success: true,
+        message: "Posko KKN berhasil ditambahkan.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] createPosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
+  async updatePosko(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+      let fotoUrl = req.body.foto;
+      if (req.file) {
+        fotoUrl = `/uploads/${req.file.filename}`;
+      }
+      const payload: any = {
+        ...req.body,
+      };
+      if (fotoUrl !== undefined) {
+        payload.foto = fotoUrl;
+      }
+      if (req.body.latitude != null && req.body.latitude !== "") {
+        payload.latitude = Number(req.body.latitude);
+      }
+      if (req.body.longitude != null && req.body.longitude !== "") {
+        payload.longitude = Number(req.body.longitude);
+      }
+      if (req.body.rwId != null && req.body.rwId !== "") {
+        payload.rwId = Number(req.body.rwId);
+      }
+
+      const data = await kknService.updatePoskoAdmin(id, userId, payload);
+      res.status(200).json({
+        success: true,
+        message: "Posko KKN berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] updatePosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
+  async deletePosko(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.userId;
+      const data = await kknService.deletePoskoAdmin(id, userId);
+      res.status(200).json({
+        success: true,
+        message: "Posko KKN berhasil dihapus.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] deletePosko error:", error);
+      const statusCode = error.statusCode || 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
   // ──────────────────────────────────────────────────────────
   // 3 Pilar KKN (Perencanaan, Aksi, Panen)
   // ──────────────────────────────────────────────────────────
@@ -509,7 +627,10 @@ export class KknController {
     try {
       const payload = { ...req.body };
       if (req.file) {
-        payload.linkGoogleDrive = `/uploads/${req.file.filename}`;
+        const fileUrl = `/uploads/${req.file.filename}`;
+        payload.attachmentFile = fileUrl;
+        payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
+        payload.attachmentUrls = [fileUrl];
       }
       const data = await kknService.createProgramKerja(req.user!.userId, payload);
       
@@ -642,6 +763,76 @@ export class KknController {
       }
       res.status(400).json({ success: false, message: error.message });
     }
+  }
+
+  async getTimelineMahasiswa(req: Request, res: Response): Promise<void> {
+    try {
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+
+      const result = await timelineKknService.getTimelineMahasiswa(
+        {
+          kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
+          fase: fase ? String(fase) : undefined,
+          statusPelaksanaan: statusPelaksanaan ? String(statusPelaksanaan) : undefined,
+          search: search ? String(search) : undefined,
+          startDate: startDate ? String(startDate) : undefined,
+          endDate: endDate ? String(endDate) : undefined,
+        },
+        userId,
+        userRole
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat linimasa program KKN beserta rekomendasi dan pertanyaan kritis",
+        summary: result.summary,
+        fases: result.fases,
+        data: result.data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getTimelineMahasiswa error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  }
+
+  async getActiveTimelineMahasiswa(req: Request, res: Response): Promise<void> {
+    try {
+      const userRole = String(req.user?.role || "").toUpperCase();
+      const userId = req.user?.userId || (req.user as any)?.id;
+      const { kelompokId, kelurahan, bidangKegiatan, fase, search } = req.query;
+
+      const result = await timelineKknService.getActiveTimelineMahasiswa(
+        {
+          kelompokId: kelompokId ? String(kelompokId) : undefined,
+          kelurahan: kelurahan ? String(kelurahan) : undefined,
+          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
+          fase: fase ? String(fase) : undefined,
+          search: search ? String(search) : undefined,
+        },
+        userId,
+        userRole
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat tahapan linimasa KKN yang sedang berlangsung",
+        summary: result.summary,
+        activeFaseSummary: result.activeFaseSummary,
+        data: result.data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getActiveTimelineMahasiswa error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  }
+
+  // Alias yang kompatibel dengan naming dari mobile dev
+  async getActiveTimeline(req: Request, res: Response): Promise<void> {
+    return this.getActiveTimelineMahasiswa(req, res);
   }
 }
 

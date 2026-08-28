@@ -1,4 +1,4 @@
-﻿# 📋 MAPPING ROLE FEATURE REQUIREMENT BERSEKA (KKN & JALUR AKADEMIK)
+# 📋 MAPPING ROLE FEATURE REQUIREMENT BERSEKA (KKN & JALUR AKADEMIK)
 
 > **Versi:** 1.0 — 13 Agustus 2026  
 > **Proyek:** BERSEKA — Sistem Pemilahan Sampah Cerdas Terintegrasi  
@@ -17,7 +17,7 @@ Dokumen ini melengkapi `ROLE_MAPPING_BERSEKA.md` dengan pendalaman khusus pada *
    - `id: 1` = `SUPER_USER` (Administrator Sistem)
    - `id: 9` = `PEMIMPIN` (Pimpinan UNIKOM - Monitoring Institusi)
    - `id: 10` = `PANITIA_TASKFORCE` (Admin Operasional KKN)
-   - `id: 8` = `DPL` (Dosen Pembimbing Lapangan)
+   - `id: 8` = `DPL` (Dosen Pendamping Lapangan)
    - `id: 7` = `MAHASISWA_KKN` (Pelaksana Lapangan)
 2. **Platform**:
    - `PANITIA_TASKFORCE`, `PEMIMPIN`, `DPL` -> **Web Dashboard**
@@ -172,49 +172,22 @@ Dokumen ini melengkapi `ROLE_MAPPING_BERSEKA.md` dengan pendalaman khusus pada *
 
 ## Bab 5 — State Machine & Alur Bisnis KKN <a name="bab-5"></a>
 
-### 5.1 Alur Registrasi Akun Mahasiswa & Welcome Bonus
+  2. **Edukasi & Pendampingan Warga**: Membantu warga lanjut usia/kesulitan digital untuk aktivasi akun Tempat Sampah.
+  3. **Presensi Kehadiran GPS**: Absensi radius geofencing < 100m dari koordinat posko KKN (+5 Poin/hari).
+  4. **Pengajuan Izin/Sakit**: Upload bukti foto/surat dokter jika berhalangan hadir.
+  5. **Pengisian Survei Baseline & Hambatan**: Menginput kondisi awal dan kendala pemilahan sampah di RW binaan.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor TF as Panitia Taskforce
-    participant API as Backend API
-    participant DB as PostgreSQL Database
+---
 
-    TF->>API: POST /api/v1/users (role: MAHASISWA_KKN)
-    API->>DB: INSERT INTO pengguna (status: "Aktif", mustChangePassword: true)
-    API->>DB: INSERT INTO mahasiswa_kkn (whitelistStatus: "APPROVED")
-    API->>DB: INSERT INTO riwayat_poin (+20 Poin, kategori: "BONUS_REGISTRASI")
-    API-->>TF: 201 Created (Akun Siap Digunakan)
-```
+## Bab 5 — Alur Kerja & Sequence Diagram <a name="bab-5"></a>
 
-### 5.2 Alur Presensi GPS Mahasiswa
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor MHS as Mahasiswa KKN (Mobile)
-    participant API as Backend API
-    participant DB as Database
-
-    MHS->>API: POST /api/v1/kegiatan/:scheduleId/absen (lat, lng)
-    API->>DB: Cek Jadwal & Hitung Haversine Distance (Radius)
-    alt Di Dalam Radius
-        API->>DB: INSERT INTO kehadiran_kegiatan (status: "DALAM_RADIUS")
-        API->>DB: INSERT INTO riwayat_poin (+1 Poin, kategori: "KEHADIRAN_KKN")
-        API-->>MHS: 200 OK (Presensi Berhasil)
-    else Di Luar Radius
-        API-->>MHS: 400 Bad Request (Di Luar Radius Penugasan)
-    end
-```
-
-### 5.3 Alur Eskalasi Izin Mahasiswa
+### 5.1 Alur Pengajuan & Approval Izin Mahasiswa KKN
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor MHS as Mahasiswa KKN
-    actor DPL as Dosen Pembimbing
+    actor DPL as Dosen Pendamping
     actor TF as Panitia Taskforce
     participant API as Backend API
 

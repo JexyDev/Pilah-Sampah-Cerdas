@@ -1,4 +1,4 @@
-﻿# 📱 Dokumentasi API BERSEKA Mobile App (Developer Reference)
+# 📱 Dokumentasi API BERSEKA Mobile App (Developer Reference)
 
 > **Untuk:** Mobile Developer (Flutter / Riverpod)  
 > **Versi API:** `v1`  
@@ -171,7 +171,7 @@ Authorization: Bearer <jwt_token_disini>
     "kelompok": {
       "id": "klp_01",
       "nama": "Kelompok 01 Sadang Serang",
-      "dplName": "Dr. Dosen Pembimbing, M.T."
+      "dplName": "Dr. Dosen Pendamping, M.T."
     }
   }
 }
@@ -604,7 +604,7 @@ Authorization: Bearer <jwt_token_disini>
     "id": "klp_01",
     "nama": "Kelompok 01 Coblong",
     "dpl": {
-      "name": "Dr. Dosen Pembimbing, M.T.",
+      "name": "Dr. Dosen Pendamping, M.T.",
       "phone": "+62812345678"
     },
     "anggota": [

@@ -139,14 +139,14 @@ router.get("/", authMiddleware, async (req, res) => {
     const isDplRole = role === "DPL" || role === "DOSEN_PEMBIMBING";
 
     if (isDplRole && userId) {
-      // 1. Ambil seluruh mahasiswa di kelompok bimbingan DPL ini
+      // 1. Ambil seluruh mahasiswa di kelompok dampingan DPL ini
       const dplGroups = await prisma.kelompokKkn.findMany({
         where: { OR: [{ dplId: userId }, { dpl: { id: userId } }] },
         select: { students: { select: { userId: true, user: { select: { name: true } } } } },
       });
       const studentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
 
-      // 2. Ambil pengajuan izin (Leave Request) mahasiswa bimbingan DPL
+      // 2. Ambil pengajuan izin (Leave Request) mahasiswa dampingan DPL
       let leaveNotifs: any[] = [];
       if (studentUserIds.length > 0) {
         const pendingLeave = await prisma.studentLeaveRequest.findMany({
@@ -170,7 +170,7 @@ router.get("/", authMiddleware, async (req, res) => {
             id: `leave-req-${r.id}`,
             type: "PENGAJUAN_IZIN",
             title: `Pengajuan ${r.type === "SAKIT" ? "Izin Sakit" : "Izin Meninggalkan Tempat"}`,
-            desc: `Mahasiswa ${r.student?.name || "Bimbingan"} mengajukan ${r.type}: "${r.reason}". Mohon review/persetujuan DPL.`,
+            desc: `Mahasiswa ${r.student?.name || "Dampingan"} mengajukan ${r.type}: "${r.reason}". Mohon review/persetujuan DPL.`,
             isRead: false,
             time,
             createdAt: r.createdAt,

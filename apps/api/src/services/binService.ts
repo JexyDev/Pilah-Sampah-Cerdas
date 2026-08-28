@@ -1425,44 +1425,21 @@ export class BinService {
       jenisSampah
     );
 
-    const citizenName = request.user?.name || "Warga";
-    const binQr = request.bin?.qrCode || "Tempat Sampah";
-    const areaName = request.bin?.rw?.name || "Wilayah";
+    // Langsung eksekusi reset kapasitas tempat sampah ke 0L (instan tanpa approval)
+    await prisma.bin.update({
+      where: { id: binId },
+      data: { currentVolumeLiter: 0 },
+    });
 
-    // Notifikasi spesifik ke petugas tujuan (jika ada)
-    if (resolvedPetugasId) {
-      await prisma.notification
-        .create({
-          data: {
-            userId: resolvedPetugasId,
-            title: "Pengajuan Pengosongan Baru",
-            message: `${citizenName} mengajukan pengosongan tempat sampah (${binQr}) di ${areaName}. Ketuk untuk melihat detail.`,
-          },
-        })
-        .catch(() => {});
-    } else {
-      // Fallback: notif ke semua staff RW jika belum ada petugas tetap
-      const staffList = await getStaffForBin(request.bin?.rwId || null);
-      for (const staff of staffList) {
-        await prisma.notification
-          .create({
-            data: {
-              userId: staff.id,
-              title: "Pengajuan Pengosongan Baru",
-              message: `${citizenName} mengajukan pengosongan tempat sampah (${binQr}) di ${areaName}.`,
-            },
-          })
-          .catch(() => {});
-      }
-    }
+    const binQr = request.bin?.qrCode || "Tempat Sampah";
 
     // Notifikasi konfirmasi ke warga
     await prisma.notification
       .create({
         data: {
           userId,
-          title: "Pengajuan Pengosongan Dikirim",
-          message: `Pengajuan pengosongan tempat sampah ${binQr} berhasil dikirim. Status: PENDING.`,
+          title: "Pengosongan Tempat Sampah Berhasil",
+          message: `Tempat sampah ${binQr} telah berhasil dikosongkan secara otomatis. Kapasitas kembali 0L.`,
         },
       })
       .catch(() => {});

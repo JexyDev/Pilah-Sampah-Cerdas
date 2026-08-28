@@ -24,6 +24,10 @@ import {
   Bot,
   Truck,
   Recycle,
+  Sparkles,
+  Globe,
+  Coins,
+  Radio,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -64,6 +68,7 @@ const checkRouteActive = (
     const logbookAliases = ["/log-aktivitas/mahasiswa", "/logbook-kkn", "/dpl/logbook", "/logbook"];
     if (logbookAliases.includes(tPath) && logbookAliases.includes(cPath)) return true;
     const dplLogAliases = [
+      "/log-aktivitas/dosen-pendamping-lapangan",
       "/log-aktivitas/dosen-pembimbing-lapangan",
       "/log-aktivitas-dpl",
       "/dpl/log-aktivitas",
@@ -138,6 +143,9 @@ const checkRouteActive = (
     const presensiAliases = ["/monitoring-kegiatan/presensi", "/monitoring-absen"];
     if (presensiAliases.includes(tPath) && presensiAliases.includes(cPath)) return true;
 
+    const laporanPresensiAliases = ["/monitoring-kegiatan/laporan-presensi", "/laporan-presensi"];
+    if (laporanPresensiAliases.includes(tPath) && laporanPresensiAliases.includes(cPath)) return true;
+
     const izinAliases = ["/monitoring-kegiatan/pengajuan-izin", "/ajuan-absensi", "/validasi-absensi"];
     if (izinAliases.includes(tPath) && izinAliases.includes(cPath)) return true;
 
@@ -164,6 +172,18 @@ const checkRouteActive = (
 
     const importSurveiAliases = ["/hasil-survei/data-survei", "/superUser/import-survei-kkn", "/import-survei-kkn"];
     if (importSurveiAliases.includes(tPath) && importSurveiAliases.includes(cPath)) return true;
+
+    const kurasiAliases = [
+      "/kurasi-landing",
+      "/manajemen-berita",
+      "/master-data/kurasi-landing",
+      "/master-data/manajemen-berita",
+      "/superUser/kurasi-landing",
+    ];
+    if (kurasiAliases.includes(tPath) && kurasiAliases.includes(cPath)) return true;
+
+    const inspeksiZonaAliases = ["/developer/inspeksi-zona", "/inspeksi-zona", "/monitoring-zona"];
+    if (inspeksiZonaAliases.includes(tPath) && inspeksiZonaAliases.includes(cPath)) return true;
 
     return false;
   };
@@ -642,17 +662,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "MAHASISWA_KKN",
     "DPL",
     "DOSEN_PEMBIMBING",
+    "MPL",
+    "TASK_FORCE",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
     "WARGA",
   ];
 
-  const hasAccess = (allowed?: UserRole[]) =>
-    !allowed ||
-    userRole === "DEVELOPER" ||
-    userRole === "SUPER_USER" ||
-    userRole === "PEMIMPIN" ||
-    allowed.includes(userRole);
+  const hasAccess = (allowed?: UserRole[]) => {
+    if (!allowed) return true;
+    // Pengecekan ketat: jika menu dikunci khusus DEVELOPER, role lain tidak boleh melihat
+    if (allowed.length === 1 && allowed[0] === "DEVELOPER") {
+      return userRole === "DEVELOPER";
+    }
+    if (allowed.includes("DEVELOPER") && !allowed.includes("SUPER_USER") && !allowed.includes("PEMIMPIN")) {
+      return userRole === "DEVELOPER";
+    }
+    return (
+      userRole === "DEVELOPER" ||
+      userRole === "SUPER_USER" ||
+      userRole === "PEMIMPIN" ||
+      allowed.includes(userRole)
+    );
+  };
 
   const getFilteredGroupChildren = (
     groupLabel: string,
@@ -685,7 +717,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
       ],
     },
     {
-      header: "KULIAH KERJA NYATA",
+      header: "PROGRAM KKN",
       items: [
         {
           type: "group",
@@ -796,6 +828,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               ] as UserRole[],
             },
             {
+              to: "/monitoring-kegiatan/laporan-presensi",
+              label: "Laporan Presensi",
+              allowed: [
+                "DEVELOPER",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+              ] as UserRole[],
+            },
+            {
               to: "/monitoring-kegiatan/pengajuan-izin",
               label: "Pengajuan Izin & Sakit",
               allowed: [
@@ -896,8 +937,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: ALL_ROLES,
             },
             {
-              to: "/log-aktivitas/dosen-pembimbing-lapangan",
-              label: "Dosen Pembimbing Lapangan",
+              to: "/log-aktivitas/dosen-pendamping-lapangan",
+              label: "Dosen Pendamping Lapangan",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -920,8 +961,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: [
             "DEVELOPER",
             "SUPER_USER",
-            "DPL",
-            "DOSEN_PEMBIMBING",
             "PANITIA_TASKFORCE",
             "PEMIMPIN",
             "ADMIN_DLH",
@@ -935,8 +974,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "ADMIN_DLH",
@@ -950,8 +987,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "ADMIN_DLH",
@@ -965,8 +1000,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
-                "DPL",
-                "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
                 "PEMIMPIN",
                 "ADMIN_DLH",
@@ -1163,7 +1196,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
             { to: "/pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=dpl", label: "Dosen Pembimbing Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
             { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
@@ -1208,10 +1241,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
+          to: "/kurasi-landing",
+          icon: Globe,
+          label: "Manajemen Berita",
+          allowed: ["DEVELOPER"] as UserRole[],
+        },
+        {
+          to: "/kelola-poin",
+          icon: Coins,
+          label: "Kelola Poin Pengguna",
+          allowed: ["DEVELOPER"] as UserRole[],
+        },
+        {
           to: "/pengguna-daring",
           icon: UserIcon,
           label: "Pengguna Daring",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/developer/inspeksi-zona",
+          icon: Radio,
+          label: "Inspeksi Zona KKN",
+          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
         },
       ],
     },

@@ -80,6 +80,76 @@ export class SystemController {
   }
 
   /**
+   * Get curated activities list for Landing Page
+   */
+  async getCuratedActivities(req: Request, res: Response): Promise<void> {
+    try {
+      const list = await systemService.getCuratedLandingActivities();
+      res.status(200).json({ success: true, data: list });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Save curated activities list for Landing Page (Admin / Super User / Developer)
+   */
+  async saveCuratedActivities(req: Request, res: Response): Promise<void> {
+    try {
+      const { activities } = req.body;
+      if (!Array.isArray(activities)) {
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "Data activities harus berupa array kegiatan",
+        });
+        return;
+      }
+      const updatedBy = (req.user as any)?.name || "Super User";
+      const saved = await systemService.saveCuratedLandingActivities(activities, updatedBy);
+      res.status(200).json({
+        success: true,
+        message: "Daftar kurasi kegiatan Landing Page berhasil disimpan.",
+        data: saved,
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Get approved KKN logbook sources as candidates for curation
+   */
+  async getApprovedLogbookSources(req: Request, res: Response): Promise<void> {
+    try {
+      const logbooks = await systemService.getApprovedLogbookSources();
+      res.status(200).json({ success: true, data: logbooks });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Get real student Program Kerja sources as candidates for curation
+   */
+  async getRealProkerSources(req: Request, res: Response): Promise<void> {
+    try {
+      const prokers = await systemService.getRealProkerSources();
+      res.status(200).json({ success: true, data: prokers });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
    * Publish new APK release (SUPER_USER only)
    */
   async publishRelease(req: Request, res: Response): Promise<void> {

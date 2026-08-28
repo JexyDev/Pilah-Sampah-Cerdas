@@ -134,6 +134,14 @@ export const kknAttendanceController = {
       const { latitude, longitude, lat, lng, method, scheduleId: bodyScheduleId, nim, namaMahasiswa, kodeZona } = req.body;
       const id = paramId || bodyScheduleId || req.body.id || "kkn-main-posko";
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let rawFoto = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        rawFoto = `${baseUrl}/uploads/${file.filename}`;
+      }
+
       const finalLat =
         latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : null;
       const finalLng =
@@ -167,6 +175,8 @@ export const kknAttendanceController = {
         nim,
         namaMahasiswa,
         kodeZona,
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: rawFoto,
       });
 
       res.status(200).json({
@@ -207,6 +217,14 @@ export const kknAttendanceController = {
       const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId } = req.body;
       const id = paramId || bodyScheduleId || req.body.id;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
+
       const finalLat =
         latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : undefined;
       const finalLng =
@@ -217,6 +235,8 @@ export const kknAttendanceController = {
         scheduleId: id,
         latitude: finalLat,
         longitude: finalLng,
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: finalFotoUrl,
       });
 
       res.status(200).json(result);
@@ -299,11 +319,15 @@ export const kknAttendanceController = {
       const kelompokId = req.query.kelompokId as string | undefined;
       const studentId = isStudent ? currentUserId : (req.query.studentId as string | undefined);
       const dplUserId = isDpl ? currentUserId : undefined;
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
 
       const result = await kknAttendanceService.getTimesheetSummary({
         kelompokId,
         studentId,
         dplUserId,
+        startDate,
+        endDate,
       });
 
       res.status(200).json({
@@ -316,6 +340,48 @@ export const kknAttendanceController = {
         success: false,
         error: "INTERNAL_SERVER_ERROR",
         message: "Gagal mendapatkan data rekap timesheet presensi",
+      });
+    }
+  },
+
+  getLaporanPresensi: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const rawRole = (req as any).user?.role;
+      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const isStudent = roleName === "MAHASISWA_KKN";
+
+      const currentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const dplUserId = isDpl ? currentUserId : undefined;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const startDate = req.query.startDate as string | undefined;
+      const endDate = req.query.endDate as string | undefined;
+      const status = req.query.status as string | undefined;
+      const search = req.query.search as string | undefined;
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
+
+      const result = await kknAttendanceService.getLaporanPresensi({
+        kelompokId,
+        dplUserId,
+        startDate,
+        endDate,
+        status,
+        search,
+        page,
+        limit,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] getLaporanPresensi error:", error);
+      res.status(500).json({
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal mendapatkan data laporan presensi",
       });
     }
   },
@@ -356,6 +422,14 @@ export const kknAttendanceController = {
       const { id } = req.params;
       const { latitude, longitude, deviceInfo } = req.body;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
+
       if (!id) {
         res.status(400).json({
           success: false,
@@ -378,6 +452,8 @@ export const kknAttendanceController = {
         latitude: Number(latitude),
         longitude: Number(longitude),
         deviceInfo,
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: finalFotoUrl,
       });
 
       res.status(200).json({
@@ -416,12 +492,24 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
-      const { sessionId, totalDurasiDalamZonaMenit, alasan } = req.body;
+      const { sessionId, totalDurasiDalamZonaMenit, alasan, latitude, longitude } = req.body;
+
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
 
       const result = await kknAttendanceService.selesaiKegiatan(studentUserId, id, {
         sessionId,
-        totalDurasiDalamZonaMenit,
+        totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit ? Number(totalDurasiDalamZonaMenit) : undefined,
         alasan,
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: finalFotoUrl,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
       });
 
       res.status(200).json({
@@ -445,12 +533,22 @@ export const kknAttendanceController = {
       const id = req.params.id || req.body.scheduleId;
       const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan } = req.body;
 
+      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const file = (req as any).file;
+      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      if (file) {
+        const baseUrl = process.env.BASE_URL ?? "";
+        finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
+      }
+
       const mins = totalDurasiDalamZonaMenit ?? durationMinutes ?? Math.ceil(((accumulatedDuration || accumulatedSeconds || 0) / 60));
 
       const result = await kknAttendanceService.selesaiKegiatan(studentUserId, id, {
         sessionId: sessionId || `SES-${id}`,
         totalDurasiDalamZonaMenit: mins,
         alasan: alasan || "Presensi Selesai",
+        deskripsiKegiatan: rawDeskripsi,
+        fotoUrl: finalFotoUrl,
       });
 
       res.status(200).json({

@@ -260,4 +260,19 @@ export const scheduleController = {
       res.status(500).json({ success: false, message: "Gagal mengupdate jadwal" });
     }
   },
+
+  syncDailySchedules: async (req: Request, res: Response) => {
+    try {
+      const { date } = req.body || {};
+      const result = await scheduleService.syncDailySchedulesForToday(date);
+      res.status(200).json({
+        success: true,
+        message: `Berhasil sinkronisasi jadwal kegiatan harian untuk tanggal ${result.date}`,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[ScheduleController] syncDailySchedules error:", error);
+      res.status(500).json({ success: false, message: error?.message || "Internal server error" });
+    }
+  },
 };

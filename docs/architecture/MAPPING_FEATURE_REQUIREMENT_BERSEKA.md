@@ -1,4 +1,4 @@
-﻿# Mapping Feature Requirement Aplikasi BERSEKA
+# Mapping Feature Requirement Aplikasi BERSEKA
 
 ---
 
@@ -244,34 +244,34 @@ Berdasarkan **Term of Reference (TOR) KKN Berdampak Coblong**, adopsi 11 poin fi
 
 ---
 
-## 5️⃣ DPL — Dosen Pembimbing Lapangan (Jalur Akademik)
+## 5️⃣ DPL — Dosen Pendamping Lapangan (Jalur Akademik)
 
 ### Identitas
 | Atribut | Nilai |
 |---|---|
 | Auth | No HP (+62) + Password |
 | Platform | Web |
-| Scope data | 1 kelompok KKN bimbingan |
-| Sifat akses | Operasional akademik — approval terbatas ke mahasiswa bimbingan |
+| Scope data | 1 kelompok KKN dampingan |
+| Sifat akses | Operasional akademik — approval terbatas ke mahasiswa dampingan |
 | Didaftarkan oleh | Admin DLH |
 
 ### Relasi
 | Relasi ke | Jenis | Detail |
 |---|---|---|
-| Mahasiswa KKN | Turun (membimbing) | Monitoring absensi GPS, logbook, approve izin/sakit, beri skor |
+| Mahasiswa KKN | Turun (mendampingi) | Monitoring absensi GPS, logbook, approve izin/sakit, beri skor |
 | Panitia Taskforce | Naik (dikoordinasikan) | Berada di bawah koordinasi operasional Taskforce |
 | Pimpinan | Naik (diawasi) | Aktivitas dipantau institusi |
 
 ### Feature Requirement
 | # | Fitur | Fungsi | Hak Tulis |
 |---|---|---|---|
-| 1 | Dashboard KKN | Ringkasan kelompok bimbingan | Read |
-| 2 | Kelompok KKN | Lihat kelompok yang dibimbing | Read |
+| 1 | Dashboard KKN | Ringkasan kelompok dampingan | Read |
+| 2 | Kelompok KKN | Lihat kelompok yang didampingi | Read |
 | 3 | Portofolio Mahasiswa | Detail mahasiswa (NIM, jurusan, skor, aktivitas) | Read |
 | 4 | Penilaian Mahasiswa | Submit assessment score | ✅ Write |
 | 5 | Approval Izin/Sakit | Approve/reject pengajuan mahasiswa | ✅ Write |
 | 6 | Peta Cakupan | Sebaran polygon RW & titik koordinat bin KKN | Read |
-| 7 | Monitoring Absen | Kehadiran mahasiswa bimbingan via GPS ping | Read |
+| 7 | Monitoring Absen | Kehadiran mahasiswa dampingan via GPS ping | Read |
 | 8 | Warga Dampingan | Warga yang didampingi per mahasiswa | Read |
 | 9 | Riwayat Approval | Histori keputusan logbook | Read |
 | 10 | Baseline & Hambatan, Endline, Komparasi Dampak *(KKN & Evaluasi Dampak, scope kelompok)* | Memantau & memvalidasi data warga binaan | ✅ **Validasi/Revisi** |

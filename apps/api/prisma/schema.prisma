@@ -207,12 +207,17 @@ model User {
   reviewedProkers       ProgramKerjaKkn[]        @relation("DplReviewedProker")
   penilaianKkn          PenilaianKknMahasiswa?   @relation("StudentPenilaianKkn")
   penilaianKknDiberikan PenilaianKknMahasiswa[]  @relation("DplPenilaianKkn")
+  penilaianKknMpl       PenilaianKknMahasiswa[]  @relation("MplPenilaianKkn")
+  mplKelompok           KelompokKkn[]            @relation("MplKelompok")
+  mplStudents           StudentKkn[]             @relation("MplStudent")
   facilitiesRegistered  Facility[]               @relation("FacilityRegisteredBy")
   logbooksWritten       LogbookKkn[]             @relation("LogbookPenulis")
   logbooksApprovedKetua LogbookKkn[]             @relation("LogbookKetuaPenyetuju")
   logbooksVerifiedDpl   LogbookKkn[]             @relation("LogbookDplVerifikator")
   dplLogbooks           LogbookDpl[]             @relation("DplLogbooks")
   notificationSync      UserNotificationSync?
+  beritaKonten          BeritaKonten[]           @relation("BeritaAuthor")
+  presensiMandiri       PresensiMandiri[]        @relation("PresensiMandiriStudent")
 
   @@index([roleId])
   @@index([rwId])
@@ -350,16 +355,20 @@ model StudentKkn {
   createdAt         DateTime     @default(now()) @map("dibuat_pada")
   updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
   kelompokId        String?      @map("id_kelompok")
+  mplId             String?      @map("id_mpl")
   assessmentScore   Decimal?     @default(0.0) @map("skor_penilaian_dpl") @db.Decimal(5, 2)
   assessmentNote    String?      @map("catatan_penilaian_dpl")
   isAssessed        Boolean      @default(false) @map("sudah_dinilai")
   isKetua           Boolean      @default(false) @map("is_ketua")
   jenjangPendidikan String?      @map("jenjang_pendidikan")
   kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id])
+  mpl               User?        @relation("MplStudent", fields: [mplId], references: [id])
   user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedRw        Rw?          @relation(fields: [assignedRwId], references: [id])
+  programKerja      ProgramKerjaKkn[]
 
   @@index([kelompokId])
+  @@index([mplId])
   @@index([assignedRwId])
   @@map("mahasiswa_kkn")
 }
@@ -371,9 +380,11 @@ model KelompokKkn {
   cakupanRw          Json?                   @map("cakupan_rw")
   dplNamaMentah      String?                 @map("dpl_nama_mentah")
   dplId              String?                 @map("id_dpl")
+  mplId              String?                 @map("id_mpl")
   createdAt          DateTime                @default(now()) @map("dibuat_pada")
   updatedAt          DateTime                @updatedAt @map("diperbarui_pada")
   dpl                User?                   @relation("DplKelompok", fields: [dplId], references: [id])
+  mpl                User?                   @relation("MplKelompok", fields: [mplId], references: [id])
   students           StudentKkn[]
   schedules          Schedule[]
   timelines          TimelineKkn[]
@@ -383,6 +394,7 @@ model KelompokKkn {
   poskoKkn           PoskoKkn?
   logbooks           LogbookKkn[]
   dplLogbooks        LogbookDpl[]
+  presensiMandiri    PresensiMandiri[]
 
   @@index([dplId])
   @@map("kelompok_kkn")
@@ -405,34 +417,40 @@ model PoskoKkn {
 }
 
 model ProgramKerjaKkn {
-  id               String       @id @default(uuid())
-  kelompokId       String       @map("id_kelompok")
-  nomor            Int?         @map("nomor")
-  deskripsi        String       @map("deskripsi")
-  kategori         String?      @default("LAINNYA") @map("kategori")
-  sumber           String?      @default("MAHASISWA") @map("sumber")
-  waktuPelaksanaan String?      @map("waktu_pelaksanaan")
-  linkGoogleDrive  String?      @map("link_google_drive")
-  kebutuhanBiaya   Decimal      @default(0.00) @map("kebutuhan_biaya") @db.Decimal(12, 2)
-  status           StatusProker @default(BELUM_DISETUJUI) @map("status")
-  statusUsulan     String?      @default("BELUM_DISETUJUI") @map("status_usulan")
-  statusPelaksanaan String?     @default("BELUM_MULAI") @map("status_pelaksanaan")
-  catatanDpl       String?      @map("catatan_dpl")
-  reviewedById     String?      @map("id_pereview")
-  reviewedAt       DateTime?    @map("direview_pada")
-  skorPenilaian    Decimal?     @map("skor_penilaian") @db.Decimal(5, 2)
-  evaluasiDpl      String?      @map("evaluasi_dpl")
-  aspekPenilaian   Json?        @map("aspek_penilaian")
-  predikat         String?      @map("predikat")
-  statusPenilaian  String?      @default("BELUM_DINILAI") @map("status_penilaian")
-  createdAt        DateTime     @default(now()) @map("dibuat_pada")
-  updatedAt        DateTime     @updatedAt @map("diperbarui_pada")
-  kelompok         KelompokKkn  @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
-  reviewedBy       User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
-  logbooks         LogbookKkn[]
-  pemanfaatan      Pemanfaatan[]
-  kritikSaran      KritikSaranPemanfaatan[]
+  id                String       @id @default(uuid())
+  kelompokId        String       @map("id_kelompok")
+  studentId         String?      @map("id_mahasiswa")
+  nomor             Int?         @map("nomor")
+  deskripsi         String       @map("deskripsi")
+  kategori          String?      @default("LAINNYA") @map("kategori")
+  sumber            String?      @default("MAHASISWA") @map("sumber")
+  waktuPelaksanaan  String?      @map("waktu_pelaksanaan")
+  linkGoogleDrive   String?      @map("link_google_drive")
+  attachmentFile    String?      @map("lampiran_file")
+  attachmentUrls    Json?        @map("lampiran_urls")
+  hasAttachment     Boolean      @default(false) @map("ada_lampiran")
+  kebutuhanBiaya    Decimal      @default(0.00) @map("kebutuhan_biaya") @db.Decimal(12, 2)
+  status            StatusProker @default(BELUM_DISETUJUI) @map("status")
+  statusUsulan      String?      @default("BELUM_DISETUJUI") @map("status_usulan")
+  statusPelaksanaan String?      @default("BELUM_MULAI") @map("status_pelaksanaan")
+  catatanDpl        String?      @map("catatan_dpl")
+  reviewedById      String?      @map("id_pereview")
+  reviewedAt        DateTime?    @map("direview_pada")
+  skorPenilaian     Decimal?     @map("skor_penilaian") @db.Decimal(5, 2)
+  evaluasiDpl       String?      @map("evaluasi_dpl")
+  aspekPenilaian    Json?        @map("aspek_penilaian")
+  predikat          String?      @map("predikat")
+  statusPenilaian   String?      @default("BELUM_DINILAI") @map("status_penilaian")
+  createdAt         DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
+  kelompok          KelompokKkn  @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  student           StudentKkn?  @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  reviewedBy        User?        @relation("DplReviewedProker", fields: [reviewedById], references: [id])
+  logbooks          LogbookKkn[]
+  pemanfaatan       Pemanfaatan[]
+  kritikSaran       KritikSaranPemanfaatan[]
 
+  @@index([studentId])
   @@map("program_kerja_kkn")
 }
 
@@ -442,6 +460,7 @@ model PenilaianKknMahasiswa {
   kelompokId       String? @map("id_kelompok")
   dplId            String? @map("id_dpl")
   mitraId          String? @map("id_mitra")
+  mplId            String? @map("id_mpl")
   namaMitraPenilai String? @map("nama_mitra_penilai")
 
   // Skor Aspek Mitra / PL (0 - 4)
@@ -480,6 +499,7 @@ model PenilaianKknMahasiswa {
 
   student  User         @relation("StudentPenilaianKkn", fields: [studentId], references: [id], onDelete: Cascade)
   dpl      User?        @relation("DplPenilaianKkn", fields: [dplId], references: [id])
+  mpl      User?        @relation("MplPenilaianKkn", fields: [mplId], references: [id])
   kelompok KelompokKkn? @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
 
   @@map("penilaian_kkn_mahasiswa")
@@ -511,6 +531,9 @@ model ActivityAttendance {
   status              String    @default("DALAM_RADIUS") @map("status")
   actualInZoneMinutes Int?      @map("durasi_aktual_dalam_zona_menit")
   jedaLogs            Json?     @map("log_jeda")
+  deskripsiKegiatan   String?   @map("deskripsi_kegiatan") @db.Text
+  fotoUrl             String?   @map("foto_url")
+  platformOs          String?   @default("ANDROID") @map("platform_os")
   schedule            Schedule  @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   student             User      @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
 
@@ -530,6 +553,32 @@ model StudentLocation {
 
   @@index([recordedAt])
   @@map("lokasi_mahasiswa")
+}
+
+/// Presensi mandiri mahasiswa — digunakan ketika tidak ada jadwal aktif
+/// atau mahasiswa ingin mendokumentasikan kegiatan yang dilakukan di lapangan.
+model PresensiMandiri {
+  id                String       @id @default(uuid())
+  studentId         String       @map("id_mahasiswa")
+  kelompokId        String?      @map("id_kelompok")
+  latitude          Decimal      @db.Decimal(11, 8)
+  longitude         Decimal      @db.Decimal(11, 8)
+  deskripsiKegiatan String       @map("deskripsi_kegiatan") @db.VarChar(500)
+  fotoUrl           String       @map("foto_url")
+  platformOs        String?      @default("ANDROID") @map("platform_os")
+  status            String       @default("AKTIF") @map("status")
+  checkInAt         DateTime     @default(now()) @map("waktu_checkin")
+  checkOutAt        DateTime?    @map("waktu_checkout")
+  durasiMenit       Int?         @map("durasi_menit")
+  createdAt         DateTime     @default(now()) @map("dibuat_pada")
+  updatedAt         DateTime     @updatedAt @map("diperbarui_pada")
+  student           User         @relation("PresensiMandiriStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  kelompok          KelompokKkn? @relation(fields: [kelompokId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, checkInAt(sort: Desc)])
+  @@index([kelompokId])
+  @@index([status])
+  @@map("presensi_mandiri")
 }
 
 model StudentLeaveRequest {
@@ -935,7 +984,7 @@ model Schedule {
   latitude    Decimal?             @db.Decimal(11, 8)
   longitude   Decimal?             @db.Decimal(11, 8)
   polygon     Json?
-  radius      Int?                 @default(100)
+  radius      Int?                 @default(200)
   kelompokId  String?              @map("id_kelompok")
   isActive    Boolean              @default(true) @map("is_aktif")
   kelompok    KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
@@ -1357,7 +1406,9 @@ model LogbookKkn {
   waktuSelesai    String?          @map("waktu_selesai")
   tempat          String           @map("tempat")
   deskripsi       String           @map("deskripsi")
-  fotoBuktiUrl    String           @map("foto_bukti_url")
+  fotoBuktiUrl    String?          @map("foto_bukti_url")
+  attachmentUrls  Json?            @map("lampiran_urls")
+  platformOs      String?          @default("ANDROID") @map("platform_os")
   tipeAktivitas   TipeAktivitasKkn @default(KELOMPOK) @map("tipe_aktivitas")
   programKerjaId  String?          @map("id_program_kerja")
   fasilitasId     String?          @map("id_fasilitas")
@@ -1443,4 +1494,32 @@ model UserNotificationSync {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("sinkronisasi_notifikasi_user")
+}
+
+// ─────────────────────────────────────────────
+// BERITA & KONTEN (CMS — Kegiatan Mahasiswa Real-time)
+// ─────────────────────────────────────────────
+
+model BeritaKonten {
+  id           String    @id @default(uuid())
+  judul        String    @map("judul")
+  slug         String    @unique @map("slug")
+  konten       String    @map("konten") @db.Text
+  ringkasan    String?   @map("ringkasan") @db.Text
+  gambarUrl    String?   @map("gambar_url")
+  kategori     String    @default("KKN") @map("kategori")   // UMUM | KKN | PENGUMUMAN
+  status       String    @default("DRAFT") @map("status")   // DRAFT | PUBLISHED | ARCHIVED
+  publishedAt  DateTime? @map("diterbitkan_pada")
+  authorId     String?   @map("id_penulis")
+  kelompokId   String?   @map("id_kelompok")
+  viewCount    Int       @default(0) @map("jumlah_tayangan")
+  tags         String?   @map("tags")
+  createdAt    DateTime  @default(now()) @map("dibuat_pada")
+  updatedAt    DateTime  @updatedAt @map("diperbarui_pada")
+  author       User?     @relation("BeritaAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([kategori])
+  @@index([kelompokId])
+  @@map("berita_konten")
 }

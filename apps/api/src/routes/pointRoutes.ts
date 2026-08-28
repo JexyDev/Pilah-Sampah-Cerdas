@@ -81,4 +81,153 @@ router.post(
 
 router.get("/leaderboard", pointController.getLeaderboard);
 
+// ─────────────────────────────────────────────
+// DEVELOPER ONLY: CRUD & MANAGEMENT POIN PENGGUNA
+// ─────────────────────────────────────────────
+
+/**
+ * @swagger
+ * /api/v1/points/admin/users:
+ *   get:
+ *     summary: "[DEVELOPER ONLY] Get all users with points ledger, search, filter, and server pagination"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/admin/users",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.getAdminUsersPoints
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/stats:
+ *   get:
+ *     summary: "[DEVELOPER ONLY] Get system-wide points summary statistics"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/admin/stats",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.getAdminPointsStats
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/ledger:
+ *   get:
+ *     summary: "[DEVELOPER ONLY] Get global ledger transactions feed with pagination"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/admin/ledger",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.getAdminLedgerFeed
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/user/{userId}:
+ *   get:
+ *     summary: "[DEVELOPER ONLY] Get single user ledger details"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/admin/user/:userId",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.getAdminUserLedger
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/adjust:
+ *   post:
+ *     summary: "[DEVELOPER ONLY] Adjust (+/-) points for single user"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/admin/adjust",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.adjustPointsDeveloper
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/set-balance:
+ *   post:
+ *     summary: "[DEVELOPER ONLY] Set exact balance for a user with auto-calculated delta"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/admin/set-balance",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.setBalanceDeveloper
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/bulk-adjust:
+ *   post:
+ *     summary: "[DEVELOPER ONLY] Bulk adjust points for multiple users"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/admin/bulk-adjust",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.bulkAdjustPointsDeveloper
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/transaction/{id}:
+ *   put:
+ *     summary: "[DEVELOPER ONLY] Edit point transaction description or category"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put(
+  "/admin/transaction/:id",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.updateTransactionDeveloper
+);
+
+/**
+ * @swagger
+ * /api/v1/points/admin/transaction/{id}:
+ *   delete:
+ *     summary: "[DEVELOPER ONLY] Void / Reversal a transaction"
+ *     tags: [Points]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete(
+  "/admin/transaction/:id",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  pointController.voidTransactionDeveloper
+);
+
 export default router;
+

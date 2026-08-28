@@ -35,7 +35,8 @@ export const scheduleService = {
         });
         kelompokIds = kelompokBinaan.map((k) => k.id);
       } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "DEVELOPER"].includes(userRole)) {
-        // Global viewers see everything
+        // Global viewers see everything, auto-ensure today's schedules exist
+        await scheduleService.syncDailySchedulesForToday().catch(() => {});
         kelompokIds = null;
       } else if (userId) {
         // Other users (warga, rw, lurah)
@@ -88,10 +89,10 @@ export const scheduleService = {
       try {
         const ruleConfigs = await configService.getRuleEngineConfigs();
         data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
-          ? 100 + (ruleConfigs as any).attendanceGeofenceBufferMeters
-          : 100;
+          ? 200 + (ruleConfigs as any).attendanceGeofenceBufferMeters
+          : 200;
       } catch (_err) {
-        data.radius = 100;
+        data.radius = 200;
       }
     }
     const schedule = await prisma.schedule.create({
@@ -155,5 +156,124 @@ export const scheduleService = {
         },
       },
     });
+  },
+
+  syncDailySchedulesForToday: async (targetDateStr?: string) => {
+    try {
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const dateStr = targetDateStr || wibNow.toISOString().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+      const endOfDay = new Date(`${dateStr}T23:59:59.999+07:00`);
+
+      // Fetch all KKN groups
+      const groups = await prisma.kelompokKkn.findMany({
+        include: {
+          facilities: {
+            where: { jenis: "posko_kkn" },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+        },
+      });
+
+      // Also check posko_kkn table
+      const poskos = await prisma.poskoKkn.findMany();
+      const poskoMap = new Map<string, any>();
+      poskos.forEach((p) => {
+        if (p.kelompokId) poskoMap.set(p.kelompokId, p);
+      });
+
+      let createdCount = 0;
+      let existingCount = 0;
+
+      for (const group of groups) {
+        // Check if schedule already exists for this group on this date
+        const existing = await prisma.schedule.findFirst({
+          where: {
+            kelompokId: group.id,
+            date: { gte: startOfDay, lte: endOfDay },
+            isActive: true,
+          },
+        });
+
+        if (existing) {
+          existingCount++;
+          continue;
+        }
+
+        // Determine Posko location & name
+        const officialPosko = poskoMap.get(group.id);
+        const facilityPosko = group.facilities?.[0];
+
+        let poskoLat = -6.8915; // default Coblong
+        let poskoLng = 107.6107;
+        let poskoName = `Posko KKN ${group.name}`;
+        const poskoRadius = 200;
+
+        if (officialPosko && officialPosko.latitude && officialPosko.longitude) {
+          poskoLat = Number(officialPosko.latitude);
+          poskoLng = Number(officialPosko.longitude);
+          poskoName = officialPosko.nama || poskoName;
+        } else if (facilityPosko && facilityPosko.latitude && facilityPosko.longitude) {
+          poskoLat = Number(facilityPosko.latitude);
+          poskoLng = Number(facilityPosko.longitude);
+          poskoName = facilityPosko.nama || poskoName;
+        } else {
+          // Fallback kelurahan resmi
+          const kel = (group.kelurahan || group.name || "").toLowerCase();
+          if (kel.includes("dago")) {
+            poskoLat = -6.8833;
+            poskoLng = 107.6167;
+            poskoName = `Posko KKN ${group.name} - Kel. Dago`;
+          } else if (kel.includes("cipaganti")) {
+            poskoLat = -6.8912;
+            poskoLng = 107.6035;
+            poskoName = `Posko KKN ${group.name} - Kel. Cipaganti`;
+          } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
+            poskoLat = -6.8875;
+            poskoLng = 107.6133;
+            poskoName = `Posko KKN ${group.name} - Kel. Lebak Gede`;
+          } else if (kel.includes("lebak siliwangi")) {
+            poskoLat = -6.8892;
+            poskoLng = 107.6083;
+            poskoName = `Posko KKN ${group.name} - Kel. Lebak Siliwangi`;
+          } else if (kel.includes("sadang serang")) {
+            poskoLat = -6.8917;
+            poskoLng = 107.6250;
+            poskoName = `Posko KKN ${group.name} - Kel. Sadang Serang`;
+          } else if (kel.includes("sekeloa")) {
+            poskoLat = -6.8900;
+            poskoLng = 107.6200;
+            poskoName = `Posko KKN ${group.name} - Kel. Sekeloa`;
+          }
+        }
+
+        try {
+          await prisma.schedule.create({
+            data: {
+              title: `Kegiatan Harian ${poskoName}`,
+              date: startOfDay,
+              time: "08:00 - 16:00",
+              category: "POSKO_KKN",
+              location: poskoName,
+              latitude: poskoLat,
+              longitude: poskoLng,
+              radius: poskoRadius,
+              kelompokId: group.id,
+              isActive: true,
+            },
+          });
+          createdCount++;
+        } catch (_createErr) {
+          // Concurrent creation safe
+        }
+      }
+
+      return { success: true, date: dateStr, createdCount, existingCount, totalGroups: groups.length };
+    } catch (err: any) {
+      console.error("[scheduleService.syncDailySchedulesForToday] Error:", err);
+      throw err;
+    }
   },
 };

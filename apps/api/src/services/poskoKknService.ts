@@ -55,7 +55,22 @@ export class PoskoKknService {
         if (normalizedRole.includes("MAHASISWA")) {
           whereClause = { kelompok: { students: { some: { userId } } } };
         } else if (normalizedRole.includes("DPL") || normalizedRole.includes("DOSEN")) {
-          whereClause = { OR: [{ kelompok: { dplId: userId } }, { kelompok: { dpl: { id: userId } } }] };
+          const userDpl = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, name: true, nip: true },
+          });
+          const orConditions: any[] = [
+            { kelompok: { dplId: userId } },
+            { kelompok: { dpl: { id: userId } } },
+          ];
+          if (userDpl?.name) {
+            orConditions.push({ kelompok: { dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" } } });
+            orConditions.push({ kelompok: { dpl: { name: { equals: userDpl.name.trim(), mode: "insensitive" } } } });
+          }
+          if (userDpl?.nip) {
+            orConditions.push({ kelompok: { dpl: { nip: userDpl.nip } } });
+          }
+          whereClause = { OR: orConditions };
         } else if (normalizedRole.includes("RW")) {
           const userRw = await prisma.user.findUnique({ where: { id: userId }, select: { rwId: true } });
           if (userRw?.rwId) {

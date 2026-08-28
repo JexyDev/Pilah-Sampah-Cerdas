@@ -1,4 +1,4 @@
-﻿# 📋 ROLE MAPPING BERSEKA — Dokumentasi Komprehensif
+# 📋 ROLE MAPPING BERSEKA — Dokumentasi Komprehensif
 
 > **Versi:** 1.0 — 10 Agustus 2026  
 > **Proyek:** BERSEKA — Sistem Pemilahan Sampah Cerdas Terintegrasi  
@@ -368,23 +368,23 @@ Role **ADMIN_DLH**, **CAMAT**, dan **LURAH** memiliki akses **Read-Only**. Opera
 
 ---
 
-### 3.7 DPL — Dosen Pembimbing Lapangan
+### 3.7 DPL — Dosen Pendamping Lapangan
 
-**Deskripsi:** Role perguruan tinggi untuk pembimbingan dan evaluasi mahasiswa KKN.
+**Deskripsi:** Role perguruan tinggi untuk pendampingan dan evaluasi mahasiswa KKN.
 
 **Fitur Utama:**
-1. **Dashboard KKN** — Ringkasan kelompok bimbingan
-2. **Kelompok KKN** — Lihat kelompok yang dibimbing
+1. **Dashboard KKN** — Ringkasan kelompok dampingan
+2. **Kelompok KKN** — Lihat kelompok yang didampingi
 3. **Portofolio Mahasiswa** — Detail mahasiswa (NIM, jurusan, skor, aktivitas)
 4. **Penilaian Mahasiswa** — Submit assessment score mahasiswa
 5. **Approval Izin/Sakit** — Decide pengajuan izin/sakit mahasiswa
 6. **Peta Cakupan** — Sebaran polygon RW & titik koordinat bin KKN
-7. **Alert & Notifikasi** — Notifikasi terkait mahasiswa bimbingan
+7. **Alert & Notifikasi** — Notifikasi terkait mahasiswa dampingan
 8. **Riwayat Approval** — Histori keputusan logbook
-9. **Monitoring Absen** — Kehadiran mahasiswa bimbingan
+9. **Monitoring Absen** — Kehadiran mahasiswa dampingan
 10. **Warga Dampingan** — Lihat warga yang didampingi per mahasiswa
 
-**Relasi:** Membimbing → Mahasiswa KKN | Dipantau oleh → PEMIMPIN, PANITIA_TASKFORCE
+**Relasi:** Mendampingi → Mahasiswa KKN | Dipantau oleh → PEMIMPIN, PANITIA_TASKFORCE
 
 ---
 
@@ -1321,7 +1321,7 @@ Berikut adalah rancangan sidebar **baru yang terstruktur ulang** berdasarkan pen
 │   ├── Rukun Warga
 │   ├── Pimpinan PT
 │   ├── Task Force PT
-│   ├── Dosen Pembimbing
+│   ├── Dosen Pendamping Lapangan
 │   ├── Petugas Residu
 │   ├── Mahasiswa KKN
 │   └── Warga

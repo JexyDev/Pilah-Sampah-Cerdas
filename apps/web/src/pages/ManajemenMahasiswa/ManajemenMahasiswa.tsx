@@ -207,7 +207,7 @@ const ManajemenMahasiswa: React.FC = () => {
       return;
     }
 
-    const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "DPL Pembimbing", "Wilayah RT/RW", "Status"];
+    const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "Dosen Pendamping (DPL)", "Wilayah RT/RW", "Status"];
     const csvRows = [headers.join(",")];
 
     filteredMahasiswas.forEach((m) => {
@@ -359,7 +359,7 @@ const ManajemenMahasiswa: React.FC = () => {
                   <th className="py-3.5 px-4">NIM</th>
                   <th className="py-3.5 px-4">No. HP</th>
                   <th className="py-3.5 px-4">Kelompok KKN</th>
-                  <th className="py-3.5 px-4">DPL Pembimbing</th>
+                  <th className="py-3.5 px-4">Dosen Pendamping (DPL)</th>
                   <th className="py-3.5 px-4">Wilayah Tugas</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
                   <th className="py-3.5 px-4 text-center w-28">Aksi</th>
@@ -540,7 +540,7 @@ const ManajemenMahasiswa: React.FC = () => {
                     <span className="font-bold text-blue-600">{selectedStudentDetail.studentProfile?.kelompok?.name || "Belum Plotting"}</span>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-                    <span className="text-slate-400 font-bold block mb-0.5">DPL Pembimbing</span>
+                    <span className="text-slate-400 font-bold block mb-0.5">Dosen Pendamping (DPL)</span>
                     <span className="font-bold text-indigo-600">
                       {selectedStudentDetail.studentProfile?.kelompok?.dplName ||
                        selectedStudentDetail.studentProfile?.kelompok?.dpl?.name ||

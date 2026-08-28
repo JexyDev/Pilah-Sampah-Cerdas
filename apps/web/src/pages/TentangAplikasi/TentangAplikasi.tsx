@@ -54,7 +54,7 @@ const Informasi: React.FC = () => {
       case "DOSEN_PEMBIMBING":
         return {
           title: "Dosen Pendamping Lapangan (DPL)",
-          desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan penginputan nilai akhir program KKN.",
+          desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan pengisian nilai akhir program KKN.",
           icon: GraduationCap,
           color: "bg-indigo-50 text-indigo-700 border-indigo-200",
         };
@@ -91,7 +91,7 @@ const Informasi: React.FC = () => {
       case "PANITIA_TASKFORCE":
         return {
           title: "Panitia Task Force KKN",
-          desc: "Panduan koordinasi satgas KKN lintas 6 kelurahan, alokasi kelompok bimbingan DPL, impor survei baseline/endline, dan eskalasi izin darurat.",
+          desc: "Panduan koordinasi satgas KKN lintas 6 kelurahan, alokasi kelompok dampingan DPL, impor survei baseline/endline, dan eskalasi izin darurat.",
           icon: Briefcase,
           color: "bg-teal-50 text-teal-700 border-teal-200",
         };
@@ -256,7 +256,7 @@ const Informasi: React.FC = () => {
                       <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">1. Penilaian Kinerja Mahasiswa KKN</h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Buka menu <strong>Dasbor</strong> &rarr; Tab <strong>Mahasiswa &amp; Nilai</strong>. Anda dapat melihat presensi, partisipasi dampingan warga, dan memasukkan nilai akhir mahasiswa bimbingan secara langsung.
+                      Buka menu <strong>Dasbor</strong> &rarr; Tab <strong>Mahasiswa &amp; Nilai</strong>. Anda dapat melihat presensi, partisipasi dampingan warga, dan memasukkan nilai akhir mahasiswa dampingan secara langsung.
                     </p>
                   </div>
 
@@ -626,7 +626,7 @@ const Informasi: React.FC = () => {
                 {[
                   { role: "Warga", icon: Users, desc: "Akses Mobile: Foto sampah AI, scan QR Tempat Sampah, riwayat setoran, poin reward, dan ide daur ulang." },
                   { role: "Mahasiswa KKN", icon: GraduationCap, desc: "Akses Mobile & Web: Presensi GPS, pendampingan aktivasi QR warga, verifikasi tempat sampah, dan pengisian survei." },
-                  { role: "Dosen Pendamping Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa bimbingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
+                  { role: "Dosen Pendamping Lapangan (DPL)", icon: UserCheck, desc: "Akses Web Portal: Monitoring mahasiswa dampingan, penilaian kinerja KKN, validasi permohonan izin/sakit." },
                   { role: "Petugas Residu", icon: Truck, desc: "Akses Mobile & Web: Jadwal pengangkutan, rute TPS, klaim tugas penjemputan, dan input timbangan fisik." },
                   { role: "Rukun Warga (RW)", icon: Building2, desc: "Akses Web: Persetujuan tempat sampah warga, monitoring kepatuhan RW, fasilitas pengolahan, dan ide inovasi." },
                   { role: "Lurah & Camat", icon: Building, desc: "Akses Web Read-Only: Monitoring spasial agregasi wilayah, statistik median kepatuhan, dan eskalasi layanan." },
