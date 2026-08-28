@@ -22,7 +22,6 @@ on:
       - 'v*.*.*'
     branches:
       - 'release/ios'
-      - 'mobile'
 
 jobs:
   build-ios:
