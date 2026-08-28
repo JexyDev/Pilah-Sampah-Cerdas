@@ -14,6 +14,8 @@ apps/web/dist/
 *.bin
 *.lock
 *.tsbuildinfo
+*.tar.gz
+*.zip
 
 # Environment & Secrets (NEVER COMMIT / NEVER PUSH)
 .env
