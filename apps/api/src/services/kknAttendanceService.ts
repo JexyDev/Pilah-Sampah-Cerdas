@@ -3187,7 +3187,8 @@ export class KknAttendanceService {
   async handleStaleGpsSessions() {
     try {
       const now = new Date();
-      const STALE_THRESHOLD_MINUTES = 15;
+      const ruleConfigs = await configService.getRuleEngineConfigs();
+      const STALE_THRESHOLD_MINUTES = (ruleConfigs as any).attendanceStaleGpsMinutes ?? 5;
       const staleThresholdMs = STALE_THRESHOLD_MINUTES * 60 * 1000;
 
       const activeAttendances = await prisma.activityAttendance.findMany({
@@ -3213,7 +3214,7 @@ export class KknAttendanceService {
         const lastPingTime = latestLoc ? new Date(latestLoc.recordedAt).getTime() : new Date(att.attendedAt).getTime();
         const timeSinceLastPingMs = now.getTime() - lastPingTime;
 
-        // Jika tidak ada ping GPS selama > 15 menit (HP mati / aplikasi di-kill / GPS dimatikan)
+        // Jika tidak ada ping GPS selama > 5 menit (HP mati / aplikasi di-kill / GPS dimatikan)
         if (timeSinceLastPingMs > staleThresholdMs) {
           console.log(`[Watchdog Stale GPS] Mendeteksi HP mati / GPS terputus untuk Mahasiswa ${att.student?.name} (${att.studentId}). Menjeda sesi otomatis.`);
 

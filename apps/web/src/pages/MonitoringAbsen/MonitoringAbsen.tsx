@@ -3488,6 +3488,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
                         const recAny = rec as any;
                         const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
+
+                        const liveLoc = studentLocations.find(
+                          (l) => l.studentId === rec.student?.id || l.student?.id === rec.student?.id || l.studentId === rec.studentId
+                        );
+                        const recTime = liveLoc ? new Date(liveLoc.recordedAt).getTime() : 0;
+                        const minsSincePing = !isNaN(recTime) && recTime > 0 ? Math.floor((Date.now() - recTime) / 60000) : null;
+                        const isGpsStale = isBerlangsung && minsSincePing !== null && minsSincePing >= 3;
+
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
                         const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
@@ -3619,9 +3627,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   <span>Tanpa Keterangan</span>
                                 </span>
                               ) : isTerjeda ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title="Sesi terjeda otomatis karena GPS terputus atau keluar zona">
                                   <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-ping" />
                                   <span>Terjeda</span>
+                                </span>
+                              ) : isGpsStale ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse" title={`Sinyal GPS belum diterima sejak ${minsSincePing} menit lalu. Otomatis terjeda di menit ke-5 jika HP mati.`}>
+                                  <Clock size={13} className="text-amber-600 animate-spin" />
+                                  <span>Menunggu GPS ({minsSincePing}m)</span>
                                 </span>
                               ) : isBerlangsung ? (
                                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
