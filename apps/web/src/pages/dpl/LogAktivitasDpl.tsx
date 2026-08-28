@@ -1471,71 +1471,77 @@ export const LogAktivitasDpl: React.FC = () => {
             </div>
 
             {/* 5. Card: Bukti Dokumentasi */}
-            {selectedDetailLog.fotoBuktiUrl && (
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
-                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
-                  <Camera className="w-4 h-4 text-slate-600" />
-                  <span>Bukti Dokumentasi</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  {selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).map((url, idx) => {
-                    const cleanUrl = url.trim();
-                    const isImg = cleanUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) || !cleanUrl.includes(".");
-                    const fullUrl = resolveImageUrl(cleanUrl);
+            {selectedDetailLog.fotoBuktiUrl && (() => {
+              const buktiList = Array.from(
+                new Set(selectedDetailLog.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean))
+              );
+              if (buktiList.length === 0) return null;
 
-                    return isImg ? (
-                      <div
-                        key={idx}
-                        onClick={() => setPreviewGalleryImage(fullUrl)}
-                        className="relative w-36 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs group cursor-pointer"
-                        title="Klik untuk memperbesar foto"
+              return (
+                <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-3 shadow-2xs">
+                  <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
+                    <Camera className="w-4 h-4 text-slate-600" />
+                    <span>Bukti Dokumentasi ({buktiList.length} Foto/Berkas)</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {buktiList.map((cleanUrl, idx) => {
+                      const isImg = cleanUrl.match(/\.(jpeg|jpg|png|webp|gif)$/i) || !cleanUrl.includes(".");
+                      const fullUrl = resolveImageUrl(cleanUrl);
+
+                      return isImg ? (
+                        <div
+                          key={idx}
+                          onClick={() => setPreviewGalleryImage(fullUrl)}
+                          className="relative w-36 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs group cursor-pointer"
+                          title="Klik untuk memperbesar foto"
+                        >
+                          <img
+                            src={fullUrl}
+                            alt={`Dokumentasi ${idx + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = "/image/berseka-logo.png";
+                            }}
+                          />
+                          <span className="absolute bottom-1.5 left-1.5 bg-slate-900/75 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                            Foto {idx + 1}
+                          </span>
+                        </div>
+                      ) : (
+                        <a
+                          key={idx}
+                          href={fullUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2.5 rounded-xl border border-emerald-200 transition-colors shadow-2xs"
+                        >
+                          <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span className="truncate">Buka Dokumen ({cleanUrl.split("/").pop() || "Dokumen"})</span>
+                        </a>
+                      );
+                    })}
+
+                    {buktiList.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const first = buktiList[0];
+                          setPreviewGalleryImage(resolveImageUrl(first));
+                        }}
+                        className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 inline-flex items-center gap-2 transition cursor-pointer shadow-2xs"
                       >
-                        <img
-                          src={fullUrl}
-                          alt={`Dokumentasi ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                          onError={(e) => {
-                            const target = e.currentTarget as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = "/image/berseka-logo.png";
-                          }}
-                        />
-                        <span className="absolute bottom-1.5 left-1.5 bg-slate-900/75 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
-                          Foto {idx + 1}
+                        <ImageIcon className="w-4 h-4 text-slate-500" />
+                        <span>
+                          Lihat Semua Bukti ({buktiList.length})
                         </span>
-                      </div>
-                    ) : (
-                      <a
-                        key={idx}
-                        href={fullUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-emerald-700 font-semibold hover:underline bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2.5 rounded-xl border border-emerald-200 transition-colors shadow-2xs"
-                      >
-                        <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <span className="truncate">Buka Dokumen ({cleanUrl.split("/").pop() || "Dokumen"})</span>
-                      </a>
-                    );
-                  })}
-
-                  {selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const first = selectedDetailLog.fotoBuktiUrl!.split(/[,;]/)[0].trim();
-                        setPreviewGalleryImage(resolveImageUrl(first));
-                      }}
-                      className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-700 inline-flex items-center gap-2 transition cursor-pointer shadow-2xs"
-                    >
-                      <ImageIcon className="w-4 h-4 text-slate-500" />
-                      <span>
-                        Lihat Semua Bukti ({selectedDetailLog.fotoBuktiUrl.split(/[,;]/).filter(Boolean).length})
-                      </span>
-                    </button>
-                  )}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Timestamp Diperbarui */}
             <div className="flex items-center gap-1.5 text-xs text-slate-400 pt-1">

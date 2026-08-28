@@ -3628,11 +3628,13 @@ export const dplService = {
         // Bukti Label
         let buktiLabel = "—";
         const rawBukti = (item.fotoBuktiUrl || "").trim();
-        const validBukti = rawBukti && rawBukti !== "null" && rawBukti !== "undefined" && rawBukti !== "-" ? rawBukti : null;
+        const validBuktiList = rawBukti && rawBukti !== "null" && rawBukti !== "undefined" && rawBukti !== "-"
+          ? Array.from(new Set(rawBukti.split(/[,;]/).map((u) => u.trim()).filter(Boolean)))
+          : [];
+        const validBukti = validBuktiList.length > 0 ? validBuktiList.join(",") : null;
         if (validBukti) {
-          if (validBukti.includes(",") || validBukti.includes(";")) {
-            const count = validBukti.split(/[,;]/).filter(Boolean).length;
-            buktiLabel = `${count} Foto`;
+          if (validBuktiList.length > 1) {
+            buktiLabel = `${validBuktiList.length} Foto`;
           } else if (validBukti.endsWith(".pdf")) {
             buktiLabel = "Dokumen";
           } else if (validBukti.includes("notula") || validBukti.includes("doc")) {
@@ -3778,6 +3780,12 @@ export const dplService = {
       durasiMenit = e - s;
     }
 
+    let cleanFotoBukti: string | null = null;
+    if (data.fotoBuktiUrl && typeof data.fotoBuktiUrl === "string" && data.fotoBuktiUrl.trim() !== "" && data.fotoBuktiUrl !== "null") {
+      const uniqueUrls = Array.from(new Set(data.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)));
+      cleanFotoBukti = uniqueUrls.length > 0 ? uniqueUrls.join(",") : null;
+    }
+
     const created = await prisma.logbookDpl.create({
       data: {
         dplId: dplUserId,
@@ -3791,7 +3799,7 @@ export const dplService = {
         programKerjaId: data.programKerjaId || null,
         deskripsi: data.deskripsi.trim(),
         arahanEvaluasi: data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null,
-        fotoBuktiUrl: data.fotoBuktiUrl || null,
+        fotoBuktiUrl: cleanFotoBukti,
         status: requestedStatus,
         durasiMenit,
         simpanLokasi: data.simpanLokasi ?? true,
@@ -3854,7 +3862,14 @@ export const dplService = {
       updateData.arahanEvaluasi =
         data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null;
     }
-    if (data.fotoBuktiUrl !== undefined) updateData.fotoBuktiUrl = data.fotoBuktiUrl;
+    if (data.fotoBuktiUrl !== undefined) {
+      if (typeof data.fotoBuktiUrl === "string" && data.fotoBuktiUrl.trim() !== "" && data.fotoBuktiUrl !== "null") {
+        const uniqueUrls = Array.from(new Set(data.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)));
+        updateData.fotoBuktiUrl = uniqueUrls.length > 0 ? uniqueUrls.join(",") : null;
+      } else {
+        updateData.fotoBuktiUrl = null;
+      }
+    }
     if (data.status !== undefined) updateData.status = data.status;
     if (data.simpanLokasi !== undefined) updateData.simpanLokasi = Boolean(data.simpanLokasi);
 

@@ -112,17 +112,18 @@ export const safeUploadPemanfaatanImage = (req: Request, res: Response, next: Ne
 /**
  * Ekstraksi aman untuk seluruh URL file yang diunggah dari req.file atau req.files
  * Mendukung format Multer: .single(), .array(), .fields(), dan .any()
+ * Mencegah duplikasi file yang sama di req.file dan req.files
  */
 export function extractUploadedFileUrls(req: Request): string[] {
-  const urls: string[] = [];
+  const urls = new Set<string>();
   if (req.file && req.file.filename) {
-    urls.push(`/uploads/${req.file.filename}`);
+    urls.add(`/uploads/${req.file.filename}`);
   }
   if (req.files) {
     if (Array.isArray(req.files)) {
       for (const f of req.files) {
         if (f && f.filename) {
-          urls.push(`/uploads/${f.filename}`);
+          urls.add(`/uploads/${f.filename}`);
         }
       }
     } else if (typeof req.files === "object") {
@@ -132,14 +133,14 @@ export function extractUploadedFileUrls(req: Request): string[] {
         if (Array.isArray(arr)) {
           for (const f of arr) {
             if (f && f.filename) {
-              urls.push(`/uploads/${f.filename}`);
+              urls.add(`/uploads/${f.filename}`);
             }
           }
         }
       }
     }
   }
-  return urls;
+  return Array.from(urls);
 }
 
 /**

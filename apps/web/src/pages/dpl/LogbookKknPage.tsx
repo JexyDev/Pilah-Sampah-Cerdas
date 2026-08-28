@@ -1280,11 +1280,12 @@ export const LogbookKknPage: React.FC = () => {
 
             {/* Dokumentasi Kegiatan (Multi-Foto Gallery) */}
             {(() => {
-              const allPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
+              const rawPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
                 ? (selectedItemDetail as any).attachmentUrls
                 : selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== ""
-                ? [selectedItemDetail.fotoBuktiUrl]
+                ? selectedItemDetail.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)
                 : [];
+              const allPhotos = Array.from(new Set(rawPhotos.map((u) => (typeof u === "string" ? u.trim() : u)).filter(Boolean)));
 
               if (allPhotos.length === 0) return null;
 
