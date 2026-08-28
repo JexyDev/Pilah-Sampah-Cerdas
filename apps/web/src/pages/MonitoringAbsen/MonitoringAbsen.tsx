@@ -104,6 +104,23 @@ const createActivityMarkerIcon = () => {
   });
 };
 
+const createPoskoZoneIcon = (groupName: string) => {
+  const shortNum = groupName.replace(/[^0-9]/g, "") || "P";
+  return L.divIcon({
+    className: "custom-posko-zone-icon",
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+        <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 8px; padding: 2px 6px; display: flex; align-items: center; justify-content: center; gap: 3px; border: 2px solid white; box-shadow: 0 3px 8px rgba(0,0,0,0.35); font-weight: 900; font-size: 10px; white-space: nowrap;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>K${shortNum}</span>
+        </div>
+      </div>
+    `,
+    iconSize: [36, 22],
+    iconAnchor: [18, 11],
+  });
+};
+
 const getDistanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -2887,8 +2904,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </Polygon>
               ))}
 
-              {/* Geofence Kegiatan */}
-              {activeSchedule && (
+              {/* Geofence Kegiatan - Mode Single Schedule ATAU Mode Global Seluruh Kelompok */}
+              {activeSchedule ? (
                 <>
                   {activeSchedule.polygon && activeSchedule.polygon.length >= 3 ? (
                     <Polygon
@@ -2897,24 +2914,52 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         color: "#10b981",
                         fillColor: "#10b981",
                         fillOpacity: 0.25,
-                        weight: 2,
+                        weight: 2.5,
                       }}
-                    />
+                    >
+                      <Popup>
+                        <div className="p-2 font-sans space-y-1 text-xs">
+                          <div className="font-extrabold text-emerald-800 dark:text-emerald-300">
+                            {activeSchedule.title}
+                          </div>
+                          <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                            {activeSchedule.location || "Lokasi Kegiatan KKN"}
+                          </div>
+                          <div className="text-[10px] font-bold text-slate-500">
+                            Radius Geofence: {activeSchedule.radius || 200}m
+                          </div>
+                        </div>
+                      </Popup>
+                    </Polygon>
                   ) : (() => {
                     const lat = Number(activeSchedule.latitude);
                     const lng = Number(activeSchedule.longitude);
                     if (!isNaN(lat) && !isNaN(lng) && lat < 0 && lng > 0) {
                       return (
                         <>
-                          <Marker position={[lat, lng]} icon={createActivityMarkerIcon()} />
+                          <Marker position={[lat, lng]} icon={createActivityMarkerIcon()}>
+                            <Popup>
+                              <div className="p-2 font-sans space-y-1 text-xs">
+                                <div className="font-extrabold text-emerald-800 dark:text-emerald-300">
+                                  {activeSchedule.title}
+                                </div>
+                                <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                                  {activeSchedule.location || "Lokasi Kegiatan KKN"}
+                                </div>
+                                <div className="text-[10px] font-bold text-slate-500">
+                                  Radius Geofence: {activeSchedule.radius || 200} meter
+                                </div>
+                              </div>
+                            </Popup>
+                          </Marker>
                           <Circle
                             center={[lat, lng]}
                             radius={Number(activeSchedule.radius || 200)}
                             pathOptions={{
-                              color: "#3b82f6",
-                              fillColor: "#3b82f6",
-                              fillOpacity: 0.2,
-                              weight: 2,
+                              color: "#059669",
+                              fillColor: "#10b981",
+                              fillOpacity: 0.25,
+                              weight: 2.5,
                             }}
                           />
                         </>
@@ -2922,6 +2967,104 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     }
                     return null;
                   })()}
+                </>
+              ) : (
+                /* Mode Global Overview: Tampilkan Seluruh Zona Geofence 32 Kelompok */
+                <>
+                  {visibleSchedules.map((s, sIdx) => {
+                    const lat = Number(s.latitude);
+                    const lng = Number(s.longitude);
+                    if (isNaN(lat) || isNaN(lng) || lat >= 0 || lng <= 0) return null;
+
+                    const groupName = s.kelompok?.name || `Kelompok ${sIdx + 1}`;
+                    const kelurahan = s.kelompok?.kelurahan || "";
+                    const rad = Number(s.radius || 200);
+
+                    return (
+                      <React.Fragment key={`sched-geofence-${s.id}`}>
+                        {s.polygon && s.polygon.length >= 3 ? (
+                          <Polygon
+                            positions={s.polygon}
+                            pathOptions={{
+                              color: "#059669",
+                              fillColor: "#10b981",
+                              fillOpacity: 0.2,
+                              weight: 2,
+                            }}
+                          >
+                            <Popup>
+                              <div className="p-2 font-sans space-y-1.5 text-xs">
+                                <div className="font-extrabold text-emerald-800 dark:text-emerald-300 text-xs">
+                                  {groupName}
+                                </div>
+                                <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                  {s.title}
+                                </div>
+                                <div className="text-[10px] text-slate-500">
+                                  {s.location || kelurahan || "Lokasi KKN"} (Radius: {rad}m)
+                                </div>
+                                {s.kelompokId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectKelompok(s.kelompokId!)}
+                                    className="w-full mt-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer"
+                                  >
+                                    Fokus ke Kelompok Ini
+                                  </button>
+                                )}
+                              </div>
+                            </Popup>
+                          </Polygon>
+                        ) : (
+                          <>
+                            <Marker
+                              position={[lat, lng]}
+                              icon={createPoskoZoneIcon(groupName)}
+                            >
+                              <Popup>
+                                <div className="p-2.5 font-sans space-y-1.5 text-xs min-w-[180px]">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                                    <span className="font-extrabold text-emerald-900 dark:text-emerald-300 text-xs">
+                                      {groupName}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                    {s.title}
+                                  </div>
+                                  <div className="text-[10px] text-slate-500">
+                                    📍 {s.location || kelurahan || "Posko KKN"}
+                                  </div>
+                                  <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold">
+                                    Geofence Radius: {rad} meter
+                                  </div>
+                                  {s.kelompokId && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectKelompok(s.kelompokId!)}
+                                      className="w-full mt-1.5 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-extrabold transition cursor-pointer flex items-center justify-center gap-1 shadow-xs"
+                                    >
+                                      <span>Fokus ke {groupName}</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </Popup>
+                            </Marker>
+                            <Circle
+                              center={[lat, lng]}
+                              radius={rad}
+                              pathOptions={{
+                                color: "#059669",
+                                fillColor: "#10b981",
+                                fillOpacity: 0.18,
+                                weight: 2,
+                              }}
+                            />
+                          </>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </>
               )}
 
