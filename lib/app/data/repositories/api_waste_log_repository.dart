@@ -157,14 +157,22 @@ class ApiWasteLogRepository implements WasteLogRepository {
       '').toString()
     ).trim().toUpperCase();
     
+    final String binQrCode = json['binQrCode']?.toString().toUpperCase() ?? '';
+    
     WasteType wasteType;
-    // Cek NON/ANORG dulu — 'ORGANIC' adalah substring dari 'ANORGANIK'
-    if (rawKategori.contains('NON') || rawKategori.contains('ANORG')) {
+    if (binQrCode.contains('ANO') || binQrCode.contains('ANG') || binQrCode.contains('ANORG')) {
       wasteType = WasteType.nonOrganic;
-    } else if (rawKategori.contains('ORG')) {
+    } else if (binQrCode.contains('OGN') || binQrCode.contains('ORG')) {
       wasteType = WasteType.organic;
     } else {
-      wasteType = WasteType.organic; // default organic
+      // Cek NON/ANORG dulu - 'ORGANIC' adalah substring dari 'ANORGANIK'
+      if (rawKategori.contains('NON') || rawKategori.contains('ANORG')) {
+        wasteType = WasteType.nonOrganic;
+      } else if (rawKategori.contains('ORG')) {
+        wasteType = WasteType.organic;
+      } else {
+        wasteType = WasteType.organic; // default organic
+      }
     }
 
     // berat dari backend: coba weightKg dulu, fallback ke berat/volumeLiter
