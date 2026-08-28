@@ -86,19 +86,32 @@ jobs:
           $SDK_MANAGER "cmake;3.22.1"
 
       - name: Setup CI Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p android/app
-          if [ ! -f "android/app/berseka-release.keystore" ]; then
-            echo "Generating CI signing keystore for release build..."
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using persistent keystore from GitHub Secrets..."
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/berseka-release.keystore
+            echo "storePassword=$KEYSTORE_PASSWORD" > android/key.properties
+            echo "keyPassword=$KEY_PASSWORD" >> android/key.properties
+            echo "keyAlias=$KEY_ALIAS" >> android/key.properties
+            echo "storeFile=berseka-release.keystore" >> android/key.properties
+          else
+            echo "WARNING: ANDROID_KEYSTORE_BASE64 secret not set."
+            echo "Generating temporary keystore — APK tidak bisa update app yang sudah terinstall!"
             keytool -genkey -v -keystore android/app/berseka-release.keystore \
               -alias bersekakey -keyalg RSA -keysize 2048 -validity 10000 \
               -storepass bersekarelease2026 -keypass bersekarelease2026 \
               -dname "CN=BERSEKA CI, OU=Engineering, O=UNIKOM, L=Bandung, ST=Jawa Barat, C=ID"
+            echo "storePassword=bersekarelease2026" > android/key.properties
+            echo "keyPassword=bersekarelease2026" >> android/key.properties
+            echo "keyAlias=bersekakey" >> android/key.properties
+            echo "storeFile=berseka-release.keystore" >> android/key.properties
           fi
-          echo "storePassword=bersekarelease2026" > android/key.properties
-          echo "keyPassword=bersekarelease2026" >> android/key.properties
-          echo "keyAlias=bersekakey" >> android/key.properties
-          echo "storeFile=berseka-release.keystore" >> android/key.properties
 
       - name: Build Android Release APK (Universal Build)
         run: |
