@@ -3388,6 +3388,7 @@ export class KknAttendanceService {
           actualInZoneMinutes: true,
           attendedAt: true,
           checkOutAt: true,
+          jedaLogs: true,
         },
       }),
     ]);
@@ -3402,7 +3403,15 @@ export class KknAttendanceService {
 
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
-      const mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
+      let mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
+
+      if (st === "BERLANGSUNG" && !r.checkOutAt && r.attendedAt) {
+        mins = calculateLiveInZoneMinutes(r as any);
+      } else if (mins === 0 && r.attendedAt && r.checkOutAt) {
+        const diff = Math.floor((new Date(r.checkOutAt).getTime() - new Date(r.attendedAt).getTime()) / 60000);
+        mins = Math.min(480, Math.max(0, diff));
+      }
+
       totalMenitKumulatif += mins;
 
       if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 240)) {
