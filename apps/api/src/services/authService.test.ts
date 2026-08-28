@@ -15,6 +15,10 @@ import { comparePassword } from "../utils/hashUtils.js";
 vi.mock("../lib/prisma.js", () => {
   return {
     prisma: {
+      user: {
+        findUnique: vi.fn(),
+        update: vi.fn(),
+      },
       pointHistory: {
         findFirst: vi.fn(),
         create: vi.fn(),
@@ -222,6 +226,73 @@ describe("AuthService - registerWarga security", () => {
 
       expect(prisma.pointHistory.findFirst).not.toHaveBeenCalled();
       expect(prisma.pointHistory.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("AuthService - changePassword & updatePassword NIM Fallback", () => {
+    it("should allow changePassword when Mahasiswa KKN inputs NIM as oldPassword", async () => {
+      const mockUser = {
+        id: "mhs-1",
+        password: "$2a$10$hashedDefaultPassword",
+        studentProfile: {
+          nim: "10123001",
+        },
+      };
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
+      vi.mocked(comparePassword).mockResolvedValue(false);
+      vi.mocked(prisma.user.update).mockResolvedValue({ id: "mhs-1" } as any);
+
+      await authService.changePassword("mhs-1", "10123001", "NewSecurePassword123!");
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: "mhs-1" },
+        data: {
+          password: "hashed_password",
+          mustChangePassword: false,
+        },
+      });
+    });
+
+    it("should allow updatePassword when Mahasiswa KKN inputs NIM as currentPassword", async () => {
+      const mockUser = {
+        id: "mhs-1",
+        password: "$2a$10$hashedDefaultPassword",
+        studentProfile: {
+          nim: "10123001",
+        },
+      };
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
+      vi.mocked(comparePassword).mockResolvedValue(false);
+      vi.mocked(prisma.user.update).mockResolvedValue({ id: "mhs-1" } as any);
+
+      await authService.updatePassword("mhs-1", "10123001", "NewSecurePassword123!");
+
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: "mhs-1" },
+        data: {
+          password: "hashed_password",
+          mustChangePassword: false,
+        },
+      });
+    });
+
+    it("should reject changePassword when old password does not match hash or NIM", async () => {
+      const mockUser = {
+        id: "mhs-1",
+        password: "$2a$10$hashedDefaultPassword",
+        studentProfile: {
+          nim: "10123001",
+        },
+      };
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser as any);
+      vi.mocked(comparePassword).mockResolvedValue(false);
+
+      await expect(
+        authService.changePassword("mhs-1", "wrongpassword", "NewSecurePassword123!")
+      ).rejects.toThrow("WRONG_OLD_PASSWORD");
     });
   });
 });

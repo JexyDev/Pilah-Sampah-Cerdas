@@ -603,12 +603,30 @@ export class AuthService {
       throw new Error("INVALID_PASSWORD: " + check.reason);
     }
 
-    const user = await authRepository.findUserById(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { studentProfile: true },
+    });
     if (!user) {
       throw new Error("USER_NOT_FOUND");
     }
 
-    const isPasswordMatch = await comparePassword(currentPassword, user.password);
+    let isPasswordMatch = false;
+    try {
+      isPasswordMatch = await comparePassword(currentPassword, user.password);
+    } catch {
+      isPasswordMatch = false;
+    }
+
+    const anyUser = user as any;
+    if (!isPasswordMatch) {
+      if (user.password === currentPassword) {
+        isPasswordMatch = true;
+      } else if (anyUser.studentProfile?.nim && currentPassword === anyUser.studentProfile.nim) {
+        isPasswordMatch = true;
+      }
+    }
+
     if (!isPasswordMatch) {
       throw new Error("INVALID_CREDENTIALS");
     }
@@ -616,7 +634,10 @@ export class AuthService {
     const { hashPassword } = await import("../utils/hashUtils.js");
     const hashedPassword = await hashPassword(newPassword);
 
-    await authRepository.updatePassword(userId, hashedPassword);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, mustChangePassword: false },
+    });
   }
 
   async resolveRtRwId(rtRw?: string, kelurahan?: string): Promise<number> {
@@ -916,10 +937,28 @@ export class AuthService {
     oldPasswordInput: string,
     newPasswordInput: string
   ): Promise<void> {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { studentProfile: true },
+    });
     if (!user) throw new Error("USER_NOT_FOUND");
 
-    const isMatch = await comparePassword(oldPasswordInput, user.password);
+    let isMatch = false;
+    try {
+      isMatch = await comparePassword(oldPasswordInput, user.password);
+    } catch {
+      isMatch = false;
+    }
+
+    const anyUser = user as any;
+    if (!isMatch) {
+      if (user.password === oldPasswordInput) {
+        isMatch = true;
+      } else if (anyUser.studentProfile?.nim && oldPasswordInput === anyUser.studentProfile.nim) {
+        isMatch = true;
+      }
+    }
+
     if (!isMatch) {
       throw new Error("WRONG_OLD_PASSWORD");
     }
@@ -933,7 +972,7 @@ export class AuthService {
     const hashedPassword = await hashPassword(newPasswordInput);
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword },
+      data: { password: hashedPassword, mustChangePassword: false },
     });
   }
 
