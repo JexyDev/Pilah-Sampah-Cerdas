@@ -1222,6 +1222,7 @@ export const PoskoKknPage: React.FC = () => {
                             <img
                               src={resolvedFoto}
                               alt={item.nama}
+                              onError={(e) => handlePoskoImageError(e, item.nama)}
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                             />
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
@@ -1415,6 +1416,7 @@ export const PoskoKknPage: React.FC = () => {
                                 <img
                                   src={resolvedFoto}
                                   alt={item.nama}
+                                  onError={(e) => handlePoskoImageError(e, item.nama)}
                                   className="w-full h-full object-cover group-hover/img:scale-110 transition duration-200"
                                 />
                                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 transition flex items-center justify-center text-white">
@@ -1666,6 +1668,7 @@ export const PoskoKknPage: React.FC = () => {
                   <img
                     src={resolveImageUrl(detailModalPosko.foto) || ""}
                     alt={detailModalPosko.nama}
+                    onError={(e) => handlePoskoImageError(e, detailModalPosko.nama)}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-4">
@@ -1831,7 +1834,7 @@ export const PoskoKknPage: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2">
-                {isDeveloperOrAdmin && (
+                {canEditPosko && (
                   <button
                     type="button"
                     onClick={() => {
@@ -2253,6 +2256,7 @@ export const PoskoKknPage: React.FC = () => {
               <img
                 src={previewImage.url}
                 alt={previewImage.title}
+                onError={(e) => handlePoskoImageError(e, previewImage.title)}
                 className="max-h-[70vh] w-auto object-contain"
               />
             </div>
