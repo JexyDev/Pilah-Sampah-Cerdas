@@ -161,16 +161,34 @@ jobs:
             if [ -f /tmp/frontend-dist.tar.gz ] && tar -tzf /tmp/frontend-dist.tar.gz &>/dev/null; then
               echo "Extracting frontend archive from GitHub Actions..."
               tar -xzf /tmp/frontend-dist.tar.gz -C "$REPO_DIR/apps/web/dist/"
+
+              # Backup APK dari semua lokasi yang mungkin sebelum rm -rf
+              APK_NAME="berseka-release-arm64-v8a.apk"
+              APK_TMP="/tmp/$APK_NAME"
+              if [ -f "/var/www/html/downloads/$APK_NAME" ]; then
+                cp "/var/www/html/downloads/$APK_NAME" "$APK_TMP"
+                echo "APK backed up from /var/www/html/downloads/"
+              elif [ -f "$REPO_DIR/apps/api/uploads/$APK_NAME" ]; then
+                cp "$REPO_DIR/apps/api/uploads/$APK_NAME" "$APK_TMP"
+                echo "APK backed up from apps/api/uploads/"
+              fi
+
               echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
               echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
               echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
-              
-              # Restore downloads directory & APK from persistent API uploads folder
+
+              # Restore APK dari backup /tmp (prioritas) atau uploads
               echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads
-              if [ -f "$REPO_DIR/apps/api/uploads/berseka-release-arm64-v8a.apk" ]; then
-                echo "Restoring arm64 APK to static downloads..."
-                echo "$VPS_PASS" | sudo -S cp "$REPO_DIR/apps/api/uploads/berseka-release-arm64-v8a.apk" /var/www/html/downloads/berseka-release-arm64-v8a.apk
-                echo "$VPS_PASS" | sudo -S cp "$REPO_DIR/apps/api/uploads/berseka-release-arm64-v8a.apk" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/berseka-release-arm64-v8a.apk
+              if [ -f "$APK_TMP" ]; then
+                echo "Restoring APK from backup..."
+                echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/html/downloads/$APK_NAME
+                echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME
+                # Sync balik ke uploads agar konsisten
+                mkdir -p "$REPO_DIR/apps/api/uploads"
+                cp "$APK_TMP" "$REPO_DIR/apps/api/uploads/$APK_NAME"
+                rm -f "$APK_TMP"
+              else
+                echo "WARNING: APK tidak ditemukan di semua lokasi. Download page akan kosong sampai mobile CI jalan."
               fi
               rm -f /tmp/frontend-dist.tar.gz
             fi

@@ -26,7 +26,6 @@ import {
   FileText,
   Award,
   Clock,
-  ArrowLeft,
   Crown,
   Download,
 } from "lucide-react";
@@ -954,24 +953,6 @@ export const DplDashboardPage: React.FC = () => {
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
               Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              to="/monitoring-absen"
-              className="bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-emerald-200 dark:border-emerald-700/40 shadow-xs"
-              title="Buka Halaman Presensi Mahasiswa"
-            >
-              <ClipboardCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
-              <span>Lihat Presensi Mahasiswa</span>
-            </Link>
-            <Link
-              to="/dasbor"
-              className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer border border-slate-200 dark:border-slate-700 shadow-xs"
-            >
-              <ArrowLeft size={14} />
-              <span>Kembali ke Dasbor</span>
-            </Link>
           </div>
         </div>
 
