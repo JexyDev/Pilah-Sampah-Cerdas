@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import cron from "node-cron";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { kknAttendanceService } from "./kknAttendanceService.js";
+import { scheduleService } from "./scheduleService.js";
 
 export class CronService {
   public start() {
@@ -48,6 +49,11 @@ export class CronService {
     // Auto checkout ended KKN schedules every minute
     cron.schedule("* * * * *", () => {
       kknAttendanceService.autoCheckOutEndedSchedules();
+    }, tzOptions);
+
+    // Daily KKN schedules batch auto-generation at midnight (00:01 AM WIB)
+    cron.schedule("1 0 * * *", () => {
+      scheduleService.syncDailySchedulesForToday();
     }, tzOptions);
 
     console.log("[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone).");

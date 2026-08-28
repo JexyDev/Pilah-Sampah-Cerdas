@@ -829,6 +829,11 @@ export class KknController {
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
     }
   }
+
+  // Alias yang kompatibel dengan naming dari mobile dev
+  async getActiveTimeline(req: Request, res: Response): Promise<void> {
+    return this.getActiveTimelineMahasiswa(req, res);
+  }
 }
 
 export const kknController = new KknController();

@@ -9,7 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { Router } from "express";
 import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage, upload } from "../middlewares/uploadMiddleware.js";
 
@@ -903,19 +903,7 @@ router.get(
  */
 router.get(
   ["/timeline/active", "/timeline/aktif", "/linimasa/active", "/linimasa/aktif"],
-  authMiddleware,
-  roleMiddleware([
-    "MAHASISWA_KKN",
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PEMIMPIN",
-    "PANITIA_TASKFORCE",
-    "CAMAT",
-    "LURAH",
-    "RW",
-  ]),
+  optionalAuthMiddleware,
   kknController.getActiveTimelineMahasiswa
 );
 
@@ -949,19 +937,7 @@ router.get(
  */
 router.get(
   ["/timeline", "/linimasa"],
-  authMiddleware,
-  roleMiddleware([
-    "MAHASISWA_KKN",
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PEMIMPIN",
-    "PANITIA_TASKFORCE",
-    "CAMAT",
-    "LURAH",
-    "RW",
-  ]),
+  optionalAuthMiddleware,
   kknController.getTimelineMahasiswa
 );
 

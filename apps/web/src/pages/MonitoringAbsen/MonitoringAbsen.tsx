@@ -1027,20 +1027,38 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     fetchConfigTargets();
   }, []);
 
+  const [syncingSchedules, setSyncingSchedules] = useState(false);
+  const handleSyncTodaySchedules = async () => {
+    setSyncingSchedules(true);
+    try {
+      const res = await api.post("/schedules/sync-today");
+      toast.success(res.data?.message || "Jadwal kegiatan hari ini berhasil disinkronkan untuk semua kelompok!");
+      await fetchSchedules();
+    } catch (err: any) {
+      toast.error("Gagal sinkronisasi jadwal harian");
+    } finally {
+      setSyncingSchedules(false);
+    }
+  };
+
   useEffect(() => {
     if (visibleSchedules.length > 0) {
       setSelectedScheduleId((prev) => {
         if (prev && visibleSchedules.some((s) => s.id === prev)) return prev;
         
-        // Utamakan jadwal hari ini (WIB)
-        const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
+        // Utamakan jadwal hari ini (WIB / Asia/Jakarta)
+        const todayWibStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         const todaySched = visibleSchedules.find((s) => {
           if (!s.date) return false;
-          const dStr = new Date(new Date(s.date).toISOString()).toISOString().split("T")[0];
-          return dStr === todayStr;
+          const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          return sWibStr === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
+        }) || visibleSchedules.find((s) => {
+          if (!s.date) return false;
+          const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          return sWibStr === todayWibStr;
         });
-        if (todaySched) return todaySched.id;
 
+        if (todaySched) return todaySched.id;
         return visibleSchedules[0].id;
       });
     } else {
@@ -2252,6 +2270,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     <span className="flex items-center gap-1.5">
                       <Calendar size={14} className="text-emerald-600" />
                       {new Date(activeSchedule.date).toLocaleDateString("id-ID", {
+                        timeZone: "Asia/Jakarta",
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -2279,6 +2298,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
           {/* Quick Schedule Selector & Manager */}
           <div className="flex items-center gap-2 shrink-0">
+            {canManageSchedules && (
+              <button
+                type="button"
+                onClick={handleSyncTodaySchedules}
+                disabled={syncingSchedules}
+                className="h-11 px-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-black transition flex items-center gap-1.5 cursor-pointer shadow-2xs disabled:opacity-50"
+                title="Sinkronkan / Buat Otomatis Jadwal Seluruh Kelompok Hari Ini"
+              >
+                <Sparkles size={14} className={syncingSchedules ? "animate-spin text-emerald-500" : "text-emerald-600"} />
+                <span>{syncingSchedules ? "Sinkron..." : "Sinkron Hari Ini"}</span>
+              </button>
+            )}
+
             <div className="relative min-w-[260px]">
               <select
                 value={selectedScheduleId}
@@ -2291,7 +2323,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   visibleSchedules.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.kelompok ? `[${s.kelompok.name}] ` : "[Bersama] "}
-                      {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })})
+                      {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
                     </option>
                   ))
                 )}
