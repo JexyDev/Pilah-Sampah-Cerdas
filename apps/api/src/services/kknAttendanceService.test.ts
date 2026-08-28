@@ -32,6 +32,7 @@ vi.mock("../lib/prisma.js", () => {
         create: vi.fn(),
         deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
         findMany: vi.fn(),
+        findFirst: vi.fn(),
       },
       schedule: {
         findMany: vi.fn(),
@@ -544,6 +545,156 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.data.status).toBe("HADIR_TIDAK_MEMENUHI");
       expect(result.data.statusDisplay).toBe("Hadir & Tidak Memenuhi");
       expect(result.data.isMemenuhiDurasi).toBe(false);
+    });
+  });
+
+  describe("Backend SSOT Duration & Standardization (SPPB)", () => {
+    const studentId = "mhs-ssot-1";
+    const scheduleId = "sch-ssot-1";
+
+    it("should ignore inZoneSeconds / accumulatedDuration from mobile payload in updateStudentLocationsBatch", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: studentId,
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: studentId,
+        kelompokId: "kel-1",
+      } as any);
+
+      vi.mocked(prisma.studentLocation.create).mockResolvedValue({
+        id: "loc-ssot-1",
+        studentId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        recordedAt: new Date(),
+      } as any);
+
+      vi.mocked(prisma.schedule.findMany).mockResolvedValue([
+        {
+          id: scheduleId,
+          title: "Kegiatan Posko KKN",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          time: "00:00 - 23:59",
+          isActive: true,
+        } as any,
+      ]);
+
+      // Attended 15 minutes ago
+      const attendedAt = new Date(Date.now() - 15 * 60 * 1000);
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue({
+        id: "att-ssot-1",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt,
+        actualInZoneMinutes: 0,
+        jedaLogs: [],
+      } as any);
+
+      let updatedData: any = null;
+      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+        updatedData = data;
+        return {
+          id: "att-ssot-1",
+          studentId,
+          scheduleId,
+          status: "BERLANGSUNG",
+          attendedAt,
+          actualInZoneMinutes: data.actualInZoneMinutes,
+        } as any;
+      });
+
+      // Mobile sends forged 9999 inZoneSeconds (approx 166 minutes)
+      const result = await service.updateStudentLocationsBatch(studentId, [
+        {
+          latitude: -6.8915,
+          longitude: 107.6107,
+          inZoneSeconds: 9999,
+          accumulatedDuration: 9999,
+          accumulatedDurationSeconds: 9999,
+        } as any,
+      ]);
+
+      expect(result.success).toBe(true);
+      // Backend calculation for 15 minutes elapsed since attendedAt is 15 minutes
+      expect(updatedData.actualInZoneMinutes).toBe(15);
+      expect(result.data.actualInZoneMinutes).toBe(15);
+      expect(result.data.actualInZoneSeconds).toBe(15 * 60);
+    });
+
+    it("should ignore accumulatedDurationSeconds parameter in pingLocation and return standardized response", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: studentId,
+        name: "Mahasiswa SSOT",
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: studentId,
+        nim: "130121002",
+        jurusan: "Informatika",
+        kelompokId: "kel-1",
+      } as any);
+
+      vi.mocked(prisma.studentLocation.create).mockResolvedValue({
+        id: "loc-ssot-2",
+        studentId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        recordedAt: new Date(),
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.schedule.findMany).mockResolvedValue([
+        {
+          id: scheduleId,
+          title: "Kegiatan Posko KKN",
+          date: new Date(),
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          time: "00:00 - 23:59",
+          isActive: true,
+        } as any,
+      ]);
+
+      const attendedAt = new Date(Date.now() - 20 * 60 * 1000);
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue({
+        id: "att-ssot-2",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt,
+        actualInZoneMinutes: 0,
+        jedaLogs: [],
+      } as any);
+
+      let updatedData: any = null;
+      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+        updatedData = data;
+        return {
+          id: "att-ssot-2",
+          studentId,
+          scheduleId,
+          status: "BERLANGSUNG",
+          attendedAt,
+          actualInZoneMinutes: data.actualInZoneMinutes,
+        } as any;
+      });
+
+      // Mobile passes 10000 seconds
+      const result = await service.pingLocation(studentId, -6.8915, 107.6107, 10000);
+
+      expect(result.success).toBe(true);
+      expect(updatedData.actualInZoneMinutes).toBe(20);
+      expect(result.data.actualInZoneMinutes).toBe(20);
+      expect(result.data.actualInZoneSeconds).toBe(20 * 60);
+      expect(result.data.inZoneMinutes).toBe(20);
     });
   });
 });

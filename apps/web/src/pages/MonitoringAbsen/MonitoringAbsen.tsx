@@ -954,38 +954,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   }, [visibleSchedules, selectedScheduleId, isAllTodayMode]);
 
   const scheduleTargetHours = useMemo(() => {
-    // 1. Jika jadwal aktif memiliki rentang jam kerja CRUD (contoh: 08:00 - 12:00 -> 4 Jam)
-    if (activeSchedule?.time) {
-      const parsed = parseTimeRange(activeSchedule.time);
-      if (parsed.start && parsed.end) {
-        const [sh, sm] = parsed.start.split(":").map(Number);
-        const [eh, em] = parsed.end.split(":").map(Number);
-        if (!isNaN(sh) && !isNaN(sm) && !isNaN(eh) && !isNaN(em)) {
-          const diffMins = (eh * 60 + em) - (sh * 60 + sm);
-          if (diffMins > 0) {
-            return Math.round((diffMins / 60) * 10) / 10;
-          }
-        }
-      }
-    }
-
-    // 2. Relasi Konfigurasi Target dari Database / Rule Engine
+    // 1. Relasi Konfigurasi Target Minimal Durasi Harian dari Database / Rule Engine Developer (SSOT)
     const h = Number(configTargets.attendanceMinDurationHours || 0);
     const m = Number(configTargets.attendanceMinDurationMinutes || 0);
     const s = Number(configTargets.attendanceMinDurationSeconds || 0);
     const totalH = (h * 3600 + m * 60 + s) / 3600;
-    if (totalH > 0) return totalH;
+    if (totalH > 0) return Math.min(8, Math.max(4, totalH));
 
     const harian = Number(configTargets.targetHarianJam);
-    if (!isNaN(harian) && harian > 0) return harian;
+    if (!isNaN(harian) && harian > 0) return Math.min(8, Math.max(4, harian));
 
     if (configTargets.targetTotalJam && configTargets.targetTotalHari && configTargets.targetTotalHari > 0) {
-      return configTargets.targetTotalJam / configTargets.targetTotalHari;
+      const calculated = configTargets.targetTotalJam / configTargets.targetTotalHari;
+      if (calculated > 0) return Math.min(8, Math.max(4, calculated));
     }
 
     return 4;
   }, [
-    activeSchedule,
     configTargets.attendanceMinDurationHours,
     configTargets.attendanceMinDurationMinutes,
     configTargets.attendanceMinDurationSeconds,
@@ -3516,9 +3501,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || checkOutTimestamp !== null && checkOutTimestamp !== undefined;
                         const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
-                        const targetZonaHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
-                        const targetZonaMins = targetZonaHours * 60;
-                        const percentZona = targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0;
+                        const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
+                          ? Number(recAny.targetHours) 
+                          : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
+                        const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
+                          ? Number(recAny.targetDurationMinutes) 
+                          : Math.round(targetZonaHours * 60);
+                        const percentZona = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
+                          ? Number(recAny.targetRatioPercent)
+                          : (targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0);
 
                         const isMemenuhiDurasi = rec.isMemenuhiDurasi !== undefined
                           ? rec.isMemenuhiDurasi
@@ -5000,9 +4991,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
               const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
               const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : isBerlangsung ? Math.max(storedMins, liveElapsedMins) : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
-              const targetHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
-              const targetMins = targetHours * 60;
-              const ratioPercent = targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0;
+              const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
+                ? Number(recAny.targetHours) 
+                : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
+              const targetMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
+                ? Number(recAny.targetDurationMinutes) 
+                : Math.round(targetHours * 60);
+              const ratioPercent = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
+                ? Number(recAny.targetRatioPercent)
+                : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
               const isMemenuhi = rec.isMemenuhiDurasi !== undefined ? Boolean(rec.isMemenuhiDurasi) : durationMins >= targetMins;
 
               const liveLoc = studentLocations.find(

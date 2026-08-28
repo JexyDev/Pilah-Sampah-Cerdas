@@ -545,23 +545,11 @@ export class KknAttendanceService {
 
 
           // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
+          // [SSOT Backend]: Durasi mutlak hanya berasal dari kalkulasi internal backend
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
           if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
             const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
-
-            let durationFromMobile = 0;
-            if (accumulatedDurationSeconds !== undefined && !isNaN(Number(accumulatedDurationSeconds))) {
-              durationFromMobile = Math.max(0, Math.floor(Number(accumulatedDurationSeconds) / 60));
-              if (durationFromMobile > liveCalculatedMins + 2) {
-                durationFromMobile = liveCalculatedMins;
-              }
-            }
-
-            durationInZone = Math.max(
-              liveCalculatedMins,
-              durationFromMobile,
-              existingAtt.actualInZoneMinutes ?? 0
-            );
+            durationInZone = liveCalculatedMins;
 
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
@@ -917,19 +905,11 @@ export class KknAttendanceService {
           }
 
 
+          // [SSOT Backend]: Durasi mutlak hanya berasal dari kalkulasi internal backend, abaikan payload mobile
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
           if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
             const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
-            let durationFromMobile = 0;
-            const lastLoc = locations[locations.length - 1] as any;
-            const inZoneSec = lastLoc?.inZoneSeconds ?? lastLoc?.accumulatedDuration ?? lastLoc?.accumulatedDurationSeconds;
-            if (inZoneSec !== undefined && !isNaN(Number(inZoneSec))) {
-              durationFromMobile = Math.max(0, Math.floor(Number(inZoneSec) / 60));
-              if (durationFromMobile > liveCalculatedMins + 2) {
-                durationFromMobile = liveCalculatedMins;
-              }
-            }
-            durationInZone = Math.max(existingAtt.actualInZoneMinutes ?? 0, liveCalculatedMins, durationFromMobile);
+            durationInZone = liveCalculatedMins;
 
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
@@ -1481,9 +1461,9 @@ export class KknAttendanceService {
 
     const storedMins = attendance.actualInZoneMinutes ?? 0;
     const liveMins = (attendance.status === "BERLANGSUNG" && attendance.attendedAt) ? calculateLiveInZoneMinutes(attendance) : storedMins;
-    const payloadMins = (totalDurasiDalamZonaMenit && !isNaN(Number(totalDurasiDalamZonaMenit))) ? Number(totalDurasiDalamZonaMenit) : 0;
 
-    let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, payloadMins, logsCalculatedMins));
+    // [SSOT Backend]: Durasi mutlak berasal dari kalkulasi internal backend (mengabaikan input durasi dari mobile payload)
+    let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, logsCalculatedMins));
     if (actualInZoneMins === 0 && rawDurationMinutes > 0) {
       actualInZoneMins = Math.min(480, rawDurationMinutes);
     }
@@ -1878,6 +1858,13 @@ export class KknAttendanceService {
       cumulativeMap.set(cr.studentId, prev);
     }
 
+    const targetConfigMins =
+      (attendanceListRuleConfigs.attendanceMinDurationHours * 60) +
+      attendanceListRuleConfigs.attendanceMinDurationMinutes +
+      Math.round(attendanceListRuleConfigs.attendanceMinDurationSeconds / 60);
+    const durasiWajib = scheduleLoc?.targetDurationMinutes || (targetConfigMins > 0 ? targetConfigMins : 240);
+    const targetHours = Math.round((durasiWajib / 60) * 10) / 10;
+
     const attendedStudentIds = new Set<string>();
 
     const attendedList = list.map((att) => {
@@ -1898,8 +1885,8 @@ export class KknAttendanceService {
       let statusDisplay = att.status;
       let isMemenuhiDurasi = false;
 
-      const durasiWajib = scheduleLoc?.targetDurationMinutes || 120;
       const actualMins = att.actualInZoneMinutes ?? 0;
+      const percentRatio = durasiWajib > 0 ? Math.round((actualMins / durasiWajib) * 100) : 0;
 
       if (att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT")) {
         currentStatus = "IZIN_DISETUJUI";
@@ -1949,6 +1936,9 @@ export class KknAttendanceService {
         statusDisplay,
         isMemenuhiDurasi,
         actualInZoneMinutes: actualMins,
+        targetHours,
+        targetDurationMinutes: durasiWajib,
+        targetRatioPercent: percentRatio,
         totalMinutes: cum.totalMinutes,
         totalHours: cum.totalHours,
         totalDays: cum.totalDays,
@@ -2028,6 +2018,9 @@ export class KknAttendanceService {
           currentStatus: "IZIN_DISETUJUI",
           statusDisplay: attStatus === "SAKIT" ? "Sakit (Disetujui)" : "Izin (Disetujui)",
           student: s,
+          targetHours,
+          targetDurationMinutes: durasiWajib,
+          targetRatioPercent: 0,
           totalMinutes: cum.totalMinutes,
           totalHours: cum.totalHours,
           totalDays: cum.totalDays,
@@ -2054,6 +2047,9 @@ export class KknAttendanceService {
           currentStatus: "MENUNGGU_PERSETUJUAN_IZIN",
           statusDisplay: isSakit ? "Sakit (Menunggu)" : "Izin (Menunggu)",
           student: s,
+          targetHours,
+          targetDurationMinutes: durasiWajib,
+          targetRatioPercent: 0,
           totalMinutes: cum.totalMinutes,
           totalHours: cum.totalHours,
           totalDays: cum.totalDays,
@@ -2079,6 +2075,9 @@ export class KknAttendanceService {
           currentStatus: "PENGAJUAN_BATAL_IZIN",
           statusDisplay: "Batal Izin (Menunggu)",
           student: s,
+          targetHours,
+          targetDurationMinutes: durasiWajib,
+          targetRatioPercent: 0,
           totalMinutes: cum.totalMinutes,
           totalHours: cum.totalHours,
           totalDays: cum.totalDays,
@@ -2105,6 +2104,9 @@ export class KknAttendanceService {
           statusDisplay: "Hadir (Batal Izin)",
           isMemenuhiDurasi: true,
           student: s,
+          targetHours,
+          targetDurationMinutes: durasiWajib,
+          targetRatioPercent: 100,
           totalMinutes: cum.totalMinutes,
           totalHours: cum.totalHours,
           totalDays: cum.totalDays,
@@ -2161,6 +2163,9 @@ export class KknAttendanceService {
           currentStatus,
           statusDisplay: status === "LAPANGAN" ? "Lapangan" : "Belum Absen",
           student: s,
+          targetHours,
+          targetDurationMinutes: durasiWajib,
+          targetRatioPercent: 0,
           totalMinutes: cum.totalMinutes,
           totalHours: cum.totalHours,
           totalDays: cum.totalDays,
@@ -3073,16 +3078,15 @@ export class KknAttendanceService {
       throw new Error("Kegiatan sudah diselesaikan.");
     }
 
-    const calculatedMins = payload.totalDurasiDalamZonaDetik
-      ? Math.max(existing.actualInZoneMinutes || 0, Math.floor(payload.totalDurasiDalamZonaDetik / 60))
-      : Math.max(existing.actualInZoneMinutes || 0, payload.totalDurasiDalamZonaMenit || 0);
+    // [SSOT Backend]: Hitung durasi live backend secara mutlak tanpa bergantung pada payload mobile
+    const calculatedMins = calculateLiveInZoneMinutes(existing);
 
     const currentLogs = (existing.jedaLogs as any[]) || [];
     currentLogs.push({
       alasan: payload.alasan,
       waktuJeda: new Date().toISOString(),
       durasiSebelumJedaMenit: calculatedMins,
-      durasiSebelumJedaDetik: payload.totalDurasiDalamZonaDetik || (calculatedMins * 60),
+      durasiSebelumJedaDetik: calculatedMins * 60,
     });
 
     const updated = await prisma.activityAttendance.update({
