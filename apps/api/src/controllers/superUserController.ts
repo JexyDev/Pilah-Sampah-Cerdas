@@ -147,13 +147,15 @@ export class SuperUserController {
 
   async getAuditTrail(req: Request, res: Response): Promise<void> {
     try {
-      const { action, userId, startDate, endDate, search } = req.query;
+      const { action, userId, startDate, endDate, search, page, limit } = req.query;
       const data = await superUserService.getAuditTrail({
         action: action as string,
         userId: userId as string,
         startDate: startDate as string,
         endDate: endDate as string,
         search: search as string,
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
       });
       res.status(200).json({ success: true, data });
     } catch (error: any) {

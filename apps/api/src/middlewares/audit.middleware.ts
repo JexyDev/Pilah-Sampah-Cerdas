@@ -8,13 +8,14 @@ export const auditMiddleware = (featureCategory: string) => {
       // Only log mutations (POST, PUT, PATCH, DELETE) or specific auth endpoints, skip GET/HEAD/OPTIONS and static assets
       const method = req.method;
       const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-      const isAuthEvent = req.originalUrl.includes('/auth/');
+      const isAuthEvent = req.originalUrl.includes('/auth/') && !req.originalUrl.includes('/auth/me');
       const isStaticOrHealth = req.originalUrl.startsWith('/uploads') || req.originalUrl.includes('/health') || req.originalUrl.includes('/docs');
+      const isHighFrequency = req.originalUrl.includes('/location-ping') || req.originalUrl.includes('/ping') || req.originalUrl.includes('/notifications');
 
       if (!isMutation && !isAuthEvent) {
         return;
       }
-      if (isStaticOrHealth) {
+      if (isStaticOrHealth || isHighFrequency) {
         return;
       }
       

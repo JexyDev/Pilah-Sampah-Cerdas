@@ -350,7 +350,13 @@ export class SuperUserService {
     startDate?: string;
     endDate?: string;
     search?: string;
+    page?: number;
+    limit?: number;
   }) {
+    const page = Math.max(1, Number(filters?.page ?? 1));
+    const limit = Math.min(500, Math.max(1, Number(filters?.limit ?? 200)));
+    const skip = (page - 1) * limit;
+
     const where: any = {};
     if (filters?.action) {
       where.action = filters.action;
@@ -373,16 +379,22 @@ export class SuperUserService {
       where.OR = [
         { action: { contains: filters.search, mode: "insensitive" } },
         { user: { name: { contains: filters.search, mode: "insensitive" } } },
-        { user: { email: { contains: filters.search, mode: "insensitive" } } },
+        { user: { phone: { contains: filters.search, mode: "insensitive" } } },
       ];
     }
 
     return prisma.auditTrail.findMany({
       where,
+      take: limit,
+      skip,
       include: {
         user: {
-          include: {
-            role: true,
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            fotoProfil: true,
+            role: { select: { id: true, name: true } },
           },
         },
       },

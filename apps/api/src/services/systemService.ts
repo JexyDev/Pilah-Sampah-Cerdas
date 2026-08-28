@@ -10,8 +10,9 @@ export const systemService = {
   /**
    * Get all audit trail logs (SUPER USER only view)
    */
-  getAuditTrails: async () => {
+  getAuditTrails: async (limit: number = 100) => {
     return prisma.auditTrail.findMany({
+      take: limit,
       include: {
         user: {
           select: {
