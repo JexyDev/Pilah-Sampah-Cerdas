@@ -27,6 +27,7 @@ import {
   Sparkles,
   Globe,
   Coins,
+  Radio,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -180,6 +181,9 @@ const checkRouteActive = (
       "/superUser/kurasi-landing",
     ];
     if (kurasiAliases.includes(tPath) && kurasiAliases.includes(cPath)) return true;
+
+    const inspeksiZonaAliases = ["/developer/inspeksi-zona", "/inspeksi-zona", "/monitoring-zona"];
+    if (inspeksiZonaAliases.includes(tPath) && inspeksiZonaAliases.includes(cPath)) return true;
 
     return false;
   };
@@ -1253,6 +1257,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: UserIcon,
           label: "Pengguna Daring",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/developer/inspeksi-zona",
+          icon: Radio,
+          label: "Inspeksi Zona KKN",
+          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
         },
       ],
     },

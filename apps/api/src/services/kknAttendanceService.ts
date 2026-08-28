@@ -2281,8 +2281,8 @@ export class KknAttendanceService {
 
     return {
       targetRules: {
-        hariKerja: config.hariKerja || "Senin – Jumat",
-        jamOperasional: config.jamKerja || "08:00 – 16:00 WIB",
+        hariKerja: config.hariKerja || "Senin - Jumat",
+        jamOperasional: config.jamKerja || "08:00 - 16:00 WIB",
         targetHarianMinJam: TARGET_HARIAN_HOURS,
         targetTotalJam: TARGET_TOTAL_HOURS,
         targetTotalHari: config.targetTotalHari || 50,

@@ -85,6 +85,7 @@ import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
 import LogAktivitasDpl from "../pages/dpl/LogAktivitasDpl";
 import KurasiLandingPage from "../pages/SuperUser/KurasiLandingPage";
 import KelolaPoinPengguna from "../pages/KelolaPoinPengguna/KelolaPoinPengguna";
+import ZonaInspectorPage from "../pages/Developer/ZonaInspectorPage";
 
 
 // Protected Route Wrapper
@@ -934,6 +935,22 @@ const AppRoutes: React.FC = () => {
               <KelolaPoinPengguna />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/developer/inspeksi-zona"
+          element={
+            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"]}>
+              <ZonaInspectorPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inspeksi-zona"
+          element={<Navigate to="/developer/inspeksi-zona" replace />}
+        />
+        <Route
+          path="/monitoring-zona"
+          element={<Navigate to="/developer/inspeksi-zona" replace />}
         />
         <Route
           path="/master-data/poin-pengguna"

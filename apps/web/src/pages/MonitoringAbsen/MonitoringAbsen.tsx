@@ -593,9 +593,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   // Dynamic Targets & Ketentuan Waktu (Managed by Super User / Taskforce / Developer)
   const ALL_DAYS_LIST = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
+  const sanitizeDisplayDash = (text?: string): string => {
+    if (!text) return "";
+    return text.replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
+  };
+
   const parseDaysFromString = (str?: string): string[] => {
     if (!str) return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
-    const s = str.toLowerCase();
+    const sanitized = str.replace(/\?{2,3}|â€“|–|—/g, " - ");
+    const s = sanitized.toLowerCase();
     if (s.includes("senin") && s.includes("jumat")) {
       return ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"];
     }
@@ -611,20 +617,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
   const formatDaysToString = (days: string[]): string => {
     if (days.length === 5 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"].every((d) => days.includes(d))) {
-      return "Senin – Jumat";
+      return "Senin - Jumat";
     }
     if (days.length === 6 && ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"].every((d) => days.includes(d))) {
-      return "Senin – Sabtu";
+      return "Senin - Sabtu";
     }
     if (days.length === 7) {
-      return "Setiap Hari (Senin – Minggu)";
+      return "Setiap Hari (Senin - Minggu)";
     }
     return days.join(", ");
   };
 
   const parseTimeRange = (timeStr?: string): { start: string; end: string } => {
     if (!timeStr) return { start: "08:00", end: "16:00" };
-    const matches = timeStr.match(/(\d{1,2}[:.]\d{2})\s*(?:-|–|s\/d|sampai)\s*(\d{1,2}[:.]\d{2})/i);
+    const sanitized = timeStr.replace(/\?{2,3}|â€“|–|—/g, "-");
+    const matches = sanitized.match(/(\d{1,2}[:.]\d{2})\s*(?:-|\/|s\/d|sampai)\s*(\d{1,2}[:.]\d{2})/i);
     if (matches) {
       return {
         start: matches[1].replace(".", ":").padStart(5, "0"),
@@ -642,8 +649,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     attendanceMinDurationHours: 4,
     attendanceMinDurationMinutes: 0,
     attendanceMinDurationSeconds: 0,
-    hariKerja: "Senin – Jumat",
-    jamKerja: "08:00 – 16:00 WIB",
+    hariKerja: "Senin - Jumat",
+    jamKerja: "08:00 - 16:00 WIB",
     targetPekan: 10,
     targetTotalHari: 50,
   });
@@ -779,7 +786,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     try {
       const payload: Partial<ConfigTargets> = {
         hariKerja: formatDaysToString(formDays),
-        jamKerja: `${formStartTime} – ${formEndTime} WIB`,
+        jamKerja: `${formStartTime} - ${formEndTime} WIB`,
         targetPekan: Number(formTargetPekan),
         targetTotalHari: Number(formTotalHari),
         targetHarianJam: durasiTotalHarian,
@@ -2252,7 +2259,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Clock size={14} className="text-emerald-600" />
-                      {activeSchedule.time || configTargets.jamKerja || "08:00 – 16:00 WIB"} (Target Minimal {formatHoursToUnits(scheduleTargetHours)})
+                      {sanitizeDisplayDash(activeSchedule.time || configTargets.jamKerja) || "08:00 - 16:00 WIB"} (Target Minimal {formatHoursToUnits(scheduleTargetHours)})
                     </span>
                     <span className="flex items-center gap-1.5 truncate max-w-sm">
                       <MapPin size={14} className="text-emerald-600 shrink-0" />
@@ -2365,7 +2372,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Calendar size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Hari Kerja Operasional
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.hariKerja || "Senin – Jumat"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{sanitizeDisplayDash(configTargets.hariKerja) || "Senin - Jumat"}</span>
               </div>
 
               <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60 text-xs">
@@ -2373,7 +2380,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   <Clock size={14} className="text-emerald-600 dark:text-emerald-400" />
                   Jam Kerja Operasional
                 </span>
-                <span className="font-extrabold text-slate-900 dark:text-slate-100">{configTargets.jamKerja || "08:00 – 16:00"}</span>
+                <span className="font-extrabold text-slate-900 dark:text-slate-100">{sanitizeDisplayDash(configTargets.jamKerja) || "08:00 - 16:00 WIB"}</span>
               </div>
 
               <div className="flex items-center justify-between text-xs">
@@ -4066,7 +4073,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
                     }`}
                   >
-                    Senin – Jumat (5 Hari)
+                    Senin - Jumat (5 Hari)
                   </button>
                   <button
                     type="button"
@@ -4077,7 +4084,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-emerald-300"
                     }`}
                   >
-                    Senin – Sabtu (6 Hari)
+                    Senin - Sabtu (6 Hari)
                   </button>
                   <button
                     type="button"
@@ -4149,7 +4156,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
                   <span className="block text-[10px] text-slate-500 font-medium">
-                    Format: {formStartTime} – {formEndTime} WIB
+                    Format: {formStartTime} - {formEndTime} WIB
                   </span>
                 </div>
 

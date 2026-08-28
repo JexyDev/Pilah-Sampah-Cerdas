@@ -575,18 +575,7 @@ export const PoskoKknPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                      {formatWhatsAppUrl(ketuaPhone) && (
-                        <a
-                          href={formatWhatsAppUrl(ketuaPhone)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                        >
-                          <Phone size={14} />
-                          <span>Hubungi Ketua (WA)</span>
-                        </a>
-                      )}
+                    <div className="shrink-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -625,7 +614,7 @@ export const PoskoKknPage: React.FC = () => {
                         </div>
 
                         <div className="space-y-3.5 text-xs">
-                          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-1">
+                          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-1.5">
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                               Ketua Kelompok (PIC)
                             </span>
@@ -633,17 +622,19 @@ export const PoskoKknPage: React.FC = () => {
                               {ketuaName}
                             </p>
                             {formatWhatsAppUrl(ketuaPhone) ? (
-                              <a
-                                href={formatWhatsAppUrl(ketuaPhone)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline mt-0.5"
-                              >
-                                <Phone size={12} />
-                                <span>WhatsApp: {ketuaPhone}</span>
-                              </a>
+                              <div className="pt-1">
+                                <a
+                                  href={formatWhatsAppUrl(ketuaPhone)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs active:scale-95"
+                                >
+                                  <Phone size={12} />
+                                  <span>Hubungi via WhatsApp ({ketuaPhone})</span>
+                                </a>
+                              </div>
                             ) : (
-                              <span className="text-slate-400 italic">Kontak nomor belum terdata</span>
+                              <span className="text-slate-400 italic block pt-0.5">Kontak nomor belum terdata</span>
                             )}
                           </div>
 

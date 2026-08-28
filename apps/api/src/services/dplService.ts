@@ -3297,8 +3297,8 @@ export const dplService = {
       attendanceMinDurationHours: minHours,
       attendanceMinDurationMinutes: minMinutes,
       attendanceMinDurationSeconds: minSeconds,
-      hariKerja: configMap.get("kkn_hari_kerja") || "Senin – Jumat",
-      jamKerja: configMap.get("kkn_jam_kerja") || "08:00 – 16:00 WIB",
+      hariKerja: (configMap.get("kkn_hari_kerja") || "Senin - Jumat").replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim(),
+      jamKerja: (configMap.get("kkn_jam_kerja") || "08:00 - 16:00 WIB").replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim(),
       targetPekan: Number(configMap.get("kkn_target_pekan") || 10),
       targetTotalHari: targetHariTotal,
       catatanDpl:
@@ -3398,17 +3398,19 @@ export const dplService = {
       });
     }
     if (data.hariKerja !== undefined) {
+      const cleanVal = String(data.hariKerja).replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
       updates.push({
         key: "kkn_hari_kerja",
-        value: String(data.hariKerja),
+        value: cleanVal,
         desc: "Hari kerja operasional KKN",
         tipe: "STRING",
       });
     }
     if (data.jamKerja !== undefined) {
+      const cleanVal = String(data.jamKerja).replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
       updates.push({
         key: "kkn_jam_kerja",
-        value: String(data.jamKerja),
+        value: cleanVal,
         desc: "Jam operasional kerja KKN",
         tipe: "STRING",
       });
