@@ -349,4 +349,25 @@ export const logbookController = {
       res.status(500).json({ success: false, message: error.message });
     }
   },
+
+  /**
+   * Menghapus logbook aktivitas mahasiswa
+   */
+  deleteMahasiswaLogbook: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+
+      const data = await logbookService.deleteMahasiswaLogbook(id, userId, userRole);
+      res.status(200).json({
+        success: true,
+        message: "Logbook aktivitas berhasil dihapus.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[logbookController.deleteMahasiswaLogbook] error:", error);
+      res.status(400).json({ success: false, message: error.message || "Gagal menghapus logbook" });
+    }
+  },
 };

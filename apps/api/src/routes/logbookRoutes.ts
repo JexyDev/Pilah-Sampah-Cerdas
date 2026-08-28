@@ -59,6 +59,13 @@ router.post(
   logbookController.batchVerifikasiByDpl
 );
 
+// Hapus Logbook Aktivitas Mahasiswa (DPL, Super User, Penulis)
+router.delete(
+  "/mahasiswa/:id",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "MAHASISWA_KKN"]),
+  logbookController.deleteMahasiswaLogbook
+);
+
 /**
  * ─────────────────────────────────────────────
  * LOGBOOK MONITORING MINGGUAN DPL

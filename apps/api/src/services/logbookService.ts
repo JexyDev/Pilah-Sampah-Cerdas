@@ -1011,6 +1011,38 @@ export class LogbookService {
       },
     };
   }
+
+  /**
+   * Menghapus logbook aktivitas mahasiswa (DPL, Super User, Penulis)
+   */
+  async deleteMahasiswaLogbook(
+    logbookId: string,
+    userId: string,
+    userRole: string
+  ) {
+    const logbook = await prisma.logbookKkn.findUnique({
+      where: { id: logbookId },
+      include: {
+        kelompok: true,
+      },
+    });
+
+    if (!logbook) throw new Error("Logbook tidak ditemukan");
+
+    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
+    const isAssignedDpl = logbook.kelompok.dplId === userId;
+    const isAuthor = logbook.penulisId === userId;
+
+    if (!isSuper && !isAssignedDpl && !isAuthor) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk menghapus logbook ini.");
+    }
+
+    await prisma.logbookKkn.delete({
+      where: { id: logbookId },
+    });
+
+    return { success: true, message: "Logbook aktivitas berhasil dihapus" };
+  }
 }
 
 export const logbookService = new LogbookService();

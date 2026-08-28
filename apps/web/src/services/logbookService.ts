@@ -219,6 +219,14 @@ export const logbookApiService = {
   },
 
   /**
+   * Hapus logbook aktivitas mahasiswa
+   */
+  deleteMahasiswaLogbook: async (id: string) => {
+    const res = await api.delete(`/logbook/mahasiswa/${id}`);
+    return res.data;
+  },
+
+  /**
    * Mengambil riwayat logbook monitoring mingguan DPL
    */
   getDplLogbooks: async (groupId?: string): Promise<LogbookDplItem[]> => {
