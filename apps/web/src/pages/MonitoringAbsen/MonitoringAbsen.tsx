@@ -574,7 +574,7 @@ const MonitoringAbsen: React.FC = () => {
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [displayMode] = useState<"table" | "cards">("table");
-  const [showMap, setShowMap] = useState<boolean>(false);
+  const [showMap, setShowMap] = useState<boolean>(true);
 
   // Real-Time WebSocket & Pagination States
   const [wsStatus, setWsStatus] = useState<"CONNECTED" | "CONNECTING" | "DISCONNECTED">("DISCONNECTED");
@@ -2852,50 +2852,86 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </div>
           </div>
 
-          {/* Right Card: Target Kegiatan Zona Lapangan */}
-          <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
-                  <Target size={15} />
+          {/* Right Card: Target Kegiatan Lapangan (Developer & Super Admin) vs Target Zona (DPL) */}
+          {isDpl ? (
+            <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
+                    <Target size={15} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Zona Kegiatan Hari Ini</span>
                 </div>
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Zona Kegiatan Hari Ini</span>
-              </div>
-              {isSuperUserOrDev && (
-                <button
-                  type="button"
-                  onClick={openConfigModal}
-                  className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Pencil size={12} />
-                  <span>Ubah Target</span>
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
-              <div className="px-2 flex flex-col items-center justify-center">
-                <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Zona</span>
-                <span className="text-[10px] text-slate-400 font-medium">Minimal Durasi Lapangan</span>
               </div>
 
-              <div className="px-2 flex flex-col items-center justify-center">
-                <MapPin size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{activeSchedule?.radius || 200}m</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Geofence Radius</span>
-                <span className="text-[10px] text-slate-400 font-medium">Batas Zona GPS Valid</span>
-              </div>
+              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
+                <div className="px-2 flex flex-col items-center justify-center">
+                  <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Zona</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Minimal Durasi Lapangan</span>
+                </div>
 
-              <div className="px-2 flex flex-col items-center justify-center">
-                <Users size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{filteredAttendance.length}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Mahasiswa</span>
-                <span className="text-[10px] text-slate-400 font-medium">Total Terjadwal di Zona</span>
+                <div className="px-2 flex flex-col items-center justify-center">
+                  <MapPin size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{activeSchedule?.radius || 200}m</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Geofence Radius</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Batas Zona GPS Valid</span>
+                </div>
+
+                <div className="px-2 flex flex-col items-center justify-center">
+                  <Users size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{filteredAttendance.length}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Mahasiswa</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Total Terjadwal di Zona</span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
+                    <Target size={15} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Kegiatan Lapangan</span>
+                </div>
+                {isSuperUserOrDev && (
+                  <button
+                    type="button"
+                    onClick={openConfigModal}
+                    className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Pencil size={12} />
+                    <span>Ubah Target</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
+                <div className="px-2 flex flex-col items-center justify-center">
+                  <Calendar size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetPekan ?? 10}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Pekan</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Periode Kegiatan</span>
+                </div>
+
+                <div className="px-2 flex flex-col items-center justify-center">
+                  <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                  <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetTotalHari ?? 50}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hari</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Total Hari Kegiatan</span>
+                </div>
+
+                <div className="px-2 flex flex-col items-center justify-center">
+                  <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(configTargets.targetTotalJam ?? 200)}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Minimal Target</span>
+                  <span className="text-[10px] text-slate-400 font-medium">Total Jam KKN</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
@@ -3454,18 +3490,33 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                      <tr>
-                        <th className="py-3.5 px-3 w-12 text-center">NO.</th>
-                        <th className="py-3.5 px-4 min-w-[200px] text-left">MAHASISWA &amp; NIM</th>
-                        <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
-                        <th className="py-3.5 px-3 text-center">JAM MASUK</th>
-                        <th className="py-3.5 px-3 text-center">JAM PULANG</th>
-                        <th className="py-3.5 px-4 text-center">DURASI</th>
-                        <th className="py-3.5 px-3 text-center">TARGET JAM</th>
-                        <th className="py-3.5 px-4 text-center">RASIO KEHADIRAN</th>
-                        <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
-                        <th className="py-3.5 px-4 text-center">DETAIL</th>
-                      </tr>
+                      {isDpl ? (
+                        <tr>
+                          <th className="py-3.5 px-3 w-12 text-center">NO.</th>
+                          <th className="py-3.5 px-4 min-w-[200px] text-left">MAHASISWA &amp; NIM</th>
+                          <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
+                          <th className="py-3.5 px-3 text-center">JAM MASUK</th>
+                          <th className="py-3.5 px-3 text-center">JAM PULANG</th>
+                          <th className="py-3.5 px-4 text-center">DURASI</th>
+                          <th className="py-3.5 px-3 text-center">TARGET JAM</th>
+                          <th className="py-3.5 px-4 text-center">RASIO KEHADIRAN</th>
+                          <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
+                          <th className="py-3.5 px-4 text-center">DETAIL</th>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <th className="py-3.5 px-4 text-center w-12">NO</th>
+                          <th className="py-3.5 px-4 min-w-[200px]">MAHASISWA</th>
+                          {!selectedKelompokId && <th className="py-3.5 px-4 text-center">KELOMPOK &amp; WILAYAH</th>}
+                          <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
+                          <th className="py-3.5 px-4 text-center">JAM MASUK</th>
+                          <th className="py-3.5 px-4 text-center">JAM PULANG</th>
+                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
+                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN</th>
+                          <th className="py-3.5 px-4 text-center">POIN</th>
+                          <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
+                        </tr>
+                      )}
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
                       {paginatedAttendance.map((rec, idx) => {
@@ -3494,6 +3545,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         );
                         const recTime = liveLoc ? new Date(liveLoc.recordedAt).getTime() : 0;
                         const minsSincePing = !isNaN(recTime) && recTime > 0 ? Math.floor((Date.now() - recTime) / 60000) : null;
+                        const isGpsRecent = !isNaN(recTime) && recTime > 0 && Date.now() - recTime < 5 * 60 * 1000;
                         const isGpsStale = isBerlangsung && minsSincePing !== null && minsSincePing >= 3;
 
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
@@ -3541,50 +3593,262 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const isKetua = Boolean(rec.student?.studentProfile?.isKetua || rec.student?.isKetua);
 
+                        const targetKumulatif = configTargets.targetTotalJam || 200;
+                        const percentCapaian = rec.totalHours !== undefined ? Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2)) : 0;
+                        const isExceeded = percentCapaian > 100;
+                        const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? "0 PTS" : (isHadir ? "10 PTS" : "0 PTS");
+
+                        const avatarColors = [
+                          "bg-emerald-100 text-emerald-800 border-emerald-200",
+                          "bg-teal-100 text-teal-800 border-teal-200",
+                          "bg-blue-100 text-blue-800 border-blue-200",
+                          "bg-indigo-100 text-indigo-800 border-indigo-200",
+                          "bg-amber-100 text-amber-800 border-amber-200",
+                          "bg-purple-100 text-purple-800 border-purple-200",
+                        ];
+                        const avatarColor = avatarColors[idx % avatarColors.length];
+
+                        // DPL Table Row vs Developer Table Row
+                        if (isDpl) {
+                          return (
+                            <tr
+                              key={rec.id}
+                              className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors"
+                            >
+                              {/* 1. NO. */}
+                              <td className="py-4 px-3 text-center text-slate-500 font-bold">
+                                {itemNumber}
+                              </td>
+
+                              {/* 2. MAHASISWA & NIM */}
+                              <td className="py-4 px-4 text-left">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                                    {cleanStudentName}
+                                  </span>
+                                  <span className="text-[11px] text-slate-400 font-mono">
+                                    {rec.student?.studentProfile?.nim || "-"}
+                                  </span>
+                                  {isKetua && (
+                                    <div className="pt-0.5">
+                                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                        Ketua
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* 3. STATUS PRESENSI */}
+                              <td className="py-4 px-4 text-center">
+                                {isBelumAdaJadwal ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    Belum Tercatat
+                                  </span>
+                                ) : isOverrideDpl ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Izin dibatalkan dan di-override menjadi Hadir oleh DPL">
+                                    <CheckCircle2 size={13} className="text-emerald-600" />
+                                    <span>Hadir</span>
+                                  </span>
+                                ) : isCancelRequested ? (
+                                  <Link
+                                    to="/monitoring-kegiatan/pengajuan-izin"
+                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+                                    title="Mahasiswa mengajukan pembatalan izin - Klik untuk review di menu Ajuan"
+                                  >
+                                    <Hourglass size={13} className="text-rose-600" />
+                                    <span>Batal Izin (Menunggu)</span>
+                                    <ExternalLink size={10} className="text-rose-500" />
+                                  </Link>
+                                ) : isSakitPending ? (
+                                  <Link
+                                    to="/monitoring-kegiatan/pengajuan-izin"
+                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                                    title="Pengajuan Sakit sedang menunggu persetujuan DPL"
+                                  >
+                                    <Hourglass size={13} className="text-amber-600 animate-pulse" />
+                                    <span>Sakit (Menunggu)</span>
+                                    <ExternalLink size={10} className="text-amber-600" />
+                                  </Link>
+                                ) : isIzinPending ? (
+                                  <Link
+                                    to="/monitoring-kegiatan/pengajuan-izin"
+                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
+                                    title="Pengajuan Izin sedang menunggu persetujuan DPL"
+                                  >
+                                    <Hourglass size={13} className="text-sky-600 animate-pulse" />
+                                    <span>Izin (Menunggu)</span>
+                                    <ExternalLink size={10} className="text-sky-600" />
+                                  </Link>
+                                ) : isSakit ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Sakit disetujui DPL"}>
+                                    <Thermometer size={13} className="text-rose-600" />
+                                    <span>Sakit</span>
+                                  </span>
+                                ) : isIzin ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Izin disetujui DPL"}>
+                                    <Info size={13} className="text-amber-600" />
+                                    <span>Izin</span>
+                                  </span>
+                                ) : isTanpaKeterangan ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                    <XCircle size={13} className="text-rose-600" />
+                                    <span>Tanpa Keterangan</span>
+                                  </span>
+                                ) : isTerjeda ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title="Sesi terjeda otomatis karena GPS terputus atau keluar zona">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-ping" />
+                                    <span>Terjeda</span>
+                                  </span>
+                                ) : isGpsStale ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse" title={`Sinyal GPS belum diterima sejak ${minsSincePing} menit lalu. Otomatis terjeda di menit ke-5 jika HP mati.`}>
+                                    <Clock size={13} className="text-amber-600 animate-spin" />
+                                    <span>Menunggu GPS ({minsSincePing}m)</span>
+                                  </span>
+                                ) : isBerlangsung ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
+                                    <Clock size={13} className="text-emerald-600 animate-spin" />
+                                    <span>Berlangsung</span>
+                                  </span>
+                                ) : isHadir ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    <span>Hadir</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    <span>Belum Tercatat</span>
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* 4. JAM MASUK */}
+                              <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                                {jamMasukStr}
+                              </td>
+
+                              {/* 5. JAM PULANG */}
+                              <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                                {jamPulangStr}
+                              </td>
+
+                              {/* 6. DURASI */}
+                              <td className="py-4 px-4 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
+                                {durasiText}
+                              </td>
+
+                              {/* 7. TARGET JAM */}
+                              <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
+                                {targetZonaHours} jam
+                              </td>
+
+                              {/* 8. RASIO KEHADIRAN */}
+                              <td className="py-4 px-4 text-center">
+                                <div className="flex flex-col items-center gap-1.5 min-w-[70px]">
+                                  <span className="font-bold text-xs text-slate-800 dark:text-slate-200 font-mono">
+                                    {percentZona}%
+                                  </span>
+                                  <div className="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${
+                                        percentZona >= 100
+                                          ? "bg-emerald-500"
+                                          : percentZona > 0
+                                          ? "bg-orange-500"
+                                          : "bg-transparent"
+                                      }`}
+                                      style={{ width: `${Math.min(100, percentZona)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* 9. STATUS PEMENUHAN */}
+                              <td className="py-4 px-4 text-center">
+                                {isMemenuhiDurasi ? (
+                                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                    Memenuhi
+                                  </span>
+                                ) : (
+                                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                                    Tidak Memenuhi
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* 10. DETAIL */}
+                              <td className="py-4 px-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStudentForDetail(rec)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
+                                  title="Lihat detail lokasi & riwayat presensi"
+                                >
+                                  <MapPin size={13} className="text-emerald-600" />
+                                  <span>Lokasi &amp; Riwayat</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        // DEVELOPER / SUPER ADMIN TABLE ROW (Full Geospatial & Live GIS tracking)
                         return (
                           <tr
                             key={rec.id}
                             className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors"
                           >
                             {/* 1. NO. */}
-                            <td className="py-4 px-3 text-center text-slate-500 font-bold">
+                            <td className="py-3.5 px-4 text-center text-slate-500 font-bold">
                               {itemNumber}
                             </td>
 
                             {/* 2. MAHASISWA & NIM */}
-                            <td className="py-4 px-4 text-left">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
-                                  {cleanStudentName}
-                                </span>
-                                <span className="text-[11px] text-slate-400 font-mono">
-                                  {rec.student?.studentProfile?.nim || "-"}
-                                </span>
-                                {isKetua && (
-                                  <div className="pt-0.5">
-                                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                      Ketua
-                                    </span>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full font-black text-xs flex items-center justify-center shrink-0 border shadow-2xs ${avatarColor}`}>
+                                  {rec.student.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 lowercase first-letter:capitalize">
+                                    {cleanStudentName}
+                                    {isKetua && (
+                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
+                                        Ketua
+                                      </span>
+                                    )}
                                   </div>
-                                )}
+                                  <div className="text-[11px] text-slate-400 font-mono">
+                                    NIM: {rec.student.studentProfile?.nim || "-"}
+                                  </div>
+                                </div>
                               </div>
                             </td>
 
-                            {/* 3. STATUS PRESENSI */}
-                            <td className="py-4 px-4 text-center">
+                            {/* 3. KELOMPOK & WILAYAH */}
+                            {!selectedKelompokId && (
+                              <td className="py-3.5 px-4 text-center">
+                                <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black border border-slate-200 dark:border-slate-700 inline-block">
+                                  {rec.student.studentProfile?.kelompok?.name || rec.kelompokName || "Kelompok KKN"}
+                                </span>
+                              </td>
+                            )}
+
+                            {/* 4. STATUS PRESENSI */}
+                            <td className="py-3.5 px-4 text-center">
                               {isBelumAdaJadwal ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                  Belum Tercatat
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+                                  <Clock size={13} className="text-slate-400" />
+                                  Belum Ada Jadwal
                                 </span>
                               ) : isOverrideDpl ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Izin dibatalkan dan di-override menjadi Hadir oleh DPL">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Izin dibatalkan dan di-override menjadi Hadir oleh DPL">
                                   <CheckCircle2 size={13} className="text-emerald-600" />
-                                  <span>Hadir</span>
+                                  <span>Hadir (Override)</span>
                                 </span>
                               ) : isCancelRequested ? (
                                 <Link
                                   to="/monitoring-kegiatan/pengajuan-izin"
-                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
                                   title="Mahasiswa mengajukan pembatalan izin - Klik untuk review di menu Ajuan"
                                 >
                                   <Hourglass size={13} className="text-rose-600" />
@@ -3594,8 +3858,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               ) : isSakitPending ? (
                                 <Link
                                   to="/monitoring-kegiatan/pengajuan-izin"
-                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
-                                  title="Pengajuan Sakit sedang menunggu persetujuan DPL"
+                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                                  title="Pengajuan Sakit sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
                                 >
                                   <Hourglass size={13} className="text-amber-600 animate-pulse" />
                                   <span>Sakit (Menunggu)</span>
@@ -3604,119 +3868,145 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               ) : isIzinPending ? (
                                 <Link
                                   to="/monitoring-kegiatan/pengajuan-izin"
-                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
-                                  title="Pengajuan Izin sedang menunggu persetujuan DPL"
+                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
+                                  title="Pengajuan Izin sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
                                 >
                                   <Hourglass size={13} className="text-sky-600 animate-pulse" />
                                   <span>Izin (Menunggu)</span>
                                   <ExternalLink size={10} className="text-sky-600" />
                                 </Link>
                               ) : isSakit ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Sakit disetujui DPL"}>
-                                  <Thermometer size={13} className="text-rose-600" />
-                                  <span>Sakit</span>
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Sakit disetujui DPL"}>
+                                  <Thermometer size={13} className="text-amber-600" />
+                                  Sakit (Disetujui)
                                 </span>
                               ) : isIzin ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Izin disetujui DPL"}>
-                                  <Info size={13} className="text-amber-600" />
-                                  <span>Izin</span>
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Izin disetujui DPL"}>
+                                  <Info size={13} className="text-blue-600" />
+                                  Izin (Disetujui)
                                 </span>
                               ) : isTanpaKeterangan ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                   <XCircle size={13} className="text-rose-600" />
-                                  <span>Tanpa Keterangan</span>
+                                  Tanpa Keterangan
                                 </span>
                               ) : isTerjeda ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title="Sesi terjeda otomatis karena GPS terputus atau keluar zona">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title="Sesi terjeda otomatis karena GPS terputus atau keluar zona">
                                   <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-ping" />
                                   <span>Terjeda</span>
                                 </span>
                               ) : isGpsStale ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse" title={`Sinyal GPS belum diterima sejak ${minsSincePing} menit lalu. Otomatis terjeda di menit ke-5 jika HP mati.`}>
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse" title={`Sinyal GPS belum diterima sejak ${minsSincePing} menit lalu. Otomatis terjeda di menit ke-5 jika HP mati.`}>
                                   <Clock size={13} className="text-amber-600 animate-spin" />
                                   <span>Menunggu GPS ({minsSincePing}m)</span>
                                 </span>
                               ) : isBerlangsung ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
                                   <Clock size={13} className="text-emerald-600 animate-spin" />
                                   <span>Berlangsung</span>
                                 </span>
                               ) : isHadir ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                  <span>Hadir</span>
-                                </span>
+                                isMemenuhiDurasi ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700" title="Hadir dan durasi di lokasi memenuhi target minimal">
+                                    <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                                    Hadir &amp; Memenuhi
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700" title="Hadir tetapi durasi di lokasi kurang dari target minimal">
+                                    <Clock size={13} className="text-amber-600 dark:text-amber-400" />
+                                    Hadir &amp; Kurang
+                                  </span>
+                                )
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                  <span>Belum Tercatat</span>
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+                                  <Clock size={13} className="text-slate-400" />
+                                  Belum Tercatat
                                 </span>
                               )}
                             </td>
 
-                            {/* 4. JAM MASUK */}
-                            <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                            {/* 5. JAM MASUK */}
+                            <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
                               {jamMasukStr}
                             </td>
 
-                            {/* 5. JAM PULANG */}
-                            <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                            {/* 6. JAM PULANG */}
+                            <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
                               {jamPulangStr}
                             </td>
 
-                            {/* 6. DURASI */}
-                            <td className="py-4 px-4 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
+                            {/* 7. DURASI AKTUAL */}
+                            <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                               {durasiText}
                             </td>
 
-                            {/* 7. TARGET JAM */}
-                            <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
-                              {targetZonaHours} jam
-                            </td>
-
-                            {/* 8. RASIO KEHADIRAN */}
-                            <td className="py-4 px-4 text-center">
-                              <div className="flex flex-col items-center gap-1.5 min-w-[70px]">
-                                <span className="font-bold text-xs text-slate-800 dark:text-slate-200 font-mono">
-                                  {percentZona}%
-                                </span>
-                                <div className="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all ${
-                                      percentZona >= 100
-                                        ? "bg-emerald-500"
-                                        : percentZona > 0
-                                        ? "bg-orange-500"
-                                        : "bg-transparent"
-                                    }`}
-                                    style={{ width: `${Math.min(100, percentZona)}%` }}
-                                  />
+                            {/* 8. TOTAL AKUMULASI KKN */}
+                            <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
+                              {isLeaveOrPending ? (
+                                <span className="text-slate-400 font-mono text-xs">0 Menit / {formatHoursToUnits(scheduleTargetHours)}</span>
+                              ) : rec.totalHours !== undefined ? (
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
+                                    {formatHoursToUnits(rec.totalHours)} / {formatHoursToUnits(targetKumulatif)}
+                                  </span>
+                                  {isExceeded ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                                      <span>🌟 Melampaui</span>
+                                      <span className="font-extrabold">({percentCapaian}%)</span>
+                                    </span>
+                                  ) : (
+                                    <div className="w-full max-w-[120px] flex flex-col items-center gap-0.5">
+                                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                          className="bg-emerald-600 h-full rounded-full transition-all"
+                                          style={{ width: `${Math.min(100, percentCapaian)}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-[9px] font-bold text-slate-500">
+                                        {percentCapaian}% Tercapai
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </td>
-
-                            {/* 9. STATUS PEMENUHAN */}
-                            <td className="py-4 px-4 text-center">
-                              {isMemenuhiDurasi ? (
-                                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                  Memenuhi
-                                </span>
                               ) : (
-                                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
-                                  Tidak Memenuhi
+                                <span className="font-mono text-xs text-slate-700 dark:text-slate-300">
+                                  {(isAttended || isBerlangsung) ? formatDurationUnits(durationMins) : "0 Menit"} / {formatHoursToUnits(scheduleTargetHours)}
                                 </span>
                               )}
                             </td>
 
-                            {/* 10. DETAIL */}
-                            <td className="py-4 px-4 text-center">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedStudentForDetail(rec)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
-                                title="Lihat detail lokasi & riwayat presensi"
-                              >
-                                <MapPin size={13} className="text-emerald-600" />
-                                <span>Lokasi &amp; Riwayat</span>
-                              </button>
+                            {/* 9. POIN */}
+                            <td className="py-3.5 px-4 text-center font-black text-emerald-700 dark:text-emerald-400">
+                              {poinDampingan}
+                            </td>
+
+                            {/* 10. AKSI */}
+                            <td className="py-3.5 px-4 text-center">
+                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => handleFocusMahasiswaMap(rec)}
+                                  className="px-2.5 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs rounded-xl border border-emerald-300 dark:border-emerald-800 transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs active:scale-95"
+                                  title="Lihat posisi GPS pada peta interaktif"
+                                >
+                                  <MapPin size={13} className="text-emerald-600" />
+                                  <span>Lihat Peta</span>
+                                </button>
+                                {isGpsRecent && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Live GPS</span>
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStudentForDetail(rec)}
+                                  className="p-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-600 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                                  title="Buka riwayat timeline lengkap"
+                                >
+                                  <ExternalLink size={12} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
