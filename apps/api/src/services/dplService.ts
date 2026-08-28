@@ -1,10 +1,11 @@
-// @ts-nocheck
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
 import { normalizeProkerKategori } from "./kknService.js";
-import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
-export function parseProkerDeskripsi(rawDeskripsi?: string | null): { judul: string; deskripsi: string } {
+export function parseProkerDeskripsi(rawDeskripsi?: string | null): {
+  judul: string;
+  deskripsi: string;
+} {
   if (!rawDeskripsi || !rawDeskripsi.trim()) {
     return { judul: "-", deskripsi: "-" };
   }
@@ -102,38 +103,326 @@ export function isDplSuperUser(role: any): boolean {
 }
 
 export const REAL_32_DPL_STANDARDIZED = [
-  { no: 1, name: "Muhammad Aksan Ipaenin, S.T. M.Sc", phone: "+6285294754801", rawPhone: "085294754801", nip: "4127.99.90.268", prodi: "S1 Teknik Sipil", kelompok: "Kelompok 1 Lebak Gede", kelurahan: "Lebak Gede" },
-  { no: 2, name: "Assoc.Prof. Dr. Wartika S.Kom.,MT", phone: "+62895337560201", rawPhone: "0895337560201", nip: "4127.70.26.002", prodi: "S1 Sistem Informasi", kelompok: "Kelompok 2 Lebak Gede", kelurahan: "Lebak Gede" },
-  { no: 3, name: "Myrna Dwi Rahmatya, S.Kom.,M.Kom", phone: "+6285320322236", rawPhone: "085320322236", nip: "4127.70.26.111", prodi: "D3 Manajemen Informatika", kelompok: "Kelompok 3 Lebak Gede", kelurahan: "Lebak Gede" },
-  { no: 4, name: "Alif Finandhita, S.Kom., M.T.", phone: "+6282115865070", rawPhone: "082115865070", nip: "4127.70.06.025", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 4 Lebak Gede", kelurahan: "Lebak Gede" },
-  { no: 5, name: "Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D", phone: "+6281318920636", rawPhone: "081318920636", nip: "4127.70.06.024", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 1 Sekeloa", kelurahan: "Sekeloa" },
-  { no: 6, name: "Dr. Eng. Siswanti Zuraida, S.Pd., M.T.", phone: "+6288210288162", rawPhone: "088210288162", nip: "4127.88.80.717", prodi: "S1 Teknik Arsitektur", kelompok: "Kelompok 2 Sekeloa", kelurahan: "Sekeloa" },
-  { no: 7, name: "Dr. Olih Solihin, S.Sos., M.I.Kom.", phone: "+6289656618667", rawPhone: "089656618667", nip: "4127.35.30.016", prodi: "S1 Ilmu Komunikasi", kelompok: "Kelompok 3 Sekeloa", kelurahan: "Sekeloa" },
-  { no: 8, name: "Hery Dwi Yulianto, S.T., M.Kom.", phone: "+628382821127", rawPhone: "08382821127", nip: "4127.70.67.004", prodi: "D3 Komputerisasi Akuntansi", kelompok: "Kelompok 4 Sekeloa", kelurahan: "Sekeloa" },
-  { no: 9, name: "John Adler, S.Si., M.Si.", phone: "+6282130536915", rawPhone: "082130536915", nip: "4127.70.05.007", prodi: "D3 Teknik Komputer", kelompok: "Kelompok 5 Sekeloa", kelurahan: "Sekeloa" },
-  { no: 10, name: "Dr. Henike Primawati, S.IP., M.I.Pol.", phone: "+628118748686", rawPhone: "08118748686", nip: "4127.35.32.011", prodi: "S1 Hubungan Internasional", kelompok: "Kelompok 6 Sekeloa", kelurahan: "Sekeloa" },
-  { no: 11, name: "Fenny Febrianti, S.S., M.Hum", phone: "+6282121822503", rawPhone: "082121822503", nip: "4127.20.04.004", prodi: "S1 Sastra Jepang", kelompok: "Kelompok 1 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
-  { no: 12, name: "Dr. Tatik Fidowaty, S.IP., M.Si", phone: "+62817616930", rawPhone: "0817616930", nip: "4127.35.31.009", prodi: "S1 Ilmu Pemerintahan", kelompok: "Kelompok 2 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
-  { no: 13, name: "Dr. Nungki Heriyati, S.S.S.,I.Kom.,M.A.", phone: "+6281322752828", rawPhone: "081322752828", nip: "4127.20.03.020", prodi: "S1 Sastra Inggris", kelompok: "Kelompok 3 Lebak Siliwangi", kelurahan: "Lebak Siliwangi" },
-  { no: 14, name: "Dr. Agus Mulyana, S.Kom, M.T.", phone: "+6282116871007", rawPhone: "82116871007", nip: "4127.70.05.017", prodi: "D3 Teknik Komputer", kelompok: "Kelompok 1 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 15, name: "Amilia Widya, S.Pd., M.T.", phone: "+6281344706038", rawPhone: "081344706038", nip: "4127.70.17.015", prodi: "S1 Teknik Perencanaan Wilayah dan Kota", kelompok: "Kelompok 2 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 16, name: "Wahyudi, S.H., M.H.", phone: "+6281321920848", rawPhone: "081321920848", nip: "4127.33.00.019", prodi: "S1 Ilmu Hukum", kelompok: "Kelompok 3 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 17, name: "Richi Dwi Agustia, S.Kom., M.Kom.", phone: "+6285780084003", rawPhone: "085780084003", nip: "4127.70.06.132", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 4 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 18, name: "Assoc. Prof., Dr. Manap Solihat, Drs., M.Si.", phone: "+6281321911449", rawPhone: "081321911449", nip: "4127.35.30.007", prodi: "S1 Ilmu Komunikasi", kelompok: "Kelompok 5 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 19, name: "Cherry Dharmawan, S.Sn., M.Sn.", phone: "+6282118047608", rawPhone: "082118047608", nip: "4127.32.04.002", prodi: "S1 Desain Interior", kelompok: "Kelompok 6 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 20, name: "Assoc. Prof. Dr. Sri Dewi Anggadini, S.E., M.Si., Ak., CA", phone: "+628122421004", rawPhone: "08122421004", nip: "4127.34.03.003", prodi: "S1 Akuntansi", kelompok: "Kelompok 7 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 21, name: "Dr.H.Tatang Supriyadi,S.E.,M.M", phone: "+6281222927778", rawPhone: "081222927778", nip: "4127.34.02.075", prodi: "D3 Manajemen Pemasaran", kelompok: "Kelompok 8 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 22, name: "Dr. Wendi Zarman, M.Si", phone: "+628157131405", rawPhone: "08157131405", nip: "4127.70.05.010", prodi: "S1 Sistem Komputer", kelompok: "Kelompok 9 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 23, name: "Arif Try Cahyadi, S.Ds., M.Ds.", phone: "+6282298522354", rawPhone: "082298522354", nip: "4127.32.06.087", prodi: "S1 Desain Komunikasi Visual", kelompok: "Kelompok 10 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 24, name: "Ayub Subandi, S.Si., M.T., Ph.D.", phone: "+6289612270264", rawPhone: "089612270264", nip: "4127.70.05.030", prodi: "S1 Teknik Elektro", kelompok: "Kelompok 11 Sadang Serang", kelurahan: "Sadang Serang" },
-  { no: 25, name: "Iyan Andriana, S.T., M.T.", phone: "+628112334224", rawPhone: "08112334224", nip: "4127.70.03.009", prodi: "S1 Teknik Industri", kelompok: "Kelompok 1 Cipaganti", kelurahan: "Cipaganti" },
-  { no: 26, name: "Hanhan Maulana, M.Kom., Ph.D.", phone: "+6285222267759", rawPhone: "085222267759", nip: "4127.70.06.134", prodi: "S1 Teknik Informatika", kelompok: "Kelompok 2 Cipaganti", kelurahan: "Cipaganti" },
-  { no: 27, name: "Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.", phone: "+6289670059709", rawPhone: "089670059709", nip: "4127.32.06.011", prodi: "D3 Desain Grafis", kelompok: "Kelompok 3 Cipaganti", kelurahan: "Cipaganti" },
-  { no: 28, name: "Rangga Sidik, S.Kom., M.Kom., M.Eng", phone: "+6285624088878", rawPhone: "085624088878", nip: "4127.70.26.113", prodi: "S1 Sistem Informasi", kelompok: "Kelompok 4 Cipaganti", kelurahan: "Cipaganti" },
-  { no: 29, name: "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd", phone: "+6281213143636", rawPhone: "081213143636", nip: "4127.34.02.015", prodi: "S1 Manajemen", kelompok: "Kelompok 1 Dago", kelurahan: "Dago" },
-  { no: 30, name: "Assoc Prof. Dr. Agus Riyanto S.E., M.S.i", phone: "+6285759996154", rawPhone: "085759996154", nip: "4127.70.03.007", prodi: "S1 Manajemen", kelompok: "Kelompok 2 Dago", kelurahan: "Dago" },
-  { no: 31, name: "Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP", phone: "+6281223216029", rawPhone: "81223216029", nip: "4127.34.02.006", prodi: "S1 Manajemen", kelompok: "Kelompok 3 Dago", kelurahan: "Dago" },
-  { no: 32, name: "Dr. Linna Ismawati, S.E., M.Si.", phone: "+6281221471617", rawPhone: "81221471617", nip: "4127.34.02.008", prodi: "S1 Manajemen", kelompok: "Kelompok 4 Dago", kelurahan: "Dago" },
+  {
+    no: 1,
+    name: "Muhammad Aksan Ipaenin, S.T. M.Sc",
+    phone: "+6285294754801",
+    rawPhone: "085294754801",
+    nip: "4127.99.90.268",
+    prodi: "S1 Teknik Sipil",
+    kelompok: "Kelompok 1 Lebak Gede",
+    kelurahan: "Lebak Gede",
+  },
+  {
+    no: 2,
+    name: "Assoc.Prof. Dr. Wartika S.Kom.,MT",
+    phone: "+62895337560201",
+    rawPhone: "0895337560201",
+    nip: "4127.70.26.002",
+    prodi: "S1 Sistem Informasi",
+    kelompok: "Kelompok 2 Lebak Gede",
+    kelurahan: "Lebak Gede",
+  },
+  {
+    no: 3,
+    name: "Myrna Dwi Rahmatya, S.Kom.,M.Kom",
+    phone: "+6285320322236",
+    rawPhone: "085320322236",
+    nip: "4127.70.26.111",
+    prodi: "D3 Manajemen Informatika",
+    kelompok: "Kelompok 3 Lebak Gede",
+    kelurahan: "Lebak Gede",
+  },
+  {
+    no: 4,
+    name: "Alif Finandhita, S.Kom., M.T.",
+    phone: "+6282115865070",
+    rawPhone: "082115865070",
+    nip: "4127.70.06.025",
+    prodi: "S1 Teknik Informatika",
+    kelompok: "Kelompok 4 Lebak Gede",
+    kelurahan: "Lebak Gede",
+  },
+  {
+    no: 5,
+    name: "Adam Mukharil Bachtiar, S.Kom., M.T., Ph.D",
+    phone: "+6281318920636",
+    rawPhone: "081318920636",
+    nip: "4127.70.06.024",
+    prodi: "S1 Teknik Informatika",
+    kelompok: "Kelompok 1 Sekeloa",
+    kelurahan: "Sekeloa",
+  },
+  {
+    no: 6,
+    name: "Dr. Eng. Siswanti Zuraida, S.Pd., M.T.",
+    phone: "+6288210288162",
+    rawPhone: "088210288162",
+    nip: "4127.88.80.717",
+    prodi: "S1 Teknik Arsitektur",
+    kelompok: "Kelompok 2 Sekeloa",
+    kelurahan: "Sekeloa",
+  },
+  {
+    no: 7,
+    name: "Dr. Olih Solihin, S.Sos., M.I.Kom.",
+    phone: "+6289656618667",
+    rawPhone: "089656618667",
+    nip: "4127.35.30.016",
+    prodi: "S1 Ilmu Komunikasi",
+    kelompok: "Kelompok 3 Sekeloa",
+    kelurahan: "Sekeloa",
+  },
+  {
+    no: 8,
+    name: "Hery Dwi Yulianto, S.T., M.Kom.",
+    phone: "+628382821127",
+    rawPhone: "08382821127",
+    nip: "4127.70.67.004",
+    prodi: "D3 Komputerisasi Akuntansi",
+    kelompok: "Kelompok 4 Sekeloa",
+    kelurahan: "Sekeloa",
+  },
+  {
+    no: 9,
+    name: "John Adler, S.Si., M.Si.",
+    phone: "+6282130536915",
+    rawPhone: "082130536915",
+    nip: "4127.70.05.007",
+    prodi: "D3 Teknik Komputer",
+    kelompok: "Kelompok 5 Sekeloa",
+    kelurahan: "Sekeloa",
+  },
+  {
+    no: 10,
+    name: "Dr. Henike Primawati, S.IP., M.I.Pol.",
+    phone: "+628118748686",
+    rawPhone: "08118748686",
+    nip: "4127.35.32.011",
+    prodi: "S1 Hubungan Internasional",
+    kelompok: "Kelompok 6 Sekeloa",
+    kelurahan: "Sekeloa",
+  },
+  {
+    no: 11,
+    name: "Fenny Febrianti, S.S., M.Hum",
+    phone: "+6282121822503",
+    rawPhone: "082121822503",
+    nip: "4127.20.04.004",
+    prodi: "S1 Sastra Jepang",
+    kelompok: "Kelompok 1 Lebak Siliwangi",
+    kelurahan: "Lebak Siliwangi",
+  },
+  {
+    no: 12,
+    name: "Dr. Tatik Fidowaty, S.IP., M.Si",
+    phone: "+62817616930",
+    rawPhone: "0817616930",
+    nip: "4127.35.31.009",
+    prodi: "S1 Ilmu Pemerintahan",
+    kelompok: "Kelompok 2 Lebak Siliwangi",
+    kelurahan: "Lebak Siliwangi",
+  },
+  {
+    no: 13,
+    name: "Dr. Nungki Heriyati, S.S.S.,I.Kom.,M.A.",
+    phone: "+6281322752828",
+    rawPhone: "081322752828",
+    nip: "4127.20.03.020",
+    prodi: "S1 Sastra Inggris",
+    kelompok: "Kelompok 3 Lebak Siliwangi",
+    kelurahan: "Lebak Siliwangi",
+  },
+  {
+    no: 14,
+    name: "Dr. Agus Mulyana, S.Kom, M.T.",
+    phone: "+6282116871007",
+    rawPhone: "82116871007",
+    nip: "4127.70.05.017",
+    prodi: "D3 Teknik Komputer",
+    kelompok: "Kelompok 1 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 15,
+    name: "Amilia Widya, S.Pd., M.T.",
+    phone: "+6281344706038",
+    rawPhone: "081344706038",
+    nip: "4127.70.17.015",
+    prodi: "S1 Teknik Perencanaan Wilayah dan Kota",
+    kelompok: "Kelompok 2 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 16,
+    name: "Wahyudi, S.H., M.H.",
+    phone: "+6281321920848",
+    rawPhone: "081321920848",
+    nip: "4127.33.00.019",
+    prodi: "S1 Ilmu Hukum",
+    kelompok: "Kelompok 3 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 17,
+    name: "Richi Dwi Agustia, S.Kom., M.Kom.",
+    phone: "+6285780084003",
+    rawPhone: "085780084003",
+    nip: "4127.70.06.132",
+    prodi: "S1 Teknik Informatika",
+    kelompok: "Kelompok 4 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 18,
+    name: "Assoc. Prof., Dr. Manap Solihat, Drs., M.Si.",
+    phone: "+6281321911449",
+    rawPhone: "081321911449",
+    nip: "4127.35.30.007",
+    prodi: "S1 Ilmu Komunikasi",
+    kelompok: "Kelompok 5 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 19,
+    name: "Cherry Dharmawan, S.Sn., M.Sn.",
+    phone: "+6282118047608",
+    rawPhone: "082118047608",
+    nip: "4127.32.04.002",
+    prodi: "S1 Desain Interior",
+    kelompok: "Kelompok 6 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 20,
+    name: "Assoc. Prof. Dr. Sri Dewi Anggadini, S.E., M.Si., Ak., CA",
+    phone: "+628122421004",
+    rawPhone: "08122421004",
+    nip: "4127.34.03.003",
+    prodi: "S1 Akuntansi",
+    kelompok: "Kelompok 7 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 21,
+    name: "Dr.H.Tatang Supriyadi,S.E.,M.M",
+    phone: "+6281222927778",
+    rawPhone: "081222927778",
+    nip: "4127.34.02.075",
+    prodi: "D3 Manajemen Pemasaran",
+    kelompok: "Kelompok 8 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 22,
+    name: "Dr. Wendi Zarman, M.Si",
+    phone: "+628157131405",
+    rawPhone: "08157131405",
+    nip: "4127.70.05.010",
+    prodi: "S1 Sistem Komputer",
+    kelompok: "Kelompok 9 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 23,
+    name: "Arif Try Cahyadi, S.Ds., M.Ds.",
+    phone: "+6282298522354",
+    rawPhone: "082298522354",
+    nip: "4127.32.06.087",
+    prodi: "S1 Desain Komunikasi Visual",
+    kelompok: "Kelompok 10 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 24,
+    name: "Ayub Subandi, S.Si., M.T., Ph.D.",
+    phone: "+6289612270264",
+    rawPhone: "089612270264",
+    nip: "4127.70.05.030",
+    prodi: "S1 Teknik Elektro",
+    kelompok: "Kelompok 11 Sadang Serang",
+    kelurahan: "Sadang Serang",
+  },
+  {
+    no: 25,
+    name: "Iyan Andriana, S.T., M.T.",
+    phone: "+628112334224",
+    rawPhone: "08112334224",
+    nip: "4127.70.03.009",
+    prodi: "S1 Teknik Industri",
+    kelompok: "Kelompok 1 Cipaganti",
+    kelurahan: "Cipaganti",
+  },
+  {
+    no: 26,
+    name: "Hanhan Maulana, M.Kom., Ph.D.",
+    phone: "+6285222267759",
+    rawPhone: "085222267759",
+    nip: "4127.70.06.134",
+    prodi: "S1 Teknik Informatika",
+    kelompok: "Kelompok 2 Cipaganti",
+    kelurahan: "Cipaganti",
+  },
+  {
+    no: 27,
+    name: "Assoc. Prof. Dr. Rini Maulina, S.Sn., M.Sn.",
+    phone: "+6289670059709",
+    rawPhone: "089670059709",
+    nip: "4127.32.06.011",
+    prodi: "D3 Desain Grafis",
+    kelompok: "Kelompok 3 Cipaganti",
+    kelurahan: "Cipaganti",
+  },
+  {
+    no: 28,
+    name: "Rangga Sidik, S.Kom., M.Kom., M.Eng",
+    phone: "+6285624088878",
+    rawPhone: "085624088878",
+    nip: "4127.70.26.113",
+    prodi: "S1 Sistem Informasi",
+    kelompok: "Kelompok 4 Cipaganti",
+    kelurahan: "Cipaganti",
+  },
+  {
+    no: 29,
+    name: "Prof Umi Narimawati,dra, S.E. M.Si.,M.pd",
+    phone: "+6281213143636",
+    rawPhone: "081213143636",
+    nip: "4127.34.02.015",
+    prodi: "S1 Manajemen",
+    kelompok: "Kelompok 1 Dago",
+    kelurahan: "Dago",
+  },
+  {
+    no: 30,
+    name: "Assoc Prof. Dr. Agus Riyanto S.E., M.S.i",
+    phone: "+6285759996154",
+    rawPhone: "085759996154",
+    nip: "4127.70.03.007",
+    prodi: "S1 Manajemen",
+    kelompok: "Kelompok 2 Dago",
+    kelurahan: "Dago",
+  },
+  {
+    no: 31,
+    name: "Assoc. Prof. Dr. Raeni Dwi Santy, S.E., M.Si., CIMA, CDMP",
+    phone: "+6281223216029",
+    rawPhone: "81223216029",
+    nip: "4127.34.02.006",
+    prodi: "S1 Manajemen",
+    kelompok: "Kelompok 3 Dago",
+    kelurahan: "Dago",
+  },
+  {
+    no: 32,
+    name: "Dr. Linna Ismawati, S.E., M.Si.",
+    phone: "+6281221471617",
+    rawPhone: "81221471617",
+    nip: "4127.34.02.008",
+    prodi: "S1 Manajemen",
+    kelompok: "Kelompok 4 Dago",
+    kelurahan: "Dago",
+  },
 ];
 
 export async function ensureDplKelompokRelation(dplUserId: string) {
@@ -165,8 +454,18 @@ export async function ensureDplKelompokRelation(dplUserId: string) {
       const itemCleanName = item.name.toLowerCase().replace(/[^a-z]/g, "");
 
       if (cleanNip && itemCleanNip && cleanNip === itemCleanNip) return true;
-      if (cleanPhone && (cleanPhone.endsWith(itemCleanPhone.slice(-8)) || cleanPhone.endsWith(itemCleanRawPhone.slice(-8)))) return true;
-      if (cleanName && itemCleanName && (cleanName.includes(itemCleanName) || itemCleanName.includes(cleanName))) return true;
+      if (
+        cleanPhone &&
+        (cleanPhone.endsWith(itemCleanPhone.slice(-8)) ||
+          cleanPhone.endsWith(itemCleanRawPhone.slice(-8)))
+      )
+        return true;
+      if (
+        cleanName &&
+        itemCleanName &&
+        (cleanName.includes(itemCleanName) || itemCleanName.includes(cleanName))
+      )
+        return true;
       return false;
     });
 
@@ -186,7 +485,9 @@ export async function ensureDplKelompokRelation(dplUserId: string) {
             kelurahan: existingGroup.kelurahan || matchedStandard.kelurahan,
           },
         });
-        console.log(`[ensureDplKelompokRelation] Relasi strict by ID terbentuk: ${existingGroup.name} -> DPL ${dplUser.name} (${dplUserId})`);
+        console.log(
+          `[ensureDplKelompokRelation] Relasi strict by ID terbentuk: ${existingGroup.name} -> DPL ${dplUser.name} (${dplUserId})`
+        );
         return;
       } else {
         await prisma.kelompokKkn.create({
@@ -197,7 +498,9 @@ export async function ensureDplKelompokRelation(dplUserId: string) {
             kelurahan: matchedStandard.kelurahan,
           },
         });
-        console.log(`[ensureDplKelompokRelation] Kelompok baru dibuat & direlasikan strict: ${matchedStandard.kelompok} -> DPL ${dplUser.name} (${dplUserId})`);
+        console.log(
+          `[ensureDplKelompokRelation] Kelompok baru dibuat & direlasikan strict: ${matchedStandard.kelompok} -> DPL ${dplUser.name} (${dplUserId})`
+        );
         return;
       }
     }
@@ -215,7 +518,9 @@ export async function ensureDplKelompokRelation(dplUserId: string) {
           where: { id: rawNameGroup.id },
           data: { dplId: dplUserId, dplNamaMentah: dplUser.name },
         });
-        console.log(`[ensureDplKelompokRelation] Relasi strict via dplNamaMentah terbentuk: ${rawNameGroup.name} -> DPL ${dplUser.name} (${dplUserId})`);
+        console.log(
+          `[ensureDplKelompokRelation] Relasi strict via dplNamaMentah terbentuk: ${rawNameGroup.name} -> DPL ${dplUser.name} (${dplUserId})`
+        );
         return;
       }
     }
@@ -243,7 +548,7 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
 
   if (normalizedRole.includes("MAHASISWA_KKN") || normalizedRole.includes("MAHASISWA")) {
     return {
-      students: { some: { userId: dplUserId } }
+      students: { some: { userId: dplUserId } },
     };
   }
 
@@ -252,10 +557,7 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
 
   // Relasi strict by ID: kelompok milik DPL ini
   return {
-    OR: [
-      { dplId: dplUserId },
-      { dpl: { id: dplUserId } },
-    ],
+    OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }],
   };
 }
 
@@ -322,7 +624,9 @@ export const dplService = {
                 id: true,
                 name: true,
                 kelurahan: {
-                  include: { kecamatan: { include: { kabupaten: { include: { provinsi: true } } } } },
+                  include: {
+                    kecamatan: { include: { kabupaten: { include: { provinsi: true } } } },
+                  },
                 },
               },
             },
@@ -340,7 +644,9 @@ export const dplService = {
                     id: true,
                     name: true,
                     kelurahan: {
-                      include: { kecamatan: { include: { kabupaten: { include: { provinsi: true } } } } },
+                      include: {
+                        kecamatan: { include: { kabupaten: { include: { provinsi: true } } } },
+                      },
                     },
                   },
                 },
@@ -372,9 +678,12 @@ export const dplService = {
         // Resolusi Kelurahan yang sangat presisi
         let rawKel = (grp.kelurahan || "").trim();
         if (!rawKel && grp.students.length > 0) {
-          const stWithRw = grp.students.find((s) => s.assignedRw?.kelurahan?.name || s.user?.rw?.kelurahan?.name);
+          const stWithRw = grp.students.find(
+            (s) => s.assignedRw?.kelurahan?.name || s.user?.rw?.kelurahan?.name
+          );
           if (stWithRw) {
-            rawKel = stWithRw.assignedRw?.kelurahan?.name || stWithRw.user?.rw?.kelurahan?.name || "";
+            rawKel =
+              stWithRw.assignedRw?.kelurahan?.name || stWithRw.user?.rw?.kelurahan?.name || "";
           }
         }
         if (!rawKel && grp.name) {
@@ -478,9 +787,18 @@ export const dplService = {
         let resolvedCakupanRw: string[] = [];
         if (grp.cakupanRw) {
           if (Array.isArray(grp.cakupanRw)) {
-            resolvedCakupanRw = grp.cakupanRw.map((r: any) => String(r).trim().replace(/^RW\s*/i, "")).filter(Boolean);
+            resolvedCakupanRw = grp.cakupanRw
+              .map((r: any) =>
+                String(r)
+                  .trim()
+                  .replace(/^RW\s*/i, "")
+              )
+              .filter(Boolean);
           } else if (typeof grp.cakupanRw === "string") {
-            resolvedCakupanRw = grp.cakupanRw.split(/[,&/]/).map((r) => r.trim().replace(/^RW\s*/i, "")).filter(Boolean);
+            resolvedCakupanRw = grp.cakupanRw
+              .split(/[,&/]/)
+              .map((r) => r.trim().replace(/^RW\s*/i, ""))
+              .filter(Boolean);
           }
         }
         if (resolvedCakupanRw.length === 0 && grp.students.length > 0) {
@@ -488,7 +806,11 @@ export const dplService = {
           grp.students.forEach((s) => {
             const rwName = s.assignedRw?.name || s.user?.rw?.name;
             if (rwName) {
-              rwSet.add(String(rwName).replace(/^RW\s*/i, "").trim());
+              rwSet.add(
+                String(rwName)
+                  .replace(/^RW\s*/i, "")
+                  .trim()
+              );
             }
           });
           if (rwSet.size > 0) {
@@ -511,7 +833,11 @@ export const dplService = {
           });
 
         // Simpan hasil resolusi ke database jika sebelumnya kosong
-        if (!grp.cakupanRw || (Array.isArray(grp.cakupanRw) && grp.cakupanRw.length === 0) || !grp.kelurahan) {
+        if (
+          !grp.cakupanRw ||
+          (Array.isArray(grp.cakupanRw) && grp.cakupanRw.length === 0) ||
+          !grp.kelurahan
+        ) {
           try {
             await prisma.kelompokKkn.update({
               where: { id: grp.id },
@@ -520,7 +846,7 @@ export const dplService = {
                 kelurahan: resolvedKelurahanName,
               },
             });
-          } catch (err) {
+          } catch {
             // Ignore background update error
           }
         }
@@ -534,45 +860,46 @@ export const dplService = {
               }
             : { id: "impossible-id" };
 
-        const [activatedBinsCount, organikBinsCount, anorganikBinsCount, wasteSum] = await Promise.all([
-          prisma.bin.count({
-            where: binWhere,
-          }),
-          prisma.bin.count({
-            where: {
-              ...binWhere,
-              category: {
-                name: {
-                  in: ["Organik", "organik", "ORGANIK", "ORGANIC", "organic"],
+        const [activatedBinsCount, organikBinsCount, anorganikBinsCount, wasteSum] =
+          await Promise.all([
+            prisma.bin.count({
+              where: binWhere,
+            }),
+            prisma.bin.count({
+              where: {
+                ...binWhere,
+                category: {
+                  name: {
+                    in: ["Organik", "organik", "ORGANIK", "ORGANIC", "organic"],
+                  },
                 },
               },
-            },
-          }),
-          prisma.bin.count({
-            where: {
-              ...binWhere,
-              category: {
-                name: {
-                  in: [
-                    "Anorganik",
-                    "anorganik",
-                    "ANORGANIK",
-                    "ANORGANIC",
-                    "anorganic",
-                    "NON_ORGANIC",
-                    "Non-Organik",
-                  ],
+            }),
+            prisma.bin.count({
+              where: {
+                ...binWhere,
+                category: {
+                  name: {
+                    in: [
+                      "Anorganik",
+                      "anorganik",
+                      "ANORGANIK",
+                      "ANORGANIC",
+                      "anorganic",
+                      "NON_ORGANIC",
+                      "Non-Organik",
+                    ],
+                  },
                 },
               },
-            },
-          }),
-          prisma.setoranOtomatis.aggregate({
-            where: {
-              bin: binWhere,
-            },
-            _sum: { berat: true },
-          }),
-        ]);
+            }),
+            prisma.setoranOtomatis.aggregate({
+              where: {
+                bin: binWhere,
+              },
+              _sum: { berat: true },
+            }),
+          ]);
 
         const totalWasteWeight = Math.round(Number(wasteSum._sum.berat || 0) * 100) / 100;
 
@@ -646,14 +973,25 @@ export const dplService = {
           const legacySt = String(p.status || "").toUpperCase();
           let u = (p as any).statusUsulan;
           if (!u) {
-            if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+            if (
+              legacySt === "DITERIMA" ||
+              legacySt === "DISETUJUI" ||
+              legacySt === "SEDANG_BERJALAN" ||
+              legacySt === "SELESAI"
+            )
+              u = "DISETUJUI";
             else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
             else u = "BELUM_DISETUJUI";
           }
           let pl = (p as any).statusPelaksanaan;
           if (!pl) {
             if (legacySt === "SELESAI") pl = "SELESAI";
-            else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
+            else if (
+              legacySt === "SEDANG_BERJALAN" ||
+              legacySt === "SEDANG_DILAKSANAKAN" ||
+              legacySt === "BERJALAN"
+            )
+              pl = "SEDANG_BERJALAN";
             else pl = "BELUM_MULAI";
           }
 
@@ -751,7 +1089,12 @@ export const dplService = {
   /**
    * 2. Detail per Mahasiswa Dampingan DPL
    */
-  getStudentDetails: async (dplUserId: string, groupId?: string, role?: string, search?: string) => {
+  getStudentDetails: async (
+    dplUserId: string,
+    groupId?: string,
+    role?: string,
+    search?: string
+  ) => {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
@@ -813,9 +1156,7 @@ export const dplService = {
         const izinCount = leaveRequests.filter(
           (r) => r.type === "IZIN" && r.status === "APPROVED"
         ).length;
-        const rejectedAbsenceCount = leaveRequests.filter(
-          (r) => r.status === "REJECTED"
-        ).length;
+        const rejectedAbsenceCount = leaveRequests.filter((r) => r.status === "REJECTED").length;
 
         const totalSchedules = await getEligiblePastSchedulesCount(st.kelompokId || undefined);
         const attendedCount = attendances.length;
@@ -830,12 +1171,18 @@ export const dplService = {
         const ruleConfigs = await configService.getRuleEngineConfigs();
         const baseScore = Number(st.assessmentScore || 0);
         const penaltyPerAlpha = ruleConfigs.alphaPenaltyScorePercent || 5.0;
-        const finalCalculatedScore = Math.max(0, Math.round(baseScore - (alphaCount * penaltyPerAlpha)));
+        const finalCalculatedScore = Math.max(
+          0,
+          Math.round(baseScore - alphaCount * penaltyPerAlpha)
+        );
 
         let totalMinutes = 0;
         for (const a of attendances) {
           if (a.checkOutAt && a.attendedAt) {
-            const diffMs = Math.max(0, new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime());
+            const diffMs = Math.max(
+              0,
+              new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime()
+            );
             const mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
             totalMinutes += mins;
           } else if (a.attendedAt) {
@@ -857,7 +1204,10 @@ export const dplService = {
           where: { userId: st.userId },
           _sum: { points: true },
         });
-        const netPoints = Math.max(0, (points._sum.points || 0) - (alphaCount * (ruleConfigs.alphaPenaltyPoints || 10)));
+        const netPoints = Math.max(
+          0,
+          (points._sum.points || 0) - alphaCount * (ruleConfigs.alphaPenaltyPoints || 10)
+        );
 
         return {
           id: st.id,
@@ -887,7 +1237,8 @@ export const dplService = {
           remainingMinutes,
           targetHours,
           progressPercentage,
-          statusKehadiranLabel: alphaCount > 0 ? `${alphaCount}x Tanpa Keterangan (Alpha)` : "Tertib Presensi",
+          statusKehadiranLabel:
+            alphaCount > 0 ? `${alphaCount}x Tanpa Keterangan (Alpha)` : "Tertib Presensi",
           attendances: attendances.map((a) => ({
             id: a.id,
             scheduleTitle: a.schedule?.title || "Kegiatan KKN",
@@ -911,7 +1262,12 @@ export const dplService = {
   /**
    * Mendapatkan summary kumulatif jam aktual mahasiswa KKN terhadap minimal target
    */
-  getStudentCumulativeSummary: async (dplUserId: string, groupId?: string, role?: string, search?: string) => {
+  getStudentCumulativeSummary: async (
+    dplUserId: string,
+    groupId?: string,
+    role?: string,
+    search?: string
+  ) => {
     const whereGroup: any = await getKelompokWhere(dplUserId, role);
     if (groupId) whereGroup.id = groupId;
 
@@ -959,7 +1315,10 @@ export const dplService = {
         let totalMinutes = 0;
         for (const a of attendances) {
           if (a.checkOutAt && a.attendedAt) {
-            const diffMs = Math.max(0, new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime());
+            const diffMs = Math.max(
+              0,
+              new Date(a.checkOutAt).getTime() - new Date(a.attendedAt).getTime()
+            );
             const mins = Math.min(480, Math.round(diffMs / (1000 * 60)));
             totalMinutes += mins;
           } else if (a.attendedAt) {
@@ -975,7 +1334,7 @@ export const dplService = {
 
         const totalHoursActual = Math.floor(totalMinutes / 60);
         const remainingMinsActual = totalMinutes % 60;
-        
+
         const progressPercentage = Math.round((totalMinutes / (targetTotalMinutes || 1)) * 100);
         const isTargetAchieved = totalMinutes >= targetTotalMinutes;
 
@@ -1137,13 +1496,28 @@ export const dplService = {
     });
 
     const poskos = await prisma.poskoKkn.findMany({
-      where: { kelompokId: { in: groups.map(g => g.id) } },
-      select: { id: true, kelompokId: true, nama: true, alamat: true, latitude: true, longitude: true }
+      where: { kelompokId: { in: groups.map((g) => g.id) } },
+      select: {
+        id: true,
+        kelompokId: true,
+        nama: true,
+        alamat: true,
+        latitude: true,
+        longitude: true,
+      },
     });
 
     const facilities = await prisma.facility.findMany({
-      where: { kelompokId: { in: groups.map(g => g.id) } },
-      select: { id: true, nama: true, jenis: true, latitude: true, longitude: true, kelompokId: true, statusApproval: true }
+      where: { kelompokId: { in: groups.map((g) => g.id) } },
+      select: {
+        id: true,
+        nama: true,
+        jenis: true,
+        latitude: true,
+        longitude: true,
+        kelompokId: true,
+        statusApproval: true,
+      },
     });
 
     return {
@@ -1168,7 +1542,7 @@ export const dplService = {
         longitude: b.longitude ? Number(b.longitude) : 0,
         wargaNama: b.user?.name || "Warga",
       })),
-      poskos: poskos.map(p => ({
+      poskos: poskos.map((p) => ({
         id: p.id,
         kelompokId: p.kelompokId,
         nama: p.nama,
@@ -1176,15 +1550,15 @@ export const dplService = {
         latitude: p.latitude ? Number(p.latitude) : 0,
         longitude: p.longitude ? Number(p.longitude) : 0,
       })),
-      facilities: facilities.map(f => ({
+      facilities: facilities.map((f) => ({
         id: f.id,
         nama: f.nama,
         jenis: f.jenis,
         latitude: f.latitude ? Number(f.latitude) : 0,
         longitude: f.longitude ? Number(f.longitude) : 0,
         kelompokId: f.kelompokId,
-        statusApproval: f.statusApproval
-      }))
+        statusApproval: f.statusApproval,
+      })),
     };
   },
 
@@ -1293,7 +1667,11 @@ export const dplService = {
               {
                 OR: [
                   { reviewedById: dplUserId },
-                  { status: { in: ["APPROVED", "REJECTED", "ESCALATED", "CANCELLED", "OVERRIDDEN_HADIR"] } },
+                  {
+                    status: {
+                      in: ["APPROVED", "REJECTED", "ESCALATED", "CANCELLED", "OVERRIDDEN_HADIR"],
+                    },
+                  },
                 ],
               },
             ],
@@ -1542,7 +1920,8 @@ export const dplService = {
         status: "OVERRIDDEN_HADIR",
         reviewedById: dplUserId,
         reviewedAt: new Date(),
-        rejectionReason: note || "Izin dibatalkan dan disetujui DPL. Status presensi diubah menjadi Hadir.",
+        rejectionReason:
+          note || "Izin dibatalkan dan disetujui DPL. Status presensi diubah menjadi Hadir.",
       },
     });
 
@@ -1717,10 +2096,7 @@ export const dplService = {
         });
       } else if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") {
         andConditions.push({
-          OR: [
-            { statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI"] } },
-            { status: "DITOLAK" },
-          ],
+          OR: [{ statusUsulan: { in: ["DITOLAK", "TIDAK_DISETUJUI"] } }, { status: "DITOLAK" }],
         });
       } else if (u === "BELUM_DISETUJUI" || u === "MENUNGGU" || u === "PENDING") {
         andConditions.push({
@@ -1737,12 +2113,16 @@ export const dplService = {
       const p = filters.statusPelaksanaan.toUpperCase();
       if (p === "SELESAI" || p === "SUDAH") {
         andConditions.push({
-          OR: [
-            { statusPelaksanaan: "SELESAI" },
-            { status: "SELESAI" },
-          ],
+          OR: [{ statusPelaksanaan: "SELESAI" }, { status: "SELESAI" }],
         });
-      } else if (p === "BERJALAN" || p === "SEDANG_BERJALAN" || p === "SEDANG" || p === "SEDANG_DILAKSANAKAN" || p === "BERLANGSUNG" || p === "SEDANG_BERLANGSUNG") {
+      } else if (
+        p === "BERJALAN" ||
+        p === "SEDANG_BERJALAN" ||
+        p === "SEDANG" ||
+        p === "SEDANG_DILAKSANAKAN" ||
+        p === "BERLANGSUNG" ||
+        p === "SEDANG_BERLANGSUNG"
+      ) {
         andConditions.push({
           OR: [
             { statusPelaksanaan: { in: ["SEDANG_BERJALAN", "SEDANG_DILAKSANAKAN", "BERJALAN"] } },
@@ -1820,7 +2200,12 @@ export const dplService = {
       let resolvedStatusUsulan = (p as any).statusUsulan;
       const legacySt = String(p.status || "").toUpperCase();
       if (!resolvedStatusUsulan) {
-        if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") {
+        if (
+          legacySt === "DITERIMA" ||
+          legacySt === "DISETUJUI" ||
+          legacySt === "SEDANG_BERJALAN" ||
+          legacySt === "SELESAI"
+        ) {
           resolvedStatusUsulan = "DISETUJUI";
         } else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") {
           resolvedStatusUsulan = "DITOLAK";
@@ -1933,7 +2318,8 @@ export const dplService = {
         reviewedAt: p.reviewedAt,
         skorPenilaian: skorNum,
         predikat: (p as any).predikat || calculatedPredikat,
-        statusPenilaian: (p as any).statusPenilaian || (skorNum !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"),
+        statusPenilaian:
+          (p as any).statusPenilaian || (skorNum !== null ? "SUDAH_DINILAI" : "BELUM_DINILAI"),
         aspekPenilaian: (p as any).aspekPenilaian || null,
         evaluasiDpl: p.evaluasiDpl,
         createdAt: p.createdAt,
@@ -1956,7 +2342,15 @@ export const dplService = {
       waktuPelaksanaan?: string;
       linkGoogleDrive?: string;
       kebutuhanBiaya?: number;
-      status?: "BELUM_DISETUJUI" | "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI";
+      status?:
+        | "BELUM_DISETUJUI"
+        | "DITERIMA"
+        | "DISETUJUI"
+        | "DITOLAK"
+        | "TIDAK_DISETUJUI"
+        | "SEDANG_BERJALAN"
+        | "SEDANG_DILAKSANAKAN"
+        | "SELESAI";
       statusUsulan?: "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | string;
       statusPelaksanaan?: "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" | string;
     }
@@ -1994,7 +2388,13 @@ export const dplService = {
     if (normalizedStatusUsulan === "TIDAK_DISETUJUI") normalizedStatusUsulan = "DITOLAK";
 
     let normalizedStatusPelaksanaan = data.statusPelaksanaan || "BELUM_MULAI";
-    if (normalizedStatusPelaksanaan === "BERJALAN" || normalizedStatusPelaksanaan === "SEDANG" || normalizedStatusPelaksanaan === "BERLANGSUNG" || normalizedStatusPelaksanaan === "SEDANG_BERLANGSUNG") normalizedStatusPelaksanaan = "SEDANG_BERJALAN";
+    if (
+      normalizedStatusPelaksanaan === "BERJALAN" ||
+      normalizedStatusPelaksanaan === "SEDANG" ||
+      normalizedStatusPelaksanaan === "BERLANGSUNG" ||
+      normalizedStatusPelaksanaan === "SEDANG_BERLANGSUNG"
+    )
+      normalizedStatusPelaksanaan = "SEDANG_BERJALAN";
     if (normalizedStatusPelaksanaan === "SUDAH") normalizedStatusPelaksanaan = "SELESAI";
 
     // Legacy status synchronization
@@ -2082,8 +2482,16 @@ export const dplService = {
     if (data.nomor !== undefined) updateData.nomor = data.nomor;
     if ((data as any).judul !== undefined || data.deskripsi !== undefined) {
       const existingParsed = parseProkerDeskripsi(prokerExisting.deskripsi);
-      const newJudul = (data as any).judul !== undefined ? String((data as any).judul).trim().replace(/\*\*/g, "") : existingParsed.judul;
-      const newDesc = data.deskripsi !== undefined ? data.deskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim() : existingParsed.deskripsi;
+      const newJudul =
+        (data as any).judul !== undefined
+          ? String((data as any).judul)
+              .trim()
+              .replace(/\*\*/g, "")
+          : existingParsed.judul;
+      const newDesc =
+        data.deskripsi !== undefined
+          ? data.deskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim()
+          : existingParsed.deskripsi;
       updateData.deskripsi = newDesc ? `**${newJudul}**\n\n${newDesc}` : `**${newJudul}**`;
     }
     if (data.kategori !== undefined) updateData.kategori = normalizeProkerKategori(data.kategori);
@@ -2130,8 +2538,10 @@ export const dplService = {
     }
 
     // Sync legacy status
-    const effectiveUsulan = updateData.statusUsulan || (prokerExisting as any).statusUsulan || "BELUM_DISETUJUI";
-    const effectivePelaksanaan = updateData.statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
+    const effectiveUsulan =
+      updateData.statusUsulan || (prokerExisting as any).statusUsulan || "BELUM_DISETUJUI";
+    const effectivePelaksanaan =
+      updateData.statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
     if (effectivePelaksanaan === "SELESAI") {
       updateData.status = "SELESAI";
     } else if (effectivePelaksanaan === "SEDANG_BERJALAN") {
@@ -2189,7 +2599,15 @@ export const dplService = {
   decideProgramKerja: async (
     dplUserId: string,
     id: string,
-    status: "DITERIMA" | "DISETUJUI" | "DITOLAK" | "TIDAK_DISETUJUI" | "SEDANG_BERJALAN" | "SEDANG_DILAKSANAKAN" | "SELESAI" | "BELUM_DISETUJUI",
+    status:
+      | "DITERIMA"
+      | "DISETUJUI"
+      | "DITOLAK"
+      | "TIDAK_DISETUJUI"
+      | "SEDANG_BERJALAN"
+      | "SEDANG_DILAKSANAKAN"
+      | "SELESAI"
+      | "BELUM_DISETUJUI",
     catatanDpl?: string,
     role?: any,
     statusPelaksanaan?: string
@@ -2218,13 +2636,18 @@ export const dplService = {
     if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
 
     let statusUsulan = "BELUM_DISETUJUI";
-    if (normalizedStatus === "DITERIMA" || normalizedStatus === "SEDANG_BERJALAN" || normalizedStatus === "SELESAI") {
+    if (
+      normalizedStatus === "DITERIMA" ||
+      normalizedStatus === "SEDANG_BERJALAN" ||
+      normalizedStatus === "SELESAI"
+    ) {
       statusUsulan = "DISETUJUI";
     } else if (normalizedStatus === "DITOLAK") {
       statusUsulan = "DITOLAK";
     }
 
-    let newStatusPelaksanaan = statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
+    let newStatusPelaksanaan =
+      statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
     if (normalizedStatus === "SELESAI") newStatusPelaksanaan = "SELESAI";
     else if (normalizedStatus === "SEDANG_BERJALAN") newStatusPelaksanaan = "SEDANG_BERJALAN";
 
@@ -2232,7 +2655,7 @@ export const dplService = {
       status: normalizedStatus,
       statusUsulan,
       statusPelaksanaan: newStatusPelaksanaan,
-      catatanDpl: catatanDpl !== undefined ? (catatanDpl || null) : undefined,
+      catatanDpl: catatanDpl !== undefined ? catatanDpl || null : undefined,
       reviewedById: dplUserId,
       reviewedAt: new Date(),
     };
@@ -2269,7 +2692,9 @@ export const dplService = {
     const prokerExisting = await prisma.programKerjaKkn.findUnique({ where: { id } });
     if (!prokerExisting) throw new Error("Program kerja tidak ditemukan");
 
-    const statusUsulanStr = String(prokerExisting.statusUsulan || prokerExisting.status || "").toUpperCase();
+    const statusUsulanStr = String(
+      prokerExisting.statusUsulan || prokerExisting.status || ""
+    ).toUpperCase();
     const isApproved = statusUsulanStr === "DISETUJUI" || statusUsulanStr === "DITERIMA";
     if (!isApproved) {
       if (statusUsulanStr === "DITOLAK" || statusUsulanStr === "TIDAK_DISETUJUI") {
@@ -2284,11 +2709,15 @@ export const dplService = {
       (prokerExisting as any).attachmentFile ||
       (prokerExisting as any).hasAttachment ||
       prokerExisting.linkGoogleDrive ||
-      ((prokerExisting as any).attachmentUrls && Array.isArray((prokerExisting as any).attachmentUrls) && (prokerExisting as any).attachmentUrls.length > 0)
+      ((prokerExisting as any).attachmentUrls &&
+        Array.isArray((prokerExisting as any).attachmentUrls) &&
+        (prokerExisting as any).attachmentUrls.length > 0)
     );
 
     if (!hasFile) {
-      throw new Error("PROKER_ATTACHMENT_REQUIRED: File lampiran bukti program kerja belum diunggah oleh ketua kelompok. Penilaian belum dapat dilakukan.");
+      throw new Error(
+        "PROKER_ATTACHMENT_REQUIRED: File lampiran bukti program kerja belum diunggah oleh ketua kelompok. Penilaian belum dapat dilakukan."
+      );
     }
 
     const groups = await prisma.kelompokKkn.findMany({
@@ -2309,7 +2738,8 @@ export const dplService = {
       else finalPredikat = "Kurang";
     }
 
-    const finalStatusPenilaian = statusPenilaian || (skorPenilaian > 0 ? "SUDAH_DINILAI" : "SEDANG_DINILAI");
+    const finalStatusPenilaian =
+      statusPenilaian || (skorPenilaian > 0 ? "SUDAH_DINILAI" : "SEDANG_DINILAI");
     const targetStatusPelaksanaan = statusPelaksanaan || "SELESAI";
 
     const updateData: any = {
@@ -2367,12 +2797,12 @@ export const dplService = {
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
     });
-    const allowedGroupIds = groups.map(g => g.id);
+    const allowedGroupIds = groups.map((g) => g.id);
     if (!allowedGroupIds.includes(proker.kelompokId)) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
-    const studentUserIds = proker.kelompok.students.map(s => s.userId);
+    const studentUserIds = proker.kelompok.students.map((s) => s.userId);
     const attendances = await prisma.activityAttendance.findMany({
       where: {
         studentId: { in: studentUserIds },
@@ -2390,10 +2820,7 @@ export const dplService = {
     try {
       const logbooks = await prisma.logbookKkn.findMany({
         where: {
-          OR: [
-            { programKerjaId: prokerId },
-            { kelompokId: proker.kelompokId },
-          ],
+          OR: [{ programKerjaId: prokerId }, { kelompokId: proker.kelompokId }],
         },
         orderBy: { createdAt: "desc" },
         take: 24,
@@ -2405,14 +2832,15 @@ export const dplService = {
         .filter((l) => l.fotoBuktiUrl && l.fotoBuktiUrl.trim() !== "" && l.fotoBuktiUrl !== "null")
         .map((l) => ({
           id: l.id,
-          activityTitle: l.deskripsi?.split("\n")[0]?.replace(/^[*#\s]+/, "") || "Logbook Kegiatan KKN",
+          activityTitle:
+            l.deskripsi?.split("\n")[0]?.replace(/^[*#\s]+/, "") || "Logbook Kegiatan KKN",
           description: l.tempat ? `Tempat: ${l.tempat}` : "Dokumentasi Logbook",
           photoUrl: l.fotoBuktiUrl,
           checkIn: (l.tanggalKegiatan || l.createdAt).toISOString(),
           user: { name: l.penulis?.name || "Mahasiswa" },
           type: "LOGBOOK",
         }));
-    } catch (e) {
+    } catch {
       // Abaikan jika error
     }
 
@@ -2441,7 +2869,7 @@ export const dplService = {
           user: { name: f.user?.name || f.wargaNama || "Mahasiswa" },
           type: "LAPOR_PEMANFAATAN",
         }));
-    } catch (e) {
+    } catch {
       // Abaikan jika tabel belum di-migrate
     }
 
@@ -2457,7 +2885,12 @@ export const dplService = {
         take: 12,
       });
       pemanfaatanPhotos = pemanfaatans
-        .filter(p => p.fotoDokumentasiUrl && p.fotoDokumentasiUrl.trim() !== "" && p.fotoDokumentasiUrl !== "null")
+        .filter(
+          (p) =>
+            p.fotoDokumentasiUrl &&
+            p.fotoDokumentasiUrl.trim() !== "" &&
+            p.fotoDokumentasiUrl !== "null"
+        )
         .map((p) => ({
           id: p.id,
           activityTitle: p.program || p.teknologi || "Catat Hasil Pemanfaatan",
@@ -2467,7 +2900,7 @@ export const dplService = {
           user: { name: proker.kelompok.name },
           type: "CATAT_PEMANFAATAN",
         }));
-    } catch (e) {
+    } catch {
       // Abaikan jika tabel belum di-migrate
     }
 
@@ -2482,8 +2915,12 @@ export const dplService = {
       type: "PRESENSI",
     }));
 
-    const allBukti = [...logbookPhotos, ...feedbackPhotos, ...pemanfaatanPhotos, ...attendancesMapped]
-      .sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
+    const allBukti = [
+      ...logbookPhotos,
+      ...feedbackPhotos,
+      ...pemanfaatanPhotos,
+      ...attendancesMapped,
+    ].sort((a, b) => new Date(b.checkIn).getTime() - new Date(a.checkIn).getTime());
 
     return {
       proker: {
@@ -2524,7 +2961,11 @@ export const dplService = {
     });
 
     if (groups.length === 0) {
-      return { groups: [], students: [], stats: { totalStudents: 0, rerataNilai: 0, rerataKehadiran: 0 } };
+      return {
+        groups: [],
+        students: [],
+        stats: { totalStudents: 0, rerataNilai: 0, rerataKehadiran: 0 },
+      };
     }
 
     const allStudentsList: any[] = [];
@@ -2551,7 +2992,8 @@ export const dplService = {
 
         const rawPoints = Number(points._sum.points || 0);
         // Poin dampingan normalized to 0-100 scale (default base 85 if active)
-        const poinDampinganScore = rawPoints > 0 ? Math.min(100, Math.max(70, Math.round((rawPoints / 100) * 10) + 75)) : 80;
+        const poinDampinganScore =
+          rawPoints > 0 ? Math.min(100, Math.max(70, Math.round((rawPoints / 100) * 10) + 75)) : 80;
 
         const attRate =
           totalSchedules === 0 || attendancesCount === 0
@@ -2559,9 +3001,13 @@ export const dplService = {
             : Math.min(100, Math.round((attendancesCount / totalSchedules) * 100));
 
         const pRecord = st.user?.penilaianKkn;
-        
+
         // DPL Individu Score (Murni dari input DPL, tanpa skor fiktif)
-        const dplIndivRaw = pRecord?.subtotalDpl ? Number(pRecord.subtotalDpl) : (st.isAssessed ? Number(st.assessmentScore ?? 0) : null);
+        const dplIndivRaw = pRecord?.subtotalDpl
+          ? Number(pRecord.subtotalDpl)
+          : st.isAssessed
+            ? Number(st.assessmentScore ?? 0)
+            : null;
         const dplIndiv = dplIndivRaw !== null ? dplIndivRaw : null;
 
         // MPL Individu Score (Murni dari input MPL, tanpa skor fiktif)
@@ -2569,23 +3015,31 @@ export const dplService = {
         const mplIndiv = mplIndivRaw !== null && mplIndivRaw > 0 ? mplIndivRaw : null;
 
         // Gabungan Individu: ((50 * DPL) + (50 * MPL)) / 100
-        const indivGabungan = mplIndiv !== null && dplIndiv !== null
-          ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
-          : null;
+        const indivGabungan =
+          mplIndiv !== null && dplIndiv !== null
+            ? Math.round(((50 * dplIndiv + 50 * mplIndiv) / 100) * 10) / 10
+            : null;
 
         // Proker DPL & MPL Scores
-        const dplProker = prokerAvgScore > 0 ? Math.round(prokerAvgScore * 10) / 10 : (dplIndiv !== null ? dplIndiv : null);
+        const dplProker =
+          prokerAvgScore > 0
+            ? Math.round(prokerAvgScore * 10) / 10
+            : dplIndiv !== null
+              ? dplIndiv
+              : null;
         const mplProker = mplIndiv !== null ? mplIndiv : null;
-        const prokerGabungan = mplProker !== null && dplProker !== null
-          ? Math.round(((50 * dplProker + 50 * mplProker) / 100) * 10) / 10
-          : null;
+        const prokerGabungan =
+          mplProker !== null && dplProker !== null
+            ? Math.round(((50 * dplProker + 50 * mplProker) / 100) * 10) / 10
+            : null;
 
         // Kelompok DPL & MPL Scores
         const dplKelompok = dplIndiv !== null ? dplIndiv : null;
         const mplKelompok = mplIndiv !== null ? mplIndiv : null;
-        const kelompokGabungan = mplKelompok !== null && dplKelompok !== null
-          ? Math.round(((50 * dplKelompok + 50 * mplKelompok) / 100) * 10) / 10
-          : null;
+        const kelompokGabungan =
+          mplKelompok !== null && dplKelompok !== null
+            ? Math.round(((50 * dplKelompok + 50 * mplKelompok) / 100) * 10) / 10
+            : null;
 
         // Nilai Akhir & Huruf Mutu: HANYA DITERBITKAN JIKA KEDUA PIHAK (DPL & MPL) LENGKAP
         let finalScore: number | null = null;
@@ -2603,13 +3057,19 @@ export const dplService = {
         const effectiveKehadiran = attRate > 0 ? attRate : 0;
         const effectivePoin = poinDampinganScore > 0 ? poinDampinganScore : 0;
 
-        if (dplIndiv !== null && mplIndiv !== null && indivGabungan !== null && prokerGabungan !== null && kelompokGabungan !== null) {
+        if (
+          dplIndiv !== null &&
+          mplIndiv !== null &&
+          indivGabungan !== null &&
+          prokerGabungan !== null &&
+          kelompokGabungan !== null
+        ) {
           const calcScore =
             0.25 * effectiveKehadiran +
             0.15 * effectivePoin +
-            0.20 * indivGabungan +
-            0.20 * prokerGabungan +
-            0.20 * kelompokGabungan;
+            0.2 * indivGabungan +
+            0.2 * prokerGabungan +
+            0.2 * kelompokGabungan;
           finalScore = Math.round(calcScore * 10) / 10;
           if (finalScore >= 80) gradeLetter = "A";
           else if (finalScore >= 70) gradeLetter = "B";
@@ -2674,26 +3134,45 @@ export const dplService = {
       const legacySt = String(p.status || "").toUpperCase();
       let u = p.statusUsulan;
       if (!u) {
-        if (legacySt === "DITERIMA" || legacySt === "DISETUJUI" || legacySt === "SEDANG_BERJALAN" || legacySt === "SELESAI") u = "DISETUJUI";
+        if (
+          legacySt === "DITERIMA" ||
+          legacySt === "DISETUJUI" ||
+          legacySt === "SEDANG_BERJALAN" ||
+          legacySt === "SELESAI"
+        )
+          u = "DISETUJUI";
         else if (legacySt === "DITOLAK" || legacySt === "TIDAK_DISETUJUI") u = "DITOLAK";
         else u = "BELUM_DISETUJUI";
       }
       let pl = p.statusPelaksanaan;
       if (!pl) {
         if (legacySt === "SELESAI") pl = "SELESAI";
-        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN") pl = "SEDANG_BERJALAN";
+        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN")
+          pl = "SEDANG_BERJALAN";
         else pl = "BELUM_MULAI";
       }
       return { usulan: u, pelaksanaan: pl };
     };
 
-    const totalUsulanDisetujui = allProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI").length;
-    const totalUsulanDitolak = allProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK").length;
-    const totalUsulanMenunggu = allProkers.filter((p) => resolveProkerStatus(p).usulan === "BELUM_DISETUJUI").length;
+    const totalUsulanDisetujui = allProkers.filter(
+      (p) => resolveProkerStatus(p).usulan === "DISETUJUI"
+    ).length;
+    const totalUsulanDitolak = allProkers.filter(
+      (p) => resolveProkerStatus(p).usulan === "DITOLAK"
+    ).length;
+    const totalUsulanMenunggu = allProkers.filter(
+      (p) => resolveProkerStatus(p).usulan === "BELUM_DISETUJUI"
+    ).length;
 
-    const totalPelaksanaanBelumMulai = allProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "BELUM_MULAI").length;
-    const totalPelaksanaanSedangBerjalan = allProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN").length;
-    const totalPelaksanaanSelesai = allProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI").length;
+    const totalPelaksanaanBelumMulai = allProkers.filter(
+      (p) => resolveProkerStatus(p).pelaksanaan === "BELUM_MULAI"
+    ).length;
+    const totalPelaksanaanSedangBerjalan = allProkers.filter(
+      (p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN"
+    ).length;
+    const totalPelaksanaanSelesai = allProkers.filter(
+      (p) => resolveProkerStatus(p).pelaksanaan === "SELESAI"
+    ).length;
 
     return {
       groups: groups.map((g) => {
@@ -2703,17 +3182,33 @@ export const dplService = {
           name: g.name,
           kelurahan: g.kelurahan || null,
           totalProker: grpProkers.length,
-          usulanDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI").length,
-          usulanDitolak: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK").length,
-          usulanMenunggu: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "BELUM_DISETUJUI").length,
-          pelaksanaanBelumMulai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "BELUM_MULAI").length,
-          pelaksanaanSedangBerjalan: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN").length,
-          pelaksanaanSelesai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI").length,
+          usulanDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI")
+            .length,
+          usulanDitolak: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK")
+            .length,
+          usulanMenunggu: grpProkers.filter(
+            (p) => resolveProkerStatus(p).usulan === "BELUM_DISETUJUI"
+          ).length,
+          pelaksanaanBelumMulai: grpProkers.filter(
+            (p) => resolveProkerStatus(p).pelaksanaan === "BELUM_MULAI"
+          ).length,
+          pelaksanaanSedangBerjalan: grpProkers.filter(
+            (p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN"
+          ).length,
+          pelaksanaanSelesai: grpProkers.filter(
+            (p) => resolveProkerStatus(p).pelaksanaan === "SELESAI"
+          ).length,
           // Compatibility fields
-          prokerDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI").length,
-          prokerTidakDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DITOLAK").length,
-          prokerSedangDilaksanakan: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN").length,
-          prokerSelesai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI").length,
+          prokerDisetujui: grpProkers.filter((p) => resolveProkerStatus(p).usulan === "DISETUJUI")
+            .length,
+          prokerTidakDisetujui: grpProkers.filter(
+            (p) => resolveProkerStatus(p).usulan === "DITOLAK"
+          ).length,
+          prokerSedangDilaksanakan: grpProkers.filter(
+            (p) => resolveProkerStatus(p).pelaksanaan === "SEDANG_BERJALAN"
+          ).length,
+          prokerSelesai: grpProkers.filter((p) => resolveProkerStatus(p).pelaksanaan === "SELESAI")
+            .length,
         };
       }),
       students: allStudentsList,
@@ -2779,7 +3274,8 @@ export const dplService = {
     let minTotalHours = (minHours * 3600 + minMinutes * 60 + minSeconds) / 3600;
 
     // Otomatisasi: Jika durasi minimal harian belum diatur atau nilai uji coba lama (< 0.05 jam saat target kumulatif >= 10 jam)
-    const autoDailyMins = targetHariTotal > 0 ? Math.round((targetJamTotal * 60) / targetHariTotal) : 240;
+    const autoDailyMins =
+      targetHariTotal > 0 ? Math.round((targetJamTotal * 60) / targetHariTotal) : 240;
     if (minTotalHours <= 0 || (minTotalHours < 0.05 && targetJamTotal >= 10)) {
       minHours = Math.floor(autoDailyMins / 60);
       minMinutes = autoDailyMins % 60;
@@ -2788,9 +3284,10 @@ export const dplService = {
     }
 
     const targetHarianRaw = Number(configMap.get("kkn_target_harian_jam"));
-    const targetHarian = !isNaN(targetHarianRaw) && targetHarianRaw > 0 && targetHarianRaw >= 0.05
-      ? targetHarianRaw
-      : minTotalHours;
+    const targetHarian =
+      !isNaN(targetHarianRaw) && targetHarianRaw > 0 && targetHarianRaw >= 0.05
+        ? targetHarianRaw
+        : minTotalHours;
 
     return {
       targetTotalKegiatan: Number(configMap.get("kkn_target_total_kegiatan") || 2000),
@@ -2804,7 +3301,9 @@ export const dplService = {
       jamKerja: configMap.get("kkn_jam_kerja") || "08:00 – 16:00 WIB",
       targetPekan: Number(configMap.get("kkn_target_pekan") || 10),
       targetTotalHari: targetHariTotal,
-      catatanDpl: configMap.get("kkn_catatan_dpl") || `Pastikan mahasiswa hadir minimal ${minHours > 0 ? `${minHours} jam ` : ''}${minMinutes > 0 ? `${minMinutes} menit ` : ''}per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.`,
+      catatanDpl:
+        configMap.get("kkn_catatan_dpl") ||
+        `Pastikan mahasiswa hadir minimal ${minHours > 0 ? `${minHours} jam ` : ""}${minMinutes > 0 ? `${minMinutes} menit ` : ""}per hari di lokasi kegiatan. Verifikasi lokasi melalui GPS dan unduh berita acara sebagai bukti validasi.`,
     };
   },
 
@@ -2823,12 +3322,16 @@ export const dplService = {
     catatanDpl?: string;
     updatedBy?: string;
   }) => {
-    const targetHari = data.targetTotalHari !== undefined ? Number(data.targetTotalHari) : undefined;
+    const targetHari =
+      data.targetTotalHari !== undefined ? Number(data.targetTotalHari) : undefined;
     const targetJam = data.targetTotalJam !== undefined ? Number(data.targetTotalJam) : undefined;
 
     // Jika durasi harian tidak dioper secara eksplisit namun total jam dan total hari ada, hitung otomatis
     if (targetJam !== undefined && targetHari !== undefined && targetHari > 0) {
-      if (data.attendanceMinDurationHours === undefined && data.attendanceMinDurationMinutes === undefined) {
+      if (
+        data.attendanceMinDurationHours === undefined &&
+        data.attendanceMinDurationMinutes === undefined
+      ) {
         const dailyMins = Math.round((targetJam * 60) / targetHari);
         data.attendanceMinDurationHours = Math.floor(dailyMins / 60);
         data.attendanceMinDurationMinutes = dailyMins % 60;
@@ -2959,7 +3462,7 @@ export const dplService = {
     }
   ) => {
     const isSuper = isDplSuperUser(role);
-    
+
     const allowedGroups = await prisma.kelompokKkn.findMany({
       where: await getKelompokWhere(dplUserId, role),
       select: { id: true },
@@ -2988,7 +3491,11 @@ export const dplService = {
       where.status = params.status;
     }
 
-    if (params?.pekanKe !== undefined && params.pekanKe !== null && !isNaN(Number(params.pekanKe))) {
+    if (
+      params?.pekanKe !== undefined &&
+      params.pekanKe !== null &&
+      !isNaN(Number(params.pekanKe))
+    ) {
       where.pekanKe = Number(params.pekanKe);
     }
 
@@ -3057,10 +3564,7 @@ export const dplService = {
             },
           },
         },
-        orderBy: [
-          { tanggal: "desc" },
-          { createdAt: "desc" },
-        ],
+        orderBy: [{ tanggal: "desc" }, { createdAt: "desc" }],
         skip: params?.page && params?.limit ? (params.page - 1) * params.limit : undefined,
         take: params?.limit ? params.limit : undefined,
       }),
@@ -3142,7 +3646,12 @@ export const dplService = {
         const durasiM = item.durasiMenit || 120;
         const durasiH = Math.floor(durasiM / 60);
         const durasiRemM = durasiM % 60;
-        const durasiLabel = durasiH > 0 && durasiRemM > 0 ? `${durasiH} jam ${durasiRemM} menit` : durasiH > 0 ? `${durasiH} jam` : `${durasiM} menit`;
+        const durasiLabel =
+          durasiH > 0 && durasiRemM > 0
+            ? `${durasiH} jam ${durasiRemM} menit`
+            : durasiH > 0
+              ? `${durasiH} jam`
+              : `${durasiM} menit`;
 
         return {
           id: item.id,
@@ -3164,7 +3673,9 @@ export const dplService = {
           hasilTindakLanjut: item.arahanEvaluasi || "",
           arahanEvaluasi: item.arahanEvaluasi || "",
           programKerjaId: item.programKerjaId || null,
-          programKerjaDeskripsi: item.programKerjaId ? prokerMap.get(item.programKerjaId) || null : null,
+          programKerjaDeskripsi: item.programKerjaId
+            ? prokerMap.get(item.programKerjaId) || null
+            : null,
           durasiMenit: durasiM,
           durasi: durasiLabel,
           bukti: buktiLabel,
@@ -3207,7 +3718,8 @@ export const dplService = {
   ) => {
     if (!data.kelompokId) throw new Error("Pilih kelompok dampingan");
     if (!data.tanggal) throw new Error("Tanggal kegiatan wajib diisi");
-    if (!data.deskripsi || data.deskripsi.trim() === "") throw new Error("Uraian aktivitas wajib diisi");
+    if (!data.deskripsi || data.deskripsi.trim() === "")
+      throw new Error("Uraian aktivitas wajib diisi");
 
     const requestedStatus = data.status || "TERKIRIM";
     const isSuper = isDplSuperUser(role);
@@ -3222,8 +3734,14 @@ export const dplService = {
         select: { id: true },
       });
       const allowedGroupIds = allowedGroups.map((g) => g.id);
-      if (kelompok.dplId && kelompok.dplId !== dplUserId && !allowedGroupIds.includes(kelompok.id)) {
-        throw new Error("Akses ditolak: Anda hanya dapat mencatat aktivitas untuk kelompok dampingan Anda.");
+      if (
+        kelompok.dplId &&
+        kelompok.dplId !== dplUserId &&
+        !allowedGroupIds.includes(kelompok.id)
+      ) {
+        throw new Error(
+          "Akses ditolak: Anda hanya dapat mencatat aktivitas untuk kelompok dampingan Anda."
+        );
       }
     }
 
@@ -3328,7 +3846,8 @@ export const dplService = {
     }
     if (data.deskripsi !== undefined) updateData.deskripsi = data.deskripsi.trim();
     if (data.arahanEvaluasi !== undefined || data.hasilTindakLanjut !== undefined) {
-      updateData.arahanEvaluasi = data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null;
+      updateData.arahanEvaluasi =
+        data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null;
     }
     if (data.fotoBuktiUrl !== undefined) updateData.fotoBuktiUrl = data.fotoBuktiUrl;
     if (data.status !== undefined) updateData.status = data.status;
@@ -3378,4 +3897,3 @@ export const dplService = {
     return { success: true, message: "Aktivitas DPL berhasil dihapus" };
   },
 };
-

@@ -54,7 +54,7 @@ const Informasi: React.FC = () => {
       case "DOSEN_PEMBIMBING":
         return {
           title: "Dosen Pendamping Lapangan (DPL)",
-          desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan penginputan nilai akhir program KKN.",
+          desc: "Panduan pendampingan akademik, verifikasi logbook presensi, validasi pengajuan izin mahasiswa, dan pengisian nilai akhir program KKN.",
           icon: GraduationCap,
           color: "bg-indigo-50 text-indigo-700 border-indigo-200",
         };

@@ -1336,6 +1336,91 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     );
   };
 
+  // Export CSV langsung dari data tabel yang tersaring (Filtered Table Export)
+  const handleExportFilteredAttendanceCSV = () => {
+    if (!filteredAttendance || filteredAttendance.length === 0) {
+      toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Nama Mahasiswa",
+      "NIM",
+      "Kelompok",
+      "Jadwal Kegiatan",
+      "Status Presensi",
+      "Waktu Masuk",
+      "Waktu Pulang",
+      "Durasi (Menit)",
+      "Target (Jam)",
+      "Pemenuhan Target",
+    ];
+
+    const rows = filteredAttendance.map((rec, index) => {
+      const isAttended = Boolean(rec.attendedAt);
+      const isCompleted = Boolean(rec.completedAt);
+      const statusUpper = String(rec.status || "").toUpperCase();
+      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
+      const recAny = rec as any;
+      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
+      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+
+      let statusStr = "Belum Absen";
+      if (statusUpper.includes("SAKIT")) {
+        statusStr = "Sakit (Disetujui)";
+      } else if (statusUpper.includes("IZIN")) {
+        statusStr = "Izin (Disetujui)";
+      } else if (statusUpper.includes("ALPA") || statusUpper.includes("ALPHA")) {
+        statusStr = "Alpa";
+      } else if (isAttended && !isFinished) {
+        statusStr = "Sedang di Lapangan";
+      } else if (isFinished) {
+        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
+          ? rec.isMemenuhiDurasi
+          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+        statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+      }
+
+      const kelompokName = groups.find((g) => g.id === (recAny.groupId || rec.student?.groupId || selectedKelompokId))?.name || (selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId)?.name : "-");
+      const kegiatanTitle = activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-");
+      const isTargetMet = durationMins >= (scheduleTargetHours * 60);
+
+      return [
+        index + 1,
+        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
+        `"${rec.student?.studentProfile?.nim || "-"}"`,
+        `"${(kelompokName || "-").replace(/"/g, '""')}"`,
+        `"${(kegiatanTitle || "-").replace(/"/g, '""')}"`,
+        `"${statusStr}"`,
+        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
+        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        durationMins,
+        scheduleTargetHours,
+        `"${isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-"}"`,
+      ].join(",");
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
+    link.setAttribute(
+      "download",
+      `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(
+      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor`
+    );
+  };
+
   // Fly Map to Mahasiswa Location & smooth scroll to Map Section
   const handleFocusMahasiswaMap = (rec: AttendanceRecord) => {
     const liveLoc = studentLocations.find(l => l.studentId === rec.student.id || l.student?.id === rec.student.id);
@@ -2103,16 +2188,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <span>Pengajuan Izin & Sakit</span>
           </Link>
 
-          <button
-            type="button"
-            onClick={() => setIsExportModalOpen(true)}
-            className="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            title="Ekspor Rekap Presensi format CSV"
-          >
-            <Download size={14} className="text-emerald-600" />
-            <span>Ekspor CSV</span>
-          </button>
-
           {isSuperUserOrDev && (
             <button
               type="button"
@@ -2633,9 +2708,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
 
-          {/* Filter Status Chips & Mode Switcher (Disembunyikan untuk role DPL) */}
-          {!isDpl && (
-            <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+          {/* Filter Status Chips & Export Button */}
+          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+            {!isDpl && (
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
                 <button
                   type="button"
@@ -2693,8 +2768,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   ⚪ Belum ({attendanceStats.notAttended})
                 </button>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Tombol Ekspor CSV dekat tabel setelah seleksi filter */}
+            <button
+              type="button"
+              onClick={handleExportFilteredAttendanceCSV}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+              title={`Ekspor ${filteredAttendance.length} data presensi terfilter ke format CSV`}
+            >
+              <Download size={14} />
+              <span>Ekspor CSV</span>
+              <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
+                {filteredAttendance.length}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Info Banner when viewing Roster mode (no schedule active) */}

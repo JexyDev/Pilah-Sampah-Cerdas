@@ -1151,7 +1151,7 @@ export const HasilPemanfaatan: React.FC = () => {
           >
             <div className="flex items-center justify-between px-1 border-b border-slate-100 dark:border-slate-800 pb-2.5">
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                <ImageIcon size={15} className="text-[#009966] dark:text-emerald-400" /> Bukti Lampiran Foto
+                <ImageIcon size={15} className="text-[#009966] dark:text-emerald-400" /> Dokumentasi Foto Kegiatan
               </span>
               <div className="flex items-center gap-2">
                 <a
@@ -1174,7 +1174,7 @@ export const HasilPemanfaatan: React.FC = () => {
             <div className="flex items-center justify-center bg-slate-950/90 rounded-2xl overflow-hidden min-h-[220px] p-2">
               <img
                 src={resolveImageUrl(previewPhotoUrl)}
-                alt="Bukti Lampiran Foto"
+                alt="Dokumentasi Foto Kegiatan"
                 className="w-full h-auto max-h-[75vh] object-contain rounded-xl"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = "none";

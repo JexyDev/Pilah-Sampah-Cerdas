@@ -694,8 +694,8 @@ export const ProgramKerjaKkn: React.FC = () => {
           "Kelurahan",
           "RW",
           "DPL Pembimbing",
-          "Penginput / Mahasiswa",
-          "NIM Penginput",
+          "Pengisi Data / Mahasiswa",
+          "NIM Pengisi Data",
           "Kategori",
           "Sumber",
           "Judul Program",
@@ -1132,7 +1132,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   <th className="py-3.5 px-3 w-12 text-center">No</th>
                   <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
                   {isDeveloper && <th className="py-3.5 px-3 min-w-[170px] text-left">Kelompok & Wilayah</th>}
-                  {isDeveloper && <th className="py-3.5 px-3 min-w-[190px] text-left">Penginput / Mahasiswa</th>}
+                  {isDeveloper && <th className="py-3.5 px-3 min-w-[190px] text-left">Pengisi Data / Mahasiswa</th>}
                   <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
                   <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
@@ -1201,7 +1201,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                                   </span>
                                   {p.penginput.isKetua && (
                                     <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded text-[9px] font-bold">
-                                      Ketua
+                                      Ketua Kelompok
                                     </span>
                                   )}
                                   {p.penginput.role === "DPL" && (
@@ -1909,7 +1909,7 @@ export const ProgramKerjaKkn: React.FC = () => {
               </div>
             </div>
 
-            {/* Kelompok & Penginput Overview */}
+            {/* Kelompok & Pengisi Data Overview */}
             <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/70 dark:border-emerald-900/40 space-y-2">
               <h4 className="text-xs font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Building2 size={13} />
@@ -1936,7 +1936,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                   </span>
                   {detailModal.proker.penginput && (
                     <div className="mt-1 pt-1 border-t border-emerald-200/40 dark:border-emerald-800/40">
-                      <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Penginput Proker:</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[10px] block">Pengisi Data Proker:</span>
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {detailModal.proker.penginput.nama} {detailModal.proker.penginput.nim ? `(${detailModal.proker.penginput.nim})` : ""}
                       </span>

@@ -264,8 +264,23 @@ export class KknService {
         isCorrect: true,
       }));
       
-      const binOrganik = userBins.find((b: any) => b.category?.name === "ORGANIC" || b.qrCode?.toLowerCase().includes("org") || b.qrCode?.toLowerCase().includes("1"));
-      const binAnorganik = userBins.find((b: any) => b.category?.name === "NON_ORGANIC" || b.qrCode?.toLowerCase().includes("anorg") || b.qrCode?.toLowerCase().includes("2"));
+      const binOrganik = userBins.find(
+        (b: any) =>
+          b.category?.name === "ORGANIC" ||
+          b.category?.name === "ORGANIK" ||
+          b.qrCode?.toLowerCase().includes("org") ||
+          b.qrCode?.toLowerCase().includes("ogn") ||
+          b.qrCode?.toLowerCase().includes("1")
+      );
+      const binAnorganik = userBins.find(
+        (b: any) =>
+          b.category?.name === "NON_ORGANIC" ||
+          b.category?.name === "ANORGANIK" ||
+          b.category?.name === "NON_ORGANIK" ||
+          b.qrCode?.toLowerCase().includes("anorg") ||
+          b.qrCode?.toLowerCase().includes("non") ||
+          b.qrCode?.toLowerCase().includes("2")
+      );
 
       return {
         id: u.id,
@@ -317,7 +332,9 @@ export class KknService {
     const warga = (await prisma.user.findUnique({
       where: { id: wargaId },
       include: {
-        rw: true,
+        rw: { include: { kelurahan: true } },
+        households: { include: { rw: { include: { kelurahan: true } } } },
+        pointHistory: true,
         setoranOtomatis: {
           take: 5,
           orderBy: { createdAt: "desc" },
@@ -356,24 +373,44 @@ export class KknService {
     }
 
     const household = warga.households?.[0];
-    const defaultBin = warga.binOwnerships[0]?.bin;
+    const defaultBin = warga.binOwnerships?.[0]?.bin;
+    const allBins = warga.binOwnerships?.map((bo: any) => bo.bin).filter(Boolean) || [];
+    const binOrganik = allBins.find(
+      (b: any) =>
+        b.category?.name === "ORGANIC" ||
+        b.category?.name === "ORGANIK" ||
+        b.qrCode?.toLowerCase().includes("ogn") ||
+        b.qrCode?.toLowerCase().includes("org") ||
+        b.qrCode?.toLowerCase().includes("1")
+    );
+    const binAnorganik = allBins.find(
+      (b: any) =>
+        b.category?.name === "NON_ORGANIC" ||
+        b.category?.name === "ANORGANIK" ||
+        b.category?.name === "NON_ORGANIK" ||
+        b.qrCode?.toLowerCase().includes("non") ||
+        b.qrCode?.toLowerCase().includes("anorg") ||
+        b.qrCode?.toLowerCase().includes("2")
+    );
+    const primaryBin = binOrganik || binAnorganik || defaultBin;
+
     const lat = household?.latitude
       ? Number(household.latitude)
-      : defaultBin?.latitude
-        ? Number(defaultBin.latitude)
+      : primaryBin?.latitude
+        ? Number(primaryBin.latitude)
         : warga.rw?.latitude
           ? Number(warga.rw.latitude)
           : -6.891234;
     const lng = household?.longitude
       ? Number(household.longitude)
-      : defaultBin?.longitude
-        ? Number(defaultBin.longitude)
+      : primaryBin?.longitude
+        ? Number(primaryBin.longitude)
         : warga.rw?.longitude
           ? Number(warga.rw.longitude)
           : 107.610123;
 
     const recentLogs =
-      warga.setoranOtomatis.map((log: any) => ({
+      warga.setoranOtomatis?.map((log: any) => ({
         id: log.id,
         weightKg: Number(log.berat),
         volumeLiter: 0,
@@ -394,13 +431,23 @@ export class KknService {
       longitude: lng,
       lat: lat,
       lng: lng,
-      bin: defaultBin
+      binOrganikId: binOrganik?.qrCode || null,
+      binAnorganikId: binAnorganik?.qrCode || null,
+      binId: primaryBin?.qrCode || "",
+      binCode: primaryBin?.qrCode || "",
+      bin: primaryBin
         ? {
-            qrCode: defaultBin.qrCode,
-            category: defaultBin.category?.name || "UMUM",
-            capacity: `${defaultBin.currentVolumeLiter}L / ${defaultBin.maxCapacityLiter}L`,
+            qrCode: primaryBin.qrCode,
+            category: primaryBin.category?.name || "UMUM",
+            capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`,
           }
         : null,
+      bins: allBins.map((b: any) => ({
+        id: b.id,
+        qrCode: b.qrCode,
+        category: b.category?.name || "UMUM",
+        capacity: `${b.currentVolumeLiter || 0}L / ${b.maxCapacityLiter || 25}L`,
+      })),
       recentLogs,
     };
   }
@@ -533,6 +580,8 @@ export class KknService {
       const binOrganik = w.binOwnerships?.find(
         (bo: any) =>
           bo.bin?.category?.name === "ORGANIC" ||
+          bo.bin?.category?.name === "ORGANIK" ||
+          bo.bin?.qrCode?.toLowerCase().includes("ogn") ||
           bo.bin?.qrCode?.toLowerCase().includes("org") ||
           bo.bin?.qrCode?.toLowerCase().includes("1")
       )?.bin;
@@ -540,6 +589,9 @@ export class KknService {
       const binAnorganik = w.binOwnerships?.find(
         (bo: any) =>
           bo.bin?.category?.name === "NON_ORGANIC" ||
+          bo.bin?.category?.name === "ANORGANIK" ||
+          bo.bin?.category?.name === "NON_ORGANIK" ||
+          bo.bin?.qrCode?.toLowerCase().includes("non") ||
           bo.bin?.qrCode?.toLowerCase().includes("anorg") ||
           bo.bin?.qrCode?.toLowerCase().includes("2")
       )?.bin;
@@ -757,8 +809,8 @@ export class KknService {
 
         for (const mCode of missing) {
           const lower = mCode.toLowerCase();
-          const isAnorg = lower.includes("anorganik") || lower.includes("anorg");
-          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org"));
+          const isAnorg = lower.includes("anorganik") || lower.includes("anorg") || lower.includes("non");
+          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org") || lower.includes("ogn"));
           let category = await tx.wasteCategory.findFirst({
             where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
           });
@@ -766,7 +818,7 @@ export class KknService {
 
           const newBin = await tx.bin.create({
             data: {
-              qrCode: mCode.startsWith("TS-") ? mCode : `TS-${mCode}`,
+              qrCode: mCode.startsWith("TS-") || mCode.startsWith("BSK-") ? mCode : `TS-${mCode}`,
               status: "ACTIVE_BOUND",
               categoryId: category?.id,
               userId: wargaId,

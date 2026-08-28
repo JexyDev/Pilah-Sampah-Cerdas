@@ -38,7 +38,8 @@ import {
   Navigation,
   Info,
   CheckCircle2,
-  Clock
+  Clock,
+  RefreshCw
 } from "lucide-react";
 import L from "leaflet";
 import api from "../../services/api";
@@ -48,7 +49,7 @@ import { Pagination } from "../../components/common/Pagination";
 import PageHeader from "../../components/common/PageHeader";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
-import { KELURAHAN_GEODATA } from "../../constants/coblongGeoData";
+import { KELURAHAN_GEODATA, CoblongGeo } from "../../constants/coblongGeoData";
 import { resolveImageUrl } from "../../utils/imageUrl";
 
 export interface PoskoItem {
@@ -208,21 +209,21 @@ export const PoskoKknPage: React.FC = () => {
   const fetchKelompokList = useCallback(async () => {
     try {
       const res = await api.get("/kelompok?limit=100");
-      const list = res.data?.data || res.data?.kelompoks || res.data || [];
+      const list = res.data?.data || res.data?.groups || res.data?.kelompoks || res.data || [];
       if (Array.isArray(list)) {
         setKelompokList(list);
       }
     } catch (err) {
-      console.warn("Gagal memuat kelompok list untuk form:", err);
+      console.warn("Gagal memuat kelompok list:", err);
     }
   }, []);
 
   useEffect(() => {
     fetchPoskoList();
-    if (isDeveloperOrAdmin) {
+    if (isDeveloperOrAdmin || isDpl) {
       fetchKelompokList();
     }
-  }, [fetchPoskoList, fetchKelompokList, isDeveloperOrAdmin]);
+  }, [fetchPoskoList, fetchKelompokList, isDeveloperOrAdmin, isDpl]);
 
   // Metrik Penghitungan Posko
   const metrics = useMemo(() => {
@@ -516,33 +517,225 @@ export const PoskoKknPage: React.FC = () => {
               <p className="text-sm font-semibold text-slate-500">Memuat data posko kelompok bimbingan...</p>
             </div>
           ) : items.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xs space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto border border-indigo-200 dark:border-indigo-800">
-                <MapPin size={32} />
-              </div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-slate-100">
-                Posko Kelompok Bimbingan Belum Didaftarkan
-              </h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
-                Ketua kelompok KKN bimbingan Anda belum mendaftarkan titik lokasi posko di aplikasi. Silakan beritahu ketua kelompok untuk mendaftarkan posko melalui aplikasi mobile atau web.
-              </p>
-              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => fetchPoskoList()}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
-                >
-                  Muat Ulang
-                </button>
-                <Link
-                  to="/log-aktivitas/dpl"
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Compass size={14} />
-                  <span>Catat Kunjungan Lapangan</span>
-                </Link>
-              </div>
-            </div>
+            (() => {
+              const dplKelompok = kelompokList[0] || null;
+              const rawKelurahan = dplKelompok?.kelurahan || (user as any)?.kelurahan || "Coblong";
+              const normalizedKelKey =
+                Object.keys(KELURAHAN_GEODATA).find(
+                  (k) =>
+                    k.toLowerCase() === rawKelurahan.toLowerCase().replace(/[\s_]+/g, "") ||
+                    rawKelurahan.toLowerCase().replace(/[\s_]+/g, "").includes(k.toLowerCase())
+                ) || "DAGO";
+              const kelurahanGeo = KELURAHAN_GEODATA[normalizedKelKey] || KELURAHAN_GEODATA["DAGO"];
+              const mapCenter: [number, number] = kelurahanGeo?.centroid || CoblongGeo.CENTER;
+
+              const ketuaStudent =
+                dplKelompok?.students?.find((s) => s.isKetua) || dplKelompok?.students?.[0];
+              const ketuaName = ketuaStudent?.user?.name || (ketuaStudent as any)?.nama || "Ketua Kelompok";
+              const ketuaPhone =
+                ketuaStudent?.noWa ||
+                ketuaStudent?.user?.phone ||
+                (ketuaStudent?.user as any)?.noHp ||
+                "";
+              const totalAnggota = dplKelompok?.students?.length || 0;
+
+              return (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Status Banner */}
+                  <div className="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800">
+                        <Clock size={24} />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-200/70 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200">
+                            Menunggu Pendaftaran Posko
+                          </span>
+                          {dplKelompok?.name && (
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              {dplKelompok.name}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-1">
+                          Posko Kelompok Bimbingan Belum Didaftarkan
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
+                          Ketua kelompok KKN bimbingan Anda belum mendaftarkan titik lokasi GPS posko di aplikasi. Peta di bawah menampilkan wilayah penugasan kelompok di <strong>Kelurahan {dplKelompok?.kelurahan || kelurahanGeo.name}</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                      {ketuaPhone && (
+                        <a
+                          href={`https://wa.me/${ketuaPhone.replace(/[^0-9]/g, "").replace(/^0/, "62")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                        >
+                          <Phone size={14} />
+                          <span>Hubungi Ketua (WA)</span>
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          fetchPoskoList();
+                          fetchKelompokList();
+                        }}
+                        className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <RefreshCw size={13} />
+                        <span>Muat Ulang</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2 Column: Info Kelompok & Map Placeholder */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Left Column: Info Kelompok Binaan & Kontak */}
+                    <div className="lg:col-span-5 space-y-6">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-5">
+                        <div className="flex items-start gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-200 dark:border-indigo-800">
+                            <GraduationCap size={24} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                              Kelompok Bimbingan DPL
+                            </span>
+                            <h4 className="text-base font-black text-slate-900 dark:text-slate-100 mt-0.5">
+                              {dplKelompok?.name || "Kelompok KKN Binaan"}
+                            </h4>
+                            <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
+                              <MapPin size={12} className="text-rose-500" />
+                              <span>Kelurahan {dplKelompok?.kelurahan || kelurahanGeo.name}, Kec. Coblong</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3.5 text-xs">
+                          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                              Ketua Kelompok (PIC)
+                            </span>
+                            <p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">
+                              {ketuaName}
+                            </p>
+                            {ketuaPhone ? (
+                              <a
+                                href={`https://wa.me/${ketuaPhone.replace(/[^0-9]/g, "").replace(/^0/, "62")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline mt-0.5"
+                              >
+                                <Phone size={12} />
+                                <span>WhatsApp: {ketuaPhone}</span>
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 italic">Kontak nomor belum terdata</span>
+                            )}
+                          </div>
+
+                          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                Total Mahasiswa
+                              </span>
+                              <p className="font-black text-slate-800 dark:text-slate-200 text-sm mt-0.5">
+                                {totalAnggota} Mahasiswa
+                              </p>
+                            </div>
+                            <Link
+                              to="/manajemen-mahasiswa"
+                              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold flex items-center gap-1"
+                            >
+                              <Users size={12} />
+                              <span>Daftar Anggota</span>
+                            </Link>
+                          </div>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 text-xs text-indigo-900 dark:text-indigo-300 space-y-1">
+                          <div className="font-bold flex items-center gap-1.5">
+                            <Info size={14} className="text-indigo-600 shrink-0" />
+                            <span>Langkah Selanjutnya:</span>
+                          </div>
+                          <p className="text-[11px] leading-relaxed text-indigo-800/80 dark:text-indigo-300/80">
+                            Silakan beri tahu Ketua Kelompok untuk mendaftarkan titik lokasi posko melalui menu <strong>Posko KKN</strong> di aplikasi.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Peta Wilayah Kelurahan Penugasan */}
+                    <div className="lg:col-span-7">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs h-[440px] flex flex-col">
+                        <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-slate-100 dark:border-slate-800">
+                          <div className="flex items-center gap-2">
+                            <Compass size={16} className="text-indigo-600" />
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                              Wilayah Penugasan: Kelurahan {dplKelompok?.kelurahan || kelurahanGeo.name}
+                            </span>
+                          </div>
+                          <span className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                            <Clock size={11} />
+                            <span>Menunggu Titik Posko</span>
+                          </span>
+                        </div>
+
+                        <div className="flex-1 rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700">
+                          <MapContainer
+                            center={mapCenter}
+                            zoom={14}
+                            style={{ height: "100%", width: "100%" }}
+                            className="z-0"
+                          >
+                            <ThemeTileLayer />
+                            {kelurahanGeo?.bounds && (
+                              <Polygon
+                                positions={kelurahanGeo.bounds}
+                                pathOptions={{
+                                  color: "#4f46e5",
+                                  fillColor: "#4f46e5",
+                                  fillOpacity: 0.12,
+                                  weight: 2.5,
+                                  dashArray: "6, 6",
+                                }}
+                              >
+                                <Popup>
+                                  <div className="p-1 text-xs">
+                                    <strong className="text-indigo-600 block">Kelurahan {kelurahanGeo.name}</strong>
+                                    <p className="text-slate-500 mt-0.5">Wilayah Operasional Kelompok Bimbingan Anda.</p>
+                                  </div>
+                                </Popup>
+                              </Polygon>
+                            )}
+                          </MapContainer>
+
+                          {/* Map Overlay Badge */}
+                          <div className="absolute bottom-3 left-3 right-3 sm:right-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md flex items-center gap-3 z-[1000]">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center shrink-0">
+                              <MapPin size={16} />
+                            </div>
+                            <div className="text-xs">
+                              <p className="font-bold text-slate-800 dark:text-slate-200">
+                                Peta Wilayah Kelurahan {dplKelompok?.kelurahan || kelurahanGeo.name}
+                              </p>
+                              <p className="text-[11px] text-slate-500">
+                                Titik koordinat posko akan otomatis muncul di sini setelah didaftarkan.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
           ) : (
             (() => {
               const posko = items[0];
@@ -575,7 +768,7 @@ export const PoskoKknPage: React.FC = () => {
                           </h2>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
                             <MapPin size={14} className="text-rose-500 shrink-0" />
-                            <span>Kelurahan {posko.kelurahan} • RW {posko.rwName} • Kec. Coblong</span>
+                            <span>Kelurahan {posko.kelurahan} &bull; RW {posko.rwName} &bull; Kec. Coblong</span>
                           </p>
                         </div>
                       </div>
@@ -594,13 +787,6 @@ export const PoskoKknPage: React.FC = () => {
                             <ExternalLink size={12} />
                           </a>
                         )}
-                        <Link
-                          to="/log-aktivitas/dpl"
-                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                        >
-                          <Compass size={14} />
-                          <span>Catat Kunjungan Posko</span>
-                        </Link>
                       </div>
                     </div>
 

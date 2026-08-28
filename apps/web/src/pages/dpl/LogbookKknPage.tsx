@@ -701,15 +701,15 @@ export const LogbookKknPage: React.FC = () => {
                     }`}
                     title={
                       selectedIds.length > 0
-                        ? `Validasi ${selectedPendingLogbooks.length} aktivitas terpilih`
-                        : `Validasi semua ${pendingLogbooks.length} aktivitas yang menunggu validasi`
+                        ? `Setujui ${selectedPendingLogbooks.length} kegiatan terpilih`
+                        : `Setujui semua ${pendingLogbooks.length} kegiatan yang menunggu validasi`
                     }
                   >
                     <CheckCheck className="w-4 h-4" />
                     <span>
                       {selectedIds.length > 0
-                        ? `Validasi Terpilih (${selectedPendingLogbooks.length})`
-                        : `Validasi Semua (${pendingLogbooks.length})`}
+                        ? `Setujui Terpilih (${selectedPendingLogbooks.length})`
+                        : `Setujui Semua (${pendingLogbooks.length})`}
                     </span>
                   </button>
                 )}
@@ -720,10 +720,10 @@ export const LogbookKknPage: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2.5 rounded-xl text-xs">
                   <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-semibold">
                     <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{selectedIds.length} aktivitas dipilih</span>
+                    <span>{selectedIds.length} kegiatan dipilih</span>
                     {selectedPendingLogbooks.length > 0 ? (
                       <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                        • {selectedPendingLogbooks.length} siap divalidasi
+                        • {selectedPendingLogbooks.length} siap disetujui
                       </span>
                     ) : (
                       <span className="text-[11px] font-normal text-slate-500">
@@ -750,7 +750,7 @@ export const LogbookKknPage: React.FC = () => {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-xs cursor-pointer transition text-xs"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
-                        <span>Validasi Terpilih ({selectedPendingLogbooks.length})</span>
+                        <span>Setujui Terpilih ({selectedPendingLogbooks.length})</span>
                       </button>
                     )}
                   </div>
@@ -774,7 +774,7 @@ export const LogbookKknPage: React.FC = () => {
                     </th>
                     <th className="p-3.5 whitespace-nowrap">Tanggal & Waktu</th>
                     <th className="p-3.5 whitespace-nowrap">Kelompok</th>
-                    <th className="p-3.5 whitespace-nowrap">Diinput Oleh</th>
+                    <th className="p-3.5 whitespace-nowrap">Pengisi Data</th>
                     <th className="p-3.5 whitespace-nowrap">Kategori</th>
                     <th className="p-3.5 min-w-[220px]">Ringkasan Aktivitas Kelompok</th>
                     <th className="p-3.5 whitespace-nowrap">Lokasi / GPS</th>
@@ -1024,7 +1024,7 @@ export const LogbookKknPage: React.FC = () => {
             {/* Grid 2 Kolom Ringkasan */}
             <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-750">
               <div>
-                <span className="text-slate-400 block text-[11px]">Diinput Oleh</span>
+                <span className="text-slate-400 block text-[11px]">Pengisi Data</span>
                 <span className="font-bold text-slate-800 dark:text-slate-100">
                   {selectedItemDetail.penulisNama}
                   {selectedItemDetail.penulisNim && (
@@ -1098,8 +1098,8 @@ export const LogbookKknPage: React.FC = () => {
                         key={st.id}
                         title={
                           st.name +
-                          (st.isKetua ? " (Ketua)" : "") +
-                          (isPenulis ? " (Penginput)" : "")
+                          (st.isKetua ? " (Ketua Kelompok)" : "") +
+                          (isPenulis ? " (Pengisi Data)" : "")
                         }
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
                           isPenulis
@@ -1110,28 +1110,28 @@ export const LogbookKknPage: React.FC = () => {
                         }`}
                       >
                         <span>{st.name}</span>
-                        {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua)</span>}
+                        {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua Kelompok)</span>}
                         {isPenulis && !st.isKetua && (
-                          <span className="text-[10px] text-emerald-700 font-bold">(Penginput)</span>
+                          <span className="text-[10px] text-emerald-700 font-bold">(Pengisi Data)</span>
                         )}
                       </span>
                     );
                   })}
                 </div>
               ) : (
-                <p className="text-slate-500 italic">Diinput oleh {selectedItemDetail.penulisNama}</p>
+                <p className="text-slate-500 italic">Diisi oleh {selectedItemDetail.penulisNama}</p>
               )}
             </div>
 
-            {/* Hasil / Output */}
+            {/* Capaian Kegiatan */}
             <div className="space-y-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Hasil / Output Capaian:</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Capaian Kegiatan:</span>
               <p className="text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-750 font-medium">
                 {resolveHasilOutput(selectedItemDetail)}
               </p>
             </div>
 
-            {/* Bukti Lampiran Foto (Multi-Foto Gallery) */}
+            {/* Dokumentasi Kegiatan (Multi-Foto Gallery) */}
             {(() => {
               const allPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
                 ? (selectedItemDetail as any).attachmentUrls
@@ -1144,7 +1144,7 @@ export const LogbookKknPage: React.FC = () => {
               return (
                 <div className="space-y-1.5">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    Bukti Lampiran Foto ({allPhotos.length} Foto):
+                    Dokumentasi Kegiatan ({allPhotos.length} foto):
                   </span>
                   <div className={`grid gap-2.5 ${allPhotos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
                     {allPhotos.map((photoUrl, pIdx) => (
@@ -1154,7 +1154,7 @@ export const LogbookKknPage: React.FC = () => {
                       >
                         <img
                           src={resolveImageUrl(photoUrl)}
-                          alt={`Bukti Aktivitas ${pIdx + 1}`}
+                          alt={`Dokumentasi Kegiatan ${pIdx + 1}`}
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = "none";
                             const parent = (e.target as HTMLElement).parentElement;
@@ -1171,11 +1171,11 @@ export const LogbookKknPage: React.FC = () => {
                           type="button"
                           onClick={() => {
                             setPreviewPhotoUrl(resolveImageUrl(photoUrl));
-                            setPreviewTitle(`Bukti #${pIdx + 1}: ${selectedItemDetail.tempat}`);
+                            setPreviewTitle(`Dokumentasi #${pIdx + 1}: ${selectedItemDetail.tempat}`);
                           }}
                           className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
                         >
-                          <Eye className="w-3 h-3" /> Fullsize
+                          <Eye className="w-3 h-3" /> Perbesar
                         </button>
                       </div>
                     ))}
@@ -1196,7 +1196,7 @@ export const LogbookKknPage: React.FC = () => {
               </div>
             )}
 
-            {/* Section Form Validasi DPL / Mode Pimpinan View-Only */}
+            {/* Section Catatan dan Validasi DPL / Mode Pimpinan View-Only */}
             {isPimpinan ? (
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
@@ -1213,7 +1213,7 @@ export const LogbookKknPage: React.FC = () => {
             ) : (
               <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
                 <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                  Form Validasi DPL
+                  Catatan & Validasi DPL
                 </h4>
 
                 <textarea
@@ -1252,7 +1252,7 @@ export const LogbookKknPage: React.FC = () => {
                   >
                     {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                     <CheckCircle className="w-3.5 h-3.5" />
-                    Validasi Aktivitas
+                    Setujui Kegiatan
                   </button>
                 </div>
               </div>
@@ -1277,11 +1277,11 @@ export const LogbookKknPage: React.FC = () => {
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     {selectedIds.length > 0
-                      ? "Validasi Aktivitas Terpilih"
-                      : "Validasi Semua Aktivitas"}
+                      ? "Setujui Kegiatan Terpilih"
+                      : "Setujui Semua Kegiatan"}
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Persetujuan serentak aktivitas mahasiswa KKN
+                    Persetujuan serentak kegiatan mahasiswa KKN
                   </p>
                 </div>
               </div>
@@ -1301,7 +1301,7 @@ export const LogbookKknPage: React.FC = () => {
                   Jumlah yang akan disetujui:
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-600 text-white">
-                  {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length} Aktivitas
+                  {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length} Kegiatan
                 </span>
               </div>
               <p className="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
@@ -1312,7 +1312,7 @@ export const LogbookKknPage: React.FC = () => {
             {/* Preview List (Up to 5 items) */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold text-slate-500 block">
-                Daftar Aktivitas yang Akan Disetujui:
+                Daftar Kegiatan yang Akan Disetujui:
               </span>
               <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                 {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).slice(0, 5).map((item) => (
@@ -1333,7 +1333,7 @@ export const LogbookKknPage: React.FC = () => {
                 ))}
                 {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length > 5 && (
                   <p className="text-center text-[10px] text-slate-400 italic">
-                    ... dan {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length - 5} aktivitas lainnya
+                    ... dan {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length - 5} kegiatan lainnya
                   </p>
                 )}
               </div>
@@ -1342,13 +1342,13 @@ export const LogbookKknPage: React.FC = () => {
             {/* Input Catatan Batch */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
-                Catatan Validasi DPL (Opsional):
+                Catatan & Validasi DPL (Opsional):
               </label>
               <textarea
                 rows={2}
                 value={batchCatatan}
                 onChange={(e) => setBatchCatatan(e.target.value)}
-                placeholder="Contoh: Disetujui serentak oleh DPL, bukti foto dan GPS terverifikasi."
+                placeholder="Contoh: Disetujui serentak oleh DPL, dokumentasi foto dan GPS terverifikasi."
                 className="w-full p-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
               />
             </div>
@@ -1371,7 +1371,7 @@ export const LogbookKknPage: React.FC = () => {
                 {isSubmittingBatch && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>
-                  Ya, Validasi {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length} Aktivitas
+                  Ya, Setujui {(selectedIds.length > 0 ? selectedPendingLogbooks : pendingLogbooks).length} Kegiatan
                 </span>
               </button>
             </div>

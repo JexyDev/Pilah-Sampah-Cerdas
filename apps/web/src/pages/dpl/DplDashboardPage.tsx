@@ -28,6 +28,7 @@ import {
   Clock,
   ArrowLeft,
   Crown,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -411,6 +412,75 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
+  // Export CSV Riwayat Validasi Izin & Sakit (Absensi)
+  const handleExportAbsensiCSV = () => {
+    if (!filteredApprovalHistory || filteredApprovalHistory.length === 0) {
+      toast.error("Tidak ada data riwayat izin & sakit yang sesuai filter untuk diekspor.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Nama Mahasiswa",
+      "Jenis Pengajuan",
+      "Tanggal Mulai",
+      "Tanggal Selesai",
+      "Alasan / Keterangan",
+      "Status Keputusan",
+      "Waktu Verifikasi",
+      "Catatan Penolakan",
+    ];
+
+    const rows = filteredApprovalHistory.map((log, index) => {
+      const st = (log.status || "").toUpperCase();
+      let statusLabel = log.status || "-";
+      if (st === "APPROVED") statusLabel = "Disetujui";
+      else if (st === "REJECTED") statusLabel = "Ditolak";
+      else if (st === "ESCALATED") statusLabel = "Dieskalasi ke Taskforce";
+      else if (st === "CANCELLED") statusLabel = "Dibatalkan Mahasiswa";
+      else if (st === "OVERRIDDEN_HADIR") statusLabel = "Batal Izin (Hadir)";
+
+      const startDateFormatted = log.startDate
+        ? new Date(log.startDate).toLocaleDateString("id-ID")
+        : "-";
+      const endDateFormatted = log.endDate
+        ? new Date(log.endDate).toLocaleDateString("id-ID")
+        : "-";
+      const reviewedAtFormatted = log.reviewedAt
+        ? new Date(log.reviewedAt).toLocaleString("id-ID")
+        : "-";
+
+      return [
+        index + 1,
+        `"${(log.studentName || "-").replace(/"/g, '""')}"`,
+        `"${log.type || "-"}"`,
+        `"${startDateFormatted}"`,
+        `"${endDateFormatted}"`,
+        `"${(log.reason || "-").replace(/"/g, '""')}"`,
+        `"${statusLabel}"`,
+        `"${reviewedAtFormatted}"`,
+        `"${(log.rejectionReason || "-").replace(/"/g, '""')}"`,
+      ].join(",");
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `Rekap_Riwayat_Absensi_Izin_Sakit_KKN_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(
+      `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor`
+    );
+  };
+
   // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)
   const dplKecamatanList = useMemo(() => {
     const set = new Set<string>();
@@ -782,7 +852,7 @@ export const DplDashboardPage: React.FC = () => {
                                 {st.isKetua && (
                                   <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700 flex items-center gap-0.5">
                                     <Crown size={9} />
-                                    <span>Ketua</span>
+                                    <span>Ketua Kelompok</span>
                                   </span>
                                 )}
                               </div>
@@ -1042,7 +1112,10 @@ export const DplDashboardPage: React.FC = () => {
         {/* Riwayat Validasi Log */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin &amp; Sakit</h3>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin &amp; Sakit</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin dan sakit mahasiswa bimbingan.</p>
+            </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <select
@@ -1051,12 +1124,25 @@ export const DplDashboardPage: React.FC = () => {
                   setSelectedApprovalStatus(e.target.value);
                   setApprovalPage(1);
                 }}
-                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
+                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
               >
                 <option value="ALL">Semua Keputusan</option>
                 <option value="APPROVED">Disetujui</option>
                 <option value="REJECTED">Ditolak</option>
               </select>
+
+              <button
+                type="button"
+                onClick={handleExportAbsensiCSV}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                title={`Ekspor ${filteredApprovalHistory.length} data riwayat izin/sakit ke format CSV`}
+              >
+                <Download size={14} />
+                <span>Ekspor CSV</span>
+                <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
+                  {filteredApprovalHistory.length}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -1667,7 +1753,7 @@ export const DplDashboardPage: React.FC = () => {
                     </p>
                     {g.ketua && (
                       <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1 truncate">
-                        <span className="text-slate-400 font-normal">Ketua:</span> {g.ketua.name} ({g.ketua.nim})
+                        <span className="text-slate-400 font-normal">Ketua Kelompok:</span> {g.ketua.name} ({g.ketua.nim})
                       </p>
                     )}
                     {g.posko && (

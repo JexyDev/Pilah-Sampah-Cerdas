@@ -9,7 +9,19 @@ const router = Router();
 
 // Protect all DPL routes with authentication and role check
 router.use(authMiddleware);
-router.use(roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]));
+router.use(
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "DOSEN_PENDAMPING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ])
+);
 
 /**
  * @swagger
@@ -59,7 +71,11 @@ router.get("/students", dplScopeMiddleware, dplController.getStudentDetails);
  *       200:
  *         description: Berhasil mendapatkan summary mahasiswa
  */
-router.get("/students-cumulative-summary", dplScopeMiddleware, dplController.getStudentCumulativeSummary);
+router.get(
+  "/students-cumulative-summary",
+  dplScopeMiddleware,
+  dplController.getStudentCumulativeSummary
+);
 
 /**
  * @swagger
@@ -163,12 +179,20 @@ router.post("/students/:studentId/assess", dplScopeMiddleware, dplController.ass
  */
 router.post("/approvals/:requestId/decide", dplScopeMiddleware, dplController.decideLeaveRequest);
 router.post(
-  ["/approvals/:requestId/cancel-decide", "/approvals/:requestId/decide-cancel", "/approvals/:requestId/override-hadir"],
+  [
+    "/approvals/:requestId/cancel-decide",
+    "/approvals/:requestId/decide-cancel",
+    "/approvals/:requestId/override-hadir",
+  ],
   dplScopeMiddleware,
   dplController.decideCancelLeaveRequest
 );
 router.put(
-  ["/approvals/:requestId/cancel-decide", "/approvals/:requestId/decide-cancel", "/approvals/:requestId/override-hadir"],
+  [
+    "/approvals/:requestId/cancel-decide",
+    "/approvals/:requestId/decide-cancel",
+    "/approvals/:requestId/override-hadir",
+  ],
   dplScopeMiddleware,
   dplController.decideCancelLeaveRequest
 );
@@ -194,16 +218,35 @@ router.get("/penilaian/rekap", dplScopeMiddleware, dplController.getRekapNilaiAk
 // TARGET & KONFIGURASI KKN
 // ─────────────────────────────────────────────
 router.get("/config-targets", dplController.getConfigTargets);
-router.put("/config-targets", roleMiddleware(["SUPER_USER", "DEVELOPER"]), dplController.updateConfigTargets);
+router.put(
+  "/config-targets",
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  dplController.updateConfigTargets
+);
 
 // ─────────────────────────────────────────────
 // LOG AKTIVITAS DPL (WEB ENTRY & MONITORING)
 // ─────────────────────────────────────────────
 // BUGFIX: Tambahkan dplScopeMiddleware ke semua route activity logs
 router.get("/activity-logs", dplScopeMiddleware, dplController.getDplActivityLogs);
-router.post("/activity-logs", dplScopeMiddleware, safeUploadPemanfaatanImage, dplController.createDplActivityLog);
-router.put("/activity-logs/:id", dplScopeMiddleware, safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
-router.patch("/activity-logs/:id", dplScopeMiddleware, safeUploadPemanfaatanImage, dplController.updateDplActivityLog);
+router.post(
+  "/activity-logs",
+  dplScopeMiddleware,
+  safeUploadPemanfaatanImage,
+  dplController.createDplActivityLog
+);
+router.put(
+  "/activity-logs/:id",
+  dplScopeMiddleware,
+  safeUploadPemanfaatanImage,
+  dplController.updateDplActivityLog
+);
+router.patch(
+  "/activity-logs/:id",
+  dplScopeMiddleware,
+  safeUploadPemanfaatanImage,
+  dplController.updateDplActivityLog
+);
 router.delete("/activity-logs/:id", dplScopeMiddleware, dplController.deleteDplActivityLog);
 
 export default router;
