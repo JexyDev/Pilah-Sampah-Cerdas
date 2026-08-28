@@ -2475,7 +2475,9 @@ export class KknAttendanceService {
             isActive: true,
           },
           include: {
-            kelompok: true,
+            kelompok: {
+              include: { poskoKkn: true },
+            },
             attendances: {
               where: { studentId: userId },
             },
@@ -2491,7 +2493,9 @@ export class KknAttendanceService {
             isActive: true,
           },
           include: {
-            kelompok: true,
+            kelompok: {
+              include: { poskoKkn: true },
+            },
             attendances: {
               where: { studentId: userId },
             },
