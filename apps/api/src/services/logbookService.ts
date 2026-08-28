@@ -298,6 +298,9 @@ export class LogbookService {
     if (!payload.tanggalKegiatan) throw new Error("Tanggal kegiatan wajib diisi");
     if (!payload.tempat || payload.tempat.trim() === "") throw new Error("Tempat kegiatan wajib diisi");
     if (!payload.deskripsi || payload.deskripsi.trim() === "") throw new Error("Deskripsi kegiatan wajib diisi");
+    if (!payload.fotoBuktiUrl && (!payload.attachmentUrls || payload.attachmentUrls.length === 0)) {
+      throw new Error("Foto / bukti dokumentasi kegiatan wajib dilampirkan (minimal 1 foto/dokumen).");
+    }
 
     const activityDate = new Date(payload.tanggalKegiatan);
     if (isNaN(activityDate.getTime())) {

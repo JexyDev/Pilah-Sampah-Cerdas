@@ -88,6 +88,14 @@ export const logbookController = {
         }
       }
 
+      if (!fotoBuktiUrl && uploadedFileUrls.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: "Foto / bukti dokumentasi kegiatan wajib dilampirkan (minimal 1 foto/dokumen).",
+        });
+        return;
+      }
+
       const payload = {
         tanggalKegiatan: req.body.tanggalKegiatan || req.body.tanggal,
         waktuMulai: req.body.waktuMulai,
@@ -95,7 +103,7 @@ export const logbookController = {
         tempat: req.body.tempat,
         deskripsi: req.body.deskripsi,
         fotoBuktiUrl: fotoBuktiUrl || null,
-        attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : undefined,
+        attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : (fotoBuktiUrl ? [fotoBuktiUrl] : undefined),
         platformOs: req.body.platformOs || "ANDROID",
         tipeAktivitas: req.body.tipeAktivitas,
         programKerjaId: req.body.programKerjaId || undefined,
