@@ -12,6 +12,7 @@ type StudentLocationCallback = (locationData: any) => void;
 type StudentLogoutCallback = (data: { studentId: string; loggedOutAt?: string; removedAt?: string }) => void;
 type StudentCheckoutCallback = (checkoutData: any) => void;
 type StudentAttendanceCallback = (attendanceData: any) => void;
+type GenericMessageCallback = (message: any) => void;
 type StatusCallback = (status: "CONNECTED" | "CONNECTING" | "DISCONNECTED") => void;
 
 class BERSEKAWebSocketClient {
@@ -21,6 +22,7 @@ class BERSEKAWebSocketClient {
   private studentLogoutListeners: Set<StudentLogoutCallback> = new Set();
   private studentCheckoutListeners: Set<StudentCheckoutCallback> = new Set();
   private studentAttendanceListeners: Set<StudentAttendanceCallback> = new Set();
+  private messageListeners: Set<GenericMessageCallback> = new Set();
   private statusListeners: Set<StatusCallback> = new Set();
   private reconnectTimeout: any = null;
   private heartbeatInterval: any = null;
@@ -159,6 +161,15 @@ class BERSEKAWebSocketClient {
           if (msg.type === "PONG") {
             return;
           }
+          // Dispatch to generic message listeners
+          this.messageListeners.forEach((listener) => {
+            try {
+              listener(msg);
+            } catch (err) {
+              console.error("[WS] generic message listener error:", err);
+            }
+          });
+
           if (msg.type === "NEW_DEPOSIT" && msg.data) {
             this.depositListeners.forEach((listener) => {
               try {
@@ -319,6 +330,16 @@ class BERSEKAWebSocketClient {
     }
     return () => {
       this.studentAttendanceListeners.delete(callback);
+    };
+  }
+
+  public onMessage(callback: GenericMessageCallback): () => void {
+    this.messageListeners.add(callback);
+    if (this.isDeveloper()) {
+      this.connect();
+    }
+    return () => {
+      this.messageListeners.delete(callback);
     };
   }
 
