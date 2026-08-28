@@ -218,6 +218,14 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (!_formKey.currentState!.validate()) return;
     
+    if (_selectedFiles.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Foto / bukti dokumentasi kegiatan wajib dilampirkan (minimal 1 foto/dokumen)'),
+        backgroundColor: AppColors.dangerRed,
+      ));
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
@@ -493,7 +501,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Dokumentasi Kegiatan (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                      const Text('Dokumentasi Kegiatan (Wajib)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                       if (_selectedFiles.isNotEmpty)
                         Text('${_selectedFiles.length} file dipilih', style: const TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
                     ],

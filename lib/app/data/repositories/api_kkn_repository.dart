@@ -874,20 +874,30 @@ class ApiKknRepository implements KknRepository {
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
       dynamic requestData;
-      if (imagePath != null) {
-        final fileExt = imagePath.split('.').last.toLowerCase();
-        String mimeType = 'image/jpeg';
-        if (fileExt == 'png') mimeType = 'image/png';
-        if (fileExt == 'webp') mimeType = 'image/webp';
+      final allImagePaths = <String>[
+        if (imagePath != null && imagePath.trim().isNotEmpty) imagePath.trim(),
+        if (imagePaths != null) ...imagePaths.where((p) => p.trim().isNotEmpty),
+      ];
 
-        requestData = FormData.fromMap({
-          ...data,
-          'fotoDokumentasi': await MultipartFile.fromFile(
-            imagePath,
-            filename: 'logbook_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+      if (allImagePaths.isNotEmpty) {
+        final formMap = Map<String, dynamic>.from(data);
+        final List<MultipartFile> files = [];
+        for (int i = 0; i < allImagePaths.length; i++) {
+          final p = allImagePaths[i];
+          final fileExt = p.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (fileExt == 'png') mimeType = 'image/png';
+          if (fileExt == 'webp') mimeType = 'image/webp';
+          if (fileExt == 'pdf') mimeType = 'application/pdf';
+
+          files.add(await MultipartFile.fromFile(
+            p,
+            filename: 'logbook_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
             contentType: MediaType.parse(mimeType),
-          ),
-        });
+          ));
+        }
+        formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
+        requestData = FormData.fromMap(formMap);
       } else {
         requestData = data;
       }
@@ -909,21 +919,30 @@ class ApiKknRepository implements KknRepository {
   Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
       dynamic requestData;
-      if (imagePath != null) {
-        final fileExt = imagePath.split('.').last.toLowerCase();
-        String mimeType = 'image/jpeg';
-        if (fileExt == 'png') mimeType = 'image/png';
-        if (fileExt == 'webp') mimeType = 'image/webp';
-        if (fileExt == 'pdf') mimeType = 'application/pdf';
+      final allImagePaths = <String>[
+        if (imagePath != null && imagePath.trim().isNotEmpty) imagePath.trim(),
+        if (imagePaths != null) ...imagePaths.where((p) => p.trim().isNotEmpty),
+      ];
 
-        requestData = FormData.fromMap({
-          ...data,
-          'fotoDokumentasi': await MultipartFile.fromFile(
-            imagePath,
-            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+      if (allImagePaths.isNotEmpty) {
+        final formMap = Map<String, dynamic>.from(data);
+        final List<MultipartFile> files = [];
+        for (int i = 0; i < allImagePaths.length; i++) {
+          final p = allImagePaths[i];
+          final fileExt = p.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (fileExt == 'png') mimeType = 'image/png';
+          if (fileExt == 'webp') mimeType = 'image/webp';
+          if (fileExt == 'pdf') mimeType = 'application/pdf';
+
+          files.add(await MultipartFile.fromFile(
+            p,
+            filename: 'logbook_harian_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
             contentType: MediaType.parse(mimeType),
-          ),
-        });
+          ));
+        }
+        formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
+        requestData = FormData.fromMap(formMap);
       } else {
         requestData = data;
       }
@@ -934,12 +953,12 @@ class ApiKknRepository implements KknRepository {
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-        if (e is DioException) {
-          final rawData = e.response?.data?.toString() ?? 'null';
-          final snippet = rawData.length > 50 ? rawData.substring(0, 50) : rawData;
-          final msg = _extractError(e.response?.data, 'HTTP ${e.response?.statusCode}: $snippet');
-          throw Exception(msg);
-        }
+      if (e is DioException) {
+        final rawData = e.response?.data?.toString() ?? 'null';
+        final snippet = rawData.length > 50 ? rawData.substring(0, 50) : rawData;
+        final msg = _extractError(e.response?.data, 'HTTP ${e.response?.statusCode}: $snippet');
+        throw Exception(msg);
+      }
       rethrow;
     }
   }
@@ -963,28 +982,38 @@ class ApiKknRepository implements KknRepository {
   @override
   Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
-      FormData formData;
-      if (imagePath != null) {
-        final fileExt = imagePath.split('.').last.toLowerCase();
-        String mimeType = 'image/jpeg';
-        if (fileExt == 'png') mimeType = 'image/png';
-        if (fileExt == 'webp') mimeType = 'image/webp';
+      dynamic requestData;
+      final allImagePaths = <String>[
+        if (imagePath != null && imagePath.trim().isNotEmpty) imagePath.trim(),
+        if (imagePaths != null) ...imagePaths.where((p) => p.trim().isNotEmpty),
+      ];
 
-        formData = FormData.fromMap({
-          ...data,
-          'fotoDokumentasi': await MultipartFile.fromFile(
-            imagePath,
-            filename: 'panen_${DateTime.now().millisecondsSinceEpoch}.$fileExt',
+      if (allImagePaths.isNotEmpty) {
+        final formMap = Map<String, dynamic>.from(data);
+        final List<MultipartFile> files = [];
+        for (int i = 0; i < allImagePaths.length; i++) {
+          final p = allImagePaths[i];
+          final fileExt = p.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (fileExt == 'png') mimeType = 'image/png';
+          if (fileExt == 'webp') mimeType = 'image/webp';
+          if (fileExt == 'pdf') mimeType = 'application/pdf';
+
+          files.add(await MultipartFile.fromFile(
+            p,
+            filename: 'panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
             contentType: MediaType.parse(mimeType),
-          ),
-        });
+          ));
+        }
+        formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
+        requestData = FormData.fromMap(formMap);
       } else {
-        formData = FormData.fromMap(data);
+        requestData = FormData.fromMap(data);
       }
 
       final response = await apiClient.dio.post(
         ApiEndpoints.kknPanenHasil,
-        data: formData,
+        data: requestData,
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {

@@ -158,7 +158,7 @@ abstract class KknRepository {
 
   /// Pilar 2: Logbook Pemanfaatan (Mewarisi/menggantikan submitPemanfaatanSampah lama)
   /// POST /api/v1/kkn/pemanfaatan-sampah
-  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath});
+  Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
 
   /// Input Logbook Harian (Umum) oleh Mahasiswa
   Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
@@ -168,5 +168,5 @@ abstract class KknRepository {
   Future<List<dynamic>> getUnharvestedLogbooks();
 
   /// POST /api/v1/kkn/panen-hasil
-  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath});
+  Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
 }
