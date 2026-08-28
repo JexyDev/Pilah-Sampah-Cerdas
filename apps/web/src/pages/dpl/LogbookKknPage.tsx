@@ -254,6 +254,10 @@ export const LogbookKknPage: React.FC = () => {
     return filteredLogbooks.filter((item) => item.statusApproval === "MENUNGGU_VERIFIKASI_DPL");
   }, [filteredLogbooks]);
 
+  const selectedLogbooks = useMemo(() => {
+    return filteredLogbooks.filter((item) => selectedIds.includes(item.id));
+  }, [filteredLogbooks, selectedIds]);
+
   const selectedPendingLogbooks = useMemo(() => {
     return filteredLogbooks.filter(
       (item) => selectedIds.includes(item.id) && item.statusApproval === "MENUNGGU_VERIFIKASI_DPL"
@@ -267,18 +271,27 @@ export const LogbookKknPage: React.FC = () => {
     return filteredLogbooks.slice(start, start + pageSize);
   }, [filteredLogbooks, currentPage, pageSize]);
 
-  // Checkbox Multi-Selection Helpers
+  // Pending logbooks on current active page
+  const paginatedPendingLogbooks = useMemo(() => {
+    return paginatedLogbooks.filter((item) => item.statusApproval === "MENUNGGU_VERIFIKASI_DPL");
+  }, [paginatedLogbooks]);
+
+  // Checkbox Multi-Selection Helpers (Smart Select: memprioritaskan item yang butuh validasi)
   const isAllCurrentPageSelected = useMemo(() => {
     if (paginatedLogbooks.length === 0) return false;
+    if (paginatedPendingLogbooks.length > 0) {
+      return paginatedPendingLogbooks.every((item) => selectedIds.includes(item.id));
+    }
     return paginatedLogbooks.every((item) => selectedIds.includes(item.id));
-  }, [paginatedLogbooks, selectedIds]);
+  }, [paginatedLogbooks, paginatedPendingLogbooks, selectedIds]);
 
   const handleToggleSelectAllPage = () => {
+    const targetList = paginatedPendingLogbooks.length > 0 ? paginatedPendingLogbooks : paginatedLogbooks;
     if (isAllCurrentPageSelected) {
-      const pageIds = new Set(paginatedLogbooks.map((p) => p.id));
+      const pageIds = new Set(targetList.map((p) => p.id));
       setSelectedIds((prev) => prev.filter((id) => !pageIds.has(id)));
     } else {
-      const pageIds = paginatedLogbooks.map((p) => p.id);
+      const pageIds = targetList.map((p) => p.id);
       setSelectedIds((prev) => Array.from(new Set([...prev, ...pageIds])));
     }
   };
@@ -288,6 +301,47 @@ export const LogbookKknPage: React.FC = () => {
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
+
+  // Validasi Filter & Gating Aturan Ekspor
+  const isDateRangePartial = useMemo(() => {
+    return (startDateFilter && !endDateFilter) || (!startDateFilter && endDateFilter);
+  }, [startDateFilter, endDateFilter]);
+
+  const isDateRangeInvalid = useMemo(() => {
+    if (!startDateFilter || !endDateFilter) return false;
+    return new Date(startDateFilter) > new Date(endDateFilter);
+  }, [startDateFilter, endDateFilter]);
+
+  const hasExplicitFilter = useMemo(() => {
+    const hasCategory = selectedKategori !== "ALL";
+    const hasGroup = selectedGroup !== "ALL";
+    const hasStatus = selectedStatus !== "ALL";
+    const hasSearch = searchQuery.trim().length > 0;
+    const hasCompleteDate = Boolean(startDateFilter && endDateFilter && !isDateRangeInvalid);
+    return hasCompleteDate || hasCategory || hasGroup || hasStatus || hasSearch;
+  }, [selectedKategori, selectedGroup, selectedStatus, searchQuery, startDateFilter, endDateFilter, isDateRangeInvalid]);
+
+  const isExportReady = useMemo(() => {
+    if (isDateRangePartial || isDateRangeInvalid) return false;
+    if (!hasExplicitFilter) return false;
+    return filteredLogbooks.length > 0;
+  }, [isDateRangePartial, isDateRangeInvalid, hasExplicitFilter, filteredLogbooks.length]);
+
+  const exportTooltipMessage = useMemo(() => {
+    if (isDateRangePartial) {
+      return "Lengkapi kedua kolom tanggal (Dari dan Sampai) terlebih dahulu.";
+    }
+    if (isDateRangeInvalid) {
+      return "Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'.";
+    }
+    if (!hasExplicitFilter) {
+      return "Tentukan rentang tanggal (Dari & Sampai) atau filter seleksi di sebelah kiri terlebih dahulu untuk mengekspor.";
+    }
+    if (filteredLogbooks.length === 0) {
+      return "Tidak ada data logbook yang sesuai filter untuk diekspor.";
+    }
+    return `Ekspor ${filteredLogbooks.length} baris data logbook terfilter ke CSV`;
+  }, [isDateRangePartial, isDateRangeInvalid, hasExplicitFilter, filteredLogbooks.length]);
 
   // Open Detail Modal
   const handleOpenDetailModal = (item: LogbookMahasiswaItem) => {
@@ -373,9 +427,10 @@ export const LogbookKknPage: React.FC = () => {
     }
   };
 
-  // Export CSV
-  const handleExportCsv = () => {
-    if (filteredLogbooks.length === 0) {
+  // Export CSV (Mendukung Ekspor Data Terfilter atau Ekspor Data Terpilih)
+  const handleExportCsv = (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
+    const itemsToExport = customItems || filteredLogbooks;
+    if (itemsToExport.length === 0) {
       toast.error("Tidak ada data logbook untuk diekspor");
       return;
     }
@@ -393,7 +448,7 @@ export const LogbookKknPage: React.FC = () => {
       "Status",
       "Catatan Validasi DPL",
     ];
-    const rows = filteredLogbooks.map((item, index) => [
+    const rows = itemsToExport.map((item, index) => [
       index + 1,
       item.tanggalKegiatan,
       item.waktuMulai,
@@ -413,11 +468,12 @@ export const LogbookKknPage: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Rekap_Logbook_Mahasiswa_${new Date().toISOString().split("T")[0]}.csv`);
+    const filenamePrefix = labelPrefix ? `Rekap_Logbook_${labelPrefix}` : "Rekap_Logbook_Mahasiswa";
+    link.setAttribute("download", `${filenamePrefix}_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("File CSV berhasil diekspor");
+    toast.success(`File CSV (${itemsToExport.length} data) berhasil diekspor`);
   };
 
   // Render Status Badge
@@ -637,7 +693,22 @@ export const LogbookKknPage: React.FC = () => {
                 </select>
 
                 {/* Date Range Inputs (Notulensi Item 12: Filter Tanggal) */}
-                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
+                <div
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs shadow-2xs transition-colors ${
+                    isDateRangeInvalid
+                      ? "bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700"
+                      : isDateRangePartial
+                      ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+                      : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                  }`}
+                  title={
+                    isDateRangeInvalid
+                      ? "Tanggal 'Dari' tidak boleh melebihi 'Sampai'"
+                      : isDateRangePartial
+                      ? "Lengkapi tanggal 'Sampai'"
+                      : "Filter Rentang Tanggal Kegiatan"
+                  }
+                >
                   <span className="text-[10px] font-bold text-slate-400">Dari:</span>
                   <input
                     type="date"
@@ -649,7 +720,22 @@ export const LogbookKknPage: React.FC = () => {
                     className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                   />
                 </div>
-                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs shadow-2xs">
+                <div
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs shadow-2xs transition-colors ${
+                    isDateRangeInvalid
+                      ? "bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700"
+                      : isDateRangePartial
+                      ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700"
+                      : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                  }`}
+                  title={
+                    isDateRangeInvalid
+                      ? "Tanggal 'Sampai' harus setelah tanggal 'Dari'"
+                      : isDateRangePartial
+                      ? "Lengkapi rentang tanggal"
+                      : "Filter Rentang Tanggal Kegiatan"
+                  }
+                >
                   <span className="text-[10px] font-bold text-slate-400">Sampai:</span>
                   <input
                     type="date"
@@ -676,13 +762,20 @@ export const LogbookKknPage: React.FC = () => {
                   </button>
                 )}
 
-                {/* Button Ekspor */}
+                {/* Button Ekspor (Gated: Aktif Jika Filter & Rentang Waktu Terisi Valid) */}
                 <button
-                  onClick={handleExportCsv}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 transition-colors shadow-2xs cursor-pointer"
+                  type="button"
+                  onClick={() => handleExportCsv()}
+                  disabled={!isExportReady}
+                  title={exportTooltipMessage}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs ${
+                    isExportReady
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95 shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-60"
+                  }`}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Ekspor
+                  <span>Ekspor {isExportReady ? `(${filteredLogbooks.length})` : ""}</span>
                 </button>
 
                 {/* Button Validasi Semua / Validasi Terpilih (DPL & Admin) */}
@@ -694,22 +787,28 @@ export const LogbookKknPage: React.FC = () => {
                       setIsBatchModalOpen(true);
                     }}
                     disabled={selectedIds.length > 0 ? selectedPendingLogbooks.length === 0 : pendingLogbooks.length === 0}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs ${
                       (selectedIds.length > 0 ? selectedPendingLogbooks.length > 0 : pendingLogbooks.length > 0)
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 hover:shadow-md"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 hover:shadow-md cursor-pointer"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700 opacity-70"
                     }`}
                     title={
                       selectedIds.length > 0
-                        ? `Setujui ${selectedPendingLogbooks.length} kegiatan terpilih`
-                        : `Setujui semua ${pendingLogbooks.length} kegiatan yang menunggu validasi`
+                        ? selectedPendingLogbooks.length > 0
+                          ? `Validasi & setujui ${selectedPendingLogbooks.length} aktivitas terpilih yang menunggu validasi`
+                          : "Semua aktivitas terpilih sudah berstatus tervalidasi atau perlu perbaikan"
+                        : pendingLogbooks.length > 0
+                        ? `Validasi semua ${pendingLogbooks.length} aktivitas yang menunggu validasi`
+                        : "Tidak ada aktivitas yang berstatus menunggu validasi"
                     }
                   >
                     <CheckCheck className="w-4 h-4" />
                     <span>
                       {selectedIds.length > 0
-                        ? `Setujui Terpilih (${selectedPendingLogbooks.length})`
-                        : `Setujui Semua (${pendingLogbooks.length})`}
+                        ? selectedPendingLogbooks.length > 0
+                          ? `Validasi Terpilih (${selectedPendingLogbooks.length})`
+                          : `Validasi Terpilih (0 Siap)`
+                        : `Validasi Semua (${pendingLogbooks.length})`}
                     </span>
                   </button>
                 )}
@@ -720,19 +819,30 @@ export const LogbookKknPage: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-between gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2.5 rounded-xl text-xs">
                   <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-200 font-semibold">
                     <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>{selectedIds.length} kegiatan dipilih</span>
+                    <span>{selectedIds.length} aktivitas dipilih</span>
                     {selectedPendingLogbooks.length > 0 ? (
                       <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                        • {selectedPendingLogbooks.length} siap disetujui
+                        • {selectedPendingLogbooks.length} siap divalidasi
                       </span>
                     ) : (
-                      <span className="text-[11px] font-normal text-slate-500">
-                        • (Semua yang dipilih sudah tervalidasi / perlu perbaikan)
+                      <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">
+                        • (Semua yang dipilih sudah tervalidasi / perlu revisi)
                       </span>
                     )}
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* Tombol Ekspor Khusus Baris Terpilih */}
+                    <button
+                      type="button"
+                      onClick={() => handleExportCsv(selectedLogbooks, `${selectedIds.length}_Aktivitas`)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 rounded-lg font-semibold text-xs transition cursor-pointer shadow-2xs"
+                      title={`Ekspor ${selectedIds.length} data aktivitas terpilih ke format CSV`}
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Ekspor Terpilih ({selectedIds.length})</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setSelectedIds([])}
@@ -740,6 +850,7 @@ export const LogbookKknPage: React.FC = () => {
                     >
                       Batalkan Pilihan
                     </button>
+
                     {!isPimpinan && selectedPendingLogbooks.length > 0 && (
                       <button
                         type="button"
@@ -750,7 +861,7 @@ export const LogbookKknPage: React.FC = () => {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-xs cursor-pointer transition text-xs"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
-                        <span>Setujui Terpilih ({selectedPendingLogbooks.length})</span>
+                        <span>Validasi Terpilih ({selectedPendingLogbooks.length})</span>
                       </button>
                     )}
                   </div>
@@ -768,7 +879,13 @@ export const LogbookKknPage: React.FC = () => {
                         type="checkbox"
                         checked={isAllCurrentPageSelected}
                         onChange={handleToggleSelectAllPage}
-                        title={isAllCurrentPageSelected ? "Batalkan pilih semua di halaman ini" : "Pilih semua di halaman ini"}
+                        title={
+                          isAllCurrentPageSelected
+                            ? "Batalkan pilih di halaman ini"
+                            : paginatedPendingLogbooks.length > 0
+                            ? `Pilih semua ${paginatedPendingLogbooks.length} aktivitas yang menunggu validasi di halaman ini`
+                            : "Pilih semua baris di halaman ini"
+                        }
                         className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                       />
                     </th>

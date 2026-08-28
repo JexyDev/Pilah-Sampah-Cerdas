@@ -96,6 +96,20 @@ router.post(
   scheduleController.createSchedule
 );
 
+router.post(
+  "/sync-today",
+  authMiddleware,
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "PANITIA_TASKFORCE",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+  ]),
+  scheduleController.syncDailySchedules
+);
+
 /**
  * @swagger
  * /api/v1/schedules/{id}:

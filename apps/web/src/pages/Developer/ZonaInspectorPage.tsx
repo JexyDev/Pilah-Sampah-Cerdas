@@ -3,11 +3,12 @@
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Developer Multi-Zone KKN Inspector & Collision/Overlap Detector
+ * Developer Multi-Zone KKN Inspector & Collision/Overlap Detector + Interactive CRUD
  * Menampilkan seluruh zona presensi auto-generate & posko 50+ kelompok KKN secara simultan,
- * mendeteksi tabrakan/tumpang tindih (overlap) antar zona, dan mencocokkan kesesuaian posisi GPS mahasiswa.
+ * mendeteksi tabrakan/tumpang tindih (overlap) antar zona, mencocokkan kesesuaian posisi GPS mahasiswa,
+ * dan menyediakan fitur CRUD interaktif untuk mengubah titik posko, radius geofence, poligon, serta jadwal kegiatan.
  * 
- * Strict Relational Integrity & Zero Database Mutation.
+ * Strict Relational Integrity & Real-Time Client-Side Overlap Engine.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
@@ -20,6 +21,7 @@ import {
   Polyline,
   Tooltip,
   useMap,
+  useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
 import {
@@ -53,6 +55,13 @@ import {
   AlertCircle,
   HelpCircle,
   Check,
+  Pencil,
+  Trash2,
+  Save,
+  RotateCcw,
+  Plus,
+  X,
+  SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -116,7 +125,7 @@ const MapController: React.FC<{
   return null;
 };
 
-// Generate distinct color per index
+// Generate distinct color per index using Golden Ratio Hue distribution
 const getGroupColor = (index: number) => {
   const hue = (index * 137.5) % 360;
   return `hsl(${hue}, 80%, 45%)`;
@@ -178,6 +187,85 @@ const createPoskoKknIcon = (
   });
 };
 
+// Interactive Geofence / Posko Picker Sub-Map component for Modal
+const DualGeofencePickerModalMap: React.FC<{
+  mode: "CIRCLE" | "POLYGON";
+  points: [number, number][];
+  onChange: (pts: [number, number][]) => void;
+  radius: number;
+}> = ({ mode, points, onChange, radius }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    map.invalidateSize();
+    if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
+      map.setView(points[0], 16);
+    }
+    const t1 = setTimeout(() => {
+      map.invalidateSize();
+      if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
+        map.setView(points[0], 16);
+      }
+    }, 200);
+    return () => clearTimeout(t1);
+  }, [mode, map]);
+
+  useMapEvents({
+    click(e) {
+      if (mode === "CIRCLE") {
+        onChange([[e.latlng.lat, e.latlng.lng]]);
+      } else {
+        onChange([...points, [e.latlng.lat, e.latlng.lng]]);
+      }
+    },
+  });
+
+  return (
+    <>
+      {mode === "CIRCLE" && points.length >= 1 && (
+        <>
+          <Marker position={points[0]} />
+          <Circle
+            center={points[0]}
+            radius={radius}
+            pathOptions={{
+              color: "#059669",
+              fillColor: "#10b981",
+              fillOpacity: 0.25,
+              weight: 2.5,
+            }}
+          />
+        </>
+      )}
+
+      {mode === "POLYGON" && (
+        <>
+          {points.map((p, i) => (
+            <Marker key={`poly-node-${i}`} position={p} />
+          ))}
+          {points.length === 2 && (
+            <Polyline
+              positions={points}
+              pathOptions={{ color: "#f59e0b", dashArray: "5,5", weight: 2 }}
+            />
+          )}
+          {points.length >= 3 && (
+            <Polygon
+              positions={points}
+              pathOptions={{
+                color: "#059669",
+                fillColor: "#10b981",
+                fillOpacity: 0.25,
+                weight: 2.5,
+              }}
+            />
+          )}
+        </>
+      )}
+    </>
+  );
+};
+
 export const ZonaInspectorPage: React.FC = () => {
   // Master Data States (Strict Relational Binding by ID)
   const [kelompokList, setKelompokList] = useState<any[]>([]);
@@ -206,6 +294,19 @@ export const ZonaInspectorPage: React.FC = () => {
   const [mapZoom, setMapZoom] = useState<number>(CoblongGeo.DEFAULT_ZOOM);
   const [activeTab, setActiveTab] = useState<"kelompok" | "overlap" | "mahasiswa">("kelompok");
   const [detailModalGroup, setDetailModalGroup] = useState<any | null>(null);
+
+  // ─── CRUD MODAL STATES ───
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<any | null>(null);
+  const [editMode, setEditMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
+  const [editPoints, setEditPoints] = useState<[number, number][]>([[-6.8906, 107.615]]);
+  const [editRadius, setEditRadius] = useState<number>(200);
+  const [editPoskoForm, setEditPoskoForm] = useState({
+    nama: "",
+    alamat: "",
+    keterangan: "",
+  });
+  const [savingAction, setSavingAction] = useState(false);
 
   // Fetch all master data in parallel with strict ID-scoped queries
   const loadAllData = async (isManualRefresh = false) => {
@@ -451,6 +552,105 @@ export const ZonaInspectorPage: React.FC = () => {
     setMapZoom(CoblongGeo.DEFAULT_ZOOM);
   };
 
+  // ─── OPEN CRUD MODAL ───
+  const handleOpenEditModal = (group: any) => {
+    setEditingGroup(group);
+    setEditRadius(group.radius || 200);
+
+    if (group.polygon && group.polygon.length >= 3) {
+      setEditMode("POLYGON");
+      setEditPoints(group.polygon);
+    } else {
+      setEditMode("CIRCLE");
+      setEditPoints([group.center]);
+    }
+
+    setEditPoskoForm({
+      nama: group.posko?.nama || `Posko KKN ${group.name}`,
+      alamat: group.posko?.alamat || `Kelurahan ${group.kelurahan || "Coblong"}`,
+      keterangan: group.posko?.keterangan || "",
+    });
+
+    setIsEditModalOpen(true);
+  };
+
+  // ─── SAVE POSKO KKN RESMI (UPSERT) ───
+  const handleSavePosko = async () => {
+    if (!editingGroup) return;
+    if (!editPoints || editPoints.length === 0) {
+      toast.error("Titik koordinat posko belum ditentukan");
+      return;
+    }
+
+    setSavingAction(true);
+    try {
+      const lat = editPoints[0][0];
+      const lng = editPoints[0][1];
+
+      await api.post("/posko-kkn", {
+        kelompokId: editingGroup.id,
+        nama: editPoskoForm.nama.trim() || `Posko ${editingGroup.name}`,
+        alamat: editPoskoForm.alamat.trim() || `Kel. ${editingGroup.kelurahan || "Coblong"}`,
+        latitude: lat,
+        longitude: lng,
+        keterangan: editPoskoForm.keterangan || undefined,
+      });
+
+      // Update Schedule radius if active schedule exists
+      if (editingGroup.activeSchedule?.id) {
+        await api.put(`/schedules/${editingGroup.activeSchedule.id}`, {
+          latitude: lat,
+          longitude: lng,
+          radius: editRadius,
+          polygon: editMode === "POLYGON" ? editPoints : null,
+        }).catch(() => {});
+      }
+
+      toast.success(`Posko & Geofence ${editingGroup.name} berhasil disimpan! Presensi otomatis mengikuti titik ini.`);
+      setIsEditModalOpen(false);
+      await loadAllData(false);
+    } catch (err: any) {
+      console.error("[handleSavePosko] error:", err);
+      toast.error(err.response?.data?.message || "Gagal menyimpan Posko KKN");
+    } finally {
+      setSavingAction(false);
+    }
+  };
+
+  // ─── DELETE POSKO KKN (RESET KE DEFAULT) ───
+  const handleDeletePosko = async (kelompokId: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus data posko ini dan mereset zona ke default kelurahan?")) {
+      return;
+    }
+
+    setSavingAction(true);
+    try {
+      await api.delete(`/posko-kkn/${kelompokId}`);
+      toast.success("Posko berhasil dihapus. Zona kembali ke estimasi default.");
+      setIsEditModalOpen(false);
+      if (detailModalGroup?.id === kelompokId) setDetailModalGroup(null);
+      await loadAllData(false);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal menghapus posko");
+    } finally {
+      setSavingAction(false);
+    }
+  };
+
+  const [syncingDaily, setSyncingDaily] = useState(false);
+  const handleSyncDailySchedules = async () => {
+    setSyncingDaily(true);
+    try {
+      const res = await api.post("/schedules/sync-today");
+      toast.success(res.data?.message || "Jadwal kegiatan hari ini berhasil disinkronkan untuk semua kelompok!");
+      await loadAllData(false);
+    } catch (err: any) {
+      toast.error("Gagal sinkronisasi jadwal harian");
+    } finally {
+      setSyncingDaily(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5 p-4 md:p-6 min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors">
       {/* ─── HEADER BAR ─── */}
@@ -472,13 +672,22 @@ export const ZonaInspectorPage: React.FC = () => {
               Inspeksi Geospatial Seluruh Zona KKN &amp; Overlap
             </h1>
             <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5 max-w-3xl">
-              Pantau seluruh zona otomatis by system dan posko 50+ kelompok KKN secara simultan, verifikasi tabrakan antar zona, dan pastikan kesesuaian posisi GPS mahasiswa tanpa mengganggu database live.
+              Pantau seluruh zona otomatis by system dan posko 50+ kelompok KKN secara simultan, verifikasi tabrakan antar zona, sesuaikan ukuran/radius, dan pastikan presensi mahasiswa otomatis mengikuti titik terbaru.
             </p>
           </div>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleSyncDailySchedules}
+            disabled={syncingDaily}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 transition-all border border-indigo-200 dark:border-indigo-800 active:scale-95 disabled:opacity-50"
+            title="Sinkronkan / Buat Otomatis Jadwal Seluruh Kelompok Hari Ini"
+          >
+            <Sparkles size={15} className={syncingDaily ? "animate-spin text-indigo-500" : "text-indigo-600"} />
+            <span>{syncingDaily ? "Sinkron..." : "Sinkronkan Jadwal Hari Ini"}</span>
+          </button>
           <button
             onClick={() => loadAllData(true)}
             disabled={refreshing}
@@ -550,7 +759,7 @@ export const ZonaInspectorPage: React.FC = () => {
             <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Zona Overlap / Nabrak</p>
             <h3 className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-0.5">{overlapConflicts.length}</h3>
             <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">
-              {overlapConflicts.length > 0 ? "⚠️ Perlu Review Lokasi" : "✅ Bersih Tanpa Tabrakan"}
+              {overlapConflicts.length > 0 ? "⚠️ Perlu Penyesuaian Zona" : "✅ Bersih Tanpa Tabrakan"}
             </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400">
@@ -707,7 +916,7 @@ export const ZonaInspectorPage: React.FC = () => {
                           }}
                         >
                           <Popup>
-                            <div className="p-1 min-w-[220px] text-xs font-sans">
+                            <div className="p-1 min-w-[230px] text-xs font-sans">
                               <div className="flex items-center gap-1.5 font-black text-slate-800 text-sm">
                                 <span>{group.name}</span>
                                 {isOverlapping && (
@@ -723,6 +932,21 @@ export const ZonaInspectorPage: React.FC = () => {
                                 <p><strong>DPL:</strong> {group.dpl?.name || group.dplNamaMentah || "-"}</p>
                                 <p><strong>Posko:</strong> {group.posko?.nama || "Belum Didaftarkan"}</p>
                                 <p><strong>Anggota:</strong> {group.totalStudents} Mahasiswa ({group.insideZoneCount} di zona)</p>
+                              </div>
+                              <div className="mt-2.5 pt-2 border-t border-slate-100 flex gap-1.5">
+                                <button
+                                  onClick={() => handleOpenEditModal(group)}
+                                  className="flex-1 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10.5px] flex items-center justify-center gap-1"
+                                >
+                                  <Pencil size={12} />
+                                  <span>Ubah Zona</span>
+                                </button>
+                                <button
+                                  onClick={() => setDetailModalGroup(group)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10.5px]"
+                                >
+                                  Detail
+                                </button>
                               </div>
                             </div>
                           </Popup>
@@ -744,7 +968,7 @@ export const ZonaInspectorPage: React.FC = () => {
                           }}
                         >
                           <Popup>
-                            <div className="p-1 min-w-[230px] text-xs font-sans">
+                            <div className="p-1 min-w-[240px] text-xs font-sans">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="font-black text-slate-900 text-sm">{group.name}</span>
                                 {isOverlapping ? (
@@ -770,12 +994,21 @@ export const ZonaInspectorPage: React.FC = () => {
                                 <p><span className="font-semibold text-slate-500">Mahasiswa:</span> {group.insideZoneCount} / {group.totalStudents} di zona</p>
                               </div>
 
-                              <button
-                                onClick={() => setDetailModalGroup(group)}
-                                className="w-full mt-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] text-center"
-                              >
-                                Buka Inspeksi Lengkap
-                              </button>
+                              <div className="mt-3 pt-2 border-t border-slate-100 flex gap-1.5">
+                                <button
+                                  onClick={() => handleOpenEditModal(group)}
+                                  className="flex-1 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10.5px] flex items-center justify-center gap-1 shadow-xs"
+                                >
+                                  <Pencil size={12} />
+                                  <span>Ubah Posko / Zona</span>
+                                </button>
+                                <button
+                                  onClick={() => setDetailModalGroup(group)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10.5px]"
+                                >
+                                  Detail
+                                </button>
+                              </div>
                             </div>
                           </Popup>
                           <Tooltip direction="top" offset={[0, -10]} opacity={0.9} className="custom-leaflet-tooltip font-bold text-[10px]">
@@ -808,7 +1041,7 @@ export const ZonaInspectorPage: React.FC = () => {
                       }}
                     >
                       <Popup>
-                        <div className="p-1 min-w-[210px] text-xs">
+                        <div className="p-1 min-w-[220px] text-xs">
                           <span className="font-bold text-slate-900 text-sm block">{group.name}</span>
                           <span className="text-[10px] text-slate-500 block mb-1.5">
                             {group.hasRegisteredPosko ? "📍 Posko KKN Resmi Terverifikasi" : "⚠️ Posko Belum Didaftarkan (Titik Default)"}
@@ -824,6 +1057,15 @@ export const ZonaInspectorPage: React.FC = () => {
                               Mahasiswa kelompok ini belum menentukan titik posko pada aplikasi.
                             </p>
                           )}
+                          <div className="mt-2 pt-2 border-t border-slate-100">
+                            <button
+                              onClick={() => handleOpenEditModal(group)}
+                              className="w-full py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] flex items-center justify-center gap-1"
+                            >
+                              <Pencil size={11} />
+                              <span>Set Titik Posko Ini</span>
+                            </button>
+                          </div>
                         </div>
                       </Popup>
                     </Marker>
@@ -1092,20 +1334,32 @@ export const ZonaInspectorPage: React.FC = () => {
                       </div>
 
                       {/* Footer Info & Action */}
-                      <div className="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[10.5px]">
-                        <span className="text-slate-500">
+                      <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[10.5px]">
+                        <span className="text-slate-500 font-medium">
                           {group.insideZoneCount} / {group.totalStudents} Mahasiswa di Zona
                         </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDetailModalGroup(group);
-                          }}
-                          className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-0.5"
-                        >
-                          <span>Detail</span>
-                          <ChevronRight size={13} />
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(group);
+                            }}
+                            className="px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold hover:bg-indigo-100 transition flex items-center gap-1"
+                          >
+                            <Pencil size={11} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDetailModalGroup(group);
+                            }}
+                            className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-0.5"
+                          >
+                            <span>Detail</span>
+                            <ChevronRight size={13} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -1244,9 +1498,22 @@ export const ZonaInspectorPage: React.FC = () => {
             <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar text-xs">
               {/* Posko Section */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-                <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs block mb-2 uppercase tracking-wider">
-                  Data Posko KKN
-                </span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs uppercase tracking-wider">
+                    Data Posko KKN
+                  </span>
+                  <button
+                    onClick={() => {
+                      setDetailModalGroup(null);
+                      handleOpenEditModal(detailModalGroup);
+                    }}
+                    className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs"
+                  >
+                    <Pencil size={12} />
+                    <span>Ubah Posko &amp; Geofence</span>
+                  </button>
+                </div>
+
                 {detailModalGroup.posko ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700 dark:text-slate-300">
                     <div>
@@ -1272,7 +1539,7 @@ export const ZonaInspectorPage: React.FC = () => {
                   <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-300">
                     <p className="font-bold">⚠️ Belum Mendaftarkan Posko Resmi</p>
                     <p className="text-[11px] mt-0.5">
-                      Titik geofence presensi saat ini masih menggunakan titik tengah kelurahan / Coblong. Mahasiswa ketua kelompok perlu melakukan input titik posko di aplikasi.
+                      Titik geofence presensi saat ini masih menggunakan titik tengah kelurahan / Coblong. Anda dapat mendaftarkan titik posko resmi untuk kelompok ini sekarang.
                     </p>
                   </div>
                 )}
@@ -1335,15 +1602,278 @@ export const ZonaInspectorPage: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end gap-2">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between gap-2">
+              {detailModalGroup.posko && (
+                <button
+                  onClick={() => handleDeletePosko(detailModalGroup.id)}
+                  disabled={savingAction}
+                  className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 dark:border-rose-800 font-bold text-xs flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  <span>Hapus Posko</span>
+                </button>
+              )}
               <button
                 onClick={() => {
                   handleFocusGroup(detailModalGroup);
                   setDetailModalGroup(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs ml-auto"
               >
                 Fokuskan di Peta
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── INTERACTIVE GEOFENCE & POSKO CRUD EDITOR MODAL ─── */}
+      {isEditModalOpen && editingGroup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/30">
+                  <SlidersHorizontal size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                    Ubah Geofence &amp; Posko: {editingGroup.name}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Klik pada peta untuk menggeser koordinat, sesuaikan radius zona presensi, atau ubah identitas posko.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                {/* Left: Mini Map Picker (7 Cols) */}
+                <div className="md:col-span-7 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">
+                      Peta Pemilihan Titik &amp; Radius
+                    </span>
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditMode("CIRCLE");
+                          if (editPoints.length > 1) setEditPoints([editPoints[0]]);
+                        }}
+                        className={`px-2.5 py-1 rounded-md transition-all ${
+                          editMode === "CIRCLE"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        Radius Lingkaran
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditMode("POLYGON")}
+                        className={`px-2.5 py-1 rounded-md transition-all ${
+                          editMode === "POLYGON"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        Poligon Custom
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Leaflet Sub-Map */}
+                  <div className="w-full h-72 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner relative">
+                    <MapContainer
+                      center={editPoints[0] || editingGroup.center}
+                      zoom={16}
+                      scrollWheelZoom={true}
+                      className="w-full h-full"
+                    >
+                      <ThemeTileLayer />
+                      <DualGeofencePickerModalMap
+                        mode={editMode}
+                        points={editPoints}
+                        onChange={(pts) => setEditPoints(pts)}
+                        radius={editRadius}
+                      />
+                    </MapContainer>
+                  </div>
+
+                  {/* Polygon Node Action buttons if in POLYGON mode */}
+                  {editMode === "POLYGON" && (
+                    <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                      <span className="text-[11px] text-amber-800 dark:text-amber-300 font-semibold">
+                        Titik Sudut: <strong>{editPoints.length}</strong> (Minimal 3 titik)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditPoints([editPoints[0] || editingGroup.center])}
+                        className="px-2 py-1 rounded bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-bold text-[10px]"
+                      >
+                        Reset Titik
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Radius Slider if in CIRCLE mode */}
+                  {editMode === "CIRCLE" && (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">
+                          Ukuran Radius Geofence
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-md font-black text-xs">
+                          {editRadius} Meter
+                        </span>
+                      </div>
+
+                      <input
+                        type="range"
+                        min="50"
+                        max="800"
+                        step="25"
+                        value={editRadius}
+                        onChange={(e) => setEditRadius(Number(e.target.value))}
+                        className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                      />
+
+                      {/* Quick Radius Presets */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {[50, 100, 150, 200, 250, 300, 500].map((r) => (
+                          <button
+                            key={`preset-${r}`}
+                            type="button"
+                            onClick={() => setEditRadius(r)}
+                            className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                              editRadius === r
+                                ? "bg-emerald-600 text-white border-emerald-600"
+                                : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500"
+                            }`}
+                          >
+                            {r}m {r === 200 ? "(Standar)" : ""}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Form Data Posko (5 Cols) */}
+                <div className="md:col-span-5 flex flex-col gap-3.5">
+                  <span className="font-extrabold text-slate-800 dark:text-slate-200 text-xs">
+                    Informasi &amp; Identitas Posko
+                  </span>
+
+                  <div>
+                    <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                      Nama Posko KKN
+                    </label>
+                    <input
+                      type="text"
+                      value={editPoskoForm.nama}
+                      onChange={(e) => setEditPoskoForm({ ...editPoskoForm, nama: e.target.value })}
+                      placeholder="Contoh: Posko KKN RW 05 Sekeloa"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                      Alamat Lengkap Posko
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editPoskoForm.alamat}
+                      onChange={(e) => setEditPoskoForm({ ...editPoskoForm, alamat: e.target.value })}
+                      placeholder="Contoh: Jl. Tubagus Ismail Raya No. 42"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={editPoints[0] ? editPoints[0][0] : ""}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (!isNaN(val)) setEditPoints([[val, editPoints[0]?.[1] || CoblongGeo.CENTER[1]]]);
+                        }}
+                        className="w-full px-2.5 py-1.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-0.5">Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={editPoints[0] ? editPoints[0][1] : ""}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (!isNaN(val)) setEditPoints([[editPoints[0]?.[0] || CoblongGeo.CENTER[0], val]]);
+                        }}
+                        className="w-full px-2.5 py-1.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10.5px] font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                      Catatan / Keterangan (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={editPoskoForm.keterangan}
+                      onChange={(e) => setEditPoskoForm({ ...editPoskoForm, keterangan: e.target.value })}
+                      placeholder="Contoh: Rumah Ketua RT 02 / Balai RW"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300">
+                    <p className="font-bold text-[11px] flex items-center gap-1">
+                      <Sparkles size={13} />
+                      <span>Sinkronisasi Otomatis Presensi</span>
+                    </p>
+                    <p className="text-[10.5px] mt-0.5">
+                      Menyimpan posko ini akan langsung mengaktifkan titik geofence presensi untuk semua mahasiswa di kelompok ini.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSavePosko}
+                disabled={savingAction}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-emerald-600/30 active:scale-95 transition disabled:opacity-50"
+              >
+                <Save size={15} />
+                <span>{savingAction ? "Menyimpan..." : "Simpan & Terapkan Zona"}</span>
               </button>
             </div>
           </div>
