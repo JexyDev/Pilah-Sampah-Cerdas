@@ -861,8 +861,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          WeightText(
-                            newVol,
+                          Text(
+                            '${newVol.toStringAsFixed(1)} L',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -889,19 +889,18 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Text(
+                              const Text(
                                 'Maks ',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,
                                 ),
                               ),
-                              WeightText(
-                                maxVol,
-                                fractionDigits: 0,
-                                style: TextStyle(
+                              Text(
+                                '${maxVol.toStringAsFixed(0)} L',
+                                style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,
                                 ),
