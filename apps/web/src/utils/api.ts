@@ -40,7 +40,12 @@ api.interceptors.request.use(
     }
     // Jika data berupa FormData, hapus default Content-Type agar browser mengatur multipart boundary secara otomatis
     if (config.data instanceof FormData && config.headers) {
+      if (typeof (config.headers as any).delete === "function") {
+        (config.headers as any).delete("Content-Type");
+        (config.headers as any).delete("content-type");
+      }
       delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
     }
     return config;
   },

@@ -3627,13 +3627,15 @@ export const dplService = {
 
         // Bukti Label
         let buktiLabel = "—";
-        if (item.fotoBuktiUrl) {
-          if (item.fotoBuktiUrl.includes(",") || item.fotoBuktiUrl.includes(";")) {
-            const count = item.fotoBuktiUrl.split(/[,;]/).filter(Boolean).length;
+        const rawBukti = (item.fotoBuktiUrl || "").trim();
+        const validBukti = rawBukti && rawBukti !== "null" && rawBukti !== "undefined" && rawBukti !== "-" ? rawBukti : null;
+        if (validBukti) {
+          if (validBukti.includes(",") || validBukti.includes(";")) {
+            const count = validBukti.split(/[,;]/).filter(Boolean).length;
             buktiLabel = `${count} Foto`;
-          } else if (item.fotoBuktiUrl.endsWith(".pdf")) {
+          } else if (validBukti.endsWith(".pdf")) {
             buktiLabel = "Dokumen";
-          } else if (item.fotoBuktiUrl.includes("notula") || item.fotoBuktiUrl.includes("doc")) {
+          } else if (validBukti.includes("notula") || validBukti.includes("doc")) {
             buktiLabel = "Notula";
           } else {
             buktiLabel = "1 Foto";
@@ -3681,7 +3683,7 @@ export const dplService = {
           durasiMenit: durasiM,
           durasi: durasiLabel,
           bukti: buktiLabel,
-          fotoBuktiUrl: item.fotoBuktiUrl,
+          fotoBuktiUrl: validBukti,
           simpanLokasi: item.simpanLokasi ?? true,
           status: st,
           pekanKe: item.pekanKe || 1,

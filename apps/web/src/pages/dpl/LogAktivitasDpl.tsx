@@ -82,7 +82,6 @@ export const LogAktivitasDpl: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("ALL");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("ALL");
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
   const [selectedPekanFilter, setSelectedPekanFilter] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -281,7 +280,6 @@ export const LogAktivitasDpl: React.FC = () => {
         search: searchQuery,
         groupId: selectedGroupFilter !== "ALL" ? selectedGroupFilter : undefined,
         kategori: selectedCategoryFilter !== "ALL" ? selectedCategoryFilter : undefined,
-        status: selectedStatusFilter !== "ALL" ? selectedStatusFilter : undefined,
         pekanKe: selectedPekanFilter !== "ALL" ? parseInt(selectedPekanFilter, 10) : undefined,
         page: currentPage,
         limit: pageSize,
@@ -309,7 +307,7 @@ export const LogAktivitasDpl: React.FC = () => {
 
   useEffect(() => {
     fetchActivityLogs();
-  }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedStatusFilter, selectedPekanFilter, currentPage]);
+  }, [searchQuery, selectedGroupFilter, selectedCategoryFilter, selectedPekanFilter, currentPage]);
 
   // File Upload Handlers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -400,8 +398,8 @@ export const LogAktivitasDpl: React.FC = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Submit Handler (Draf vs Terkirim)
-  const handleSubmit = async (status: "DRAF" | "TERKIRIM") => {
+  // Submit Handler
+  const handleSubmit = async (status: "DRAF" | "TERKIRIM" = "TERKIRIM") => {
     if (!validateForm()) {
       toast.error("Mohon lengkapi seluruh kolom bertanda bintang (*) dengan benar");
       return;
@@ -428,7 +426,6 @@ export const LogAktivitasDpl: React.FC = () => {
       formData.append("status", status);
 
       if (selectedFile) {
-        formData.append("file", selectedFile);
         formData.append("fotoBukti", selectedFile);
       } else if (filePreview && !filePreview.startsWith("blob:") && !filePreview.startsWith("data:")) {
         formData.append("fotoBuktiUrl", filePreview);
@@ -438,10 +435,10 @@ export const LogAktivitasDpl: React.FC = () => {
 
       if (editingLogId) {
         await dplActivityLogService.updateActivityLog(editingLogId, formData);
-        toast.success(status === "DRAF" ? "Draf berhasil diperbarui" : "Kegiatan DPL berhasil disimpan!");
+        toast.success("Kegiatan DPL berhasil diperbarui!");
       } else {
         await dplActivityLogService.createActivityLog(formData);
-        toast.success(status === "DRAF" ? "Draf kegiatan berhasil disimpan" : "Kegiatan DPL berhasil disimpan!");
+        toast.success("Kegiatan DPL berhasil disimpan!");
       }
 
       setIsFormModalOpen(false);
@@ -512,9 +509,9 @@ export const LogAktivitasDpl: React.FC = () => {
       </div>
 
       {/* ─────────────────────────────────────────────
-          2. 4 TOP STAT SUMMARY CARDS
+          2. 3 TOP STAT SUMMARY CARDS
           ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: Total Aktivitas */}
         <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs flex items-center justify-between">
           <div>
@@ -547,21 +544,10 @@ export const LogAktivitasDpl: React.FC = () => {
             <Clock className="w-5 h-5" />
           </div>
         </div>
-
-        {/* Card 4: Belum Dikirim */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-slate-500">Belum Dikirim</p>
-            <h3 className="text-2xl font-bold text-slate-800 mt-1">{stats.belumDikirim}</h3>
-          </div>
-          <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Hourglass className="w-5 h-5" />
-          </div>
-        </div>
       </div>
 
       {/* ─────────────────────────────────────────────
-          3. FULL-WIDTH TABLE: RIWAYAT KEGIATAN DPL (12 Kolom)
+          3. FULL-WIDTH TABLE: RIWAYAT KEGIATAN DPL
           ───────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
@@ -652,24 +638,6 @@ export const LogAktivitasDpl: React.FC = () => {
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-
-          {/* Filter Status */}
-          <div className="relative">
-            <select
-              value={selectedStatusFilter}
-              onChange={(e) => {
-                setSelectedStatusFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="appearance-none bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-8 py-2 text-xs text-slate-700 font-medium focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-600 cursor-pointer"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="TERKIRIM">Terkirim</option>
-              <option value="TERVERIFIKASI">Terverifikasi</option>
-              <option value="DRAF">Draf</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
         </div>
 
         {/* Full-Width Table Container */}
@@ -685,14 +653,13 @@ export const LogAktivitasDpl: React.FC = () => {
                 <th className="py-3 px-3.5 whitespace-nowrap">Lokasi Kegiatan</th>
                 <th className="py-3 px-3.5 whitespace-nowrap text-center">Durasi (Jam)</th>
                 <th className="py-3 px-3.5 whitespace-nowrap text-center">Bukti</th>
-                <th className="py-3 px-3.5 whitespace-nowrap text-center">Status</th>
-                <th className="py-3 px-3.5 text-center whitespace-nowrap">Aksi</th>
+                <th className="py-3 px-3.5 text-center whitespace-nowrap min-w-[210px]">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
                       <span>Memuat riwayat aktivitas DPL...</span>
@@ -701,7 +668,7 @@ export const LogAktivitasDpl: React.FC = () => {
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <AlertCircle className="w-7 h-7 text-slate-300" />
                       <span className="font-semibold text-slate-600 text-sm">Belum ada kegiatan DPL</span>
@@ -765,64 +732,50 @@ export const LogAktivitasDpl: React.FC = () => {
 
                     {/* 8. Bukti */}
                     <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                      {item.fotoBuktiUrl ? (
+                      {item.fotoBuktiUrl && item.fotoBuktiUrl.trim() !== "" && item.fotoBuktiUrl !== "null" && item.fotoBuktiUrl !== "-" ? (
                         <button
                           type="button"
                           onClick={() => setSelectedDetailLog(item)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
-                          title="Klik untuk melihat bukti foto/dokumen"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-colors cursor-pointer shadow-2xs"
+                          title="Klik untuk melihat bukti dokumentasi"
                         >
-                          <Eye className="w-3 h-3" />
-                          <span>{item.bukti}</span>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{item.bukti && item.bukti !== "—" ? item.bukti : "Lihat Bukti"}</span>
                         </button>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400 font-medium">-</span>
                       )}
                     </td>
 
-                    {/* 9. Status */}
-                    <td className="py-3 px-3.5 whitespace-nowrap text-center">
-                      {item.status === "TERVERIFIKASI" ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Terverifikasi
-                        </span>
-                      ) : item.status === "DRAF" ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                          Draf
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                          Terkirim
-                        </span>
-                      )}
-                    </td>
-
-                    {/* 10. Aksi */}
+                    {/* 9. Aksi */}
                     <td className="py-3 px-3.5 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => setSelectedDetailLog(item)}
-                          className="px-2.5 py-1.5 rounded-lg border border-blue-500 text-blue-600 hover:bg-blue-50 text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          title="Lihat detil kegiatan"
                         >
-                          <Eye className="w-3 h-3" />
-                          <span>Lihat</span>
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Detil</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleEditClick(item)}
-                          className="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 text-[11px] font-semibold transition-colors cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          title="Edit kegiatan"
                         >
-                          <Edit3 className="w-3 h-3" />
+                          <Edit3 className="w-3.5 h-3.5" />
                           <span>Edit</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteLog(item.id)}
-                          className="p-1.5 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 text-[11px] font-semibold transition-colors cursor-pointer"
-                          title="Hapus Kegiatan"
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                          title="Hapus kegiatan"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus</span>
                         </button>
                       </div>
                     </td>
@@ -1304,20 +1257,12 @@ export const LogAktivitasDpl: React.FC = () => {
                   Batal
                 </button>
                 <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => handleSubmit("DRAF")}
-                  className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  Simpan Draf
-                </button>
-                <button
                   type="submit"
                   disabled={submitting}
                   className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
                   {submitting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{editingLogId ? "Simpan Perubahan" : "Kirim Aktivitas"}</span>
+                  <span>{editingLogId ? "Simpan Perubahan" : "Simpan Kegiatan"}</span>
                 </button>
               </div>
             </form>
@@ -1326,7 +1271,7 @@ export const LogAktivitasDpl: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────
-          5. POPUP MODAL: DETAIL AKTIVITAS ("LIHAT") - 100% MATCHING MOCKUP
+          5. POPUP MODAL: DETIL AKTIVITAS
           ───────────────────────────────────────────── */}
       {selectedDetailLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
@@ -1349,16 +1294,6 @@ export const LogAktivitasDpl: React.FC = () => {
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs">
                     <Calendar className="w-3.5 h-3.5" />
                     <span>Pekan {selectedDetailLog.pekanKe || 1}</span>
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-2xs ${
-                      selectedDetailLog.status === "DRAF"
-                        ? "bg-slate-100 text-slate-700 border border-slate-200"
-                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    }`}
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    <span>{selectedDetailLog.status === "DRAF" ? "Draf" : "Terkirim"}</span>
                   </span>
                 </div>
               </div>

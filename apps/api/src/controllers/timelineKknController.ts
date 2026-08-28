@@ -7,6 +7,8 @@
 
 import { Request, Response } from "express";
 import { timelineKknService } from "../services/timelineKknService.js";
+import { prisma } from "../lib/prisma.js";
+import { notificationIntegrationService } from "../services/notificationIntegrationService.js";
 
 export const timelineKknController = {
   getAll: async (req: Request, res: Response) => {
@@ -201,6 +203,29 @@ export const timelineKknController = {
         statusPelaksanaan: statusPelaksanaan || "BELUM_DIMULAI",
         kelompokId: kelompokId || null,
       });
+
+      // Kirim Notifikasi Latar Belakang (Push Notification) ke anggota Kelompok
+      if (kelompokId) {
+        const students = await prisma.studentKkn.findMany({
+          where: { kelompokId },
+          include: { user: true },
+        });
+        // Kumpulkan token FCM yang valid
+        const validTokens = students
+          .map((s) => s.user.fcmToken)
+          .filter((token) => token && token.trim() !== "");
+        const notifTitle = "Kegiatan KKN Baru!";
+        const notifBody = `Ada kegiatan baru: ${kegiatanUtama} pada ${tanggal || "jadwal terbaru"}. Cek aplikasi sekarang!`;
+        // Tembak FCM ke semua token secara paralel (Fire & Forget)
+        for (const token of validTokens) {
+          notificationIntegrationService.sendPushNotification(
+            token as string,
+            notifTitle,
+            notifBody,
+            "NEW_KEGIATAN"
+          ).catch((e) => console.error("Gagal kirim push notif kegiatan:", e));
+        }
+      }
 
       res.status(201).json({
         success: true,

@@ -218,18 +218,24 @@ export const dplActivityLogService = {
   },
 
   /**
-   * Menyimpan aktivitas DPL baru (Draf atau Terkirim)
+   * Menyimpan aktivitas DPL baru
    */
   createActivityLog: async (data: FormData | Record<string, any>) => {
-    const res = await api.post("/dpl/activity-logs", data);
+    const isFormData = data instanceof FormData;
+    const res = await api.post("/dpl/activity-logs", data, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
     return res.data;
   },
 
   /**
-   * Memperbarui aktivitas DPL (Edit Draf atau Kirim)
+   * Memperbarui aktivitas DPL (Edit)
    */
   updateActivityLog: async (id: string, data: FormData | Record<string, any>) => {
-    const res = await api.put(`/dpl/activity-logs/${id}`, data);
+    const isFormData = data instanceof FormData;
+    const res = await api.put(`/dpl/activity-logs/${id}`, data, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
     return res.data;
   },
 
