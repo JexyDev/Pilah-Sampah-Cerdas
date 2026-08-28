@@ -294,6 +294,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       case "/audit-trail":
       case "/audit-log":
         return ["Histori Sistem"];
+      case "/kurasi-landing":
+      case "/manajemen-berita":
+      case "/master-data/kurasi-landing":
+      case "/master-data/manajemen-berita":
+      case "/superUser/kurasi-landing":
+        return ["Master Data", "Manajemen Berita"];
       case "/evaluasi-ai":
       case "/superUser/discrepancies":
         return ["Verifikasi & QR", "Diskrepansi AI"];

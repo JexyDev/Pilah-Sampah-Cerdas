@@ -1026,6 +1026,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route path="/master-data/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />
+        <Route path="/master-data/manajemen-berita" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/superUser/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/master-data/histori-sistem" element={<Navigate to="/histori-sistem" replace />} />
         <Route path="/log-aktivitas" element={<Navigate to="/histori-sistem" replace />} />

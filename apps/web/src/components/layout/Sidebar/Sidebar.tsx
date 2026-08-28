@@ -172,6 +172,15 @@ const checkRouteActive = (
     const importSurveiAliases = ["/hasil-survei/data-survei", "/superUser/import-survei-kkn", "/import-survei-kkn"];
     if (importSurveiAliases.includes(tPath) && importSurveiAliases.includes(cPath)) return true;
 
+    const kurasiAliases = [
+      "/kurasi-landing",
+      "/manajemen-berita",
+      "/master-data/kurasi-landing",
+      "/master-data/manajemen-berita",
+      "/superUser/kurasi-landing",
+    ];
+    if (kurasiAliases.includes(tPath) && kurasiAliases.includes(cPath)) return true;
+
     return false;
   };
 
@@ -701,18 +710,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           label: "Dasbor",
           allowed: ALL_ROLES,
         },
-        {
-          to: "/kurasi-landing",
-          icon: Sparkles,
-          label: "Kurasi Kegiatan Landing",
-          allowed: ["DEVELOPER"] as UserRole[],
-        },
-        {
-          to: "/manajemen-berita",
-          icon: Globe,
-          label: "Manajemen Berita",
-          allowed: ["DEVELOPER"] as UserRole[],
-        },
       ],
     },
     {
@@ -1241,8 +1238,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         },
         {
           to: "/kurasi-landing",
-          icon: Sparkles,
-          label: "Kurasi Landing Page",
+          icon: Globe,
+          label: "Manajemen Berita",
           allowed: ["DEVELOPER"] as UserRole[],
         },
         {
