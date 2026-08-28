@@ -3150,13 +3150,94 @@ export class KknAttendanceService {
   }
 
   /**
-   * Cek semua presensi BERLANGSUNG, jika jadwalnya sudah lewat, checkout otomatis.
+   * Watchdog Anomali GPS:
+   * Mendeteksi mahasiswa yang statusnya BERLANGSUNG/DI_ZONA tetapi HP mati / aplikasi ditutup / sinyal GPS hilang > 15 menit.
+   * Mengunci durasi aktual pada waktu ping terakhir dan mengubah status menjadi TERJEDA secara otomatis.
+   */
+  async handleStaleGpsSessions() {
+    try {
+      const now = new Date();
+      const STALE_THRESHOLD_MINUTES = 15;
+      const staleThresholdMs = STALE_THRESHOLD_MINUTES * 60 * 1000;
+
+      const activeAttendances = await prisma.activityAttendance.findMany({
+        where: {
+          status: { in: ["BERLANGSUNG", "DI_ZONA", "DALAM_RADIUS"] },
+          checkOutAt: null,
+        },
+        include: {
+          schedule: true,
+          student: {
+            include: {
+              locations: {
+                orderBy: { recordedAt: "desc" },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
+      for (const att of activeAttendances) {
+        const latestLoc = att.student?.locations?.[0];
+        const lastPingTime = latestLoc ? new Date(latestLoc.recordedAt).getTime() : new Date(att.attendedAt).getTime();
+        const timeSinceLastPingMs = now.getTime() - lastPingTime;
+
+        // Jika tidak ada ping GPS selama > 15 menit (HP mati / aplikasi di-kill / GPS dimatikan)
+        if (timeSinceLastPingMs > staleThresholdMs) {
+          console.log(`[Watchdog Stale GPS] Mendeteksi HP mati / GPS terputus untuk Mahasiswa ${att.student?.name} (${att.studentId}). Menjeda sesi otomatis.`);
+
+          const currentLogs = (att.jedaLogs as any[]) || [];
+          const lastPingDate = new Date(lastPingTime);
+
+          // Hitung durasi aktual yang valid sampai waktu ping terakhir
+          let validMins = att.actualInZoneMinutes ?? 0;
+          if (validMins === 0 && att.attendedAt) {
+            const diffFromAttended = Math.max(0, Math.floor((lastPingTime - new Date(att.attendedAt).getTime()) / 60000));
+            validMins = Math.min(480, diffFromAttended);
+          }
+
+          currentLogs.push({
+            alasan: "Anomali Sinyal GPS Terputus / HP Mati / Aplikasi Ditutup (Otomatis)",
+            waktuJeda: lastPingDate.toISOString(),
+            durasiSebelumJedaMenit: validMins,
+            autoTriggered: true,
+            staleGpsAnomaly: true,
+          });
+
+          await prisma.activityAttendance.update({
+            where: { id: att.id },
+            data: {
+              status: "TERJEDA",
+              actualInZoneMinutes: validMins,
+              jedaLogs: currentLogs,
+            },
+          });
+
+          websocketService.broadcastStudentAttendance({
+            id: att.id,
+            studentId: att.studentId,
+            scheduleId: att.scheduleId,
+            status: "TERJEDA",
+            currentStatus: "HP_MATI_ATAU_GPS_TERPUTUS",
+            attendedAt: att.attendedAt.toISOString(),
+            actualInZoneMinutes: validMins,
+          });
+        }
+      }
+    } catch (e) {
+      console.error("[Watchdog Stale GPS] Error pada handleStaleGpsSessions:", e);
+    }
+  }
+
+  /**
+   * Cek semua presensi BERLANGSUNG & TERJEDA, jika jam jadwal sudah usai, checkout otomatis dan kunci durasi final.
    */
   async autoCheckOutEndedSchedules() {
     try {
       const activeAttendances = await prisma.activityAttendance.findMany({
         where: {
-          status: { in: ["BERLANGSUNG", "DI_ZONA"] },
+          status: { in: ["BERLANGSUNG", "DI_ZONA", "DALAM_RADIUS", "TERJEDA"] },
           checkOutAt: null,
         },
         include: {
@@ -3179,7 +3260,7 @@ export class KknAttendanceService {
         // Jika waktu saat ini sudah lewat / sama dengan batas selesai jadwal
         if (currentMins >= endMins) {
           console.log(`[AutoCheckout] Melakukan checkout otomatis untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`);
-          
+
           await this.checkOutAttendance({
             studentId: att.studentId,
             scheduleId: att.scheduleId,
@@ -3192,7 +3273,7 @@ export class KknAttendanceService {
               title: "Kegiatan Selesai ✅",
               message: `Kegiatan ${att.schedule.title} telah usai. Sistem telah mencatat jam kepulangan Anda secara otomatis.`,
             },
-          });
+          }).catch(() => {});
 
           // Notifikasi Push FCM
           if (att.student.fcmToken) {
@@ -3200,7 +3281,7 @@ export class KknAttendanceService {
               att.student.fcmToken,
               "Kegiatan Selesai ✅",
               `Kegiatan ${att.schedule.title} usai. Checkout berhasil otomatis.`
-            );
+            ).catch(() => {});
           }
         }
       }

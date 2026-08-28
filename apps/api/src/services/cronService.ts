@@ -46,9 +46,10 @@ export class CronService {
       this.cleanupStaleData();
     }, tzOptions);
 
-    // Auto checkout ended KKN schedules every minute
+    // Auto checkout ended KKN schedules & handle stale GPS / dead battery anomalies every minute
     cron.schedule("* * * * *", () => {
       kknAttendanceService.autoCheckOutEndedSchedules();
+      kknAttendanceService.handleStaleGpsSessions();
     }, tzOptions);
 
     // Daily KKN schedules batch auto-generation at midnight (00:01 AM WIB)
