@@ -12,6 +12,7 @@ import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
 import { websocketService } from "./websocketService.js";
 import { validateCoordinate } from "../utils/geoValidation.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
+import { isOrganikBin, isAnorganikBin } from "./kknService.js";
 
 /**
  * Helper: Build unified geofence object with fallback to system defaults.
@@ -541,33 +542,7 @@ export class KknAttendanceService {
               actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
             });
           }
-          // Auto-Resume saat kembali masuk zona
-          else if (isCurrInside && currentAttStatus === "TERJEDA") {
-            currentLogs.push({
-              waktuResume: new Date().toISOString(),
-              durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
-              autoTriggered: true,
-            });
-            currentAttStatus = "BERLANGSUNG";
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
-                status: "BERLANGSUNG",
-                jedaLogs: currentLogs,
-              },
-            });
-            existingAtt.status = "BERLANGSUNG";
-            existingAtt.jedaLogs = currentLogs as any;
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "BERLANGSUNG",
-              currentStatus: "MASIH_DI_LOKASI",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
-            });
-          }
+
 
           // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
@@ -705,8 +680,8 @@ export class KknAttendanceService {
     return Array.from(usersMap.values()).map((u: any) => {
       u.recentLogs.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
-      const binOrganik = u.bins.find((b: any) => b.category?.name === "ORGANIC" || b.qrCode?.toLowerCase().includes("org") || b.qrCode?.toLowerCase().includes("1"));
-      const binAnorganik = u.bins.find((b: any) => b.category?.name === "NON_ORGANIC" || b.qrCode?.toLowerCase().includes("anorg") || b.qrCode?.toLowerCase().includes("2"));
+      const binOrganik = u.bins.find((b: any) => isOrganikBin(b));
+      const binAnorganik = u.bins.find((b: any) => isAnorganikBin(b));
       const primaryBin = u.bins[0];
 
       return {
@@ -940,33 +915,7 @@ export class KknAttendanceService {
               actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
             });
           }
-          // Auto-Resume saat kembali masuk zona
-          else if (isCurrInside && currentAttStatus === "TERJEDA") {
-            currentLogs.push({
-              waktuResume: new Date().toISOString(),
-              durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
-              autoTriggered: true,
-            });
-            currentAttStatus = "BERLANGSUNG";
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
-                status: "BERLANGSUNG",
-                jedaLogs: currentLogs,
-              },
-            });
-            existingAtt.status = "BERLANGSUNG";
-            existingAtt.jedaLogs = currentLogs as any;
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "BERLANGSUNG",
-              currentStatus: "MASIH_DI_LOKASI",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
-            });
-          }
+
 
           let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
           if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
@@ -3469,8 +3418,20 @@ export class KknAttendanceService {
     // Filter DPL scope
     let dplStudentUserIds: string[] | undefined;
     if (params.dplUserId) {
+      const dplUser = await prisma.user.findUnique({
+        where: { id: params.dplUserId },
+        select: { id: true, name: true, nip: true, phone: true },
+      });
+      const dplOr: any[] = [
+        { dplId: params.dplUserId },
+        { dpl: { id: params.dplUserId } },
+      ];
+      if (dplUser?.name) dplOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
+      if (dplUser?.nip) dplOr.push({ dpl: { nip: dplUser.nip } });
+      if (dplUser?.phone) dplOr.push({ dpl: { phone: dplUser.phone } });
+
       const dplGroups = await prisma.kelompokKkn.findMany({
-        where: { OR: [{ dplId: params.dplUserId }, { dpl: { id: params.dplUserId } }] },
+        where: { OR: dplOr },
         include: { students: { select: { userId: true } } },
       });
       dplStudentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
@@ -3576,26 +3537,51 @@ export class KknAttendanceService {
           },
         },
       }),
-      // Query aggregated stats without pagination
+      // Query aggregated stats without pagination (with student profile for student-level accumulation)
       prisma.activityAttendance.findMany({
         where,
         select: {
+          studentId: true,
           status: true,
           actualInZoneMinutes: true,
           attendedAt: true,
           checkOutAt: true,
           jedaLogs: true,
+          student: {
+            select: {
+              id: true,
+              name: true,
+              fotoProfil: true,
+              studentProfile: {
+                select: {
+                  nim: true,
+                  jurusan: true,
+                  isKetua: true,
+                  kelompok: {
+                    select: {
+                      id: true,
+                      name: true,
+                      kelurahan: true,
+                      dpl: { select: { id: true, name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       }),
     ]);
 
-    // Calculate aggregated summary
+    // Calculate aggregated summary and per-student cumulative stats
     let hadirMemenuhiCount = 0;
     let hadirKurangCount = 0;
     let berlangsungCount = 0;
     let terjedaCount = 0;
     let izinSakitCount = 0;
     let totalMenitKumulatif = 0;
+
+    const studentAggMap = new Map<string, any>();
 
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
@@ -3621,7 +3607,61 @@ export class KknAttendanceService {
       } else if (st.includes("IZIN") || st.includes("SAKIT")) {
         izinSakitCount++;
       }
+
+      // Group per student for cumulative reporting
+      const sId = r.studentId;
+      if (!studentAggMap.has(sId)) {
+        const kknGroup = r.student?.studentProfile?.kelompok;
+        studentAggMap.set(sId, {
+          studentId: sId,
+          namaMahasiswa: r.student?.name || "Mahasiswa",
+          nim: r.student?.studentProfile?.nim || "-",
+          jurusan: r.student?.studentProfile?.jurusan || "-",
+          fotoProfil: r.student?.fotoProfil || null,
+          isKetua: r.student?.studentProfile?.isKetua || false,
+          kelompok: kknGroup ? {
+            id: kknGroup.id,
+            name: kknGroup.name,
+            kelurahan: kknGroup.kelurahan,
+            dplName: (kknGroup as any).dpl?.name || "-",
+          } : null,
+          totalSessions: 0,
+          totalMinutes: 0,
+          hadirMemenuhi: 0,
+          hadirKurang: 0,
+          berlangsung: 0,
+          terjeda: 0,
+          izinSakit: 0,
+        });
+      }
+
+      const agg = studentAggMap.get(sId)!;
+      agg.totalSessions++;
+      agg.totalMinutes += mins;
+      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 240)) agg.hadirMemenuhi++;
+      else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < 240)) agg.hadirKurang++;
+      else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") agg.berlangsung++;
+      else if (st === "TERJEDA") agg.terjeda++;
+      else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
     }
+
+    const studentAggregates = Array.from(studentAggMap.values()).map((agg) => {
+      const hours = Math.floor(agg.totalMinutes / 60);
+      const mins = agg.totalMinutes % 60;
+      const totalFormatted = hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
+      const avgMins = Math.round(agg.totalMinutes / (agg.totalSessions || 1));
+      const avgHours = Math.floor(avgMins / 60);
+      const avgRemainderMins = avgMins % 60;
+      const avgFormatted = avgHours === 0 ? `${avgRemainderMins} Menit` : avgRemainderMins === 0 ? `${avgHours} Jam` : `${avgHours} Jam ${avgRemainderMins} Menit`;
+
+      return {
+        ...agg,
+        totalHours: Math.round((agg.totalMinutes / 60) * 10) / 10,
+        totalFormatted,
+        avgMinutesPerDay: avgMins,
+        avgFormatted,
+      };
+    }).sort((a, b) => b.totalMinutes - a.totalMinutes);
 
     const items = records.map((att) => {
       const st = String(att.status || "").toUpperCase();
@@ -3694,6 +3734,7 @@ export class KknAttendanceService {
         totalJamKumulatif: Math.round((totalMenitKumulatif / 60) * 10) / 10,
         totalMenitKumulatif,
       },
+      studentAggregates,
       items,
       pagination: {
         total,

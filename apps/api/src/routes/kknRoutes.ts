@@ -941,4 +941,29 @@ router.get(
   kknController.getTimelineMahasiswa
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/wilayah-kelompok:
+ *   get:
+ *     summary: Mengambil data batas geografis (Polygon/Radius) serta titik pusat posko dari kelompok KKN mahasiswa yang sedang login
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat wilayah kelompok
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Hanya untuk Mahasiswa KKN
+ *       404:
+ *         description: Data kelompok KKN mahasiswa tidak ditemukan
+ */
+router.get(
+  "/wilayah-kelompok",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknController.getWilayahKelompok
+);
+
 export default router;

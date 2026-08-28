@@ -597,6 +597,7 @@ const MonitoringAbsen: React.FC = () => {
   >("SEMUA");
   const [exportStartDate, setExportStartDate] = useState("");
   const [exportEndDate, setExportEndDate] = useState("");
+  const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<any | null>(null);
 
   // Modal State for Schedule Add / Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -674,6 +675,24 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const sanitizeDisplayDash = (text?: string): string => {
     if (!text) return "";
     return text.replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
+  };
+
+  const formatTimeDot = (dateStr?: string | Date | null): string => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "-";
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${h}.${m}`;
+  };
+
+  const formatDurasiIndo = (minutes: number): string => {
+    if (!minutes || minutes <= 0) return "0 menit";
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h > 0 && m > 0) return `${h} jam ${m} menit`;
+    if (h > 0) return `${h} jam`;
+    return `${m} menit`;
   };
 
   const parseDaysFromString = (str?: string): string[] => {
@@ -2831,14 +2850,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </div>
           </div>
 
-          {/* Right Card: Target Kegiatan Lapangan */}
+          {/* Right Card: Target Kegiatan Zona Lapangan */}
           <div className="bg-slate-50/70 dark:bg-slate-800/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 shadow-2xs">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 flex items-center justify-center">
                   <Target size={15} />
                 </div>
-                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Kegiatan Lapangan</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Target Zona Kegiatan Hari Ini</span>
               </div>
               {isSuperUserOrDev && (
                 <button
@@ -2854,24 +2873,24 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
             <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
               <div className="px-2 flex flex-col items-center justify-center">
-                <Calendar size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetPekan ?? 10}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Pekan</span>
-                <span className="text-[10px] text-slate-400 font-medium">Periode Kegiatan</span>
-              </div>
-
-              <div className="px-2 flex flex-col items-center justify-center">
-                <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{configTargets.targetTotalHari ?? 50}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Hari</span>
-                <span className="text-[10px] text-slate-400 font-medium">Total Hari Kegiatan</span>
-              </div>
-
-              <div className="px-2 flex flex-col items-center justify-center">
                 <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(configTargets.targetTotalJam ?? 200)}</span>
-                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Minimal Target</span>
-                <span className="text-[10px] text-slate-400 font-medium">Minimal Jam Kumulatif</span>
+                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Zona</span>
+                <span className="text-[10px] text-slate-400 font-medium">Minimal Durasi Lapangan</span>
+              </div>
+
+              <div className="px-2 flex flex-col items-center justify-center">
+                <MapPin size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{activeSchedule?.radius || 200}m</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Geofence Radius</span>
+                <span className="text-[10px] text-slate-400 font-medium">Batas Zona GPS Valid</span>
+              </div>
+
+              <div className="px-2 flex flex-col items-center justify-center">
+                <Users size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
+                <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{filteredAttendance.length}</span>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Mahasiswa</span>
+                <span className="text-[10px] text-slate-400 font-medium">Total Terjadwal di Zona</span>
               </div>
             </div>
           </div>
@@ -3428,540 +3447,502 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         {filteredAttendance.length > 0 ? (
           <>
             {displayMode === "table" ? (
-              /* Mode 1: Table Pro */
+              /* Mode 1: Table Pro - Sesuai Acuan Gambar Resmi 10 Kolom */
               <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                    <tr>
-                      <th className="py-3.5 px-4 w-12 text-center text-emerald-700"># No</th>
-                      <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa & NIM</th>
-                      {!selectedKelompokId && (
-                        <th className="py-3.5 px-4 text-center">Kelompok</th>
-                      )}
-                      <th className="py-3.5 px-4 text-center">Status Presensi</th>
-                      <th className="py-3.5 px-4 text-center">Jam Masuk</th>
-                      <th className="py-3.5 px-4 text-center">Jam Pulang</th>
-                      <th className="py-3.5 px-4 text-center">Durasi Sesi Ini</th>
-                      <th className="py-3.5 px-4 text-center">
-                        Total Akumulasi Mahasiswa
-                      </th>
-                      <th className="py-3.5 px-4 text-center">Poin Dampingan</th>
-                      <th className="py-3.5 px-4 text-center">Lokasi Kegiatan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-                    {paginatedAttendance.map((rec, idx) => {
-                      const itemNumber = (currentPage - 1) * pageSize + idx + 1;
-                      const statusUpper = String(rec.status || "").toUpperCase();
-                      const methodUpper = String(rec.method || "").toUpperCase();
-                      const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
-                      const isSakitPending = statusUpper === "SAKIT_PENDING" || (statusUpper.includes("SAKIT") && (statusUpper.includes("PENDING") || currentStatusUpper.includes("MENUNGGU")));
-                      const isIzinPending = statusUpper === "IZIN_PENDING" || (statusUpper.includes("IZIN") && (statusUpper.includes("PENDING") || currentStatusUpper.includes("MENUNGGU")));
-                      const isCancelRequested = statusUpper === "CANCEL_REQUESTED" || currentStatusUpper === "PENGAJUAN_BATAL_IZIN";
-                      const isSakit = (statusUpper.includes("SAKIT") || statusUpper === "SAKIT") && !isSakitPending;
-                      const isIzin = (statusUpper.includes("IZIN") || statusUpper === "IZIN") && !isIzinPending;
-                      const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
-                      const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
-                      const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
-                      const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
-                      
-                      const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
-                      const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
-                      const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
-                      const recAny = rec as any;
-                      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
-                      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-                      const durationMins = isLeaveOrPending 
-                        ? 0 
-                        : isTerjeda
-                        ? storedMins
-                        : isBerlangsung
-                        ? Math.max(storedMins, liveElapsedMins)
-                        : (storedMins > 0 ? storedMins : liveElapsedMins);
-                      const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null;
-                      const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
-                      const isMemenuhiDurasi = rec.isMemenuhiDurasi !== undefined
-                        ? rec.isMemenuhiDurasi
-                        : (statusUpper === "HADIR_MEMENUHI"
-                          ? true
-                          : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
-                          ? false
-                          : (scheduleTargetHours > 0 ? durationMins >= scheduleTargetHours * 60 : true));
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      <tr>
+                        <th className="py-3.5 px-3 w-12 text-center">NO.</th>
+                        <th className="py-3.5 px-4 min-w-[200px] text-left">MAHASISWA &amp; NIM</th>
+                        <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
+                        <th className="py-3.5 px-3 text-center">JAM MASUK</th>
+                        <th className="py-3.5 px-3 text-center">JAM PULANG</th>
+                        <th className="py-3.5 px-4 text-center">DURASI</th>
+                        <th className="py-3.5 px-3 text-center">TARGET JAM</th>
+                        <th className="py-3.5 px-4 text-center">RASIO KEHADIRAN</th>
+                        <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
+                        <th className="py-3.5 px-4 text-center">DETAIL</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
+                      {paginatedAttendance.map((rec, idx) => {
+                        const itemNumber = (currentPage - 1) * pageSize + idx + 1;
+                        const statusUpper = String(rec.status || "").toUpperCase();
+                        const methodUpper = String(rec.method || "").toUpperCase();
+                        const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
+                        const isSakitPending = statusUpper === "SAKIT_PENDING" || (statusUpper.includes("SAKIT") && (statusUpper.includes("PENDING") || currentStatusUpper.includes("MENUNGGU")));
+                        const isIzinPending = statusUpper === "IZIN_PENDING" || (statusUpper.includes("IZIN") && (statusUpper.includes("PENDING") || currentStatusUpper.includes("MENUNGGU")));
+                        const isCancelRequested = statusUpper === "CANCEL_REQUESTED" || currentStatusUpper === "PENGAJUAN_BATAL_IZIN";
+                        const isSakit = (statusUpper.includes("SAKIT") || statusUpper === "SAKIT") && !isSakitPending;
+                        const isIzin = (statusUpper.includes("IZIN") || statusUpper === "IZIN") && !isIzinPending;
+                        const isLeaveOrPending = isSakit || isIzin || isSakitPending || isIzinPending || isCancelRequested;
+                        const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
+                        const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+                        const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+                        
+                        const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
+                        const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
+                        const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                        const recAny = rec as any;
+                        const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
+                        const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
+                        const durationMins = isLeaveOrPending 
+                          ? 0 
+                          : isTerjeda
+                          ? storedMins
+                          : isBerlangsung
+                          ? Math.max(storedMins, liveElapsedMins)
+                          : (storedMins > 0 ? storedMins : liveElapsedMins);
+                        const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || rec.completedAt !== null;
+                        const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
-                      const formattedHours = isLeaveOrPending
-                        ? "-"
-                        : (isAttended || isBerlangsung || isTerjeda)
-                        ? formatDurationUnits(durationMins)
-                        : "-";
+                        const targetZonaHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
+                        const targetZonaMins = targetZonaHours * 60;
+                        const percentZona = targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0;
 
-                      const targetKumulatif = configTargets.targetTotalJam || 100;
-                      const studentCumulativeMins = (rec.totalMinutes !== undefined && rec.totalMinutes !== null)
-                        ? Number(rec.totalMinutes)
-                        : (rec.totalHours !== undefined ? Number(rec.totalHours) * 60 : (isAttended || isBerlangsung ? durationMins : 0));
-                      const studentCumulativeHours = (rec.totalHours !== undefined && rec.totalHours !== null)
-                        ? Number(rec.totalHours)
-                        : Math.round((studentCumulativeMins / 60) * 10) / 10;
-                      const percentCapaian = Number(((studentCumulativeHours / (targetKumulatif || 1)) * 100).toFixed(1));
-                      const isExceeded = percentCapaian >= 100;
+                        const isMemenuhiDurasi = rec.isMemenuhiDurasi !== undefined
+                          ? rec.isMemenuhiDurasi
+                          : (statusUpper === "HADIR_MEMENUHI"
+                            ? true
+                            : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
+                            ? false
+                            : (durationMins >= targetZonaMins && (isHadir || isFinished)));
 
-                      const formattedActualTarget = (
-                        <div className="flex flex-col items-center gap-1">
-                          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
-                            {formatHoursToUnits(studentCumulativeHours)} / {formatHoursToUnits(targetKumulatif)}
-                          </span>
-                          {isExceeded ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
-                              <span>🌟 Target Tercapai</span>
-                              <span className="font-extrabold">({percentCapaian}%)</span>
-                            </span>
-                          ) : (
-                            <div className="w-full max-w-[120px] flex flex-col items-center gap-0.5">
-                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                <div
-                                  className="bg-emerald-600 h-full rounded-full transition-all"
-                                  style={{ width: `${Math.min(100, percentCapaian)}%` }}
-                                />
+                        const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
+                        const jamPulangStr = !isLeaveOrPending && rec.completedAt ? formatTimeDot(rec.completedAt) : "-";
+                        const durasiText = isLeaveOrPending
+                          ? "0 menit"
+                          : (isAttended || isBerlangsung || isTerjeda)
+                          ? formatDurasiIndo(durationMins)
+                          : "0 menit";
+
+                        const cleanStudentName = rec.student?.name
+                          ? rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
+                          : "Mahasiswa";
+
+                        const isKetua = Boolean(rec.student?.studentProfile?.isKetua || rec.student?.isKetua);
+
+                        return (
+                          <tr
+                            key={rec.id}
+                            className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors"
+                          >
+                            {/* 1. NO. */}
+                            <td className="py-4 px-3 text-center text-slate-500 font-bold">
+                              {itemNumber}
+                            </td>
+
+                            {/* 2. MAHASISWA & NIM */}
+                            <td className="py-4 px-4 text-left">
+                              <div className="flex flex-col gap-0.5">
+                                <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                                  {cleanStudentName}
+                                </span>
+                                <span className="text-[11px] text-slate-400 font-mono">
+                                  {rec.student?.studentProfile?.nim || "-"}
+                                </span>
+                                {isKetua && (
+                                  <div className="pt-0.5">
+                                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                      Ketua
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                              <span className="text-[9px] font-bold text-slate-500">
-                                {percentCapaian}% Capaian Total
-                              </span>
+                            </td>
+
+                            {/* 3. STATUS PRESENSI */}
+                            <td className="py-4 px-4 text-center">
+                              {isBelumAdaJadwal ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                  Belum Tercatat
+                                </span>
+                              ) : isOverrideDpl ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Izin dibatalkan dan di-override menjadi Hadir oleh DPL">
+                                  <CheckCircle2 size={13} className="text-emerald-600" />
+                                  <span>Hadir</span>
+                                </span>
+                              ) : isCancelRequested ? (
+                                <Link
+                                  to="/monitoring-kegiatan/pengajuan-izin"
+                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+                                  title="Mahasiswa mengajukan pembatalan izin - Klik untuk review di menu Ajuan"
+                                >
+                                  <Hourglass size={13} className="text-rose-600" />
+                                  <span>Batal Izin (Menunggu)</span>
+                                  <ExternalLink size={10} className="text-rose-500" />
+                                </Link>
+                              ) : isSakitPending ? (
+                                <Link
+                                  to="/monitoring-kegiatan/pengajuan-izin"
+                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
+                                  title="Pengajuan Sakit sedang menunggu persetujuan DPL"
+                                >
+                                  <Hourglass size={13} className="text-amber-600 animate-pulse" />
+                                  <span>Sakit (Menunggu)</span>
+                                  <ExternalLink size={10} className="text-amber-600" />
+                                </Link>
+                              ) : isIzinPending ? (
+                                <Link
+                                  to="/monitoring-kegiatan/pengajuan-izin"
+                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
+                                  title="Pengajuan Izin sedang menunggu persetujuan DPL"
+                                >
+                                  <Hourglass size={13} className="text-sky-600 animate-pulse" />
+                                  <span>Izin (Menunggu)</span>
+                                  <ExternalLink size={10} className="text-sky-600" />
+                                </Link>
+                              ) : isSakit ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Sakit disetujui DPL"}>
+                                  <Thermometer size={13} className="text-rose-600" />
+                                  <span>Sakit</span>
+                                </span>
+                              ) : isIzin ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Izin disetujui DPL"}>
+                                  <Info size={13} className="text-amber-600" />
+                                  <span>Izin</span>
+                                </span>
+                              ) : isTanpaKeterangan ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                  <XCircle size={13} className="text-rose-600" />
+                                  <span>Tanpa Keterangan</span>
+                                </span>
+                              ) : isTerjeda ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-ping" />
+                                  <span>Terjeda</span>
+                                </span>
+                              ) : isBerlangsung ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
+                                  <Clock size={13} className="text-emerald-600 animate-spin" />
+                                  <span>Berlangsung</span>
+                                </span>
+                              ) : isHadir ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  <span>Hadir</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                  <span>Belum Tercatat</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 4. JAM MASUK */}
+                            <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                              {jamMasukStr}
+                            </td>
+
+                            {/* 5. JAM PULANG */}
+                            <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                              {jamPulangStr}
+                            </td>
+
+                            {/* 6. DURASI */}
+                            <td className="py-4 px-4 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
+                              {durasiText}
+                            </td>
+
+                            {/* 7. TARGET JAM */}
+                            <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
+                              {targetZonaHours} jam
+                            </td>
+
+                            {/* 8. RASIO KEHADIRAN */}
+                            <td className="py-4 px-4 text-center">
+                              <div className="flex flex-col items-center gap-1.5 min-w-[70px]">
+                                <span className="font-bold text-xs text-slate-800 dark:text-slate-200 font-mono">
+                                  {percentZona}%
+                                </span>
+                                <div className="w-16 bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      percentZona >= 100
+                                        ? "bg-emerald-500"
+                                        : percentZona > 0
+                                        ? "bg-orange-500"
+                                        : "bg-transparent"
+                                    }`}
+                                    style={{ width: `${Math.min(100, percentZona)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* 9. STATUS PEMENUHAN */}
+                            <td className="py-4 px-4 text-center">
+                              {isMemenuhiDurasi ? (
+                                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  Memenuhi
+                                </span>
+                              ) : (
+                                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                                  Tidak Memenuhi
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 10. DETAIL */}
+                            <td className="py-4 px-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStudentForDetail(rec)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 transition shadow-2xs cursor-pointer active:scale-95 whitespace-nowrap"
+                                title="Lihat detail lokasi & riwayat presensi"
+                              >
+                                <MapPin size={13} className="text-emerald-600" />
+                                <span>Lokasi &amp; Riwayat</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+            /* Mode 2: Grid Card Pro */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {paginatedAttendance.map((rec) => {
+                  const statusUpper = String(rec.status || "").toUpperCase();
+                  const isSakit = statusUpper.includes("SAKIT");
+                  const isIzin = statusUpper.includes("IZIN");
+                  const isLeaveOrPending = isSakit || isIzin;
+                  const isActivePresence =
+                    statusUpper === "BERLANGSUNG" ||
+                    statusUpper === "DALAM_RADIUS" ||
+                    statusUpper === "DI_ZONA";
+                  const isCompleted =
+                    Boolean(rec.completedAt) ||
+                    statusUpper === "HADIR" ||
+                    statusUpper === "SELESAI" ||
+                    statusUpper === "HADIR_MEMENUHI" ||
+                    statusUpper === "HADIR_TIDAK_MEMENUHI";
+
+                  const liveElapsedMins = rec.attendedAt
+                    ? calculateDurationMinutes(rec.attendedAt, rec.completedAt)
+                    : 0;
+                  const recAny = rec as any;
+                  const storedMins =
+                    recAny.actualInZoneMinutes !== null &&
+                    recAny.actualInZoneMinutes !== undefined
+                      ? Number(recAny.actualInZoneMinutes)
+                      : 0;
+                  const durationMins = isLeaveOrPending
+                    ? 0
+                    : isActivePresence
+                    ? Math.max(storedMins, liveElapsedMins)
+                    : storedMins > 0
+                    ? storedMins
+                    : liveElapsedMins;
+
+                  const isAttended =
+                    Boolean(rec.attendedAt) && !isLeaveOrPending;
+                  const targetZonaHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
+                  const targetZonaMins = targetZonaHours * 60;
+                  const isDurationSufficient = durationMins >= targetZonaMins;
+                  const percentZona = Math.min(100, Math.round((durationMins / targetZonaMins) * 100));
+                  const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
+
+                  return (
+                    <div
+                      key={rec.id}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Card Header: Avatar, Name, Status */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold flex items-center justify-center text-sm shrink-0 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
+                              {rec.student.name.charAt(0).toUpperCase()}
                             </div>
-                          )}
-                        </div>
-                      );
-
-                      const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? 0 : (isHadir ? 10 : 0);
-
-                      // Pastel avatar backgrounds
-                      const avatarColors = [
-                        "bg-emerald-100 text-emerald-800 border-emerald-200",
-                        "bg-teal-100 text-teal-800 border-teal-200",
-                        "bg-blue-100 text-blue-800 border-blue-200",
-                        "bg-indigo-100 text-indigo-800 border-indigo-200",
-                        "bg-amber-100 text-amber-800 border-amber-200",
-                        "bg-purple-100 text-purple-800 border-purple-200",
-                      ];
-                      const avatarColor = avatarColors[idx % avatarColors.length];
-
-                      return (
-                        <tr
-                          key={rec.id}
-                          className="hover:bg-slate-50/70 dark:bg-slate-800/70 dark:hover:bg-slate-800/70 transition-colors"
-                        >
-                          <td className="py-3.5 px-4 text-center text-slate-500 font-bold">
-                            {itemNumber}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full font-black text-xs flex items-center justify-center shrink-0 border shadow-2xs ${avatarColor}`}>
-                                {rec.student.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 lowercase first-letter:capitalize">
+                            <div>
+                              <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
+                                <span className="lowercase first-letter:capitalize">
                                   {rec.student.name
                                     .replace(/👑|\(Ketua Kelompok\)/g, "")
                                     .trim()}
-                                  {rec.student.studentProfile?.isKetua && (
-                                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
-                                      Ketua
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[11px] text-slate-400 font-mono">
-                                  NIM: {rec.student.studentProfile?.nim || "-"}
-                                </div>
+                                </span>
+                                {rec.student.studentProfile?.isKetua && (
+                                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
+                                    Ketua
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-400 font-mono">
+                                NIM: {rec.student.studentProfile?.nim || "-"}
                               </div>
                             </div>
-                          </td>
-                          {!selectedKelompokId && (
-                            <td className="py-3.5 px-4 text-center">
-                              <span className="px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black border border-slate-200 dark:border-slate-700 inline-block">
-                                {rec.kelompokName || rec.student.studentProfile?.kelompok?.name || "Kelompok KKN"}
-                              </span>
-                            </td>
-                          )}
-                          <td className="py-3.5 px-4 text-center">
-                            {isBelumAdaJadwal ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
-                                <Clock size={13} className="text-slate-400" />
-                                Belum Ada Jadwal
-                              </span>
-                            ) : isOverrideDpl ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-50 text-cyan-700 border border-cyan-200" title="Izin dibatalkan dan di-override menjadi Hadir oleh DPL">
-                                <CheckCircle2 size={13} className="text-cyan-600" />
-                                Hadir (Batal Izin)
-                              </span>
-                            ) : isCancelRequested ? (
-                              <Link
-                                to="/monitoring-kegiatan/pengajuan-izin"
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
-                                title="Mahasiswa mengajukan pembatalan izin - Klik untuk review di menu Ajuan"
-                              >
-                                <Hourglass size={13} className="text-rose-600" />
-                                <span>Batal Izin (Menunggu)</span>
-                                <ExternalLink size={10} className="text-rose-500" />
-                              </Link>
-                            ) : isSakitPending ? (
-                              <Link
-                                to="/monitoring-kegiatan/pengajuan-izin"
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer"
-                                title="Pengajuan Sakit sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
-                              >
-                                <Hourglass size={13} className="text-amber-600 animate-pulse" />
-                                <span>Sakit (Menunggu)</span>
-                                <ExternalLink size={10} className="text-amber-600" />
-                              </Link>
-                            ) : isIzinPending ? (
-                              <Link
-                                to="/monitoring-kegiatan/pengajuan-izin"
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition cursor-pointer"
-                                title="Pengajuan Izin sedang menunggu persetujuan DPL - Klik untuk buka menu Ajuan"
-                              >
-                                <Hourglass size={13} className="text-sky-600 animate-pulse" />
-                                <span>Izin (Menunggu)</span>
-                                <ExternalLink size={10} className="text-sky-600" />
-                              </Link>
-                            ) : isSakit ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Sakit disetujui DPL"}>
-                                <Thermometer size={13} className="text-amber-600" />
-                                Sakit (Disetujui)
-                              </span>
-                            ) : isIzin ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title={rec.leaveRequest?.reason ? `Alasan: ${rec.leaveRequest.reason}` : "Izin disetujui DPL"}>
-                                <Info size={13} className="text-blue-600" />
-                                Izin (Disetujui)
-                              </span>
-                            ) : isTanpaKeterangan ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                <XCircle size={13} className="text-rose-600" />
-                                Tanpa Keterangan
-                              </span>
-                            ) : isTerjeda ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-ping" />
-                                <span>Terjeda</span>
-                              </span>
-                            ) : isBerlangsung ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 animate-pulse">
-                                <Clock size={13} className="text-amber-600 animate-spin" />
-                                <span>Berlangsung</span>
-                              </span>
-                            ) : isHadir ? (
-                              isMemenuhiDurasi ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700" title="Hadir dan durasi di lokasi memenuhi target minimal">
-                                  <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+                          </div>
+
+                          {isBelumAdaJadwal ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 shrink-0">
+                              Belum Ada Jadwal
+                            </span>
+                          ) : String(rec.status).toUpperCase().includes("SAKIT") ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                              Sakit (Disetujui)
+                            </span>
+                          ) : String(rec.status).toUpperCase().includes("IZIN") ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
+                              Izin (Disetujui)
+                            </span>
+                          ) : isActivePresence ? (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
+                              Di Lapangan
+                            </span>
+                          ) : (isCompleted || String(rec.status).toUpperCase() === "HADIR_MEMENUHI" || String(rec.status).toUpperCase() === "HADIR_TIDAK_MEMENUHI" || String(rec.status).toUpperCase() === "SELESAI") ? (
+                            (() => {
+                              const stUpper = String(rec.status || "").toUpperCase();
+                              const isMem = rec.isMemenuhiDurasi !== undefined
+                                ? rec.isMemenuhiDurasi
+                                : (stUpper === "HADIR_MEMENUHI"
+                                  ? true
+                                  : (stUpper === "HADIR_TIDAK_MEMENUHI" || stUpper === "SELESAI_TELAT")
+                                  ? false
+                                  : isDurationSufficient);
+                              return isMem ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shrink-0">
                                   Hadir & Memenuhi
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700" title="Hadir tetapi durasi di lokasi kurang dari target minimal">
-                                  <Clock size={13} className="text-amber-600 dark:text-amber-400" />
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 shrink-0">
                                   Hadir & Tidak Memenuhi
                                 </span>
-                              )
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
-                                <Clock size={13} className="text-slate-400" />
-                                Belum Tercatat
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
-                            {!isLeaveOrPending && rec.attendedAt
-                              ? new Date(rec.attendedAt).toLocaleTimeString(
-                                  "id-ID",
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )
-                              : "-"}
-                          </td>
-                          <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-800 dark:text-slate-100">
-                            {!isLeaveOrPending && rec.completedAt
-                              ? new Date(rec.completedAt).toLocaleTimeString(
-                                  "id-ID",
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )
-                              : "-"}
-                          </td>
-                          <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
-                            {formattedHours}
-                          </td>
-                          <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
-                            {formattedActualTarget}
-                          </td>
-                          <td className="py-3.5 px-4 text-center font-black text-emerald-700">
-                            {poinDampingan}
-                          </td>
-                          <td className="py-3.5 px-4 text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleFocusMahasiswaMap(rec)}
-                                className="px-3 py-1.5 bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-300 transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-                                title="Lihat posisi GPS pada peta"
-                              >
-                                <MapPin size={13} className="text-emerald-600" />
-                                <span>Lihat Peta</span>
-                              </button>
-                              {(() => {
-                                const liveLoc = studentLocations.find(
-                                  (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
-                                );
-                                if (!liveLoc) return null;
-                                const recTime = new Date(liveLoc.recordedAt).getTime();
-                                const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
-                                if (!isRecent) return null;
-                                return (
-                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span>Live GPS</span>
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            /* Mode 2: Cards Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-              {paginatedAttendance.map((rec) => {
-                const isAttended = Boolean(rec.attendedAt);
-                const isCompleted = Boolean(rec.completedAt);
-                const isInsideZone = rec.currentStatus === "MASIH_DI_LOKASI" || rec.currentStatus === "DI_LOKASI_BELUM_ABSEN";
-                const isActivePresence = (isAttended && !isCompleted) || isInsideZone;
-                const durationMins = calculateDurationMinutes(
-                  rec.attendedAt,
-                  rec.completedAt
-                );
-                const isDurationSufficient =
-                  durationMins >= scheduleTargetHours * 60;
-                const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
-
-                return (
-                  <div
-                    key={rec.id}
-                    className="border border-slate-200 dark:border-slate-800 hover:border-emerald-500 rounded-2xl p-4 bg-white dark:bg-slate-900 hover:shadow-sm transition flex flex-col justify-between"
-                  >
-                    <div>
-                      {/* Card Header */}
-                      <div className="flex justify-between items-start mb-3 gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center shrink-0 border border-emerald-200">
-                            {rec.student.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-black text-slate-900 dark:text-slate-100 truncate">
-                              {rec.student.name
-                                .replace(/👑|\(Ketua Kelompok\)/g, "")
-                                .trim()}
-                            </h4>
-                            <p className="text-[10px] text-slate-400 font-mono font-semibold">
-                              NIM: {rec.student.studentProfile?.nim || "-"}
-                            </p>
-                          </div>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shrink-0">
+                              Belum Absen
+                            </span>
+                          )}
                         </div>
 
-                        {isBelumAdaJadwal ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shrink-0">
-                            Belum Ada Jadwal
-                          </span>
-                        ) : rec.status === "IZIN_PENDING" || rec.currentStatus === "MENUNGGU_PERSETUJUAN_IZIN" ? (
-                          <Link
-                            to="/monitoring-kegiatan/pengajuan-izin"
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-800 border border-sky-300 hover:bg-sky-100 transition shrink-0 flex items-center gap-1"
-                          >
-                            <span>Izin (Menunggu)</span>
-                            <ExternalLink size={9} />
-                          </Link>
-                        ) : rec.status === "SAKIT_PENDING" ? (
-                          <Link
-                            to="/monitoring-kegiatan/pengajuan-izin"
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shrink-0 flex items-center gap-1"
-                          >
-                            <span>Sakit (Menunggu)</span>
-                            <ExternalLink size={9} />
-                          </Link>
-                        ) : rec.status === "CANCEL_REQUESTED" || rec.currentStatus === "PENGAJUAN_BATAL_IZIN" ? (
-                          <Link
-                            to="/monitoring-kegiatan/pengajuan-izin"
-                            className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition shrink-0 flex items-center gap-1"
-                          >
-                            <span>Batal Izin (Menunggu)</span>
-                            <ExternalLink size={9} />
-                          </Link>
-                        ) : rec.method === "OVERRIDE_DPL" || String(rec.status).toUpperCase().includes("OVERRIDE") ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200 shrink-0">
-                            Hadir (Batal Izin)
-                          </span>
-                        ) : String(rec.status).toUpperCase().includes("SAKIT") ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
-                            Sakit (Disetujui)
-                          </span>
-                        ) : String(rec.status).toUpperCase().includes("IZIN") ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
-                            Izin (Disetujui)
-                          </span>
-                        ) : isActivePresence ? (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
-                            Di Lapangan
-                          </span>
-                        ) : (isCompleted || String(rec.status).toUpperCase() === "HADIR_MEMENUHI" || String(rec.status).toUpperCase() === "HADIR_TIDAK_MEMENUHI" || String(rec.status).toUpperCase() === "SELESAI") ? (
-                          (() => {
-                            const stUpper = String(rec.status || "").toUpperCase();
-                            const isMem = rec.isMemenuhiDurasi !== undefined
-                              ? rec.isMemenuhiDurasi
-                              : (stUpper === "HADIR_MEMENUHI"
-                                ? true
-                                : (stUpper === "HADIR_TIDAK_MEMENUHI" || stUpper === "SELESAI_TELAT")
-                                ? false
-                                : isDurationSufficient);
-                            return isMem ? (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shrink-0">
-                                Hadir & Memenuhi
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 shrink-0">
-                                Hadir & Tidak Memenuhi
-                              </span>
-                            );
-                          })()
-                        ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 shrink-0">
-                            Belum Absen
-                          </span>
+                        {(rec.kelompokName || rec.student.studentProfile?.kelompok?.name) && (
+                          <div className="mb-2">
+                            <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+                              {rec.kelompokName || rec.student.studentProfile?.kelompok?.name}
+                            </span>
+                          </div>
                         )}
+
+                        {/* Card Stats Grid */}
+                        <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px] mb-3">
+                          <div>
+                            <span className="text-[9px] text-slate-400 block font-bold uppercase">
+                              Masuk
+                            </span>
+                            <span className="font-bold text-slate-800 dark:text-slate-100">
+                              {rec.attendedAt
+                                ? new Date(rec.attendedAt).toLocaleTimeString(
+                                    "id-ID",
+                                    { hour: "2-digit", minute: "2-digit" }
+                                  )
+                                : "-"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] text-slate-400 block font-bold uppercase">
+                              Aktual di Zona
+                            </span>
+                            <span
+                              className={`font-black ${
+                                isAttended && isDurationSufficient
+                                  ? "text-emerald-700 dark:text-emerald-400"
+                                  : isAttended
+                                  ? "text-amber-700 dark:text-amber-400"
+                                  : "text-slate-700 dark:text-slate-300"
+                              }`}
+                            >
+                              {isAttended || isActivePresence
+                                ? formatDurationUnits(durationMins)
+                                : "-"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] text-slate-400 block font-bold uppercase">
+                              Pulang
+                            </span>
+                            <span className="font-bold text-slate-800 dark:text-slate-100">
+                              {rec.completedAt
+                                ? new Date(rec.completedAt).toLocaleTimeString(
+                                    "id-ID",
+                                    { hour: "2-digit", minute: "2-digit" }
+                                  )
+                                : isActivePresence
+                                ? "Aktif"
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
-                      {(rec.kelompokName || rec.student.studentProfile?.kelompok?.name) && (
-                        <div className="mb-2">
-                          <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
-                            {rec.kelompokName || rec.student.studentProfile?.kelompok?.name}
+                      {/* Card Footer */}
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-slate-400">Target Zona:</span>
+                          <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                            {formatHoursToUnits(targetZonaHours)}
                           </span>
                         </div>
-                      )}
 
-                      {/* Card Stats Grid */}
-                      <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px] mb-3">
-                        <div>
-                          <span className="text-[9px] text-slate-400 block font-bold uppercase">
-                            Masuk
-                          </span>
-                          <span className="font-bold text-slate-800 dark:text-slate-100">
-                            {rec.attendedAt
-                              ? new Date(rec.attendedAt).toLocaleTimeString(
-                                  "id-ID",
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )
-                              : "-"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-slate-400 block font-bold uppercase">
-                            Aktual / Target
-                          </span>
-                          <span
-                            className={`font-black ${
-                              rec.totalHours !== undefined
-                                ? "text-emerald-700"
-                                : isDurationSufficient
-                                ? "text-emerald-700"
-                                : "text-amber-700"
-                            }`}
-                          >
-                            {rec.totalHours !== undefined
-                              ? formatHoursToUnits(rec.totalHours)
-                              : isAttended
-                               ? formatDurationUnits(durationMins)
-                              : "0 Menit"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-slate-400 block font-bold uppercase">
-                            Pulang
-                          </span>
-                          <span className="font-bold text-slate-800 dark:text-slate-100">
-                            {rec.completedAt
-                              ? new Date(rec.completedAt).toLocaleTimeString(
-                                  "id-ID",
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )
-                              : isActivePresence
-                              ? "Aktif"
-                              : "-"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Footer */}
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                      {rec.totalHours !== undefined ? (
-                        (() => {
-                          const targetKumulatif = configTargets.targetTotalJam || 200;
-                          const percentCapaian = Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2));
-                          const isExceeded = percentCapaian > 100;
-                          return isExceeded ? (
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              🌟 Melampaui ({percentCapaian}%)
+                        {isLeaveOrPending ? (
+                          <span className="text-[10px] text-slate-400 font-semibold italic">Izin / Sakit</span>
+                        ) : isAttended ? (
+                          isDurationSufficient ? (
+                            <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                              <span>🎯 Target Tercapai</span>
+                              <span>(100%)</span>
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                              {percentCapaian}% ({formatHoursToUnits(rec.totalHours)} / {formatHoursToUnits(targetKumulatif)})
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                              ⚠️ Kurang {formatDurationUnits(targetZonaMins - durationMins)} ({percentZona}%)
                             </span>
-                          );
-                        })()
-                      ) : isAttended ? (
-                        isDurationSufficient ? (
-                          <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400">
-                            ✅ Target Minimal {formatHoursToUnits(scheduleTargetHours)} OK
+                          )
+                        ) : isActivePresence ? (
+                          <span className="text-[10px] font-black text-emerald-600 animate-pulse flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span>{percentZona}% di Zona</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-amber-800 dark:text-amber-400">
-                            ⚠️ Target Minimal {formatHoursToUnits(scheduleTargetHours)}
+                          <span className="text-[10px] text-slate-400 font-semibold">
+                            Belum Mulai
                           </span>
-                        )
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-semibold">
-                          Belum Mulai Absen
-                        </span>
-                      )}
+                        )}
 
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const liveLoc = studentLocations.find(
-                            (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
-                          );
-                          if (!liveLoc) return null;
-                          const recTime = new Date(liveLoc.recordedAt).getTime();
-                          const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
-                          if (!isRecent) return null;
-                          return (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                              <span>Live</span>
-                            </span>
-                          );
-                        })()}
-                        <button
-                          type="button"
-                          onClick={() => handleFocusMahasiswaMap(rec)}
-                          className="text-emerald-700 hover:text-emerald-800 font-black flex items-center gap-1 text-[11px] cursor-pointer"
-                        >
-                          <Navigation size={11} />
-                          <span>Peta GPS</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const liveLoc = studentLocations.find(
+                              (l) => l.studentId === rec.student.id || l.student?.id === rec.student.id
+                            );
+                            if (!liveLoc) return null;
+                            const recTime = new Date(liveLoc.recordedAt).getTime();
+                            const isRecent = !isNaN(recTime) && Date.now() - recTime < 5 * 60 * 1000;
+                            if (!isRecent) return null;
+                            return (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                <span>Live GPS</span>
+                              </span>
+                            );
+                          })()}
+                          <button
+                            type="button"
+                            onClick={() => handleFocusMahasiswaMap(rec)}
+                            className="text-emerald-700 hover:text-emerald-800 font-black flex items-center gap-1 text-[11px] cursor-pointer"
+                          >
+                            <Navigation size={11} />
+                            <span>Peta GPS</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
 
           {/* Kontrol Navigasi Pagination Pro */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5 bg-white dark:bg-slate-900 px-5 py-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs mt-4">
@@ -4920,6 +4901,194 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detail Lokasi & Riwayat Presensi Mahasiswa (Sesuai Acuan Tombol Tabel) */}
+      {selectedStudentForDetail && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-xl shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black text-sm">
+                  <MapPin size={20} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">
+                    Detail Lokasi &amp; Riwayat Presensi
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Rincian presensi, jam kerja, rasio target, dan lokasi live GPS.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForDetail(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Profile Info Box */}
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-sm flex items-center justify-center border border-emerald-200 shadow-2xs">
+                  {selectedStudentForDetail.student?.name?.charAt(0).toUpperCase() || "M"}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
+                      {selectedStudentForDetail.student?.name?.replace(/👑|\(Ketua Kelompok\)/g, "").trim()}
+                    </h4>
+                    {(selectedStudentForDetail.student?.studentProfile?.isKetua || selectedStudentForDetail.student?.isKetua) && (
+                      <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Ketua
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 mt-0.5">
+                    <span>NIM: {selectedStudentForDetail.student?.studentProfile?.nim || "-"}</span>
+                    <span>•</span>
+                    <span>{selectedStudentForDetail.student?.studentProfile?.jurusan || "-"}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-slate-400 block uppercase">Kelompok</span>
+                <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                  {selectedStudentForDetail.kelompokName || selectedStudentForDetail.student?.studentProfile?.kelompok?.name || "Kelompok KKN"}
+                </span>
+              </div>
+            </div>
+
+            {/* Metrics Breakdown */}
+            {(() => {
+              const rec = selectedStudentForDetail;
+              const statusUpper = String(rec.status || "").toUpperCase();
+              const isLeaveOrPending = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN");
+              const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+              const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+              const isTerjeda = statusUpper === "TERJEDA" || String(rec.currentStatus || "").toUpperCase() === "TERJEDA";
+              const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
+              const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
+              const storedMins = (rec.actualInZoneMinutes !== null && rec.actualInZoneMinutes !== undefined) ? Number(rec.actualInZoneMinutes) : 0;
+              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : isBerlangsung ? Math.max(storedMins, liveElapsedMins) : (storedMins > 0 ? storedMins : liveElapsedMins);
+              const targetHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
+              const targetMins = targetHours * 60;
+              const ratioPercent = targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0;
+              const isMemenuhi = durationMins >= targetMins;
+
+              const liveLoc = studentLocations.find(
+                (l) => l.studentId === rec.student?.id || l.student?.id === rec.student?.id
+              );
+              const lat = liveLoc ? Number(liveLoc.latitude) : Number(rec.latitude);
+              const lng = liveLoc ? Number(liveLoc.longitude) : Number(rec.longitude);
+              const hasGps = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+
+              return (
+                <div className="space-y-3.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk</span>
+                      <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
+                        {!isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-"}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Pulang</span>
+                      <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
+                        {!isLeaveOrPending && rec.completedAt ? formatTimeDot(rec.completedAt) : "-"}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Durasi Aktual</span>
+                      <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
+                        {isLeaveOrPending ? "0 menit" : formatDurasiIndo(durationMins)}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Jam</span>
+                      <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                        {targetHours} jam
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Rasio Progress Bar */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Kehadiran &amp; Pemenuhan:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{ratioPercent}%</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          isMemenuhi
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-rose-50 text-rose-600 border border-rose-200"
+                        }`}>
+                          {isMemenuhi ? "Memenuhi" : "Tidak Memenuhi"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          ratioPercent >= 100
+                            ? "bg-emerald-500"
+                            : ratioPercent > 0
+                            ? "bg-orange-500"
+                            : "bg-transparent"
+                        }`}
+                        style={{ width: `${Math.min(100, ratioPercent)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* GPS Coordinates & Action */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2.5">
+                      <MapPin size={16} className="text-emerald-600 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-100">
+                          {hasGps ? `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}` : "GPS belum tercatat"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {liveLoc ? "Live tracking GPS aktif" : "Berdasarkan catatan waktu presensi"}
+                        </span>
+                      </div>
+                    </div>
+                    {hasGps && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleFocusMahasiswaMap(rec);
+                          setSelectedStudentForDetail(null);
+                        }}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <MapPin size={12} />
+                        <span>Fokus di Peta Utama</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForDetail(null)}
+                className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

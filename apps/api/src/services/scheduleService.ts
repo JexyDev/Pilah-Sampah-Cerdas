@@ -22,15 +22,22 @@ export const scheduleService = {
           select: { kelompokId: true }
         });
         kelompokIds = studentProfile?.kelompokId ? [studentProfile.kelompokId] : [];
-      } else if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole) && userId) {
-        // DPL sees all their groups + global schedules
+      } else if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN"].includes(userRole) && userId) {
+        // DPL strictly sees ONLY their assigned groups + global schedules
+        const dplUser = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, name: true, nip: true, phone: true },
+        });
+        const dplOr: any[] = [
+          { dplId: userId },
+          { dpl: { id: userId } },
+        ];
+        if (dplUser?.name) dplOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
+        if (dplUser?.nip) dplOr.push({ dpl: { nip: dplUser.nip } });
+        if (dplUser?.phone) dplOr.push({ dpl: { phone: dplUser.phone } });
+
         const kelompokBinaan = await prisma.kelompokKkn.findMany({
-          where: {
-            OR: [
-              { dplId: userId },
-              { dpl: { id: userId } },
-            ],
-          },
+          where: { OR: dplOr },
           select: { id: true },
         });
         kelompokIds = kelompokBinaan.map((k) => k.id);

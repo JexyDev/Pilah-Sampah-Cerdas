@@ -26,6 +26,40 @@ export function normalizeProkerKategori(kategori?: string | null): string {
   return kategori.trim();
 }
 
+export function isAnorganikBin(bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null): boolean {
+  if (!bin) return false;
+  const cat = (bin.category?.name || "").toUpperCase();
+  const qr = (bin.qrCode || "").toLowerCase();
+  return (
+    cat === "NON_ORGANIC" ||
+    cat === "ANORGANIK" ||
+    cat === "NON_ORGANIK" ||
+    qr.includes("anorganik") ||
+    qr.includes("non_organic") ||
+    qr.includes("anorg") ||
+    qr.includes("ano") ||
+    qr.includes("agn") ||
+    qr.includes("ang") ||
+    qr.includes("non") ||
+    qr.includes("2")
+  );
+}
+
+export function isOrganikBin(bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null): boolean {
+  if (!bin) return false;
+  if (isAnorganikBin(bin)) return false;
+  const cat = (bin.category?.name || "").toUpperCase();
+  const qr = (bin.qrCode || "").toLowerCase();
+  return (
+    cat === "ORGANIC" ||
+    cat === "ORGANIK" ||
+    qr.includes("organik") ||
+    qr.includes("org") ||
+    qr.includes("ogn") ||
+    qr.includes("1")
+  );
+}
+
 export class KknService {
   async getDashboardStats(userId: string) {
     const user = await prisma.user.findUnique({
@@ -264,23 +298,8 @@ export class KknService {
         isCorrect: true,
       }));
       
-      const binOrganik = userBins.find(
-        (b: any) =>
-          b.category?.name === "ORGANIC" ||
-          b.category?.name === "ORGANIK" ||
-          b.qrCode?.toLowerCase().includes("org") ||
-          b.qrCode?.toLowerCase().includes("ogn") ||
-          b.qrCode?.toLowerCase().includes("1")
-      );
-      const binAnorganik = userBins.find(
-        (b: any) =>
-          b.category?.name === "NON_ORGANIC" ||
-          b.category?.name === "ANORGANIK" ||
-          b.category?.name === "NON_ORGANIK" ||
-          b.qrCode?.toLowerCase().includes("anorg") ||
-          b.qrCode?.toLowerCase().includes("non") ||
-          b.qrCode?.toLowerCase().includes("2")
-      );
+      const binOrganik = userBins.find((b: any) => isOrganikBin(b));
+      const binAnorganik = userBins.find((b: any) => isAnorganikBin(b));
 
       return {
         id: u.id,
@@ -375,23 +394,8 @@ export class KknService {
     const household = warga.households?.[0];
     const defaultBin = warga.binOwnerships?.[0]?.bin;
     const allBins = warga.binOwnerships?.map((bo: any) => bo.bin).filter(Boolean) || [];
-    const binOrganik = allBins.find(
-      (b: any) =>
-        b.category?.name === "ORGANIC" ||
-        b.category?.name === "ORGANIK" ||
-        b.qrCode?.toLowerCase().includes("ogn") ||
-        b.qrCode?.toLowerCase().includes("org") ||
-        b.qrCode?.toLowerCase().includes("1")
-    );
-    const binAnorganik = allBins.find(
-      (b: any) =>
-        b.category?.name === "NON_ORGANIC" ||
-        b.category?.name === "ANORGANIK" ||
-        b.category?.name === "NON_ORGANIK" ||
-        b.qrCode?.toLowerCase().includes("non") ||
-        b.qrCode?.toLowerCase().includes("anorg") ||
-        b.qrCode?.toLowerCase().includes("2")
-    );
+    const binOrganik = allBins.find((b: any) => isOrganikBin(b));
+    const binAnorganik = allBins.find((b: any) => isAnorganikBin(b));
     const primaryBin = binOrganik || binAnorganik || defaultBin;
 
     const lat = household?.latitude
@@ -577,24 +581,8 @@ export class KknService {
       const totalKg = setoranLogs.reduce((acc: number, curr: any) => acc + Number(curr.berat || 0), 0);
       const totalPoin = w.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) || Math.round(totalKg * 10);
 
-      const binOrganik = w.binOwnerships?.find(
-        (bo: any) =>
-          bo.bin?.category?.name === "ORGANIC" ||
-          bo.bin?.category?.name === "ORGANIK" ||
-          bo.bin?.qrCode?.toLowerCase().includes("ogn") ||
-          bo.bin?.qrCode?.toLowerCase().includes("org") ||
-          bo.bin?.qrCode?.toLowerCase().includes("1")
-      )?.bin;
-
-      const binAnorganik = w.binOwnerships?.find(
-        (bo: any) =>
-          bo.bin?.category?.name === "NON_ORGANIC" ||
-          bo.bin?.category?.name === "ANORGANIK" ||
-          bo.bin?.category?.name === "NON_ORGANIK" ||
-          bo.bin?.qrCode?.toLowerCase().includes("non") ||
-          bo.bin?.qrCode?.toLowerCase().includes("anorg") ||
-          bo.bin?.qrCode?.toLowerCase().includes("2")
-      )?.bin;
+      const binOrganik = w.binOwnerships?.find((bo: any) => isOrganikBin(bo.bin))?.bin;
+      const binAnorganik = w.binOwnerships?.find((bo: any) => isAnorganikBin(bo.bin))?.bin;
 
       const primaryBin = w.binOwnerships?.[0]?.bin;
 
@@ -655,10 +643,10 @@ export class KknService {
         mahasiswaId: registeredStudentId,
         binOrganikId:
           binOrganik?.qrCode ||
-          (primaryBin?.category?.name === "ORGANIC" ? primaryBin.qrCode : null),
+          (isOrganikBin(primaryBin) ? primaryBin.qrCode : null),
         binAnorganikId:
           binAnorganik?.qrCode ||
-          (primaryBin?.category?.name === "NON_ORGANIC" ? primaryBin.qrCode : null),
+          (isAnorganikBin(primaryBin) ? primaryBin.qrCode : null),
         binId: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
         binCode: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
         bin: primaryBin ? {
@@ -809,8 +797,16 @@ export class KknService {
 
         for (const mCode of missing) {
           const lower = mCode.toLowerCase();
-          const isAnorg = lower.includes("anorganik") || lower.includes("anorg") || lower.includes("non");
-          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org") || lower.includes("ogn"));
+          const isAnorg =
+            lower.includes("anorganik") ||
+            lower.includes("non_organic") ||
+            lower.includes("anorg") ||
+            lower.includes("ano") ||
+            lower.includes("agn") ||
+            lower.includes("ang") ||
+            lower.includes("non") ||
+            lower.includes("2");
+          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org") || lower.includes("ogn") || lower.includes("1"));
           let category = await tx.wasteCategory.findFirst({
             where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
           });
@@ -1238,8 +1234,12 @@ export class KknService {
           qrLower.includes("anorganik") ||
           qrLower.includes("non_organic") ||
           qrLower.includes("anorg") ||
+          qrLower.includes("ano") ||
           qrLower.includes("agn") ||
-          qrLower.includes("ang");
+          qrLower.includes("ang") ||
+          qrLower.includes("non") ||
+          qrLower.includes("2");
+        const isOrg = !isAnorg && (qrLower.includes("organik") || qrLower.includes("org") || qrLower.includes("ogn") || qrLower.includes("1"));
         const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
 
         if (!bin) {
@@ -3516,6 +3516,197 @@ export class KknService {
       };
     });
   }
+
+  /**
+   * Mengambil data batas geografis (Polygon/Radius) serta titik pusat posko
+   * dari kelompok KKN mahasiswa yang sedang login.
+   */
+  async getWilayahKelompok(userId: string) {
+    let student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: {
+        kelompok: {
+          include: {
+            poskoKkn: true,
+            facilities: {
+              where: { jenis: "posko_kkn" },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+            schedules: {
+              where: { isActive: true },
+              orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+            },
+          },
+        },
+        assignedRw: {
+          include: {
+            kelurahan: true,
+          },
+        },
+      },
+    });
+
+    let kelompok = student?.kelompok;
+
+    if (!student || !kelompok) {
+      // Check if admin / developer testing without direct student profile
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { role: true },
+      });
+      const roleName = dbUser?.role?.name?.toUpperCase() || "";
+      if (["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "ADMIN"].includes(roleName)) {
+        kelompok = await prisma.kelompokKkn.findFirst({
+          include: {
+            poskoKkn: true,
+            facilities: {
+              where: { jenis: "posko_kkn" },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+            schedules: {
+              where: { isActive: true },
+              orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+            },
+          },
+        });
+      }
+    }
+
+    if (!kelompok) {
+      throw new Error("KELOMPOK_NOT_FOUND");
+    }
+
+    // 1. Resolve Titik Pusat Posko
+    let poskoLat: number = -6.8915; // default Coblong
+    let poskoLng: number = 107.6107;
+
+    if (kelompok.poskoKkn?.latitude != null && kelompok.poskoKkn?.longitude != null) {
+      poskoLat = Number(kelompok.poskoKkn.latitude);
+      poskoLng = Number(kelompok.poskoKkn.longitude);
+    } else if (kelompok.facilities && kelompok.facilities.length > 0 && kelompok.facilities[0].latitude != null && kelompok.facilities[0].longitude != null) {
+      poskoLat = Number(kelompok.facilities[0].latitude);
+      poskoLng = Number(kelompok.facilities[0].longitude);
+    } else if (kelompok.schedules && kelompok.schedules.length > 0 && kelompok.schedules[0].latitude != null && kelompok.schedules[0].longitude != null) {
+      poskoLat = Number(kelompok.schedules[0].latitude);
+      poskoLng = Number(kelompok.schedules[0].longitude);
+    } else if (student?.assignedRw?.latitude != null && student?.assignedRw?.longitude != null) {
+      poskoLat = Number(student.assignedRw.latitude);
+      poskoLng = Number(student.assignedRw.longitude);
+    } else {
+      // Fallback berdasarkan kelurahan / nama kelompok
+      const kel = (kelompok.kelurahan || kelompok.name || "").toLowerCase();
+      if (kel.includes("dago")) {
+        poskoLat = -6.8833;
+        poskoLng = 107.6167;
+      } else if (kel.includes("cipaganti")) {
+        poskoLat = -6.8912;
+        poskoLng = 107.6035;
+      } else if (kel.includes("lebak gede") || kel.includes("lebakgede")) {
+        poskoLat = -6.8875;
+        poskoLng = 107.6133;
+      } else if (kel.includes("lebak siliwangi")) {
+        poskoLat = -6.8892;
+        poskoLng = 107.6083;
+      } else if (kel.includes("sadang serang")) {
+        poskoLat = -6.8917;
+        poskoLng = 107.6250;
+      } else if (kel.includes("sekeloa")) {
+        poskoLat = -6.8900;
+        poskoLng = 107.6200;
+      } else if (kel.includes("cibiru")) {
+        poskoLat = -6.914744;
+        poskoLng = 107.609810;
+      }
+    }
+
+    // 2. Resolve Batas Geografis (Polygon vs Radius)
+    let polygonKoordinat: Array<{ lat: number; lng: number }> | null = null;
+    let radiusMeters: number | null = null;
+    let tipeArea: "POLYGON" | "RADIUS" = "RADIUS";
+
+    const scheduleWithPolygon = kelompok.schedules?.find(
+      (s) => s.polygon && parsePolygonCoordinates(s.polygon) !== null
+    );
+
+    if (scheduleWithPolygon?.polygon) {
+      polygonKoordinat = parsePolygonCoordinates(scheduleWithPolygon.polygon);
+    }
+
+    if (polygonKoordinat && polygonKoordinat.length >= 3) {
+      tipeArea = "POLYGON";
+      radiusMeters = null;
+    } else {
+      tipeArea = "RADIUS";
+      polygonKoordinat = null;
+      radiusMeters = kelompok.schedules?.[0]?.radius || 200;
+    }
+
+    return {
+      kelompokId: kelompok.id,
+      namaKelompok: kelompok.name,
+      posko: {
+        latitude: poskoLat,
+        longitude: poskoLng,
+      },
+      tipeArea,
+      polygonKoordinat,
+      radiusMeters,
+    };
+  }
+}
+
+export function parsePolygonCoordinates(rawPolygon: any): Array<{ lat: number; lng: number }> | null {
+  if (!rawPolygon) return null;
+  let parsed = rawPolygon;
+  if (typeof rawPolygon === "string") {
+    try {
+      parsed = JSON.parse(rawPolygon);
+    } catch {
+      return null;
+    }
+  }
+
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    !Array.isArray(parsed) &&
+    parsed.type === "Polygon" &&
+    Array.isArray(parsed.coordinates)
+  ) {
+    parsed = parsed.coordinates[0];
+  }
+
+  if (!Array.isArray(parsed) || parsed.length < 3) {
+    return null;
+  }
+
+  const result: Array<{ lat: number; lng: number }> = [];
+  for (const item of parsed) {
+    if (item && typeof item === "object") {
+      if (Array.isArray(item) && item.length >= 2) {
+        const val0 = Number(item[0]);
+        const val1 = Number(item[1]);
+        if (!isNaN(val0) && !isNaN(val1)) {
+          const lat = Math.abs(val0) > 45 ? val1 : val0;
+          const lng = Math.abs(val0) > 45 ? val0 : val1;
+          result.push({ lat, lng });
+        }
+      } else {
+        const lat = Number(item.lat ?? item.latitude);
+        const lng = Number(item.lng ?? item.longitude ?? item.lon);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          result.push({ lat, lng });
+        }
+      }
+    }
+  }
+
+  if (result.length >= 3) {
+    return result;
+  }
+  return null;
 }
 
 export const kknService = new KknService();

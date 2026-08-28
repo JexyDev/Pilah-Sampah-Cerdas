@@ -834,6 +834,40 @@ export class KknController {
   async getActiveTimeline(req: Request, res: Response): Promise<void> {
     return this.getActiveTimelineMahasiswa(req, res);
   }
+
+  /**
+   * GET /api/v1/kkn/wilayah-kelompok
+   * Mengambil data batas geografis (Polygon/Radius) serta titik pusat posko dari kelompok KKN mahasiswa yang sedang login.
+   */
+  async getWilayahKelompok(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId || (req.user as any)?.id;
+      if (!userId) {
+        res.status(401).json({ success: false, message: "Pengguna tidak terautentikasi" });
+        return;
+      }
+
+      const result = await kknService.getWilayahKelompok(userId);
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memuat wilayah kelompok",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getWilayahKelompok error:", error);
+      if (error.message === "STUDENT_NOT_FOUND" || error.message === "KELOMPOK_NOT_FOUND") {
+        res.status(404).json({
+          success: false,
+          message: "Data kelompok KKN mahasiswa tidak ditemukan",
+        });
+        return;
+      }
+      res.status(500).json({
+        success: false,
+        message: error.message || "Gagal memuat wilayah kelompok",
+      });
+    }
+  }
 }
 
 export const kknController = new KknController();

@@ -13,6 +13,7 @@ export function getCategoryCodeTag(categoryNameOrId?: string | null): string {
     upper.includes("ANORGANIK") ||
     upper.includes("ANORG") ||
     upper.includes("NON_ORGANIC") ||
+    upper.includes("ANO") ||
     upper.includes("AGN") ||
     upper.includes("ANG") ||
     categoryNameOrId === "anorganik"

@@ -348,7 +348,7 @@ export const kknAttendanceController = {
     try {
       const rawRole = (req as any).user?.role;
       const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
-      const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
+      const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN"].includes(roleName);
       const isStudent = roleName === "MAHASISWA_KKN";
 
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
