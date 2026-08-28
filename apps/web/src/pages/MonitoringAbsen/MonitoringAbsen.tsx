@@ -1661,20 +1661,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   };
 
-  // Filtered Attendance List
+  // Filtered Attendance List with Smart Activity Prioritization Sorting
   const filteredAttendance = useMemo(() => {
-    return attendance.filter((rec) => {
+    const list = attendance.filter((rec) => {
       const isAttended = Boolean(rec.attendedAt);
       const isCompleted = Boolean(rec.completedAt);
       const statusUpper = String(rec.status || "").toUpperCase();
+      const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
       const isSakit = statusUpper.includes("SAKIT");
       const isIzin = statusUpper.includes("IZIN");
       const isIzinSakit = isIzin || isSakit;
       const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
       const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
-      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
+      const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
+      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT";
       const isHadir = (isAttended || isFinished) && !isTanpaKeterangan && !isIzinSakit && !isBelumAdaJadwal;
-      const isActivePresence = isHadir && !isFinished;
+      const isActivePresence = isHadir && !isFinished && !isTerjeda;
 
       if (attendanceFilterTab === "ACTIVE" && !isActivePresence) return false;
       if (attendanceFilterTab === "COMPLETED" && (!isFinished || isIzinSakit)) return false;
@@ -1685,9 +1687,68 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const q = studentSearch.toLowerCase();
         const name = (rec.student?.name || "").toLowerCase();
         const nim = (rec.student?.studentProfile?.nim || "").toLowerCase();
-        return name.includes(q) || nim.includes(q);
+        const kel = (rec.student?.studentProfile?.kelompok?.name || rec.kelompokName || "").toLowerCase();
+        return name.includes(q) || nim.includes(q) || kel.includes(q);
       }
       return true;
+    });
+
+    // Smart Prioritization Sorting (🟢 Live Lapangan duluan, ✨ Selesai kedua, ⏸️ Terjeda ketiga, 📋 Izin/Sakit keempat, ⚪ Belum Absen terbawah)
+    return list.sort((a, b) => {
+      const getPriorityRank = (rec: AttendanceRecord) => {
+        const statusUpper = String(rec.status || "").toUpperCase();
+        const currentStatusUpper = String(rec.currentStatus || "").toUpperCase();
+        const isAttended = Boolean(rec.attendedAt);
+        const isCompleted = Boolean(rec.completedAt);
+        const isSakit = statusUpper.includes("SAKIT");
+        const isIzin = statusUpper.includes("IZIN");
+        const isIzinSakit = isIzin || isSakit;
+        const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+        const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+        const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
+        const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT";
+        const isHadir = (isAttended || isFinished) && !isTanpaKeterangan && !isIzinSakit && !isBelumAdaJadwal;
+        const isActive = isHadir && !isFinished && !isTerjeda;
+
+        if (isActive) return 1;       // 🟢 1. Live / Sedang di Lapangan (Prioritas Tertinggi)
+        if (isFinished) return 2;     // ✨ 2. Sudah Selesai / Hadir Memenuhi
+        if (isTerjeda) return 3;      // ⏸️ 3. Sesi Terjeda
+        if (isIzinSakit) return 4;    // 📋 4. Izin / Sakit
+        return 5;                     // ⚪ 5. Belum Absen / Alpa (Terbawah)
+      };
+
+      const rankA = getPriorityRank(a);
+      const rankB = getPriorityRank(b);
+
+      if (rankA !== rankB) {
+        return rankA - rankB;
+      }
+
+      // Jika sama-sama Live (Rank 1): urutkan berdasarkan durasi aktual terbesar atau jam masuk terbaru
+      if (rankA === 1) {
+        const durA = (a as any).actualInZoneMinutes || calculateDurationMinutes(a.attendedAt, a.completedAt);
+        const durB = (b as any).actualInZoneMinutes || calculateDurationMinutes(b.attendedAt, b.completedAt);
+        if (durB !== durA) return durB - durA;
+        const timeA = a.attendedAt ? new Date(a.attendedAt).getTime() : 0;
+        const timeB = b.attendedAt ? new Date(b.attendedAt).getTime() : 0;
+        return timeB - timeA;
+      }
+
+      // Jika sama-sama Selesai (Rank 2): urutkan waktu pulang terbaru
+      if (rankA === 2) {
+        const timeA = a.completedAt ? new Date(a.completedAt).getTime() : (a.attendedAt ? new Date(a.attendedAt).getTime() : 0);
+        const timeB = b.completedAt ? new Date(b.completedAt).getTime() : (b.attendedAt ? new Date(b.attendedAt).getTime() : 0);
+        return timeB - timeA;
+      }
+
+      // Default fallback: urutkan alfabet kelompok lalu nama mahasiswa
+      const kelA = a.student?.studentProfile?.kelompok?.name || a.kelompokName || "";
+      const kelB = b.student?.studentProfile?.kelompok?.name || b.kelompokName || "";
+      if (kelA !== kelB) return kelA.localeCompare(kelB);
+
+      const nameA = a.student?.name || "";
+      const nameB = b.student?.name || "";
+      return nameA.localeCompare(nameB);
     });
   }, [attendance, attendanceFilterTab, studentSearch]);
 
@@ -3318,19 +3379,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
         </div>
 
-        {/* Info Banner when viewing Roster mode (no schedule active) */}
+        {/* Info Banner when viewing Roster mode or ALL_TODAY overview mode */}
         {!activeSchedule && (
           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                <Users size={20} />
+                {selectedScheduleId === "ALL_TODAY" ? <Sparkles size={20} className="text-emerald-600" /> : <Users size={20} />}
               </div>
               <div>
                 <h4 className="text-xs font-black text-slate-900 dark:text-slate-100">
-                  Daftar Roster Mahasiswa KKN {selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Wilayah Binaan)"}
+                  {selectedScheduleId === "ALL_TODAY"
+                    ? "Monitoring Agregat Seluruh Wilayah KKN (32 Kelompok)"
+                    : `Daftar Roster Mahasiswa KKN ${selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Wilayah Binaan)"}`}
                 </h4>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-                  Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, progres aktual / target jam kerja, dan pin live GPS.
+                  {selectedScheduleId === "ALL_TODAY"
+                    ? "Menampilkan rekapitulasi seluruh mahasiswa aktif dari 32 posko KKN. Mahasiswa yang sedang live beraktivitas di lapangan otomatis diprioritaskan di baris teratas."
+                    : "Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, progres aktual / target jam kerja, dan pin live GPS."}
                 </p>
               </div>
             </div>
