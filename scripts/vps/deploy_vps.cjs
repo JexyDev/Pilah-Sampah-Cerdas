@@ -7,10 +7,9 @@ cd /home/maker/Pilah-Sampah-Cerdas-new
 git restore package-lock.json || true
 git pull origin main
 
-echo "=== 2. Building & Migrating Backend ==="
+echo "=== 2. Building Backend API ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new/apps/api
 npx prisma generate
-npx prisma migrate deploy || true
 npm run build
 
 echo "=== 3. Reloading PM2 Backend (Cluster Mode Zero-Downtime) ==="
