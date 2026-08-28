@@ -34,25 +34,41 @@ import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 export class AuthRepository {
   async findUserByPhone(phone: string): Promise<(User & { role: Role; rw?: any; studentProfile?: any }) | null> {
     try {
-      const formatted = formatPhoneNumber(phone);
-      const raw = phone.trim();
+      const raw = (phone || "").trim();
+      if (!raw) return null;
 
-      // Hasilkan format alternatif: 08xxx ↔ +628xxx
-      const alt = raw.startsWith("0")
-        ? "+62" + raw.slice(1)
-        : raw.startsWith("+62")
-          ? "0" + raw.slice(3)
-          : raw;
+      const formatted = formatPhoneNumber(raw);
+      const cleaned = raw.replace(/[^\d+]/g, "");
+      const digitsOnly = raw.replace(/\D/g, "");
 
-      // Cari user hanya berdasarkan nomor telepon (3 format yang valid)
+      const candidatePhones = new Set<string>();
+      if (raw) candidatePhones.add(raw);
+      if (formatted) candidatePhones.add(formatted);
+      if (cleaned) candidatePhones.add(cleaned);
+      if (digitsOnly) {
+        candidatePhones.add(digitsOnly);
+        if (digitsOnly.startsWith("0")) {
+          candidatePhones.add("+62" + digitsOnly.slice(1));
+          candidatePhones.add("62" + digitsOnly.slice(1));
+        } else if (digitsOnly.startsWith("62")) {
+          candidatePhones.add("+" + digitsOnly);
+          candidatePhones.add("0" + digitsOnly.slice(2));
+        } else if (digitsOnly.startsWith("8")) {
+          candidatePhones.add("+62" + digitsOnly);
+          candidatePhones.add("0" + digitsOnly);
+          candidatePhones.add("62" + digitsOnly);
+        }
+      }
+
+      const phoneArray = Array.from(candidatePhones);
+
+      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, atau NIP dosen
       const user = (await prisma.user.findFirst({
         where: {
           OR: [
-            { phone: formatted },
-            { phone: raw },
-            { phone: alt },
-            { studentProfile: { nim: raw } },
-            { studentProfile: { nim: alt } },
+            { phone: { in: phoneArray } },
+            { studentProfile: { nim: { in: [raw, digitsOnly, cleaned] } } },
+            { nip: { in: [raw, digitsOnly, cleaned] } },
           ],
         },
         include: {

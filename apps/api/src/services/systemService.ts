@@ -200,7 +200,7 @@ export const systemService = {
           p.waktu_pelaksanaan as "waktuPelaksanaan",
           k.nama as "kelompokNama", 
           k.kelurahan,
-          k.kecamatan
+          'Coblong' as "kecamatan"
         FROM program_kerja_kkn p
         LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
         ORDER BY p.dibuat_pada DESC

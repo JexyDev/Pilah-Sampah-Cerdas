@@ -48,11 +48,24 @@ export class AuthService {
       isPasswordValid = false;
     }
 
+    // Fallback: cek jika password tersimpan plaintext atau mahasiswa memasukkan NIM sebagai kata sandi
+    const anyUser = user as any;
+    if (!isPasswordValid) {
+      if (user.password === password) {
+        isPasswordValid = true;
+        // Auto-upgrade password plaintext ke bcrypt hash
+        try {
+          const newHashed = await hashPassword(password);
+          await prisma.user.update({ where: { id: user.id }, data: { password: newHashed } });
+        } catch (_) {}
+      } else if (anyUser.studentProfile?.nim && password === anyUser.studentProfile.nim) {
+        isPasswordValid = true;
+      }
+    }
+
     if (!isPasswordValid) {
       throw new Error("WRONG_PASSWORD");
     }
-
-    const anyUser = user as any;
     const userRoleName = user.role?.name || "WARGA";
     const knownKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
     let matchedKelurahan = "";

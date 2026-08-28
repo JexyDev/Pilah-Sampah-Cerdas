@@ -319,7 +319,11 @@ archiveAuditLogsCron.start();
         "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
-      'ALTER TABLE "kegiatan_harian_kkn" ALTER COLUMN "foto_bukti_url" DROP NOT NULL;',
+      `DO $$ BEGIN 
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='kegiatan_harian_kkn') THEN 
+          ALTER TABLE "kegiatan_harian_kkn" ALTER COLUMN "foto_bukti_url" DROP NOT NULL; 
+        END IF; 
+      END $$;`,
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "judul" TEXT;',
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "nomor" INTEGER;',
       'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "id_mahasiswa" TEXT;',
