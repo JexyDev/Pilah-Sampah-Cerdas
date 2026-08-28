@@ -1897,6 +1897,38 @@ export class KknAttendanceService {
     const locMap = new Map(locations.map((l) => [l.studentId, l]));
     const scheduleLoc = await this.getActivityLocation(scheduleId);
 
+    // Query total cumulative minutes for each student across all historical sessions
+    const allStudentIds = allStudents.map((s) => s.id);
+    const cumulativeRecords = allStudentIds.length > 0
+      ? await prisma.activityAttendance.findMany({
+          where: {
+            studentId: { in: allStudentIds },
+          },
+          select: {
+            studentId: true,
+            actualInZoneMinutes: true,
+            status: true,
+            attendedAt: true,
+            checkOutAt: true,
+          },
+        })
+      : [];
+
+    const cumulativeMap = new Map<string, { totalMinutes: number; totalHours: number; totalDays: number }>();
+    for (const cr of cumulativeRecords) {
+      let mins = cr.actualInZoneMinutes ?? 0;
+      if (mins === 0 && cr.attendedAt && cr.checkOutAt) {
+        mins = Math.max(0, Math.floor((new Date(cr.checkOutAt).getTime() - new Date(cr.attendedAt).getTime()) / 60000));
+      }
+      const prev = cumulativeMap.get(cr.studentId) || { totalMinutes: 0, totalHours: 0, totalDays: 0 };
+      prev.totalMinutes += mins;
+      prev.totalHours = Math.round((prev.totalMinutes / 60) * 10) / 10;
+      if (cr.attendedAt) {
+        prev.totalDays += 1;
+      }
+      cumulativeMap.set(cr.studentId, prev);
+    }
+
     const attendedStudentIds = new Set<string>();
 
     const attendedList = list.map((att) => {
@@ -1960,6 +1992,7 @@ export class KknAttendanceService {
       }
 
       const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
+      const cum = cumulativeMap.get(att.studentId) || { totalMinutes: 0, totalHours: 0, totalDays: 0 };
       return {
         ...att,
         status,
@@ -1967,6 +2000,9 @@ export class KknAttendanceService {
         statusDisplay,
         isMemenuhiDurasi,
         actualInZoneMinutes: actualMins,
+        totalMinutes: cum.totalMinutes,
+        totalHours: cum.totalHours,
+        totalDays: cum.totalDays,
         attendedAt: isLeave ? null : att.attendedAt,
         completedAt: isFinished ? (att.checkOutAt || (att as any).completedAt || null) : null,
         leaveRequest: leave
@@ -1988,6 +2024,7 @@ export class KknAttendanceService {
 
       const latestLoc = locMap.get(s.id);
       const leave = leaveMap.get(s.id);
+      const cum = cumulativeMap.get(s.id) || { totalMinutes: 0, totalHours: 0, totalDays: 0 };
 
       if (leave && leave.status === "APPROVED") {
         const attStatus = String(leave.type || "").toUpperCase().includes("SAKIT") ? "SAKIT" : "IZIN";
@@ -2042,6 +2079,9 @@ export class KknAttendanceService {
           currentStatus: "IZIN_DISETUJUI",
           statusDisplay: attStatus === "SAKIT" ? "Sakit (Disetujui)" : "Izin (Disetujui)",
           student: s,
+          totalMinutes: cum.totalMinutes,
+          totalHours: cum.totalHours,
+          totalDays: cum.totalDays,
           leaveRequest: {
             id: leave.id,
             type: leave.type,
@@ -2065,6 +2105,9 @@ export class KknAttendanceService {
           currentStatus: "MENUNGGU_PERSETUJUAN_IZIN",
           statusDisplay: isSakit ? "Sakit (Menunggu)" : "Izin (Menunggu)",
           student: s,
+          totalMinutes: cum.totalMinutes,
+          totalHours: cum.totalHours,
+          totalDays: cum.totalDays,
           leaveRequest: {
             id: leave.id,
             type: leave.type,
@@ -2087,6 +2130,9 @@ export class KknAttendanceService {
           currentStatus: "PENGAJUAN_BATAL_IZIN",
           statusDisplay: "Batal Izin (Menunggu)",
           student: s,
+          totalMinutes: cum.totalMinutes,
+          totalHours: cum.totalHours,
+          totalDays: cum.totalDays,
           leaveRequest: {
             id: leave.id,
             type: leave.type,
@@ -2110,6 +2156,9 @@ export class KknAttendanceService {
           statusDisplay: "Hadir (Batal Izin)",
           isMemenuhiDurasi: true,
           student: s,
+          totalMinutes: cum.totalMinutes,
+          totalHours: cum.totalHours,
+          totalDays: cum.totalDays,
           leaveRequest: {
             id: leave.id,
             type: leave.type,
@@ -2163,6 +2212,9 @@ export class KknAttendanceService {
           currentStatus,
           statusDisplay: status === "LAPANGAN" ? "Lapangan" : "Belum Absen",
           student: s,
+          totalMinutes: cum.totalMinutes,
+          totalHours: cum.totalHours,
+          totalDays: cum.totalDays,
         });
       }
     }

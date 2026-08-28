@@ -3430,9 +3430,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <th className="py-3.5 px-4 text-center">Status Presensi</th>
                       <th className="py-3.5 px-4 text-center">Jam Masuk</th>
                       <th className="py-3.5 px-4 text-center">Jam Pulang</th>
-                      <th className="py-3.5 px-4 text-center">Durasi</th>
+                      <th className="py-3.5 px-4 text-center">Durasi Sesi Ini</th>
                       <th className="py-3.5 px-4 text-center">
-                        Aktual / Target
+                        Total Akumulasi Mahasiswa
                       </th>
                       <th className="py-3.5 px-4 text-center">Poin Dampingan</th>
                       <th className="py-3.5 px-4 text-center">Lokasi Kegiatan</th>
@@ -3483,39 +3483,41 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         ? formatDurationUnits(durationMins)
                         : "-";
 
-                      const targetKumulatif = configTargets.targetTotalJam || 200;
-                      const percentCapaian = rec.totalHours !== undefined ? Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2)) : 0;
-                      const isExceeded = percentCapaian > 100;
+                      const targetKumulatif = configTargets.targetTotalJam || 100;
+                      const studentCumulativeMins = (rec.totalMinutes !== undefined && rec.totalMinutes !== null)
+                        ? Number(rec.totalMinutes)
+                        : (rec.totalHours !== undefined ? Number(rec.totalHours) * 60 : (isAttended || isBerlangsung ? durationMins : 0));
+                      const studentCumulativeHours = (rec.totalHours !== undefined && rec.totalHours !== null)
+                        ? Number(rec.totalHours)
+                        : Math.round((studentCumulativeMins / 60) * 10) / 10;
+                      const percentCapaian = Number(((studentCumulativeHours / (targetKumulatif || 1)) * 100).toFixed(1));
+                      const isExceeded = percentCapaian >= 100;
 
-                      const formattedActualTarget = isLeaveOrPending
-                        ? `0 Menit / ${formatHoursToUnits(scheduleTargetHours)}`
-                        : (rec.totalHours !== undefined
-                            ? (
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
-                                    {formatHoursToUnits(rec.totalHours)} / {formatHoursToUnits(targetKumulatif)}
-                                  </span>
-                                  {isExceeded ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
-                                      <span>🌟 Melampaui</span>
-                                      <span className="font-extrabold">({percentCapaian}%)</span>
-                                    </span>
-                                  ) : (
-                                    <div className="w-full max-w-[120px] flex flex-col items-center gap-0.5">
-                                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                                        <div
-                                          className="bg-emerald-600 h-full rounded-full transition-all"
-                                          style={{ width: `${Math.min(100, percentCapaian)}%` }}
-                                        />
-                                      </div>
-                                      <span className="text-[9px] font-bold text-slate-500">
-                                        {percentCapaian}% Tercapai
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            : `${(isAttended || isBerlangsung) ? formatDurationUnits(durationMins) : "0 Menit"} / ${formatHoursToUnits(scheduleTargetHours)}`);
+                      const formattedActualTarget = (
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
+                            {formatHoursToUnits(studentCumulativeHours)} / {formatHoursToUnits(targetKumulatif)}
+                          </span>
+                          {isExceeded ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                              <span>🌟 Target Tercapai</span>
+                              <span className="font-extrabold">({percentCapaian}%)</span>
+                            </span>
+                          ) : (
+                            <div className="w-full max-w-[120px] flex flex-col items-center gap-0.5">
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className="bg-emerald-600 h-full rounded-full transition-all"
+                                  style={{ width: `${Math.min(100, percentCapaian)}%` }}
+                                />
+                              </div>
+                              <span className="text-[9px] font-bold text-slate-500">
+                                {percentCapaian}% Capaian Total
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
 
                       const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? 0 : (isHadir ? 10 : 0);
 
