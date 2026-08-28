@@ -541,7 +541,7 @@ router.get(
 router.post(
   "/posko",
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL"]),
   safeUploadSingleImage("foto"),
   kknController.createPosko
 );
@@ -549,7 +549,7 @@ router.post(
 router.put(
   "/posko/:id",
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL"]),
   safeUploadSingleImage("foto"),
   kknController.updatePosko
 );

@@ -49,7 +49,7 @@ import PageHeader from "../../components/common/PageHeader";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo } from "../../constants/coblongGeoData";
-import { resolveImageUrl } from "../../utils/imageUrl";
+import { resolveImageUrl, handlePoskoImageError, getPoskoFallbackImage } from "../../utils/imageUrl";
 
 export interface PoskoItem {
   id: string;
@@ -154,6 +154,7 @@ export const PoskoKknPage: React.FC = () => {
     "PANITIA_TASKFORCE",
     "PEMIMPIN"
   ].includes(userRole);
+  const canEditPosko = isDeveloperOrAdmin || isDpl;
 
   const [items, setItems] = useState<PoskoItem[]>([]);
   const [kelompokList, setKelompokList] = useState<KelompokOption[]>([]);
@@ -782,6 +783,16 @@ export const PoskoKknPage: React.FC = () => {
                             <ExternalLink size={12} />
                           </a>
                         )}
+                        {canEditPosko && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(posko)}
+                            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+                          >
+                            <Pencil size={13} />
+                            <span>Edit &amp; Upload Foto Posko</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -856,18 +867,31 @@ export const PoskoKknPage: React.FC = () => {
                     <div className="lg:col-span-5 space-y-6">
                       {/* Foto Posko Card */}
                       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
-                        <h4 className="text-xs font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                          <Eye size={14} />
-                          <span>Dokumentasi Posko</span>
-                        </h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                            <Eye size={14} />
+                            <span>Dokumentasi Posko</span>
+                          </h4>
+                          {canEditPosko && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(posko)}
+                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                            >
+                              <Upload size={12} />
+                              <span>{posko.foto ? "Ubah Foto" : "Unggah Foto"}</span>
+                            </button>
+                          )}
+                        </div>
                         {resolvedFoto ? (
                           <div
                             onClick={() => setPreviewImage({ url: resolvedFoto, title: posko.nama, subtitle: posko.alamat })}
-                            className="relative aspect-video rounded-2xl overflow-hidden cursor-pointer group border border-slate-200 dark:border-slate-700"
+                            className="relative aspect-video rounded-2xl overflow-hidden cursor-pointer group border border-slate-200 dark:border-slate-700 bg-slate-950 shadow-xs"
                           >
                             <img
                               src={resolvedFoto}
                               alt={posko.nama}
+                              onError={(e) => handlePoskoImageError(e, posko.nama)}
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                             />
                             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1.5">
@@ -876,9 +900,19 @@ export const PoskoKknPage: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <div className="aspect-video rounded-2xl bg-slate-100 dark:bg-slate-800 flex flex-col items-center justify-center text-slate-400 p-4 border border-dashed border-slate-300 dark:border-slate-700">
-                            <Building2 size={32} className="mb-1" />
-                            <span className="text-xs font-medium">Foto posko belum diunggah</span>
+                          <div
+                            onClick={() => (canEditPosko ? handleOpenEditModal(posko) : null)}
+                            className={`aspect-video rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center text-slate-400 p-4 border border-dashed border-slate-300 dark:border-slate-700 ${
+                              canEditPosko ? "cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800 transition group" : ""
+                            }`}
+                          >
+                            <Upload size={28} className="mb-1.5 text-indigo-500 group-hover:scale-110 transition" />
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Foto posko belum diunggah</span>
+                            {canEditPosko && (
+                              <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                                Klik di sini untuk unggah foto posko
+                              </span>
+                            )}
                           </div>
                         )}
 

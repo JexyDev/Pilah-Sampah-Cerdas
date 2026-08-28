@@ -117,9 +117,18 @@ app.use("/api", (req, res, next) => {
 
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
-// Statically serve uploads and downloads folders
-app.use("/uploads", express.static("uploads"));
-app.use("/downloads", express.static("uploads"));
+// Statically serve uploads and downloads folders with multi-directory fallback
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/api/uploads")));
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
+app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads")));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/web/public/uploads")));
+
+app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads")));
+app.use("/downloads", express.static(path.resolve(process.cwd(), "apps/api/uploads")));
+app.use("/downloads", express.static(path.resolve(__dirname, "../uploads")));
+app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads")));
 
 // In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
