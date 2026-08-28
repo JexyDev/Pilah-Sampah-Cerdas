@@ -5,6 +5,7 @@
  */
 
 import { prisma } from "../lib/prisma.js";
+import { auditTrailService } from "./auditTrailService.js";
 
 const MAX_DESKRIPSI_LENGTH = 500;
 
@@ -66,6 +67,22 @@ export class PresensiMandiriService {
       },
     });
 
+    // Record into system history / audit trail
+    auditTrailService.recordPresensiMandiriCheckIn({
+      presensiId: record.id,
+      studentId: record.studentId,
+      studentName: record.student?.name,
+      nim: record.student?.studentProfile?.nim,
+      kelompokName: record.kelompok?.name,
+      kelurahan: record.kelompok?.kelurahan,
+      latitude: Number(record.latitude),
+      longitude: Number(record.longitude),
+      deskripsiKegiatan: record.deskripsiKegiatan,
+      fotoUrl: record.fotoUrl,
+      platformOs: record.platformOs,
+      checkInAt: record.checkInAt.toISOString(),
+    }).catch((err) => console.warn("[Audit] Presensi mandiri check-in log error:", err));
+
     return {
       presensiId: record.id,
       studentId: record.studentId,
@@ -87,7 +104,13 @@ export class PresensiMandiriService {
   async checkOut(params: { presensiId: string; studentId: string; deskripsiKegiatan?: string }) {
     const { presensiId, studentId, deskripsiKegiatan } = params;
     const db = prisma as any;
-    const record = await db.presensiMandiri.findFirst({ where: { id: presensiId, studentId } });
+    const record = await db.presensiMandiri.findFirst({
+      where: { id: presensiId, studentId },
+      include: {
+        student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
+        kelompok: { select: { id: true, name: true } },
+      },
+    });
     if (!record) throw new Error("PRESENSI_NOT_FOUND");
     if (record.status === "SELESAI") throw new Error("ALREADY_CHECKED_OUT");
 
@@ -103,6 +126,20 @@ export class PresensiMandiriService {
     }
 
     const updated = await db.presensiMandiri.update({ where: { id: presensiId }, data: updateData });
+
+    // Record into system history / audit trail
+    auditTrailService.recordPresensiMandiriCheckOut({
+      presensiId: updated.id,
+      studentId: record.studentId,
+      studentName: record.student?.name,
+      nim: record.student?.studentProfile?.nim,
+      kelompokName: record.kelompok?.name,
+      durasiMenit,
+      checkInAt: record.checkInAt.toISOString(),
+      checkOutAt: checkOutAt.toISOString(),
+      deskripsiKegiatan: updated.deskripsiKegiatan,
+    }).catch((err) => console.warn("[Audit] Presensi mandiri check-out log error:", err));
+
     return {
       presensiId: updated.id,
       status: updated.status,
@@ -120,12 +157,33 @@ export class PresensiMandiriService {
       throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
     }
     const db = prisma as any;
-    const record = await db.presensiMandiri.findFirst({ where: { id: presensiId, studentId } });
+    const record = await db.presensiMandiri.findFirst({
+      where: { id: presensiId, studentId },
+      include: {
+        student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
+      },
+    });
     if (!record) throw new Error("PRESENSI_NOT_FOUND");
     const updated = await db.presensiMandiri.update({
       where: { id: presensiId },
       data: { deskripsiKegiatan: deskripsiKegiatan.trim() },
     });
+
+    // Record into system history / audit trail
+    auditTrailService.recordAudit({
+      action: "PRESENSI_MANDIRI_UPDATE",
+      userId: studentId,
+      roleName: "MAHASISWA_KKN",
+      featureCategory: "Presensi KKN",
+      endpoint: `/api/v1/presensi/mandiri/${presensiId}/deskripsi`,
+      oldValue: { deskripsiKegiatanLama: record.deskripsiKegiatan },
+      newValue: {
+        presensiId: updated.id,
+        deskripsiKegiatanBaru: updated.deskripsiKegiatan,
+        keterangan: `Mahasiswa ${record.student?.name ? `${record.student.name} (${record.student?.studentProfile?.nim || "-"})` : ""} memperbarui catatan kegiatan Presensi Mandiri.`,
+      },
+    }).catch((err) => console.warn("[Audit] Presensi mandiri update log error:", err));
+
     return { presensiId: updated.id, deskripsiKegiatan: updated.deskripsiKegiatan, updatedAt: updated.updatedAt.toISOString() };
   }
 

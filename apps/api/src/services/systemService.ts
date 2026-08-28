@@ -19,7 +19,15 @@ export const systemService = {
             id: true,
             name: true,
             phone: true,
+            fotoProfil: true,
             role: { select: { name: true } },
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+                kelompok: { select: { id: true, name: true, kelurahan: true } },
+              },
+            },
           },
         },
       },

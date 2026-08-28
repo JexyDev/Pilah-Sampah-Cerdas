@@ -380,6 +380,7 @@ export class SuperUserService {
         { action: { contains: filters.search, mode: "insensitive" } },
         { user: { name: { contains: filters.search, mode: "insensitive" } } },
         { user: { phone: { contains: filters.search, mode: "insensitive" } } },
+        { user: { studentProfile: { nim: { contains: filters.search, mode: "insensitive" } } } },
       ];
     }
 
@@ -395,6 +396,13 @@ export class SuperUserService {
             phone: true,
             fotoProfil: true,
             role: { select: { id: true, name: true } },
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+                kelompok: { select: { id: true, name: true, kelurahan: true } },
+              },
+            },
           },
         },
       },

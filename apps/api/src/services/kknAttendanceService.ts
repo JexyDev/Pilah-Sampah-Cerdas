@@ -13,6 +13,7 @@ import { websocketService } from "./websocketService.js";
 import { validateCoordinate } from "../utils/geoValidation.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { isOrganikBin, isAnorganikBin } from "./kknService.js";
+import { auditTrailService } from "./auditTrailService.js";
 
 /**
  * Helper: Build unified geofence object with fallback to system defaults.
@@ -1355,6 +1356,23 @@ export class KknAttendanceService {
       },
     });
 
+    // Record into system history / audit trail
+    auditTrailService.recordPresensiMasuk({
+      studentId,
+      scheduleId,
+      scheduleTitle: actLoc?.title || "Kegiatan KKN",
+      kelompokName: studentUser?.studentProfile?.kelompok?.name || "-",
+      kelurahan: studentUser?.studentProfile?.kelompok?.kelurahan || "-",
+      latitude,
+      longitude,
+      method: attendance.method || method,
+      status: attendance.status,
+      deskripsiKegiatan,
+      fotoUrl,
+      studentName: finalNama,
+      nim: finalNim,
+    }).catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
+
     return {
       ...attendance,
       namaMahasiswa: finalNama,
@@ -1565,6 +1583,29 @@ export class KknAttendanceService {
       longitude: updated.longitude,
       student: updated.student,
     });
+
+    // Record into system history / audit trail
+    const kknGroupForAudit = (updated.student?.studentProfile as any)?.kelompok || (updated.schedule as any)?.kelompok;
+    auditTrailService.recordPresensiPulang({
+      studentId,
+      scheduleId: updated.scheduleId,
+      scheduleTitle: updated.schedule?.title || "Kegiatan KKN",
+      kelompokName: kknGroupForAudit?.name || "-",
+      kelurahan: kknGroupForAudit?.kelurahan || "-",
+      attendedAt: updated.attendedAt,
+      checkOutAt: updated.checkOutAt,
+      durasiMenit: actualInZoneMins,
+      durasiTargetMenit: durasiWajibMenit,
+      isMemenuhiDurasi: isMemenuhi,
+      status: updated.status,
+      statusDisplay,
+      latitude: updated.latitude ? Number(updated.latitude) : latitude,
+      longitude: updated.longitude ? Number(updated.longitude) : longitude,
+      deskripsiKegiatan: (updated as any).deskripsiKegiatan || deskripsiKegiatan,
+      fotoUrl: (updated as any).fotoUrl || fotoUrl,
+      studentName: updated.student?.name,
+      nim: updated.student?.studentProfile?.nim,
+    }).catch((err) => console.warn("[Audit] Presensi pulang log error:", err));
 
     return {
       success: true,
@@ -2979,6 +3020,37 @@ export class KknAttendanceService {
       });
     }
 
+    // Record into system history / audit trail
+    const isResumeSession = existingSession?.status === "TERJEDA";
+    if (isResumeSession) {
+      auditTrailService.recordPresensiLanjut({
+        studentId: studentUserId,
+        scheduleId: schedule.id,
+        scheduleTitle: schedule.title,
+        kelompokName: student.kelompok?.name || schedule.kelompok?.name || "-",
+        durasiSebelumResumeMenit: existingSession?.actualInZoneMinutes || 0,
+        waktuResume: new Date().toISOString(),
+        studentName: student.user?.name,
+        nim: student.nim,
+      }).catch((err) => console.warn("[Audit] Presensi lanjut log error:", err));
+    } else {
+      auditTrailService.recordPresensiMasuk({
+        studentId: studentUserId,
+        scheduleId: schedule.id,
+        scheduleTitle: schedule.title,
+        kelompokName: student.kelompok?.name || schedule.kelompok?.name || "-",
+        kelurahan: student.kelompok?.kelurahan || "-",
+        latitude,
+        longitude,
+        method: "GPS_ACTIVITY",
+        status: attendance.status,
+        deskripsiKegiatan,
+        fotoUrl,
+        studentName: student.user?.name,
+        nim: student.nim,
+      }).catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
+    }
+
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
       ruleConfigs.attendanceMinDurationMinutes +
@@ -3110,6 +3182,28 @@ export class KknAttendanceService {
       });
     } catch (_) {}
 
+    // Record into system history / audit trail
+    prisma.user.findUnique({
+      where: { id: studentUserId },
+      include: { studentProfile: { include: { kelompok: true } } },
+    }).then(async (studentUserForJeda) => {
+      const schedForJeda = await prisma.schedule.findUnique({
+        where: { id: scheduleId },
+        select: { title: true },
+      });
+      auditTrailService.recordPresensiJeda({
+        studentId: studentUserId,
+        scheduleId,
+        scheduleTitle: schedForJeda?.title || "Kegiatan KKN",
+        kelompokName: studentUserForJeda?.studentProfile?.kelompok?.name || "-",
+        alasan: payload.alasan,
+        durasiSebelumJedaMenit: calculatedMins,
+        waktuJeda: new Date().toISOString(),
+        studentName: studentUserForJeda?.name,
+        nim: studentUserForJeda?.studentProfile?.nim,
+      }).catch((err) => console.warn("[Audit] Presensi jeda log error:", err));
+    }).catch(() => {});
+
     return updated;
   }
 
@@ -3163,6 +3257,18 @@ export class KknAttendanceService {
         redeemable: false,
       },
     });
+
+    // Record into system history / audit trail
+    auditTrailService.recordPresensiPelanggaranZona({
+      studentId: studentUserId,
+      scheduleId,
+      scheduleTitle: schedule?.title || "Kegiatan KKN",
+      kelompokName: student?.kelompok?.name || schedule?.kelompok?.name || "-",
+      outOfZoneMinutes,
+      pointsDeducted: penaltyPoints,
+      studentName: student?.user?.name,
+      nim: student?.nim,
+    }).catch((err) => console.warn("[Audit] Pelanggaran zona log error:", err));
 
     return {
       success: true,

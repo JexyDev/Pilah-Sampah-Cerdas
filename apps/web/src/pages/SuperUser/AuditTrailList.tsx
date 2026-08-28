@@ -28,6 +28,13 @@ import {
   Layers,
   Sparkles,
   Loader2,
+  MapPin,
+  Calendar,
+  Image as ImageIcon,
+  ExternalLink,
+  FileCheck2,
+  AlertTriangle,
+  CheckSquare,
 } from "lucide-react";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
@@ -35,12 +42,22 @@ interface AuditTrail {
   id: string;
   action: string;
   userId: string | null;
+  roleName?: string | null;
+  featureCategory?: string | null;
+  endpoint?: string | null;
+  ipAddress?: string | null;
   user: {
+    id?: string;
     name: string;
-    email: string;
+    email?: string;
     phone?: string;
     fotoProfil?: string;
-    role?: { name: string };
+    role?: { id?: string; name: string };
+    studentProfile?: {
+      nim?: string;
+      jurusan?: string;
+      kelompok?: { id: string; name: string; kelurahan?: string };
+    };
   } | null;
   timestamp: string;
   referenceId?: string;
@@ -109,86 +126,198 @@ export const AuditTrailList: React.FC = () => {
   // Helper formatting for Action Names to KBBI / EYD Indonesian
   const getActionMeta = (action: string) => {
     const act = (action || "").toUpperCase();
-    if (act.includes("REACTIVATE_BIN")) {
+
+    // 1. Presensi & Kegiatan Mahasiswa KKN
+    if (
+      act.includes("PRESENSI_MASUK") ||
+      act.includes("MULAI_KEGIATAN") ||
+      act.includes("/KEGIATAN/MULAI") ||
+      (act.includes("KEGIATAN") && act.includes("ABSEN"))
+    ) {
       return {
-        label: "Reaktivasi Tempat Sampah",
-        badgeClass: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-        category: "TEMPAT_SAMPAH",
+        label: "Presensi Masuk KKN",
+        badgeClass:
+          "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+        category: "PRESENSI",
+      };
+    }
+    if (
+      act.includes("PRESENSI_PULANG") ||
+      act.includes("SELESAI_KEGIATAN") ||
+      act.includes("CHECK-OUT") ||
+      act.includes("CHECKOUT") ||
+      act.includes("/KEGIATAN/SELESAI")
+    ) {
+      return {
+        label: "Presensi Pulang KKN",
+        badgeClass:
+          "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("PRESENSI_JEDA") || act.includes("JEDA_KEGIATAN") || act.includes("/KEGIATAN/JEDA")) {
+      return {
+        label: "Jeda Kegiatan KKN",
+        badgeClass:
+          "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("PRESENSI_LANJUT") || act.includes("RESUME_KEGIATAN")) {
+      return {
+        label: "Lanjut Kegiatan KKN",
+        badgeClass:
+          "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("PRESENSI_MANDIRI_CHECKIN")) {
+      return {
+        label: "Presensi Mandiri (Masuk)",
+        badgeClass:
+          "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("PRESENSI_MANDIRI_CHECKOUT")) {
+      return {
+        label: "Presensi Mandiri (Selesai)",
+        badgeClass:
+          "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("PRESENSI_MANDIRI_UPDATE")) {
+      return {
+        label: "Pembaruan Presensi Mandiri",
+        badgeClass:
+          "bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("PRESENSI_PELANGGARAN_ZONA") || act.includes("PELANGGARAN_ZONA") || act.includes("OUT-OF-ZONE")) {
+      return {
+        label: "Pelanggaran Zona Geofence",
+        badgeClass:
+          "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+        category: "PRESENSI",
+      };
+    }
+    if (act.includes("LOGBOOK_MAHASISWA") || act.includes("LOGBOOK")) {
+      return {
+        label: "Pengisian Logbook Mahasiswa",
+        badgeClass:
+          "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800",
+        category: "KKN",
       };
     }
     if (act.includes("KKN_HANDOVER")) {
       return {
         label: "Serah Terima Tugas KKN",
-        badgeClass: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
+        badgeClass:
+          "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800",
         category: "KKN",
+      };
+    }
+    if (act.includes("REGISTER_POSKO_KKN") || act.includes("POSKO_KKN")) {
+      return {
+        label: "Registrasi Posko KKN",
+        badgeClass:
+          "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
+        category: "KKN",
+      };
+    }
+
+    // 2. Tempat Sampah & QR Code
+    if (act.includes("REACTIVATE_BIN")) {
+      return {
+        label: "Reaktivasi Tempat Sampah",
+        badgeClass:
+          "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+        category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("GENERATE_QR") || act.includes("QR")) {
       return {
         label: "Pembuatan Kode QR Massal",
-        badgeClass: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+        badgeClass:
+          "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
         category: "QR_CODE",
       };
     }
     if (act.includes("APPROVE_ACTIVATION") || act.includes("APPROVE_BIN")) {
       return {
         label: "Persetujuan Tempat Sampah",
-        badgeClass: "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
+        badgeClass:
+          "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("REJECT_ACTIVATION") || act.includes("REJECT_BIN")) {
       return {
         label: "Penolakan Aktivasi Tempat Sampah",
-        badgeClass: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
+        badgeClass:
+          "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("REPORT_BIN_BROKEN") || act.includes("BROKEN")) {
       return {
         label: "Pelaporan Tempat Sampah Rusak",
-        badgeClass: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
+        badgeClass:
+          "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
         category: "TEMPAT_SAMPAH",
       };
     }
     if (act.includes("UPDATE_BIN")) {
       return {
         label: "Pembaruan Data Tempat Sampah",
-        badgeClass: "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800",
+        badgeClass:
+          "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800",
         category: "TEMPAT_SAMPAH",
       };
     }
+
+    // 3. User Management
     if (act.includes("CREATE_USER")) {
       return {
         label: "Penambahan Pengguna Baru",
-        badgeClass: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
+        badgeClass:
+          "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
         category: "MUTASI_USER",
       };
     }
     if (act.includes("UPDATE_USER")) {
       return {
         label: "Pembaruan Profil Pengguna",
-        badgeClass: "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
+        badgeClass:
+          "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
         category: "MUTASI_USER",
       };
     }
     if (act.includes("DELETE_USER")) {
       return {
         label: "Penghapusan Akun Pengguna",
-        badgeClass: "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800",
+        badgeClass:
+          "bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800",
         category: "MUTASI_USER",
       };
     }
+
+    // 4. Sistem
     if (act.includes("SYSTEM") || act.includes("CONFIG") || act.includes("PENALTY")) {
       return {
         label: "Peristiwa Otomatis Sistem",
-        badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
+        badgeClass:
+          "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700",
         category: "SISTEM",
       };
     }
+
     return {
       label: action.replace(/_/g, " "),
-      badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+      badgeClass:
+        "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
       category: "LAINNYA",
     };
   };
@@ -371,10 +500,11 @@ export const AuditTrailList: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-100 dark:border-slate-800">
           {[
             { id: "SEMUA", label: "Semua Aktivitas", icon: Activity },
-            { id: "TEMPAT_SAMPAH", label: "Tempat Sampah", icon: Trash2 },
-            { id: "MUTASI_USER", label: "Pengelolaan Pengguna", icon: UserCheck },
-            { id: "QR_CODE", label: "Kode QR", icon: QrCode },
+            { id: "PRESENSI", label: "Presensi Mahasiswa", icon: UserCheck },
             { id: "KKN", label: "Program KKN", icon: GraduationCap },
+            { id: "TEMPAT_SAMPAH", label: "Tempat Sampah", icon: Trash2 },
+            { id: "MUTASI_USER", label: "Pengelolaan Pengguna", icon: Shield },
+            { id: "QR_CODE", label: "Kode QR", icon: QrCode },
             { id: "SISTEM", label: "Otomatisasi Sistem", icon: Settings },
           ].map((tab) => {
             const TabIcon = tab.icon;
@@ -410,7 +540,7 @@ export const AuditTrailList: React.FC = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={15} />
               <input
                 type="text"
-                placeholder="Cari nama pengguna, email, atau aksi..."
+                placeholder="Cari nama pengguna, NIM, email, atau aksi..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#009966] bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800"
@@ -432,14 +562,26 @@ export const AuditTrailList: React.FC = () => {
               className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] bg-white dark:bg-slate-800 cursor-pointer shadow-2xs"
             >
               <option value="" className="dark:bg-slate-800">Semua Jenis Aktivitas</option>
-              <option value="REACTIVATE_BIN" className="dark:bg-slate-800">Reaktivasi Tempat Sampah</option>
-              <option value="KKN_HANDOVER" className="dark:bg-slate-800">Serah Terima KKN</option>
-              <option value="GENERATE_QR_BATCH" className="dark:bg-slate-800">Pembuatan Kode QR Massal</option>
-              <option value="APPROVE_ACTIVATION" className="dark:bg-slate-800">Persetujuan Tempat Sampah</option>
-              <option value="REJECT_ACTIVATION" className="dark:bg-slate-800">Penolakan Aktivasi Tempat Sampah</option>
-              <option value="REPORT_BIN_BROKEN" className="dark:bg-slate-800">Pelaporan Tempat Sampah Rusak</option>
-              <option value="UPDATE_BIN_CAPACITY" className="dark:bg-slate-800">Pembaruan Kapasitas Tempat Sampah</option>
-              <option value="APPROVE_RECYCLE_IDEA" className="dark:bg-slate-800">Persetujuan Ide Daur Ulang</option>
+              <optgroup label="Presensi &amp; Kegiatan KKN" className="dark:bg-slate-800">
+                <option value="PRESENSI_MASUK_KKN" className="dark:bg-slate-800">Presensi Masuk KKN</option>
+                <option value="PRESENSI_PULANG_KKN" className="dark:bg-slate-800">Presensi Pulang KKN</option>
+                <option value="PRESENSI_JEDA_KKN" className="dark:bg-slate-800">Jeda Kegiatan KKN</option>
+                <option value="PRESENSI_LANJUT_KKN" className="dark:bg-slate-800">Lanjut Kegiatan KKN</option>
+                <option value="PRESENSI_MANDIRI_CHECKIN" className="dark:bg-slate-800">Presensi Mandiri (Masuk)</option>
+                <option value="PRESENSI_MANDIRI_CHECKOUT" className="dark:bg-slate-800">Presensi Mandiri (Selesai)</option>
+                <option value="PRESENSI_PELANGGARAN_ZONA" className="dark:bg-slate-800">Pelanggaran Zona Geofence</option>
+                <option value="LOGBOOK_MAHASISWA_SUBMIT" className="dark:bg-slate-800">Pengisian Logbook Mahasiswa</option>
+                <option value="KKN_HANDOVER" className="dark:bg-slate-800">Serah Terima KKN</option>
+              </optgroup>
+              <optgroup label="Tempat Sampah &amp; QR" className="dark:bg-slate-800">
+                <option value="REACTIVATE_BIN" className="dark:bg-slate-800">Reaktivasi Tempat Sampah</option>
+                <option value="GENERATE_QR_BATCH" className="dark:bg-slate-800">Pembuatan Kode QR Massal</option>
+                <option value="APPROVE_ACTIVATION" className="dark:bg-slate-800">Persetujuan Tempat Sampah</option>
+                <option value="REJECT_ACTIVATION" className="dark:bg-slate-800">Penolakan Aktivasi Tempat Sampah</option>
+                <option value="REPORT_BIN_BROKEN" className="dark:bg-slate-800">Pelaporan Tempat Sampah Rusak</option>
+                <option value="UPDATE_BIN_CAPACITY" className="dark:bg-slate-800">Pembaruan Kapasitas Tempat Sampah</option>
+                <option value="APPROVE_RECYCLE_IDEA" className="dark:bg-slate-800">Persetujuan Ide Daur Ulang</option>
+              </optgroup>
             </select>
           </div>
 
@@ -661,22 +803,141 @@ export const AuditTrailList: React.FC = () => {
 
           {selectedLog ? (
             <div className="space-y-4">
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1.5">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1.5">
                 <div className="flex justify-between items-center text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                   <span>Jenis Aktivitas</span>
-                  <span className="text-[#009966] dark:text-emerald-400 font-mono">{selectedLog.action}</span>
+                  <span className="text-[#009966] dark:text-emerald-400 font-mono text-[10px]">{selectedLog.action}</span>
                 </div>
-                <p className="text-xs font-black text-slate-800 dark:text-slate-100">
-                  {getActionMeta(selectedLog.action).label}
+                <p className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center justify-between">
+                  <span>{getActionMeta(selectedLog.action).label}</span>
+                  {selectedLog.featureCategory && (
+                    <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                      {selectedLog.featureCategory}
+                    </span>
+                  )}
                 </p>
               </div>
 
-              {/* Nilai Baru / New Value */}
+              {/* Rich Visual Card for Mahasiswa / Presensi / Logbook Activities */}
+              {(() => {
+                const nv = selectedLog.newValue;
+                const studentName = nv?.namaMahasiswa || selectedLog.user?.name;
+                const nim = nv?.nim || selectedLog.user?.studentProfile?.nim;
+                const kelompok = nv?.kelompok || selectedLog.user?.studentProfile?.kelompok?.name;
+                const kelurahan = nv?.kelurahan || selectedLog.user?.studentProfile?.kelompok?.kelurahan;
+                const activityTitle = nv?.namaKegiatan || nv?.judulKegiatan;
+                const statusText = nv?.statusDisplay || nv?.status;
+                const duration = nv?.durasiFormatted || (nv?.durasiMenit !== undefined ? `${nv.durasiMenit} Menit` : null);
+                const coords = nv?.koordinat;
+                const photo = nv?.fotoUrl;
+                const deskripsi = nv?.deskripsiKegiatan || nv?.deskripsiBaru || nv?.alasanJeda || nv?.keterangan;
+
+                const hasRichData = Boolean(studentName || activityTitle || coords || photo || duration);
+                if (!hasRichData) return null;
+
+                return (
+                  <div className="p-4 bg-emerald-50/40 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200/70 dark:border-emerald-800/50 space-y-3">
+                    <div className="flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900/50 pb-2">
+                      <div className="flex items-center gap-2">
+                        <UserCheck size={16} className="text-[#009966] dark:text-emerald-400" />
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                          {studentName}
+                        </span>
+                      </div>
+                      {nim && (
+                        <span className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                          NIM: {nim}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Kelompok & Kegiatan Info */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {kelompok && (
+                        <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="block text-[9.5px] font-bold text-slate-400 uppercase">Kelompok</span>
+                          <span className="font-extrabold text-slate-800 dark:text-slate-200 text-[11px] truncate block">
+                            {kelompok} {kelurahan ? `(${kelurahan})` : ""}
+                          </span>
+                        </div>
+                      )}
+                      {activityTitle && (
+                        <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="block text-[9.5px] font-bold text-slate-400 uppercase">Kegiatan</span>
+                          <span className="font-extrabold text-slate-800 dark:text-slate-200 text-[11px] truncate block" title={activityTitle}>
+                            {activityTitle}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Metrics / Status */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {statusText && (
+                        <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="block text-[9.5px] font-bold text-slate-400 uppercase">Status</span>
+                          <span className="font-black text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            {statusText}
+                          </span>
+                        </div>
+                      )}
+                      {duration && (
+                        <div className="bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <span className="block text-[9.5px] font-bold text-slate-400 uppercase">Durasi</span>
+                          <span className="font-black text-slate-800 dark:text-slate-200 text-[11px]">
+                            {duration}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* GPS Coordinates */}
+                    {coords && coords.latitude && coords.longitude && (
+                      <div className="flex items-center gap-2 text-[10.5px] text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-800 font-mono">
+                        <MapPin size={13} className="text-emerald-600 shrink-0" />
+                        <span>GPS: {Number(coords.latitude).toFixed(6)}, {Number(coords.longitude).toFixed(6)}</span>
+                      </div>
+                    )}
+
+                    {/* Photo Proof */}
+                    {photo && (
+                      <div className="space-y-1">
+                        <span className="block text-[9.5px] font-bold text-slate-400 uppercase">Bukti Dokumentasi</span>
+                        <a
+                          href={photo}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-36 group"
+                        >
+                          <img
+                            src={photo}
+                            alt="Bukti Presensi"
+                            className="w-full h-36 object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">
+                            <ExternalLink size={14} /> Buka Foto Asli
+                          </div>
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Description or Official Sentence */}
+                    {deskripsi && (
+                      <div className="bg-white/90 dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                        <span className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Keterangan / Catatan</span>
+                        {deskripsi}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Nilai Baru / New Value (Raw JSON) */}
               <div className="space-y-1.5">
                 <span className="text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                  <CheckCircle2 size={13} className="text-emerald-500" /> Kondisi Sesudah
+                  <CheckCircle2 size={13} className="text-emerald-500" /> Kondisi Sesudah (Payload Lengkap)
                 </span>
-                <pre className="p-3.5 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 text-[10.5px] font-mono overflow-x-auto whitespace-pre-wrap max-h-56 scrollbar-thin shadow-inner leading-relaxed">
+                <pre className="p-3.5 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 text-[10px] font-mono overflow-x-auto whitespace-pre-wrap max-h-52 scrollbar-thin shadow-inner leading-relaxed">
                   {JSON.stringify(selectedLog.newValue || {}, null, 2)}
                 </pre>
               </div>
@@ -687,7 +948,7 @@ export const AuditTrailList: React.FC = () => {
                   <span className="text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Clock size={13} className="text-amber-500" /> Kondisi Sebelum
                   </span>
-                  <pre className="p-3.5 bg-slate-900 text-amber-300 rounded-2xl border border-slate-800 text-[10.5px] font-mono overflow-x-auto whitespace-pre-wrap max-h-48 scrollbar-thin shadow-inner leading-relaxed">
+                  <pre className="p-3.5 bg-slate-900 text-amber-300 rounded-2xl border border-slate-800 text-[10px] font-mono overflow-x-auto whitespace-pre-wrap max-h-40 scrollbar-thin shadow-inner leading-relaxed">
                     {JSON.stringify(selectedLog.oldValue, null, 2)}
                   </pre>
                 </div>

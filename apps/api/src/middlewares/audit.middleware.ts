@@ -25,8 +25,8 @@ export const auditMiddleware = (featureCategory: string) => {
       
       // Attempt to extract user context.
       const user = (req as any).user;
-      const userId = user?.id || null;
-      const roleName = user?.role?.name || 'GUEST';
+      const userId = user?.userId || user?.id || null;
+      const roleName = typeof user?.role === 'string' ? user.role : (user?.role?.name || 'GUEST');
 
       // Capture request body for mutations
       const payload = req.method !== 'GET' ? req.body : null;

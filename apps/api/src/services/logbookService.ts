@@ -12,6 +12,7 @@ import { prisma } from "../lib/prisma.js";
 import { StatusLogbookKkn, TipeAktivitasKkn } from "@prisma/client";
 import { getKelompokWhere } from "./dplService.js";
 import { configService } from "./configService.js";
+import { auditTrailService } from "./auditTrailService.js";
 
 // Target standar logbook per kelompok selama KKN (misal: 6 hari/pekan x 4 pekan = 24 aktivitas)
 const DEFAULT_LOGBOOK_TARGET = 24;
@@ -385,6 +386,20 @@ export class LogbookService {
         },
       }).catch(() => {});
     }
+
+    // Record into system history / audit trail
+    auditTrailService.recordLogbookSubmit({
+      logbookId: logbook.id,
+      studentId: userId,
+      studentName: user.name,
+      nim: student.nim,
+      kelompokName: kelompok.name,
+      judulKegiatan: payload.deskripsi.slice(0, 80),
+      tipeAktivitas: logbook.tipeAktivitas,
+      pekanKe,
+      tanggalKegiatan: activityDate.toISOString(),
+      fotoUrl: logbook.fotoBuktiUrl,
+    }).catch((err) => console.warn("[Audit] Logbook submit log error:", err));
 
     return logbook;
   }
