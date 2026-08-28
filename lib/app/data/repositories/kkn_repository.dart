@@ -1,5 +1,6 @@
 import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
+import '../models/wilayah_kelompok_model.dart';
 
 /// Interface repository untuk fitur Mahasiswa KKN.
 ///
@@ -72,6 +73,9 @@ abstract class KknRepository {
 
   /// Mengambil data kelompok KKN mahasiswa yang sedang login (GET /kkn/kelompok/me)
   Future<KelompokKknData?> getKelompokKkn();
+
+  /// Mengambil data wilayah dan posko kelompok KKN (GET /api/v1/kkn/wilayah-kelompok)
+  Future<WilayahKelompokModel?> getWilayahKelompok();
 
   /// Mengirim laporan pemanfaatan hasil sampah ke backend
   Future<bool> submitPemanfaatanSampah(PemanfaatanSampahRequest request);

@@ -39,18 +39,27 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
 
       if (targetWarga != null) {
         Future.microtask(() {
-          ref.read(detailWargaControllerProvider.notifier).setWarga(targetWarga!);
+          ref
+              .read(detailWargaControllerProvider.notifier)
+              .setWarga(targetWarga!);
         });
       }
       _initialized = true;
     }
   }
 
-  Future<void> _handleClaimWarga(BuildContext context, WidgetRef ref, WargaDampingan warga) async {
+  Future<void> _handleClaimWarga(
+    BuildContext context,
+    WidgetRef ref,
+    WargaDampingan warga,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Konfirmasi Klaim Warga', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Konfirmasi Klaim Warga',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Text('Klaim ${warga.wargaName} sebagai warga dampingan Anda?'),
         actions: [
           TextButton(
@@ -58,7 +67,9 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
             child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Klaim', style: TextStyle(color: Colors.white)),
           ),
@@ -107,7 +118,10 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
           title: const Text('Detail Warga'),
         ),
         body: const Center(
-          child: Text('Data warga tidak tersedia.', style: TextStyle(color: AppColors.textSecondary)),
+          child: Text(
+            'Data warga tidak tersedia.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
         ),
       );
     }
@@ -118,7 +132,7 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
         slivers: [
           // ── App Bar + Header ────────────────────────────────
           SliverAppBar(
-            expandedHeight: 205,
+            expandedHeight: 175,
             pinned: true,
             backgroundColor: AppColors.primaryGreen,
             foregroundColor: Colors.white,
@@ -128,15 +142,12 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primaryGreen,
-                      AppColors.successDark,
-                    ],
+                    colors: [AppColors.primaryGreen, AppColors.successDark],
                   ),
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -181,8 +192,11 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(Icons.location_on_outlined,
-                                          size: 14, color: Colors.white70),
+                                      const Icon(
+                                        Icons.location_on_outlined,
+                                        size: 14,
+                                        color: Colors.white70,
+                                      ),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
@@ -199,37 +213,79 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(Icons.delete_outline_rounded,
-                                          size: 14, color: Colors.white70),
+                                      const Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 14,
+                                        color: Colors.white70,
+                                      ),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Builder(
                                           builder: (_) {
                                             final org = warga.binOrganikId;
                                             final anorg = warga.binAnorganikId;
-                                            final hasOrg = org != null && org.trim().isNotEmpty;
-                                            final hasAnorg = anorg != null && anorg.trim().isNotEmpty;
+                                            final hasOrg =
+                                                org != null &&
+                                                org.trim().isNotEmpty;
+                                            final hasAnorg =
+                                                anorg != null &&
+                                                anorg.trim().isNotEmpty;
                                             const defaultStyle = TextStyle(
                                               fontSize: 12,
                                               color: Colors.white,
                                               fontWeight: FontWeight.w600,
                                             );
 
-                                            if (hasOrg && hasAnorg && org != anorg) {
+                                            if (hasOrg &&
+                                                hasAnorg &&
+                                                org != anorg) {
                                               return Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  Text('Organik: $org', style: defaultStyle, overflow: TextOverflow.ellipsis),
-                                                  Text('Non Organik: $anorg', style: defaultStyle, overflow: TextOverflow.ellipsis),
+                                                  Text(
+                                                    'Organik: $org',
+                                                    style: defaultStyle,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  Text(
+                                                    'Non Organik: $anorg',
+                                                    style: defaultStyle,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
                                                 ],
                                               );
                                             }
-                                            if (hasOrg) return Text('Organik: $org', style: defaultStyle, overflow: TextOverflow.ellipsis);
-                                            if (hasAnorg) return Text('Non Organik: $anorg', style: defaultStyle, overflow: TextOverflow.ellipsis);
-                                            if (warga.binId.isEmpty || warga.binId == 'Belum Ada Tempat Sampah') {
-                                              return const Text('Belum Ada Tempat Sampah', style: defaultStyle, overflow: TextOverflow.ellipsis);
+                                            if (hasOrg) {
+                                              return Text(
+                                                'Organik: $org',
+                                                style: defaultStyle,
+                                                overflow: TextOverflow.ellipsis,
+                                              );
                                             }
-                                            return Text('ID: ${warga.binId}', style: defaultStyle, overflow: TextOverflow.ellipsis);
+                                            if (hasAnorg) {
+                                              return Text(
+                                                'Non Organik: $anorg',
+                                                style: defaultStyle,
+                                                overflow: TextOverflow.ellipsis,
+                                              );
+                                            }
+                                            if (warga.binId.isEmpty ||
+                                                warga.binId ==
+                                                    'Belum Ada Tempat Sampah') {
+                                              return const Text(
+                                                'Belum Ada Tempat Sampah',
+                                                style: defaultStyle,
+                                                overflow: TextOverflow.ellipsis,
+                                              );
+                                            }
+                                            return Text(
+                                              'ID: ${warga.binId}',
+                                              style: defaultStyle,
+                                              overflow: TextOverflow.ellipsis,
+                                            );
                                           },
                                         ),
                                       ),
@@ -240,49 +296,91 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.2),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: Colors.white38),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white38,
+                                            ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const Icon(Icons.verified_rounded, size: 12, color: Colors.white),
+                                              const Icon(
+                                                Icons.verified_rounded,
+                                                size: 12,
+                                                color: Colors.white,
+                                              ),
                                               const SizedBox(width: 4),
                                               Flexible(
-                                                child: Builder(builder: (_) {
-                                                  String mName = warga.pendampingName;
-                                                  if (mName.isEmpty && warga.mahasiswaId.isNotEmpty) {
-                                                    final mem = kelompokState.kelompok?.members.where((m) => m.userId == warga.mahasiswaId).firstOrNull;
-                                                    if (mem != null) mName = mem.name;
-                                                  }
-                                                  return Text(
-                                                    mName.isNotEmpty
-                                                        ? 'Diaktivasi oleh: $mName'
-                                                        : 'Aktivasi Mandiri',
-                                                    style: const TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: Colors.white,
-                                                    ),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  );
-                                                }),
+                                                child: Builder(
+                                                  builder: (_) {
+                                                    String mName =
+                                                        warga.pendampingName;
+                                                    if (mName.isEmpty &&
+                                                        warga
+                                                            .mahasiswaId
+                                                            .isNotEmpty) {
+                                                      final mem = kelompokState
+                                                          .kelompok
+                                                          ?.members
+                                                          .where(
+                                                            (m) =>
+                                                                m.userId ==
+                                                                warga
+                                                                    .mahasiswaId,
+                                                          )
+                                                          .firstOrNull;
+                                                      if (mem != null) {
+                                                        mName = mem.name;
+                                                      }
+                                                    }
+                                                    return Text(
+                                                      mName.isNotEmpty
+                                                          ? 'Diaktivasi oleh: $mName'
+                                                          : 'Aktivasi Mandiri',
+                                                      style: const TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    );
+                                                  },
+                                                ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        if (warga.pendampingName.isEmpty && warga.mahasiswaId.isEmpty) ...[
+                                        if (warga.pendampingName.isEmpty &&
+                                            warga.mahasiswaId.isEmpty) ...[
                                           const SizedBox(width: 8),
                                           InkWell(
-                                            onTap: () => _handleClaimWarga(context, ref, warga),
+                                            onTap: () => _handleClaimWarga(
+                                              context,
+                                              ref,
+                                              warga,
+                                            ),
                                             child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
                                                 color: Colors.white,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: const Text(
                                                 'Klaim Warga',
@@ -327,17 +425,29 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
                     margin: const EdgeInsets.only(bottom: AppDimensions.md),
                     decoration: BoxDecoration(
                       color: AppColors.warningOrange.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                      border: Border.all(color: AppColors.warningOrange.withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusMd,
+                      ),
+                      border: Border.all(
+                        color: AppColors.warningOrange.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: AppColors.warningOrange, size: 20),
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppColors.warningOrange,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Warga ini membutuhkan edukasi ulang. Tingkat kesalahan: ${warga.errorPercentage.toStringAsFixed(1)}%',
-                            style: const TextStyle(fontSize: 12, color: AppColors.warningOrange, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.warningOrange,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -406,7 +516,8 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
               Expanded(
                 child: _StatItem(
                   label: 'Benar',
-                  value: '${warga.correctCount} (${warga.correctPercentage.toStringAsFixed(0)}%)',
+                  value:
+                      '${warga.correctCount} (${warga.correctPercentage.toStringAsFixed(0)}%)',
                   color: AppColors.success,
                   icon: Icons.check_circle_outline_rounded,
                 ),
@@ -415,7 +526,8 @@ class _DetailWargaViewState extends ConsumerState<DetailWargaView> {
               Expanded(
                 child: _StatItem(
                   label: 'Salah',
-                  value: '${warga.incorrectCount} (${warga.errorPercentage.toStringAsFixed(0)}%)',
+                  value:
+                      '${warga.incorrectCount} (${warga.errorPercentage.toStringAsFixed(0)}%)',
                   color: AppColors.dangerRed,
                   icon: Icons.cancel_outlined,
                 ),
@@ -540,7 +652,10 @@ class _HorizontalBar extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
             ),
             Text(
               '${percentage.toStringAsFixed(1)}%',

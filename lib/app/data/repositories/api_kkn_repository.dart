@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
+import '../models/wilayah_kelompok_model.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
 import 'kkn_repository.dart';
@@ -237,6 +238,23 @@ class ApiKknRepository implements KknRepository {
       return {};
     } catch (_) {
       return {};
+    }
+  }
+
+  @override
+  Future<WilayahKelompokModel?> getWilayahKelompok() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknWilayahKelompok);
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data != null) {
+          return WilayahKelompokModel.fromJson(data);
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Gagal memuat wilayah kelompok: $e');
+      return null;
     }
   }
 

@@ -45,16 +45,53 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
   File? _selectedImage;
   bool _isLoading = false;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.rear,
+      source: source,
       imageQuality: 70,
     );
     if (picked != null) {
       setState(() => _selectedImage = File(picked.path));
     }
+  }
+
+  void _showPhotoPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (pickerCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
+                  title: const Text('Ambil dari Kamera', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(pickerCtx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library, color: AppColors.primaryGreen),
+                  title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(pickerCtx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _submit() async {
@@ -333,7 +370,7 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                   const Text('Foto Dokumentasi Aksi (Opsional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
                   const SizedBox(height: 8),
                   InkWell(
-                    onTap: _pickImage,
+                    onTap: _showPhotoPicker,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       height: 160,
@@ -349,12 +386,28 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
-                                  child: const Icon(Icons.add_a_photo_rounded, size: 32, color: AppColors.primaryGreen),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.cloud_upload_rounded, size: 28, color: AppColors.primaryGreen),
                                 ),
-                                  const SizedBox(height: 12),
-                                  const Text('Ambil Foto Kegiatan (Kamera Langsung)', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
-                                ],
+                                const SizedBox(height: 12),
+                                const Text('Unggah foto kegiatan', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14)),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Ketuk untuk mengambil/memilih foto\nFormat JPG, PNG (Maks. 5MB)',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                              ],
                             ),
                     ),
                   ),

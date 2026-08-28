@@ -184,7 +184,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final savedDate = prefs.getString(_prefKeyDate);
       if (savedDate == todayStr) {
         final savedSeconds = prefs.getInt(_prefKeyAccumulated) ?? 0;
-        if (savedSeconds > _accumulatedSeconds) {
+        if (savedSeconds > 0) {
           _accumulatedSeconds = savedSeconds;
         }
         final savedEntry = prefs.getString(_prefKeyEntryTime);
@@ -381,9 +381,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                 .toInt();
 
         // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
-        if (serverSecs > _accumulatedSeconds) {
-          _accumulatedSeconds = serverSecs;
-        }
+        _accumulatedSeconds = serverSecs;
 
         final durasiWajib =
             int.tryParse(activeItem['durasiWajibMenit']?.toString() ?? '120') ??
@@ -413,8 +411,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                   .toString()
                   .toUpperCase();
           if (statusUpper == 'TERJEDA' && scheduleId != null) {
-            // Otomatis resume sesi TERJEDA kembali ke BERLANGSUNG
-            await mulaiKegiatan(scheduleId, isAuto: true);
+            // Jangan lakukan auto-resume dan jangan nyalakan GPS otomatis
+            // Biarkan user menekan tombol 'Lanjutkan Sesi'
           } else {
             await startTracking(null, true);
           }
@@ -477,17 +475,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final serverSecs =
             int.tryParse(response['actualInZoneSeconds'].toString()) ?? 0;
         // Ambil nilai terbesar antara server dan lokal
-        if (serverSecs > _accumulatedSeconds) {
-          _accumulatedSeconds = serverSecs;
-        }
+        _accumulatedSeconds = serverSecs;
       } else if (response['actualInZoneMinutes'] != null) {
         final serverSecs =
             ((num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0) *
                     60)
                 .toInt();
-        if (serverSecs > _accumulatedSeconds) {
-          _accumulatedSeconds = serverSecs;
-        }
+        _accumulatedSeconds = serverSecs;
       }
       // Jika server tidak return durasi sama sekali, _accumulatedSeconds tetap dari nilai lokal sebelumnya
       _zoneEntryTime = DateTime.now();
@@ -1067,10 +1061,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // di-throttle Android sehingga baru menerima update setelah lompatan >60dtk).
         // Guard lama menolak lompatan >60dtk dan membuat durasi UI beku permanen sampai
         // tracking di-restart. Sekarang: terima setiap kenaikan (tidak pernah mundur).
-        if (totalSeconds > _accumulatedSeconds) {
-          _accumulatedSeconds = totalSeconds;
-          _zoneEntryTime = DateTime.now();
-        }
+        _accumulatedSeconds = totalSeconds;
+        _zoneEntryTime = DateTime.now();
 
         state = state.copyWith(
           inZoneDurationSeconds: _accumulatedSeconds,

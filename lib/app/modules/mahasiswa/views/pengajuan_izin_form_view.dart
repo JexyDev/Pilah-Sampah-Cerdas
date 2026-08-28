@@ -80,8 +80,41 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
 
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
+
+    // Tampilkan pilihan Camera atau Gallery
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt_rounded,
+                color: AppColors.primaryGreen,
+              ),
+              title: const Text('Ambil dari Kamera'),
+              onTap: () => Navigator.of(context).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library_rounded,
+                color: AppColors.primaryGreen,
+              ),
+              title: const Text('Pilih dari Galeri'),
+              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     final file = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
       maxWidth: 1080,
       maxHeight: 1080,

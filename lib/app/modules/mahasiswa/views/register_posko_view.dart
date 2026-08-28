@@ -527,6 +527,27 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                         ),
                                       ),
                                     ),
+                                    IconButton(
+                                      icon: const Icon(
+                                        Icons.copy_rounded,
+                                        size: 16,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      onPressed: () {
+                                        Clipboard.setData(
+                                          ClipboardData(
+                                            text: '${_selectedLocation!.latitude},${_selectedLocation!.longitude}',
+                                          ),
+                                        );
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Koordinat disalin!'),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),

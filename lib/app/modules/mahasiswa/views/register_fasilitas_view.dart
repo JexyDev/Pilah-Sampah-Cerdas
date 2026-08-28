@@ -488,59 +488,22 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
       },
       child: Scaffold(
       backgroundColor: AppColors.backgroundCanvas,
+      appBar: AppBar(
+        title: const Text(
+          'Daftar Fasilitas Warga',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
+      ),
       body: CustomScrollView(
         slivers: [
-          // ─── Header ──────────────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              color: Colors.white,
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 8,
-                left: 20,
-                right: 20,
-                bottom: 20,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Back button + Title
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Daftar Fasilitas Warga',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Lengkapi informasi fasilitas untuk\nmemudahkan pemantauan',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
 
           // ─── Form ─────────────────────────────────────────────────────────────
           SliverPadding(
@@ -551,522 +514,496 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Jenis Fasilitas ─────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.local_offer_rounded,
-                      label: 'Jenis Fasilitas',
-                    ),
-                    const SizedBox(height: 8),
-                    Builder(
-                      builder: (_) {
-                        final jenisList = state.jenisFasilitasList;
-                        final selectedJenisObj = _selectedJenis != null
-                            ? jenisList
-                                  .where((j) => j.key == _selectedJenis)
-                                  .firstOrNull
-                            : null;
-                        return _JenisPickerField(
-                          selectedKey: _selectedJenis,
-                          label:
-                              selectedJenisObj?.nama ?? 'Pilih jenis fasilitas',
-                          isLoading: state.isLoadingJenis,
-                          onTap: () => _showJenisBottomSheet(jenisList),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── Nama Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.business_rounded,
-                      label: 'Nama Fasilitas',
-                    ),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _namaController,
-                      hintText: 'Masukkan Nama Fasilitas',
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Nama fasilitas wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── PIC Fasilitas (Warga) ───────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.person_rounded,
-                      label: 'PIC (Penanggung Jawab Warga)',
-                    ),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _picController,
-                      hintText:
-                          'Nama Warga / Pengelola Fasilitas (cth: Ibu Siti)',
-                      validator: (val) {
-                        if (val == null || val.trim().isEmpty) {
-                          return 'Nama PIC / Pengelola Warga wajib diisi';
-                        }
-                        if (val.trim().length < 3) {
-                          return 'Nama PIC minimal 3 karakter';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── Kontak PIC ───────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.phone_rounded,
-                      label: 'Kontak PIC',
-                    ),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _kontakController,
-                      hintText: 'Masukkan Nomor Telepon PIC',
-                      keyboardType: TextInputType.phone,
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Kontak wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── Kapasitas Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.people_rounded,
-                      label: 'Kapasitas',
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // ── Informasi Umum ─────────────────────────────────────────
+                    _buildSectionCard(
+                      title: 'Informasi Umum',
+                      icon: Icons.info_outline_rounded,
                       children: [
-                        Expanded(
-                          flex: 2,
-                          child: _StyledTextField(
-                            controller: _kapasitasController,
-                            hintText: 'Masukkan Kapasitas',
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                              LengthLimitingTextInputFormatter(7),
-                            ],
-                            validator: (val) => (val == null || val.isEmpty)
-                                ? 'Wajib diisi'
-                                : null,
-                          ),
+                        const Text('Jenis Fasilitas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Builder(
+                          builder: (_) {
+                            final jenisList = state.jenisFasilitasList;
+                            final selectedJenisObj = _selectedJenis != null
+                                ? jenisList
+                                      .where((j) => j.key == _selectedJenis)
+                                      .firstOrNull
+                                : null;
+                            return _JenisPickerField(
+                              selectedKey: _selectedJenis,
+                              label:
+                                  selectedJenisObj?.nama ?? 'Pilih jenis fasilitas',
+                              isLoading: state.isLoadingJenis,
+                              onTap: () => _showJenisBottomSheet(jenisList),
+                            );
+                          },
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 1,
-                          child: Container(
-                            height: 54,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _kapasitasUnit,
-                                isExpanded: true,
-                                icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen),
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                items: ['Kg', 'Liter', 'Orang', 'Unit']
-                                    .map((e) => DropdownMenuItem(
-                                          value: e,
-                                          child: Text(e),
-                                        ))
-                                    .toList(),
-                                onChanged: (val) {
-                                  if (val != null) setState(() => _kapasitasUnit = val);
-                                },
-                              ),
-                            ),
-                          ),
+                        const SizedBox(height: 16),
+                        const Text('Nama Fasilitas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        _StyledTextField(
+                          controller: _namaController,
+                          hintText: 'Masukkan Nama Fasilitas',
+                          validator: (val) => (val == null || val.isEmpty)
+                              ? 'Nama fasilitas wajib diisi'
+                              : null,
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: 16),
 
-                    // ── Alamat Lengkap ───────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.map_rounded,
-                      label: 'Alamat Lengkap',
-                    ),
-                    const SizedBox(height: 8),
-                    _StyledTextField(
-                      controller: _alamatController,
-                      hintText: 'Masukkan Alamat Lengkap',
-                      maxLines: 3,
-                      validator: (val) => (val == null || val.isEmpty)
-                          ? 'Alamat wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── Koordinat GPS ────────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.location_on_rounded,
-                      label: 'Koordinat GPS Fasilitas',
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Tentukan lokasi fasilitas pada peta dengan menempatkan pin di posisi yang tepat.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      height: 250,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        children: [
-                          FlutterMap(
-                            mapController: _mapController,
-                            options: MapOptions(
-                              initialCenter:
-                                  _selectedLocation ??
-                                  const LatLng(-6.914744, 107.609810),
-                              initialZoom: 15.0,
-                              onTap: (tapPosition, point) {
-                                setState(() {
-                                  _selectedLocation = point;
-                                });
-                              },
-                            ),
-                            children: [
-                              TileLayer(
-                                urlTemplate:
-                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                userAgentPackageName:
-                                    'com.makerindo.pilahsampah',
+                    // ── Kontak & Kapasitas ───────────────────────────────────────
+                    _buildSectionCard(
+                      title: 'Kontak & Kapasitas',
+                      icon: Icons.contact_mail_rounded,
+                      children: [
+                        const Text('PIC (Penanggung Jawab Warga)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        _StyledTextField(
+                          controller: _picController,
+                          hintText:
+                              'Nama Warga / Pengelola Fasilitas (cth: Ibu Siti)',
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Nama PIC / Pengelola Warga wajib diisi';
+                            }
+                            if (val.trim().length < 3) {
+                              return 'Nama PIC minimal 3 karakter';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Kontak PIC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        _StyledTextField(
+                          controller: _kontakController,
+                          hintText: 'Masukkan Nomor Telepon PIC',
+                          keyboardType: TextInputType.phone,
+                          validator: (val) => (val == null || val.isEmpty)
+                              ? 'Kontak wajib diisi'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Kapasitas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: _StyledTextField(
+                                controller: _kapasitasController,
+                                hintText: 'Masukkan Kapasitas',
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(7),
+                                ],
+                                validator: (val) => (val == null || val.isEmpty)
+                                    ? 'Wajib diisi'
+                                    : null,
                               ),
-                              if (_selectedLocation != null)
-                                MarkerLayer(
-                                  markers: [
-                                    Marker(
-                                      point: _selectedLocation!,
-                                      width: 36,
-                                      height: 36,
-                                      child: const Icon(
-                                        Icons.location_on,
-                                        size: 24,
-                                        color: AppColors.primaryGreen,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 1,
+                              child: Container(
+                                height: 50,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _kapasitasUnit,
+                                    isExpanded: true,
+                                    icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
+                                    style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 14,
+                                    ),
+                                    items: ['Kg', 'Liter', 'Orang', 'Unit']
+                                        .map((e) => DropdownMenuItem(
+                                              value: e,
+                                              child: Text(e),
+                                            ))
+                                        .toList(),
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _kapasitasUnit = val);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Lokasi & Koordinat ───────────────────────────────────────
+                    _buildSectionCard(
+                      title: 'Lokasi & Koordinat',
+                      icon: Icons.map_rounded,
+                      children: [
+                        const Text('Alamat Lengkap', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        _StyledTextField(
+                          controller: _alamatController,
+                          hintText: 'Masukkan Alamat Lengkap',
+                          maxLines: 3,
+                          validator: (val) => (val == null || val.isEmpty)
+                              ? 'Alamat wajib diisi'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text('Koordinat GPS Fasilitas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Tentukan lokasi fasilitas pada peta dengan menempatkan pin di posisi yang tepat.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          height: 250,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            children: [
+                              FlutterMap(
+                                mapController: _mapController,
+                                options: MapOptions(
+                                  initialCenter:
+                                      _selectedLocation ??
+                                      const LatLng(-6.914744, 107.609810),
+                                  initialZoom: 15.0,
+                                  onTap: (tapPosition, point) {
+                                    setState(() {
+                                      _selectedLocation = point;
+                                    });
+                                  },
+                                ),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate:
+                                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    userAgentPackageName:
+                                        'com.makerindo.pilahsampah',
+                                  ),
+                                  if (_selectedLocation != null)
+                                    MarkerLayer(
+                                      markers: [
+                                        Marker(
+                                          point: _selectedLocation!,
+                                          width: 36,
+                                          height: 36,
+                                          child: const Icon(
+                                            Icons.location_on,
+                                            size: 24,
+                                            color: AppColors.primaryGreen,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                              // Floating "Lokasi Saya" button
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: Material(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  elevation: 2,
+                                  child: InkWell(
+                                    onTap: _isGettingLocation ? null : _getLocation,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _isGettingLocation
+                                              ? const SizedBox(
+                                                  width: 16,
+                                                  height: 16,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: AppColors.primaryGreen,
+                                                  ),
+                                                )
+                                              : const Icon(
+                                                  Icons.my_location_rounded,
+                                                  size: 18,
+                                                  color: AppColors.primaryGreen,
+                                                ),
+                                          const SizedBox(width: 6),
+                                          const Text(
+                                            'Lokasi Saya',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                ),
+                              ),
+                              // Label coordinate overlay
+                              if (_selectedLocation != null)
+                                Positioned(
+                                  top: 20,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        borderRadius: BorderRadius.circular(8),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _namaController.text.isNotEmpty
+                                                ? _namaController.text
+                                                : 'Lokasi Terpilih',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 12,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${_selectedLocation!.latitude.toStringAsFixed(6)}, ${_selectedLocation!.longitude.toStringAsFixed(6)}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ),
                             ],
                           ),
-                          // Floating "Lokasi Saya" button
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Material(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              elevation: 2,
-                              child: InkWell(
-                                onTap: _isGettingLocation ? null : _getLocation,
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
+                        ),
+                        const SizedBox(height: 16),
+                        // ── Legenda Peta (Dinamis dari API) ─────────────────────
+                        Builder(
+                          builder: (_) {
+                            final jenisList = state.jenisFasilitasList;
+                            if (jenisList.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
                                     children: [
-                                      _isGettingLocation
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.primaryGreen,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.my_location_rounded,
-                                              size: 18,
-                                              color: AppColors.primaryGreen,
-                                            ),
-                                      const SizedBox(width: 6),
-                                      const Text(
-                                        'Lokasi Saya',
+                                      Icon(
+                                        Icons.map_rounded,
+                                        size: 18,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Legenda Peta',
                                         style: TextStyle(
-                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
+                                          fontSize: 13,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: 12),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 10,
+                                    children: jenisList.map((jenis) {
+                                      return SizedBox(
+                                        width:
+                                            (MediaQuery.of(context).size.width -
+                                                40 -
+                                                32 -
+                                                32 -
+                                                12) /
+                                            2, // 2 kolom
+                                        child: Row(
+                                          children: [
+                                            if (jenis.iconUrl != null &&
+                                                jenis.iconUrl!.isNotEmpty)
+                                              Image.network(
+                                                jenis.iconUrl!,
+                                                width: 22,
+                                                height: 22,
+                                                errorBuilder: (_, __, ___) =>
+                                                    const Icon(
+                                                      Icons.location_on,
+                                                      size: 22,
+                                                      color: AppColors.primaryGreen,
+                                                    ),
+                                              )
+                                            else
+                                              Icon(
+                                                jenis.key == 'posko_kkn'
+                                                    ? Icons.home_work_rounded
+                                                    : Icons.location_on,
+                                                size: 22,
+                                                color: jenis.key == 'posko_kkn'
+                                                    ? Colors.deepPurple
+                                                    : AppColors.primaryGreen,
+                                              ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                jenis.nama,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 11,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Dokumentasi ───────────────────────────────────────
+                    _buildSectionCard(
+                      title: 'Dokumentasi',
+                      icon: Icons.camera_alt_rounded,
+                      children: [
+                        const Text('Foto Fasilitas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            height: 160,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _photoPath != null ? AppColors.primaryGreen : Colors.grey[300]!,
+                                width: _photoPath != null ? 2 : 1,
                               ),
                             ),
-                          ),
-                          // Label coordinate overlay
-                          if (_selectedLocation != null)
-                            Positioned(
-                              top: 20,
-                              left: 0,
-                              right: 0,
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.1,
+                            child: _photoPath != null
+                                ? Stack(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Image.file(
+                                          File(_photoPath!),
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
                                         ),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
+                                      ),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: GestureDetector(
+                                          onTap: () =>
+                                              setState(() => _photoPath = null),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: AppColors.dangerRed,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
+                                  )
+                                : const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
+                                      Icon(
+                                        Icons.add_a_photo_rounded,
+                                        color: AppColors.primaryGreen,
+                                        size: 40,
+                                      ),
+                                      SizedBox(height: 12),
                                       Text(
-                                        _namaController.text.isNotEmpty
-                                            ? _namaController.text
-                                            : 'Lokasi Terpilih',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                          color: AppColors.textPrimary,
+                                        'Ketuk untuk mengambil/memilih foto',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                          color: AppColors.primaryGreen,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
+                                      SizedBox(height: 4),
                                       Text(
-                                        '${_selectedLocation!.latitude.toStringAsFixed(6)}, ${_selectedLocation!.longitude.toStringAsFixed(6)}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
+                                        'Format JPG, PNG (Maks. 5MB)',
+                                        style: TextStyle(
+                                          fontSize: 12,
                                           color: AppColors.textSecondary,
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // ── Legenda Peta (Dinamis dari API) ─────────────────────
-                    Builder(
-                      builder: (_) {
-                        final jenisList = state.jenisFasilitasList;
-                        if (jenisList.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Row(
-                                children: [
-                                  Icon(
-                                    Icons.map_rounded,
-                                    size: 18,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Legenda Peta',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 12,
-                                runSpacing: 10,
-                                children: jenisList.map((jenis) {
-                                  return SizedBox(
-                                    width:
-                                        (MediaQuery.of(context).size.width -
-                                            40 -
-                                            32 -
-                                            12) /
-                                        2, // 2 kolom
-                                    child: Row(
-                                      children: [
-                                        if (jenis.iconUrl != null &&
-                                            jenis.iconUrl!.isNotEmpty)
-                                          Image.network(
-                                            jenis.iconUrl!,
-                                            width: 22,
-                                            height: 22,
-                                            errorBuilder: (_, __, ___) =>
-                                                const Icon(
-                                                  Icons.location_on,
-                                                  size: 22,
-                                                  color: AppColors.primaryGreen,
-                                                ),
-                                          )
-                                        else
-                                          Icon(
-                                            jenis.key == 'posko_kkn'
-                                                ? Icons.home_work_rounded
-                                                : Icons.location_on,
-                                            size: 22,
-                                            color: jenis.key == 'posko_kkn'
-                                                ? Colors.deepPurple
-                                                : AppColors.primaryGreen,
-                                          ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            jenis.nama,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w500,
-                                              fontSize: 11,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: AppDimensions.md),
-
-                    // ── Foto Fasilitas ───────────────────────────────────────
-                    const _SectionLabel(
-                      icon: Icons.camera_alt_rounded,
-                      label: 'Foto Fasilitas',
-                    ),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: Container(
-                        height: 160,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.primaryGreen.withValues(
-                              alpha: 0.5,
-                            ),
-                            width: 1,
-                            style: BorderStyle.solid,
                           ),
                         ),
-                        child: _photoPath != null
-                            ? Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: Image.file(
-                                      File(_photoPath!),
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _photoPath = null),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.dangerRed,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.close,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 52,
-                                    height: 52,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F5E9),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.cloud_upload_rounded,
-                                      color: AppColors.primaryGreen,
-                                      size: 28,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  const Text(
-                                    'Unggah foto fasilitas',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: AppColors.primaryGreen,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    'Ketuk untuk mengambil/memilih foto',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const Text(
-                                    'Format JPG, PNG (Maks. 5MB)',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textHint,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
+                      ],
                     ),
                     const SizedBox(height: 28),
 
@@ -1151,40 +1088,54 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
     ),
     );
   }
-}
 
-// ─── Reusable Widgets ──────────────────────────────────────────────────────────
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE8F5E9),
-            borderRadius: BorderRadius.circular(6),
+  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Icon(icon, size: 16, color: AppColors.primaryGreen),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: AppColors.primaryGreen),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+// ─── Reusable Widgets ──────────────────────────────────────────────────────────
 
 class _StyledTextField extends StatelessWidget {
   const _StyledTextField({

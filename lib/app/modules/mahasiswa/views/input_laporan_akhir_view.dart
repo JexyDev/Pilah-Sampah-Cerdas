@@ -123,12 +123,17 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
         }
       },
       child: Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Input Laporan Akhir'),
+        title: const Text('Input Laporan Akhir', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.history, color: AppColors.primaryGreen),
@@ -150,42 +155,71 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _judulCtrl,
-                decoration: const InputDecoration(labelText: 'Judul Laporan', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
-              ),
+              _buildHeaderBanner(),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _deskripsiCtrl,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Deskripsi Singkat', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _pickPdf,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(4),
+              
+              _buildSectionCard(
+                title: 'Data Laporan',
+                icon: Icons.article_rounded,
+                children: [
+                  const Text('Judul Laporan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _judulCtrl,
+                    decoration: _inputDecoration('Contoh: Laporan Akhir KKN Desa X'),
+                    validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.picture_as_pdf, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _selectedPdf != null ? _selectedPdf!.path.split('/').last : 'Pilih File PDF Laporan',
-                          style: TextStyle(color: _selectedPdf != null ? Colors.black : Colors.grey[600]),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                  const SizedBox(height: 16),
+                  
+                  const Text('Deskripsi Singkat', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _deskripsiCtrl,
+                    maxLines: 3,
+                    decoration: _inputDecoration('Deskripsikan secara singkat...'),
+                    validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              _buildSectionCard(
+                title: 'Dokumen Laporan',
+                icon: Icons.picture_as_pdf_rounded,
+                children: [
+                  const Text('File Laporan Akhir (PDF)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: _pickPdf,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCanvas,
+                        border: Border.all(color: _selectedPdf != null ? AppColors.primaryGreen : AppColors.border),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          const Icon(Icons.picture_as_pdf, color: Colors.red),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _selectedPdf != null ? _selectedPdf!.path.split('/').last : 'Pilih File PDF...',
+                              style: TextStyle(
+                                color: _selectedPdf != null ? AppColors.textPrimary : AppColors.textHint,
+                                fontSize: 14
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_selectedPdf != null)
+                            const Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 20),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -194,16 +228,131 @@ class _InputLaporanAkhirViewState extends ConsumerState<InputLaporanAkhirView> {
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isLoading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Submit Laporan Akhir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.send_rounded, size: 20),
+                          SizedBox(width: 10),
+                          Text('Submit Laporan Akhir', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
               ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
       ),
     ),
+    );
+  }
+
+  Widget _buildHeaderBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Unggah Laporan Akhir',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Laporan akhir ini akan menjadi syarat kelulusan dan akan ditinjau oleh DPL Anda.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: AppColors.primaryGreen),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
+      filled: true,
+      fillColor: AppColors.backgroundCanvas,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.dangerRed),
+      ),
     );
   }
 }

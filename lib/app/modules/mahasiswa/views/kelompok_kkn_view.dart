@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../core/values/app_colors.dart';
 import '../controllers/kelompok_kkn_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -608,6 +611,112 @@ class KelompokKknView extends ConsumerWidget {
                     ),
                   ],
                 ),
+                if (posko != null) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 150,
+                    width: double.infinity,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
+                        children: [
+                          FlutterMap(
+                            options: MapOptions(
+                              initialCenter: LatLng(posko.latitude, posko.longitude),
+                              initialZoom: 15.0,
+                              interactionOptions: const InteractionOptions(
+                                flags: InteractiveFlag.none,
+                              ),
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.makerindo.berseka',
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: LatLng(posko.latitude, posko.longitude),
+                                    width: 40,
+                                    height: 40,
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: AppColors.dangerRed,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            left: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: const [
+                                  BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.pin_drop_rounded, size: 14, color: AppColors.primaryGreen),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      '${posko.latitude.toStringAsFixed(5)}, ${posko.longitude.toStringAsFixed(5)}',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () {
+                                      Clipboard.setData(ClipboardData(text: '${posko.latitude},${posko.longitude}'));
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Koordinat disalin!')));
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(4.0),
+                                      child: Icon(Icons.copy_rounded, size: 14, color: AppColors.primaryGreen),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.map_rounded, size: 16),
+                      label: const Text('Buka di Google Maps', style: TextStyle(fontSize: 13)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryBlue,
+                        side: const BorderSide(color: AppColors.primaryBlue),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final url = Uri.parse(
+                          'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
+                        );
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                ],
                 if (isLeader) ...[
                   const SizedBox(height: 20),
                   SizedBox(

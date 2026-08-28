@@ -9,41 +9,44 @@ import '../../../data/services/notification_engine.dart';
 import '../controllers/mahasiswa_notifikasi_controller.dart';
 import 'riwayat_program_kerja_view.dart'; // import provider untuk dropdown program kerja
 
-final fasilitasWargaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final repo = ref.read(kknRepositoryProvider);
-  return repo.getFasilitasWarga();
-});
+final fasilitasWargaListProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final repo = ref.read(kknRepositoryProvider);
+      return repo.getFasilitasWarga();
+    });
 
 class InputLogbookKknView extends ConsumerStatefulWidget {
   const InputLogbookKknView({super.key});
 
   @override
-  ConsumerState<InputLogbookKknView> createState() => _InputLogbookKknViewState();
+  ConsumerState<InputLogbookKknView> createState() =>
+      _InputLogbookKknViewState();
 }
 
 class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   final _formKey = GlobalKey<FormState>();
-  
+
   String? _selectedProkerId;
   String? _selectedFasilitasId;
-  
+
   final _tanggalCtrl = TextEditingController();
   final _waktuMulaiCtrl = TextEditingController();
   final _waktuSelesaiCtrl = TextEditingController();
   final _lokasiCtrl = TextEditingController();
   final _deskripsiCtrl = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
-  
+
   final List<File> _selectedFiles = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+    _tanggalCtrl.text =
+        "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
   }
 
   Future<void> _showPickerOptions() async {
@@ -57,16 +60,22 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryGreen),
-                title: const Text('Kamera (Foto Baru)'),
-                subtitle: const Text('Ambil foto langsung dari kamera'),
+                leading: const Icon(
+                  Icons.camera_alt_rounded,
+                  color: AppColors.primaryGreen,
+                ),
+                title: const Text('Ambil dari Kamera'),
+                // subtitle: const Text('Ambil foto langsung dari kamera'),
                 onTap: () {
                   Navigator.pop(context);
                   _pickFromCamera();
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.photo_library_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Galeri Foto (Pilih Banyak)'),
                 subtitle: const Text('Pilih satu atau beberapa foto sekaligus'),
                 onTap: () {
@@ -75,7 +84,10 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primaryGreen),
+                leading: const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  color: AppColors.primaryGreen,
+                ),
                 title: const Text('Dokumen PDF'),
                 subtitle: const Text('Pilih file dokumen PDF'),
                 onTap: () {
@@ -154,7 +166,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       }
     });
   }
-  
+
   Future<void> _selectDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -179,13 +191,16 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        _tanggalCtrl.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        _tanggalCtrl.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
 
   Future<void> _selectTime(bool isStart) async {
-    final initialTime = isStart ? _startTime ?? TimeOfDay.now() : _endTime ?? TimeOfDay.now();
+    final initialTime = isStart
+        ? _startTime ?? TimeOfDay.now()
+        : _endTime ?? TimeOfDay.now();
     final picked = await showTimePicker(
       context: context,
       initialTime: initialTime,
@@ -202,7 +217,8 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     );
     if (picked != null) {
       setState(() {
-        final formatted = "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+        final formatted =
+            "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
         if (isStart) {
           _startTime = picked;
           _waktuMulaiCtrl.text = formatted;
@@ -217,20 +233,26 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   Future<void> _submit() async {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_selectedFiles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Foto / bukti dokumentasi kegiatan wajib dilampirkan (minimal 1 foto/dokumen)'),
-        backgroundColor: AppColors.dangerRed,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto bukti kegiatan wajib diunggah (minimal 1 foto)!'),
+          backgroundColor: AppColors.dangerRed,
+        ),
+      );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
-      final platformStr = Platform.isIOS ? 'IOS' : Platform.isAndroid ? 'ANDROID' : 'WEB';
-      
+      final platformStr = Platform.isIOS
+          ? 'IOS'
+          : Platform.isAndroid
+          ? 'ANDROID'
+          : 'WEB';
+
       await repo.submitLogbookHarian({
         'tanggalKegiatan': _tanggalCtrl.text,
         'waktuMulai': _waktuMulaiCtrl.text,
@@ -241,30 +263,35 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         if (_selectedProkerId != null) 'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
       }, imagePaths: _selectedFiles.map((f) => f.path).toList());
-      
+
       if (mounted) {
         NotificationEngine().showGenericNotification(
           id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
           title: 'Logbook Berhasil Dikirim! ✅',
-          body: 'Laporan aktivitas harian Anda telah masuk dan menunggu validasi DPL.',
+          body:
+              'Laporan aktivitas harian Anda telah masuk dan menunggu validasi DPL.',
           color: AppColors.primaryGreen,
           payload: 'ROUTE_POIN',
         );
 
         ref.invalidate(mahasiswaNotificationsProvider);
 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Berhasil mencatat logbook harian!'),
-          backgroundColor: AppColors.success,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Berhasil mencatat logbook harian!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: AppColors.dangerRed,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.dangerRed,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -287,19 +314,19 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
     bool hasUnsavedChanges() {
       return _waktuMulaiCtrl.text.isNotEmpty ||
-             _waktuSelesaiCtrl.text.isNotEmpty ||
-             _lokasiCtrl.text.isNotEmpty ||
-             _deskripsiCtrl.text.isNotEmpty ||
-             _selectedProkerId != null ||
-             _selectedFasilitasId != null ||
-             _selectedFiles.isNotEmpty;
+          _waktuSelesaiCtrl.text.isNotEmpty ||
+          _lokasiCtrl.text.isNotEmpty ||
+          _deskripsiCtrl.text.isNotEmpty ||
+          _selectedProkerId != null ||
+          _selectedFasilitasId != null ||
+          _selectedFiles.isNotEmpty;
     }
 
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        
+
         if (!hasUnsavedChanges()) {
           if (context.mounted) Navigator.pop(context);
           return;
@@ -309,13 +336,23 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Input Logbook?', style: TextStyle(fontWeight: FontWeight.bold)),
-              content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Batalkan Input Logbook?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                'Perubahan ini akan terhapus jika Anda keluar dari halaman ini.',
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Lanjutkan Edit', style: TextStyle(color: AppColors.textSecondary)),
+                  child: const Text(
+                    'Lanjutkan Edit',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -335,315 +372,519 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.backgroundCanvas,
-      appBar: AppBar(
-        title: const Text('Input Logbook Harian', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
+        backgroundColor: AppColors.backgroundCanvas,
+        appBar: AppBar(
+          title: const Text(
+            'Input Logbook Harian',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          centerTitle: true,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: AppColors.border, height: 1),
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeaderBanner(),
-              const SizedBox(height: 16),
-              
-              _buildSectionCard(
-                title: 'Data Aktivitas',
-                icon: Icons.article_rounded,
-                children: [
-                  const Text('Tanggal Kegiatan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _tanggalCtrl,
-                    readOnly: true,
-                    onTap: _selectDate,
-                    decoration: _inputDecoration('YYYY-MM-DD').copyWith(
-                      suffixIcon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryGreen),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeaderBanner(),
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Data Aktivitas',
+                  icon: Icons.article_rounded,
+                  children: [
+                    const Text(
+                      'Tanggal Kegiatan',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Waktu Mulai', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _waktuMulaiCtrl,
-                              readOnly: true,
-                              onTap: () => _selectTime(true),
-                              decoration: _inputDecoration('08:00').copyWith(
-                                suffixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGreen),
-                              ),
-                              validator: (val) => val == null || val.isEmpty ? 'Wajib dipilih' : null,
-                            ),
-                          ],
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _tanggalCtrl,
+                      readOnly: true,
+                      onTap: _selectDate,
+                      decoration: _inputDecoration('YYYY-MM-DD').copyWith(
+                        suffixIcon: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: AppColors.primaryGreen,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Waktu Selesai', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _waktuSelesaiCtrl,
-                              readOnly: true,
-                              onTap: () => _selectTime(false),
-                              decoration: _inputDecoration('16:00').copyWith(
-                                suffixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGreen),
-                              ),
-                              validator: (val) => val == null || val.isEmpty ? 'Wajib dipilih' : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  const Text('Lokasi / Tempat', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _lokasiCtrl,
-                    decoration: _inputDecoration('Cth: RW 05 / Kelurahan / Lapangan'),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                ],
-              ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
 
-              const SizedBox(height: 16),
-              
-              _buildSectionCard(
-                title: 'Relasi Program (Opsional)',
-                icon: Icons.link_rounded,
-                children: [
-                  const Text('Program Kerja Terkait', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  prokerState.when(
-                    loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
-                    error: (e, _) => Text(e.toString(), style: const TextStyle(color: AppColors.dangerRed)),
-                    data: (list) {
-                      final approvedProker = list.where((p) {
-                        return p['status'] == 'APPROVED' || p['statusUsulan'] == 'APPROVED';
-                      }).toList();
-                      
-                      return DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue: _selectedProkerId,
-                        decoration: _inputDecoration('Pilih Proker (Jika ada)...'),
-                        items: approvedProker.map((p) => DropdownMenuItem(
-                          value: p['id'].toString(),
-                          child: Text(p['judul'], style: const TextStyle(fontSize: 14)),
-                        )).toList(),
-                        onChanged: (val) => setState(() => _selectedProkerId = val),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-                  const Text('Fasilitas Warga Terkait', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  Consumer(
-                    builder: (ctx, ref, _) {
-                      final fasState = ref.watch(fasilitasWargaListProvider);
-                      return fasState.when(
-                        loading: () => const LinearProgressIndicator(color: AppColors.primaryGreen),
-                        error: (e, _) => Text(e.toString(), style: const TextStyle(color: AppColors.dangerRed)),
-                        data: (list) {
-                          return DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            initialValue: _selectedFasilitasId,
-                            decoration: _inputDecoration('Pilih Fasilitas (Jika ada)...'),
-                            items: list.map((f) => DropdownMenuItem(
-                              value: f['id'].toString(),
-                              child: Text(f['nama'] ?? '-', style: const TextStyle(fontSize: 14)),
-                            )).toList(),
-                            onChanged: (val) => setState(() => _selectedFasilitasId = val),
-                          );
-                        }
-                      );
-                  }),
-                ],
-              ),
-              
-              const SizedBox(height: 16),
-
-              _buildSectionCard(
-                title: 'Uraian & Dokumentasi',
-                icon: Icons.edit_note_rounded,
-                children: [
-                  const Text('Uraian Aktivitas & Hasil', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _deskripsiCtrl,
-                    maxLines: 4,
-                    decoration: _inputDecoration('Ceritakan secara singkat apa yang dilakukan dan bagaimana hasilnya...'),
-                    validator: (val) => val == null || val.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Dokumentasi Kegiatan (Wajib)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textSecondary)),
-                      if (_selectedFiles.isNotEmpty)
-                        Text('${_selectedFiles.length} file dipilih', style: const TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_selectedFiles.isEmpty)
-                    InkWell(
-                      onTap: _showPickerOptions,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        height: 140,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5), width: 1.5, style: BorderStyle.solid),
-                          borderRadius: BorderRadius.circular(12),
-                          color: AppColors.primaryGreen.withValues(alpha: 0.05),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3))),
-                              child: const Icon(Icons.add_photo_alternate_rounded, size: 32, color: AppColors.primaryGreen),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text('Pilih / Ambil Foto atau PDF', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
-                            const SizedBox(height: 4),
-                            const Text('Mendukung multi-foto & dokumen PDF', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        SizedBox(
-                          height: 120,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _selectedFiles.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: 10),
-                            itemBuilder: (context, idx) {
-                              final file = _selectedFiles[idx];
-                              final isPdf = file.path.toLowerCase().endsWith('.pdf');
-                              return Stack(
-                                children: [
-                                  Container(
-                                    width: 110,
-                                    height: 120,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: AppColors.border),
-                                      color: Colors.grey[100],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(9),
-                                      child: isPdf
-                                          ? Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(Icons.picture_as_pdf_rounded, size: 36, color: AppColors.dangerRed),
-                                                const SizedBox(height: 4),
-                                                Padding(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                                                  child: Text(
-                                                    file.path.split('/').last,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    textAlign: TextAlign.center,
-                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                                                  ),
-                                                ),
-                                              ],
-                                            )
-                                          : Image.file(file, fit: BoxFit.cover, width: 110, height: 120),
-                                    ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Waktu Mulai',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _waktuMulaiCtrl,
+                                readOnly: true,
+                                onTap: () => _selectTime(true),
+                                decoration: _inputDecoration('08:00').copyWith(
+                                  suffixIcon: const Icon(
+                                    Icons.access_time_rounded,
+                                    color: AppColors.primaryGreen,
                                   ),
-                                  Positioned(
-                                    top: 4,
-                                    right: 4,
-                                    child: GestureDetector(
-                                      onTap: () => _removeFile(idx),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.black54,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(Icons.close_rounded, size: 14, color: Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Wajib dipilih'
+                                    : null,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: _showPickerOptions,
-                          icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                          label: const Text('Tambah Foto / Dokumen Lainnya'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryGreen,
-                            side: const BorderSide(color: AppColors.primaryGreen),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Waktu Selesai',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _waktuSelesaiCtrl,
+                                readOnly: true,
+                                onTap: () => _selectTime(false),
+                                decoration: _inputDecoration('16:00').copyWith(
+                                  suffixIcon: const Icon(
+                                    Icons.access_time_rounded,
+                                    color: AppColors.primaryGreen,
+                                  ),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Wajib dipilih'
+                                    : null,
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                ],
-              ),
+                    const SizedBox(height: 16),
 
-              const SizedBox(height: 32),
-              
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                    const Text(
+                      'Lokasi / Tempat',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _lokasiCtrl,
+                      decoration: _inputDecoration(
+                        'Cth: RW 05 / Kelurahan / Lapangan',
+                      ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                  ],
                 ),
-                child: _isLoading
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Relasi Program (Opsional)',
+                  icon: Icons.link_rounded,
+                  children: [
+                    const Text(
+                      'Program Kerja Terkait',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    prokerState.when(
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryGreen,
+                        ),
+                      ),
+                      error: (e, _) => Text(
+                        e.toString(),
+                        style: const TextStyle(color: AppColors.dangerRed),
+                      ),
+                      data: (list) {
+                        final approvedProker = list.where((p) {
+                          return p['status'] == 'APPROVED' ||
+                              p['statusUsulan'] == 'APPROVED';
+                        }).toList();
+
+                        return DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          initialValue: _selectedProkerId,
+                          decoration: _inputDecoration(
+                            'Pilih Proker (Jika ada)...',
+                          ),
+                          items: approvedProker
+                              .map(
+                                (p) => DropdownMenuItem(
+                                  value: p['id'].toString(),
+                                  child: Text(
+                                    p['judul'],
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => _selectedProkerId = val),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Fasilitas Warga Terkait',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Consumer(
+                      builder: (ctx, ref, _) {
+                        final fasState = ref.watch(fasilitasWargaListProvider);
+                        return fasState.when(
+                          loading: () => const LinearProgressIndicator(
+                            color: AppColors.primaryGreen,
+                          ),
+                          error: (e, _) => Text(
+                            e.toString(),
+                            style: const TextStyle(color: AppColors.dangerRed),
+                          ),
+                          data: (list) {
+                            return DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              initialValue: _selectedFasilitasId,
+                              decoration: _inputDecoration(
+                                'Pilih Fasilitas (Jika ada)...',
+                              ),
+                              items: list
+                                  .map(
+                                    (f) => DropdownMenuItem(
+                                      value: f['id'].toString(),
+                                      child: Text(
+                                        f['nama'] ?? '-',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => _selectedFasilitasId = val),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                _buildSectionCard(
+                  title: 'Uraian & Dokumentasi',
+                  icon: Icons.edit_note_rounded,
+                  children: [
+                    const Text(
+                      'Uraian Aktivitas & Hasil',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _deskripsiCtrl,
+                      maxLines: 4,
+                      decoration: _inputDecoration(
+                        'Ceritakan secara singkat apa yang dilakukan dan bagaimana hasilnya...',
+                      ),
+                      validator: (val) =>
+                          val == null || val.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Dokumentasi Kegiatan (Wajib) *',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        if (_selectedFiles.isNotEmpty)
+                          Text(
+                            '${_selectedFiles.length} file dipilih',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_selectedFiles.isEmpty)
+                      InkWell(
+                        onTap: _showPickerOptions,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          height: 140,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: AppColors.primaryGreen.withValues(
+                                alpha: 0.5,
+                              ),
+                              width: 1.5,
+                              style: BorderStyle.solid,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            color: AppColors.primaryGreen.withValues(
+                              alpha: 0.05,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.primaryGreen.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.add_photo_alternate_rounded,
+                                  size: 32,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'Pilih / Ambil Foto atau PDF',
+                                style: TextStyle(
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Mendukung multi-foto & dokumen PDF',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.send_rounded, size: 20),
-                          SizedBox(width: 10),
-                          Text('Kirim Logbook Harian', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          SizedBox(
+                            height: 120,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _selectedFiles.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 10),
+                              itemBuilder: (context, idx) {
+                                final file = _selectedFiles[idx];
+                                final isPdf = file.path.toLowerCase().endsWith(
+                                  '.pdf',
+                                );
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      width: 110,
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: AppColors.border,
+                                        ),
+                                        color: Colors.grey[100],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(9),
+                                        child: isPdf
+                                            ? Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(
+                                                    Icons
+                                                        .picture_as_pdf_rounded,
+                                                    size: 36,
+                                                    color: AppColors.dangerRed,
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 4,
+                                                        ),
+                                                    child: Text(
+                                                      file.path.split('/').last,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      style: const TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            : Image.file(
+                                                file,
+                                                fit: BoxFit.cover,
+                                                width: 110,
+                                                height: 120,
+                                              ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: GestureDetector(
+                                        onTap: () => _removeFile(idx),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black54,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.close_rounded,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _showPickerOptions,
+                            icon: const Icon(
+                              Icons.add_circle_outline_rounded,
+                              size: 18,
+                            ),
+                            label: const Text('Tambah Foto / Dokumen Lainnya'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryGreen,
+                              side: const BorderSide(
+                                color: AppColors.primaryGreen,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                  ],
+                ),
+
+                const SizedBox(height: 32),
+
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.send_rounded, size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Kirim Logbook Harian',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -653,12 +894,18 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+        border: Border.all(
+          color: AppColors.primaryGreen.withValues(alpha: 0.3),
+        ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
+          Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.primaryGreen,
+            size: 24,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -666,12 +913,20 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               children: [
                 Text(
                   'Catat Aktivitas Harian',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Laporan harian ini akan menjadi dasar penilaian kinerja individu maupun kelompok oleh DPL Anda.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),
@@ -681,7 +936,11 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -709,7 +968,11 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                 const SizedBox(width: 10),
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),

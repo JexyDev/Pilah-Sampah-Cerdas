@@ -60,6 +60,7 @@ class ApiEndpoints {
   static const String kknActivateBin = '/kkn/warga/activate-bin';
   static const String kknHistory = '/kkn/history';
   static const String kknKelompokMe = '/kkn/kelompok/me';
+  static const String kknWilayahKelompok = '/kkn/wilayah-kelompok';
   static const String timesheetSummary = '/timesheet/summary';
   static String kknClaimWarga(String wargaId) => '/kkn/warga/$wargaId/claim';
   

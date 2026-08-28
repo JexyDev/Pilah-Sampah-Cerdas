@@ -7,8 +7,11 @@ import '../../../core/values/app_dimensions.dart';
 
 import '../controllers/kkn_location_controller.dart';
 import '../controllers/kelompok_kkn_controller.dart';
+import '../controllers/kkn_map_controller.dart';
 import '../../auth/controllers/auth_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -130,13 +133,23 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           ],
         ),
         body: RefreshIndicator(
-          onRefresh: () => locationNotifier.forceLocationUpdate(context),
+          onRefresh: () async {
+            await locationNotifier.forceLocationUpdate(context);
+            ref.read(kknMapProvider.notifier).fetchWilayahKelompok();
+          },
           color: AppColors.primaryGreen,
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.md),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: _buildAttendanceDetail(locationState, locationNotifier),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!_showDetail) _buildMapSection(),
+                  if (!_showDetail) const SizedBox(height: 16),
+                  _buildAttendanceDetail(locationState, locationNotifier),
+                ],
+              ),
             ),
           ),
         ),
@@ -186,6 +199,44 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             if (picked != null) {
               setModalState(() => fotoFile = File(picked.path));
             }
+          }
+
+          void showPhotoPicker() {
+            showModalBottomSheet(
+              context: context,
+              backgroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (pickerCtx) {
+                return SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.camera_alt, color: AppColors.primaryGreen),
+                          title: const Text('Ambil dari Kamera', style: TextStyle(fontWeight: FontWeight.w500)),
+                          onTap: () {
+                            Navigator.pop(pickerCtx);
+                            pickImage(ImageSource.camera);
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.photo_library, color: AppColors.primaryGreen),
+                          title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w500)),
+                          onTap: () {
+                            Navigator.pop(pickerCtx);
+                            pickImage(ImageSource.gallery);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
           }
 
           Future<void> submit() async {
@@ -349,40 +400,59 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     ],
                   ),
                 ] else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => pickImage(ImageSource.camera),
-                          icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                          label: const Text('Kamera'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryGreen,
-                            side: const BorderSide(color: AppColors.primaryGreen),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                  InkWell(
+                    onTap: showPhotoPicker,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.05),
+                        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.cloud_upload_rounded,
+                              color: AppColors.primaryGreen,
+                              size: 28,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => pickImage(ImageSource.gallery),
-                          icon: const Icon(Icons.photo_library_outlined, size: 18),
-                          label: const Text('Galeri'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primaryGreen,
-                            side: const BorderSide(color: AppColors.primaryGreen),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Unggah foto kegiatan',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: AppColors.primaryGreen,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Ketuk untuk mengambil/memilih foto\nFormat JPG, PNG (Maks. 5MB)',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 const SizedBox(height: 16),
                 const Text(
@@ -603,6 +673,234 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     );
   }
 
+  Widget _buildMapSection() {
+    final mapState = ref.watch(kknMapProvider);
+    final locationState = ref.watch(kknLocationProvider);
+
+    if (mapState.isLoading) {
+      return const SizedBox(
+        height: 250,
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGreen),
+        ),
+      );
+    }
+
+    if (mapState.error != null) {
+      return Container(
+        height: 250,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            'Gagal memuat peta: ${mapState.error}',
+            style: const TextStyle(color: AppColors.dangerRed),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    final wilayah = mapState.wilayahKelompok;
+    if (wilayah == null) {
+      return Container(
+        height: 250,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(
+          child: Text(
+            'Wilayah kelompok belum diatur',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+
+    LatLng? poskoLatLng;
+    if (wilayah.posko != null) {
+      poskoLatLng = LatLng(
+        wilayah.posko!['latitude']!,
+        wilayah.posko!['longitude']!,
+      );
+    }
+
+    List<LatLng> polygonPoints = [];
+    if (wilayah.tipeArea == 'POLYGON' && wilayah.polygonKoordinat != null) {
+      polygonPoints = wilayah.polygonKoordinat!
+          .map((c) => LatLng(c['lat']!, c['lng']!))
+          .toList();
+    }
+
+    LatLng center = poskoLatLng ??
+        (polygonPoints.isNotEmpty
+            ? polygonPoints.first
+            : const LatLng(-6.914744, 107.609810));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Wilayah Kegiatan KKN',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            if (wilayah.namaKelompok.isNotEmpty) ...[
+              Builder(
+                builder: (context) {
+                  final kelompokState = ref.watch(kelompokKknProvider);
+                  final user = ref.watch(authProvider).user;
+                  final dplName = kelompokState.kelompok?.dosenPembimbing.isNotEmpty == true
+                      ? kelompokState.kelompok!.dosenPembimbing
+                      : (user?.dplName.isNotEmpty == true ? user!.dplName : '-');
+
+                  return Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            wilayah.namaKelompok,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.primaryGreen,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                          if (dplName != '-') ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              'DPL: $dplName',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: AppColors.primaryGreen.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 250,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: 15.0,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: const ['a', 'b', 'c'],
+                  userAgentPackageName: 'com.makerindo.berseka',
+                ),
+                if (wilayah.tipeArea == 'POLYGON' && polygonPoints.isNotEmpty)
+                  PolygonLayer(
+                    polygons: [
+                      Polygon(
+                        points: polygonPoints,
+                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                        borderStrokeWidth: 2,
+                        borderColor: AppColors.primaryGreen,
+                        isFilled: true,
+                      ),
+                    ],
+                  ),
+                if (wilayah.tipeArea == 'RADIUS' &&
+                    poskoLatLng != null &&
+                    wilayah.radiusMeters != null)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: poskoLatLng,
+                        radius: wilayah.radiusMeters!,
+                        useRadiusInMeter: true,
+                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                        borderColor: AppColors.primaryGreen,
+                        borderStrokeWidth: 2,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    if (poskoLatLng != null)
+                      Marker(
+                        point: poskoLatLng,
+                        width: 40,
+                        height: 40,
+                        child: const Icon(
+                          Icons.home_work_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 32,
+                        ),
+                      ),
+                    if (locationState.currentPosition != null)
+                      Marker(
+                        point: LatLng(
+                          locationState.currentPosition!.latitude,
+                          locationState.currentPosition!.longitude,
+                        ),
+                        width: 30,
+                        height: 30,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blueAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                              )
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAttendanceDetail(
     KknLocationState state,
     KknLocationNotifier notifier,
@@ -696,11 +994,23 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             return KegiatanKknCard(
               kegiatan: kegiatan,
               onMulai: (id) async {
+                final statusAktifSekarang =
+                    (kegiatan['statusKehadiran'] ??
+                            kegiatan['attendanceStatus'] ??
+                            '')
+                        .toString()
+                        .toUpperCase();
+
+                if (statusAktifSekarang == 'BERLANGSUNG') {
+                  if (mounted) setState(() => _showDetail = true);
+                  return;
+                }
+
                 // Cek kegiatan LAIN yang sedang BERLANGSUNG
                 final activeId =
                     state.activeActivity?['id']?.toString() ??
                     state.activeActivity?['scheduleId']?.toString();
-                final statusAktif =
+                final statusAktifLain =
                     (state.activeActivity?['statusKehadiran'] ??
                             state.activeActivity?['attendanceStatus'] ??
                             '')
@@ -711,7 +1021,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     state.activeActivity != null &&
                     activeId != null &&
                     activeId != id &&
-                    statusAktif == 'BERLANGSUNG' &&
+                    statusAktifLain == 'BERLANGSUNG' &&
                     !state.isSuccessAttendance;
 
                 if (isDifferentActive) {
@@ -734,9 +1044,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   if (mounted) {
                     ref.read(authProvider.notifier).fetchProfile();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
-                          '+10 Poin berhasil didapatkan dari Presensi Masuk!',
+                          statusAktifSekarang == 'TERJEDA' 
+                            ? 'Sesi berhasil dilanjutkan.'
+                            : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
                         ),
                         backgroundColor: AppColors.primaryGreen,
                       ),
@@ -1556,6 +1868,11 @@ class KegiatanKknCard extends StatelessWidget {
       statusText = '⏱️ BERLANGSUNG';
       badgeColor = Colors.orange.withValues(alpha: 0.1);
       textColor = Colors.orange;
+      buttonText = 'Sedang Berlangsung';
+    } else if (statusKehadiran == 'TERJEDA') {
+      statusText = '⏸️ TERJEDA';
+      badgeColor = Colors.grey.withValues(alpha: 0.1);
+      textColor = Colors.grey.shade700;
       buttonText = 'Lanjutkan Sesi';
     } else if (statusKehadiran == 'DI_ZONA' ||
         statusKehadiran == 'DALAM_RADIUS') {
@@ -1670,6 +1987,8 @@ class KegiatanKknCard extends StatelessWidget {
                           statusKehadiran == 'TANPA_KETERANGAN') {
                         // Fitur Lihat Riwayat telah dipindah ke halaman History
                         return;
+                      } else if (statusKehadiran == 'BERLANGSUNG') {
+                        onMulai(kegiatan['id'].toString()); // Parent akan menangani fallback jika BERLANGSUNG
                       } else {
                         onMulai(kegiatan['id'].toString());
                       }
