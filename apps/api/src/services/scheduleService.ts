@@ -63,7 +63,7 @@ export const scheduleService = {
             select: { id: true, name: true, kelurahan: true },
           },
         },
-        orderBy: { date: "asc" },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       });
     } catch (err: any) {
       console.error("[scheduleService.getAllSchedules] Error querying schedules:", err);
