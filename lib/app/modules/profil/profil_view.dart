@@ -384,28 +384,30 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                           ),
                           const Divider(height: 1, indent: 56),
                         ],
-                        // Form Evaluasi & Masukan Pengguna (Google Form)
-                        _MenuTile(
-                          icon: Icons.rate_review_outlined,
-                          iconColor: AppColors.primaryGreen,
-                          iconBgColor: AppColors.primaryGreen.withValues(
-                            alpha: 0.1,
-                          ),
-                          label: 'Kuesioner Evaluasi & Feedback',
-                          onTap: () async {
-                            final Uri url = Uri.parse('https://forms.gle/berseka-evaluasi-sistem');
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(url, mode: LaunchMode.externalApplication);
-                            } else {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Tidak dapat membuka tautan kuesioner.')),
-                                );
+                        if (user?.role == UserRole.mahasiswaKkn) ...[
+                          // Form Evaluasi & Masukan Pengguna (Google Form)
+                          _MenuTile(
+                            icon: Icons.rate_review_outlined,
+                            iconColor: AppColors.primaryGreen,
+                            iconBgColor: AppColors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
+                            label: 'Kuesioner Evaluasi & Feedback',
+                            onTap: () async {
+                              final Uri url = Uri.parse('https://docs.google.com/forms/d/e/1FAIpQLSdj1kGx4TalUlrefeHvU7LGrsfK2hgAGJYBK0mBL69O8_h5lQ/viewform?usp=sharing&ouid=100074849759690894073');
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Tidak dapat membuka tautan kuesioner.')),
+                                  );
+                                }
                               }
-                            }
-                          },
-                        ),
-                        const Divider(height: 1, indent: 56),
+                            },
+                          ),
+                          const Divider(height: 1, indent: 56),
+                        ],
 
                         // Tentang Aplikasi
                         _MenuTile(
@@ -445,28 +447,6 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                   ),
 
                   const SizedBox(height: 12),
-                  const Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          '© 2026 Universitas Komputer Indonesia',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Versi 1.0.0',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textHint,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 80),
                 ],
               ),

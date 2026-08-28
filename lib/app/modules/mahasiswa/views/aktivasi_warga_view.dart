@@ -311,7 +311,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
         ref.read(aktivasiWargaProvider.notifier).refresh();
         // Tampilkan Full Dialog Modal Berhasil Aktivasi
         if (mounted) {
-          showDialog(
+          await showDialog(
             context: context,
             barrierDismissible: false,
             builder: (modalCtx) => AlertDialog(
@@ -350,27 +350,33 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
                       color: AppColors.textSecondary,
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(modalCtx).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('Tutup', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
                 ],
               ),
             ),
           );
 
-          // Rating dialog di background (tidak blocking)
           if (mounted) {
+            Navigator.of(context).pop(); // Keluar dari halaman aktivasi
             showFeatureRatingOnceIfNeeded(
               context: context,
               featureKey: 'mahasiswa_aktivasi_warga',
-              featureTitle: 'Aktivasi Warga Berhasil! ⭐',
+              featureTitle: 'Aktivasi Warga Berhasil! ✨',
               featureSubtitle: 'Bagaimana pengalaman Anda saat pertama kali membantu proses aktivasi tempat sampah warga binaan?',
               roleTag: 'Mahasiswa KKN',
             );
-          }
-
-          // Otomatis kembali setelah 2 detik
-          await Future.delayed(const Duration(seconds: 2));
-          if (mounted) {
-            Navigator.of(context).pop(); // Tutup dialog modal
-            Navigator.of(context).pop(); // Kembali ke halaman sebelumnya
           }
         }
       } else if (mounted) {

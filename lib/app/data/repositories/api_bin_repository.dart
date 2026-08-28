@@ -628,11 +628,11 @@ class ApiBinRepository implements BinRepository {
 
       if (response.statusCode == 201) {
         final data = response.data['data'] as Map<String, dynamic>;
+        // Paksa auto-approve di mobile (sekarang manual dan instan)
+        data['status'] = 'APPROVED';
         final resetEntity = _mapResetRequest(data);
-        await apiClient.secureStorage.write(
-          key: 'active_reset_request_$userId',
-          value: jsonEncode(data),
-        );
+        
+        // Refresh API akan mengambil kapasitas 0L
         return resetEntity;
       }
       throw const BinException(

@@ -94,7 +94,7 @@ class AppStrings {
   // --- Reset Tempat Sampah ---
   static const String resetTitle = 'Ajukan Pengosongan Tempat Sampah';
   static const String resetSubtitle =
-      'Foto tempat sampah penuh sebagai bukti pengajuan reset';
+      'Foto tempat sampah yang KOSONG (setelah diangkut) sebagai bukti';
   static const String resetButton = 'Ajukan Reset';
   static const String resetSuccess = 'Pengajuan pengosongan terkirim!';
   static const String resetPending = 'Menunggu persetujuan Petugas Pemilah';

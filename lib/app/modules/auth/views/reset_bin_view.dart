@@ -25,7 +25,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   String? _evidencePhotoPath;
   double _compressedKB = 0;
   final Set<String> _selectedBinIds = {};
-  String? _selectedPetugasId;
+
 
   String _mapError(String code, String? message) {
     switch (code) {
@@ -102,15 +102,15 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           if (mounted) {
             setState(() {
               _selectedBinIds.clear();
-              _selectedPetugasId = null;
+              
             });
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
             NotificationEngine().showResetPendingNotification();
             ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Pengajuan pengosongan berhasil dikirim. Menunggu proses persetujuan Petugas Pemilah (PENDING).'),
-                backgroundColor: AppColors.warningYellow,
+                content: Text('Pengosongan berhasil! Tempat sampah siap digunakan kembali.'),
+                backgroundColor: AppColors.primaryGreen,
                 behavior: SnackBarBehavior.floating,
                 duration: Duration(seconds: 4),
               ),
@@ -402,8 +402,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         const SizedBox(height: AppDimensions.md),
 
         if (!isPending) ...[
-          _buildPetugasSelection(petugasState),
-          
           const SizedBox(height: AppDimensions.md),
         ],
         
@@ -454,16 +452,12 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         ],
         
         (() {
-          final bool hasInvalidSelectedBin = _selectedBinIds.any((id) {
-            final b = bins.firstWhere((element) => element.id == id);
-            return b.capacityPercent < 0.70;
-          });
+          
           
           final bool isFotoEmpty = _evidencePhotoPath == null;
-          final bool isPetugasListEmpty = ref.read(petugasPengosonganProvider).petugasWilayah.isEmpty;
-          final bool isPetugasInvalid = !isPetugasListEmpty && (_selectedPetugasId == null || _selectedPetugasId!.isEmpty || _selectedPetugasId == 'CHANGE_REQUESTED');
           
-          final bool canSubmit = !isFotoEmpty && _selectedBinIds.isNotEmpty && !isPetugasInvalid;
+          
+          final bool canSubmit = !isFotoEmpty && _selectedBinIds.isNotEmpty;
 
           return SizedBox(
             width: double.infinity,
@@ -479,18 +473,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                         ),
                       );
                     }
-                  : hasInvalidSelectedBin
-                      ? () {
-                          ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Tempat sampah yang dipilih belum terisi 70%. Tidak dapat mengajukan pengosongan.'),
-                              backgroundColor: AppColors.dangerRed,
-                              behavior: SnackBarBehavior.floating,
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      : isFotoEmpty
+                  : isFotoEmpty
                           ? () {
                               ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -501,18 +484,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                 ),
                               );
                             }
-                          : isPetugasInvalid
-                              ? () {
-                                  ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Pilih petugas tujuan terlebih dahulu.'),
-                                      backgroundColor: AppColors.dangerRed,
-                                      behavior: SnackBarBehavior.floating,
-                                      duration: Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              : canSubmit
+                          : canSubmit
                                   ? () {
                                       final binIds = _selectedBinIds.toList();
                                       ref.read(resetBinProvider.notifier).submitReset(
@@ -520,7 +492,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                                               userId: userId,
                                               evidencePhotoPath: _evidencePhotoPath!,
                                               wargaName: ref.read(authProvider).user?.name,
-                                              petugasId: _selectedPetugasId,
                                             );
                                     }
                                   : null,
@@ -528,7 +499,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: isPending
                     ? AppColors.warningYellow
-                    : hasInvalidSelectedBin || isPetugasInvalid || isFotoEmpty
+                    : isFotoEmpty
                         ? AppColors.dangerRed
                         : (canSubmit ? AppColors.primaryGreen : Colors.grey.shade400),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -536,19 +507,15 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               child: Text(
                 isPending
                     ? 'Sedang Mengajukan (PENDING)'
-                    : hasInvalidSelectedBin
-                        ? 'Tempat Sampah Belum 70%'
-                        : isFotoEmpty
-                            ? 'Upload Foto Bukti'
-                            : isPetugasInvalid
-                                ? 'Pilih Petugas Tujuan'
-                                : (_selectedBinIds.isEmpty
-                                    ? 'Pilih Tempat Sampah'
-                                    : 'Ajukan Pengosongan (${_selectedBinIds.length} Tempat Sampah)'),
+                    : isFotoEmpty
+                        ? 'Upload Foto Bukti'
+                        : (_selectedBinIds.isEmpty
+                            ? 'Pilih Tempat Sampah'
+                            : 'Kosongkan (${_selectedBinIds.length} Tempat Sampah)'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isPending || hasInvalidSelectedBin || isPetugasInvalid || isFotoEmpty || canSubmit ? Colors.white : Colors.grey.shade700,
+                  color: isPending || isFotoEmpty || canSubmit ? Colors.white : Colors.grey.shade700,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -584,7 +551,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           ),
           const SizedBox(height: AppDimensions.sm),
           Text(
-            AppStrings.resetPending,
+            'Tempat sampah berhasil dikosongkan dan siap digunakan kembali.',
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -592,22 +559,22 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           Container(
             padding: const EdgeInsets.all(AppDimensions.md),
             decoration: BoxDecoration(
-              color: AppColors.warningYellow.withValues(alpha: 0.1),
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.access_time_rounded,
-                  color: AppColors.warningYellow,
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.primaryGreen,
                   size: 18,
                 ),
-                const SizedBox(width: AppDimensions.sm),
+                SizedBox(width: AppDimensions.sm),
                 Text(
-                  'Status: ${result.status.displayName}',
-                  style: const TextStyle(
-                    color: AppColors.warningYellow,
+                  'Status: SELESAI',
+                  style: TextStyle(
+                    color: AppColors.primaryGreen,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -618,7 +585,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           const SizedBox(height: AppDimensions.xl),
           ElevatedButton(
             onPressed: () {
-              // Invalidate data terkait sebelum kembali ke halaman profil
               ref.invalidate(binsProvider);
               ref.invalidate(notificationsProvider);
               ref.read(resetBinProvider.notifier).reset();
@@ -630,150 +596,4 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       ),
     );
   }
-
-  Widget _buildPetugasSelection(PetugasPengosonganState state) {
-    if (state.isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
-      );
-    }
-
-    if (state.error != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text('Gagal memuat info petugas: ${state.error}', style: const TextStyle(color: AppColors.dangerRed)),
-      );
-    }
-
-    final hasDefault = state.statusResponse?.hasDefaultPetugas ?? false;
-    final defaultPetugas = state.statusResponse?.petugas;
-
-    if (hasDefault && defaultPetugas != null && _selectedPetugasId == null) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: AppDimensions.md),
-        padding: const EdgeInsets.all(AppDimensions.md),
-        decoration: BoxDecoration(
-          color: AppColors.primaryGreen.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.2),
-              backgroundImage: defaultPetugas.fotoProfil != null ? NetworkImage(defaultPetugas.fotoProfil!) : null,
-              child: defaultPetugas.fotoProfil == null ? const Icon(Icons.person, color: AppColors.primaryGreen) : null,
-            ),
-            const SizedBox(width: AppDimensions.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Petugas Tujuan', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  Text(defaultPetugas.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _selectedPetugasId = 'CHANGE_REQUESTED';
-                });
-                ref.read(petugasPengosonganProvider.notifier).fetchPetugasWilayah();
-              },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text('Ganti', style: TextStyle(fontSize: 12, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Tampilkan daftar petugas untuk dipilih
-    final petugasList = state.petugasWilayah;
-    
-    if (petugasList.isEmpty && !hasDefault && state.statusResponse != null) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: AppDimensions.md),
-        padding: const EdgeInsets.all(AppDimensions.md),
-        decoration: BoxDecoration(
-          color: AppColors.warningYellow.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.warningYellow),
-        ),
-        child: const Row(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.warningYellow),
-            SizedBox(width: AppDimensions.sm),
-            Expanded(
-              child: Text(
-                'Belum ada petugas pemilah terdaftar di wilayah Anda. Pengajuan akan diteruskan ke Admin RW untuk diproses manual.',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (state.isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16.0),
-        child: Center(child: CircularProgressIndicator(color: AppColors.primaryGreen)),
-      );
-    }
-
-    if (petugasList.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Pilih Petugas Pemilah', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-        const SizedBox(height: AppDimensions.sm),
-        ...petugasList.map((petugas) {
-          final isSelected = _selectedPetugasId == petugas.id || (_selectedPetugasId == 'CHANGE_REQUESTED' && petugas.id == defaultPetugas?.id);
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: InkWell(
-              onTap: () {
-                setState(() => _selectedPetugasId = petugas.id);
-                // Call set default if they are changing or setting for first time
-                ref.read(petugasPengosonganProvider.notifier).setDefaultPetugas(petugas.id);
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primaryGreen.withValues(alpha: 0.1) : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isSelected ? AppColors.primaryGreen : AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: petugas.fotoProfil != null ? NetworkImage(petugas.fotoProfil!) : null,
-                      child: petugas.fotoProfil == null ? const Icon(Icons.person, color: Colors.grey) : null,
-                    ),
-                    const SizedBox(width: AppDimensions.md),
-                    Expanded(
-                      child: Text(petugas.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                    ),
-                    if (isSelected) const Icon(Icons.check_circle, color: AppColors.primaryGreen),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-        const SizedBox(height: AppDimensions.md),
-      ],
-    );
-  }
 }
-
