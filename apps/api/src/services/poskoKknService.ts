@@ -18,7 +18,7 @@ export class PoskoKknService {
       keterangan?: string;
     }
   ) {
-    return prisma.poskoKkn.upsert({
+    const posko = await prisma.poskoKkn.upsert({
       where: { kelompokId },
       update: {
         nama: data.nama,
@@ -43,6 +43,49 @@ export class PoskoKknService {
         },
       },
     });
+
+    // Otomatis sinkronkan jadwal hari ini dan jadwal aktif kelompok dengan koordinat Posko baru
+    try {
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const dateStr = wibNow.toISOString().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+
+      // Update jadwal aktif untuk kelompok ini
+      await prisma.schedule.updateMany({
+        where: {
+          kelompokId,
+          isActive: true,
+          date: { gte: startOfDay },
+        },
+        data: {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          location: data.nama,
+          title: `Kegiatan Harian ${data.nama}`,
+        },
+      });
+
+      // Kirim Silent Push ke seluruh mahasiswa kelompok agar aplikasi mobile langsung reload zona
+      const { notificationIntegrationService } = await import("./notificationIntegrationService.js");
+      const students = await prisma.studentKkn.findMany({
+        where: { kelompokId },
+        include: { user: true },
+      });
+
+      for (const s of students) {
+        if (s.user?.fcmToken) {
+          notificationIntegrationService.sendSilentDataPush(
+            s.user.fcmToken,
+            { event: "REFRESH_KEGIATAN_MAHASISWA" }
+          ).catch(() => {});
+        }
+      }
+    } catch (syncErr) {
+      console.warn("[PoskoKknService.upsertPosko] Failed to cascade update schedules:", syncErr);
+    }
+
+    return posko;
   }
 
   async getAllPosko(userId?: string, role?: string) {

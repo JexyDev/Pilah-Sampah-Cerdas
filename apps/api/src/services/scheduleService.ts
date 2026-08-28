@@ -197,11 +197,6 @@ export const scheduleService = {
           },
         });
 
-        if (existing) {
-          existingCount++;
-          continue;
-        }
-
         // Determine Posko location & name
         const officialPosko = poskoMap.get(group.id);
         const facilityPosko = group.facilities?.[0];
@@ -247,6 +242,26 @@ export const scheduleService = {
             poskoLng = 107.6200;
             poskoName = `Posko KKN ${group.name} - Kel. Sekeloa`;
           }
+        }
+
+        if (existing) {
+          existingCount++;
+          // Jika sudah ada posko resmi atau koordinat fallback berbeda dari jadwal yang tercatat, perbarui
+          if (
+            (officialPosko && (Number(existing.latitude) !== poskoLat || Number(existing.longitude) !== poskoLng)) ||
+            (existing.location?.startsWith("Posko KKN") && (Number(existing.latitude) !== poskoLat || Number(existing.longitude) !== poskoLng))
+          ) {
+            await prisma.schedule.update({
+              where: { id: existing.id },
+              data: {
+                latitude: poskoLat,
+                longitude: poskoLng,
+                location: poskoName,
+                title: `Kegiatan Harian ${poskoName}`,
+              },
+            });
+          }
+          continue;
         }
 
         try {

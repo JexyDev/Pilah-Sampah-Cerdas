@@ -51,6 +51,7 @@ import {
   Layers,
   GraduationCap,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -481,8 +482,27 @@ const MonitoringAbsen: React.FC = () => {
     user?.peran || (user as any)?.role || ""
   ).toUpperCase();
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
+  const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "DEV";
 
-  const [selectedKelompokId, setSelectedKelompokId] = useState<string>("");
+  const [selectedKelompokId, setSelectedKelompokId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("berseka_dev_selected_kelompok");
+        if (saved !== null) return saved;
+      } catch {}
+    }
+    return "";
+  });
+
+  const handleSelectKelompok = (id: string) => {
+    setSelectedKelompokId(id);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("berseka_dev_selected_kelompok", id);
+      } catch {}
+    }
+  };
+
   const [schedules, setSchedules] = useState<ScheduleActivity[]>([]);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
