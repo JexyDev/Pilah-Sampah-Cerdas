@@ -374,27 +374,32 @@ model StudentKkn {
 }
 
 model KelompokKkn {
-  id                 String                  @id @default(uuid())
-  name               String                  @unique @map("nama")
-  kelurahan          String?                 @map("kelurahan")
-  cakupanRw          Json?                   @map("cakupan_rw")
-  dplNamaMentah      String?                 @map("dpl_nama_mentah")
-  dplId              String?                 @map("id_dpl")
-  mplId              String?                 @map("id_mpl")
-  createdAt          DateTime                @default(now()) @map("dibuat_pada")
-  updatedAt          DateTime                @updatedAt @map("diperbarui_pada")
-  dpl                User?                   @relation("DplKelompok", fields: [dplId], references: [id])
-  mpl                User?                   @relation("MplKelompok", fields: [mplId], references: [id])
-  students           StudentKkn[]
-  schedules          Schedule[]
-  timelines          TimelineKkn[]
-  programKerja       ProgramKerjaKkn[]
-  penilaianMahasiswa PenilaianKknMahasiswa[]
-  facilities         Facility[]
-  poskoKkn           PoskoKkn?
-  logbooks           LogbookKkn[]
-  dplLogbooks        LogbookDpl[]
-  presensiMandiri    PresensiMandiri[]
+  id                    String                  @id @default(uuid())
+  name                  String                  @unique @map("nama")
+  kelurahan             String?                 @map("kelurahan")
+  cakupanRw             Json?                   @map("cakupan_rw")
+  dplNamaMentah         String?                 @map("dpl_nama_mentah")
+  dplId                 String?                 @map("id_dpl")
+  mplId                 String?                 @map("id_mpl")
+  // === SMART ZONE: Auto-generated polygon dari GPS mahasiswa aktif ===
+  autoPolygon           Json?                   @map("auto_polygon")
+  autoPolygonUpdatedAt  DateTime?               @map("auto_polygon_updated_at")
+  autoPolygonStudentCount Int?                  @map("auto_polygon_student_count")
+  createdAt             DateTime                @default(now()) @map("dibuat_pada")
+  updatedAt             DateTime                @updatedAt @map("diperbarui_pada")
+  dpl                   User?                   @relation("DplKelompok", fields: [dplId], references: [id])
+  mpl                   User?                   @relation("MplKelompok", fields: [mplId], references: [id])
+  students              StudentKkn[]
+  schedules             Schedule[]
+  timelines             TimelineKkn[]
+  programKerja          ProgramKerjaKkn[]
+  penilaianMahasiswa    PenilaianKknMahasiswa[]
+  facilities            Facility[]
+  poskoKkn              PoskoKkn?
+  poskoMulti            PoskoKknMulti[]
+  logbooks              LogbookKkn[]
+  dplLogbooks           LogbookDpl[]
+  presensiMandiri       PresensiMandiri[]
 
   @@index([dplId])
   @@map("kelompok_kkn")
@@ -414,6 +419,27 @@ model PoskoKkn {
   kelompok   KelompokKkn @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
 
   @@map("posko_kkn")
+}
+
+// === SMART ZONE: Multi-Posko per Kelompok ===
+// Mendukung kelompok KKN yang berpencar di beberapa titik sekaligus
+model PoskoKknMulti {
+  id         String      @id @default(uuid())
+  kelompokId String      @map("id_kelompok")
+  nama       String
+  alamat     String
+  latitude   Decimal     @db.Decimal(11, 8)
+  longitude  Decimal     @db.Decimal(11, 8)
+  isUtama    Boolean     @default(false) @map("is_utama")
+  radius     Int         @default(150)
+  fotoUrl    String?     @map("foto_url")
+  keterangan String?
+  createdAt  DateTime    @default(now()) @map("dibuat_pada")
+  updatedAt  DateTime    @updatedAt @map("diperbarui_pada")
+  kelompok   KelompokKkn @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+
+  @@index([kelompokId])
+  @@map("posko_kkn_multi")
 }
 
 model ProgramKerjaKkn {

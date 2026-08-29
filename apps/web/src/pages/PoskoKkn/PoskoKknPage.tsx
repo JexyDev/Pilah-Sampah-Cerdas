@@ -96,6 +96,17 @@ const formatWhatsAppUrl = (phone?: string | null): string => {
   return `https://wa.me/${formatted}`;
 };
 
+// Helper Format RW Display (Normalisasi awalan RW dan buang teks parenthetical redundan)
+export const formatCleanRw = (rwName?: string | null): string => {
+  if (!rwName || rwName === "-" || rwName.trim() === "" || rwName === "null") return "-";
+  const clean = rwName.trim();
+  const withoutParen = clean.replace(/\s*\([^)]*\)/g, "").trim();
+  if (/^RW\b/i.test(withoutParen)) {
+    return withoutParen;
+  }
+  return `RW ${withoutParen}`;
+};
+
 // Custom Marker Pin Icon untuk Posko KKN (Indigo Theme)
 const createPoskoMarkerIcon = (nama?: string) => {
   return L.divIcon({
@@ -261,7 +272,9 @@ export const PoskoKknPage: React.FC = () => {
 
       let matchKelurahan = true;
       if (selectedKelurahan !== "ALL") {
-        matchKelurahan = (item.kelurahan || "").toLowerCase().includes(selectedKelurahan.toLowerCase());
+        const itemKel = (item.kelurahan || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+        const filterKel = selectedKelurahan.toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+        matchKelurahan = itemKel.includes(filterKel) || filterKel.includes(itemKel);
       }
 
       return matchSearch && matchKelurahan;
@@ -764,7 +777,7 @@ export const PoskoKknPage: React.FC = () => {
                           </h2>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
                             <MapPin size={14} className="text-rose-500 shrink-0" />
-                            <span>Kelurahan {posko.kelurahan} &bull; RW {posko.rwName} &bull; Kec. Coblong</span>
+                            <span>Kelurahan {posko.kelurahan} &bull; {formatCleanRw(posko.rwName)} &bull; Kec. Coblong</span>
                           </p>
                         </div>
                       </div>
@@ -1501,7 +1514,7 @@ export const PoskoKknPage: React.FC = () => {
                         <td className="py-4 px-4">
                           <div className="space-y-1">
                             <span className="font-bold text-slate-700 dark:text-slate-300 block text-xs">
-                              {item.rwName && item.rwName !== "-" ? `RW ${item.rwName}` : ""} ({item.kelurahan})
+                              {formatCleanRw(item.rwName)} &bull; Kel. {item.kelurahan}
                             </span>
                             
                             {hasValidCoords ? (
@@ -1532,10 +1545,10 @@ export const PoskoKknPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setDetailModalPosko(item)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 transition duration-150 cursor-pointer shadow-2xs"
+                              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 transition duration-150 flex items-center justify-center cursor-pointer shadow-2xs"
                               title="Lihat Detail Posko"
                             >
-                              <Eye size={14} />
+                              <Eye size={15} />
                             </button>
 
                             {/* Tombol Peta */}
@@ -1543,10 +1556,10 @@ export const PoskoKknPage: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => handleViewOnMap(latNum, lngNum)}
-                                className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 dark:text-indigo-300 transition duration-150 cursor-pointer shadow-2xs"
+                                className="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 dark:text-indigo-300 transition duration-150 flex items-center justify-center cursor-pointer shadow-2xs"
                                 title="Tampilkan titik di peta"
                               >
-                                <MapPin size={14} />
+                                <MapPin size={15} />
                               </button>
                             )}
 
@@ -1556,19 +1569,19 @@ export const PoskoKknPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenEditModal(item)}
-                                  className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 dark:text-amber-300 transition duration-150 cursor-pointer shadow-2xs"
+                                  className="w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:hover:bg-amber-900/80 dark:text-amber-300 transition duration-150 flex items-center justify-center cursor-pointer shadow-2xs"
                                   title="Edit Posko KKN"
                                 >
-                                  <Pencil size={14} />
+                                  <Pencil size={15} />
                                 </button>
 
                                 <button
                                   type="button"
                                   onClick={() => setDeleteModal({ isOpen: true, posko: item, isLoading: false })}
-                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 dark:text-rose-300 transition duration-150 cursor-pointer shadow-2xs"
+                                  className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 dark:text-rose-300 transition duration-150 flex items-center justify-center cursor-pointer shadow-2xs"
                                   title="Hapus Posko KKN"
                                 >
-                                  <Trash2 size={14} />
+                                  <Trash2 size={15} />
                                 </button>
                               </>
                             )}
@@ -1756,7 +1769,7 @@ export const PoskoKknPage: React.FC = () => {
                     Kelurahan {detailModalPosko.kelurahan}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-300">
-                    {detailModalPosko.rwName && detailModalPosko.rwName !== "-" ? `RW ${detailModalPosko.rwName}` : "RW Wilayah"} &bull; Kecamatan Coblong
+                    {formatCleanRw(detailModalPosko.rwName)} &bull; Kecamatan Coblong
                   </p>
                 </div>
 

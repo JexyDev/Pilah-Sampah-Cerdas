@@ -1446,7 +1446,7 @@ export const DplDashboardPage: React.FC = () => {
             <Link
               to="/monitoring-kegiatan/pengajuan-izin"
               className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Pengajuan Izin & Sakit (Filter Sakit)"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
             >
               <span>{gradeDistribution.totalSakit} Sakit</span>
             </Link>
@@ -1454,7 +1454,7 @@ export const DplDashboardPage: React.FC = () => {
             <Link
               to="/monitoring-kegiatan/pengajuan-izin"
               className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
-              title="Buka Halaman Pengajuan Izin & Sakit (Filter Izin)"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
             >
               <span>{gradeDistribution.totalIzin} Izin</span>
             </Link>

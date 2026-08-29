@@ -1327,6 +1327,52 @@ export class KknService {
     });
   }
 
+  private async resolveKelompokRwId(
+    kelompok?: { id?: string; name?: string; kelurahan?: string | null; cakupanRw?: any } | null,
+    preferredRwId?: number
+  ): Promise<number> {
+    if (preferredRwId && !isNaN(Number(preferredRwId))) {
+      const found = await prisma.rw.findUnique({ where: { id: Number(preferredRwId) } });
+      if (found) return found.id;
+    }
+
+    const kelName = kelompok?.kelurahan || "Dago";
+    let rwNum = "01";
+
+    if (kelompok?.cakupanRw) {
+      try {
+        const parsed = typeof kelompok.cakupanRw === "string" ? JSON.parse(kelompok.cakupanRw) : kelompok.cakupanRw;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          rwNum = String(parsed[0]).padStart(2, "0");
+        } else if (typeof parsed === "number" || typeof parsed === "string") {
+          rwNum = String(parsed).padStart(2, "0");
+        }
+      } catch (_) {}
+    }
+
+    const matchingRw = await prisma.rw.findFirst({
+      where: {
+        kelurahan: { name: { equals: kelName, mode: "insensitive" } },
+        OR: [
+          { name: { contains: `RW ${rwNum}`, mode: "insensitive" } },
+          { name: { contains: `RW ${parseInt(rwNum, 10)}`, mode: "insensitive" } },
+          { name: { contains: rwNum, mode: "insensitive" } },
+        ],
+      },
+    });
+
+    if (matchingRw) return matchingRw.id;
+
+    const firstKelRw = await prisma.rw.findFirst({
+      where: { kelurahan: { name: { equals: kelName, mode: "insensitive" } } },
+    });
+
+    if (firstKelRw) return firstKelRw.id;
+
+    const anyRw = await prisma.rw.findFirst();
+    return anyRw?.id || 1;
+  }
+
   async registerPoskoKkn(
     userId: string,
     payload: {
@@ -1377,7 +1423,7 @@ export class KknService {
       },
     });
 
-    const R = 6371e3;
+    const R = 6371e3; // meter
     for (const op of otherPoskos) {
       const phi1 = (lat * Math.PI) / 180;
       const phi2 = (Number(op.latitude) * Math.PI) / 180;
@@ -1395,17 +1441,7 @@ export class KknService {
       }
     }
 
-    let targetRwId = payload.rwId || student.assignedRwId || student.user.rwId;
-    if (!targetRwId && student.kelompok.cakupanRw) {
-      try {
-        const parsed = typeof student.kelompok.cakupanRw === "string" ? JSON.parse(student.kelompok.cakupanRw) : student.kelompok.cakupanRw;
-        if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
-      } catch (_) {}
-    }
-    if (!targetRwId) {
-      const firstRw = await prisma.rw.findFirst();
-      targetRwId = firstRw?.id || 1;
-    }
+    const targetRwId = await this.resolveKelompokRwId(student.kelompok, payload.rwId || student.assignedRwId || student.user.rwId);
 
     const existingPosko = await prisma.facility.findFirst({
       where: {
@@ -1548,16 +1584,7 @@ export class KknService {
       }
     }
 
-    let targetRwId = payload.rwId || existingPosko.rwId || student.assignedRwId || student.user.rwId;
-    if (!targetRwId && student.kelompok.cakupanRw) {
-      try {
-        const parsed = typeof student.kelompok.cakupanRw === "string" ? JSON.parse(student.kelompok.cakupanRw) : student.kelompok.cakupanRw;
-        if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
-      } catch (_) {}
-    }
-    if (!targetRwId) {
-      targetRwId = 1;
-    }
+    const targetRwId = await this.resolveKelompokRwId(student.kelompok, payload.rwId || existingPosko.rwId || student.assignedRwId || student.user.rwId);
 
     const ketuaStudentUpdate = student.isKetua
       ? student
@@ -1667,9 +1694,10 @@ export class KknService {
     }
 
     if (filters?.kelurahan && filters.kelurahan !== "ALL") {
+      const cleanKel = filters.kelurahan.replace(/^(kelurahan|kel\.)\s*/i, "").trim();
       const kelurahanOr = [
-        { rw: { kelurahan: { name: { contains: filters.kelurahan, mode: "insensitive" } } } },
-        { kelompok: { kelurahan: { contains: filters.kelurahan, mode: "insensitive" } } },
+        { kelompok: { kelurahan: { contains: cleanKel, mode: "insensitive" } } },
+        { rw: { kelurahan: { name: { contains: cleanKel, mode: "insensitive" } } } },
       ];
       if (where.OR) {
         where.AND = [{ OR: where.OR }, { OR: kelurahanOr }];
@@ -1703,7 +1731,7 @@ export class KknService {
       const ketuaName = p.pic || ketua?.user?.name || "Ketua Kelompok KKN";
       const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || ketua?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
-      const kelurahan = p.rw?.kelurahan?.name || p.kelompok?.kelurahan || "Coblong";
+      const kelurahan = p.kelompok?.kelurahan || p.rw?.kelurahan?.name || "Coblong";
 
       return {
         id: p.id,
@@ -1751,7 +1779,7 @@ export class KknService {
       throw new Error("Koordinat GPS (latitude & longitude) wajib valid dan tidak boleh kosong.");
     }
 
-    let targetRwId = payload.rwId ? Number(payload.rwId) : undefined;
+    let targetRwId: number | undefined;
     let targetKelompokId = payload.kelompokId || undefined;
     let resolvedPic = payload.pic?.trim();
     let resolvedKontak = payload.kontak?.trim();
@@ -1768,12 +1796,7 @@ export class KknService {
       });
 
       if (kelompok) {
-        if (!targetRwId && kelompok.cakupanRw) {
-          try {
-            const parsed = typeof kelompok.cakupanRw === "string" ? JSON.parse(kelompok.cakupanRw) : kelompok.cakupanRw;
-            if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
-          } catch (_) {}
-        }
+        targetRwId = await this.resolveKelompokRwId(kelompok, payload.rwId ? Number(payload.rwId) : undefined);
         if (!resolvedPic) {
           const ketua = kelompok.students.find((s) => s.isKetua) || kelompok.students[0];
           resolvedPic = ketua?.user?.name || "Ketua Kelompok KKN";
@@ -1786,8 +1809,7 @@ export class KknService {
     }
 
     if (!targetRwId) {
-      const firstRw = await prisma.rw.findFirst();
-      targetRwId = firstRw?.id || 1;
+      targetRwId = await this.resolveKelompokRwId(null, payload.rwId ? Number(payload.rwId) : undefined);
     }
 
     const posko = await prisma.facility.create({

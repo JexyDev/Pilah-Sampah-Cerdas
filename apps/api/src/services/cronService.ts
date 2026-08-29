@@ -57,6 +57,22 @@ export class CronService {
       scheduleService.syncDailySchedulesForToday();
     }, tzOptions);
 
+    // === SMART ZONE: Batch auto-polygon update setiap 5 menit saat ada mahasiswa aktif ===
+    cron.schedule("*/5 * * * *", async () => {
+      try {
+        const { smartZoneService } = await import("./smartZoneService.js");
+        const activeGroups = await smartZoneService.getGroupsWithActiveStudents();
+        if (activeGroups.length > 0) {
+          console.log(`[SmartZone Cron] Updating auto-polygon for ${activeGroups.length} active group(s)...`);
+          for (const kelompokId of activeGroups) {
+            await smartZoneService.updateGroupAutoPolygon(kelompokId).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn("[SmartZone Cron] Batch polygon update error:", err);
+      }
+    }, tzOptions);
+
     console.log("[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone).");
   }
   public async cleanupStaleData() {

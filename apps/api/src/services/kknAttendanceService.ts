@@ -14,6 +14,8 @@ import { validateCoordinate } from "../utils/geoValidation.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { isOrganikBin, isAnorganikBin } from "./kknService.js";
 import { auditTrailService } from "./auditTrailService.js";
+// SMART ZONE: Multi-Posko adaptive geofence engine
+import { smartZoneService, type ZoneCheckResult } from "./smartZoneService.js";
 
 /**
  * Helper: Build unified geofence object with fallback to system defaults.
@@ -738,7 +740,10 @@ export class KknAttendanceService {
     const autoAttendanceTriggered: string[] = [];
     let inZoneMinutes = 0;
     let isInsideZone = false;
-    
+
+    // SMART ZONE: Tambahan data multi-zona untuk response mobile
+    let smartZoneResult: ZoneCheckResult | null = null;
+
     // Data tambahan untuk sinkronisasi UI real-time
     let activeScheduleId: string | null = null;
     let activeJamMasuk: string | null = null;
@@ -762,6 +767,15 @@ export class KknAttendanceService {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: studentId },
     });
+
+    // SMART ZONE: Trigger auto-polygon update for this group (async, non-blocking)
+    if (student?.kelompokId && latestLoc) {
+      smartZoneService.updateGroupAutoPolygon(student.kelompokId).catch(() => {});
+      // Pre-check smart zone for response enrichment
+      smartZoneService.isStudentInGroupZone(latestLoc.latitude, latestLoc.longitude, student.kelompokId)
+        .then((result) => { smartZoneResult = result; })
+        .catch(() => {});
+    }
 
     const activeSchedules = await prisma.schedule.findMany({
       where: {
@@ -843,8 +857,9 @@ export class KknAttendanceService {
 
         const geofence = await buildGeofence(sch);
 
-        // 1. Cek posisi saat ini menggunakan buffer dinamis
+        // 1. Cek posisi saat ini: schedule geofence ATAU smart zone multi-posko (OR logic)
         let isCurrInside = false;
+        // a. Schedule polygon / radius check (original logic)
         if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
           const polyPoints = (geofence.polygon as any[]).map((p) => ({
             lat: Number(p[0]),
@@ -854,6 +869,23 @@ export class KknAttendanceService {
         } else {
           const dist = calculateDistance(latestLoc!.latitude, latestLoc!.longitude, geofence.latitude, geofence.longitude);
           isCurrInside = dist <= (geofence.radius + bufferMeters);
+        }
+
+        // b. SMART ZONE fallback: Jika belum masuk dari schedule geofence, cek multi-posko kelompok
+        if (!isCurrInside && student?.kelompokId) {
+          try {
+            const szResult = await smartZoneService.isStudentInGroupZone(
+              latestLoc!.latitude, latestLoc!.longitude,
+              student.kelompokId,
+              bufferMeters,
+            );
+            if (szResult.isInside) {
+              isCurrInside = true;
+              smartZoneResult = szResult;
+            }
+          } catch (_szErr) {
+            // Non-critical: fallback ke schedule geofence saja
+          }
         }
         isInsideZone = isCurrInside;
 
@@ -957,6 +989,17 @@ export class KknAttendanceService {
         poskoArea: null,
         kelurahan: null,
         message: activeScheduleId ? "Tracking active" : "No active schedule, but tracking continues",
+        // === SMART ZONE: Data multi-posko untuk UI mobile ===
+        smartZone: {
+          isInsideAnyZone: isInsideZone,
+          matchedPosko: smartZoneResult?.matchedPosko ?? null,
+          matchedPoskoId: smartZoneResult?.matchedPoskoId ?? null,
+          matchedMethod: smartZoneResult?.matchedMethod ?? (isInsideZone ? "POSKO_UTAMA" : "NONE"),
+          distanceToNearestPosko: smartZoneResult?.distanceToNearest ?? null,
+          nearestPoskoName: smartZoneResult?.nearestPoskoName ?? null,
+          autoPolygonActive: smartZoneResult?.autoPolygonActive ?? false,
+          allPoskos: smartZoneResult?.allPoskos ?? [],
+        },
       },
     };
   }
@@ -1171,10 +1214,25 @@ export class KknAttendanceService {
         const distance = calculateDistance(latitude, longitude, scheduleLat, scheduleLng);
         isInside = distance <= effectiveRadius;
       }
+
+      // SMART ZONE FALLBACK: Jika tidak masuk schedule geofence, cek multi-posko kelompok
+      if (!isInside) {
+        try {
+          const schedForSz = await prisma.schedule.findUnique({ where: { id: scheduleId }, select: { kelompokId: true } });
+          if (schedForSz?.kelompokId) {
+            const szCheck = await smartZoneService.isStudentInGroupZone(latitude, longitude, schedForSz.kelompokId, bufferMeters);
+            if (szCheck.isInside) {
+              isInside = true;
+            }
+          }
+        } catch (_szErr) {
+          // Smart zone check failed — fall through to OUT_OF_RADIUS
+        }
+      }
     }
 
     if (!isAutoAlpa && !isInside) {
-      throw new Error(`OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan.`);
+      throw new Error(`OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan manapun milik kelompok ini.`);
     }
 
     // Resolve student info for DPL notification
