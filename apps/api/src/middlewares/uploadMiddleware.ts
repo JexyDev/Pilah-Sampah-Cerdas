@@ -127,7 +127,7 @@ export function extractUploadedFileUrls(req: Request): string[] {
         }
       }
     } else if (typeof req.files === "object") {
-      const filesObj = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const filesObj = req.files as { [fieldname: string]: any[] };
       for (const key of Object.keys(filesObj)) {
         const arr = filesObj[key];
         if (Array.isArray(arr)) {
