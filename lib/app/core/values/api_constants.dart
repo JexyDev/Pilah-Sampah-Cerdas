@@ -73,6 +73,14 @@ class ApiEndpoints {
   static const String kknPoskoRegister = '/kkn/posko/register';
   static const String logbookMahasiswa = '/logbook/mahasiswa';
   static const String kknPoskoMe = '/kkn/posko/me';
+  
+  // Smart Multi-Zone Geofence
+  static const String poskoMeAllZones = '/posko-kkn/me/all-zones';
+  static String poskoKelompokAllZones(String id) => '/posko-kkn/kelompok/$id/all-zones';
+  static String poskoKelompokMulti(String id) => '/posko-kkn/kelompok/$id/multi';
+  static const String poskoMulti = '/posko-kkn/multi';
+  static String poskoMultiById(String id) => '/posko-kkn/multi/$id';
+
   static const String kknFacilities = '/facilities';
   static const String kknFasilitasJenis = '/kkn/fasilitas/jenis';
   static const String kknFasilitasBantuInput = '/facilities';

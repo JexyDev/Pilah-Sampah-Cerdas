@@ -206,6 +206,9 @@ class _PilahSampahAppState extends ConsumerState<PilahSampahApp> {
             // biarkan mahasiswa controller merefresh via rute jika perlu,
             // atau tambahkan import-nya (saya pakai fallback aman tanpa import tambahan)
             debugPrint('-> Mahasiswa providers refresh event received: $event');
+          } else if (event == 'MULTI_POSKO_UPDATED') {
+            debugPrint('-> Multi-Posko Updated event received. Delegating to KknLocationController/KelompokController if active.');
+            // Jika diperlukan, bisa di-invalidate atau call re-sync posko di sini
           }
           return;
         }

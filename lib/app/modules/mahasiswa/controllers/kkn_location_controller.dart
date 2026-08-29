@@ -79,6 +79,7 @@ class KknLocationState {
     this.isLoadingKegiatan = false,
     this.outOfZoneSeconds = 0,
     this.isAutoStarted = false,
+    this.smartZoneStatus,
   });
 
   final String? attendanceId;
@@ -89,6 +90,7 @@ class KknLocationState {
   final bool isLoadingKegiatan;
   final int outOfZoneSeconds;
   final bool isAutoStarted;
+  final Map<String, dynamic>? smartZoneStatus; // Smart Zone status payload
 
   KknLocationState copyWith({
     Position? currentPosition,
@@ -113,6 +115,7 @@ class KknLocationState {
     bool? isLoadingKegiatan,
     int? outOfZoneSeconds,
     bool? isAutoStarted,
+    Map<String, dynamic>? smartZoneStatus,
     bool clearError = false,
     bool clearActivity = false,
     bool clearWarning = false,
@@ -151,6 +154,7 @@ class KknLocationState {
       isLoadingKegiatan: isLoadingKegiatan ?? this.isLoadingKegiatan,
       outOfZoneSeconds: outOfZoneSeconds ?? this.outOfZoneSeconds,
       isAutoStarted: isAutoStarted ?? this.isAutoStarted,
+      smartZoneStatus: smartZoneStatus ?? this.smartZoneStatus,
     );
   }
 }
@@ -1151,6 +1155,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             (data['outOfZoneSeconds'] as num?)?.toInt() ?? 300;
         state = state.copyWith(outOfZoneSeconds: outOfZoneSecs);
         _recordOutOfZoneViolation();
+        break;
+
+      case 'SMART_ZONE_UPDATE':
+        final smartZone = data['smartZone'] as Map<String, dynamic>?;
+        if (smartZone != null) {
+          state = state.copyWith(smartZoneStatus: smartZone);
+        }
         break;
     }
   }

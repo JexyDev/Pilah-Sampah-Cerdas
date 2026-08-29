@@ -41,6 +41,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
 
   final List<File> _selectedFiles = [];
   bool _isLoading = false;
+  bool _isPastReport = false;
 
   @override
   void initState() {
@@ -173,7 +174,9 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: today.subtract(const Duration(days: 30)),
+      firstDate: _isPastReport 
+          ? today.subtract(const Duration(days: 365)) 
+          : today.subtract(const Duration(days: 30)),
       lastDate: today.add(const Duration(hours: 23, minutes: 59)),
       builder: (context, child) {
         return Theme(
@@ -260,6 +263,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         'tempat': _lokasiCtrl.text.trim(),
         'deskripsi': _deskripsiCtrl.text.trim(),
         'platformOs': platformStr,
+        if (_isPastReport) 'isPastReport': 'true',
         if (_selectedProkerId != null) 'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
       }, imagePaths: _selectedFiles.map((f) => f.path).toList());
@@ -374,12 +378,12 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       child: Scaffold(
         backgroundColor: AppColors.backgroundCanvas,
         appBar: AppBar(
-          title: const Text(
-            'Input Logbook Harian',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          title: Text(
+            _isPastReport ? 'Input Logbook (Masa Lampau)' : 'Input Logbook Harian',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.textPrimary,
+          backgroundColor: _isPastReport ? AppColors.warningOrange.withOpacity(0.1) : Colors.white,
+          foregroundColor: _isPastReport ? AppColors.warningOrange : AppColors.textPrimary,
           elevation: 0,
           centerTitle: true,
           bottom: PreferredSize(
@@ -395,6 +399,32 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildHeaderBanner(),
+                const SizedBox(height: 16),
+
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: SwitchListTile(
+                    title: const Text(
+                      'Mode Laporan Masa Lampau',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'Aktifkan jika laporan sudah lewat batas toleransi waktu',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    value: _isPastReport,
+                    activeColor: AppColors.warningOrange,
+                    onChanged: (val) {
+                      setState(() {
+                        _isPastReport = val;
+                      });
+                    },
+                  ),
+                ),
                 const SizedBox(height: 16),
 
                 _buildSectionCard(

@@ -1041,6 +1041,65 @@ class ApiKknRepository implements KknRepository {
       rethrow;
     }
   }
+
+  // ──────────────────────────────────────────────────────────
+  // Smart Multi-Zone Geofence
+  // ──────────────────────────────────────────────────────────
+
+  @override
+  Future<Map<String, dynamic>> syncGroupZones() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.poskoMeAllZones);
+      if (response.statusCode == 200) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      throw Exception('Gagal sinkronisasi zona kelompok');
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal sinkronisasi zona kelompok'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> addMultiPosko(Map<String, dynamic> data) async {
+    try {
+      final response = await apiClient.dio.post(ApiEndpoints.poskoMulti, data: data);
+      return response.statusCode == 201 || response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal menambahkan posko tambahan'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> updateMultiPosko(String poskoId, Map<String, dynamic> data) async {
+    try {
+      final response = await apiClient.dio.put(ApiEndpoints.poskoMultiById(poskoId), data: data);
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal mengupdate posko tambahan'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> deleteMultiPosko(String poskoId) async {
+    try {
+      final response = await apiClient.dio.delete(ApiEndpoints.poskoMultiById(poskoId));
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal menghapus posko tambahan'));
+      }
+      rethrow;
+    }
+  }
 }
 
 

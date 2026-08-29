@@ -728,11 +728,70 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       );
     }
 
+    // Kumpulkan Polygon Points
     List<LatLng> polygonPoints = [];
-    if (wilayah.tipeArea == 'POLYGON' && wilayah.polygonKoordinat != null) {
+    if (mapState.groupZone?.autoZone.isActive == true && mapState.groupZone?.autoZone.polygon != null) {
+      polygonPoints = mapState.groupZone!.autoZone.polygon!;
+    } else if (wilayah.tipeArea == 'POLYGON' && wilayah.polygonKoordinat != null) {
       polygonPoints = wilayah.polygonKoordinat!
           .map((c) => LatLng(c['lat']!, c['lng']!))
           .toList();
+    }
+
+    // Kumpulkan Posko List
+    List<CircleMarker> circleMarkers = [];
+    List<Marker> poskoMarkers = [];
+    
+    if (mapState.groupZone != null && mapState.groupZone!.poskoList.isNotEmpty) {
+      for (final posko in mapState.groupZone!.poskoList) {
+        final point = LatLng(posko.latitude, posko.longitude);
+        
+        circleMarkers.add(CircleMarker(
+          point: point,
+          radius: posko.radius.toDouble(),
+          useRadiusInMeter: true,
+          color: posko.type == 'POSKO_UTAMA' 
+              ? AppColors.primaryGreen.withValues(alpha: 0.2)
+              : Colors.blue.withValues(alpha: 0.2),
+          borderColor: posko.type == 'POSKO_UTAMA' ? AppColors.primaryGreen : Colors.blue,
+          borderStrokeWidth: 2,
+        ));
+        
+        poskoMarkers.add(Marker(
+          point: point,
+          width: 40,
+          height: 40,
+          child: Icon(
+            posko.type == 'POSKO_UTAMA' ? Icons.home_work_rounded : Icons.home,
+            color: posko.type == 'POSKO_UTAMA' ? AppColors.primaryGreen : Colors.blue,
+            size: 32,
+          ),
+        ));
+      }
+    } else {
+      // Fallback ke legacy posko jika data groupZone gagal di-load
+      if (poskoLatLng != null) {
+        if (wilayah.tipeArea == 'RADIUS' && wilayah.radiusMeters != null) {
+          circleMarkers.add(CircleMarker(
+            point: poskoLatLng,
+            radius: wilayah.radiusMeters!,
+            useRadiusInMeter: true,
+            color: AppColors.primaryGreen.withValues(alpha: 0.2),
+            borderColor: AppColors.primaryGreen,
+            borderStrokeWidth: 2,
+          ));
+        }
+        poskoMarkers.add(Marker(
+          point: poskoLatLng,
+          width: 40,
+          height: 40,
+          child: const Icon(
+            Icons.home_work_rounded,
+            color: AppColors.primaryGreen,
+            size: 32,
+          ),
+        ));
+      }
     }
 
     LatLng center = poskoLatLng ??
@@ -824,7 +883,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   subdomains: const ['a', 'b', 'c'],
                   userAgentPackageName: 'com.makerindo.berseka',
                 ),
-                if (wilayah.tipeArea == 'POLYGON' && polygonPoints.isNotEmpty)
+                if (polygonPoints.isNotEmpty)
                   PolygonLayer(
                     polygons: [
                       Polygon(
@@ -836,34 +895,13 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       ),
                     ],
                   ),
-                if (wilayah.tipeArea == 'RADIUS' &&
-                    poskoLatLng != null &&
-                    wilayah.radiusMeters != null)
+                if (circleMarkers.isNotEmpty)
                   CircleLayer(
-                    circles: [
-                      CircleMarker(
-                        point: poskoLatLng,
-                        radius: wilayah.radiusMeters!,
-                        useRadiusInMeter: true,
-                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
-                        borderColor: AppColors.primaryGreen,
-                        borderStrokeWidth: 2,
-                      ),
-                    ],
+                    circles: circleMarkers,
                   ),
                 MarkerLayer(
                   markers: [
-                    if (poskoLatLng != null)
-                      Marker(
-                        point: poskoLatLng,
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.home_work_rounded,
-                          color: AppColors.primaryGreen,
-                          size: 32,
-                        ),
-                      ),
+                    ...poskoMarkers,
                     if (locationState.currentPosition != null)
                       Marker(
                         point: LatLng(
@@ -1124,6 +1162,48 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           ],
         ),
         const SizedBox(height: 16),
+        
+        if (state.smartZoneStatus != null)
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome,
+                  color: AppColors.primaryGreen,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Smart Zone Aktif',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Terdeteksi di area: ${state.smartZoneStatus!['detectedZoneName'] ?? 'Zona KKN'}',
+                        style: TextStyle(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.8),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         if (state.outOfZoneSeconds > 0)
           Container(
             padding: const EdgeInsets.all(12),

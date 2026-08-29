@@ -173,4 +173,20 @@ abstract class KknRepository {
 
   /// POST /api/v1/kkn/panen-hasil
   Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  // ──────────────────────────────────────────────────────────
+  // Smart Multi-Zone Geofence
+  // ──────────────────────────────────────────────────────────
+  
+  /// Sync seluruh zona kelompok (Posko Utama + Multi + Polygon)
+  Future<Map<String, dynamic>> syncGroupZones();
+  
+  /// Daftar Posko Tambahan (Ketua Kelompok)
+  Future<bool> addMultiPosko(Map<String, dynamic> data);
+  
+  /// Update Posko Tambahan
+  Future<bool> updateMultiPosko(String poskoId, Map<String, dynamic> data);
+  
+  /// Hapus Posko Tambahan
+  Future<bool> deleteMultiPosko(String poskoId);
 }

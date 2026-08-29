@@ -56,6 +56,7 @@ class KknBgMessageType {
   static const autoStop = 'AUTO_STOP';
   static const outOfZoneViolation = 'OUT_OF_ZONE_VIOLATION';
   static const error = 'ERROR';
+  static const smartZoneUpdate = 'SMART_ZONE_UPDATE';
 }
 
 /// Message types untuk komunikasi UI → Background
@@ -190,6 +191,20 @@ class KknBackgroundTaskHandler extends TaskHandler {
       await _autoStop('Pengguna telah keluar (logout). Tracking dihentikan.');
       return;
     }
+    
+    // [BUGFIX] Sync API configuration from SharedPreferences after reload
+    // to ensure background isolate uses the latest values written by UI isolate
+    _authToken = authToken;
+    _apiBaseUrl = prefs.getString(KknBgPrefKeys.apiBaseUrl) ?? _apiBaseUrl;
+    _scheduleId = prefs.getString(KknBgPrefKeys.scheduleId) ?? _scheduleId;
+    
+    // [BUGFIX] Sync target location as well to avoid race conditions
+    _targetLat = prefs.getDouble(KknBgPrefKeys.targetLat) ?? _targetLat;
+    _targetLng = prefs.getDouble(KknBgPrefKeys.targetLng) ?? _targetLng;
+    _radius = prefs.getDouble(KknBgPrefKeys.targetRadius) ?? _radius;
+    _geofenceBufferMeters = prefs.getDouble(KknBgPrefKeys.geofenceBufferMeters) ?? _geofenceBufferMeters;
+    _invalidationHours = prefs.getDouble(KknBgPrefKeys.invalidationHours) ?? _invalidationHours;
+    _targetDurationMinutes = prefs.getInt(KknBgPrefKeys.targetDuration) ?? _targetDurationMinutes;
     
     // ═════════════════════════════════════════════════════════
     // CHECK 1: Batas waktu maksimal service (4 jam)
@@ -581,6 +596,15 @@ class KknBackgroundTaskHandler extends TaskHandler {
           if (activeScheduleId == null && _scheduleId != null) {
             debugPrint('[KKN-BG] Jadwal selesai di backend (auto-checkout). Menghentikan GPS.');
             _autoStop('Waktu kegiatan telah habis atau sudah di-checkout oleh sistem.');
+          }
+
+          // Smart Zone Handling
+          final smartZone = data?['smartZone'];
+          if (smartZone != null) {
+            _sendToUI({
+              'type': KknBgMessageType.smartZoneUpdate,
+              'smartZone': smartZone,
+            });
           }
         } catch (_) {}
       } else {
