@@ -42,8 +42,7 @@ export const scheduleService = {
         });
         kelompokIds = kelompokBinaan.map((k) => k.id);
       } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "DEVELOPER"].includes(userRole)) {
-        // Global viewers see everything, auto-ensure today's schedules exist
-        await scheduleService.syncDailySchedulesForToday().catch(() => {});
+        // Global viewers see everything without unnecessary write side-effects
         kelompokIds = null;
       } else if (userId) {
         // Other users (warga, rw, lurah)
@@ -165,6 +164,81 @@ export const scheduleService = {
     });
   },
 
+  cleanAllDuplicateSchedules: async () => {
+    try {
+      console.log("[scheduleService.cleanAllDuplicateSchedules] Starting duplicate schedules cleanup...");
+      // Ambil semua jadwal kegiatan posko KKN
+      const allPoskoSchedules = await prisma.schedule.findMany({
+        where: {
+          kelompokId: { not: null },
+          category: "POSKO_KKN",
+        },
+        include: {
+          attendances: {
+            select: { id: true, studentId: true },
+          },
+        },
+        orderBy: [{ createdAt: "desc" }],
+      });
+
+      // Group berdasarkan kelompokId dan tanggal (YYYY-MM-DD WIB)
+      const groupDateMap = new Map<string, typeof allPoskoSchedules>();
+      for (const s of allPoskoSchedules) {
+        if (!s.kelompokId || !s.date) continue;
+        const wibDateStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const key = `${s.kelompokId}_${wibDateStr}`;
+        if (!groupDateMap.has(key)) {
+          groupDateMap.set(key, []);
+        }
+        groupDateMap.get(key)!.push(s);
+      }
+
+      let removedDuplicatesCount = 0;
+
+      for (const [_key, list] of groupDateMap.entries()) {
+        if (list.length <= 1) continue;
+
+        // Pilih primary schedule: yang punya presensi terbanyak atau paling baru
+        list.sort((a, b) => {
+          const aCount = a.attendances?.length || 0;
+          const bCount = b.attendances?.length || 0;
+          if (bCount !== aCount) return bCount - aCount;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+        const primarySchedule = list[0];
+        const duplicates = list.slice(1);
+
+        for (const dup of duplicates) {
+          if (dup.attendances && dup.attendances.length > 0) {
+            for (const att of dup.attendances) {
+              const existingAtt = await prisma.activityAttendance.findFirst({
+                where: { scheduleId: primarySchedule.id, studentId: att.studentId },
+              });
+              if (existingAtt) {
+                await prisma.activityAttendance.delete({ where: { id: att.id } });
+              } else {
+                await prisma.activityAttendance.update({
+                  where: { id: att.id },
+                  data: { scheduleId: primarySchedule.id },
+                });
+              }
+            }
+          }
+          // Hapus jadwal duplikat
+          await prisma.schedule.delete({ where: { id: dup.id } });
+          removedDuplicatesCount++;
+        }
+      }
+
+      console.log(`[scheduleService.cleanAllDuplicateSchedules] Completed. Removed ${removedDuplicatesCount} duplicate schedules.`);
+      return { success: true, removedDuplicatesCount };
+    } catch (err: any) {
+      console.error("[scheduleService.cleanAllDuplicateSchedules] Error:", err);
+      throw err;
+    }
+  },
+
   syncDailySchedulesForToday: async (targetDateStr?: string) => {
     try {
       const now = new Date();
@@ -193,15 +267,20 @@ export const scheduleService = {
 
       let createdCount = 0;
       let existingCount = 0;
+      let cleanedDuplicatesCount = 0;
 
       for (const group of groups) {
-        // Check if schedule already exists for this group on this date
-        const existing = await prisma.schedule.findFirst({
+        // Fetch all existing schedules for this group on this date
+        const existingList = await prisma.schedule.findMany({
           where: {
             kelompokId: group.id,
             date: { gte: startOfDay, lte: endOfDay },
             isActive: true,
           },
+          include: {
+            attendances: { select: { id: true, studentId: true } },
+          },
+          orderBy: [{ createdAt: "desc" }],
         });
 
         // Determine Posko location & name
@@ -251,15 +330,49 @@ export const scheduleService = {
           }
         }
 
-        if (existing) {
+        if (existingList.length > 0) {
           existingCount++;
-          // Jika sudah ada posko resmi atau koordinat fallback berbeda dari jadwal yang tercatat, perbarui
+
+          // Urutkan: utamakan yang ada presensi, lalu yang paling baru
+          existingList.sort((a, b) => {
+            const aCount = a.attendances?.length || 0;
+            const bCount = b.attendances?.length || 0;
+            if (bCount !== aCount) return bCount - aCount;
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          });
+
+          const primarySchedule = existingList[0];
+          const duplicates = existingList.slice(1);
+
+          // Hapus duplikat dan alihkan presensinya ke primarySchedule
+          for (const dup of duplicates) {
+            if (dup.attendances && dup.attendances.length > 0) {
+              for (const att of dup.attendances) {
+                const existingAtt = await prisma.activityAttendance.findFirst({
+                  where: { scheduleId: primarySchedule.id, studentId: att.studentId },
+                });
+                if (existingAtt) {
+                  await prisma.activityAttendance.delete({ where: { id: att.id } });
+                } else {
+                  await prisma.activityAttendance.update({
+                    where: { id: att.id },
+                    data: { scheduleId: primarySchedule.id },
+                  });
+                }
+              }
+            }
+            await prisma.schedule.delete({ where: { id: dup.id } });
+            cleanedDuplicatesCount++;
+          }
+
+          // Perbarui titik koordinat dan nama jadwal utama jika berubah
           if (
-            (officialPosko && (Number(existing.latitude) !== poskoLat || Number(existing.longitude) !== poskoLng)) ||
-            (existing.location?.startsWith("Posko KKN") && (Number(existing.latitude) !== poskoLat || Number(existing.longitude) !== poskoLng))
+            Number(primarySchedule.latitude) !== poskoLat ||
+            Number(primarySchedule.longitude) !== poskoLng ||
+            primarySchedule.location !== poskoName
           ) {
             await prisma.schedule.update({
-              where: { id: existing.id },
+              where: { id: primarySchedule.id },
               data: {
                 latitude: poskoLat,
                 longitude: poskoLng,
@@ -292,7 +405,14 @@ export const scheduleService = {
         }
       }
 
-      return { success: true, date: dateStr, createdCount, existingCount, totalGroups: groups.length };
+      return {
+        success: true,
+        date: dateStr,
+        createdCount,
+        existingCount,
+        cleanedDuplicatesCount,
+        totalGroups: groups.length,
+      };
     } catch (err: any) {
       console.error("[scheduleService.syncDailySchedulesForToday] Error:", err);
       throw err;

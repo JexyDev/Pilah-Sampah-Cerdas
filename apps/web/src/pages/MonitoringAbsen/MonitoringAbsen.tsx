@@ -943,7 +943,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       });
     }
     // Urutkan jadwal terbaru (hari ini) di paling atas
-    return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const sorted = [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Deduplikasi fallback berdasarkan kelompokId + tanggal kegiatan WIB
+    const seen = new Set<string>();
+    const deduplicated: ScheduleActivity[] = [];
+    for (const s of sorted) {
+      const wibDate = s.date ? new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10) : "";
+      const key = `${s.kelompokId || "GLOBAL"}_${wibDate}_${s.category || ""}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(s);
+      }
+    }
+    return deduplicated;
   }, [schedules, selectedKelompokId, startDateFilter, endDateFilter]);
 
   const isAllTodayMode = !selectedKelompokId && selectedScheduleId === "ALL_TODAY";

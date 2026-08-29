@@ -241,11 +241,18 @@ server.on("error", (err: any) => {
 import { websocketService } from "./services/websocketService.js";
 websocketService.init(server);
 
-// Initialize Cron Scheduler Service
+// Initialize Cron Scheduler Service (Only on primary instance in PM2 Cluster Mode)
 import { cronService } from "./services/cronService.js";
 import { archiveAuditLogsCron } from "./cron/archive.cron.js";
-cronService.start();
-archiveAuditLogsCron.start();
+
+const isPrimaryWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === "0";
+if (isPrimaryWorker) {
+  console.log(`[CronService] Initializing cron scheduler on primary worker instance (${process.env.NODE_APP_INSTANCE || "single-process"})...`);
+  cronService.start();
+  archiveAuditLogsCron.start();
+} else {
+  console.log(`[CronService] Skipping cron initialization on secondary worker instance (${process.env.NODE_APP_INSTANCE}) to avoid duplicated tasks.`);
+}
 
 // Auto-migrate missing database columns on startup
 (async () => {
