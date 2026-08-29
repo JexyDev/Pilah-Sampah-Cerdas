@@ -15,6 +15,7 @@ import '../../auth/controllers/auth_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../posko/views/multi_posko_list_view.dart';
 
 class RegisterPoskoView extends ConsumerStatefulWidget {
   const RegisterPoskoView({super.key});
@@ -27,17 +28,23 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _alamatController = TextEditingController();
+  final _latitudeController = TextEditingController();
+  final _longitudeController = TextEditingController();
 
   String? _photoPath;
   LatLng? _selectedLocation;
   bool _isGettingLocation = false;
   bool _isEditMode = false;
   bool _hasTriggeredAutoGps = false;
+  bool _isUpdatingFromMap = false;
   final MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
+    _latitudeController.addListener(_onCoordinateTextChanged);
+    _longitudeController.addListener(_onCoordinateTextChanged);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final posko = ref.read(poskoKknProvider).poskoResponse?.posko;
       if (posko == null && !_hasTriggeredAutoGps) {
@@ -47,10 +54,50 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
     });
   }
 
+  void _onCoordinateTextChanged() {
+    if (_isUpdatingFromMap) return;
+
+    final lat = double.tryParse(_latitudeController.text);
+    final lng = double.tryParse(_longitudeController.text);
+
+    if (lat != null && lng != null) {
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        final newLoc = LatLng(lat, lng);
+        if (_selectedLocation == null ||
+            _selectedLocation!.latitude != lat ||
+            _selectedLocation!.longitude != lng) {
+          setState(() {
+            _selectedLocation = newLoc;
+          });
+          Future.microtask(() {
+            try {
+              _mapController.move(newLoc, 15.0);
+            } catch (_) {}
+          });
+        }
+      }
+    }
+  }
+
+  void _updateControllersFromMap(LatLng point) {
+    setState(() {
+      _selectedLocation = point;
+    });
+    
+    _isUpdatingFromMap = true;
+    _latitudeController.text = point.latitude.toStringAsFixed(6);
+    _longitudeController.text = point.longitude.toStringAsFixed(6);
+    _isUpdatingFromMap = false;
+  }
+
   @override
   void dispose() {
+    _latitudeController.removeListener(_onCoordinateTextChanged);
+    _longitudeController.removeListener(_onCoordinateTextChanged);
     _namaController.dispose();
     _alamatController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     super.dispose();
   }
 
@@ -139,10 +186,10 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
         ),
       );
 
-      setState(() {
-        _selectedLocation = LatLng(position.latitude, position.longitude);
+      _updateControllersFromMap(LatLng(position.latitude, position.longitude));
+      try {
         _mapController.move(_selectedLocation!, 15.0);
-      });
+      } catch (_) {}
     } catch (e) {
       if (mounted) {
         final errText = e.toString().replaceAll('Exception: ', '');
@@ -407,11 +454,7 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                                   _selectedLocation ??
                                   const LatLng(-6.914744, 107.609810),
                               initialZoom: 15.0,
-                              onTap: (tapPosition, point) {
-                                setState(() {
-                                  _selectedLocation = point;
-                                });
-                              },
+                              onTap: (tapPosition, point) => _updateControllersFromMap(point),
                             ),
                             children: [
                               TileLayer(
@@ -554,6 +597,28 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                             ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StyledTextField(
+                            controller: _latitudeController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                            hintText: 'Latitude',
+                            validator: (val) => (val == null || val.isEmpty) ? 'Wajib diisi' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _StyledTextField(
+                            controller: _longitudeController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                            hintText: 'Longitude',
+                            validator: (val) => (val == null || val.isEmpty) ? 'Wajib diisi' : null,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppDimensions.md),
 
@@ -986,11 +1051,14 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _isEditMode = true;
                             _namaController.text = posko.nama;
                             _alamatController.text = posko.alamat;
                             _selectedLocation = LatLng(posko.latitude, posko.longitude);
-                            _photoPath = null;
+                            _isUpdatingFromMap = true;
+                            _latitudeController.text = posko.latitude.toStringAsFixed(6);
+                            _longitudeController.text = posko.longitude.toStringAsFixed(6);
+                            _isUpdatingFromMap = false;
+                            _isEditMode = true;
                           });
                           Future.delayed(const Duration(milliseconds: 300), () {
                             _mapController.move(_selectedLocation!, 15.0);
@@ -1005,15 +1073,15 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
           ),
 
 
-          if (ref.watch(poskoKknProvider).poskoResponse?.isUserLeader == true) ...[
+          if (isKetua) ...[
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: OutlinedButton.icon(
-                icon: const Icon(Icons.edit_location_alt_rounded, size: 20),
+                icon: const Icon(Icons.add_location_alt_rounded, size: 20),
                 label: const Text(
-                  'Perbarui Data & Lokasi Posko',
+                  'Tambah Posko Baru',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -1024,13 +1092,12 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                   ),
                 ),
                 onPressed: () {
-                  setState(() {
-                    _isEditMode = true;
-                    _namaController.text = posko.nama;
-                    _alamatController.text = posko.alamat;
-                    _selectedLocation = LatLng(posko.latitude, posko.longitude);
-                    _photoPath = null;
-                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MultiPoskoListView(),
+                    ),
+                  );
                 },
               ),
             ),
@@ -1109,12 +1176,14 @@ class _StyledTextField extends StatelessWidget {
   final String hintText;
   final String? Function(String?)? validator;
   final int maxLines;
+  final TextInputType? keyboardType;
 
   const _StyledTextField({
     required this.controller,
     required this.hintText,
     this.validator,
     this.maxLines = 1,
+    this.keyboardType,
   });
 
   @override
@@ -1123,6 +1192,7 @@ class _StyledTextField extends StatelessWidget {
       controller: controller,
       maxLines: maxLines,
       validator: validator,
+      keyboardType: keyboardType,
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         hintText: hintText,
