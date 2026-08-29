@@ -110,6 +110,7 @@ export const logbookController = {
         programKerjaId: req.body.programKerjaId || undefined,
         fasilitasId: req.body.fasilitasId || undefined,
         pekanKe: req.body.pekanKe ? parseInt(req.body.pekanKe, 10) : undefined,
+        isPastReport: req.body.isPastReport,
       };
 
       const data = await logbookService.createMahasiswaLogbook(userId, userRole, payload);
@@ -368,6 +369,85 @@ export const logbookController = {
     } catch (error: any) {
       console.error("[logbookController.deleteMahasiswaLogbook] error:", error);
       res.status(400).json({ success: false, message: error.message || "Gagal menghapus logbook" });
+    }
+  },
+
+  /**
+   * Update logbook aktivitas mahasiswa (khusus Developer/Admin)
+   */
+  updateMahasiswaLogbook: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || null;
+      if (req.file) fotoBuktiUrl = `/uploads/${req.file.filename}`;
+
+      const payload = {
+        ...req.body,
+        fotoBuktiUrl: fotoBuktiUrl !== null ? fotoBuktiUrl : undefined,
+      };
+
+      const data = await logbookService.updateMahasiswaLogbook(id, payload, userId, userRole);
+      res.status(200).json({
+        success: true,
+        message: "Logbook mahasiswa berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[logbookController.updateMahasiswaLogbook] error:", error);
+      res.status(400).json({ success: false, message: error.message || "Gagal memperbarui logbook" });
+    }
+  },
+
+  /**
+   * Update logbook supervisi DPL (khusus Developer/Admin atau DPL bersangkutan)
+   */
+  updateDplLogbook: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || null;
+      if (req.file) fotoBuktiUrl = `/uploads/${req.file.filename}`;
+
+      const payload = {
+        ...req.body,
+        fotoBuktiUrl: fotoBuktiUrl !== null ? fotoBuktiUrl : undefined,
+      };
+
+      const data = await logbookService.updateDplLogbook(id, payload, userId, userRole);
+      res.status(200).json({
+        success: true,
+        message: "Logbook DPL berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[logbookController.updateDplLogbook] error:", error);
+      res.status(400).json({ success: false, message: error.message || "Gagal memperbarui logbook DPL" });
+    }
+  },
+
+  /**
+   * Menghapus logbook supervisi DPL
+   */
+  deleteDplLogbook: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+
+      const data = await logbookService.deleteDplLogbook(id, userId, userRole);
+      res.status(200).json({
+        success: true,
+        message: "Logbook DPL berhasil dihapus.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[logbookController.deleteDplLogbook] error:", error);
+      res.status(400).json({ success: false, message: error.message || "Gagal menghapus logbook DPL" });
     }
   },
 };

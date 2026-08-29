@@ -56,7 +56,7 @@ services:
       - JWT_EXPIRES_IN=24h
       - PORT=3000
       - NODE_ENV=development
-      - FRONTEND_URL=http://localhost:5173
+      - FRONTEND_URL=http://localhost:5174
     depends_on:
       postgres:
         condition: service_healthy

@@ -32,15 +32,20 @@ export class LogbookService {
     } catch {
       // fallback
     }
-    return 1; // Default 1 hari sebelumnya (H-1)
+    return 90; // Default 90 hari (lebih dari 2 bulan) sebelumnya
   }
 
   /**
    * Validasi apakah tanggal kegiatan berada dalam rentang toleransi (maksimal H-toleransi)
    */
-  async validateBackdate(activityDate: Date, userRole: string): Promise<void> {
+  async validateBackdate(activityDate: Date, userRole: string, isPastReport: boolean = false): Promise<void> {
     const isPrivileged = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
     if (isPrivileged) return; // Privileged roles tidak dibatasi
+
+    if (isPastReport) {
+      // Bypass validasi H-1 jika mahasiswa explicitly mengirimkan laporan masa lampau
+      return; 
+    }
 
     const toleranceDays = await this.getBackdateToleranceDays();
     
@@ -294,6 +299,7 @@ export class LogbookService {
       programKerjaId?: string;
       fasilitasId?: string;
       pekanKe?: number;
+      isPastReport?: string | boolean;
     }
   ) {
     if (!payload.tanggalKegiatan) throw new Error("Tanggal kegiatan wajib diisi");
@@ -309,7 +315,8 @@ export class LogbookService {
     }
 
     // 1. Validasi Batas Toleransi Input (H-1)
-    await this.validateBackdate(activityDate, userRole);
+    const pastReportFlag = payload.isPastReport === 'true' || payload.isPastReport === true;
+    await this.validateBackdate(activityDate, userRole, pastReportFlag);
 
     // 2. Ambil profil mahasiswa & kelompok
     const user = await prisma.user.findUnique({
@@ -1042,6 +1049,110 @@ export class LogbookService {
     });
 
     return { success: true, message: "Logbook aktivitas berhasil dihapus" };
+  }
+
+  /**
+   * Mengubah logbook aktivitas mahasiswa (khusus Developer/Admin)
+   */
+  async updateMahasiswaLogbook(
+    logbookId: string,
+    payload: any,
+    userId: string,
+    userRole: string
+  ) {
+    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
+    if (!isSuper) {
+      throw new Error("Akses ditolak: Hanya Developer/Admin yang dapat mengubah logbook mahasiswa.");
+    }
+
+    const logbook = await prisma.logbookKkn.findUnique({
+      where: { id: logbookId },
+    });
+
+    if (!logbook) throw new Error("Logbook tidak ditemukan");
+
+    const dataToUpdate: any = {};
+    if (payload.tanggalKegiatan) dataToUpdate.tanggalKegiatan = new Date(payload.tanggalKegiatan);
+    if (payload.waktuMulai !== undefined) dataToUpdate.waktuMulai = payload.waktuMulai;
+    if (payload.waktuSelesai !== undefined) dataToUpdate.waktuSelesai = payload.waktuSelesai;
+    if (payload.tempat) dataToUpdate.tempat = payload.tempat;
+    if (payload.deskripsi) dataToUpdate.deskripsi = payload.deskripsi;
+    if (payload.fotoBuktiUrl !== undefined) dataToUpdate.fotoBuktiUrl = payload.fotoBuktiUrl;
+    if (payload.platformOs) dataToUpdate.platformOs = payload.platformOs;
+    if (payload.tipeAktivitas) dataToUpdate.tipeAktivitas = payload.tipeAktivitas;
+    if (payload.programKerjaId !== undefined) dataToUpdate.programKerjaId = payload.programKerjaId;
+    if (payload.fasilitasId !== undefined) dataToUpdate.fasilitasId = payload.fasilitasId;
+    if (payload.pekanKe) dataToUpdate.pekanKe = Number(payload.pekanKe);
+    if (payload.statusApproval) dataToUpdate.statusApproval = payload.statusApproval;
+
+    const updated = await prisma.logbookKkn.update({
+      where: { id: logbookId },
+      data: dataToUpdate,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Mengubah logbook supervisi DPL (khusus Developer/Admin atau DPL bersangkutan)
+   */
+  async updateDplLogbook(
+    logbookId: string,
+    payload: any,
+    userId: string,
+    userRole: string
+  ) {
+    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
+    const logbook = await prisma.logbookDpl.findUnique({
+      where: { id: logbookId },
+    });
+
+    if (!logbook) throw new Error("Logbook DPL tidak ditemukan");
+
+    if (!isSuper && logbook.dplId !== userId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengubah logbook ini.");
+    }
+
+    const dataToUpdate: any = {};
+    if (payload.tanggal) dataToUpdate.tanggal = new Date(payload.tanggal);
+    if (payload.pekanKe) dataToUpdate.pekanKe = Number(payload.pekanKe);
+    if (payload.tempat) dataToUpdate.tempat = payload.tempat;
+    if (payload.deskripsi) dataToUpdate.deskripsi = payload.deskripsi;
+    if (payload.arahanEvaluasi !== undefined) dataToUpdate.arahanEvaluasi = payload.arahanEvaluasi;
+    if (payload.fotoBuktiUrl !== undefined) dataToUpdate.fotoBuktiUrl = payload.fotoBuktiUrl;
+
+    const updated = await prisma.logbookDpl.update({
+      where: { id: logbookId },
+      data: dataToUpdate,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Menghapus logbook supervisi DPL (khusus Developer/Admin atau DPL bersangkutan)
+   */
+  async deleteDplLogbook(
+    logbookId: string,
+    userId: string,
+    userRole: string
+  ) {
+    const isSuper = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole.toUpperCase());
+    const logbook = await prisma.logbookDpl.findUnique({
+      where: { id: logbookId },
+    });
+
+    if (!logbook) throw new Error("Logbook DPL tidak ditemukan");
+
+    if (!isSuper && logbook.dplId !== userId) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk menghapus logbook ini.");
+    }
+
+    await prisma.logbookDpl.delete({
+      where: { id: logbookId },
+    });
+
+    return { success: true, message: "Logbook DPL berhasil dihapus" };
   }
 }
 

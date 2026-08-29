@@ -66,6 +66,14 @@ router.delete(
   logbookController.deleteMahasiswaLogbook
 );
 
+// Update Logbook Aktivitas Mahasiswa (Developer/Admin)
+router.patch(
+  "/mahasiswa/:id",
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
 /**
  * ─────────────────────────────────────────────
  * LOGBOOK MONITORING MINGGUAN DPL
@@ -85,6 +93,21 @@ router.post(
   roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER"]),
   uploadPemanfaatanImage,
   logbookController.createDplLogbook
+);
+
+// Update Logbook Supervisi DPL (Developer/Admin atau DPL)
+router.patch(
+  "/dpl/:id",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  uploadPemanfaatanImage,
+  logbookController.updateDplLogbook
+);
+
+// Hapus Logbook Supervisi DPL (Developer/Admin atau DPL)
+router.delete(
+  "/dpl/:id",
+  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  logbookController.deleteDplLogbook
 );
 
 /**
