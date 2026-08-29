@@ -382,7 +382,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
             _isPastReport ? 'Input Logbook (Masa Lampau)' : 'Input Logbook Harian',
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          backgroundColor: _isPastReport ? AppColors.warningOrange.withOpacity(0.1) : Colors.white,
+          backgroundColor: _isPastReport ? AppColors.warningOrange.withValues(alpha: 0.1) : Colors.white,
           foregroundColor: _isPastReport ? AppColors.warningOrange : AppColors.textPrimary,
           elevation: 0,
           centerTitle: true,
@@ -417,7 +417,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                       style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
                     value: _isPastReport,
-                    activeColor: AppColors.warningOrange,
+                    activeThumbColor: AppColors.warningOrange,
                     onChanged: (val) {
                       setState(() {
                         _isPastReport = val;

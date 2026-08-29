@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/wilayah_kelompok_model.dart';
 import '../../../data/providers/repository_providers.dart';
@@ -56,7 +57,7 @@ class KknMapController extends StateNotifier<KknMapState> {
       } catch (e) {
         // If syncing group zones fails, we don't necessarily want to block the map from loading.
         // It might be unavailable or have network issues.
-        print('[KknMapController] Failed to sync group zones: $e');
+        debugPrint('[KknMapController] Failed to sync group zones: $e');
       }
 
       if (data != null) {
