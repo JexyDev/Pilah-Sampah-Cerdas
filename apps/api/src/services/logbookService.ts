@@ -32,7 +32,7 @@ export class LogbookService {
     } catch {
       // fallback
     }
-    return 90; // Default 90 hari (lebih dari 2 bulan) sebelumnya
+    return 90; // Default 90 hari toleransi backdate
   }
 
   /**
@@ -281,7 +281,7 @@ export class LogbookService {
   }
 
   /**
-   * Membuat logbook aktivitas baru oleh Mahasiswa / Perwakilan Kelompok
+   * Membuat logbook aktivitas baru oleh Mahasiswa / Perwakilan Kelompok / Developer
    */
   async createMahasiswaLogbook(
     userId: string,
@@ -300,6 +300,10 @@ export class LogbookService {
       fasilitasId?: string;
       pekanKe?: number;
       isPastReport?: string | boolean;
+      penulisId?: string;
+      kelompokId?: string;
+      statusApproval?: StatusLogbookKkn;
+      catatanDpl?: string;
     }
   ) {
     if (!payload.tanggalKegiatan) throw new Error("Tanggal kegiatan wajib diisi");
@@ -314,13 +318,17 @@ export class LogbookService {
       throw new Error("Format tanggal kegiatan tidak valid");
     }
 
-    // 1. Validasi Batas Toleransi Input (H-1)
+    const isDeveloper = userRole.toUpperCase() === "DEVELOPER" || userRole.toUpperCase() === "SUPER_USER";
+
+    // 1. Validasi Batas Toleransi Input (Bypass jika Developer atau isPastReport)
     const pastReportFlag = payload.isPastReport === 'true' || payload.isPastReport === true;
     await this.validateBackdate(activityDate, userRole, pastReportFlag);
 
     // 2. Ambil profil mahasiswa & kelompok
+    const targetUserId = (isDeveloper && payload.penulisId) ? payload.penulisId : userId;
+
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: targetUserId },
       include: {
         studentProfile: {
           include: {
@@ -335,31 +343,52 @@ export class LogbookService {
       },
     });
 
-    if (!user) throw new Error("User tidak ditemukan");
+    if (!user) throw new Error("Data mahasiswa tidak ditemukan.");
     const student = user.studentProfile;
-    if (!student || !student.kelompokId || !student.kelompok) {
-      throw new Error("Anda belum terdaftar dalam kelompok KKN.");
+    
+    let targetKelompokId = payload.kelompokId || student?.kelompokId;
+    let targetDplId = student?.kelompok?.dplId;
+    let kelompokName = student?.kelompok?.name || "Kelompok KKN";
+
+    if (payload.kelompokId && payload.kelompokId !== student?.kelompokId) {
+      const specifiedKelompok = await prisma.kelompokKkn.findUnique({
+        where: { id: payload.kelompokId },
+        include: { dpl: true },
+      });
+      if (specifiedKelompok) {
+        targetKelompokId = specifiedKelompok.id;
+        targetDplId = specifiedKelompok.dplId;
+        kelompokName = specifiedKelompok.name;
+      }
     }
 
-    const kelompok = student.kelompok;
+    if (!targetKelompokId) {
+      throw new Error("Mahasiswa ini belum terdaftar dalam kelompok KKN. Silakan tentukan kelompok KKN.");
+    }
 
     const pekanKe = payload.pekanKe && payload.pekanKe >= 1 && payload.pekanKe <= 4
       ? payload.pekanKe
-      : this.calculatePekanKe(activityDate, student.startDate);
+      : this.calculatePekanKe(activityDate, student?.startDate);
 
-    // 3. Status Approval — Langsung ke DPL (Skip ketua sesuai keputusan rapat 27 Agustus 2026)
-    // Semua mahasiswa (ketua maupun anggota) langsung MENUNGGU_VERIFIKASI_DPL
-    const statusApproval: StatusLogbookKkn = StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
-    const isUserKetua = Boolean(student.isKetua);
+    // 3. Status Approval
+    // Jika developer menginput manual, default langsung DISETUJUI_DPL
+    let statusApproval: StatusLogbookKkn = isDeveloper
+      ? (payload.statusApproval || StatusLogbookKkn.DISETUJUI_DPL)
+      : StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
 
-    // Auto-set disetujuiKetua fields agar data terstruktur (ketua-nya adalah si penulis sendiri jika ketua, atau null)
-    const disetujuiKetuaOlehId: string | null = isUserKetua ? userId : null;
-    const disetujuiKetuaPada: Date | null = isUserKetua ? new Date() : null;
+    const isUserKetua = Boolean(student?.isKetua);
+    const disetujuiKetuaOlehId: string | null = isUserKetua ? targetUserId : (isDeveloper ? userId : null);
+    const disetujuiKetuaPada: Date | null = (isUserKetua || isDeveloper) ? new Date() : null;
+
+    const diverifikasiDplOlehId: string | null = (statusApproval === StatusLogbookKkn.DISETUJUI_DPL)
+      ? (targetDplId || (isDeveloper ? userId : null))
+      : null;
+    const diverifikasiDplPada: Date | null = (statusApproval === StatusLogbookKkn.DISETUJUI_DPL) ? new Date() : null;
 
     const logbook = await prisma.logbookKkn.create({
       data: {
-        kelompokId: kelompok.id,
-        penulisId: userId,
+        kelompokId: targetKelompokId,
+        penulisId: targetUserId,
         tanggalKegiatan: activityDate,
         waktuMulai: payload.waktuMulai || null,
         waktuSelesai: payload.waktuSelesai || null,
@@ -367,7 +396,7 @@ export class LogbookService {
         deskripsi: payload.deskripsi.trim(),
         fotoBuktiUrl: payload.fotoBuktiUrl || null,
         attachmentUrls: payload.attachmentUrls || (payload.fotoBuktiUrl ? [payload.fotoBuktiUrl] : null),
-        platformOs: payload.platformOs || "ANDROID",
+        platformOs: payload.platformOs || (isDeveloper ? "DEVELOPER_OVERRIDE" : "ANDROID"),
         tipeAktivitas: payload.tipeAktivitas || TipeAktivitasKkn.KELOMPOK,
         programKerjaId: payload.programKerjaId || null,
         fasilitasId: payload.fasilitasId || null,
@@ -375,6 +404,9 @@ export class LogbookService {
         statusApproval,
         disetujuiKetuaOlehId,
         disetujuiKetuaPada,
+        diverifikasiDplOlehId,
+        diverifikasiDplPada,
+        catatanDpl: payload.catatanDpl || (isDeveloper ? "Diinput manual & disetujui langsung oleh Developer" : null),
       },
       include: {
         penulis: { select: { name: true } },
@@ -382,13 +414,34 @@ export class LogbookService {
       },
     });
 
-    // 4. Notifikasi Langsung ke DPL (tanpa melalui ketua)
-    if (kelompok.dplId) {
+    // Berikan poin gamifikasi jika langsung disetujui DPL
+    if (statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
+      await prisma.pointHistory.create({
+        data: {
+          userId: targetUserId,
+          points: 15,
+          description: `Logbook Terverifikasi: Pekan ${pekanKe}`,
+          kategori: "LOGBOOK_TERVERIFIKASI",
+        },
+      }).catch(() => {});
+    }
+
+    // 4. Notifikasi
+    if (!isDeveloper && targetDplId) {
       await prisma.notification.create({
         data: {
-          userId: kelompok.dplId,
+          userId: targetDplId,
           title: "Logbook Aktivitas Baru — Perlu Verifikasi",
-          message: `${user.name} (${kelompok.name}) mengajukan logbook aktivitas untuk pekan ke-${pekanKe}: "${payload.deskripsi.slice(0, 60)}...". Silakan tinjau dan verifikasi.`,
+          message: `${user.name} (${kelompokName}) mengajukan logbook aktivitas untuk pekan ke-${pekanKe}: "${payload.deskripsi.slice(0, 60)}...". Silakan tinjau dan verifikasi.`,
+          isRead: false,
+        },
+      }).catch(() => {});
+    } else if (isDeveloper) {
+      await prisma.notification.create({
+        data: {
+          userId: targetUserId,
+          title: "Logbook Aktivitas Telah Diinput oleh Tim Developer",
+          message: `Logbook aktivitas Anda tanggal ${activityDate.toISOString().split("T")[0]} telah berhasil diinput dan disetujui oleh Developer.`,
           isRead: false,
         },
       }).catch(() => {});
@@ -397,10 +450,10 @@ export class LogbookService {
     // Record into system history / audit trail
     auditTrailService.recordLogbookSubmit({
       logbookId: logbook.id,
-      studentId: userId,
+      studentId: targetUserId,
       studentName: user.name,
-      nim: student.nim,
-      kelompokName: kelompok.name,
+      nim: student?.nim,
+      kelompokName,
       judulKegiatan: payload.deskripsi.slice(0, 80),
       tipeAktivitas: logbook.tipeAktivitas,
       pekanKe,
@@ -409,6 +462,98 @@ export class LogbookService {
     }).catch((err) => console.warn("[Audit] Logbook submit log error:", err));
 
     return logbook;
+  }
+
+  /**
+   * Mengupdate / Mengoreksi logbook aktivitas mahasiswa (Khusus Developer / DPL / Penulis)
+   */
+  async updateMahasiswaLogbook(
+    logbookId: string,
+    userId: string,
+    userRole: string,
+    payload: {
+      tanggalKegiatan?: string;
+      waktuMulai?: string;
+      waktuSelesai?: string;
+      tempat?: string;
+      deskripsi?: string;
+      fotoBuktiUrl?: string | null;
+      attachmentUrls?: string[];
+      tipeAktivitas?: TipeAktivitasKkn;
+      programKerjaId?: string | null;
+      fasilitasId?: string | null;
+      pekanKe?: number;
+      statusApproval?: StatusLogbookKkn;
+      penulisId?: string;
+      kelompokId?: string;
+      catatanKetua?: string | null;
+      catatanDpl?: string | null;
+    }
+  ) {
+    const existing = await prisma.logbookKkn.findUnique({
+      where: { id: logbookId },
+      include: { kelompok: true, penulis: true },
+    });
+
+    if (!existing) throw new Error("Logbook tidak ditemukan");
+
+    const isDeveloper = userRole.toUpperCase() === "DEVELOPER" || userRole.toUpperCase() === "SUPER_USER";
+    const isAssignedDpl = existing.kelompok.dplId === userId;
+    const isAuthor = existing.penulisId === userId;
+
+    if (!isDeveloper && !isAssignedDpl && !isAuthor) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengedit logbook ini.");
+    }
+
+    const updateData: any = {};
+    if (payload.tanggalKegiatan) {
+      const actDate = new Date(payload.tanggalKegiatan);
+      if (!isNaN(actDate.getTime())) {
+        updateData.tanggalKegiatan = actDate;
+      }
+    }
+    if (payload.waktuMulai !== undefined) updateData.waktuMulai = payload.waktuMulai || null;
+    if (payload.waktuSelesai !== undefined) updateData.waktuSelesai = payload.waktuSelesai || null;
+    if (payload.tempat !== undefined) updateData.tempat = payload.tempat.trim();
+    if (payload.deskripsi !== undefined) updateData.deskripsi = payload.deskripsi.trim();
+    if (payload.fotoBuktiUrl !== undefined && payload.fotoBuktiUrl !== null && payload.fotoBuktiUrl !== "") {
+      updateData.fotoBuktiUrl = payload.fotoBuktiUrl;
+    }
+    if (payload.attachmentUrls !== undefined && payload.attachmentUrls.length > 0) {
+      updateData.attachmentUrls = payload.attachmentUrls;
+    }
+    if (payload.tipeAktivitas) updateData.tipeAktivitas = payload.tipeAktivitas;
+    if (payload.pekanKe !== undefined) updateData.pekanKe = Number(payload.pekanKe);
+    if (payload.statusApproval) {
+      updateData.statusApproval = payload.statusApproval;
+      if (payload.statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
+        updateData.diverifikasiDplPada = new Date();
+        if (!existing.diverifikasiDplOlehId) {
+          updateData.diverifikasiDplOlehId = existing.kelompok.dplId || (isDeveloper ? userId : null);
+        }
+      }
+    }
+    if (payload.programKerjaId !== undefined) updateData.programKerjaId = payload.programKerjaId || null;
+    if (payload.fasilitasId !== undefined) updateData.fasilitasId = payload.fasilitasId || null;
+    if (payload.catatanKetua !== undefined) updateData.catatanKetua = payload.catatanKetua;
+    if (payload.catatanDpl !== undefined) updateData.catatanDpl = payload.catatanDpl;
+    
+    // Khusus DEVELOPER: bisa memindahkan penulis atau kelompok jika salah input
+    if (isDeveloper) {
+      if (payload.penulisId) updateData.penulisId = payload.penulisId;
+      if (payload.kelompokId) updateData.kelompokId = payload.kelompokId;
+    }
+
+    const updated = await prisma.logbookKkn.update({
+      where: { id: logbookId },
+      data: updateData,
+      include: {
+        penulis: { select: { name: true } },
+        kelompok: { select: { name: true } },
+      },
+    });
+
+    return updated;
   }
 
   /**

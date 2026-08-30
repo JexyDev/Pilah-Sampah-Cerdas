@@ -54,7 +54,7 @@ export const KurasiLandingPage: React.FC = () => {
     date: new Date().toISOString().slice(0, 10),
     location: "Kecamatan Coblong, Kota Bandung",
     category: "Edukasi Pemilahan",
-    imageUrl: "/image/activity-1.png",
+    imageUrl: "/image/activity-1.webp",
     description: "",
     sdgTags: ["#3", "#11"],
     isPublished: true,
@@ -68,10 +68,10 @@ export const KurasiLandingPage: React.FC = () => {
   const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
 
   const presetImages = [
-    { label: "Edukasi & Sosialisasi", url: "/image/activity-1.png" },
-    { label: "Kompos & Maggot BSF", url: "/image/activity-2.png" },
-    { label: "Aksi Bersih Sungai", url: "/image/activity-3.png" },
-    { label: "Aksi Lapangan Mahasiswa", url: "/image/landingpage.png" },
+    { label: "Edukasi & Sosialisasi", url: "/image/activity-1.webp" },
+    { label: "Kompos & Maggot BSF", url: "/image/activity-2.webp" },
+    { label: "Aksi Bersih Sungai", url: "/image/activity-3.webp" },
+    { label: "Aksi Lapangan Mahasiswa", url: "/image/landingpage.webp" },
   ];
 
   const categoryOptions = [

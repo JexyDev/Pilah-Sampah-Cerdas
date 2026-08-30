@@ -577,6 +577,7 @@ model StudentLocation {
   recordedAt DateTime @default(now()) @map("direkam_pada")
   student    User     @relation("StudentLocations", fields: [studentId], references: [id], onDelete: Cascade)
 
+  @@index([studentId, recordedAt(sort: Desc)])
   @@index([recordedAt])
   @@map("lokasi_mahasiswa")
 }

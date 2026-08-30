@@ -27,6 +27,13 @@ import {
 } from "../../services/penilaianKknApiService";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import {
+  formatPersonName,
+  formatKelompokName,
+  formatWilayahName,
+  formatProdiName,
+} from "../../utils/textFormatter";
+import { sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
 
 // 6 Aspek Akademik DPL (Total Bobot 100%)
 const ASPEK_DPL_CONFIG = [
@@ -196,13 +203,13 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen]);
 
-  // Unique Kelompok options
+  // Unique Kelompok options (Sorted naturally)
   const uniqueKelompokList = useMemo(() => {
     const setK = new Set<string>();
     students.forEach((s) => {
       if (s.kelompok && s.kelompok !== "-") setK.add(s.kelompok);
     });
-    return Array.from(setK);
+    return sortKelompokList(Array.from(setK), (k) => k);
   }, [students]);
 
   // Statistics KPI Summary
@@ -227,9 +234,9 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
     };
   }, [students]);
 
-  // Filtered Students
+  // Filtered Students with Natural Roster Sorting
   const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
+    const filtered = students.filter((s) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -248,6 +255,12 @@ export const PenilaianKknMahasiswaPage: React.FC = () => {
       }
 
       return matchesSearch && matchesKelompok && matchesStatus;
+    });
+
+    return sortStudentsRoster(filtered, {
+      getKelompok: (s) => s.kelompok,
+      getName: (s) => s.nama,
+      getNim: (s) => s.nim,
     });
   }, [students, searchQuery, filterKelompok, filterStatus]);
 

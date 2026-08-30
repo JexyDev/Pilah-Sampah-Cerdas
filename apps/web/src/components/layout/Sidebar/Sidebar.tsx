@@ -28,6 +28,7 @@ import {
   Globe,
   Coins,
   Radio,
+  BookOpen,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -184,6 +185,14 @@ const checkRouteActive = (
 
     const inspeksiZonaAliases = ["/developer/inspeksi-zona", "/inspeksi-zona", "/monitoring-zona"];
     if (inspeksiZonaAliases.includes(tPath) && inspeksiZonaAliases.includes(cPath)) return true;
+
+    const kelolaLogbookAliases = [
+      "/developer/kelola-logbook",
+      "/developer/crud-logbook",
+      "/developer/logbook",
+      "/master-data/crud-logbook",
+    ];
+    if (kelolaLogbookAliases.includes(tPath) && kelolaLogbookAliases.includes(cPath)) return true;
 
     return false;
   };
@@ -1257,6 +1266,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: UserIcon,
           label: "Pengguna Daring",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/developer/kelola-logbook",
+          icon: BookOpen,
+          label: "CRUD Logbook Mahasiswa",
+          allowed: ["DEVELOPER"] as UserRole[],
         },
         {
           to: "/developer/inspeksi-zona",

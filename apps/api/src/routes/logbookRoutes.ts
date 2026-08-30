@@ -59,10 +59,18 @@ router.post(
   logbookController.batchVerifikasiByDpl
 );
 
-// Hapus Logbook Aktivitas Mahasiswa (DPL, Super User, Penulis)
+// Update / Koreksi Logbook Aktivitas Mahasiswa (Developer, DPL, Super User)
+router.put(
+  "/mahasiswa/:id",
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
+// Hapus Logbook Aktivitas Mahasiswa (Developer, Super User, DPL, Penulis)
 router.delete(
   "/mahasiswa/:id",
-  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "MAHASISWA_KKN"]),
+  roleMiddleware(["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "MAHASISWA_KKN"]),
   logbookController.deleteMahasiswaLogbook
 );
 
