@@ -277,11 +277,11 @@ const ManajemenPengguna: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError("");
       const params: any = {};
       if (searchQuery) params.search = searchQuery;
       if (selectedRole !== "Semua") params.roleName = selectedRole;
       if (selectedStatus !== "Semua") params.status = selectedStatus;
-
 
       const response = await api.get("/users", { params });
       let dataUsers = response.data.data || [];
@@ -296,8 +296,9 @@ const ManajemenPengguna: React.FC = () => {
       }
 
       setUsers(dataUsers);
-    } catch (err) {
-      setError("Gagal memuat data pengguna dari server.");
+    } catch (err: any) {
+      console.error("[ManajemenPengguna] fetchUsers error:", err);
+      setError(err?.response?.data?.message || "Gagal memuat data pengguna dari server.");
     } finally {
       setLoading(false);
     }

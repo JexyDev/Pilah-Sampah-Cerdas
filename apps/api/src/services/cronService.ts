@@ -79,6 +79,8 @@ export class CronService {
     try {
       const now = new Date();
       const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
       const deletedOtp = await prisma.otpCode.deleteMany({
         where: {
           OR: [
@@ -92,7 +94,15 @@ export class CronService {
           expiresAt: { lt: now },
         },
       });
-      console.log(`[CronService] Cleanup completed: ${deletedOtp.count} OTPs, ${deletedTokens.count} tokens purged.`);
+      const deletedLocations = await prisma.studentLocation.deleteMany({
+        where: {
+          recordedAt: { lt: sevenDaysAgo },
+        },
+      });
+
+      console.log(
+        `[CronService] Cleanup completed: ${deletedOtp.count} OTPs, ${deletedTokens.count} tokens, ${deletedLocations.count} stale GPS logs purged.`
+      );
     } catch (e) {
       console.error("[CronService] cleanupStaleData error:", e);
     }

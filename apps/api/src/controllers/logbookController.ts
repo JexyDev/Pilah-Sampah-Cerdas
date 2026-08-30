@@ -105,23 +105,97 @@ export const logbookController = {
         deskripsi: req.body.deskripsi,
         fotoBuktiUrl: fotoBuktiUrl || null,
         attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : (fotoBuktiUrl ? [fotoBuktiUrl] : undefined),
-        platformOs: req.body.platformOs || "ANDROID",
+        platformOs: req.body.platformOs || (userRole === "DEVELOPER" ? "DEVELOPER_OVERRIDE" : "ANDROID"),
         tipeAktivitas: req.body.tipeAktivitas,
         programKerjaId: req.body.programKerjaId || undefined,
         fasilitasId: req.body.fasilitasId || undefined,
         pekanKe: req.body.pekanKe ? parseInt(req.body.pekanKe, 10) : undefined,
+        penulisId: req.body.penulisId || req.body.targetUserId || req.body.userId,
+        kelompokId: req.body.kelompokId || undefined,
+        statusApproval: req.body.statusApproval || undefined,
+        catatanDpl: req.body.catatanDpl || undefined,
       };
 
       const data = await logbookService.createMahasiswaLogbook(userId, userRole, payload);
 
       res.status(201).json({
         success: true,
-        message: "Logbook aktivitas berhasil disimpan dan diajukan untuk proses persetujuan.",
+        message: userRole === "DEVELOPER"
+          ? "Logbook aktivitas berhasil diinput manual & disetujui untuk mahasiswa."
+          : "Logbook aktivitas berhasil disimpan dan diajukan untuk proses persetujuan.",
         data,
       });
     } catch (error: any) {
       console.error("[logbookController.createMahasiswaLogbook] error:", error);
       res.status(400).json({ success: false, message: error.message || "Gagal menyimpan logbook" });
+    }
+  },
+
+  /**
+   * Mengupdate / Koreksi data logbook mahasiswa (Khusus Developer / DPL)
+   */
+  updateMahasiswaLogbook: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+
+      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl || undefined;
+      const uploadedFileUrls: string[] = [];
+
+      if (req.file) {
+        fotoBuktiUrl = `/uploads/${req.file.filename}`;
+        uploadedFileUrls.push(fotoBuktiUrl);
+      } else if (req.files) {
+        if (Array.isArray(req.files)) {
+          for (const f of req.files) {
+            if (f && f.filename) uploadedFileUrls.push(`/uploads/${f.filename}`);
+          }
+        } else {
+          const filesObj = req.files as { [fieldname: string]: any[] };
+          for (const key of Object.keys(filesObj)) {
+            const arr = filesObj[key];
+            if (Array.isArray(arr)) {
+              for (const f of arr) {
+                if (f && f.filename) uploadedFileUrls.push(`/uploads/${f.filename}`);
+              }
+            }
+          }
+        }
+        if (uploadedFileUrls.length > 0 && !fotoBuktiUrl) {
+          fotoBuktiUrl = uploadedFileUrls[0];
+        }
+      }
+
+      const payload = {
+        tanggalKegiatan: req.body.tanggalKegiatan || req.body.tanggal,
+        waktuMulai: req.body.waktuMulai,
+        waktuSelesai: req.body.waktuSelesai,
+        tempat: req.body.tempat,
+        deskripsi: req.body.deskripsi,
+        fotoBuktiUrl: fotoBuktiUrl || undefined,
+        attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : (fotoBuktiUrl ? [fotoBuktiUrl] : undefined),
+        tipeAktivitas: req.body.tipeAktivitas,
+        programKerjaId: req.body.programKerjaId,
+        fasilitasId: req.body.fasilitasId,
+        pekanKe: req.body.pekanKe ? parseInt(req.body.pekanKe, 10) : undefined,
+        statusApproval: req.body.statusApproval,
+        penulisId: req.body.penulisId || req.body.targetUserId,
+        kelompokId: req.body.kelompokId,
+        catatanKetua: req.body.catatanKetua,
+        catatanDpl: req.body.catatanDpl,
+      };
+
+      const data = await logbookService.updateMahasiswaLogbook(id, userId, userRole, payload);
+
+      res.status(200).json({
+        success: true,
+        message: "Logbook aktivitas berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[logbookController.updateMahasiswaLogbook] error:", error);
+      res.status(400).json({ success: false, message: error.message || "Gagal memperbarui logbook" });
     }
   },
 

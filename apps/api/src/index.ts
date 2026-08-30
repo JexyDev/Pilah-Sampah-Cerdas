@@ -117,18 +117,26 @@ app.use("/api", (req, res, next) => {
 
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
-// Statically serve uploads and downloads folders with multi-directory fallback
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/api/uploads")));
-app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
-app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads")));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/web/public/uploads")));
 
-app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads")));
-app.use("/downloads", express.static(path.resolve(process.cwd(), "apps/api/uploads")));
-app.use("/downloads", express.static(path.resolve(__dirname, "../uploads")));
-app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads")));
+const staticCacheOptions = {
+  maxAge: process.env.NODE_ENV === "production" ? "7d" : "1h",
+  immutable: true,
+  etag: true,
+  lastModified: true,
+};
+
+// Statically serve uploads and downloads folders with multi-directory fallback
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions));
+
+app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
+app.use("/downloads", express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions));
+app.use("/downloads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
+app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
 
 // In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
@@ -544,6 +552,7 @@ if (isPrimaryWorker) {
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
       'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
+      'CREATE INDEX IF NOT EXISTS "lokasi_mahasiswa_id_mahasiswa_direkam_pada_idx" ON "lokasi_mahasiswa"("id_mahasiswa", "direkam_pada" DESC);',
     ];
 
     await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));
