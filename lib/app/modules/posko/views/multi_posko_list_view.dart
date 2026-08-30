@@ -4,10 +4,8 @@ import '../../../core/values/app_colors.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../mahasiswa/controllers/kkn_map_controller.dart';
 import '../../mahasiswa/controllers/kelompok_kkn_controller.dart';
-import '../../../data/models/group_zone_models.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import 'multi_posko_form_view.dart';
-import '../../../data/providers/repository_providers.dart';
 
 class MultiPoskoListView extends ConsumerWidget {
   const MultiPoskoListView({super.key});
@@ -23,64 +21,113 @@ class MultiPoskoListView extends ConsumerWidget {
     if (user != null && kelompokData != null) {
       final me = kelompokData.members.firstWhere(
         (m) => m.userId == user.id || m.nim == user.nim,
-        orElse: () => const KelompokMemberData(userId: '', nim: '', name: '', jurusan: '', fakultas: '', individualPoints: 0, isLeader: false, statusPenugasanRw: ''),
+        orElse: () => const KelompokMemberData(
+          userId: '',
+          nim: '',
+          name: '',
+          jurusan: '',
+          fakultas: '',
+          individualPoints: 0,
+          isLeader: false,
+          statusPenugasanRw: '',
+        ),
       );
       isKetua = me.isLeader;
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.backgroundCanvas,
       appBar: AppBar(
-        title: const Text('Daftar Posko KKN',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Daftar Posko KKN',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: AppColors.textPrimary,
+          ),
+        ),
         backgroundColor: Colors.white,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
+        shadowColor: Colors.black12,
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              color: AppColors.textPrimary,
+            ),
+            tooltip: 'Perbarui Data Posko',
             onPressed: () {
               ref.read(kknMapProvider.notifier).fetchWilayahKelompok();
             },
-          )
+          ),
         ],
       ),
       floatingActionButton: isKetua
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const MultiPoskoFormView(),
+          ? SizedBox(
+              height: 44,
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MultiPoskoFormView(),
+                    ),
+                  ).then((_) {
+                    ref.read(kknMapProvider.notifier).fetchWilayahKelompok();
+                  });
+                },
+                backgroundColor: AppColors.primaryGreen,
+                elevation: 2,
+                icon: const Icon(
+                  Icons.add_rounded,
+                  size: 20,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Tambah Posko',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                ).then((_) {
-                  ref.read(kknMapProvider.notifier).fetchWilayahKelompok();
-                });
-              },
-              backgroundColor: AppColors.primaryGreen,
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Tambah Posko', style: TextStyle(color: Colors.white)),
+                ),
+                extendedPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
             )
           : null,
       body: _buildBody(context, ref, mapState, isKetua),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, KknMapState state, bool isKetua) {
+  Widget _buildBody(
+    BuildContext context,
+    WidgetRef ref,
+    KknMapState state,
+    bool isKetua,
+  ) {
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGreen));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryGreen),
+      );
     }
 
     if (state.error != null) {
       return Center(
-        child: Text('Error: ${state.error}', style: const TextStyle(color: AppColors.dangerRed)),
+        child: Text(
+          'Error: ${state.error}',
+          style: const TextStyle(color: AppColors.dangerRed),
+        ),
       );
     }
 
     final groupZone = state.groupZone;
     if (groupZone == null || groupZone.poskoList.isEmpty) {
       return const Center(
-        child: Text('Belum ada data posko', style: TextStyle(color: AppColors.textSecondary)),
+        child: Text(
+          'Belum ada data posko',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
       );
     }
 
@@ -91,10 +138,20 @@ class MultiPoskoListView extends ConsumerWidget {
         final posko = groupZone.poskoList[index];
         final isUtama = posko.type == 'POSKO_UTAMA';
 
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -115,7 +172,10 @@ class MultiPoskoListView extends ConsumerWidget {
                     ),
                     if (isUtama)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primaryGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -130,98 +190,127 @@ class MultiPoskoListView extends ConsumerWidget {
                         ),
                       )
                     else if (isKetua)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MultiPoskoFormView(posko: posko),
-                                ),
-                              ).then((_) {
-                                ref.read(kknMapProvider.notifier).fetchWilayahKelompok();
-                              });
-                            },
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MultiPoskoFormView(posko: posko),
+                            ),
+                          ).then((_) {
+                            ref
+                                .read(kknMapProvider.notifier)
+                                .fetchWilayahKelompok();
+                          });
+                        },
+                        // icon: const Icon(Icons.edit_rounded, size: 16),
+                        label: const Text(
+                          'Edit Posko',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: AppColors.dangerRed, size: 20),
-                            onPressed: () => _confirmDelete(context, ref, posko),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.warningYellow,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                        ],
+                          // backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                          // shape: RoundedRectangleBorder(
+                          //   borderRadius: BorderRadius.circular(8),
+                          // ),
+                          // minimumSize: Size.zero,
+                          // tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: AppColors.border),
+                const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
-                    const SizedBox(width: 4),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        posko.alamat,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Lokasi Posko',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            posko.alamat,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Radius: ${posko.radius} meter',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.radar_rounded,
+                        size: 16,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Radius Presensi:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${posko.radius} meter',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-
-  void _confirmDelete(BuildContext context, WidgetRef ref, PoskoItem posko) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Posko?'),
-        content: Text('Apakah Anda yakin ingin menghapus ${posko.nama}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                final repo = ref.read(kknRepositoryProvider);
-                await repo.deleteMultiPosko(posko.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Posko berhasil dihapus'), backgroundColor: AppColors.primaryGreen),
-                  );
-                  ref.read(kknMapProvider.notifier).fetchWilayahKelompok();
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString()), backgroundColor: AppColors.dangerRed),
-                  );
-                }
-              }
-            },
-            child: const Text('Hapus', style: TextStyle(color: AppColors.dangerRed)),
-          ),
-        ],
-      ),
     );
   }
 }

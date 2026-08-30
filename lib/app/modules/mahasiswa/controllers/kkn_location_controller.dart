@@ -454,10 +454,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       state = state.copyWith(isLoadingKegiatan: true, clearError: true);
 
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () => throw TimeoutException(
+          'GPS tidak merespons dalam 30 detik. Pastikan lokasi aktif dan sinyal GPS tersedia.',
         ),
-      ).timeout(const Duration(seconds: 15));
+      );
 
       final repo = ref.read(kknRepositoryProvider);
       final response = await repo.mulaiKegiatan(
@@ -560,17 +563,23 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       ref.read(locationPingControllerProvider.notifier).startTracking();
       return null;
     } catch (e) {
-      final errMsg = e.toString().replaceAll('Exception:', '').trim();
       state = state.copyWith(isLoadingKegiatan: false);
-      // Handle 409 conflict (sudah ada kegiatan aktif)
-      if (errMsg.startsWith('CONFLICT:')) {
-        state = state.copyWith(error: errMsg.substring(9));
+      final rawMsg = e.toString().replaceAll('Exception:', '').trim();
+      if (rawMsg.startsWith('CONFLICT:')) {
+        state = state.copyWith(error: rawMsg.substring(9));
         return 'CONFLICT';
-      } else {
-        final err = errMsg.isNotEmpty ? errMsg : 'Gagal memulai kegiatan';
-        state = state.copyWith(error: err);
-        return err;
       }
+      final String friendlyMsg;
+      if (e is TimeoutException) {
+        friendlyMsg = e.message?.isNotEmpty == true
+            ? e.message!
+            : 'GPS atau koneksi tidak merespons. Pastikan lokasi & internet aktif, lalu coba lagi.';
+      } else {
+        final helper = NetworkExceptionHelper.getErrorMessage(e);
+        friendlyMsg = helper.isNotEmpty ? helper : (rawMsg.isNotEmpty ? rawMsg : 'Gagal memulai kegiatan');
+      }
+      state = state.copyWith(error: friendlyMsg);
+      return friendlyMsg;
     }
   }
 

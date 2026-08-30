@@ -1009,64 +1009,91 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.map_rounded, size: 18),
-                      label: const Text('Buka di Google Maps'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryBlue,
-                        side: const BorderSide(color: AppColors.primaryBlue),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                  if (isKetua)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.map_rounded, size: 16),
+                            label: const Text('Buka Map', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryBlue,
+                              side: const BorderSide(color: AppColors.primaryBlue),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () async {
+                              final url = Uri.parse(
+                                'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
+                              );
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      onPressed: () async {
-                        final url = Uri.parse(
-                          'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
-                        );
-                        if (await canLaunchUrl(url)) {
-                          await launchUrl(
-                            url,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                  if (isKetua) ...[
-                    const SizedBox(height: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: const Icon(Icons.edit_rounded, size: 16),
+                            label: const Text('Edit Data', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.warningYellow,
+                              foregroundColor: AppColors.textPrimary,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _namaController.text = posko.nama;
+                                _alamatController.text = posko.alamat;
+                                _selectedLocation = LatLng(posko.latitude, posko.longitude);
+                                _isUpdatingFromMap = true;
+                                _latitudeController.text = posko.latitude.toStringAsFixed(6);
+                                _longitudeController.text = posko.longitude.toStringAsFixed(6);
+                                _isUpdatingFromMap = false;
+                                _isEditMode = true;
+                              });
+                              Future.delayed(const Duration(milliseconds: 300), () {
+                                _mapController.move(_selectedLocation!, 15.0);
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    )
+                  else
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.edit_rounded, size: 18),
-                        label: const Text('Edit Data Posko'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.warningYellow,
-                          foregroundColor: AppColors.textPrimary,
-                          elevation: 0,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.map_rounded, size: 18),
+                        label: const Text('Buka di Google Maps'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryBlue,
+                          side: const BorderSide(color: AppColors.primaryBlue),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _namaController.text = posko.nama;
-                            _alamatController.text = posko.alamat;
-                            _selectedLocation = LatLng(posko.latitude, posko.longitude);
-                            _isUpdatingFromMap = true;
-                            _latitudeController.text = posko.latitude.toStringAsFixed(6);
-                            _longitudeController.text = posko.longitude.toStringAsFixed(6);
-                            _isUpdatingFromMap = false;
-                            _isEditMode = true;
-                          });
-                          Future.delayed(const Duration(milliseconds: 300), () {
-                            _mapController.move(_selectedLocation!, 15.0);
-                          });
+                        onPressed: () async {
+                          final url = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
+                          );
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
                         },
                       ),
                     ),
-                  ],
                 ],
               ),
             ),

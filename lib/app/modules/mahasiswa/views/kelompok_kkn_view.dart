@@ -691,40 +691,81 @@ class KelompokKknView extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.map_rounded, size: 16),
-                      label: const Text('Buka di Google Maps', style: TextStyle(fontSize: 13)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryBlue,
-                        side: const BorderSide(color: AppColors.primaryBlue),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  if (isLeader)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.map_rounded, size: 16),
+                            label: const Text('Buka Map', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryBlue,
+                              side: const BorderSide(color: AppColors.primaryBlue),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () async {
+                              final url = Uri.parse(
+                                'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
+                              );
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              }
+                            },
+                          ),
                         ),
-                      ),
-                      onPressed: () async {
-                        final url = Uri.parse(
-                          'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
-                        );
-                        if (await canLaunchUrl(url)) {
-                          await launchUrl(
-                            url,
-                            mode: LaunchMode.externalApplication,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
+                            icon: const Icon(Icons.edit_location_alt_rounded, size: 16),
+                            label: const Text('Perbarui Lokasi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryGreen,
+                              side: const BorderSide(color: AppColors.primaryGreen),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.map_rounded, size: 16),
+                        label: const Text('Buka di Google Maps', style: TextStyle(fontSize: 13)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primaryBlue,
+                          side: const BorderSide(color: AppColors.primaryBlue),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final url = Uri.parse(
+                            'https://www.google.com/maps/search/?api=1&query=${posko.latitude},${posko.longitude}',
                           );
-                        }
-                      },
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                ],
-                if (isLeader) ...[
+                ] else if (isLeader) ...[
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => Navigator.pushNamed(context, AppRoutes.registerPosko),
                       icon: const Icon(Icons.edit_location_alt_rounded, size: 18),
-                      label: Text(posko != null ? 'Perbarui Lokasi' : 'Daftarkan Posko'),
+                      label: const Text('Daftarkan Posko'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primaryGreen,
                         side: const BorderSide(color: AppColors.primaryGreen),

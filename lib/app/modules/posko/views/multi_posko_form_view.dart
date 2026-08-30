@@ -395,22 +395,95 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGreen,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    if (isEdit)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => _confirmDelete(context, ref, widget.posko!),
+                              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                              label: const Text('Hapus Posko', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.dangerRed,
+                                side: const BorderSide(color: AppColors.dangerRed),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGreen,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text(
+                                'Simpan Perubahan',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          'Tambah Posko',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
                       ),
-                      child: Text(
-                        isEdit ? 'Simpan Perubahan' : 'Tambah Posko',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref, PoskoItem posko) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Posko?'),
+        content: Text('Apakah Anda yakin ingin menghapus ${posko.nama}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                final repo = ref.read(kknRepositoryProvider);
+                await repo.deleteMultiPosko(posko.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Posko berhasil dihapus'), backgroundColor: AppColors.primaryGreen),
+                  );
+                  Navigator.pop(context, true); // Pop the form view
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString()), backgroundColor: AppColors.dangerRed),
+                  );
+                }
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: AppColors.dangerRed)),
+          ),
+        ],
+      ),
     );
   }
 }

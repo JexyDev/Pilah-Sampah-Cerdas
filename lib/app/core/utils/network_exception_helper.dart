@@ -69,7 +69,12 @@ class NetworkExceptionHelper {
         return 'Tidak ada koneksi internet atau server sedang mati.';
       }
       if (str.contains('TimeoutException')) {
-        return 'Waktu permintaan habis. Coba lagi.';
+        final msgMatch = RegExp(r'TimeoutException: (.+)').firstMatch(str);
+        final customMsg = msgMatch?.group(1)?.trim();
+        if (customMsg != null && customMsg.isNotEmpty && !customMsg.startsWith('Future not completed')) {
+          return customMsg;
+        }
+        return 'GPS atau koneksi ke server tidak merespons. Periksa koneksi internet & sinyal GPS, lalu coba lagi.';
       }
       if (str.contains('FormatException')) {
         return 'Format data dari server tidak valid.';
