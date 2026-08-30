@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   Marker,
@@ -38,7 +39,8 @@ import {
   Info,
   CheckCircle2,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Radio
 } from "lucide-react";
 import L from "leaflet";
 import api from "../../services/api";
@@ -154,6 +156,7 @@ const INITIAL_FORM_STATE = {
 };
 
 export const PoskoKknPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const userRole = String(user?.peran || "").toUpperCase();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PEMBIMBING_LAPANGAN"].some((r) => userRole.includes(r));
@@ -795,6 +798,18 @@ export const PoskoKknPage: React.FC = () => {
                             <span>Buka di Google Maps</span>
                             <ExternalLink size={12} />
                           </a>
+                        )}
+                        {/* Tombol Inspeksi Zona & Geofence */}
+                        {posko.kelompokId && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/developer/inspeksi-zona?kelompokId=${posko.kelompokId}`)}
+                            className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                            title="Buka Inspeksi Geofence & Zona Presensi Kelompok Ini"
+                          >
+                            <Radio size={14} className="text-emerald-600 dark:text-emerald-400" />
+                            <span>Inspeksi Zona &amp; Geofence</span>
+                          </button>
                         )}
                         {canEditPosko && (
                           <button
@@ -1563,6 +1578,18 @@ export const PoskoKknPage: React.FC = () => {
                               </button>
                             )}
 
+                            {/* Tombol Inspeksi Zona KKN */}
+                            {item.kelompokId && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/developer/inspeksi-zona?kelompokId=${item.kelompokId}`)}
+                                className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 dark:text-emerald-300 transition duration-150 flex items-center justify-center cursor-pointer shadow-2xs"
+                                title="Buka Inspeksi Zona & Geofence Kelompok Ini"
+                              >
+                                <Radio size={15} />
+                              </button>
+                            )}
+
                             {/* Tombol Edit & Hapus untuk Role Developer / Admin */}
                             {isDeveloperOrAdmin && (
                               <>
@@ -1847,6 +1874,19 @@ export const PoskoKknPage: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2">
+                {detailModalPosko.kelompokId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const kId = detailModalPosko.kelompokId;
+                      setDetailModalPosko(null);
+                      navigate(`/developer/inspeksi-zona?kelompokId=${kId}`);
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <Radio size={13} /> Inspeksi Zona
+                  </button>
+                )}
                 {canEditPosko && (
                   <button
                     type="button"

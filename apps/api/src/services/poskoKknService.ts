@@ -85,6 +85,82 @@ export class PoskoKknService {
       console.warn("[PoskoKknService.upsertPosko] Failed to cascade update schedules:", syncErr);
     }
 
+    // ─── SINKRONISASI KE TABEL FACILITY (POSKO_KKN) UNTUK MENU POSKO WEB ───
+    try {
+      const existingFacility = await prisma.facility.findFirst({
+        where: { kelompokId, jenis: "posko_kkn" },
+      });
+
+      const kelompokData = await prisma.kelompokKkn.findUnique({
+        where: { id: kelompokId },
+        include: {
+          students: { include: { user: true } },
+          dpl: true,
+        },
+      });
+
+      const ketua = kelompokData?.students.find((s) => s.isKetua) || kelompokData?.students[0];
+      const pic = ketua?.user?.name || "Ketua Kelompok KKN";
+      const kontak = ketua?.user?.phone || ketua?.noWa || "-";
+
+      let targetRwId: number | undefined;
+      if (kelompokData?.cakupanRw) {
+        try {
+          const parsed = typeof kelompokData.cakupanRw === "string" ? JSON.parse(kelompokData.cakupanRw) : kelompokData.cakupanRw;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const rwNum = Number(parsed[0]);
+            if (!isNaN(rwNum) && kelompokData.kelurahan) {
+              const rwStr = String(rwNum).padStart(2, "0");
+              const matchedRw = await prisma.rw.findFirst({
+                where: {
+                  name: { contains: rwStr },
+                  kelurahan: { name: { equals: kelompokData.kelurahan, mode: "insensitive" } },
+                },
+              });
+              if (matchedRw) targetRwId = matchedRw.id;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!targetRwId) {
+        const firstRw = await prisma.rw.findFirst();
+        if (firstRw) targetRwId = firstRw.id;
+      }
+
+      if (existingFacility) {
+        await prisma.facility.update({
+          where: { id: existingFacility.id },
+          data: {
+            nama: data.nama,
+            alamat: data.alamat,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            foto: data.fotoUrl ?? existingFacility.foto,
+            statusApproval: "APPROVED",
+          },
+        });
+      } else {
+        await prisma.facility.create({
+          data: {
+            nama: data.nama,
+            jenis: "posko_kkn",
+            alamat: data.alamat || "-",
+            rwId: targetRwId,
+            kelompokId,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            foto: data.fotoUrl ?? null,
+            pic,
+            kontak,
+            statusApproval: "APPROVED",
+          },
+        });
+      }
+    } catch (facilitySyncErr) {
+      console.warn("[PoskoKknService.upsertPosko] Failed to sync Facility posko_kkn:", facilitySyncErr);
+    }
+
     return posko;
   }
 
@@ -174,7 +250,13 @@ export class PoskoKknService {
   }
 
   async deletePosko(kelompokId: string) {
-    return prisma.poskoKkn.delete({ where: { kelompokId } });
+    const res = await prisma.poskoKkn.delete({ where: { kelompokId } }).catch(() => null);
+    try {
+      await prisma.facility.deleteMany({
+        where: { kelompokId, jenis: "posko_kkn" },
+      });
+    } catch (_) {}
+    return res;
   }
 
   // ─── Multi-Posko Methods ─────────────────────────────────────────────────────

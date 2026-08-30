@@ -64,6 +64,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import {
@@ -267,6 +268,9 @@ const DualGeofencePickerModalMap: React.FC<{
 };
 
 export const ZonaInspectorPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialKelompokId = searchParams.get("kelompokId");
+
   // Master Data States (Strict Relational Binding by ID)
   const [kelompokList, setKelompokList] = useState<any[]>([]);
   const [poskoList, setPoskoList] = useState<any[]>([]);
@@ -544,6 +548,19 @@ export const ZonaInspectorPage: React.FC = () => {
     setMapCenter(group.center);
     setMapZoom(16);
   };
+
+  // Auto-focus jika dibuka dari Menu Posko via URL ?kelompokId=...
+  useEffect(() => {
+    if (initialKelompokId && enrichedGroups.length > 0) {
+      const target = enrichedGroups.find((g) => String(g.id) === String(initialKelompokId));
+      if (target) {
+        setSelectedKelompokId(target.id);
+        setMapCenter(target.center);
+        setMapZoom(17);
+        setDetailModalGroup(target);
+      }
+    }
+  }, [initialKelompokId, enrichedGroups]);
 
   // Reset to full view
   const handleResetView = () => {

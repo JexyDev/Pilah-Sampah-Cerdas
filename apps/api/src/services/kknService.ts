@@ -1833,6 +1833,22 @@ export class KknService {
       },
     });
 
+    // ─── SINKRONISASI KE POSKOKKN & JADWAL SMART ZONE UNTUK PRESENSI MOBILE & INSPEKSI ZONA ───
+    if (targetKelompokId) {
+      try {
+        const { poskoKknService } = await import("./poskoKknService.js");
+        await poskoKknService.upsertPosko(targetKelompokId, {
+          nama: payload.nama.trim(),
+          alamat: payload.alamat?.trim() || "-",
+          latitude: lat,
+          longitude: lng,
+          fotoUrl: payload.foto || undefined,
+        });
+      } catch (syncErr) {
+        console.warn("[KknService.createPoskoAdmin] Failed to sync PoskoKkn:", syncErr);
+      }
+    }
+
     try {
       await prisma.auditTrail.create({
         data: {
@@ -1900,6 +1916,23 @@ export class KknService {
       },
     });
 
+    // ─── SINKRONISASI KE POSKOKKN & JADWAL SMART ZONE ───
+    const finalKelompokId = updated.kelompokId || existing.kelompokId;
+    if (finalKelompokId) {
+      try {
+        const { poskoKknService } = await import("./poskoKknService.js");
+        await poskoKknService.upsertPosko(finalKelompokId, {
+          nama: updated.nama,
+          alamat: updated.alamat || "-",
+          latitude: Number(updated.latitude),
+          longitude: Number(updated.longitude),
+          fotoUrl: updated.foto || undefined,
+        });
+      } catch (syncErr) {
+        console.warn("[KknService.updatePoskoAdmin] Failed to sync PoskoKkn:", syncErr);
+      }
+    }
+
     try {
       await prisma.auditTrail.create({
         data: {
@@ -1937,6 +1970,16 @@ export class KknService {
     await prisma.facility.delete({
       where: { id },
     });
+
+    // ─── SINKRONISASI HAPUS POSKOKKN ───
+    if (existing.kelompokId) {
+      try {
+        const { poskoKknService } = await import("./poskoKknService.js");
+        await poskoKknService.deletePosko(existing.kelompokId);
+      } catch (syncErr) {
+        console.warn("[KknService.deletePoskoAdmin] Failed to sync delete PoskoKkn:", syncErr);
+      }
+    }
 
     try {
       await prisma.auditTrail.create({
