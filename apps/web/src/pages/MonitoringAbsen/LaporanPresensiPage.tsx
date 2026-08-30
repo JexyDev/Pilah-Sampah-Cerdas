@@ -989,7 +989,7 @@ export const LaporanPresensiPage: React.FC = () => {
                             <div>
                               <div className="flex items-center gap-1.5">
                                 <span className="font-bold text-slate-900 dark:text-white text-xs">
-                                  {student.namaMahasiswa}
+                                  {formatPersonName(student.namaMahasiswa)}
                                 </span>
                                 {student.isKetua && (
                                   <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-800 dark:bg-amber-955 dark:text-amber-300 border border-amber-300">
@@ -998,7 +998,7 @@ export const LaporanPresensiPage: React.FC = () => {
                                 )}
                               </div>
                               <p className="text-[11px] text-slate-400 font-mono">
-                                NIM: {student.nim} • {student.jurusan}
+                                NIM: {student.nim} • {formatProdiName(student.jurusan)}
                               </p>
                             </div>
                           </div>
@@ -1007,10 +1007,10 @@ export const LaporanPresensiPage: React.FC = () => {
                         {/* Kelompok & DPL */}
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-800 dark:text-slate-200">
-                            {student.kelompok?.name ?? "Tanpa Kelompok"}
+                            {student.kelompok?.name ? formatKelompokName(student.kelompok.name) : "Tanpa Kelompok"}
                           </div>
                           <p className="text-[11px] text-slate-400">
-                            Kel. {student.kelompok?.kelurahan ?? "-"} • DPL: {student.kelompok?.dplName ?? "-"}
+                            {student.kelompok?.kelurahan ? formatWilayahName(`Kel. ${student.kelompok.kelurahan}`) : "-"} • DPL: {formatPersonName(student.kelompok?.dplName)}
                           </p>
                         </td>
 
