@@ -2872,26 +2872,54 @@ export class KknAttendanceService {
     }
 
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam radius zona kegiatan / posko KKN saat memulai presensi
-    const geofence = await buildGeofence(schedule);
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 25;
-    const distToZone = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
-
+    
     let isInsideOnStart = false;
-    if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-      const polyPoints = (geofence.polygon as any[]).map((p) => {
-        const val0 = Number(p[0]);
-        const val1 = Number(p[1]);
-        return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
-      });
-      isInsideOnStart = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) || (distToZone <= geofence.radius + bufferMeters);
-    } else {
-      isInsideOnStart = distToZone <= (geofence.radius + bufferMeters);
+    let fallbackDistance = 0;
+    let allowedRadius = 0;
+    // 1. Prioritas Pertama: Smart Zone Check (Multi-Posko & Auto-Polygon)
+    const kelompokIdToCheck = schedule.kelompokId || student.kelompokId;
+    if (kelompokIdToCheck) {
+      try {
+        // Panggil fungsi smartZoneService yang sudah ada
+        const szResult = await smartZoneService.isStudentInGroupZone(latitude, longitude, kelompokIdToCheck, bufferMeters);
+        if (szResult.isInside) {
+          isInsideOnStart = true;
+        } else {
+          fallbackDistance = szResult.distanceToNearest;
+          // Radius diambil dari zona terdekat yang terdeteksi
+          allowedRadius = (szResult as any).closestZoneRadius ? (szResult as any).closestZoneRadius + bufferMeters : bufferMeters;
+        }
+      } catch (err) {
+        console.error("[mulaiKegiatan] smartZoneService error:", err);
+      }
     }
-
+    // 2. Fallback jika Smart Zone gagal/belum memenuhi (hanya cek posko utama/jadwal)
     if (!isInsideOnStart) {
-      const allowedRadius = geofence.radius + bufferMeters;
-      const distanceInt = Math.round(distToZone);
+      const geofence = await buildGeofence(schedule);
+      const distToZone = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
+      
+      // Gunakan perhitungan jarak ini sebagai fallback (pesan error) jika SmartZone tidak menangkap apa-apa
+      if (fallbackDistance === 0 || distToZone < fallbackDistance) {
+        fallbackDistance = distToZone;
+        allowedRadius = geofence.radius + bufferMeters;
+      }
+      // Cek apakah jadwal kegiatan punya poligon custom
+      if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+        const polyPoints = (geofence.polygon as any[]).map((p) => {
+          const val0 = Number(p[0]);
+          const val1 = Number(p[1]);
+          return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
+        });
+        isInsideOnStart = isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) || (distToZone <= geofence.radius + bufferMeters);
+      } else {
+        isInsideOnStart = distToZone <= (geofence.radius + bufferMeters);
+      }
+    }
+    // Jika setelah kedua cara (SmartZone + Fallback) mahasiswa tetap di luar zona, lemparkan error
+    if (!isInsideOnStart) {
+      const distanceInt = Math.round(fallbackDistance);
       throw new Error(
         `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona Posko KKN (Jarak: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di lokasi Posko/Wilayah KKN.`
       );

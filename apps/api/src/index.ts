@@ -127,16 +127,42 @@ const staticCacheOptions = {
 
 // Statically serve uploads and downloads folders with multi-directory fallback
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions));
+app.use(
+  "/uploads",
+  express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions)
+);
 app.use("/uploads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
 app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
 app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads"), staticCacheOptions));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions));
+app.use(
+  "/uploads",
+  express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions)
+);
+
+// Fallback for missing local uploads / downloads (e.g. database synced from VPS)
+app.use("/uploads", (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD") {
+    const vpsUploadUrl = `http://157.10.252.252:3000/uploads${req.path}`;
+    return res.redirect(307, vpsUploadUrl);
+  }
+  next();
+});
 
 app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
-app.use("/downloads", express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions));
+app.use(
+  "/downloads",
+  express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions)
+);
 app.use("/downloads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
 app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
+
+app.use("/downloads", (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD") {
+    const vpsDownloadUrl = `http://157.10.252.252:3000/downloads${req.path}`;
+    return res.redirect(307, vpsDownloadUrl);
+  }
+  next();
+});
 
 // In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
@@ -255,11 +281,15 @@ import { archiveAuditLogsCron } from "./cron/archive.cron.js";
 
 const isPrimaryWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === "0";
 if (isPrimaryWorker) {
-  console.log(`[CronService] Initializing cron scheduler on primary worker instance (${process.env.NODE_APP_INSTANCE || "single-process"})...`);
+  console.log(
+    `[CronService] Initializing cron scheduler on primary worker instance (${process.env.NODE_APP_INSTANCE || "single-process"})...`
+  );
   cronService.start();
   archiveAuditLogsCron.start();
 } else {
-  console.log(`[CronService] Skipping cron initialization on secondary worker instance (${process.env.NODE_APP_INSTANCE}) to avoid duplicated tasks.`);
+  console.log(
+    `[CronService] Skipping cron initialization on secondary worker instance (${process.env.NODE_APP_INSTANCE}) to avoid duplicated tasks.`
+  );
 }
 
 // Auto-migrate missing database columns on startup

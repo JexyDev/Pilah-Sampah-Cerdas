@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Controller Logbook KKN (Mahasiswa & DPL)
  */
 
@@ -27,15 +27,8 @@ export const logbookController = {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      const {
-        groupId,
-        pekanKe,
-        statusApproval,
-        tipeAktivitas,
-        search,
-        startDate,
-        endDate,
-      } = req.query;
+      const { groupId, pekanKe, statusApproval, tipeAktivitas, search, startDate, endDate } =
+        req.query;
 
       const data = await logbookService.getMahasiswaLogbooks(userId, userRole, {
         groupId: groupId as string,
@@ -62,7 +55,12 @@ export const logbookController = {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl || null;
+      let fotoBuktiUrl =
+        req.body.fotoBuktiUrl ||
+        req.body.fotoUrl ||
+        req.body.evidencePhotoUrl ||
+        req.body.fotoDokumentasiUrl ||
+        null;
       const uploadedFileUrls: string[] = [];
 
       if (req.file) {
@@ -104,8 +102,14 @@ export const logbookController = {
         tempat: req.body.tempat,
         deskripsi: req.body.deskripsi,
         fotoBuktiUrl: fotoBuktiUrl || null,
-        attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : (fotoBuktiUrl ? [fotoBuktiUrl] : undefined),
-        platformOs: req.body.platformOs || (userRole === "DEVELOPER" ? "DEVELOPER_OVERRIDE" : "ANDROID"),
+        attachmentUrls:
+          uploadedFileUrls.length > 0
+            ? uploadedFileUrls
+            : fotoBuktiUrl
+              ? [fotoBuktiUrl]
+              : undefined,
+        platformOs:
+          req.body.platformOs || (userRole === "DEVELOPER" ? "DEVELOPER_OVERRIDE" : "ANDROID"),
         tipeAktivitas: req.body.tipeAktivitas,
         programKerjaId: req.body.programKerjaId || undefined,
         fasilitasId: req.body.fasilitasId || undefined,
@@ -121,9 +125,10 @@ export const logbookController = {
 
       res.status(201).json({
         success: true,
-        message: userRole === "DEVELOPER"
-          ? "Logbook aktivitas berhasil diinput manual & disetujui untuk mahasiswa."
-          : "Logbook aktivitas berhasil disimpan dan diajukan untuk proses persetujuan.",
+        message:
+          userRole === "DEVELOPER"
+            ? "Logbook aktivitas berhasil diinput manual & disetujui untuk mahasiswa."
+            : "Logbook aktivitas berhasil disimpan dan diajukan untuk proses persetujuan.",
         data,
       });
     } catch (error: any) {
@@ -141,7 +146,12 @@ export const logbookController = {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
 
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.evidencePhotoUrl || req.body.fotoDokumentasiUrl || undefined;
+      let fotoBuktiUrl =
+        req.body.fotoBuktiUrl ||
+        req.body.fotoUrl ||
+        req.body.evidencePhotoUrl ||
+        req.body.fotoDokumentasiUrl ||
+        undefined;
       const uploadedFileUrls: string[] = [];
 
       if (req.file) {
@@ -175,7 +185,12 @@ export const logbookController = {
         tempat: req.body.tempat,
         deskripsi: req.body.deskripsi,
         fotoBuktiUrl: fotoBuktiUrl || undefined,
-        attachmentUrls: uploadedFileUrls.length > 0 ? uploadedFileUrls : (fotoBuktiUrl ? [fotoBuktiUrl] : undefined),
+        attachmentUrls:
+          uploadedFileUrls.length > 0
+            ? uploadedFileUrls
+            : fotoBuktiUrl
+              ? [fotoBuktiUrl]
+              : undefined,
         tipeAktivitas: req.body.tipeAktivitas,
         programKerjaId: req.body.programKerjaId,
         fasilitasId: req.body.fasilitasId,
@@ -196,7 +211,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.updateMahasiswaLogbook] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal memperbarui logbook" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal memperbarui logbook" });
     }
   },
 
@@ -225,7 +242,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.approveByKetua] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal memproses persetujuan ketua" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal memproses persetujuan ketua" });
     }
   },
 
@@ -244,7 +263,13 @@ export const logbookController = {
         return;
       }
 
-      const data = await logbookService.verifikasiByDpl(id, dplUserId, userRole, action, catatanDpl);
+      const data = await logbookService.verifikasiByDpl(
+        id,
+        dplUserId,
+        userRole,
+        action,
+        catatanDpl
+      );
       res.status(200).json({
         success: true,
         message:
@@ -255,7 +280,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.verifikasiByDpl] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal memverifikasi logbook" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal memverifikasi logbook" });
     }
   },
 
@@ -269,11 +296,22 @@ export const logbookController = {
       const { logbookIds, action, catatanDpl } = req.body;
 
       if (!Array.isArray(logbookIds) || logbookIds.length === 0) {
-        res.status(400).json({ success: false, message: "Daftar logbookIds wajib berupa array dan tidak kosong" });
+        res
+          .status(400)
+          .json({
+            success: false,
+            message: "Daftar logbookIds wajib berupa array dan tidak kosong",
+          });
         return;
       }
 
-      const results = await logbookService.batchVerifikasiByDpl(logbookIds, dplUserId, userRole, action || "APPROVE", catatanDpl);
+      const results = await logbookService.batchVerifikasiByDpl(
+        logbookIds,
+        dplUserId,
+        userRole,
+        action || "APPROVE",
+        catatanDpl
+      );
       res.status(200).json({
         success: true,
         message: `Batch verifikasi logbook selesai diproses (${results.filter((r) => r.success).length} berhasil).`,
@@ -281,7 +319,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.batchVerifikasiByDpl] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal memproses batch verifikasi" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal memproses batch verifikasi" });
     }
   },
 
@@ -321,7 +361,12 @@ export const logbookController = {
           req.body.fotoUrl ||
           req.body.evidencePhotoUrl ||
           req.body.fotoDokumentasiUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoBuktiUrl = bodyFoto.trim();
         }
       }
@@ -344,7 +389,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.createDplLogbook] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal menyimpan logbook DPL" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal menyimpan logbook DPL" });
     }
   },
 
@@ -392,7 +439,11 @@ export const logbookController = {
   updateToleranceConfig: async (req: Request, res: Response): Promise<void> => {
     try {
       const { toleranceDays } = req.body;
-      if (toleranceDays === undefined || isNaN(Number(toleranceDays)) || Number(toleranceDays) < 0) {
+      if (
+        toleranceDays === undefined ||
+        isNaN(Number(toleranceDays)) ||
+        Number(toleranceDays) < 0
+      ) {
         res.status(400).json({ success: false, message: "toleranceDays harus berupa angka >= 0" });
         return;
       }
@@ -447,35 +498,6 @@ export const logbookController = {
   },
 
   /**
-   * Update logbook aktivitas mahasiswa (khusus Developer/Admin)
-   */
-  updateMahasiswaLogbook: async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const userId = getUserId(req);
-      const userRole = getUserRole(req);
-
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || null;
-      if (req.file) fotoBuktiUrl = `/uploads/${req.file.filename}`;
-
-      const payload = {
-        ...req.body,
-        fotoBuktiUrl: fotoBuktiUrl !== null ? fotoBuktiUrl : undefined,
-      };
-
-      const data = await logbookService.updateMahasiswaLogbook(id, payload, userId, userRole);
-      res.status(200).json({
-        success: true,
-        message: "Logbook mahasiswa berhasil diperbarui.",
-        data,
-      });
-    } catch (error: any) {
-      console.error("[logbookController.updateMahasiswaLogbook] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal memperbarui logbook" });
-    }
-  },
-
-  /**
    * Update logbook supervisi DPL (khusus Developer/Admin atau DPL bersangkutan)
    */
   updateDplLogbook: async (req: Request, res: Response): Promise<void> => {
@@ -500,7 +522,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.updateDplLogbook] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal memperbarui logbook DPL" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal memperbarui logbook DPL" });
     }
   },
 
@@ -521,7 +545,9 @@ export const logbookController = {
       });
     } catch (error: any) {
       console.error("[logbookController.deleteDplLogbook] error:", error);
-      res.status(400).json({ success: false, message: error.message || "Gagal menghapus logbook DPL" });
+      res
+        .status(400)
+        .json({ success: false, message: error.message || "Gagal menghapus logbook DPL" });
     }
   },
 };

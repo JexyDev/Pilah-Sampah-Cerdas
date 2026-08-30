@@ -42,10 +42,8 @@ import {
   formatKelompokName,
   formatWilayahName,
   formatProdiName,
-  formatStatusName,
-  toTitleCase,
 } from "../../utils/textFormatter";
-import { sortNatural, sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
+import { sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
 
 export interface LaporanItem {
   id: string;

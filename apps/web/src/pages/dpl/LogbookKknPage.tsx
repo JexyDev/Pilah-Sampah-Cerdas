@@ -39,7 +39,7 @@ import {
   type LogbookMahasiswaItem,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
-import { resolveImageUrl } from "../../utils/imageUrl";
+import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
 
 // Helper Format Tanggal
 const formatDateShort = (dateStr: string): string => {
@@ -173,7 +173,7 @@ export const LogbookKknPage: React.FC = () => {
     try {
       // 1. Ambil daftar kelompok
       const groupData = await dplService.getGroupSummary().catch(() => []);
-      setGroups(groupData);
+      setGroups(sortKelompokList(groupData, (g) => g.name || ""));
 
       // 2. Ambil logbook mahasiswa
       const mhsData = await logbookApiService.getMahasiswaLogbooks({
@@ -208,9 +208,9 @@ export const LogbookKknPage: React.FC = () => {
     }
   }, [selectedItemDetail?.id]);
 
-  // Filtered logbooks by category & search & date range
+  // Filtered logbooks by category & search & date range with Chronological Sorting (Newest First)
   const filteredLogbooks = useMemo(() => {
-    return logbooks.filter((item) => {
+    const filtered = logbooks.filter((item) => {
       if (selectedKategori !== "ALL") {
         const itemKat = resolveKategori(item);
         if (itemKat !== selectedKategori) return false;
@@ -237,6 +237,8 @@ export const LogbookKknPage: React.FC = () => {
       }
       return true;
     });
+
+    return sortChronologicalList(filtered, (item) => item.tanggalKegiatan || item.createdAt, "desc");
   }, [logbooks, selectedKategori, searchQuery, startDateFilter, endDateFilter]);
 
   // Statistics KPI
