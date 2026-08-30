@@ -37,6 +37,15 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { wsClient } from "../../utils/websocket";
+import {
+  formatPersonName,
+  formatKelompokName,
+  formatWilayahName,
+  formatProdiName,
+  formatStatusName,
+  toTitleCase,
+} from "../../utils/textFormatter";
+import { sortNatural, sortKelompokList, sortStudentsRoster } from "../../utils/sortUtils";
 
 export interface LaporanItem {
   id: string;
@@ -236,17 +245,18 @@ export const LaporanPresensiPage: React.FC = () => {
     try {
       const res = await api.get("/kelompok");
       const list = Array.isArray(res.data) ? res.data : res.data?.data || [];
+      const sortedList = sortKelompokList(list, (g: any) => g.name || "");
       if (isDpl && user?.id) {
         // Strict scope to DPL's assigned groups
-        const dplGroups = list.filter((g: any) => 
+        const dplGroups = sortedList.filter((g: any) => 
           g.dplId === user.id || 
           g.dpl?.id === user.id || 
           g.dpl?.userId === user.id || 
           (user.email && g.dpl?.email === user.email)
         );
-        setGroups(dplGroups.length > 0 ? dplGroups : list);
+        setGroups(dplGroups.length > 0 ? dplGroups : sortedList);
       } else {
-        setGroups(list);
+        setGroups(sortedList);
       }
     } catch (_err) {
       // silent fallback
@@ -372,18 +382,26 @@ export const LaporanPresensiPage: React.FC = () => {
     }
   };
 
-  // Filtered student aggregates based on search query
+  // Filtered student aggregates based on search query with natural roster sorting
   const filteredStudentAggregates = useMemo(() => {
-    if (!searchQuery.trim()) return studentAggregates;
-    const q = searchQuery.toLowerCase().trim();
-    return studentAggregates.filter(
-      (s) =>
-        s.namaMahasiswa.toLowerCase().includes(q) ||
-        s.nim.toLowerCase().includes(q) ||
-        s.jurusan.toLowerCase().includes(q) ||
-        (s.kelompok?.name && s.kelompok.name.toLowerCase().includes(q)) ||
-        (s.kelompok?.kelurahan && s.kelompok.kelurahan.toLowerCase().includes(q))
-    );
+    let list = studentAggregates;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (s) =>
+          s.namaMahasiswa.toLowerCase().includes(q) ||
+          s.nim.toLowerCase().includes(q) ||
+          s.jurusan.toLowerCase().includes(q) ||
+          (s.kelompok?.name && s.kelompok.name.toLowerCase().includes(q)) ||
+          (s.kelompok?.kelurahan && s.kelompok.kelurahan.toLowerCase().includes(q))
+      );
+    }
+    return sortStudentsRoster(list, {
+      getKelompok: (s) => s.kelompok?.name,
+      getIsKetua: (s) => s.isKetua,
+      getName: (s) => s.namaMahasiswa,
+      getNim: (s) => s.nim,
+    });
   }, [studentAggregates, searchQuery]);
 
   // Quick Action: View detailed log for specific student

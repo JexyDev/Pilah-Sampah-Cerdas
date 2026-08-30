@@ -64,6 +64,15 @@ import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
 import { wsClient } from "../../utils/websocket";
 import {
+  toTitleCase,
+  formatPersonName,
+  formatKelompokName,
+  formatWilayahName,
+  formatProdiName,
+  formatStatusName,
+} from "../../utils/textFormatter";
+import { sortNatural, sortKelompokList, extractGroupNumber } from "../../utils/sortUtils";
+import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
   createMhsClusterIcon,
@@ -1031,10 +1040,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const fetchGroups = async () => {
     try {
       const res = await api.get("/kelompok");
-      const list =
+      const rawList =
         res.data?.groups ||
         res.data?.data ||
         (Array.isArray(res.data) ? res.data : []);
+      const list = sortKelompokList(rawList, (g: any) => g.name || "");
       setGroups(list);
       if (isDpl && list.length > 0) {
         setSelectedKelompokId(list[0].id);
@@ -1774,14 +1784,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         return timeB - timeA;
       }
 
-      // Default fallback: urutkan alfabet kelompok lalu nama mahasiswa
+      // Default fallback: urutkan natural kelompok lalu nama mahasiswa
       const kelA = a.student?.studentProfile?.kelompok?.name || a.kelompokName || "";
       const kelB = b.student?.studentProfile?.kelompok?.name || b.kelompokName || "";
-      if (kelA !== kelB) return kelA.localeCompare(kelB);
+      if (kelA !== kelB) return sortNatural(kelA, kelB);
 
       const nameA = a.student?.name || "";
       const nameB = b.student?.name || "";
-      return nameA.localeCompare(nameB);
+      return nameA.localeCompare(nameB, "id", { sensitivity: "base" });
     });
   }, [attendance, attendanceFilterTab, studentSearch]);
 
@@ -3599,9 +3609,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ? formatDurasiIndo(durationMins)
                           : "0 menit";
 
-                        const cleanStudentName = rec.student?.name
+                        const rawStudentName = rec.student?.name
                           ? rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
                           : "Mahasiswa";
+                        const cleanStudentName = formatPersonName(rawStudentName);
 
                         const isKetua = Boolean(rec.student?.studentProfile?.isKetua || rec.student?.isKetua);
 
@@ -3821,10 +3832,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   {rec.student.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 lowercase first-letter:capitalize">
-                                    {cleanStudentName}
+                                  <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                    <span>{cleanStudentName}</span>
                                     {isKetua && (
-                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
+                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
                                         Ketua
                                       </span>
                                     )}
@@ -4085,13 +4096,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             </div>
                             <div>
                               <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-                                <span className="lowercase first-letter:capitalize">
-                                  {rec.student.name
-                                    .replace(/👑|\(Ketua Kelompok\)/g, "")
-                                    .trim()}
+                                <span>
+                                  {formatPersonName(
+                                    rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
+                                  )}
                                 </span>
                                 {rec.student.studentProfile?.isKetua && (
-                                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
+                                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
                                     Ketua
                                   </span>
                                 )}
