@@ -140,7 +140,7 @@ export const computeAvatarInitials = (name: string = "User"): string => {
   return words.slice(0, 3).map((w) => w[0].toUpperCase()).join("");
 };
 
-export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "MAHASISWA_KKN", "PETUGAS_RESIDU"];
+export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "PETUGAS_RESIDU"];
 
 // ─── Helper: Storage abstraction (localStorage vs sessionStorage) ─────────────
 const TOKEN_KEYS = ["psc_access_token", "psc_refresh_token", "psc_user"] as const;

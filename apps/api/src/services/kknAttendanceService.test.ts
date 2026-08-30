@@ -26,6 +26,7 @@ vi.mock("../lib/prisma.js", () => {
       },
       studentKkn: {
         findUnique: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
       },
       studentLocation: {
@@ -721,7 +722,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           id: "sch-today",
           title: "Kegiatan Harian Posko KKN Hari Ini",
           date: now,
-          time: "08:00 - 16:00",
+          time: "00:00 - 23:59",
           latitude: -6.8915,
           longitude: 107.6107,
           radius: 200,
@@ -751,6 +752,179 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result[0].id).toBe("sch-today");
       expect(result[0].tanggal).toBe(todayStr);
       expect(result[0].status).toBe("AKTIF");
+    });
+
+    it("should return TIDAK_ADA_KEGIATAN status and skip metadata when activity is skipped", async () => {
+      const studentId = "student-test-skip";
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: studentId,
+        nim: "12345678",
+        kelompokId: "kelompok-1",
+      } as any);
+
+      const now = new Date();
+      vi.mocked(prisma.schedule.findMany).mockResolvedValue([
+        {
+          id: "sch-skipped",
+          title: "Kegiatan Harian Posko KKN Libur",
+          date: now,
+          time: "08:00 - 16:00",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          isActive: true,
+          kelompok: { poskoKkn: null },
+          attendances: [
+            {
+              id: "att-skip-1",
+              studentId,
+              scheduleId: "sch-skipped",
+              status: "TIDAK_ADA_KEGIATAN",
+              deskripsiKegiatan: "Libur nasional",
+              attendedAt: now,
+              jedaLogs: {
+                skippedBy: "dpl-user-id",
+                skippedAt: now.toISOString(),
+                alasan: "Libur nasional",
+              },
+            },
+          ],
+          createdAt: now,
+        } as any,
+      ]);
+
+      const result = await service.getKegiatanAktif(studentId);
+
+      expect(result.length).toBe(1);
+      expect(result[0].statusKehadiran).toBe("TIDAK_ADA_KEGIATAN");
+      expect(result[0].statusDisplay).toBe("Tidak Ada Kegiatan");
+      expect(result[0].keteranganSkip).toBe("Libur nasional");
+      expect(result[0].skippedBy).toBe("dpl-user-id");
+    });
+  });
+
+  describe("skipKegiatan", () => {
+    const scheduleId = "sch-test-123";
+    const kelompokId = "kelompok-kkn-1";
+
+    it("should allow DPL to skip kegiatan and bulk update attendances for all group students", async () => {
+      const dplUserId = "dpl-user-1";
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        kelompokId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        kelompok: {
+          id: kelompokId,
+          dplId: dplUserId,
+          students: [{ userId: "student-1" }, { userId: "student-2" }],
+        },
+        attendances: [],
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findMany).mockResolvedValue([
+        { userId: "student-1" },
+        { userId: "student-2" },
+      ] as any);
+
+      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({} as any);
+
+      const result = await service.skipKegiatan(dplUserId, "DPL", scheduleId, {
+        alasan: "Pembersihan posko mandiri",
+      });
+
+      expect(result.success ?? true).toBeTruthy();
+      expect(result.kegiatanId).toBe(scheduleId);
+      expect(result.statusKegiatan).toBe("TIDAK_ADA_KEGIATAN");
+      expect(result.totalMahasiswaTerdampak).toBe(2);
+      expect(result.alasan).toBe("Pembersihan posko mandiri");
+      expect(result.ditandaiOleh).toBe(dplUserId);
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalledTimes(2);
+    });
+
+    it("should allow Ketua Kelompok (isKetua = true) to skip kegiatan for their own group", async () => {
+      const ketuaUserId = "student-ketua-1";
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        kelompokId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        kelompok: {
+          id: kelompokId,
+          dplId: "dpl-1",
+        },
+        attendances: [],
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: ketuaUserId,
+        isKetua: true,
+        kelompokId,
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findMany).mockResolvedValue([
+        { userId: ketuaUserId },
+        { userId: "student-member-2" },
+      ] as any);
+
+      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({} as any);
+
+      const result = await service.skipKegiatan(ketuaUserId, "MAHASISWA_KKN", scheduleId, {
+        alasan: "Koordinasi eksternal",
+      });
+
+      expect(result.statusKegiatan).toBe("TIDAK_ADA_KEGIATAN");
+      expect(result.totalMahasiswaTerdampak).toBe(2);
+    });
+
+    it("should reject regular student (isKetua = false) with FORBIDDEN", async () => {
+      const regularUserId = "student-regular-1";
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        kelompokId,
+        attendances: [],
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: regularUserId,
+        isKetua: false,
+        kelompokId,
+      } as any);
+
+      await expect(
+        service.skipKegiatan(regularUserId, "MAHASISWA_KKN", scheduleId, {
+          alasan: "Saya mau libur",
+        })
+      ).rejects.toThrow("FORBIDDEN: Anda tidak memiliki izin untuk melewati kegiatan ini.");
+    });
+
+    it("should reject skip if kegiatan is already BERLANGSUNG with CONFLICT", async () => {
+      const dplUserId = "dpl-user-1";
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue({
+        id: scheduleId,
+        title: "Kegiatan Harian KKN",
+        kelompokId,
+        kelompok: {
+          id: kelompokId,
+          dplId: dplUserId,
+        },
+        attendances: [
+          {
+            id: "att-1",
+            studentId: "student-1",
+            status: "BERLANGSUNG",
+          },
+        ],
+      } as any);
+
+      await expect(
+        service.skipKegiatan(dplUserId, "DPL", scheduleId, {
+          alasan: "Skip mendadak",
+        })
+      ).rejects.toThrow("CONFLICT: Tidak dapat skip kegiatan yang sudah dimulai.");
     });
   });
 });

@@ -13,8 +13,10 @@ import Sidebar from "../Sidebar/Sidebar";
 import Header from "../Header/Header";
 import ErrorBoundaryFallback from "../../common/ErrorBoundaryFallback";
 import { useThemeStore } from "../../../store/useThemeStore";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 const MainLayout: React.FC = () => {
+  const { user } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -25,6 +27,15 @@ const MainLayout: React.FC = () => {
       useThemeStore.getState().setInsideMainLayout(false);
     };
   }, []);
+
+  // For MAHASISWA_KKN, render dedicated mobile shell without desktop admin sidebar/header
+  if (user?.peran === "MAHASISWA_KKN") {
+    return (
+      <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
+        <Outlet />
+      </ErrorBoundary>
+    );
+  }
 
   const handleToggleSidebar = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {

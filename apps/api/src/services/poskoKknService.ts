@@ -206,7 +206,7 @@ export class PoskoKknService {
       }
     }
 
-    return prisma.poskoKkn.findMany({
+    const primaryPoskos = await prisma.poskoKkn.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
@@ -215,18 +215,132 @@ export class PoskoKknService {
             id: true,
             name: true,
             kelurahan: true,
-            dpl: { select: { id: true, name: true } },
+            cakupanRw: true,
+            dpl: { select: { id: true, name: true, phone: true } },
+            dplNamaMentah: true,
             students: {
               select: {
                 id: true,
                 isKetua: true,
                 user: { select: { id: true, name: true, phone: true } },
+                noWa: true,
               },
             },
           },
         },
       },
     });
+
+    let whereClauseMulti: any = {};
+    if (whereClause.kelompok) {
+      whereClauseMulti = { kelompok: whereClause.kelompok };
+    } else if (whereClause.OR) {
+      whereClauseMulti = { OR: whereClause.OR };
+    } else if (whereClause.kelompokId) {
+      whereClauseMulti = { kelompokId: whereClause.kelompokId };
+    }
+
+    const multiPoskos = await (prisma as any).poskoKknMulti.findMany({
+      where: whereClauseMulti,
+      orderBy: { createdAt: "desc" },
+      include: {
+        kelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
+            dpl: { select: { id: true, name: true, phone: true } },
+            dplNamaMentah: true,
+            students: {
+              select: {
+                id: true,
+                isKetua: true,
+                user: { select: { id: true, name: true, phone: true } },
+                noWa: true,
+              },
+            },
+          },
+        },
+      },
+    }).catch(() => []);
+
+    const allPoskos = [
+      ...primaryPoskos.map((p) => {
+        const ketua = p.kelompok?.students?.find((s: any) => s.isKetua) || p.kelompok?.students?.[0];
+        const rwName = (() => {
+          if (p.kelompok?.cakupanRw) {
+            try {
+              const parsed = typeof p.kelompok.cakupanRw === "string" ? JSON.parse(p.kelompok.cakupanRw) : p.kelompok.cakupanRw;
+              if (Array.isArray(parsed) && parsed.length > 0) return `RW ${String(parsed[0]).padStart(2, "0")}`;
+            } catch (_) {}
+          }
+          return "RW 01";
+        })();
+
+        return {
+          id: p.id,
+          nama: p.nama,
+          alamat: p.alamat || "-",
+          latitude: Number(p.latitude),
+          longitude: Number(p.longitude),
+          foto: p.fotoUrl || null,
+          fotoUrl: p.fotoUrl || null,
+          keterangan: p.keterangan || null,
+          radius: 150,
+          isUtama: true,
+          kelompokId: p.kelompokId,
+          kelompokName: p.kelompok?.name || "Kelompok KKN",
+          kelurahan: p.kelompok?.kelurahan || "Coblong",
+          rwName,
+          dplName: p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset",
+          pic: ketua?.user?.name || "Ketua Kelompok",
+          kontak: ketua?.user?.phone || (ketua as any)?.noWa || "-",
+          totalAnggota: p.kelompok?.students?.length || 0,
+          statusApproval: "APPROVED",
+          createdAt: p.createdAt,
+          kelompok: p.kelompok,
+        };
+      }),
+      ...multiPoskos.map((p: any) => {
+        const ketua = p.kelompok?.students?.find((s: any) => s.isKetua) || p.kelompok?.students?.[0];
+        const rwName = (() => {
+          if (p.kelompok?.cakupanRw) {
+            try {
+              const parsed = typeof p.kelompok.cakupanRw === "string" ? JSON.parse(p.kelompok.cakupanRw) : p.kelompok.cakupanRw;
+              if (Array.isArray(parsed) && parsed.length > 0) return `RW ${String(parsed[0]).padStart(2, "0")}`;
+            } catch (_) {}
+          }
+          return "RW 01";
+        })();
+
+        return {
+          id: p.id,
+          nama: p.nama,
+          alamat: p.alamat || "-",
+          latitude: Number(p.latitude),
+          longitude: Number(p.longitude),
+          foto: p.fotoUrl || null,
+          fotoUrl: p.fotoUrl || null,
+          keterangan: p.keterangan || null,
+          radius: p.radius || 150,
+          isUtama: p.isUtama ?? false,
+          kelompokId: p.kelompokId,
+          kelompokName: p.kelompok?.name || "Kelompok KKN",
+          kelurahan: p.kelompok?.kelurahan || "Coblong",
+          rwName,
+          dplName: p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset",
+          pic: ketua?.user?.name || "Ketua Kelompok",
+          kontak: ketua?.user?.phone || (ketua as any)?.noWa || "-",
+          totalAnggota: p.kelompok?.students?.length || 0,
+          statusApproval: "APPROVED",
+          createdAt: p.createdAt,
+          kelompok: p.kelompok,
+        };
+      }),
+    ];
+
+    return allPoskos;
   }
 
   async getPoskoByKelompok(kelompokId: string) {

@@ -228,6 +228,45 @@ router.post(
   kknAttendanceController.selesaiKegiatan
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/kegiatan/{id}/skip:
+ *   post:
+ *     summary: Menandai kegiatan KKN sebagai Tidak Ada Kegiatan (Skip)
+ *     tags: [Mahasiswa KKN, DPL]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               alasan:
+ *                 type: string
+ *                 default: "Tidak ada kegiatan"
+ *     responses:
+ *       200:
+ *         description: Kegiatan berhasil ditandai sebagai Tidak Ada Kegiatan
+ *       403:
+ *         description: Tidak memiliki izin untuk melewati kegiatan ini
+ *       409:
+ *         description: Tidak dapat skip kegiatan yang sudah dimulai
+ */
+router.post(
+  ["/kkn/kegiatan/:id/skip", "/kegiatan/:id/skip"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.skipKegiatan
+);
+
 router.post(
   ["/kkn/out-of-zone-violation", "/out-of-zone-violation"],
   authMiddleware,

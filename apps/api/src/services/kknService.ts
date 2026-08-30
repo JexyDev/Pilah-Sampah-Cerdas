@@ -1726,10 +1726,11 @@ export class KknService {
       orderBy: { createdAt: "desc" },
     });
 
-    return poskos.map((p) => {
+    const facilityPoskoMap = new Set(poskos.map((p) => String(p.kelompokId)));
+    const mapped = poskos.map((p) => {
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
       const ketuaName = p.pic || ketua?.user?.name || "Ketua Kelompok KKN";
-      const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || ketua?.noWa || "-");
+      const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
       const kelurahan = p.kelompok?.kelurahan || p.rw?.kelurahan?.name || "Coblong";
 
@@ -1750,9 +1751,45 @@ export class KknService {
         dplName,
         totalAnggota: p.kelompok?.students.length || 0,
         statusApproval: p.statusApproval || "APPROVED",
+        isUtama: true,
+        radius: 150,
         createdAt: p.createdAt,
       };
     });
+
+    // Merge any missing official PoskoKkn and PoskoKknMulti directly from PoskoKknService
+    try {
+      const { poskoKknService } = await import("./poskoKknService.js");
+      const allOfficialPoskos = await poskoKknService.getAllPosko(filters?.userId, filters?.role);
+      for (const off of allOfficialPoskos) {
+        const alreadyExists = mapped.some((m) => m.id === off.id || (m.kelompokId === off.kelompokId && off.isUtama));
+        if (!alreadyExists) {
+          mapped.push({
+            id: off.id,
+            nama: off.nama,
+            alamat: off.alamat || "-",
+            kelompokId: off.kelompokId,
+            kelompokName: off.kelompokName || "Kelompok KKN",
+            kelurahan: off.kelurahan || "Coblong",
+            rwId: null,
+            rwName: off.rwName || "-",
+            latitude: Number(off.latitude),
+            longitude: Number(off.longitude),
+            foto: off.foto || null,
+            pic: off.pic || "Ketua Kelompok",
+            kontak: off.kontak || "-",
+            dplName: off.dplName || "DPL Belum Diset",
+            totalAnggota: off.totalAnggota || 0,
+            statusApproval: "APPROVED",
+            isUtama: off.isUtama,
+            radius: off.radius || 150,
+            createdAt: off.createdAt,
+          });
+        }
+      }
+    } catch (_) {}
+
+    return mapped;
   }
 
   async createPoskoAdmin(
@@ -2768,6 +2805,8 @@ export class KknService {
         attendanceStatus = "sakit";
       } else if (attStatUpper.includes("ALPA")) {
         attendanceStatus = "alpa";
+      } else if (attStatUpper.includes("TIDAK_ADA_KEGIATAN") || attStatUpper.includes("SKIP")) {
+        attendanceStatus = "tidak_ada_kegiatan";
       } else if (attStatUpper === "BERLANGSUNG" || attStatUpper === "DALAM_RADIUS" || attStatUpper === "DI_ZONA") {
         attendanceStatus = "berlangsung";
       } else if (attStatUpper === "HADIR_MEMENUHI") {
@@ -2850,7 +2889,7 @@ export class KknService {
       }
     }
 
-    if (isExpired && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung" || attendanceStatus === "di_zona" || attendanceStatus === "dalam_radius")) {
+    if (isExpired && attendanceStatus !== "tidak_ada_kegiatan" && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung" || attendanceStatus === "di_zona" || attendanceStatus === "dalam_radius")) {
       attendanceStatus = "alpa";
       if (attendanceForActiveSchedule && (attendanceForActiveSchedule.status === "BERLANGSUNG" || attendanceForActiveSchedule.status === "DI_ZONA" || attendanceForActiveSchedule.status === "DALAM_RADIUS")) {
         await prisma.activityAttendance.update({

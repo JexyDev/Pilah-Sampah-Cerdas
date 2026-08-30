@@ -2679,6 +2679,8 @@ export class KknAttendanceService {
         const isMemenuhi = durasiWajibMenit <= 0 || actualMins >= durasiWajibMenit;
         if (att.status === "ALPA") {
           statusKehadiran = "ALPA";
+        } else if (att.status === "TIDAK_ADA_KEGIATAN" || att.status === "SKIP_KEGIATAN") {
+          statusKehadiran = "TIDAK_ADA_KEGIATAN";
         } else if (att.status === "HADIR_MEMENUHI") {
           statusKehadiran = "HADIR_MEMENUHI";
           isMemenuhiDurasi = true;
@@ -2732,7 +2734,15 @@ export class KknAttendanceService {
         ? "Hadir & Memenuhi"
         : statusKehadiran === "HADIR_TIDAK_MEMENUHI"
         ? "Hadir & Tidak Memenuhi"
+        : statusKehadiran === "TIDAK_ADA_KEGIATAN"
+        ? "Tidak Ada Kegiatan"
         : statusKehadiran;
+
+      const jedaLogsObj = (att?.jedaLogs as any) || {};
+      const isSkip = att?.status === "TIDAK_ADA_KEGIATAN" || att?.status === "SKIP_KEGIATAN";
+      const keteranganSkip = isSkip ? (att?.deskripsiKegiatan || jedaLogsObj.alasan || "Tidak ada kegiatan") : undefined;
+      const skippedBy = isSkip ? (jedaLogsObj.skippedBy || null) : undefined;
+      const skippedAt = isSkip ? (jedaLogsObj.skippedAt || (att?.attendedAt ? att.attendedAt.toISOString() : null)) : undefined;
 
       return {
         id: sch.id,
@@ -2753,6 +2763,9 @@ export class KknAttendanceService {
         attendanceStatus: statusKehadiran,
         statusDisplay,
         isMemenuhiDurasi,
+        keteranganSkip,
+        skippedBy,
+        skippedAt,
         actualInZoneSeconds,
         actualInZoneMinutes,
         attendedAt: att?.attendedAt ? att.attendedAt.toISOString() : null,
@@ -2934,6 +2947,10 @@ export class KknAttendanceService {
         },
       },
     });
+
+    if (existingSession && (existingSession.status === "TIDAK_ADA_KEGIATAN" || existingSession.status === "SKIP_KEGIATAN")) {
+      throw new Error("CONFLICT: Kegiatan ini telah ditandai Tidak Ada Kegiatan.");
+    }
 
     if (
       existingSession &&
@@ -3940,6 +3957,176 @@ export class KknAttendanceService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  /**
+   * Menandai jadwal kegiatan KKN sebagai TIDAK_ADA_KEGIATAN (Skip Kegiatan)
+   * Hanya diizinkan untuk DPL kelompok, Ketua Kelompok (isKetua = true), atau Super User/Admin.
+   * Endpoint: POST /api/v1/kkn/kegiatan/:id/skip
+   */
+  async skipKegiatan(
+    userId: string,
+    userRole: string,
+    scheduleId: string,
+    payload: { alasan?: string }
+  ) {
+    const alasan = payload?.alasan?.trim() || "Tidak ada kegiatan";
+
+    // 1. Cari jadwal kegiatan
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: {
+        kelompok: {
+          include: {
+            dpl: true,
+            students: true,
+          },
+        },
+        attendances: true,
+      },
+    });
+
+    if (!schedule) {
+      throw new Error("NOT_FOUND: Jadwal kegiatan tidak ditemukan.");
+    }
+
+    // 2. Validasi RBAC
+    const superRoles = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN"];
+    const isSuperUser = superRoles.includes(userRole);
+    const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
+    const isMahasiswa = userRole === "MAHASISWA_KKN" || userRole === "MAHASISWA";
+
+    let hasPermission = false;
+
+    if (isSuperUser) {
+      hasPermission = true;
+    } else if (isDpl) {
+      // DPL kelompok bersangkutan (atau jika kelompokId null, boleh)
+      if (!schedule.kelompokId || (schedule.kelompok && schedule.kelompok.dplId === userId)) {
+        hasPermission = true;
+      }
+    } else if (isMahasiswa) {
+      // Periksa apakah mahasiswa ini adalah ketua kelompok untuk kelompok jadwal ini
+      const student = await prisma.studentKkn.findUnique({
+        where: { userId },
+      });
+
+      if (
+        student &&
+        student.isKetua &&
+        (!schedule.kelompokId || student.kelompokId === schedule.kelompokId)
+      ) {
+        hasPermission = true;
+      }
+    }
+
+    if (!hasPermission) {
+      throw new Error("FORBIDDEN: Anda tidak memiliki izin untuk melewati kegiatan ini.");
+    }
+
+    // 3. Validasi Concurrency / Status Kegiatan
+    // Jika kegiatan sudah dimulai oleh mahasiswa manapun (BERLANGSUNG, DI_ZONA, DALAM_RADIUS, HADIR_MEMENUHI, HADIR_TIDAK_MEMENUHI, HADIR, SELESAI, SELESAI_TELAT)
+    const activeAttendance = schedule.attendances.find((att) => {
+      const st = (att.status || "").toUpperCase();
+      return (
+        st === "BERLANGSUNG" ||
+        st === "DI_ZONA" ||
+        st === "DALAM_RADIUS" ||
+        st === "HADIR_MEMENUHI" ||
+        st === "HADIR_TIDAK_MEMENUHI" ||
+        st === "HADIR" ||
+        st === "SELESAI" ||
+        st === "SELESAI_TELAT"
+      );
+    });
+
+    if (activeAttendance) {
+      throw new Error("CONFLICT: Tidak dapat skip kegiatan yang sudah dimulai.");
+    }
+
+    // 4. Dapatkan daftar mahasiswa anggota kelompok yang terdampak
+    let targetStudents: { userId: string }[] = [];
+    if (schedule.kelompokId) {
+      targetStudents = await prisma.studentKkn.findMany({
+        where: { kelompokId: schedule.kelompokId },
+        select: { userId: true },
+      });
+    } else {
+      targetStudents = [{ userId }];
+    }
+
+    if (targetStudents.length === 0) {
+      targetStudents = [{ userId }];
+    }
+
+    const ditandaiPada = new Date();
+    const skipMetadata = {
+      skippedBy: userId,
+      skippedAt: ditandaiPada.toISOString(),
+      alasan,
+    };
+
+    // 5. Bulk Upsert Presensi untuk seluruh anggota kelompok
+    for (const student of targetStudents) {
+      await prisma.activityAttendance.upsert({
+        where: {
+          studentId_scheduleId: {
+            studentId: student.userId,
+            scheduleId: schedule.id,
+          },
+        },
+        create: {
+          studentId: student.userId,
+          scheduleId: schedule.id,
+          method: "SKIP_KEGIATAN",
+          latitude: schedule.latitude ? Number(schedule.latitude) : 0,
+          longitude: schedule.longitude ? Number(schedule.longitude) : 0,
+          status: "TIDAK_ADA_KEGIATAN",
+          actualInZoneMinutes: 0,
+          deskripsiKegiatan: alasan,
+          jedaLogs: skipMetadata,
+          attendedAt: ditandaiPada,
+        },
+        update: {
+          method: "SKIP_KEGIATAN",
+          status: "TIDAK_ADA_KEGIATAN",
+          actualInZoneMinutes: 0,
+          deskripsiKegiatan: alasan,
+          jedaLogs: skipMetadata,
+        },
+      });
+    }
+
+    // 6. Audit Trail Logging
+    try {
+      await auditTrailService.recordAudit({
+        userId,
+        roleName: userRole,
+        action: "SKIP_KEGIATAN_KKN",
+        featureCategory: "Presensi KKN",
+        endpoint: `/api/v1/kkn/kegiatan/${schedule.id}/skip`,
+        newValue: {
+          scheduleId: schedule.id,
+          scheduleTitle: schedule.title,
+          kelompokId: schedule.kelompokId,
+          totalMahasiswaTerdampak: targetStudents.length,
+          alasan,
+          status: "TIDAK_ADA_KEGIATAN",
+        },
+      });
+    } catch (_err) {
+      // Non-blocking audit failure
+    }
+
+    return {
+      kegiatanId: schedule.id,
+      jadwalId: schedule.id,
+      statusKegiatan: "TIDAK_ADA_KEGIATAN",
+      totalMahasiswaTerdampak: targetStudents.length,
+      alasan,
+      ditandaiOleh: userId,
+      ditandaiPada: ditandaiPada.toISOString(),
     };
   }
 }

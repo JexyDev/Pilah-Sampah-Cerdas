@@ -47,6 +47,25 @@ export default function RekapSetoran() {
   const [filterKategori, setFilterKategori] = useState("ALL");
   const [filterRw, setFilterRw] = useState("");
   const [filterPeriode, setFilterPeriode] = useState("ALL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // Export Modal State with Strict Date Range Requirement
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [exportPreset, setExportPreset] = useState<"TODAY" | "7d" | "30d" | "THIS_MONTH" | "CUSTOM">("7d");
+
+  // Auto-init default export dates
+  useEffect(() => {
+    const today = new Date();
+    const endStr = today.toISOString().slice(0, 10);
+    const start7d = new Date(today);
+    start7d.setDate(start7d.getDate() - 7);
+    const startStr = start7d.toISOString().slice(0, 10);
+    setExportStartDate(startStr);
+    setExportEndDate(endStr);
+  }, []);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,8 +121,19 @@ export default function RekapSetoran() {
         }
       }
 
-      // 3. Filter Periode
-      if (filterPeriode !== "ALL") {
+      // 3. Filter Rentang Tanggal Spesifik (Custom Start/End Date)
+      if (startDate || endDate) {
+        const depositTime = new Date(d.waktu).getTime();
+        if (startDate) {
+          const startTs = new Date(`${startDate}T00:00:00`).getTime();
+          if (depositTime < startTs) return false;
+        }
+        if (endDate) {
+          const endTs = new Date(`${endDate}T23:59:59`).getTime();
+          if (depositTime > endTs) return false;
+        }
+      } else if (filterPeriode !== "ALL") {
+        // 4. Filter Periode Cepat
         const depositDate = new Date(d.waktu);
         const limitDate = new Date();
         if (filterPeriode === "7d") {
@@ -118,12 +148,12 @@ export default function RekapSetoran() {
 
       return true;
     });
-  }, [deposits, filterKategori, filterRw, filterPeriode]);
+  }, [deposits, filterKategori, filterRw, filterPeriode, startDate, endDate]);
 
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterKategori, filterRw, filterPeriode, itemsPerPage]);
+  }, [filterKategori, filterRw, filterPeriode, startDate, endDate, itemsPerPage]);
 
   // Pagination Calculation
   const totalItems = filteredDeposits.length;
@@ -152,16 +182,57 @@ export default function RekapSetoran() {
     return rawRw;
   };
 
-  const handleExportCSV = () => {
-    if (!filteredDeposits || filteredDeposits.length === 0) {
-      showToast.error("Tidak ada data setoran untuk diekspor pada periode/filter yang dipilih.");
+  const isExportDateRangeValid = !!exportStartDate && !!exportEndDate && exportStartDate <= exportEndDate;
+
+  const handleApplyExportPreset = (preset: "TODAY" | "7d" | "30d" | "THIS_MONTH" | "CUSTOM") => {
+    setExportPreset(preset);
+    const today = new Date();
+    const endStr = today.toISOString().slice(0, 10);
+    if (preset === "TODAY") {
+      setExportStartDate(endStr);
+      setExportEndDate(endStr);
+    } else if (preset === "7d") {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 7);
+      setExportStartDate(d.toISOString().slice(0, 10));
+      setExportEndDate(endStr);
+    } else if (preset === "30d") {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 30);
+      setExportStartDate(d.toISOString().slice(0, 10));
+      setExportEndDate(endStr);
+    } else if (preset === "THIS_MONTH") {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      setExportStartDate(firstDay.toISOString().slice(0, 10));
+      setExportEndDate(endStr);
+    }
+  };
+
+  const exportEligibleDeposits = useMemo(() => {
+    if (!isExportDateRangeValid) return [];
+    const startTs = new Date(`${exportStartDate}T00:00:00`).getTime();
+    const endTs = new Date(`${exportEndDate}T23:59:59`).getTime();
+    return deposits.filter((d) => {
+      const t = new Date(d.waktu).getTime();
+      return t >= startTs && t <= endTs;
+    });
+  }, [deposits, exportStartDate, exportEndDate, isExportDateRangeValid]);
+
+  const handleExecuteExportCSV = () => {
+    if (!isExportDateRangeValid) {
+      showToast.error("Rentang waktu filter ekspor wajib diisi dengan benar (Mulai <= Selesai).");
+      return;
+    }
+
+    if (exportEligibleDeposits.length === 0) {
+      showToast.error("Tidak ada data setoran untuk diekspor pada rentang tanggal yang dipilih.");
       return;
     }
 
     const headers = ["ID", "Warga", "No. Telepon", "Rukun Warga", "Kelurahan", "Jenis Sampah", "Berat (Kg)", "Poin", "Waktu Setor", "Akurasi AI (%)", "Status"];
     const csvRows = [headers.join(",")];
 
-    filteredDeposits.forEach((d) => {
+    exportEligibleDeposits.forEach((d) => {
       const row = [
         `"${d.id}"`,
         `"${d.warga || "-"}"`,
@@ -182,17 +253,20 @@ export default function RekapSetoran() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `rekapitulasi-setoran-sampah-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `rekapitulasi-setoran-${exportStartDate}_sd_${exportEndDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 
-    showToast.success(`Berhasil mengekspor ${filteredDeposits.length} data setoran!`);
+    setIsExportModalOpen(false);
+    showToast.success(`Berhasil mengekspor ${exportEligibleDeposits.length} data setoran (${exportStartDate} s/d ${exportEndDate})!`);
   };
 
   const resetFilters = () => {
     setFilterRw("");
     setFilterKategori("ALL");
     setFilterPeriode("ALL");
+    setStartDate("");
+    setEndDate("");
   };
 
   const LeafIcon: React.FC<{ size?: number }> = ({ size = 12 }) => (
@@ -229,8 +303,8 @@ export default function RekapSetoran() {
         description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
         actions={
           <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
           >
             <FileSpreadsheet size={15} /> <span>Ekspor Laporan CSV</span>
           </button>
@@ -670,6 +744,145 @@ export default function RekapSetoran() {
             >
               <X size={20} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* EXPORT VALIDATION MODAL WITH DATE RANGE ENFORCEMENT */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <FileSpreadsheet size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Ekspor Laporan Audit Setoran</h3>
+                  <p className="text-xs text-slate-500 font-medium">Pilih rentang waktu untuk mengaktifkan unduhan CSV</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-slate-400 block tracking-wider">
+                1. Pilih Preset Rentang Cepat
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "TODAY", label: "Hari Ini" },
+                  { id: "7d", label: "7 Hari" },
+                  { id: "30d", label: "30 Hari" },
+                  { id: "THIS_MONTH", label: "Bulan Ini" },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleApplyExportPreset(p.id as any)}
+                    className={`py-2 px-1 text-xs font-bold rounded-xl transition border cursor-pointer text-center ${
+                      exportPreset === p.id
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Date Range Inputs */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-slate-400 block tracking-wider">
+                2. Tanggal Mulai &amp; Tanggal Selesai (Wajib)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 block mb-1">Mulai Dari</span>
+                  <input
+                    type="date"
+                    value={exportStartDate}
+                    onChange={(e) => {
+                      setExportStartDate(e.target.value);
+                      setExportPreset("CUSTOM");
+                    }}
+                    className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 block mb-1">Sampai Dengan</span>
+                  <input
+                    type="date"
+                    value={exportEndDate}
+                    onChange={(e) => {
+                      setExportEndDate(e.target.value);
+                      setExportPreset("CUSTOM");
+                    }}
+                    className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Validation Feedback Box */}
+            <div className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center justify-between ${
+              !isExportDateRangeValid
+                ? "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200"
+                : exportEligibleDeposits.length === 0
+                ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200"
+                : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+            }`}>
+              <div className="flex items-center gap-2">
+                {!isExportDateRangeValid ? (
+                  <>
+                    <Calendar size={16} className="shrink-0 text-amber-600" />
+                    <span>Tentukan tanggal mulai dan selesai yang valid.</span>
+                  </>
+                ) : exportEligibleDeposits.length === 0 ? (
+                  <>
+                    <X size={16} className="shrink-0 text-rose-600" />
+                    <span>Tidak ada setoran pada rentang tanggal ini.</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+                    <span>Ditemukan <strong>{exportEligibleDeposits.length} data setoran</strong> siap diekspor.</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteExportCSV}
+                disabled={!isExportDateRangeValid || exportEligibleDeposits.length === 0}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 shadow-xs ${
+                  isExportDateRangeValid && exportEligibleDeposits.length > 0
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                }`}
+                title={!isExportDateRangeValid ? "Set rentang waktu filter terlebih dahulu" : undefined}
+              >
+                <Download size={15} />
+                <span>Unduh File CSV ({exportEligibleDeposits.length})</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
