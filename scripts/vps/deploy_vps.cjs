@@ -2,10 +2,12 @@ const { Client } = require('ssh2');
 
 const deployCmd = `
 set -e
-echo "=== 1. Pulling latest code ==="
+echo "=== 1. Pulling latest code from development ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new
 git restore package-lock.json || true
-git pull origin main
+git fetch origin development
+git checkout development || git checkout -b development origin/development
+git pull origin development
 
 echo "=== 2. Building Backend API ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new/apps/api
