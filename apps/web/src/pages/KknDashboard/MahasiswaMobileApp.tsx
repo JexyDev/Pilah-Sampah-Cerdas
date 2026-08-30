@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { IOSSafariGate } from "../../components/common/IOSSafariGate";
 import { MahasiswaMobileShell } from "../../components/layout/MahasiswaMobileShell/MahasiswaMobileShell";
 import { MahasiswaMobileHome } from "./MahasiswaMobileHome";
 import { MahasiswaPresensiMobile } from "./MahasiswaPresensiMobile";
@@ -35,7 +36,7 @@ export const MahasiswaMobileApp: React.FC = () => {
   };
 
   return (
-    <>
+    <IOSSafariGate>
       <MahasiswaMobileShell activeTab={activeTab} onTabChange={setActiveTab}>
         {(tab) => {
           switch (tab) {
@@ -78,7 +79,7 @@ export const MahasiswaMobileApp: React.FC = () => {
         }}
         prokerList={prokerList}
       />
-    </>
+    </IOSSafariGate>
   );
 };
 

@@ -23,6 +23,9 @@ import {
   History,
   X,
   Compass,
+  Calendar,
+  CalendarX,
+  Info,
 } from "lucide-react";
 import api from "../../utils/api";
 import showToast from "../../utils/showToast";
@@ -62,6 +65,16 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [historyList, setHistoryList] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
+  // Active Kegiatan Schedule State
+  const [kegiatanList, setKegiatanList] = useState<any[]>([]);
+  const [isLoadingKegiatan, setIsLoadingKegiatan] = useState(true);
+
+  // Skip Modal State
+  const [showSkipModal, setShowSkipModal] = useState(false);
+  const [selectedKegiatanToSkip, setSelectedKegiatanToSkip] = useState<any | null>(null);
+  const [alasanSkip, setAlasanSkip] = useState("");
+  const [isSubmittingSkip, setIsSubmittingSkip] = useState(false);
+
   // Form State
   const [deskripsi, setDeskripsi] = useState("");
   const [fotoFile, setFotoFile] = useState<File | null>(null);
@@ -71,9 +84,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 1. Ambil Data Posko & Riwayat Presensi
+  // 1. Ambil Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
   useEffect(() => {
     fetchPoskoData();
+    fetchKegiatanAktif();
     fetchRiwayatPresensi();
   }, []);
 
@@ -101,7 +115,6 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       const res = await api.get("/areas/posko");
       const list = res.data?.data || res.data || [];
       if (Array.isArray(list) && list.length > 0) {
-        // Ambil posko yang sesuai wilayah mahasiswa
         const myPosko = list[0];
         if (myPosko.latitude && myPosko.longitude) {
           setPosko({
@@ -113,13 +126,25 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         }
       }
     } catch {
-      // Default Fallback Posko Coblong
       setPosko({
         name: "Posko KKN Kelurahan",
         lat: -6.8856,
         lng: 107.6135,
         radius: 200,
       });
+    }
+  };
+
+  const fetchKegiatanAktif = async () => {
+    try {
+      setIsLoadingKegiatan(true);
+      const res = await api.get("/kkn/kegiatan-aktif");
+      const list = res.data?.data || [];
+      setKegiatanList(Array.isArray(list) ? list : []);
+    } catch (err) {
+      console.error("Gagal memuat kegiatan aktif", err);
+    } finally {
+      setIsLoadingKegiatan(false);
     }
   };
 
@@ -130,7 +155,6 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       const list = res.data?.data || [];
       setHistoryList(list);
 
-      // Cek apakah ada sesi presensi yang sedang aktif hari ini (belum checkout)
       const active = list.find((item: any) => item.statusPresensi === "AKTIF" || !item.jamPulang);
       if (active) {
         setActiveSession(active);
@@ -252,6 +276,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         setFotoPreview(null);
         setDeskripsi("");
         fetchRiwayatPresensi();
+        fetchKegiatanAktif();
       }
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal melakukan presensi mandiri.");
@@ -274,6 +299,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         showToast.success("Check-out berhasil! Sesi presensi hari ini telah selesai.");
         setActiveSession(null);
         fetchRiwayatPresensi();
+        fetchKegiatanAktif();
       }
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal melakukan check-out presensi.");
@@ -281,6 +307,50 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  // 7. Handler Skip Kegiatan (Tidak Ada Kegiatan)
+  const handleOpenSkipModal = (kegiatan: any) => {
+    setSelectedKegiatanToSkip(kegiatan);
+    setAlasanSkip("Tidak ada kegiatan di posko pada hari ini");
+    setShowSkipModal(true);
+  };
+
+  const handleConfirmSkip = async () => {
+    if (!selectedKegiatanToSkip) return;
+
+    setIsSubmittingSkip(true);
+    try {
+      const res = await api.post(`/kkn/kegiatan/${selectedKegiatanToSkip.id}/skip`, {
+        alasan: alasanSkip.trim() || "Tidak ada kegiatan",
+      });
+
+      if (res.data?.success || res.status === 200) {
+        showToast.success("Jadwal kegiatan berhasil ditandai sebagai: Tidak Ada Kegiatan.");
+        setShowSkipModal(false);
+        setSelectedKegiatanToSkip(null);
+        fetchKegiatanAktif();
+        fetchRiwayatPresensi();
+      }
+    } catch (err: any) {
+      showToast.error(err.response?.data?.message || "Gagal menandai tidak ada kegiatan.");
+    } finally {
+      setIsSubmittingSkip(false);
+    }
+  };
+
+  const primaryKegiatan = kegiatanList.length > 0 ? kegiatanList[0] : null;
+  const isSkippedToday =
+    primaryKegiatan?.statusKehadiran === "TIDAK_ADA_KEGIATAN" ||
+    primaryKegiatan?.attendanceStatus === "TIDAK_ADA_KEGIATAN";
+
+  const isDplOrKetuaOrAdmin =
+    user?.peran === "DPL" ||
+    user?.peran === "DOSEN_PEMBIMBING" ||
+    user?.peran === "SUPER_USER" ||
+    user?.peran === "DEVELOPER" ||
+    user?.peran === "ADMIN_DLH" ||
+    Boolean((user as any)?.isKetua) ||
+    Boolean((user as any)?.studentKkn?.isKetua);
 
   return (
     <div className="space-y-4">
@@ -293,12 +363,15 @@ export const MahasiswaPresensiMobile: React.FC = () => {
               GPS Geofencing Mobile
             </span>
             <button
-              onClick={getCurrentLocation}
+              onClick={() => {
+                getCurrentLocation();
+                fetchKegiatanAktif();
+              }}
               disabled={isLocating}
               className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all flex items-center gap-1 text-[10px] font-bold cursor-pointer"
             >
               <RefreshCw size={12} className={isLocating ? "animate-spin" : ""} />
-              <span>{isLocating ? "Mencari..." : "Segarkan GPS"}</span>
+              <span>{isLocating ? "Mencari..." : "Segarkan"}</span>
             </button>
           </div>
           <h2 className="text-xl font-black tracking-tight pt-1">Presensi Lapangan KKN</h2>
@@ -308,7 +381,88 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Status Lokasi & Geofence Posko */}
+      {/* 2. Kartu Jadwal Kegiatan Aktif Hari Ini (KegiatanKknCard) */}
+      {isLoadingKegiatan ? (
+        <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 text-xs text-slate-400">
+          <Loader2 size={16} className="animate-spin text-emerald-600" />
+          <span>Memeriksa jadwal kegiatan aktif...</span>
+        </div>
+      ) : primaryKegiatan ? (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                <Calendar size={12} className="text-emerald-600" />
+                <span>Jadwal Kegiatan Hari Ini</span>
+              </div>
+              <h3 className="font-black text-sm text-slate-900 dark:text-white truncate mt-0.5">
+                {primaryKegiatan.namaKegiatan || "Kegiatan Harian Posko KKN"}
+              </h3>
+            </div>
+
+            {/* Badge Status Kegiatan */}
+            <span
+              className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shrink-0 ${
+                isSkippedToday
+                  ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700"
+                  : primaryKegiatan.statusKehadiran === "HADIR" || primaryKegiatan.statusKehadiran === "HADIR_MEMENUHI"
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  : primaryKegiatan.statusKehadiran === "BERLANGSUNG"
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 animate-pulse"
+                  : "bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+              }`}
+            >
+              {isSkippedToday
+                ? "⚪ Tidak Ada Kegiatan"
+                : primaryKegiatan.statusDisplay || primaryKegiatan.status || "Aktif"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+            <div className="space-y-0.5">
+              <p className="text-[10px] text-slate-400 font-medium">Jam Kegiatan</p>
+              <p className="font-bold text-slate-800 dark:text-slate-200">
+                {primaryKegiatan.jamMulai && primaryKegiatan.jamSelesai
+                  ? `${primaryKegiatan.jamMulai} - ${primaryKegiatan.jamSelesai} WIB`
+                  : primaryKegiatan.time || "08:00 - 16:00 WIB"}
+              </p>
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-[10px] text-slate-400 font-medium">Durasi Wajib</p>
+              <p className="font-bold text-slate-800 dark:text-slate-200">
+                {primaryKegiatan.durasiWajibMenit || 120} Menit
+              </p>
+            </div>
+          </div>
+
+          {/* Banner jika di-Skip */}
+          {isSkippedToday && (
+            <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                <Info size={14} className="text-slate-500" />
+                <span>Kegiatan Diliburkan / Dikosongkan</span>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                Alasan: "{primaryKegiatan.keteranganSkip || "Tidak ada kegiatan pada hari ini"}". Anda tidak
+                diwajibkan melakukan presensi dan tidak dikenakan sanksi Alpa.
+              </p>
+            </div>
+          )}
+
+          {/* Tombol Skip Kegiatan untuk Ketua Kelompok / DPL */}
+          {isDplOrKetuaOrAdmin && !isSkippedToday && !activeSession && (
+            <button
+              onClick={() => handleOpenSkipModal(primaryKegiatan)}
+              className="w-full py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <CalendarX size={14} className="text-slate-500" />
+              <span>Tandai: Tidak Ada Kegiatan</span>
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      {/* 3. Status Lokasi & Geofence Posko */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -359,8 +513,26 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         )}
       </div>
 
-      {/* 3. Tampilan Sesi Aktif (Jika Sedang Masuk) ATAU Form Check-In Baru */}
-      {activeSession ? (
+      {/* 4. Tampilan Sesi Aktif ATAU Form Check-In Baru */}
+      {isSkippedToday ? (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-2xs text-center space-y-2">
+          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center mx-auto">
+            <CalendarX size={24} />
+          </div>
+          <h4 className="font-black text-sm text-slate-800 dark:text-slate-200">Presensi Hari Ini Dinonaktifkan</h4>
+          <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+            Jadwal kegiatan posko hari ini telah ditandai sebagai "Tidak Ada Kegiatan".
+          </p>
+          <div className="pt-2">
+            <button
+              disabled
+              className="w-full py-3.5 bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl text-xs font-black uppercase tracking-wider cursor-not-allowed"
+            >
+              Tidak Ada Kegiatan
+            </button>
+          </div>
+        </div>
+      ) : activeSession ? (
         /* KARTU SESI SEDANG BERLANGSUNG */
         <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/80 rounded-3xl p-5 shadow-sm space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
@@ -523,7 +695,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         </form>
       )}
 
-      {/* 4. Riwayat Presensi Singkat */}
+      {/* 5. Riwayat Presensi Singkat */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
           <div className="flex items-center gap-2 text-xs font-black text-slate-900 dark:text-white">
@@ -573,6 +745,74 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 6. Modal Konfirmasi Skip Kegiatan */}
+      {showSkipModal && selectedKegiatanToSkip && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-scale-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} />
+              </div>
+              <div className="min-w-0">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                  Tandai "Tidak Ada Kegiatan"?
+                </h4>
+                <p className="text-[10px] text-slate-500 font-mono">
+                  {selectedKegiatanToSkip.namaKegiatan || "Jadwal KKN"}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Seluruh anggota kelompok pada jadwal ini akan mendapatkan status{" "}
+              <span className="font-bold text-slate-900 dark:text-white">"Tidak Ada Kegiatan"</span> dan tidak
+              diwajibkan hadir. Tindakan ini tidak dapat dibatalkan oleh mahasiswa biasa.
+            </p>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Alasan Ketiadaan Kegiatan:</label>
+              <input
+                type="text"
+                value={alasanSkip}
+                onChange={(e) => setAlasanSkip(e.target.value)}
+                placeholder="Contoh: Libur posko / Koordinasi luar wilayah"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSkipModal(false);
+                  setSelectedKegiatanToSkip(null);
+                }}
+                disabled={isSubmittingSkip}
+                className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition cursor-pointer"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmSkip}
+                disabled={isSubmittingSkip}
+                className="py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+              >
+                {isSubmittingSkip ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <span>Ya, Tandai</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -14,6 +14,7 @@ import Header from "../Header/Header";
 import ErrorBoundaryFallback from "../../common/ErrorBoundaryFallback";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { IOSSafariGate } from "../../common/IOSSafariGate";
 
 const MainLayout: React.FC = () => {
   const { user } = useAuthStore();
@@ -28,11 +29,13 @@ const MainLayout: React.FC = () => {
     };
   }, []);
 
-  // For MAHASISWA_KKN, render dedicated mobile shell without desktop admin sidebar/header
+  // For MAHASISWA_KKN, render dedicated mobile shell with strict iOS Safari verification
   if (user?.peran === "MAHASISWA_KKN") {
     return (
       <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
-        <Outlet />
+        <IOSSafariGate>
+          <Outlet />
+        </IOSSafariGate>
       </ErrorBoundary>
     );
   }
