@@ -38,6 +38,12 @@ import {
 } from "../../services/penilaianKknApiService";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import {
+  formatPersonName,
+  formatKelompokName,
+  formatProdiName,
+} from "../../utils/textFormatter";
+import { sortStudentsRoster } from "../../utils/sortUtils";
 
 export const PenilaianLaporanAkhirPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
@@ -124,9 +130,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
     fetchData();
   }, []);
 
-  // Filtered Data
+  // Filtered Data with Natural Roster Sorting
   const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
+    const filtered = students.filter((s) => {
       const q = searchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
@@ -141,6 +147,12 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         (statusFilter === "BELUM" && s.status === "Belum Dinilai");
 
       return matchSearch && matchStatus;
+    });
+
+    return sortStudentsRoster(filtered, {
+      getKelompok: (s) => s.kelompok,
+      getName: (s) => s.nama,
+      getNim: (s) => s.nim,
     });
   }, [students, searchQuery, statusFilter]);
 
@@ -604,17 +616,17 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       {/* 3. Nama Mahasiswa */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900 dark:text-slate-100">
-                          {item.nama}
+                          {formatPersonName(item.nama)}
                         </div>
                         <div className="text-[11px] text-slate-400 font-normal">
-                          {item.jurusan}
+                          {formatProdiName(item.jurusan)}
                         </div>
                       </td>
 
                       {/* 4. Kelompok */}
                       <td className="py-3.5 px-4">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {item.kelompok}
+                          {formatKelompokName(item.kelompok)}
                         </span>
                       </td>
 
