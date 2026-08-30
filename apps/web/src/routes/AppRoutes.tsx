@@ -6,8 +6,78 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import MainLayout from "../components/layout/MainLayout/MainLayout";
+import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
+import type { UserRole } from "../store/useAuthStore";
+
+// Lazy Loaded Pages for Optimal Code-Splitting & Minimal Initial Bundle Size
+const Dashboard = React.lazy(() => import("../pages/Dashboard/Dashboard"));
+const Monitoring = React.lazy(() => import("../pages/Monitoring/Monitoring"));
+const MasterData = React.lazy(() => import("../pages/MasterData/MasterData"));
+const MasterWilayah = React.lazy(() => import("../pages/MasterWilayah/MasterWilayah"));
+const Leaderboard = React.lazy(() => import("../pages/Leaderboard/Leaderboard"));
+const NotFound = React.lazy(() => import("../pages/NotFound/NotFound"));
+const Login = React.lazy(() => import("../pages/Login/Login"));
+const MahasiswaRegistration = React.lazy(() => import("../pages/Registration/MahasiswaRegistration"));
+const Register = React.lazy(() => import("../pages/Registration/Register"));
+
+const ManajemenPengguna = React.lazy(() => import("../pages/ManajemenPengguna/ManajemenPengguna"));
+const ManajemenTempatSampah = React.lazy(() => import("../pages/ManajemenTempatSampah/ManajemenTempatSampah"));
+const MasterRuleEngine = React.lazy(() => import("../pages/MasterRuleEngine/MasterRuleEngine"));
+const MasterProvinsi = React.lazy(() => import("../pages/MasterProvinsi/MasterProvinsi"));
+const MasterKabupaten = React.lazy(() => import("../pages/MasterKabupaten/MasterKabupaten"));
+const MasterKecamatan = React.lazy(() => import("../pages/MasterKecamatan/MasterKecamatan"));
+const MasterKelurahan = React.lazy(() => import("../pages/MasterKelurahan/MasterKelurahan"));
+const MasterRw = React.lazy(() => import("../pages/MasterRw/MasterRw"));
+const JadwalKegiatan = React.lazy(() => import("../pages/JadwalKegiatan/JadwalKegiatan"));
+const RekapSetoran = React.lazy(() => import("../pages/RekapSetoran/RekapSetoran"));
+const PoinWarga = React.lazy(() => import("../pages/PoinWarga/PoinWarga"));
+const MasterDatasetKlasifikasi = React.lazy(() => import("../pages/MasterDatasetKlasifikasi/MasterDatasetKlasifikasi"));
+const Notifikasi = React.lazy(() => import("../pages/Notifikasi/Notifikasi"));
+const Pengaturan = React.lazy(() => import("../pages/Pengaturan/Pengaturan"));
+const SimulasiModelAI = React.lazy(() => import("../pages/SimulasiModelAI/SimulasiModelAI"));
+const PenggunaOnline = React.lazy(() => import("../pages/PenggunaOnline/PenggunaOnline"));
+const SetorSampah = React.lazy(() => import("../pages/SetorSampah/SetorSampah"));
+const KknDashboard = React.lazy(() => import("../pages/KknDashboard/KknDashboard"));
+const KknWargaMonitoring = React.lazy(() => import("../pages/KknDashboard/KknWargaMonitoring"));
+const AuditTrailList = React.lazy(() => import("../pages/SuperUser/AuditTrailList"));
+const MonitoringAbsen = React.lazy(() => import("../pages/MonitoringAbsen/MonitoringAbsen"));
+const LaporanPresensiPage = React.lazy(() => import("../pages/MonitoringAbsen/LaporanPresensiPage"));
+const ManajemenPengangkutan = React.lazy(() => import("../pages/ManajemenPengangkutan/ManajemenPengangkutan"));
+const ManajemenEkosistemKkn = React.lazy(() => import("../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn"));
+const PemanfaatanSampah = React.lazy(() => import("../pages/PemanfaatanSampah/PemanfaatanSampah"));
+const PoskoKknPage = React.lazy(() => import("../pages/PoskoKkn/PoskoKknPage"));
+const HasilPemanfaatan = React.lazy(() => import("../pages/HasilPemanfaatan/HasilPemanfaatan"));
+const RwApproval = React.lazy(() => import("../pages/RwPortal/RwApproval"));
+const InputSetoranManual = React.lazy(() => import("../pages/InputSetoranManual/InputSetoranManual"));
+const IdeDaurUlang = React.lazy(() => import("../pages/IdeDaurUlang/IdeDaurUlang"));
+const TentangAplikasi = React.lazy(() => import("../pages/TentangAplikasi/TentangAplikasi"));
+const PanduanPage = React.lazy(() => import("../pages/Panduan/PanduanPage"));
+const DplDashboardPage = React.lazy(() => import("../pages/dpl/DplDashboardPage"));
+const LandingPage = React.lazy(() => import("../pages/LandingPage/LandingPage"));
+const ImportSurveiKkn = React.lazy(() => import("../pages/SuperUser/ImportSurveiKkn"));
+const DataSurveiKkn = React.lazy(() => import("../pages/SuperUser/DataSurveiKkn"));
+const DetailSurveiKkn = React.lazy(() => import("../pages/SuperUser/DetailSurveiKkn"));
+const EditSurveiKkn = React.lazy(() => import("../pages/SuperUser/EditSurveiKkn"));
+const ResiduDashboard = React.lazy(() => import("../pages/ResiduDashboard/ResiduDashboard"));
+const DownloadPage = React.lazy(() => import("../pages/Download/DownloadPage"));
+const EvaluasiDampakKkn = React.lazy(() => import("../pages/EvaluasiDampak/EvaluasiDampakKkn"));
+const PemantauanDanRekapitulasi = React.lazy(() => import("../pages/PemantauanDanRekapitulasi/PemantauanDanRekapitulasi"));
+const ProgramKerjaKkn = React.lazy(() => import("../pages/ProgramKerjaKkn/ProgramKerjaKkn"));
+const PenilaianProkerPage = React.lazy(() => import("../pages/PenilaianKkn/PenilaianProkerPage"));
+const RekapNilaiKknPage = React.lazy(() => import("../pages/PenilaianKkn/RekapNilaiKknPage"));
+const PenilaianKknMahasiswaPage = React.lazy(() => import("../pages/PenilaianKkn/PenilaianKknMahasiswaPage"));
+const PenilaianLaporanAkhirPage = React.lazy(() => import("../pages/PenilaianKkn/PenilaianLaporanAkhirPage"));
+const MasterPanduanPage = React.lazy(() => import("../pages/MasterData/MasterPanduanPage"));
+const MasterKegiatanSampahPage = React.lazy(() => import("../pages/MasterData/MasterKegiatanSampahPage"));
+const LogbookKknPage = React.lazy(() => import("../pages/dpl/LogbookKknPage"));
+const LogAktivitasDpl = React.lazy(() => import("../pages/dpl/LogAktivitasDpl"));
+const KurasiLandingPage = React.lazy(() => import("../pages/SuperUser/KurasiLandingPage"));
+const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/KelolaPoinPengguna"));
+const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
+const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
 
 // Scroll Restoration Helper Component
 export const ScrollToTop: React.FC = () => {
@@ -19,75 +89,14 @@ export const ScrollToTop: React.FC = () => {
 
   return null;
 };
-import MainLayout from "../components/layout/MainLayout/MainLayout";
-import Dashboard from "../pages/Dashboard/Dashboard";
-import Monitoring from "../pages/Monitoring/Monitoring";
-import MasterData from "../pages/MasterData/MasterData";
-import MasterWilayah from "../pages/MasterWilayah/MasterWilayah";
-import Leaderboard from "../pages/Leaderboard/Leaderboard";
-import NotFound from "../pages/NotFound/NotFound";
-import Login from "../pages/Login/Login";
-import MahasiswaRegistration from "../pages/Registration/MahasiswaRegistration";
-import Register from "../pages/Registration/Register";
 
-import ManajemenPengguna from "../pages/ManajemenPengguna/ManajemenPengguna";
-import ManajemenTempatSampah from "../pages/ManajemenTempatSampah/ManajemenTempatSampah";
-import MasterRuleEngine from "../pages/MasterRuleEngine/MasterRuleEngine";
-import MasterProvinsi from "../pages/MasterProvinsi/MasterProvinsi";
-import MasterKabupaten from "../pages/MasterKabupaten/MasterKabupaten";
-import MasterKecamatan from "../pages/MasterKecamatan/MasterKecamatan";
-import MasterKelurahan from "../pages/MasterKelurahan/MasterKelurahan";
-import MasterRw from "../pages/MasterRw/MasterRw";
-import JadwalKegiatan from "../pages/JadwalKegiatan/JadwalKegiatan";
-import RekapSetoran from "../pages/RekapSetoran/RekapSetoran";
-import PoinWarga from "../pages/PoinWarga/PoinWarga";
-import MasterDatasetKlasifikasi from "../pages/MasterDatasetKlasifikasi/MasterDatasetKlasifikasi";
-import Notifikasi from "../pages/Notifikasi/Notifikasi";
-import Pengaturan from "../pages/Pengaturan/Pengaturan";
-import SimulasiModelAI from "../pages/SimulasiModelAI/SimulasiModelAI";
-import PenggunaOnline from "../pages/PenggunaOnline/PenggunaOnline";
-import SetorSampah from "../pages/SetorSampah/SetorSampah";
-import KknDashboard from "../pages/KknDashboard/KknDashboard";
-import KknWargaMonitoring from "../pages/KknDashboard/KknWargaMonitoring";
-import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
-import type { UserRole } from "../store/useAuthStore";
-import { AuditTrailList } from "../pages/SuperUser/AuditTrailList";
-import MonitoringAbsen from "../pages/MonitoringAbsen/MonitoringAbsen";
-import LaporanPresensiPage from "../pages/MonitoringAbsen/LaporanPresensiPage";
-import ManajemenPengangkutan from "../pages/ManajemenPengangkutan/ManajemenPengangkutan";
-import ManajemenEkosistemKkn from "../pages/ManajemenEkosistemKkn/ManajemenEkosistemKkn";
-import PemanfaatanSampah from "../pages/PemanfaatanSampah/PemanfaatanSampah";
-import PoskoKknPage from "../pages/PoskoKkn/PoskoKknPage";
-import HasilPemanfaatan from "../pages/HasilPemanfaatan/HasilPemanfaatan";
-import { RwApproval } from "../pages/RwPortal/RwApproval";
-import InputSetoranManual from "../pages/InputSetoranManual/InputSetoranManual";
-import IdeDaurUlang from "../pages/IdeDaurUlang/IdeDaurUlang";
-import TentangAplikasi from "../pages/TentangAplikasi/TentangAplikasi";
-import PanduanPage from "../pages/Panduan/PanduanPage";
-import DplDashboardPage from "../pages/dpl/DplDashboardPage";
-import LandingPage from "../pages/LandingPage/LandingPage";
-import ImportSurveiKkn from "../pages/SuperUser/ImportSurveiKkn";
-import DataSurveiKkn from "../pages/SuperUser/DataSurveiKkn";
-import DetailSurveiKkn from "../pages/SuperUser/DetailSurveiKkn";
-import EditSurveiKkn from "../pages/SuperUser/EditSurveiKkn";
-import ResiduDashboard from "../pages/ResiduDashboard/ResiduDashboard";
-import DownloadPage from "../pages/Download/DownloadPage";
-import EvaluasiDampakKkn from "../pages/EvaluasiDampak/EvaluasiDampakKkn";
-import PemantauanDanRekapitulasi from "../pages/PemantauanDanRekapitulasi/PemantauanDanRekapitulasi";
-import ProgramKerjaKkn from "../pages/ProgramKerjaKkn/ProgramKerjaKkn";
-import PenilaianProkerPage from "../pages/PenilaianKkn/PenilaianProkerPage";
-import RekapNilaiKknPage from "../pages/PenilaianKkn/RekapNilaiKknPage";
-import PenilaianKknMahasiswaPage from "../pages/PenilaianKkn/PenilaianKknMahasiswaPage";
-import PenilaianLaporanAkhirPage from "../pages/PenilaianKkn/PenilaianLaporanAkhirPage";
-import MasterPanduanPage from "../pages/MasterData/MasterPanduanPage";
-import MasterKegiatanSampahPage from "../pages/MasterData/MasterKegiatanSampahPage";
-import { LogbookKknPage } from "../pages/dpl/LogbookKknPage";
-import LogAktivitasDpl from "../pages/dpl/LogAktivitasDpl";
-import KurasiLandingPage from "../pages/SuperUser/KurasiLandingPage";
-import KelolaPoinPengguna from "../pages/KelolaPoinPengguna/KelolaPoinPengguna";
-import ZonaInspectorPage from "../pages/Developer/ZonaInspectorPage";
-import KelolaLogbookPage from "../pages/Developer/KelolaLogbookPage";
-
+// Branded Minimalist Loading Spinner for Lazy Chunk Transitions
+const PageLoadingFallback: React.FC = () => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] w-full gap-3 py-16 animate-fade-in">
+    <div className="w-10 h-10 border-3 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin" />
+    <span className="text-xs font-semibold text-slate-400">Memuat halaman...</span>
+  </div>
+);
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: UserRole[] }> = ({
@@ -139,7 +148,8 @@ const AppRoutes: React.FC = () => {
   return (
     <>
       <ScrollToTop />
-      <Routes>
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/download" element={<DownloadPage />} />
@@ -1219,6 +1229,7 @@ const AppRoutes: React.FC = () => {
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </Suspense>
     </>
   );
 };
