@@ -1786,6 +1786,8 @@ const Dashboard: React.FC = () => {
       }
     };
     fetchStats();
+    const interval = setInterval(fetchStats, 30_000);
+    return () => clearInterval(interval);
   }, [user, weeks, timeFilter, selectedWilayah]);
 
   if (loading) {

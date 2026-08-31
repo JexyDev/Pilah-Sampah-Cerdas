@@ -42,14 +42,18 @@ export function resolveImageUrl(path?: string | null): string {
   const apiBase = getApiBaseUrl();
   let backendOrigin = apiBase.replace(/\/api(\/v1)?\/?$/, "");
 
-  // Jika base URL hanya relatif (/api/v1), gunakan origin window jika ada
-  if (backendOrigin.startsWith("/")) {
+  // Jika backendOrigin kosong atau hanya path relatif (/api/v1), tentukan origin yang sesuai
+  if (!backendOrigin || backendOrigin.startsWith("/")) {
     if (typeof window !== "undefined" && window.location?.origin) {
-      // Jika di localhost Vite dev (biasanya port 5173), gunakan port backend 3000 jika hostname localhost
       if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
         backendOrigin = `http://${window.location.hostname}:3000`;
       } else {
-        backendOrigin = window.location.origin;
+        // Pada VPS atau domain: jika diakses via port Vite langsung (5173 / 5174), arahkan ke backend port 3000
+        if (window.location.port === "5173" || window.location.port === "5174") {
+          backendOrigin = `${window.location.protocol}//${window.location.hostname}:3000`;
+        } else {
+          backendOrigin = window.location.origin;
+        }
       }
     } else {
       backendOrigin = "";

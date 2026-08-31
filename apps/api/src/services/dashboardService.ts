@@ -406,23 +406,78 @@ export const dashboardService = {
     if (activeUserIds.length > 0) {
       const activeUsers = await prisma.user.findMany({
         where: { id: { in: activeUserIds } },
-        include: { role: true },
+        include: {
+          role: true,
+          studentProfile: { select: { id: true } },
+          petugasProfile: { select: { id: true } },
+          dplKelompok: { select: { id: true } },
+        },
       });
 
       activeUsers.forEach((u) => {
         const roleName = (u.role?.name || "").toUpperCase();
-        if (roleName.includes("ADMIN") || roleName.includes("SUPER") || roleName.includes("TASKFORCE") || roleName.includes("DEVELOPER")) {
-          activeAdmin += 1;
-        } else if (roleName.includes("CAMAT") || roleName.includes("LURAH") || roleName.includes("PEMIMPIN")) {
-          activeOperator += 1;
-        } else if (roleName.includes("RW")) {
-          activeRw += 1;
-        } else if (roleName.includes("DPL") || roleName.includes("DOSEN")) {
+
+        // 1. Dosen DPL (Prioritas: role DPL/Dosen/MPL atau memiliki relasi kelompok DPL atau NIP Dosen)
+        const isDpl =
+          roleName.includes("DPL") ||
+          roleName.includes("DOSEN") ||
+          roleName.includes("PENDAMPING") ||
+          roleName.includes("MPL") ||
+          (u.dplKelompok && u.dplKelompok.length > 0) ||
+          (Boolean(u.nip) && !roleName.includes("SUPER") && !roleName.includes("DEVELOPER") && !roleName.includes("CAMAT") && !roleName.includes("LURAH"));
+
+        // 2. Operator (DLH / Camat / Lurah / Pimpinan)
+        const isOperator =
+          roleName.includes("DLH") ||
+          roleName.includes("CAMAT") ||
+          roleName.includes("LURAH") ||
+          roleName.includes("PEMIMPIN") ||
+          roleName.includes("PIMPINAN") ||
+          roleName.includes("OPERATOR");
+
+        // 3. Mahasiswa KKN
+        const isKkn =
+          roleName.includes("KKN") ||
+          roleName.includes("MAHASISWA") ||
+          Boolean(u.studentProfile);
+
+        // 4. Petugas Residu & Pengangkut
+        const isResidu =
+          roleName.includes("RESIDU") ||
+          roleName.includes("PENGANGKUT") ||
+          roleName.includes("PETUGAS") ||
+          Boolean(u.petugasProfile);
+
+        // 5. Rukun Warga & Rukun Tetangga (RW / RT)
+        const isRw =
+          roleName.includes("RW") ||
+          roleName.includes("RT");
+
+        // 6. Admin / Task Force / Developer
+        const isAdmin =
+          roleName.includes("SUPER") ||
+          roleName.includes("DEVELOPER") ||
+          roleName.includes("TASKFORCE") ||
+          roleName.includes("TASK_FORCE") ||
+          roleName.includes("PANITIA") ||
+          roleName.includes("ADMIN") ||
+          roleName.includes("DEV");
+
+        if (isDpl) {
           activeDpl += 1;
-        } else if (roleName.includes("RESIDU")) {
-          activeResidu += 1;
-        } else if (roleName.includes("KKN") || roleName.includes("MAHASISWA")) {
+        } else if (isOperator) {
+          activeOperator += 1;
+        } else if (isKkn) {
           activeKkn += 1;
+        } else if (isResidu) {
+          activeResidu += 1;
+        } else if (isRw) {
+          activeRw += 1;
+        } else if (isAdmin) {
+          activeAdmin += 1;
+        } else {
+          // Fallback untuk peran lain (misal ADMIN default jika tidak dikenal tapi memiliki sesi)
+          activeAdmin += 1;
         }
       });
     }

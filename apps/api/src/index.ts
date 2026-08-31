@@ -649,6 +649,14 @@ if (isPrimaryWorker) {
     await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));
     console.log("[AutoMigration] Database columns checked and synced successfully.");
 
+    // Auto-heal & synchronize Posko KKN photos with facilities records
+    try {
+      const { poskoKknService } = await import("./services/poskoKknService.js");
+      await poskoKknService.syncPoskoPhotosWithFacilities();
+    } catch (syncErr) {
+      console.warn("[AutoMigration] Posko photo sync error:", syncErr);
+    }
+
     const dummyUser = await prisma.user.findFirst({
       where: {
         OR: [

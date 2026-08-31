@@ -16,7 +16,7 @@ export const getApiBaseUrl = (): string => {
     }
   }
 
-  if (import.meta.env.VITE_API_BASE_URL) {
+  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) {
     return import.meta.env.VITE_API_BASE_URL;
   }
 

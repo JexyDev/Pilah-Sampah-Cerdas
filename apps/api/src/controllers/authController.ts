@@ -1087,8 +1087,10 @@ export class AuthController {
               id: true,
               name: true,
               phone: true,
+              nip: true,
               role: { select: { name: true } },
               studentProfile: { select: { nim: true } },
+              dplKelompok: { select: { id: true, name: true } },
             },
           },
         },
@@ -1104,24 +1106,39 @@ export class AuthController {
           return true;
         })
         .map((t) => {
-          const roleName: string = (t.user as any).role?.name ?? "UNKNOWN";
+          let roleName: string = (t.user as any)?.role?.name ?? "";
+          if (!roleName) {
+            if ((t.user as any)?.studentProfile) {
+              roleName = "MAHASISWA_KKN";
+            } else if ((t.user as any)?.dplKelompok?.length > 0 || (t.user as any)?.nip) {
+              roleName = "DPL";
+            } else {
+              roleName = "PENGGUNA";
+            }
+          }
+
           const isMobile = [
             "WARGA",
             "PETUGAS_RESIDU",
             "MAHASISWA_KKN",
-            "DPL",
             "RT",
             "RW",
             "PENGANGKUT",
-          ].includes(roleName);
+          ].includes(roleName.toUpperCase());
+
+          const identifier =
+            (t.user as any)?.studentProfile?.nim ??
+            (t.user as any)?.nip ??
+            (t.user as any)?.phone ??
+            t.userId.slice(0, 8);
+
           return {
             id: t.userId,
-            name: (t.user as any).name ?? "-",
-            phone: (t.user as any).phone ?? "-",
+            name: (t.user as any)?.name ?? "-",
+            phone: (t.user as any)?.phone ?? "-",
             role: roleName,
             device: isMobile ? "Mobile App (Android)" : "Website (Desktop)",
-            identifier:
-              (t.user as any).studentProfile?.nim ?? (t.user as any).phone ?? t.userId.slice(0, 8),
+            identifier,
             loginTime: t.createdAt.toISOString(),
             tokenExpiresAt: t.expiresAt.toISOString(),
           };

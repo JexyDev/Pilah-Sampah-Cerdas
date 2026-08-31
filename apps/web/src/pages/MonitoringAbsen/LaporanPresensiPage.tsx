@@ -39,6 +39,7 @@ import {
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { dplService, type ConfigTargets } from "../../services/dplService";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { wsClient } from "../../utils/websocket";
 import {
@@ -260,12 +261,40 @@ export const LaporanPresensiPage: React.FC = () => {
     }
   };
 
-  // Compute period target hours dynamically
+  const [configTargets, setConfigTargets] = useState<ConfigTargets>({
+    targetTotalKegiatan: 2000,
+    targetTotalJam: 200,
+    targetHarianJam: 4,
+    targetHarianKegiatan: 5,
+    attendanceMinDurationHours: 4,
+    attendanceMinDurationMinutes: 0,
+    attendanceMinDurationSeconds: 0,
+  });
+
+  const fetchConfigTargets = async () => {
+    try {
+      const data = await dplService.getConfigTargets();
+      if (data) {
+        setConfigTargets(data);
+      }
+    } catch (_err) {
+      // Keep existing defaults
+    }
+  };
+
+  useEffect(() => {
+    fetchConfigTargets();
+  }, []);
+
+  // Compute period target hours dynamically from Rule Engine / Config Targets
   const periodTargetHours = useMemo(() => {
-    if (datePreset === "TODAY") return 4;
-    if (datePreset === "7DAYS") return 20; // 5 hari kerja x 4 jam
-    if (datePreset === "30DAYS") return 80; // 20 hari kerja x 4 jam
-    if (datePreset === "ALL" && !startDate && !endDate) return 200; // Total seluruh semester KKN
+    const minHarian = Number(configTargets.attendanceMinDurationHours || configTargets.targetHarianJam) || 4;
+    const minTotal = Number(configTargets.targetTotalJam) || 200;
+
+    if (datePreset === "TODAY") return minHarian;
+    if (datePreset === "7DAYS") return 5 * minHarian; // 5 hari kerja x minHarian
+    if (datePreset === "30DAYS") return 20 * minHarian; // 20 hari kerja x minHarian
+    if (datePreset === "ALL" && !startDate && !endDate) return minTotal; // Total seluruh semester KKN
 
     if (startDate && endDate) {
       const start = new Date(startDate);
@@ -273,10 +302,10 @@ export const LaporanPresensiPage: React.FC = () => {
       const diffDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
       // Asumsi rata-rata 5 hari kerja per 7 hari kalender
       const estimatedWorkDays = Math.max(1, Math.round((diffDays / 7) * 5));
-      return estimatedWorkDays * 4;
+      return estimatedWorkDays * minHarian;
     }
-    return 200;
-  }, [datePreset, startDate, endDate]);
+    return minTotal;
+  }, [datePreset, startDate, endDate, configTargets]);
 
   const periodLabel = useMemo(() => {
     if (datePreset === "TODAY") return "Hari Ini";
@@ -800,7 +829,7 @@ export const LaporanPresensiPage: React.FC = () => {
               <Sparkles size={12} className={datePreset === "7DAYS" ? "text-amber-300" : "text-slate-400"} />
               <span>Seminggu Ini (7 Hari)</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${datePreset === "7DAYS" ? "bg-emerald-700 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
-                Target 20 Jam
+                Target {5 * (Number(configTargets.attendanceMinDurationHours || configTargets.targetHarianJam) || 4)} Jam
               </span>
             </button>
 
@@ -815,7 +844,7 @@ export const LaporanPresensiPage: React.FC = () => {
             >
               <span>Hari Ini (Live)</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${datePreset === "TODAY" ? "bg-emerald-700 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
-                Target 4 Jam
+                Target {Number(configTargets.attendanceMinDurationHours || configTargets.targetHarianJam) || 4} Jam
               </span>
             </button>
 
@@ -830,7 +859,7 @@ export const LaporanPresensiPage: React.FC = () => {
             >
               <span>30 Hari Terakhir</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${datePreset === "30DAYS" ? "bg-emerald-700 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
-                Target 80 Jam
+                Target {20 * (Number(configTargets.attendanceMinDurationHours || configTargets.targetHarianJam) || 4)} Jam
               </span>
             </button>
 
@@ -845,7 +874,7 @@ export const LaporanPresensiPage: React.FC = () => {
             >
               <span>Semua Waktu</span>
               <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${datePreset === "ALL" && !startDate && !endDate ? "bg-emerald-700 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400"}`}>
-                Target 200 Jam
+                Target {Number(configTargets.targetTotalJam) || 200} Jam
               </span>
             </button>
           </div>
@@ -1317,7 +1346,7 @@ export const LaporanPresensiPage: React.FC = () => {
                             )}
                           </div>
                           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                            / 4 Jam Target ({item.durasiMenit} mnt)
+                            / {Number(configTargets.attendanceMinDurationHours || configTargets.targetHarianJam) || 4} Jam Target ({item.durasiMenit} mnt)
                           </span>
                         </td>
 

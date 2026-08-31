@@ -2535,9 +2535,9 @@ export class KknAttendanceService {
     });
 
     const config = await dplService.getConfigTargets();
-    const TARGET_TOTAL_HOURS = config.targetTotalJam || 100;
-    const TARGET_TOTAL_MINUTES = TARGET_TOTAL_HOURS * 60;
-    const TARGET_HARIAN_HOURS = config.targetHarianJam || 2;
+    const TARGET_HARIAN_HOURS = Number(config.attendanceMinDurationHours || config.targetHarianJam) || 4;
+    const TARGET_TOTAL_HOURS = Number(config.targetTotalJam) || (TARGET_HARIAN_HOURS * Number(config.targetTotalHari || 50));
+    const TARGET_TOTAL_MINUTES = Math.round(TARGET_TOTAL_HOURS * 60);
     const TARGET_HARIAN_MINUTES = Math.round(TARGET_HARIAN_HOURS * 60);
 
     const summary = students.map((s) => {

@@ -1607,8 +1607,25 @@ export class KknService {
 
     const posko = await prisma.poskoKkn.findUnique({
       where: { kelompokId: student.kelompokId },
-      include: { kelompok: { include: { dpl: true } } },
+      include: {
+        kelompok: {
+          include: {
+            dpl: true,
+            facilities: {
+              where: { jenis: "posko_kkn" },
+              select: { id: true, foto: true },
+            },
+          },
+        },
+      },
     });
+
+    if (posko && !posko.fotoUrl) {
+      const facilityPosko = (posko.kelompok as any)?.facilities?.find((f: any) => f.foto) || (posko.kelompok as any)?.facilities?.[0];
+      if (facilityPosko?.foto) {
+        posko.fotoUrl = facilityPosko.foto;
+      }
+    }
 
     return {
       posko,
@@ -1687,6 +1704,10 @@ export class KknService {
         kelompok: {
           include: {
             dpl: { select: { id: true, name: true, phone: true, nip: true } },
+            facilities: {
+              where: { jenis: "posko_kkn" },
+              select: { id: true, foto: true, pic: true, kontak: true, alamat: true },
+            },
             students: {
               include: {
                 user: { select: { id: true, name: true, phone: true, rwId: true } },
@@ -1699,10 +1720,11 @@ export class KknService {
       orderBy: { createdAt: "desc" },
     });
 
-    const facilityPoskoMap = new Set(poskos.map((p) => String(p.kelompokId)));
     const mapped = poskos.map((p) => {
       const pAny = p as any;
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
+      const facilityPosko = p.kelompok?.facilities?.find((f: any) => f.foto) || p.kelompok?.facilities?.[0];
+      const resolvedFoto = p.fotoUrl || facilityPosko?.foto || null;
       const ketuaName = pAny.pic || ketua?.user?.name || "Ketua Kelompok KKN";
       const kontak = pAny.kontak && pAny.kontak !== "-" ? pAny.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || (p.kelompok as any)?.dplNamaMentah || "DPL Belum Diset";
@@ -1721,8 +1743,8 @@ export class KknService {
         rwName,
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
-        foto: p.fotoUrl || null,
-        fotoUrl: p.fotoUrl || null,
+        foto: resolvedFoto,
+        fotoUrl: resolvedFoto,
         pic: ketuaName,
         kontak,
         dplName,

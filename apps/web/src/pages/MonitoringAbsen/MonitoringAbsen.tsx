@@ -3554,8 +3554,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
                           <th className="py-3.5 px-4 text-center">JAM MASUK</th>
                           <th className="py-3.5 px-4 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI HARIAN / TARGET (4 JAM)</th>
-                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN (TARGET 200 JAM)</th>
+                          <th className="py-3.5 px-4 text-center">DURASI HARIAN / TARGET ({formatHoursToUnits(scheduleTargetHours).toUpperCase()})</th>
+                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN (TARGET {formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50))).toUpperCase()})</th>
                           <th className="py-3.5 px-4 text-center">POIN</th>
                           <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
                         </tr>
@@ -3593,20 +3593,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-                        const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
                         const durationMins = isLeaveOrPending 
                           ? 0 
                           : isTerjeda
                           ? storedMins
                           : storedMins > 0
                           ? storedMins
-                          : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins);
+                          : liveElapsedMins;
                         const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || checkOutTimestamp !== null && checkOutTimestamp !== undefined;
                         const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
                         const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                           ? Number(recAny.targetHours) 
-                          : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
+                          : scheduleTargetHours;
                         const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                           ? Number(recAny.targetDurationMinutes) 
                           : Math.round(targetZonaHours * 60);
@@ -3622,7 +3621,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             ? true
                             : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
                             ? false
-                            : (durationMins >= targetZonaMins));
+                            : (durationMins >= targetZonaMins && durationMins > 0));
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
@@ -3639,8 +3638,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const isKetua = Boolean(rec.student?.studentProfile?.isKetua || rec.student?.isKetua);
 
-                        const targetKumulatif = configTargets.targetTotalJam || 200;
-                        const targetKumulatifMins = targetKumulatif * 60;
+                        const targetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
+                        const targetKumulatifMins = Math.round(targetKumulatif * 60);
                         const actualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
                         const percentCapaian = targetKumulatifMins > 0 ? Number(((actualCumMinutes / targetKumulatifMins) * 100).toFixed(2)) : 0;
                         const isExceeded = percentCapaian > 100;
@@ -4012,7 +4011,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   {durasiText}
                                 </span>
                                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                                  / {targetZonaHours} Jam Target
+                                  / {formatHoursToUnits(targetZonaHours)} Target
                                 </span>
                               </div>
                             </td>
@@ -4126,10 +4125,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     ? storedMins
                     : liveElapsedMins;
 
-                  const isAttended =
-                    Boolean(rec.attendedAt) && !isLeaveOrPending;
-                  const targetZonaHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
-                  const targetZonaMins = targetZonaHours * 60;
+                  const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
+                    ? Number(recAny.targetHours) 
+                    : scheduleTargetHours;
+                  const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
+                    ? Number(recAny.targetDurationMinutes) 
+                    : Math.round(targetZonaHours * 60);
                   const isDurationSufficient = durationMins >= targetZonaMins;
                   const percentZona = Math.min(100, Math.round((durationMins / targetZonaMins) * 100));
                   const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
@@ -5367,11 +5368,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-              const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
-              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
+              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
-                : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
+                : scheduleTargetHours;
               const targetMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                 ? Number(recAny.targetDurationMinutes) 
                 : Math.round(targetHours * 60);
@@ -5382,10 +5382,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 ? false
                 : rec.isMemenuhiDurasi !== undefined
                 ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetMins && durationMins > 0) || ratioPercent >= 100)
-                : (durationMins >= targetMins || ratioPercent >= 100);
+                : (durationMins >= targetMins && durationMins > 0 || ratioPercent >= 100);
 
-              const modalTargetKumulatif = configTargets.targetTotalJam || 200;
-              const modalTargetKumulatifMins = modalTargetKumulatif * 60;
+              const modalTargetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
+              const modalTargetKumulatifMins = Math.round(modalTargetKumulatif * 60);
               const modalActualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
               const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2)) : 0;
 
