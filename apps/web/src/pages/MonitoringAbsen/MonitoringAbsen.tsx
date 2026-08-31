@@ -3568,7 +3568,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           : isTerjeda
                           ? storedMins
                           : isBerlangsung
-                          ? Math.max(storedMins, liveElapsedMins)
+                          ? (storedMins > 0 ? storedMins : liveElapsedMins)
                           : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
                         const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || checkOutTimestamp !== null && checkOutTimestamp !== undefined;
                         const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
@@ -4058,7 +4058,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   const durationMins = isLeaveOrPending
                     ? 0
                     : isActivePresence
-                    ? Math.max(storedMins, liveElapsedMins)
+                    ? (storedMins > 0 ? storedMins : liveElapsedMins)
                     : storedMins > 0
                     ? storedMins
                     : liveElapsedMins;
@@ -5305,7 +5305,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
               const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
-              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : isBerlangsung ? Math.max(storedMins, liveElapsedMins) : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
+              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : isBerlangsung ? (storedMins > 0 ? storedMins : liveElapsedMins) : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
                 : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
