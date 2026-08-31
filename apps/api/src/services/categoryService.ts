@@ -6,7 +6,6 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
 export class CategoryService {
   async getAllCategories() {
     let categories = await prisma.wasteCategory.findMany({
@@ -36,7 +35,12 @@ export class CategoryService {
     return categories;
   }
 
-  async createCategory(data: { name: string; pointsPerKg: number; description?: string; imageUrl?: string }) {
+  async createCategory(data: {
+    name: string;
+    pointsPerKg: number;
+    description?: string;
+    imageUrl?: string;
+  }) {
     return prisma.wasteCategory.create({
       data: {
         name: data.name,

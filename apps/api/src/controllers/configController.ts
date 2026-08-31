@@ -49,7 +49,9 @@ export class ConfigController {
   async getRuleEngine(req: Request, res: Response): Promise<void> {
     try {
       const data = await configService.getRuleEngineConfigs();
-      res.status(200).json({ success: true, message: "Berhasil mengambil aturan Rule Engine", data });
+      res
+        .status(200)
+        .json({ success: true, message: "Berhasil mengambil aturan Rule Engine", data });
     } catch (error: any) {
       res
         .status(500)
@@ -63,7 +65,9 @@ export class ConfigController {
   async updateRuleEngine(req: Request, res: Response): Promise<void> {
     try {
       const updated = await configService.updateRuleEngineConfigs(req.body);
-      res.status(200).json({ success: true, message: "Berhasil memperbarui aturan Rule Engine", data: updated });
+      res
+        .status(200)
+        .json({ success: true, message: "Berhasil memperbarui aturan Rule Engine", data: updated });
     } catch (error: any) {
       res
         .status(500)

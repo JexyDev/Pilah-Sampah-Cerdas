@@ -33,8 +33,19 @@ export const scheduleController = {
 
   createSchedule: async (req: Request, res: Response) => {
     try {
-      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId, isActive } =
-        req.body;
+      const {
+        title,
+        date,
+        time,
+        category,
+        location,
+        latitude,
+        longitude,
+        radius,
+        polygon,
+        kelompokId,
+        isActive,
+      } = req.body;
       if (!title || !date || !category) {
         res.status(400).json({
           success: false,
@@ -68,7 +79,8 @@ export const scheduleController = {
         return;
       }
 
-      let resolvedKelompokId = (kelompokId && kelompokId !== "ALL" && kelompokId !== "") ? kelompokId : undefined;
+      let resolvedKelompokId =
+        kelompokId && kelompokId !== "ALL" && kelompokId !== "" ? kelompokId : undefined;
       const userRole = String(req.user?.role || "").toUpperCase();
       const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
       const isMahasiswa = userRole === "MAHASISWA_KKN";
@@ -77,7 +89,8 @@ export const scheduleController = {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Role DPL hanya memiliki hak akses monitoring dan tidak dapat membuat kegiatan/agenda",
+          message:
+            "Role DPL hanya memiliki hak akses monitoring dan tidak dapat membuat kegiatan/agenda",
         });
         return;
       }
@@ -174,8 +187,19 @@ export const scheduleController = {
   updateSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { title, date, time, category, location, latitude, longitude, radius, polygon, kelompokId, isActive } =
-        req.body;
+      const {
+        title,
+        date,
+        time,
+        category,
+        location,
+        latitude,
+        longitude,
+        radius,
+        polygon,
+        kelompokId,
+        isActive,
+      } = req.body;
 
       const userRole = String(req.user?.role || "").toUpperCase();
       const userId = req.user?.userId || (req.user as any)?.id;
@@ -264,7 +288,9 @@ export const scheduleController = {
   syncDailySchedules: async (req: Request, res: Response) => {
     try {
       const { date } = req.body || {};
-      const cleanResult = await scheduleService.cleanAllDuplicateSchedules().catch(() => ({ removedDuplicatesCount: 0 }));
+      const cleanResult = await scheduleService
+        .cleanAllDuplicateSchedules()
+        .catch(() => ({ removedDuplicatesCount: 0 }));
       const result = await scheduleService.syncDailySchedulesForToday(date);
       res.status(200).json({
         success: true,

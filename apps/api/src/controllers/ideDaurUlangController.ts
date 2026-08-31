@@ -14,7 +14,8 @@ export class IdeDaurUlangController {
       const userId = (req as any).user.userId;
       const peran = (req as any).user.role;
       const foto = req.file ? `/uploads/${req.file.filename}` : null;
-      const sumber: "WARGA" | "MAHASISWA_KKN" = peran === "MAHASISWA_KKN" ? "MAHASISWA_KKN" : "WARGA";
+      const sumber: "WARGA" | "MAHASISWA_KKN" =
+        peran === "MAHASISWA_KKN" ? "MAHASISWA_KKN" : "WARGA";
 
       if (!judul || !material) {
         return res.status(400).json({ success: false, message: "Judul dan material wajib diisi" });
@@ -73,7 +74,11 @@ export class IdeDaurUlangController {
       const { id } = req.params;
       const dplUserId = (req as any).user.userId;
       const ide = await ideDaurUlangService.approveDpl(id, dplUserId);
-      res.status(200).json({ success: true, data: ide, message: "Ide disetujui DPL. Mahasiswa mendapat +30 poin!" });
+      res.status(200).json({
+        success: true,
+        data: ide,
+        message: "Ide disetujui DPL. Mahasiswa mendapat +30 poin!",
+      });
     } catch (error: any) {
       console.error("[IdeDaurUlangController] approveDpl error:", error);
       res.status(400).json({ success: false, message: error.message || "Gagal approve ide" });

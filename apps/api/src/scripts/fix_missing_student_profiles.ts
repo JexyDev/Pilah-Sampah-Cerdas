@@ -7,7 +7,6 @@ import XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
 
-
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "docs/raw_new_data.xlsx"),
   path.resolve(process.cwd(), "../../docs/raw_new_data.xlsx"),
@@ -33,7 +32,9 @@ export function standardizeKelompokName(rawName: string): string {
   clean = clean.replace(/^Kel\s+/i, "Kelompok ");
   clean = clean.replace(/-\s*/g, "");
 
-  const matchAreaNum = clean.match(/^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i);
+  const matchAreaNum = clean.match(
+    /^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i
+  );
   if (matchAreaNum) {
     clean = `Kelompok ${matchAreaNum[2]} ${matchAreaNum[1]}`;
   }
@@ -42,8 +43,16 @@ export function standardizeKelompokName(rawName: string): string {
 }
 
 const SPECIFIC_STUDENT_FIXES: Record<string, { nim: string; group: string; prodi: string }> = {
-  "serena indriani": { nim: "63824036", group: "Kelompok 7 Sadang Serang", prodi: "S1 Sastra Jepang" },
-  "azzahra fitri ramadhanti sutarso": { nim: "51923211", group: "Kelompok 10 Sadang Serang", prodi: "S1 Desain Komunikasi Visual" },
+  "serena indriani": {
+    nim: "63824036",
+    group: "Kelompok 7 Sadang Serang",
+    prodi: "S1 Sastra Jepang",
+  },
+  "azzahra fitri ramadhanti sutarso": {
+    nim: "51923211",
+    group: "Kelompok 10 Sadang Serang",
+    prodi: "S1 Desain Komunikasi Visual",
+  },
 };
 
 async function fixMissingProfiles() {
@@ -163,7 +172,9 @@ async function fixMissingProfiles() {
           kelompok: { connect: { id: targetKelompokId } },
         },
       });
-      console.log(`✅ [UPDATED EXISTING STUDENT PROFILE BY NIM] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`);
+      console.log(
+        `✅ [UPDATED EXISTING STUDENT PROFILE BY NIM] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`
+      );
     } else {
       await prisma.studentKkn.create({
         data: {
@@ -177,7 +188,9 @@ async function fixMissingProfiles() {
           kelompok: { connect: { id: targetKelompokId } },
         },
       });
-      console.log(`✅ [CREATED STUDENT PROFILE] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`);
+      console.log(
+        `✅ [CREATED STUDENT PROFILE] ${formattedName} (NIM: ${targetNim}) -> ${targetGroup}`
+      );
     }
   }
 
@@ -193,7 +206,9 @@ async function fixMissingProfiles() {
     console.log(`NIM: ${serenaDb.studentProfile?.nim}`);
     console.log(`Program Studi: ${serenaDb.programStudi}`);
     console.log(`Kelompok: ${serenaDb.studentProfile?.kelompok?.name}`);
-    console.log(`DPL: ${serenaDb.studentProfile?.kelompok?.dplNamaMentah || serenaDb.studentProfile?.kelompok?.dpl?.name}`);
+    console.log(
+      `DPL: ${serenaDb.studentProfile?.kelompok?.dplNamaMentah || serenaDb.studentProfile?.kelompok?.dpl?.name}`
+    );
   }
 }
 

@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { AiRequestLog } from "@prisma/client";
 
-
 export class AiRepository {
   /**
    * Log AI request result

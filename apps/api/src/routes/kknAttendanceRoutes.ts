@@ -158,7 +158,18 @@ router.post(
 router.get(
   "/mahasiswa/lokasi-aktif",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getActiveStudentsLocations
 );
 
@@ -183,14 +194,37 @@ router.get(
 router.get(
   "/kegiatan/:id/absen",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getAttendanceList
 );
 
 router.get(
   "/timesheet/summary",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "MAHASISWA_KKN",
+    "DEVELOPER",
+  ]),
   kknAttendanceController.getTimesheetSummary
 );
 
@@ -199,7 +233,18 @@ router.get(
 router.get(
   ["/laporan-rekap", "/kkn/attendance/laporan-rekap", "/laporan-presensi"],
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getLaporanPresensi
 );
 
@@ -271,7 +316,16 @@ router.post(
 router.post(
   ["/kkn/kegiatan/:id/skip", "/kegiatan/:id/skip"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DEVELOPER",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.skipKegiatan
 );
 
@@ -297,7 +351,6 @@ router.post(
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   kknAttendanceController.pingLocation
 );
-
 
 router.get(
   "/warga-dampingan",
@@ -342,8 +395,11 @@ router.get(
       const todayWibStrDebug = nowWibDebug.toISOString().slice(0, 10);
       const todayStartDebug = new Date(`${todayWibStrDebug}T00:00:00+07:00`);
       const todayEndDebug = new Date(`${todayWibStrDebug}T23:59:59.999+07:00`);
-      const yesterdayWibStrDebug = new Date(todayStartDebug.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
-        .toISOString().slice(0, 10);
+      const yesterdayWibStrDebug = new Date(
+        todayStartDebug.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000
+      )
+        .toISOString()
+        .slice(0, 10);
       const yesterdayStartDebug = new Date(`${yesterdayWibStrDebug}T00:00:00+07:00`);
 
       const student = await prisma.studentKkn.findUnique({
@@ -354,7 +410,9 @@ router.get(
         where: {
           date: { gte: yesterdayStartDebug, lte: todayEndDebug },
           isActive: true,
-          ...(student?.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
+          ...(student?.kelompokId
+            ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] }
+            : {}),
         },
       });
 
@@ -375,7 +433,9 @@ router.get(
         const geofenceLng = firstSchedule.longitude ? Number(firstSchedule.longitude) : 107.6107;
         const geofenceRadius = firstSchedule.radius ? Number(firstSchedule.radius) : 100;
 
-        const distance = calculateDistance(Number(latestLocation.latitude), Number(latestLocation.longitude),
+        const distance = calculateDistance(
+          Number(latestLocation.latitude),
+          Number(latestLocation.longitude),
           geofenceLat,
           geofenceLng
         );
@@ -442,35 +502,79 @@ router.get(
 router.post(
   ["/manual", "/kkn/attendance/manual", "/admin/manual"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.createAttendanceManual
 );
 
 router.get(
   ["/:id", "/kkn/attendance/:id"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "MAHASISWA_KKN",
+  ]),
   kknAttendanceController.getAttendanceById
 );
 
 router.put(
   ["/:id", "/kkn/attendance/:id", "/admin/:id"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.updateAttendanceAdmin
 );
 
 router.delete(
   ["/:id", "/kkn/attendance/:id", "/admin/:id"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.deleteAttendanceAdmin
 );
 
 router.post(
   ["/:id/force-checkout", "/kkn/attendance/:id/force-checkout", "/admin/:id/force-checkout"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.forceCheckoutAttendance
 );
 

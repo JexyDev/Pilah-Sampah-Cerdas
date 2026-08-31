@@ -9,7 +9,6 @@ const db = prisma as any;
 
 import { PointHistory } from "@prisma/client";
 
-
 export interface GetAdminUsersParams {
   page?: number;
   limit?: number;
@@ -430,7 +429,9 @@ export class PointRepository {
         createdAt: true,
         role: { select: { name: true } },
         rw: { select: { name: true, kelurahan: { select: { name: true } } } },
-        studentProfile: { select: { nim: true, jurusan: true, kelompok: { select: { id: true, name: true } } } },
+        studentProfile: {
+          select: { nim: true, jurusan: true, kelompok: { select: { id: true, name: true } } },
+        },
       },
     });
 
@@ -499,4 +500,3 @@ export class PointRepository {
 }
 
 export const pointRepository = new PointRepository();
-

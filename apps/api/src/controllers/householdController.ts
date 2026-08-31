@@ -10,7 +10,6 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { householdService } from "../services/householdService.js";
 
-
 // Validation Schema for Registration
 const registerSchema = z.object({
   address: z.string().min(5, "Alamat terlalu pendek"),

@@ -27,7 +27,12 @@ const router = Router();
 // PUBLIC — Tidak butuh auth (landing page)
 // ─────────────────────────────────────────────
 router.get("/", beritaController.getPublishedList);
-router.get("/admin/list", authMiddleware, roleMiddleware(["DEVELOPER"]), beritaController.getAdminList);
+router.get(
+  "/admin/list",
+  authMiddleware,
+  roleMiddleware(["DEVELOPER"]),
+  beritaController.getAdminList
+);
 router.get("/admin/:id", authMiddleware, roleMiddleware(["DEVELOPER"]), beritaController.getById);
 router.get("/:slug", beritaController.getBySlug);
 
@@ -59,11 +64,6 @@ router.patch(
   beritaController.changeStatus
 );
 
-router.delete(
-  "/:id",
-  authMiddleware,
-  roleMiddleware(["DEVELOPER"]),
-  beritaController.delete
-);
+router.delete("/:id", authMiddleware, roleMiddleware(["DEVELOPER"]), beritaController.delete);
 
 export default router;

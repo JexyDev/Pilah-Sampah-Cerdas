@@ -7,7 +7,6 @@
 import { PrismaClient } from "@prisma/client";
 
 declare global {
-  // eslint-disable-next-line no-var
   var prismaGlobal: PrismaClient | undefined;
 }
 
@@ -25,10 +24,7 @@ export const prisma =
   globalThis.prismaGlobal ??
   new PrismaClient({
     ...(dbUrl ? { datasources: { db: { url: dbUrl } } } : {}),
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error", "warn"],
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error", "warn"],
   });
 
 if (process.env.NODE_ENV !== "production") {

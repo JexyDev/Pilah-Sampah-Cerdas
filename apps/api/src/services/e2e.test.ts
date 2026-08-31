@@ -12,7 +12,6 @@ import { systemService } from "./systemService.js";
 
 import bcrypt from "bcryptjs";
 
-
 describe("E2E & Security Validation for All 8 Roles", () => {
   beforeAll(async () => {
     const rolesList = [
@@ -84,24 +83,36 @@ describe("E2E & Security Validation for All 8 Roles", () => {
       select: { id: true },
     });
     const userIds = usersToDelete.map((u) => u.id);
-    await prisma.pointHistory.deleteMany({
-      where: { userId: { in: userIds } },
-    }).catch(() => {});
-    await prisma.activityAttendance.deleteMany({
-      where: { studentId: { in: userIds } },
-    }).catch(() => {});
-    await prisma.studentLocation.deleteMany({
-      where: { studentId: { in: userIds } },
-    }).catch(() => {});
-    await prisma.refreshToken.deleteMany({
-      where: { userId: { in: userIds } },
-    }).catch(() => {});
-    await prisma.notification.deleteMany({
-      where: { userId: { in: userIds } },
-    }).catch(() => {});
-    await prisma.user.deleteMany({
-      where: { phone: { in: testPhones } },
-    }).catch(() => {});
+    await prisma.pointHistory
+      .deleteMany({
+        where: { userId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.activityAttendance
+      .deleteMany({
+        where: { studentId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.studentLocation
+      .deleteMany({
+        where: { studentId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.refreshToken
+      .deleteMany({
+        where: { userId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.notification
+      .deleteMany({
+        where: { userId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.user
+      .deleteMany({
+        where: { phone: { in: testPhones } },
+      })
+      .catch(() => {});
 
     for (const u of userSeeds) {
       await prisma.user.upsert({

@@ -189,8 +189,8 @@ export class ResiduService {
           user: s.warga
             ? { id: s.warga.id, name: s.warga.name, address: s.warga.address }
             : s.bin.user
-            ? { id: s.bin.user.id, name: s.bin.user.name, address: s.bin.user.address }
-            : null,
+              ? { id: s.bin.user.id, name: s.bin.user.name, address: s.bin.user.address }
+              : null,
           rw: s.bin.rw,
           category: s.bin.category,
         },
@@ -216,9 +216,7 @@ export class ResiduService {
           status: r.bin.status,
           currentVolumeLiter: Number(r.bin.currentVolumeLiter),
           maxCapacityLiter: Number(r.bin.maxCapacityLiter),
-          user: r.user
-            ? { id: r.user.id, name: r.user.name, address: r.user.address }
-            : null,
+          user: r.user ? { id: r.user.id, name: r.user.name, address: r.user.address } : null,
           rw: r.bin.rw,
           category: r.bin.category,
         },

@@ -796,7 +796,8 @@ export class LogbookService {
 
     if (!isDeveloper && !isAssignedDpl && !isAuthor) {
       const studentCaller = await prisma.studentKkn.findUnique({ where: { userId } });
-      const isKetua = Boolean(studentCaller?.isKetua) && studentCaller?.kelompokId === existing.kelompokId;
+      const isKetua =
+        Boolean(studentCaller?.isKetua) && studentCaller?.kelompokId === existing.kelompokId;
       if (!isKetua) {
         throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengedit logbook ini.");
       }
@@ -817,7 +818,9 @@ export class LogbookService {
         existing.statusApproval === StatusLogbookKkn.DITOLAK_KETUA ||
         existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL
       ) {
-        const studentProfile = await prisma.studentKkn.findUnique({ where: { userId: existing.penulisId } });
+        const studentProfile = await prisma.studentKkn.findUnique({
+          where: { userId: existing.penulisId },
+        });
         updateData.statusApproval = studentProfile?.isKetua
           ? StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL
           : StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA;
@@ -1625,7 +1628,11 @@ export class LogbookService {
       where: { id: logbookId },
     });
 
-    return { success: true, message: "Logbook aktivitas berhasil dihapus", data: { id: logbookId } };
+    return {
+      success: true,
+      message: "Logbook aktivitas berhasil dihapus",
+      data: { id: logbookId },
+    };
   }
 
   /**

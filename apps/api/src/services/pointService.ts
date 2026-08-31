@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import { pointRepository } from "../repositories/pointRepository.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 
-
 export class PointService {
   /**
    * Fetch point history and calculate total points for a user
@@ -82,14 +81,18 @@ export class PointService {
       });
 
       // Coba kirim silent push jika user punya fcmToken
-      const user = await tx.user.findUnique({ where: { id: userId }, select: { fcmToken: true, role: { select: { name: true } } } });
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { fcmToken: true, role: { select: { name: true } } },
+      });
       if (user?.fcmToken) {
-        const eventType = user.role.name === "WARGA" ? 'REFRESH_POIN_WARGA' : 'REFRESH_POIN_MAHASISWA';
+        const eventType =
+          user.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
         try {
-          await notificationIntegrationService.sendSilentDataPush(
-            user.fcmToken,
-            { event: eventType, poinTambahan: points.toString() }
-          );
+          await notificationIntegrationService.sendSilentDataPush(user.fcmToken, {
+            event: eventType,
+            poinTambahan: points.toString(),
+          });
         } catch (e) {
           console.warn("[adjustPoints] FCM failed", e);
         }
@@ -146,7 +149,15 @@ export class PointService {
     sendNotification?: boolean;
     ipAddress?: string;
   }) {
-    const { developerUserId, userId, points, kategori, description, sendNotification = true, ipAddress } = opts;
+    const {
+      developerUserId,
+      userId,
+      points,
+      kategori,
+      description,
+      sendNotification = true,
+      ipAddress,
+    } = opts;
 
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
@@ -171,7 +182,8 @@ export class PointService {
           userId,
           points,
           kategori: kategori || "MANUAL_ADJUSTMENT",
-          description: description || `Penyesuaian poin developer (${points >= 0 ? "+" : ""}${points})`,
+          description:
+            description || `Penyesuaian poin developer (${points >= 0 ? "+" : ""}${points})`,
         },
       });
 
@@ -194,7 +206,11 @@ export class PointService {
           featureCategory: "MANAJEMEN_POIN",
           endpoint: "/api/v1/points/admin/adjust",
           ipAddress: ipAddress || null,
-          oldValue: { targetUserId: userId, targetUserName: user.name, totalPointsBefore: oldPoints },
+          oldValue: {
+            targetUserId: userId,
+            targetUserName: user.name,
+            totalPointsBefore: oldPoints,
+          },
           newValue: {
             targetUserId: userId,
             targetUserName: user.name,
@@ -208,7 +224,8 @@ export class PointService {
 
       // FCM Silent Push
       if (user.fcmToken) {
-        const eventType = user.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
+        const eventType =
+          user.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
         try {
           await notificationIntegrationService.sendSilentDataPush(user.fcmToken, {
             event: eventType,
@@ -238,7 +255,14 @@ export class PointService {
     sendNotification?: boolean;
     ipAddress?: string;
   }) {
-    const { developerUserId, userId, targetBalance, description, sendNotification = true, ipAddress } = opts;
+    const {
+      developerUserId,
+      userId,
+      targetBalance,
+      description,
+      sendNotification = true,
+      ipAddress,
+    } = opts;
 
     return prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
@@ -267,7 +291,9 @@ export class PointService {
         };
       }
 
-      const note = description || `Kalibrasi saldo poin pasti dari ${oldPoints} ke ${targetBalance} poin oleh Developer`;
+      const note =
+        description ||
+        `Kalibrasi saldo poin pasti dari ${oldPoints} ke ${targetBalance} poin oleh Developer`;
 
       const history = await tx.pointHistory.create({
         data: {
@@ -297,7 +323,11 @@ export class PointService {
           featureCategory: "MANAJEMEN_POIN",
           endpoint: "/api/v1/points/admin/set-balance",
           ipAddress: ipAddress || null,
-          oldValue: { targetUserId: userId, targetUserName: user.name, totalPointsBefore: oldPoints },
+          oldValue: {
+            targetUserId: userId,
+            targetUserName: user.name,
+            totalPointsBefore: oldPoints,
+          },
           newValue: {
             targetUserId: userId,
             targetUserName: user.name,
@@ -310,7 +340,8 @@ export class PointService {
 
       // FCM Silent Push
       if (user.fcmToken) {
-        const eventType = user.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
+        const eventType =
+          user.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
         try {
           await notificationIntegrationService.sendSilentDataPush(user.fcmToken, {
             event: eventType,
@@ -342,7 +373,15 @@ export class PointService {
     sendNotification?: boolean;
     ipAddress?: string;
   }) {
-    const { developerUserId, userIds, points, kategori, description, sendNotification = true, ipAddress } = opts;
+    const {
+      developerUserId,
+      userIds,
+      points,
+      kategori,
+      description,
+      sendNotification = true,
+      ipAddress,
+    } = opts;
 
     if (!userIds || userIds.length === 0) {
       throw new Error("EMPTY_USER_IDS");
@@ -362,7 +401,8 @@ export class PointService {
             userId: u.id,
             points,
             kategori: kategori || "BULK_ADJUSTMENT",
-            description: description || `Penyesuaian massal poin (${points >= 0 ? "+" : ""}${points})`,
+            description:
+              description || `Penyesuaian massal poin (${points >= 0 ? "+" : ""}${points})`,
           },
         });
 
@@ -380,7 +420,8 @@ export class PointService {
 
         // FCM silent push (async without blocking)
         if (u.fcmToken) {
-          const eventType = u.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
+          const eventType =
+            u.role.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
           notificationIntegrationService
             .sendSilentDataPush(u.fcmToken, { event: eventType, poinTambahan: points.toString() })
             .catch(() => {});
@@ -451,8 +492,17 @@ export class PointService {
           featureCategory: "MANAJEMEN_POIN",
           endpoint: `/api/v1/points/admin/transaction/${transactionId}`,
           ipAddress: ipAddress || null,
-          oldValue: { description: old.description, kategori: old.kategori, points: old.points, userId: old.userId },
-          newValue: { description: updated.description, kategori: updated.kategori, points: updated.points },
+          oldValue: {
+            description: old.description,
+            kategori: old.kategori,
+            points: old.points,
+            userId: old.userId,
+          },
+          newValue: {
+            description: updated.description,
+            kategori: updated.kategori,
+            points: updated.points,
+          },
         },
       });
 
@@ -474,7 +524,11 @@ export class PointService {
     return prisma.$transaction(async (tx) => {
       const target = await tx.pointHistory.findUnique({
         where: { id: transactionId },
-        include: { user: { select: { id: true, name: true, fcmToken: true, role: { select: { name: true } } } } },
+        include: {
+          user: {
+            select: { id: true, name: true, fcmToken: true, role: { select: { name: true } } },
+          },
+        },
       });
 
       if (!target) throw new Error("TRANSACTION_NOT_FOUND");
@@ -510,16 +564,25 @@ export class PointService {
           featureCategory: "MANAJEMEN_POIN",
           endpoint: `/api/v1/points/admin/transaction/${transactionId}`,
           ipAddress: ipAddress || null,
-          oldValue: { originalTransactionId: target.id, points: target.points, description: target.description, userId: target.userId },
+          oldValue: {
+            originalTransactionId: target.id,
+            points: target.points,
+            description: target.description,
+            userId: target.userId,
+          },
           newValue: { reversalTransactionId: reversalHistory.id, inversePoints, reason },
         },
       });
 
       // Silent push
       if (target.user?.fcmToken) {
-        const eventType = target.user.role?.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
+        const eventType =
+          target.user.role?.name === "WARGA" ? "REFRESH_POIN_WARGA" : "REFRESH_POIN_MAHASISWA";
         notificationIntegrationService
-          .sendSilentDataPush(target.user.fcmToken, { event: eventType, poinTambahan: inversePoints.toString() })
+          .sendSilentDataPush(target.user.fcmToken, {
+            event: eventType,
+            poinTambahan: inversePoints.toString(),
+          })
           .catch(() => {});
       }
 
@@ -532,4 +595,3 @@ export class PointService {
 }
 
 export const pointService = new PointService();
-

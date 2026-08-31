@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Route Logbook KKN (Mahasiswa & DPL)
  */
 
@@ -27,14 +27,32 @@ router.use(authMiddleware);
 // Mengambil daftar logbook (Tabular) - Mahasiswa, DPL, Super User
 router.get(
   "/mahasiswa",
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ]),
   logbookController.getMahasiswaLogbooks
 );
 
 // Mengambil detail satu logbook aktivitas mahasiswa berdasarkan ID
 router.get(
   "/mahasiswa/:id",
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ]),
   logbookController.getMahasiswaLogbookById
 );
 
@@ -78,7 +96,14 @@ router.put(
 // Hapus Logbook Aktivitas Mahasiswa (Developer, Super User, DPL, Penulis)
 router.delete(
   "/mahasiswa/:id",
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "ADMIN_DLH", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "ADMIN_DLH",
+    "MAHASISWA_KKN",
+  ]),
   logbookController.deleteMahasiswaLogbook
 );
 
@@ -99,7 +124,15 @@ router.patch(
 // Mengambil riwayat logbook monitoring DPL
 router.get(
   "/dpl",
-  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   logbookController.getDplLogbooks
 );
 
@@ -135,7 +168,16 @@ router.delete(
 // Statistik kepatuhan & skor logbook per kelompok
 router.get(
   "/kepatuhan/:kelompokId",
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ]),
   logbookController.getComplianceScore
 );
 
@@ -156,13 +198,31 @@ router.patch(
  */
 router.get(
   ["/program-kerja", "/proker"],
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ]),
   kknController.getProgramKerja
 );
 
 router.get(
   ["/program-kerja/:id", "/proker/:id"],
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+    "MAHASISWA_KKN",
+  ]),
   kknController.getProgramKerjaById
 );
 

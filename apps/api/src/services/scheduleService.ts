@@ -12,27 +12,30 @@ export const scheduleService = {
   getAllSchedules: async (userId?: string, role?: string) => {
     try {
       let kelompokIds: string[] | null = null; // null means global (fetch all)
-      
+
       const userRole = role?.toUpperCase() || "";
 
       if (userRole === "MAHASISWA_KKN" && userId) {
         // Mahasiswa only sees their own group + global schedules
         const studentProfile = await prisma.studentKkn.findUnique({
           where: { userId: userId },
-          select: { kelompokId: true }
+          select: { kelompokId: true },
         });
         kelompokIds = studentProfile?.kelompokId ? [studentProfile.kelompokId] : [];
-      } else if (["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN"].includes(userRole) && userId) {
+      } else if (
+        ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN"].includes(
+          userRole
+        ) &&
+        userId
+      ) {
         // DPL strictly sees ONLY their assigned groups + global schedules
         const dplUser = await prisma.user.findUnique({
           where: { id: userId },
           select: { id: true, name: true, nip: true, phone: true },
         });
-        const dplOr: any[] = [
-          { dplId: userId },
-          { dpl: { id: userId } },
-        ];
-        if (dplUser?.name) dplOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
+        const dplOr: any[] = [{ dplId: userId }, { dpl: { id: userId } }];
+        if (dplUser?.name)
+          dplOr.push({ dplNamaMentah: { equals: dplUser.name.trim(), mode: "insensitive" } });
         if (dplUser?.nip) dplOr.push({ dpl: { nip: dplUser.nip } });
         if (dplUser?.phone) dplOr.push({ dpl: { phone: dplUser.phone } });
 
@@ -41,7 +44,9 @@ export const scheduleService = {
           select: { id: true },
         });
         kelompokIds = kelompokBinaan.map((k) => k.id);
-      } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "DEVELOPER"].includes(userRole)) {
+      } else if (
+        ["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN", "DEVELOPER"].includes(userRole)
+      ) {
         // Global viewers see everything without unnecessary write side-effects
         kelompokIds = null;
       } else if (userId) {
@@ -50,7 +55,7 @@ export const scheduleService = {
       }
 
       let whereClause: any = {};
-      
+
       if (kelompokIds !== null) {
         if (kelompokIds.length === 0) {
           // If they have no groups, they can ONLY see global schedules (kelompokId = null)
@@ -118,10 +123,9 @@ export const scheduleService = {
       });
       for (const s of students) {
         if (s.user?.fcmToken) {
-          await notificationIntegrationService.sendSilentDataPush(
-            s.user.fcmToken,
-            { event: 'REFRESH_KEGIATAN_MAHASISWA' }
-          );
+          await notificationIntegrationService.sendSilentDataPush(s.user.fcmToken, {
+            event: "REFRESH_KEGIATAN_MAHASISWA",
+          });
         }
       }
     } catch (e) {
@@ -166,7 +170,9 @@ export const scheduleService = {
 
   cleanAllDuplicateSchedules: async () => {
     try {
-      console.log("[scheduleService.cleanAllDuplicateSchedules] Starting duplicate schedules cleanup...");
+      console.log(
+        "[scheduleService.cleanAllDuplicateSchedules] Starting duplicate schedules cleanup..."
+      );
       // Ambil semua jadwal kegiatan posko KKN
       const allPoskoSchedules = await prisma.schedule.findMany({
         where: {
@@ -185,7 +191,9 @@ export const scheduleService = {
       const groupDateMap = new Map<string, typeof allPoskoSchedules>();
       for (const s of allPoskoSchedules) {
         if (!s.kelompokId || !s.date) continue;
-        const wibDateStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const wibDateStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000)
+          .toISOString()
+          .slice(0, 10);
         const key = `${s.kelompokId}_${wibDateStr}`;
         if (!groupDateMap.has(key)) {
           groupDateMap.set(key, []);
@@ -231,7 +239,9 @@ export const scheduleService = {
         }
       }
 
-      console.log(`[scheduleService.cleanAllDuplicateSchedules] Completed. Removed ${removedDuplicatesCount} duplicate schedules.`);
+      console.log(
+        `[scheduleService.cleanAllDuplicateSchedules] Completed. Removed ${removedDuplicatesCount} duplicate schedules.`
+      );
       return { success: true, removedDuplicatesCount };
     } catch (err: any) {
       console.error("[scheduleService.cleanAllDuplicateSchedules] Error:", err);
@@ -321,11 +331,11 @@ export const scheduleService = {
             poskoName = `Posko KKN ${group.name} - Kel. Lebak Siliwangi`;
           } else if (kel.includes("sadang serang")) {
             poskoLat = -6.8917;
-            poskoLng = 107.6250;
+            poskoLng = 107.625;
             poskoName = `Posko KKN ${group.name} - Kel. Sadang Serang`;
           } else if (kel.includes("sekeloa")) {
-            poskoLat = -6.8900;
-            poskoLng = 107.6200;
+            poskoLat = -6.89;
+            poskoLng = 107.62;
             poskoName = `Posko KKN ${group.name} - Kel. Sekeloa`;
           }
         }

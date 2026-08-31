@@ -3,7 +3,14 @@ import { ensureDplKelompokRelation } from "./dplService.js";
 import { getScopingFilters } from "../utils/rbacScoping.js";
 
 export const kelompokService = {
-  getAllKelompok: async (page = 1, limit = 0, search = "", kelurahan = "", dplUserId = "", user?: any) => {
+  getAllKelompok: async (
+    page = 1,
+    limit = 0,
+    search = "",
+    kelurahan = "",
+    dplUserId = "",
+    user?: any
+  ) => {
     let whereClause: any = {};
 
     if (user) {
@@ -27,7 +34,7 @@ export const kelompokService = {
         { dpl: { name: { contains: search, mode: "insensitive" } } },
       ];
       if (whereClause.OR) {
-        whereClause = { AND: [ { OR: whereClause.OR }, { OR: searchOr } ], ...whereClause };
+        whereClause = { AND: [{ OR: whereClause.OR }, { OR: searchOr }], ...whereClause };
         delete whereClause.OR;
       } else {
         whereClause.OR = searchOr;
@@ -59,7 +66,9 @@ export const kelompokService = {
     ]);
 
     // Natural sort: Kelompok 1, Kelompok 2, ..., Kelompok 10, Kelompok 11
-    groups.sort((a, b) => (a.name || "").localeCompare(b.name || "", "id", { numeric: true, sensitivity: "base" }));
+    groups.sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", "id", { numeric: true, sensitivity: "base" })
+    );
 
     return { groups, total, page, limit: isAll ? total : limit };
   },

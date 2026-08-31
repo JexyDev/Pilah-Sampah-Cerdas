@@ -7,7 +7,6 @@ import XLSX from "xlsx";
 import path from "path";
 import bcrypt from "bcryptjs";
 
-
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "docs/raw_new_data.xlsx"),
   path.resolve(process.cwd(), "../../docs/raw_new_data.xlsx"),
@@ -21,7 +20,9 @@ export function standardizeKelompokName(rawName: string): string {
   clean = clean.replace(/^Kel\s+/i, "Kelompok ");
   clean = clean.replace(/-\s*/g, ""); // remove dashes
 
-  const matchAreaNum = clean.match(/^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i);
+  const matchAreaNum = clean.match(
+    /^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i
+  );
   if (matchAreaNum) {
     clean = `Kelompok ${matchAreaNum[2]} ${matchAreaNum[1]}`;
   }
@@ -164,22 +165,27 @@ async function syncExact560() {
   for (const s of list560) {
     const baseNim = s.nim.replace("-2", "");
     let rawGrp = nimToRawGroupMap.get(baseNim) || nameToRawGroupMap.get(s.name.toLowerCase());
-    let stdGrpName = rawGrp ? standardizeKelompokName(rawGrp) : PRODI_FALLBACK_GROUPS[baseNim] || "Kelompok 1 Dago";
+    let stdGrpName = rawGrp
+      ? standardizeKelompokName(rawGrp)
+      : PRODI_FALLBACK_GROUPS[baseNim] || "Kelompok 1 Dago";
 
     let targetKelompokId = kelompokMap.get(stdGrpName.toLowerCase());
     if (!targetKelompokId) {
       targetKelompokId = kelompokMap.get("kelompok 1 dago");
     }
 
-    let phoneFormatted = s.phone ? (s.phone.startsWith("0") ? s.phone.replace(/^0/, "+62") : (s.phone.startsWith("+62") ? s.phone : `+62${s.phone}`)) : `+628000${s.nim}`;
+    let phoneFormatted = s.phone
+      ? s.phone.startsWith("0")
+        ? s.phone.replace(/^0/, "+62")
+        : s.phone.startsWith("+62")
+          ? s.phone
+          : `+62${s.phone}`
+      : `+628000${s.nim}`;
 
     // 1. Find or update User
     let user = await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: phoneFormatted },
-          { name: { equals: s.name, mode: "insensitive" } },
-        ],
+        OR: [{ phone: phoneFormatted }, { name: { equals: s.name, mode: "insensitive" } }],
       },
     });
 
@@ -225,10 +231,7 @@ async function syncExact560() {
     // 2. Find or update StudentKkn record
     let studentKkn = await prisma.studentKkn.findFirst({
       where: {
-        OR: [
-          { nim: s.nim },
-          { userId: user.id },
-        ],
+        OR: [{ nim: s.nim }, { userId: user.id }],
       },
     });
 
@@ -271,7 +274,9 @@ async function syncExact560() {
     const nimMatch = st.nim && validNims.has(st.nim);
     const nameMatch = st.user?.name && validNames.has(st.user.name.toLowerCase().trim());
     if (!nimMatch && !nameMatch) {
-      console.log(`[PURGE EXTRA STUDENT] Deleting extra record: ${st.user?.name || "No Name"} (NIM: ${st.nim})`);
+      console.log(
+        `[PURGE EXTRA STUDENT] Deleting extra record: ${st.user?.name || "No Name"} (NIM: ${st.nim})`
+      );
       await prisma.studentKkn.delete({ where: { id: st.id } });
       if (st.userId) {
         await prisma.user.delete({ where: { id: st.userId } }).catch(() => {});
@@ -289,7 +294,9 @@ async function syncExact560() {
   const finalStudentCount = await prisma.studentKkn.count({ where: { NOT: { kelompokId: null } } });
   const totalStudentKkn = await prisma.studentKkn.count();
   console.log(`Total Record StudentKkn di DB: ${totalStudentKkn}`);
-  console.log(`Total Mahasiswa Terhubung ke Kelompok di DB: ${finalStudentCount} (Target: TEPAT 560)`);
+  console.log(
+    `Total Mahasiswa Terhubung ke Kelompok di DB: ${finalStudentCount} (Target: TEPAT 560)`
+  );
 }
 
 syncExact560()

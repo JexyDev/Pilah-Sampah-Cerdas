@@ -11,7 +11,6 @@ import { kknService } from "./kknService.js";
 import { residuService } from "./residuService.js";
 import { authService } from "./authService.js";
 
-
 describe("Portals A & B Service Integration Tests", () => {
   let kknUser: any;
   let petugasUser: any;

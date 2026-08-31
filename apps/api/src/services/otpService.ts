@@ -10,7 +10,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { hashPassword } from "../utils/hashUtils.js";
 
-
 /** ─── In-memory OTP store (fallback jika Redis offline) ─── */
 const memStore = new Map<string, { value: string; expiresAt: number }>();
 

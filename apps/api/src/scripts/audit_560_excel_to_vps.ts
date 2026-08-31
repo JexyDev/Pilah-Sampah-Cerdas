@@ -6,7 +6,6 @@ import XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
 
-
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "../../docs/raw_new_data.xlsx"),
   path.resolve(process.cwd(), "../docs/raw_new_data.xlsx"),
@@ -20,7 +19,9 @@ export function standardizeKelompokName(rawName: string): string {
   clean = clean.replace(/^Kel\s+/i, "Kelompok ");
   clean = clean.replace(/-\s*/g, "");
 
-  const matchAreaNum = clean.match(/^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i);
+  const matchAreaNum = clean.match(
+    /^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i
+  );
   if (matchAreaNum) {
     clean = `Kelompok ${matchAreaNum[2]} ${matchAreaNum[1]}`;
   }
@@ -87,11 +88,17 @@ async function auditAndSync() {
       nimToGroup.set(nim, { group: curGroup, kelurahan: curKelurahan, dpl: curDpl });
     }
     if (name) {
-      nameToGroup.set(name.toLowerCase(), { group: curGroup, kelurahan: curKelurahan, dpl: curDpl });
+      nameToGroup.set(name.toLowerCase(), {
+        group: curGroup,
+        kelurahan: curKelurahan,
+        dpl: curDpl,
+      });
     }
   }
 
-  console.log(`Jumlah Mappings dari Sheet Pengelompokan: ${nimToGroup.size} NIMs, ${nameToGroup.size} Names`);
+  console.log(
+    `Jumlah Mappings dari Sheet Pengelompokan: ${nimToGroup.size} NIMs, ${nameToGroup.size} Names`
+  );
 
   // 2. Read 560 students from 'Data Keseluruhan Peserta'
   const sheetPeserta = wb.Sheets["Data Keseluruhan Peserta"];
@@ -154,7 +161,9 @@ async function auditAndSync() {
 
   const serena = list560.find((s) => s.name.toLowerCase().includes("serena"));
   if (serena) {
-    console.log(`📌 AUDIT SERENA INDRIANI: NIM=${serena.nim}, Name=${serena.name}, ExpectedGroup="${serena.expectedGroup}"`);
+    console.log(
+      `📌 AUDIT SERENA INDRIANI: NIM=${serena.nim}, Name=${serena.name}, ExpectedGroup="${serena.expectedGroup}"`
+    );
   }
 
   // 3. Map KelompokKkn in DB
@@ -176,10 +185,7 @@ async function auditAndSync() {
 
     const studentKkn = await prisma.studentKkn.findFirst({
       where: {
-        OR: [
-          { nim: s.nim },
-          { user: { name: { equals: s.name, mode: "insensitive" } } },
-        ],
+        OR: [{ nim: s.nim }, { user: { name: { equals: s.name, mode: "insensitive" } } }],
       },
     });
 
@@ -204,7 +210,9 @@ async function auditAndSync() {
   });
 
   if (serenaDb) {
-    console.log(`✅ VERIFIKASI DB SERENA INDRIANI: ${serenaDb.user.name} (NIM: ${serenaDb.nim}) -> Kelompok: ${serenaDb.kelompok?.name}`);
+    console.log(
+      `✅ VERIFIKASI DB SERENA INDRIANI: ${serenaDb.user.name} (NIM: ${serenaDb.nim}) -> Kelompok: ${serenaDb.kelompok?.name}`
+    );
   }
 }
 

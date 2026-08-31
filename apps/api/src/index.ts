@@ -251,19 +251,53 @@ app.post(
 app.get(
   ["/api/v1/mahasiswa/lokasi-aktif", "/api/mahasiswa/lokasi-aktif"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getActiveStudentsLocations
 );
 app.get(
   ["/api/v1/timesheet/summary", "/api/timesheet/summary"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "MAHASISWA_KKN",
+    "DEVELOPER",
+  ]),
   kknAttendanceController.getTimesheetSummary
 );
 app.get(
   ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getAttendanceList
 );
 app.get(
@@ -292,9 +326,25 @@ app.post(
   kknAttendanceController.checkOutAttendance
 );
 app.get(
-  ["/api/v1/laporan-rekap", "/api/laporan-rekap", "/api/v1/laporan-presensi", "/api/laporan-presensi"],
+  [
+    "/api/v1/laporan-rekap",
+    "/api/laporan-rekap",
+    "/api/v1/laporan-presensi",
+    "/api/laporan-presensi",
+  ],
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getLaporanPresensi
 );
 

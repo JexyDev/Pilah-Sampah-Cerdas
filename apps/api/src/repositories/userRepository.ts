@@ -6,8 +6,6 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
-
 const kecInclude = {
   include: {
     kabupaten: {

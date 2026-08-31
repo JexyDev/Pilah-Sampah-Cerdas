@@ -20,13 +20,22 @@ export function normalizeProkerKategori(kategori?: string | null): string {
   if (raw.includes("PEMILAHAN") || raw.includes("PILAH")) return "Pemilahan";
   if (raw.includes("PENGANGKUTAN") || raw.includes("ANGKUT")) return "Pengangkutan";
   if (raw.includes("PENGOLAHAN") || raw.includes("OLAH")) return "Pengolahan";
-  if (raw.includes("PEMANFAATAN") || raw.includes("MANFAAT") || raw === "FISIK") return "Pemanfaatan";
-  if (raw.includes("EDUKASI") || raw.includes("SOSIALISASI") || raw === "NON-FISIK" || raw === "NON_FISIK") return "Edukasi & Sosialisasi";
+  if (raw.includes("PEMANFAATAN") || raw.includes("MANFAAT") || raw === "FISIK")
+    return "Pemanfaatan";
+  if (
+    raw.includes("EDUKASI") ||
+    raw.includes("SOSIALISASI") ||
+    raw === "NON-FISIK" ||
+    raw === "NON_FISIK"
+  )
+    return "Edukasi & Sosialisasi";
   if (raw === "LAINNYA" || raw === "OTHER") return "Lainnya";
   return kategori.trim();
 }
 
-export function isAnorganikBin(bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null): boolean {
+export function isAnorganikBin(
+  bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null
+): boolean {
   if (!bin) return false;
   const cat = (bin.category?.name || "").toUpperCase();
   const qr = (bin.qrCode || "").toLowerCase();
@@ -45,7 +54,9 @@ export function isAnorganikBin(bin?: { category?: { name?: string | null } | nul
   );
 }
 
-export function isOrganikBin(bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null): boolean {
+export function isOrganikBin(
+  bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null
+): boolean {
   if (!bin) return false;
   if (isAnorganikBin(bin)) return false;
   const cat = (bin.category?.name || "").toUpperCase();
@@ -71,10 +82,15 @@ export function checkClassificationMatch(
     return true;
   }
 
-  const isAiOrg = aiType.includes("organik") && !aiType.includes("anorganik") && !aiType.includes("non");
+  const isAiOrg =
+    aiType.includes("organik") && !aiType.includes("anorganik") && !aiType.includes("non");
   const isAiAnorg = aiType.includes("anorganik") || aiType.includes("non");
-  const isBinOrg = (binType.includes("organik") || binType.includes("organic")) && !binType.includes("anorganik") && !binType.includes("non");
-  const isBinAnorg = binType.includes("anorganik") || binType.includes("non_organic") || binType.includes("non");
+  const isBinOrg =
+    (binType.includes("organik") || binType.includes("organic")) &&
+    !binType.includes("anorganik") &&
+    !binType.includes("non");
+  const isBinAnorg =
+    binType.includes("anorganik") || binType.includes("non_organic") || binType.includes("non");
 
   if (isAiOrg && isBinAnorg) return false;
   if (isAiAnorg && isBinOrg) return false;
@@ -246,7 +262,9 @@ export class KknService {
         include: { kelompok: { include: { students: { select: { userId: true } } } } },
       });
 
-      const groupStudentUserIds = studentProfile?.kelompok?.students.map((s) => s.userId) || [kknUserId];
+      const groupStudentUserIds = studentProfile?.kelompok?.students.map((s) => s.userId) || [
+        kknUserId,
+      ];
 
       whereBin = {
         status: "ACTIVE_BOUND",
@@ -261,7 +279,7 @@ export class KknService {
     const bins = await prisma.bin.findMany({
       where: {
         ...whereBin,
-        status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] }
+        status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
       },
       include: {
         category: true,
@@ -274,20 +292,20 @@ export class KknService {
             pointHistory: true,
             wargaViolations: true,
             setoranOtomatis: { orderBy: { createdAt: "desc" } },
-            binOwnerships: { include: { bin: { include: { category: true } } } }
+            binOwnerships: { include: { bin: { include: { category: true } } } },
           },
         },
       },
     });
 
     const uniqueUsers = new Map<string, any>();
-    
+
     bins.forEach((b) => {
       if (!b.user) return;
       if (!uniqueUsers.has(b.user.id)) {
         uniqueUsers.set(b.user.id, {
           u: b.user,
-          bins: [b]
+          bins: [b],
         });
       } else {
         uniqueUsers.get(b.user.id).bins.push(b);
@@ -313,15 +331,23 @@ export class KknService {
             : 107.610123;
 
       const setoranLogs = u.setoranOtomatis || [];
-      const totalKg = setoranLogs.reduce((acc: number, curr: any) => acc + Number(curr.berat || 0), 0);
-      const totalPoin = u.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) || Math.round(totalKg * 10);
+      const totalKg = setoranLogs.reduce(
+        (acc: number, curr: any) => acc + Number(curr.berat || 0),
+        0
+      );
+      const totalPoin =
+        u.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) ||
+        Math.round(totalKg * 10);
 
       const recentLogs = setoranLogs.slice(0, 5).map((log: any) => ({
         weightKg: Number(log.berat || 0),
-        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : primaryBin.category?.name || "Anorganik",
+        category:
+          log.hasilKlasifikasiAi === "organik"
+            ? "Organik"
+            : primaryBin.category?.name || "Anorganik",
         isCorrect: true,
       }));
-      
+
       const binOrganik = userBins.find((b: any) => isOrganikBin(b));
       const binAnorganik = userBins.find((b: any) => isAnorganikBin(b));
 
@@ -333,14 +359,16 @@ export class KknService {
         bin: {
           qrCode: primaryBin.qrCode,
           category: primaryBin.category?.name || "UMUM",
-          capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`
+          capacity: `${primaryBin.currentVolumeLiter || 0}L / ${primaryBin.maxCapacityLiter || 25}L`,
         },
         binOrganikId: binOrganik?.qrCode || null,
         binAnorganikId: binAnorganik?.qrCode || null,
         wargaName: u.name,
         name: u.name,
         phone: u.phone,
-        address: u.address || (u.rw?.name ? `RW ${u.rw.name}, ${u.rw.kelurahan?.name || ""}` : "Alamat tercatat"),
+        address:
+          u.address ||
+          (u.rw?.name ? `RW ${u.rw.name}, ${u.rw.kelurahan?.name || ""}` : "Alamat tercatat"),
         latitude: lat,
         longitude: lng,
         lat: lat,
@@ -489,7 +517,8 @@ export class KknService {
           id: log.id,
           weightKg: Number(log.berat || 0),
           volumeLiter: 0,
-          category: (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
+          category:
+            (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
           createdAt: log.createdAt,
           discrepancyStatus: isMatch ? "NONE" : "MISMATCH",
         };
@@ -658,8 +687,13 @@ export class KknService {
       const rtRwName = w.rw?.name || household?.rw?.name || filters.rw || "";
 
       const setoranLogs = w.setoranOtomatis || [];
-      const totalKg = setoranLogs.reduce((acc: number, curr: any) => acc + Number(curr.berat || 0), 0);
-      const totalPoin = w.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) || Math.round(totalKg * 10);
+      const totalKg = setoranLogs.reduce(
+        (acc: number, curr: any) => acc + Number(curr.berat || 0),
+        0
+      );
+      const totalPoin =
+        w.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) ||
+        Math.round(totalKg * 10);
 
       const binOrganik = w.binOwnerships?.find((bo: any) => isOrganikBin(bo.bin))?.bin;
       const binAnorganik = w.binOwnerships?.find((bo: any) => isAnorganikBin(bo.bin))?.bin;
@@ -721,19 +755,18 @@ export class KknService {
         totalPoints: totalPoin,
         isActivated,
         mahasiswaId: registeredStudentId,
-        binOrganikId:
-          binOrganik?.qrCode ||
-          (isOrganikBin(primaryBin) ? primaryBin.qrCode : null),
+        binOrganikId: binOrganik?.qrCode || (isOrganikBin(primaryBin) ? primaryBin.qrCode : null),
         binAnorganikId:
-          binAnorganik?.qrCode ||
-          (isAnorganikBin(primaryBin) ? primaryBin.qrCode : null),
+          binAnorganik?.qrCode || (isAnorganikBin(primaryBin) ? primaryBin.qrCode : null),
         binId: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
         binCode: primaryBin?.qrCode || binOrganik?.qrCode || binAnorganik?.qrCode || "",
-        bin: primaryBin ? {
-          qrCode: primaryBin.qrCode,
-          category: primaryBin.category?.name || "UMUM",
-          capacity: `${primaryBin.currentVolumeLiter}L / ${primaryBin.maxCapacityLiter}L`
-        } : null,
+        bin: primaryBin
+          ? {
+              qrCode: primaryBin.qrCode,
+              category: primaryBin.category?.name || "UMUM",
+              capacity: `${primaryBin.currentVolumeLiter}L / ${primaryBin.maxCapacityLiter}L`,
+            }
+          : null,
         needsReeducation: false,
         recentLogs,
       };
@@ -755,15 +788,14 @@ export class KknService {
 
     targetUser = await tx.user.findFirst({
       where: {
-        OR: [
-          { phone: inputWargaId },
-          { phone: formatPhoneNumber(inputWargaId) },
-        ],
+        OR: [{ phone: inputWargaId }, { phone: formatPhoneNumber(inputWargaId) }],
       },
     });
     if (targetUser) return targetUser;
 
-    throw new Error(`Pengguna Warga dengan ID/Nomor '${inputWargaId}' tidak ditemukan di sistem. Silakan pastikan Warga sudah terdaftar.`);
+    throw new Error(
+      `Pengguna Warga dengan ID/Nomor '${inputWargaId}' tidak ditemukan di sistem. Silakan pastikan Warga sudah terdaftar.`
+    );
   }
 
   async activateByScan(
@@ -794,8 +826,14 @@ export class KknService {
         });
       } else {
         // Guard: reject if bin already owned by a different warga
-        if (bin.userId && bin.userId !== wargaId && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)) {
-          throw new Error("Tempat sampah ini sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.");
+        if (
+          bin.userId &&
+          bin.userId !== wargaId &&
+          ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)
+        ) {
+          throw new Error(
+            "Tempat sampah ini sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang."
+          );
         }
 
         await tx.bin.update({
@@ -886,7 +924,12 @@ export class KknService {
             lower.includes("ang") ||
             lower.includes("non") ||
             lower.includes("2");
-          const isOrg = !isAnorg && (lower.includes("organik") || lower.includes("org") || lower.includes("ogn") || lower.includes("1"));
+          const isOrg =
+            !isAnorg &&
+            (lower.includes("organik") ||
+              lower.includes("org") ||
+              lower.includes("ogn") ||
+              lower.includes("1"));
           let category = await tx.wasteCategory.findFirst({
             where: { name: isOrg ? "ORGANIC" : "NON_ORGANIC" },
           });
@@ -907,8 +950,14 @@ export class KknService {
 
       for (const bin of bins) {
         // Guard: reject if bin already owned by a different warga
-        if (bin.userId && bin.userId !== wargaId && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)) {
-          throw new Error(`Tempat sampah ${bin.qrCode} sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.`);
+        if (
+          bin.userId &&
+          bin.userId !== wargaId &&
+          ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)
+        ) {
+          throw new Error(
+            `Tempat sampah ${bin.qrCode} sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.`
+          );
         }
 
         await tx.bin.update({
@@ -1114,20 +1163,30 @@ export class KknService {
     let picName = (data.pic || "").trim();
     if (!picName && wargaUser?.name) {
       picName = wargaUser.name;
-    } else if (!picName && data.userId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.userId.trim())) {
+    } else if (
+      !picName &&
+      data.userId &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.userId.trim())
+    ) {
       picName = data.userId.trim();
     }
 
     let kontakPhone = (data.kontak || "").trim();
     if (!kontakPhone || kontakPhone === "-") {
-      kontakPhone = wargaUser ? (wargaUser.phone || "-") : "-";
+      kontakPhone = wargaUser ? wargaUser.phone || "-" : "-";
     }
 
     const alamatLokasi = data.alamat || (wargaUser ? wargaUser.address || "-" : "-");
 
     // Jika picName masih berupa string UUID (legacy), lookup ke nama user warga
-    if (picName && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(picName)) {
-      const u = await prisma.user.findUnique({ where: { id: picName }, select: { name: true, phone: true } });
+    if (
+      picName &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(picName)
+    ) {
+      const u = await prisma.user.findUnique({
+        where: { id: picName },
+        select: { name: true, phone: true },
+      });
       if (u?.name) {
         picName = u.name;
         if ((!kontakPhone || kontakPhone === "-") && u.phone) kontakPhone = u.phone;
@@ -1262,18 +1321,20 @@ export class KknService {
       }
 
       // Extract coordinates from GPS payload
-      const latVal = data.latitude !== undefined && data.latitude !== null
-        ? Number(data.latitude)
-        : data.lat !== undefined && data.lat !== null
-        ? Number(data.lat)
-        : -6.8903;
-      const lngVal = data.longitude !== undefined && data.longitude !== null
-        ? Number(data.longitude)
-        : data.lng !== undefined && data.lng !== null
-        ? Number(data.lng)
-        : data.lon !== undefined && data.lon !== null
-        ? Number(data.lon)
-        : 107.611;
+      const latVal =
+        data.latitude !== undefined && data.latitude !== null
+          ? Number(data.latitude)
+          : data.lat !== undefined && data.lat !== null
+            ? Number(data.lat)
+            : -6.8903;
+      const lngVal =
+        data.longitude !== undefined && data.longitude !== null
+          ? Number(data.longitude)
+          : data.lng !== undefined && data.lng !== null
+            ? Number(data.lng)
+            : data.lon !== undefined && data.lon !== null
+              ? Number(data.lon)
+              : 107.611;
 
       let household = await tx.household.findFirst({ where: { userId: warga.id } });
       if (!household) {
@@ -1319,7 +1380,12 @@ export class KknService {
           qrLower.includes("ang") ||
           qrLower.includes("non") ||
           qrLower.includes("2");
-        const isOrg = !isAnorg && (qrLower.includes("organik") || qrLower.includes("org") || qrLower.includes("ogn") || qrLower.includes("1"));
+        const isOrg =
+          !isAnorg &&
+          (qrLower.includes("organik") ||
+            qrLower.includes("org") ||
+            qrLower.includes("ogn") ||
+            qrLower.includes("1"));
         const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
 
         if (!bin) {
@@ -1341,8 +1407,14 @@ export class KknService {
           });
         } else {
           // Guard: reject if bin already owned by a different warga
-          if (bin.userId && bin.userId !== warga.id && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)) {
-            throw new Error(`Tempat sampah ${bin.qrCode} sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.`);
+          if (
+            bin.userId &&
+            bin.userId !== warga.id &&
+            ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(bin.status)
+          ) {
+            throw new Error(
+              `Tempat sampah ${bin.qrCode} sudah dimiliki oleh warga lain dan tidak bisa diklaim ulang.`
+            );
           }
 
           bin = await tx.bin.update({
@@ -1403,7 +1475,10 @@ export class KknService {
 
     if (kelompok?.cakupanRw) {
       try {
-        const parsed = typeof kelompok.cakupanRw === "string" ? JSON.parse(kelompok.cakupanRw) : kelompok.cakupanRw;
+        const parsed =
+          typeof kelompok.cakupanRw === "string"
+            ? JSON.parse(kelompok.cakupanRw)
+            : kelompok.cakupanRw;
         if (Array.isArray(parsed) && parsed.length > 0) {
           rwNum = String(parsed[0]).padStart(2, "0");
         } else if (typeof parsed === "number" || typeof parsed === "string") {
@@ -1466,7 +1541,9 @@ export class KknService {
     }
 
     if (!student.isKetua) {
-      const err: any = new Error("Akses ditolak: Hanya Ketua Kelompok KKN yang berhak mendaftarkan atau memperbarui lokasi posko.");
+      const err: any = new Error(
+        "Akses ditolak: Hanya Ketua Kelompok KKN yang berhak mendaftarkan atau memperbarui lokasi posko."
+      );
       err.statusCode = 403;
       throw err;
     }
@@ -1474,7 +1551,9 @@ export class KknService {
     const lat = Number(payload.latitude);
     const lng = Number(payload.longitude);
     if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
-      throw new Error("Koordinat GPS lokasi HP (latitude & longitude) wajib valid dan tidak boleh kosong.");
+      throw new Error(
+        "Koordinat GPS lokasi HP (latitude & longitude) wajib valid dan tidak boleh kosong."
+      );
     }
 
     const poskoName = payload.nama || `Posko KKN ${student.kelompok.name}`;
@@ -1539,7 +1618,9 @@ export class KknService {
     }
 
     if (!student.isKetua) {
-      const err: any = new Error("Akses ditolak: Hanya Ketua Kelompok KKN yang berhak memperbarui data posko.");
+      const err: any = new Error(
+        "Akses ditolak: Hanya Ketua Kelompok KKN yang berhak memperbarui data posko."
+      );
       err.statusCode = 403;
       throw err;
     }
@@ -1548,23 +1629,35 @@ export class KknService {
       where: { kelompokId: student.kelompokId },
     });
 
-    const lat = payload.latitude !== undefined && !isNaN(Number(payload.latitude)) && Number(payload.latitude) !== 0
-      ? Number(payload.latitude)
-      : Number(existingPosko?.latitude || 0);
-    const lng = payload.longitude !== undefined && !isNaN(Number(payload.longitude)) && Number(payload.longitude) !== 0
-      ? Number(payload.longitude)
-      : Number(existingPosko?.longitude || 0);
+    const lat =
+      payload.latitude !== undefined &&
+      !isNaN(Number(payload.latitude)) &&
+      Number(payload.latitude) !== 0
+        ? Number(payload.latitude)
+        : Number(existingPosko?.latitude || 0);
+    const lng =
+      payload.longitude !== undefined &&
+      !isNaN(Number(payload.longitude)) &&
+      Number(payload.longitude) !== 0
+        ? Number(payload.longitude)
+        : Number(existingPosko?.longitude || 0);
 
     const poskoName = payload.nama || existingPosko?.nama || `Posko KKN ${student.kelompok.name}`;
     const { poskoKknService } = await import("./poskoKknService.js");
-    const parsedRadius = payload.radius !== undefined ? Number(payload.radius) : (Number((existingPosko as any)?.radius) || 150);
+    const parsedRadius =
+      payload.radius !== undefined
+        ? Number(payload.radius)
+        : Number((existingPosko as any)?.radius) || 150;
     const posko = await poskoKknService.upsertPosko(student.kelompokId, {
       nama: poskoName,
-      alamat: payload.alamat !== undefined ? payload.alamat : (existingPosko?.alamat || "-"),
+      alamat: payload.alamat !== undefined ? payload.alamat : existingPosko?.alamat || "-",
       latitude: lat,
       longitude: lng,
       radius: parsedRadius,
-      fotoUrl: (payload.foto !== undefined && payload.foto !== "") ? payload.foto : (existingPosko?.fotoUrl || undefined),
+      fotoUrl:
+        payload.foto !== undefined && payload.foto !== ""
+          ? payload.foto
+          : existingPosko?.fotoUrl || undefined,
     });
 
     await prisma.auditTrail.create({
@@ -1621,7 +1714,9 @@ export class KknService {
     });
 
     if (posko && !posko.fotoUrl) {
-      const facilityPosko = (posko.kelompok as any)?.facilities?.find((f: any) => f.foto) || (posko.kelompok as any)?.facilities?.[0];
+      const facilityPosko =
+        (posko.kelompok as any)?.facilities?.find((f: any) => f.foto) ||
+        (posko.kelompok as any)?.facilities?.[0];
       if (facilityPosko?.foto) {
         posko.fotoUrl = facilityPosko.foto;
       }
@@ -1634,12 +1729,26 @@ export class KknService {
     };
   }
 
-  async getAllPoskoKkn(filters?: { kelurahan?: string; search?: string; userId?: string; role?: string }) {
+  async getAllPoskoKkn(filters?: {
+    kelurahan?: string;
+    search?: string;
+    userId?: string;
+    role?: string;
+  }) {
     let where: any = {};
 
     if (filters?.userId && filters?.role) {
       const normalizedRole = String(filters.role).toUpperCase();
-      const isAdmin = ["DEVELOPER", "ADMIN_DLH", "DLH", "DLH_ADMIN", "SUPER_USER", "ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"].some(r => normalizedRole.includes(r));
+      const isAdmin = [
+        "DEVELOPER",
+        "ADMIN_DLH",
+        "DLH",
+        "DLH_ADMIN",
+        "SUPER_USER",
+        "ADMIN",
+        "PANITIA_TASKFORCE",
+        "PEMIMPIN",
+      ].some((r) => normalizedRole.includes(r));
       if (!isAdmin) {
         if (normalizedRole.includes("MAHASISWA")) {
           where.kelompok = { students: { some: { userId: filters.userId } } };
@@ -1653,19 +1762,31 @@ export class KknService {
             { kelompok: { dpl: { id: filters.userId } } },
           ];
           if (userDpl?.name) {
-            orConditions.push({ kelompok: { dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" } } });
-            orConditions.push({ kelompok: { dpl: { name: { equals: userDpl.name.trim(), mode: "insensitive" } } } });
+            orConditions.push({
+              kelompok: { dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" } },
+            });
+            orConditions.push({
+              kelompok: { dpl: { name: { equals: userDpl.name.trim(), mode: "insensitive" } } },
+            });
           }
           if (userDpl?.nip) {
             orConditions.push({ kelompok: { dpl: { nip: userDpl.nip } } });
           }
           where.OR = orConditions;
         } else if (normalizedRole.includes("RW")) {
-          const userRw = await prisma.user.findUnique({ where: { id: filters.userId }, select: { rwId: true } });
+          const userRw = await prisma.user.findUnique({
+            where: { id: filters.userId },
+            select: { rwId: true },
+          });
           if (userRw?.rwId) {
-            const rwData = await prisma.rw.findUnique({ where: { id: userRw.rwId }, include: { kelurahan: true } });
+            const rwData = await prisma.rw.findUnique({
+              where: { id: userRw.rwId },
+              include: { kelurahan: true },
+            });
             if (rwData?.kelurahan?.name) {
-              where.kelompok = { kelurahan: { equals: rwData.kelurahan.name, mode: "insensitive" } };
+              where.kelompok = {
+                kelurahan: { equals: rwData.kelurahan.name, mode: "insensitive" },
+              };
             }
           }
         }
@@ -1688,7 +1809,11 @@ export class KknService {
         { kelompok: { name: { contains: s, mode: "insensitive" } } },
         { kelompok: { kelurahan: { contains: s, mode: "insensitive" } } },
         { kelompok: { dpl: { name: { contains: s, mode: "insensitive" } } } },
-        { kelompok: { students: { some: { user: { name: { contains: s, mode: "insensitive" } } } } } },
+        {
+          kelompok: {
+            students: { some: { user: { name: { contains: s, mode: "insensitive" } } } },
+          },
+        },
       ];
       if (where.OR) {
         where.AND = [{ OR: where.OR }, { OR: searchOr }];
@@ -1723,13 +1848,28 @@ export class KknService {
     const mapped = poskos.map((p) => {
       const pAny = p as any;
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
-      const facilityPosko = p.kelompok?.facilities?.find((f: any) => f.foto) || p.kelompok?.facilities?.[0];
+      const facilityPosko =
+        p.kelompok?.facilities?.find((f: any) => f.foto) || p.kelompok?.facilities?.[0];
       const resolvedFoto = p.fotoUrl || facilityPosko?.foto || null;
       const ketuaName = pAny.pic || ketua?.user?.name || "Ketua Kelompok KKN";
-      const kontak = pAny.kontak && pAny.kontak !== "-" ? pAny.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
-      const dplName = p.kelompok?.dpl?.name || (p.kelompok as any)?.dplNamaMentah || "DPL Belum Diset";
-      const kelurahan = p.kelompok?.kelurahan || pAny.rw?.kelurahan?.name || ketua?.assignedRw?.kelurahan?.name || "Coblong";
-      const rwName = pAny.rw?.name || (ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-");
+      const kontak =
+        pAny.kontak && pAny.kontak !== "-"
+          ? pAny.kontak
+          : ketua?.user?.phone || (ketua as any)?.noWa || "-";
+      const dplName =
+        p.kelompok?.dpl?.name || (p.kelompok as any)?.dplNamaMentah || "DPL Belum Diset";
+      const kelurahan =
+        p.kelompok?.kelurahan ||
+        pAny.rw?.kelurahan?.name ||
+        ketua?.assignedRw?.kelurahan?.name ||
+        "Coblong";
+      const rwName =
+        pAny.rw?.name ||
+        (ketua?.assignedRw?.name
+          ? ketua.assignedRw.name.startsWith("RW")
+            ? ketua.assignedRw.name
+            : `RW ${ketua.assignedRw.name}`
+          : "-");
       const rwId = pAny.rwId || ketua?.assignedRwId || ketua?.user?.rwId || null;
 
       return {
@@ -1761,7 +1901,9 @@ export class KknService {
       const { poskoKknService } = await import("./poskoKknService.js");
       const allOfficialPoskos = await poskoKknService.getAllPosko(filters?.userId, filters?.role);
       for (const off of allOfficialPoskos) {
-        const alreadyExists = mapped.some((m) => m.id === off.id || (m.kelompokId === off.kelompokId && off.isUtama));
+        const alreadyExists = mapped.some(
+          (m) => m.id === off.id || (m.kelompokId === off.kelompokId && off.isUtama)
+        );
         if (!alreadyExists) {
           mapped.push({
             id: off.id,
@@ -1885,22 +2027,34 @@ export class KknService {
     }
 
     const targetKelompokId = payload.kelompokId || existing.kelompokId;
-    const lat = payload.latitude !== undefined && !isNaN(Number(payload.latitude)) && Number(payload.latitude) !== 0
-      ? Number(payload.latitude)
-      : Number(existing.latitude);
-    const lng = payload.longitude !== undefined && !isNaN(Number(payload.longitude)) && Number(payload.longitude) !== 0
-      ? Number(payload.longitude)
-      : Number(existing.longitude);
+    const lat =
+      payload.latitude !== undefined &&
+      !isNaN(Number(payload.latitude)) &&
+      Number(payload.latitude) !== 0
+        ? Number(payload.latitude)
+        : Number(existing.latitude);
+    const lng =
+      payload.longitude !== undefined &&
+      !isNaN(Number(payload.longitude)) &&
+      Number(payload.longitude) !== 0
+        ? Number(payload.longitude)
+        : Number(existing.longitude);
 
     const { poskoKknService } = await import("./poskoKknService.js");
-    const parsedRadius = payload.radius !== undefined ? Number(payload.radius) : (Number((existing as any)?.radius) || 150);
+    const parsedRadius =
+      payload.radius !== undefined
+        ? Number(payload.radius)
+        : Number((existing as any)?.radius) || 150;
     const posko = await poskoKknService.upsertPosko(targetKelompokId, {
       nama: payload.nama !== undefined ? payload.nama.trim() : existing.nama,
       alamat: payload.alamat !== undefined ? payload.alamat.trim() : existing.alamat,
       latitude: lat,
       longitude: lng,
       radius: parsedRadius,
-      fotoUrl: (payload.foto !== undefined && payload.foto !== "") ? payload.foto : (existing.fotoUrl || undefined),
+      fotoUrl:
+        payload.foto !== undefined && payload.foto !== ""
+          ? payload.foto
+          : existing.fotoUrl || undefined,
       keterangan: payload.statusApproval || existing.keterangan || undefined,
     });
 
@@ -2035,16 +2189,18 @@ export class KknService {
     const poskoLat = registeredPosko?.latitude
       ? Number(registeredPosko.latitude)
       : student.assignedRw?.latitude
-      ? Number(student.assignedRw.latitude)
-      : -6.8906;
+        ? Number(student.assignedRw.latitude)
+        : -6.8906;
     const poskoLng = registeredPosko?.longitude
       ? Number(registeredPosko.longitude)
       : student.assignedRw?.longitude
-      ? Number(student.assignedRw.longitude)
-      : 107.6123;
+        ? Number(student.assignedRw.longitude)
+        : 107.6123;
     const poskoLocationName =
       registeredPosko?.nama ||
-      (student.assignedRw?.name ? `RW ${student.assignedRw.name}` : `Kel. ${group.kelurahan || "Coblong"}`);
+      (student.assignedRw?.name
+        ? `RW ${student.assignedRw.name}`
+        : `Kel. ${group.kelurahan || "Coblong"}`);
     const poskoStatus = registeredPosko?.statusApproval || "UNREGISTERED";
 
     return {
@@ -2111,19 +2267,21 @@ export class KknService {
       }
     }
 
-      const startDate = new Date(targetDate);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(targetDate);
-      endDate.setHours(23, 59, 59, 999);
-  
-      // VALIDASI H-1: Tidak boleh izin pada hari H atau hari yang sudah lewat
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      if (startDate.getTime() <= today.getTime()) {
-        throw new Error("Pengajuan izin harus dilakukan minimal H-1. Anda tidak dapat mengajukan izin untuk hari ini atau hari yang sudah lewat.");
-      }
+    const startDate = new Date(targetDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(targetDate);
+    endDate.setHours(23, 59, 59, 999);
 
-      // VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
+    // VALIDASI H-1: Tidak boleh izin pada hari H atau hari yang sudah lewat
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (startDate.getTime() <= today.getTime()) {
+      throw new Error(
+        "Pengajuan izin harus dilakukan minimal H-1. Anda tidak dapat mengajukan izin untuk hari ini atau hari yang sudah lewat."
+      );
+    }
+
+    // VALIDASI ANTI-TUMPUK (1 Hari/Pertemuan = 1 Status Pengajuan)
     const studentProfile = await prisma.studentKkn.findFirst({
       where: { OR: [{ userId: studentId }, { id: studentId }] },
       include: { kelompok: { include: { dpl: true } }, user: true },
@@ -2147,7 +2305,9 @@ export class KknService {
         throw new Error("Pengajuan izin Anda sebelumnya masih dalam proses verifikasi.");
       }
       if (existingLeave.status === "APPROVED") {
-        throw new Error("Pengajuan izin untuk tanggal ini sudah disetujui. Silakan ajukan pembatalan jika ingin hadir.");
+        throw new Error(
+          "Pengajuan izin untuk tanggal ini sudah disetujui. Silakan ajukan pembatalan jika ingin hadir."
+        );
       }
       if (existingLeave.status === "CANCEL_REQUESTED") {
         throw new Error("Permohonan pembatalan izin Anda sedang menunggu konfirmasi DPL.");
@@ -2184,7 +2344,10 @@ export class KknService {
         });
       }
     } catch (notifErr) {
-      console.warn("[createLeaveRequest] Background DPL notification warning (non-critical):", notifErr);
+      console.warn(
+        "[createLeaveRequest] Background DPL notification warning (non-critical):",
+        notifErr
+      );
     }
 
     return {
@@ -2215,7 +2378,9 @@ export class KknService {
       where: { OR: [{ userId: studentId }, { id: studentId }] },
       include: { kelompok: { include: { dpl: true } }, user: true },
     });
-    const validIds = new Set([studentId, studentProfile?.userId, studentProfile?.id].filter(Boolean));
+    const validIds = new Set(
+      [studentId, studentProfile?.userId, studentProfile?.id].filter(Boolean)
+    );
     if (!validIds.has(leave.studentId)) {
       throw new Error("Anda tidak memiliki izin untuk membatalkan pengajuan ini.");
     }
@@ -2240,7 +2405,8 @@ export class KknService {
       return {
         success: true,
         status: "CANCELLED",
-        message: "Pengajuan izin berhasil dibatalkan. Anda dapat melakukan presensi kehadiran normal.",
+        message:
+          "Pengajuan izin berhasil dibatalkan. Anda dapat melakukan presensi kehadiran normal.",
         data: updated,
       };
     }
@@ -2251,7 +2417,8 @@ export class KknService {
         where: { id: leaveRequestId },
         data: {
           status: "CANCEL_REQUESTED",
-          rejectionReason: reason || "Mahasiswa mengajukan pembatalan izin untuk hadir pada kegiatan",
+          rejectionReason:
+            reason || "Mahasiswa mengajukan pembatalan izin untuk hadir pada kegiatan",
         },
       });
 
@@ -2275,7 +2442,8 @@ export class KknService {
       return {
         success: true,
         status: "CANCEL_REQUESTED",
-        message: "Permohonan pembatalan izin telah dikirimkan ke DPL. Menunggu konfirmasi DPL untuk pengubahan status kehadiran.",
+        message:
+          "Permohonan pembatalan izin telah dikirimkan ke DPL. Menunggu konfirmasi DPL untuk pengubahan status kehadiran.",
         data: updated,
       };
     }
@@ -2363,7 +2531,8 @@ export class KknService {
 
     const uniqueNo = `PEM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    const cleanProgramTitle = jenisPemanfaatan || payload.wilayahDampingan || deskripsi || "Program Pengolahan Mandiri";
+    const cleanProgramTitle =
+      jenisPemanfaatan || payload.wilayahDampingan || deskripsi || "Program Pengolahan Mandiri";
     const cleanTeknologi = jenisPemanfaatan || "Kompos Organik";
     const cleanBahanBaku = kategoriSampah || "Sampah Organik";
 
@@ -2383,9 +2552,12 @@ export class KknService {
       },
     });
 
-    const isIdeProgram = satuan === 'Rp' || ['FISIK', 'NON_FISIK', 'LAINNYA'].includes(jenisPemanfaatan);
-    const laporanLabel = isIdeProgram ? 'Laporan Ide Program' : 'Laporan Pemanfaatan Sampah';
-    const laporanDesc = isIdeProgram ? `${jenisPemanfaatan} dengan RAB ${jumlah} ${satuan}` : `${jenisPemanfaatan} (${jumlah} ${satuan})`;
+    const isIdeProgram =
+      satuan === "Rp" || ["FISIK", "NON_FISIK", "LAINNYA"].includes(jenisPemanfaatan);
+    const laporanLabel = isIdeProgram ? "Laporan Ide Program" : "Laporan Pemanfaatan Sampah";
+    const laporanDesc = isIdeProgram
+      ? `${jenisPemanfaatan} dengan RAB ${jumlah} ${satuan}`
+      : `${jenisPemanfaatan} (${jumlah} ${satuan})`;
 
     // Award +25 points to student for waste utilization report
     const earnedPoints = 25;
@@ -2514,7 +2686,10 @@ export class KknService {
 
     // Fetch target duration dynamically from Rule Engine as the single source of truth!
     const ruleConfigs = await configService.getRuleEngineConfigs();
-    const ruleTargetMinutes = (ruleConfigs.attendanceMinDurationHours * 60) + ruleConfigs.attendanceMinDurationMinutes + (ruleConfigs.attendanceMinDurationSeconds / 60);
+    const ruleTargetMinutes =
+      ruleConfigs.attendanceMinDurationHours * 60 +
+      ruleConfigs.attendanceMinDurationMinutes +
+      ruleConfigs.attendanceMinDurationSeconds / 60;
     const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
 
     // Hitung batas hari WIB (UTC+7) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â jadwal disimpan UTC, harus query dengan window WIB
@@ -2523,12 +2698,17 @@ export class KknService {
     const todayWibStr = nowWibBoundary.toISOString().slice(0, 10);
     const todayStart = new Date(`${todayWibStr}T00:00:00+07:00`);
     const todayEnd = new Date(`${todayWibStr}T23:59:59.999+07:00`);
-    const yesterdayWibStr = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000)
-      .toISOString().slice(0, 10);
+    const yesterdayWibStr = new Date(
+      todayStart.getTime() - 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000
+    )
+      .toISOString()
+      .slice(0, 10);
     const yesterdayStart = new Date(`${yesterdayWibStr}T00:00:00+07:00`);
 
     // Fetch all valid student ID representations to prevent any user ID mismatch
-    const studentUserIds = Array.from(new Set([userId, student?.id, student?.userId].filter(Boolean) as string[]));
+    const studentUserIds = Array.from(
+      new Set([userId, student?.id, student?.userId].filter(Boolean) as string[])
+    );
 
     // Check student's leave request status (izin / sakit) - must belong ONLY to this student, be APPROVED, and active today
     const activeLeave = await (prisma as any).studentLeaveRequest.findFirst({
@@ -2546,10 +2726,7 @@ export class KknService {
       where: {
         studentId: { in: studentUserIds },
         attendedAt: { gte: todayStart, lte: todayEnd },
-        OR: [
-          { checkOutAt: { not: null } },
-          { status: "ALPA" },
-        ],
+        OR: [{ checkOutAt: { not: null } }, { status: "ALPA" }],
       },
       select: { scheduleId: true },
     });
@@ -2560,10 +2737,7 @@ export class KknService {
     if (student?.kelompokId) {
       activeSchedules = await prisma.schedule.findMany({
         where: {
-          OR: [
-            { kelompokId: student.kelompokId },
-            { kelompokId: null },
-          ],
+          OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }],
           date: { gte: yesterdayStart, lte: todayEnd },
           isActive: true,
         },
@@ -2622,60 +2796,68 @@ export class KknService {
       // 1. Time Window Matching: Pick schedule matching current time e.g. "08:00 - 10:00" vs "13:00 - 15:00"
       for (const sch of targetScheduleList) {
         let startMins = 0;
-      let endMins = 24 * 60;
-      // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
-      const normalizedTime = (sch.time || "")
-        .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
-        .replace(/[ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â~]|s\/d|sd/gi, "-")
-        .trim();
-      if (normalizedTime.includes("-")) {
-        const parts = normalizedTime.split("-");
-        const startParts = parts[0].trim().replace(".", ":").split(":");
-        const endParts = parts[1].trim().replace(".", ":").split(":");
-        if (startParts.length >= 2) {
-          const h = parseInt(startParts[0], 10);
-          const m = parseInt(startParts[1], 10);
-          const cleanH = isNaN(h) ? 8 : (h === 24 ? 0 : h);
-          const cleanM = isNaN(m) ? 0 : m;
-          startMins = cleanH * 60 + cleanM;
+        let endMins = 24 * 60;
+        // Strip suffix WIB/WITA/WIT dan normalize separator ke "-"
+        const normalizedTime = (sch.time || "")
+          .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
+          .replace(/[ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â~]|s\/d|sd/gi, "-")
+          .trim();
+        if (normalizedTime.includes("-")) {
+          const parts = normalizedTime.split("-");
+          const startParts = parts[0].trim().replace(".", ":").split(":");
+          const endParts = parts[1].trim().replace(".", ":").split(":");
+          if (startParts.length >= 2) {
+            const h = parseInt(startParts[0], 10);
+            const m = parseInt(startParts[1], 10);
+            const cleanH = isNaN(h) ? 8 : h === 24 ? 0 : h;
+            const cleanM = isNaN(m) ? 0 : m;
+            startMins = cleanH * 60 + cleanM;
+          }
+          if (endParts.length >= 2) {
+            const h = parseInt(endParts[0], 10);
+            const m = parseInt(endParts[1], 10);
+            const cleanH = isNaN(h) ? 16 : h === 24 ? 24 : h;
+            const cleanM = isNaN(m) ? 0 : m;
+            endMins = cleanH * 60 + cleanM;
+          }
         }
-        if (endParts.length >= 2) {
-          const h = parseInt(endParts[0], 10);
-          const m = parseInt(endParts[1], 10);
-          const cleanH = isNaN(h) ? 16 : (h === 24 ? 24 : h);
-          const cleanM = isNaN(m) ? 0 : m;
-          endMins = cleanH * 60 + cleanM;
-        }
-      }
 
-      const schDateStr = sch.date
-        ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000).toISOString().substring(0, 10)
-        : todayStr;
-      const isSchedDateToday = schDateStr === todayStr;
+        const schDateStr = sch.date
+          ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000)
+              .toISOString()
+              .substring(0, 10)
+          : todayStr;
+        const isSchedDateToday = schDateStr === todayStr;
 
-      let isTimeMatch = false;
-      if (endMins >= startMins) {
-        // Normal daytime schedule
-        isTimeMatch = isSchedDateToday && (currentWibMinutes >= startMins && currentWibMinutes <= endMins);
-      } else {
-        // Overnight schedule (e.g. 11:00 - 08:02)
-        if (isSchedDateToday) {
-          isTimeMatch = currentWibMinutes >= startMins; // Day 1
+        let isTimeMatch = false;
+        if (endMins >= startMins) {
+          // Normal daytime schedule
+          isTimeMatch =
+            isSchedDateToday && currentWibMinutes >= startMins && currentWibMinutes <= endMins;
         } else {
-          isTimeMatch = currentWibMinutes <= endMins; // Day 2
+          // Overnight schedule (e.g. 11:00 - 08:02)
+          if (isSchedDateToday) {
+            isTimeMatch = currentWibMinutes >= startMins; // Day 1
+          } else {
+            isTimeMatch = currentWibMinutes <= endMins; // Day 2
+          }
+        }
+
+        if (isTimeMatch) {
+          activeSchedule = sch;
+          break;
         }
       }
-
-      if (isTimeMatch) {
-        activeSchedule = sch;
-        break;
-      }
-    }
     }
 
     // 2. Smart Multi-Schedule Matching by Geofence if no exact time match
     if (!activeSchedule && targetScheduleList.length > 0) {
-      if (currentLat !== undefined && currentLng !== undefined && !isNaN(currentLat) && !isNaN(currentLng)) {
+      if (
+        currentLat !== undefined &&
+        currentLng !== undefined &&
+        !isNaN(currentLat) &&
+        !isNaN(currentLng)
+      ) {
         for (const sch of targetScheduleList) {
           let isInside = false;
           if (sch.polygon && Array.isArray(sch.polygon) && sch.polygon.length >= 3) {
@@ -2683,10 +2865,19 @@ export class KknService {
               lat: Number(p[0]),
               lng: Number(p[1]),
             }));
-            isInside = isPointInPolygonWithBuffer({ lat: currentLat, lng: currentLng }, polyPoints, 15);
+            isInside = isPointInPolygonWithBuffer(
+              { lat: currentLat, lng: currentLng },
+              polyPoints,
+              15
+            );
           } else if (sch.latitude && sch.longitude) {
-            const dist = calculateDistance(currentLat, currentLng, Number(sch.latitude), Number(sch.longitude));
-            isInside = dist <= ((sch.radius || 100) + 15);
+            const dist = calculateDistance(
+              currentLat,
+              currentLng,
+              Number(sch.latitude),
+              Number(sch.longitude)
+            );
+            isInside = dist <= (sch.radius || 100) + 15;
           }
 
           if (isInside) {
@@ -2699,7 +2890,12 @@ export class KknService {
           let minDistance = Infinity;
           for (const sch of targetScheduleList) {
             if (sch.latitude && sch.longitude) {
-              const dist = calculateDistance(currentLat, currentLng, Number(sch.latitude), Number(sch.longitude));
+              const dist = calculateDistance(
+                currentLat,
+                currentLng,
+                Number(sch.latitude),
+                Number(sch.longitude)
+              );
               if (dist < minDistance) {
                 minDistance = dist;
                 activeSchedule = sch;
@@ -2743,7 +2939,11 @@ export class KknService {
         attendanceStatus = "alpa";
       } else if (attStatUpper.includes("TIDAK_ADA_KEGIATAN") || attStatUpper.includes("SKIP")) {
         attendanceStatus = "tidak_ada_kegiatan";
-      } else if (attStatUpper === "BERLANGSUNG" || attStatUpper === "DALAM_RADIUS" || attStatUpper === "DI_ZONA") {
+      } else if (
+        attStatUpper === "BERLANGSUNG" ||
+        attStatUpper === "DALAM_RADIUS" ||
+        attStatUpper === "DI_ZONA"
+      ) {
         attendanceStatus = "berlangsung";
       } else if (attStatUpper === "HADIR_MEMENUHI") {
         attendanceStatus = "hadir_memenuhi";
@@ -2751,7 +2951,11 @@ export class KknService {
       } else if (attStatUpper === "HADIR_TIDAK_MEMENUHI" || attStatUpper === "SELESAI_TELAT") {
         attendanceStatus = "hadir_tidak_memenuhi";
         isMemenuhiDurasi = false;
-      } else if (attStatUpper === "HADIR" || attStatUpper === "SELESAI" || attendanceForActiveSchedule.checkOutAt !== null) {
+      } else if (
+        attStatUpper === "HADIR" ||
+        attStatUpper === "SELESAI" ||
+        attendanceForActiveSchedule.checkOutAt !== null
+      ) {
         attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
       } else {
         attendanceStatus = attStatUpper.toLowerCase();
@@ -2790,7 +2994,7 @@ export class KknService {
         if (endMins > startMins) {
           scheduleDurationMinutes = endMins - startMins;
         } else {
-          scheduleDurationMinutes = (24 * 60 - startMins) + endMins;
+          scheduleDurationMinutes = 24 * 60 - startMins + endMins;
           isOvernight = true;
         }
       }
@@ -2807,15 +3011,15 @@ export class KknService {
         const endMin = parseInt(endParts[1], 10);
         const rawDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
         const wibDate = new Date(rawDate.getTime() + 7 * 60 * 60 * 1000);
-        
+
         const yyyy = wibDate.getUTCFullYear();
         const mm = String(wibDate.getUTCMonth() + 1).padStart(2, "0");
         const dd = String(wibDate.getUTCDate()).padStart(2, "0");
         const hh = String(endHour).padStart(2, "0");
         const m = String(endMin).padStart(2, "0");
-        
+
         const endDateObj = new Date(`${yyyy}-${mm}-${dd}T${hh}:${m}:59+07:00`);
-        
+
         if (isOvernight) {
           endDateObj.setTime(endDateObj.getTime() + 24 * 60 * 60 * 1000);
         }
@@ -2825,13 +3029,27 @@ export class KknService {
       }
     }
 
-    if (isExpired && attendanceStatus !== "tidak_ada_kegiatan" && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung" || attendanceStatus === "di_zona" || attendanceStatus === "dalam_radius")) {
+    if (
+      isExpired &&
+      attendanceStatus !== "tidak_ada_kegiatan" &&
+      (attendanceStatus === "belum_absen" ||
+        attendanceStatus === "berlangsung" ||
+        attendanceStatus === "di_zona" ||
+        attendanceStatus === "dalam_radius")
+    ) {
       attendanceStatus = "alpa";
-      if (attendanceForActiveSchedule && (attendanceForActiveSchedule.status === "BERLANGSUNG" || attendanceForActiveSchedule.status === "DI_ZONA" || attendanceForActiveSchedule.status === "DALAM_RADIUS")) {
-        await prisma.activityAttendance.update({
-          where: { id: attendanceForActiveSchedule.id },
-          data: { status: "ALPA" },
-        }).catch(() => {});
+      if (
+        attendanceForActiveSchedule &&
+        (attendanceForActiveSchedule.status === "BERLANGSUNG" ||
+          attendanceForActiveSchedule.status === "DI_ZONA" ||
+          attendanceForActiveSchedule.status === "DALAM_RADIUS")
+      ) {
+        await prisma.activityAttendance
+          .update({
+            where: { id: attendanceForActiveSchedule.id },
+            data: { status: "ALPA" },
+          })
+          .catch(() => {});
       }
     }
 
@@ -2849,59 +3067,75 @@ export class KknService {
             },
             orderBy: { recordedAt: "asc" },
           });
-        if (logs.length >= 2) {
-          const bufferMeters = (ruleConfigs as any).geofenceBufferMeters || 15.0;
-          const geofence = {
-            latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : -6.8915,
-            longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : 107.6107,
-            radius: activeSchedule.radius ? Number(activeSchedule.radius) : 150,
-            polygon: activeSchedule.polygon,
-          };
-          const inZonePoints = logs.filter((l) => {
-            const lat = Number(l.latitude);
-            const lng = Number(l.longitude);
-            if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-              const polyPoints = (geofence.polygon as any[]).map((p) => ({
-                lat: Number(p[0]),
-                lng: Number(p[1]),
-              }));
-              return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
-            } else {
-              const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
-              return dist <= (geofence.radius + bufferMeters);
+          if (logs.length >= 2) {
+            const bufferMeters = (ruleConfigs as any).geofenceBufferMeters || 15.0;
+            const geofence = {
+              latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : -6.8915,
+              longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : 107.6107,
+              radius: activeSchedule.radius ? Number(activeSchedule.radius) : 150,
+              polygon: activeSchedule.polygon,
+            };
+            const inZonePoints = logs.filter((l) => {
+              const lat = Number(l.latitude);
+              const lng = Number(l.longitude);
+              if (
+                geofence.polygon &&
+                Array.isArray(geofence.polygon) &&
+                geofence.polygon.length >= 3
+              ) {
+                const polyPoints = (geofence.polygon as any[]).map((p) => ({
+                  lat: Number(p[0]),
+                  lng: Number(p[1]),
+                }));
+                return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
+              } else {
+                const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
+                return dist <= geofence.radius + bufferMeters;
+              }
+            });
+            const tFirst = new Date(inZonePoints[0].recordedAt).getTime();
+            const tLast = new Date(inZonePoints[inZonePoints.length - 1].recordedAt).getTime();
+            let totalMs = 0;
+            for (let i = 0; i < inZonePoints.length - 1; i++) {
+              const t1 = new Date(inZonePoints[i].recordedAt).getTime();
+              const t2 = new Date(inZonePoints[i + 1].recordedAt).getTime();
+              const diff = t2 - t1;
+              if (diff > 0 && diff <= 5 * 60 * 1000) {
+                totalMs += diff;
+              }
             }
-          });
-          const tFirst = new Date(inZonePoints[0].recordedAt).getTime();
-          const tLast = new Date(inZonePoints[inZonePoints.length - 1].recordedAt).getTime();
-          let totalMs = 0;
-          for (let i = 0; i < inZonePoints.length - 1; i++) {
-            const t1 = new Date(inZonePoints[i].recordedAt).getTime();
-            const t2 = new Date(inZonePoints[i + 1].recordedAt).getTime();
-            const diff = t2 - t1;
-            if (diff > 0 && diff <= 5 * 60 * 1000) {
-              totalMs += diff;
-            }
+            const overallSpan = Math.max(0, tLast - tFirst);
+            totalMs = Math.max(totalMs, overallSpan);
+            actualInZoneSeconds = Math.floor(totalMs / 1000);
           }
-          const overallSpan = Math.max(0, tLast - tFirst);
-          totalMs = Math.max(totalMs, overallSpan);
-          actualInZoneSeconds = Math.floor(totalMs / 1000);
+        } catch (_) {
+          // Fallback jika query bermasalah
         }
-      } catch (_) {
-        // Fallback jika query bermasalah
+      } else {
+        actualInZoneSeconds = 0;
       }
-    } else {
-      actualInZoneSeconds = 0;
     }
-  }
     if (actualInZoneSeconds === 0 && attendanceForActiveSchedule?.actualInZoneMinutes) {
       actualInZoneSeconds = attendanceForActiveSchedule.actualInZoneMinutes * 60;
     }
 
     // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
     if (activeSchedule) {
-      const schedLat = activeSchedule.latitude ? Number(activeSchedule.latitude) : (activeArea?.latitude ? Number(activeArea.latitude) : null);
-      const schedLng = activeSchedule.longitude ? Number(activeSchedule.longitude) : (activeArea?.longitude ? Number(activeArea.longitude) : null);
-      const locName = activeSchedule.location || (activeArea?.name ? `RW ${activeArea.name}, ${activeArea.kelurahan?.name || ""}` : "Lokasi Posko KKN");
+      const schedLat = activeSchedule.latitude
+        ? Number(activeSchedule.latitude)
+        : activeArea?.latitude
+          ? Number(activeArea.latitude)
+          : null;
+      const schedLng = activeSchedule.longitude
+        ? Number(activeSchedule.longitude)
+        : activeArea?.longitude
+          ? Number(activeArea.longitude)
+          : null;
+      const locName =
+        activeSchedule.location ||
+        (activeArea?.name
+          ? `RW ${activeArea.name}, ${activeArea.kelurahan?.name || ""}`
+          : "Lokasi Posko KKN");
       const schedTime = activeSchedule.time || "08:00 - 16:00";
       const schedTitle = activeSchedule.title || "Kegiatan KKN";
 
@@ -2923,24 +3157,35 @@ export class KknService {
         radiusMeter: activeSchedule.radius || 100,
         radius: activeSchedule.radius || 100,
         targetDurationMinutes: finalTargetDurationMinutes,
-        actualInZoneMinutes: attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+        actualInZoneMinutes:
+          attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
         actualInZoneSeconds,
         attendanceStatus,
         status: attendanceStatus,
         statusKehadiran: attendanceStatus.toUpperCase(),
-        statusDisplay: attendanceStatus === "hadir_memenuhi" ? "Hadir & Memenuhi" : attendanceStatus === "hadir_tidak_memenuhi" ? "Hadir & Tidak Memenuhi" : attendanceStatus,
+        statusDisplay:
+          attendanceStatus === "hadir_memenuhi"
+            ? "Hadir & Memenuhi"
+            : attendanceStatus === "hadir_tidak_memenuhi"
+              ? "Hadir & Tidak Memenuhi"
+              : attendanceStatus,
         isMemenuhiDurasi,
         kehadiran: attendanceStatus,
         attendedAt: attendanceForActiveSchedule?.attendedAt,
         polygon: activeSchedule && activeSchedule.polygon ? activeSchedule.polygon : null,
-        polygonPoints: activeSchedule && activeSchedule.polygon && Array.isArray(activeSchedule.polygon) ? activeSchedule.polygon : [],
+        polygonPoints:
+          activeSchedule && activeSchedule.polygon && Array.isArray(activeSchedule.polygon)
+            ? activeSchedule.polygon
+            : [],
       };
     }
 
     // Fallback posko RW jika belum ada jadwal kegiatan khusus hari ini
     const lat = activeArea?.latitude ? Number(activeArea.latitude) : null;
     const lng = activeArea?.longitude ? Number(activeArea.longitude) : null;
-    const locName = activeArea?.name ? `RW ${activeArea.name}, ${activeArea.kelurahan?.name || ""}` : "Wilayah Dampingan KKN";
+    const locName = activeArea?.name
+      ? `RW ${activeArea.name}, ${activeArea.kelurahan?.name || ""}`
+      : "Wilayah Dampingan KKN";
 
     return {
       hasActiveZone: true,
@@ -2960,12 +3205,18 @@ export class KknService {
       radiusMeter: 100,
       radius: 100,
       targetDurationMinutes,
-      actualInZoneMinutes: attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+      actualInZoneMinutes:
+        attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
       actualInZoneSeconds,
       attendanceStatus,
       status: attendanceStatus,
       statusKehadiran: attendanceStatus.toUpperCase(),
-      statusDisplay: attendanceStatus === "hadir_memenuhi" ? "Hadir & Memenuhi" : attendanceStatus === "hadir_tidak_memenuhi" ? "Hadir & Tidak Memenuhi" : attendanceStatus,
+      statusDisplay:
+        attendanceStatus === "hadir_memenuhi"
+          ? "Hadir & Memenuhi"
+          : attendanceStatus === "hadir_tidak_memenuhi"
+            ? "Hadir & Tidak Memenuhi"
+            : attendanceStatus,
       isMemenuhiDurasi,
       kehadiran: attendanceStatus,
       polygonPoints:
@@ -3365,7 +3616,11 @@ export class KknService {
         urlGoogleDrive: item.linkGoogleDrive || null,
         linkGoogleDrive: item.linkGoogleDrive || null,
         attachmentFile: item.attachmentFile || null,
-        attachmentUrls: Array.isArray(item.attachmentUrls) ? item.attachmentUrls : (item.attachmentFile ? [item.attachmentFile] : []),
+        attachmentUrls: Array.isArray(item.attachmentUrls)
+          ? item.attachmentUrls
+          : item.attachmentFile
+            ? [item.attachmentFile]
+            : [],
         hasAttachment: Boolean(item.hasAttachment || item.attachmentFile || item.linkGoogleDrive),
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
         kebutuhanBiaya: Number(item.kebutuhanBiaya) || 0,
@@ -3518,7 +3773,9 @@ export class KknService {
         : proker.attachmentFile
           ? [proker.attachmentFile]
           : [],
-      hasAttachment: Boolean(proker.hasAttachment || proker.attachmentFile || proker.linkGoogleDrive),
+      hasAttachment: Boolean(
+        proker.hasAttachment || proker.attachmentFile || proker.linkGoogleDrive
+      ),
       rencanaAnggaran: Number(proker.kebutuhanBiaya) || 0,
       kebutuhanBiaya: Number(proker.kebutuhanBiaya) || 0,
       status:
@@ -3593,7 +3850,8 @@ export class KknService {
 
     if (judul !== undefined || deskripsi !== undefined) {
       const existingParsed = parseProkerDeskripsi(proker.deskripsi);
-      const newJudul = judul !== undefined ? String(judul).trim().replace(/\*\*/g, "") : existingParsed.judul;
+      const newJudul =
+        judul !== undefined ? String(judul).trim().replace(/\*\*/g, "") : existingParsed.judul;
       const newDesc =
         deskripsi !== undefined
           ? deskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim()
@@ -3685,27 +3943,30 @@ export class KknService {
       include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
-    
+
     let targetRwId = student.assignedRwId;
     if (!targetRwId && student.kelompok?.kelurahan) {
       const rw = await prisma.rw.findFirst({
         where: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
-        orderBy: { name: 'asc' }
+        orderBy: { name: "asc" },
       });
       if (rw) targetRwId = rw.id;
     }
     targetRwId = targetRwId || 1;
 
-    const { programKerjaId, fasilitasId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } = payload;
-    
+    const { programKerjaId, fasilitasId, teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl } =
+      payload;
+
     let programName = "LOGBOOK_HARIAN";
-    
+
     // Validasi apakah proker ada dan disetujui
     if (programKerjaId) {
       const proker = await prisma.programKerjaKkn.findUnique({ where: { id: programKerjaId } });
       if (proker) {
         if (proker.statusUsulan === "BELUM_DISETUJUI" || proker.statusUsulan === "DITOLAK") {
-          throw new Error("Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan.");
+          throw new Error(
+            "Program kerja belum disetujui atau ditolak DPL, tidak bisa menambah logbook pemanfaatan."
+          );
         }
         programName = proker.deskripsi || programName;
       }
@@ -3714,7 +3975,7 @@ export class KknService {
     let cleanTeknologi = teknologi || "Kompos Organik";
     let facilityName: string | null = null;
     let facilityType: string | null = null;
-    
+
     if (fasilitasId) {
       const fasilitas = await prisma.facility.findUnique({ where: { id: fasilitasId } });
       if (fasilitas) {
@@ -3738,7 +3999,9 @@ export class KknService {
         unitHasil: "Kg",
         fotoDokumentasiUrl: fotoDokumentasiUrl || "/uploads/default-pemanfaatan.jpg",
         tanggalPencatatan: new Date(),
-        jenisKomoditas: facilityName ? `${facilityName}${facilityType ? ` (${facilityType})` : ""}` : undefined,
+        jenisKomoditas: facilityName
+          ? `${facilityName}${facilityType ? ` (${facilityType})` : ""}`
+          : undefined,
       },
     });
 
@@ -3775,31 +4038,52 @@ export class KknService {
     }
 
     if (programKerjaId) {
-      await prisma.programKerjaKkn.update({
-        where: { id: programKerjaId },
-        data: { statusPelaksanaan: "SEDANG_BERJALAN" }
-      }).catch(() => {});
+      await prisma.programKerjaKkn
+        .update({
+          where: { id: programKerjaId },
+          data: { statusPelaksanaan: "SEDANG_BERJALAN" },
+        })
+        .catch(() => {});
     }
 
-    await prisma.pointHistory.create({
-      data: {
-        userId,
-        points: 10,
-        description: `Logbook Pemanfaatan: ${teknologi || 'Organik'}`,
-        kategori: "REDUKSI_TONASE",
-      },
-    }).catch(() => {});
+    // Poin untuk seluruh anggota kelompok (+10 Poin)
+    let memberUserIds: string[] = [userId];
+    if (student.kelompokId) {
+      const groupStudents = await prisma.studentKkn.findMany({
+        where: { kelompokId: student.kelompokId },
+        select: { userId: true },
+      });
+      const ids = groupStudents.map((s) => s.userId).filter(Boolean);
+      if (ids.length > 0) {
+        memberUserIds = Array.from(new Set(ids));
+      }
+    }
+
+    const pointRecords = memberUserIds.map((uid) => ({
+      userId: uid,
+      points: 10,
+      description: `Logbook Pemanfaatan: ${cleanTeknologi} [ReportID:${report.id}]`,
+      kategori: "REDUKSI_TONASE",
+    }));
+
+    await prisma.pointHistory
+      .createMany({
+        data: pointRecords,
+      })
+      .catch((e) =>
+        console.warn("[kknService.createLogbookPemanfaatan] pointHistory.createMany warning:", e)
+      );
 
     // Notifikasi ke RW
     try {
       const rwUsers = await prisma.user.findMany({
-        where: { rwId: targetRwId, role: { name: "RW" } }
+        where: { rwId: targetRwId, role: { name: "RW" } },
       });
       if (rwUsers.length > 0) {
-        const rwNotifs = rwUsers.map(rw => ({
+        const rwNotifs = rwUsers.map((rw) => ({
           userId: rw.id,
           title: "Laporan Pemanfaatan Sampah",
-          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat aksi pemanfaatan sampah: ${cleanTeknologi}.`,
+          message: `Mahasiswa KKN (${student.user?.name || "Mahasiswa"}) mencatat aksi pemanfaatan sampah: ${cleanTeknologi}.`,
         }));
         await prisma.notification.createMany({ data: rwNotifs });
       }
@@ -3808,6 +4092,74 @@ export class KknService {
     }
 
     return report;
+  }
+
+  async deleteLogbookPemanfaatan(userId: string, id: string) {
+    let existing = await prisma.pemanfaatan.findUnique({
+      where: { id },
+      include: { programKerja: true },
+    });
+
+    let matchedLogbook: any = null;
+    if (!existing) {
+      matchedLogbook = await prisma.logbookKkn.findUnique({
+        where: { id },
+        include: { programKerja: true },
+      });
+      if (matchedLogbook?.programKerjaId) {
+        existing = await prisma.pemanfaatan.findFirst({
+          where: { programKerjaId: matchedLogbook.programKerjaId },
+          include: { programKerja: true },
+        });
+      }
+    }
+
+    if (!existing && !matchedLogbook) {
+      throw new Error("Laporan pemanfaatan sampah tidak ditemukan.");
+    }
+
+    const targetId = existing?.id || id;
+
+    // Rule 1: Tarik kembali (hapus) riwayat poin dari SELURUH anggota kelompok terkait ID laporan ini
+    await prisma.pointHistory
+      .deleteMany({
+        where: {
+          description: { contains: targetId },
+        },
+      })
+      .catch((e) => console.warn("[deleteLogbookPemanfaatan] delete pointHistory warning:", e));
+
+    if (matchedLogbook && matchedLogbook.id !== targetId) {
+      await prisma.pointHistory
+        .deleteMany({
+          where: {
+            description: { contains: matchedLogbook.id },
+          },
+        })
+        .catch(() => {});
+    }
+
+    // Hapus logbookKkn jika ada
+    if (matchedLogbook) {
+      await prisma.logbookKkn.delete({ where: { id: matchedLogbook.id } }).catch(() => {});
+    } else if (existing?.programKerjaId) {
+      await prisma.logbookKkn
+        .deleteMany({ where: { programKerjaId: existing.programKerjaId } })
+        .catch(() => {});
+    }
+
+    // Hapus pemanfaatan record
+    if (existing) {
+      await prisma.pemanfaatan.delete({
+        where: { id: existing.id },
+      });
+    }
+
+    return {
+      success: true,
+      message: "Laporan pemanfaatan sampah berhasil dihapus.",
+      data: { id: targetId },
+    };
   }
 
   async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
@@ -3876,7 +4228,10 @@ export class KknService {
 
     const rawInputKg = beratInputKg !== undefined ? beratInputKg : volumeBahanBaku;
     if (rawInputKg !== undefined) {
-      const numInput = typeof rawInputKg === "string" ? parseFloat(rawInputKg.replace(/[^\d.-]/g, "")) : Number(rawInputKg);
+      const numInput =
+        typeof rawInputKg === "string"
+          ? parseFloat(rawInputKg.replace(/[^\d.-]/g, ""))
+          : Number(rawInputKg);
       if (!isNaN(numInput)) {
         updatePemanfaatanData.volumeBahanBaku = numInput;
       }
@@ -3884,7 +4239,10 @@ export class KknService {
 
     const rawOutputKg = beratOutputKg !== undefined ? beratOutputKg : volumePanen;
     if (rawOutputKg !== undefined && rawOutputKg !== null && rawOutputKg !== "") {
-      const numOutput = typeof rawOutputKg === "string" ? parseFloat(rawOutputKg.replace(/[^\d.-]/g, "")) : Number(rawOutputKg);
+      const numOutput =
+        typeof rawOutputKg === "string"
+          ? parseFloat(rawOutputKg.replace(/[^\d.-]/g, ""))
+          : Number(rawOutputKg);
       if (!isNaN(numOutput)) {
         updatePemanfaatanData.hasil = numOutput;
       }
@@ -3903,7 +4261,12 @@ export class KknService {
     }
 
     const finalFoto = fotoDokumentasiUrl || foto || fotoBukti;
-    if (finalFoto && typeof finalFoto === "string" && finalFoto.trim() !== "" && finalFoto !== "null") {
+    if (
+      finalFoto &&
+      typeof finalFoto === "string" &&
+      finalFoto.trim() !== "" &&
+      finalFoto !== "null"
+    ) {
       updatePemanfaatanData.fotoDokumentasiUrl = finalFoto.trim();
     }
 
@@ -3920,12 +4283,14 @@ export class KknService {
     }
 
     // Sync to logbookKkn if available
-    const logbookTarget = matchedLogbook || (existing?.programKerjaId
-      ? await prisma.logbookKkn.findFirst({
-          where: { programKerjaId: existing.programKerjaId },
-          orderBy: { createdAt: "desc" },
-        })
-      : null);
+    const logbookTarget =
+      matchedLogbook ||
+      (existing?.programKerjaId
+        ? await prisma.logbookKkn.findFirst({
+            where: { programKerjaId: existing.programKerjaId },
+            orderBy: { createdAt: "desc" },
+          })
+        : null);
 
     if (logbookTarget) {
       const logbookUpdate: any = {};
@@ -3939,7 +4304,9 @@ export class KknService {
       if (catatan) {
         logbookUpdate.deskripsi = catatan;
       } else if (cleanTeknologi || rawInputKg !== undefined) {
-        const inputVol = updatePemanfaatanData.volumeBahanBaku ?? (existing ? Number(existing.volumeBahanBaku) : 0);
+        const inputVol =
+          updatePemanfaatanData.volumeBahanBaku ??
+          (existing ? Number(existing.volumeBahanBaku) : 0);
         logbookUpdate.deskripsi = `Aksi Pemanfaatan Sampah: ${cleanTeknologi || existing?.teknologi || "Kompos"} (${cleanBahanBaku || existing?.bahanBaku || "Sampah Organik"} - ${inputVol} Kg)`;
       }
       if (programKerjaId) {
@@ -3949,17 +4316,21 @@ export class KknService {
         logbookUpdate.fasilitasId = fasilitasId;
       }
 
-      await prisma.logbookKkn.update({
-        where: { id: logbookTarget.id },
-        data: logbookUpdate,
-      }).catch((e) => console.warn("[updateLogbookPemanfaatan] sync logbook warning:", e));
+      await prisma.logbookKkn
+        .update({
+          where: { id: logbookTarget.id },
+          data: logbookUpdate,
+        })
+        .catch((e) => console.warn("[updateLogbookPemanfaatan] sync logbook warning:", e));
     }
 
     return {
       id: updatedPemanfaatan?.id || logbookTarget?.id,
       teknologi: updatedPemanfaatan?.teknologi || cleanTeknologi,
       bahanBaku: updatedPemanfaatan?.bahanBaku || cleanBahanBaku,
-      volumeBahanBaku: updatedPemanfaatan ? Number(updatedPemanfaatan.volumeBahanBaku) : Number(rawInputKg) || 0,
+      volumeBahanBaku: updatedPemanfaatan
+        ? Number(updatedPemanfaatan.volumeBahanBaku)
+        : Number(rawInputKg) || 0,
       hasil: updatedPemanfaatan ? Number(updatedPemanfaatan.hasil) : Number(rawOutputKg) || 0,
       fotoDokumentasiUrl: updatedPemanfaatan?.fotoDokumentasiUrl || finalFoto,
       tanggalPencatatan: updatedPemanfaatan?.tanggalPencatatan || new Date(),
@@ -3972,12 +4343,12 @@ export class KknService {
       include: { assignedRw: true, kelompok: true },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
-    
+
     let targetRwId = student.assignedRwId;
     if (!targetRwId && student.kelompok?.kelurahan) {
       const rw = await prisma.rw.findFirst({
         where: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
-        orderBy: { name: 'asc' }
+        orderBy: { name: "asc" },
       });
       if (rw) targetRwId = rw.id;
     }
@@ -3989,15 +4360,15 @@ export class KknService {
       where: {
         rwId: targetRwId,
         hasil: 0,
-        NOT: { teknologi: "PANEN" }
+        NOT: { teknologi: "PANEN" },
       },
-      orderBy: { tanggalPencatatan: 'desc' }
+      orderBy: { tanggalPencatatan: "desc" },
     });
-    
-    return logbooks.map(l => ({
+
+    return logbooks.map((l) => ({
       id: l.id,
-      judul: `${l.program} (${l.tanggalPencatatan.toISOString().split('T')[0]})`,
-      teknologi: l.teknologi
+      judul: `${l.program} (${l.tanggalPencatatan.toISOString().split("T")[0]})`,
+      teknologi: l.teknologi,
     }));
   }
 
@@ -4007,12 +4378,12 @@ export class KknService {
       include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
     });
     if (!student) throw new Error("Mahasiswa tidak ditemukan");
-    
+
     let targetRwId = student.assignedRwId;
     if (!targetRwId && student.kelompok?.kelurahan) {
       const rw = await prisma.rw.findFirst({
         where: { kelurahan: { name: { equals: student.kelompok.kelurahan, mode: "insensitive" } } },
-        orderBy: { name: 'asc' }
+        orderBy: { name: "asc" },
       });
       if (rw) targetRwId = rw.id;
     }
@@ -4020,13 +4391,13 @@ export class KknService {
 
     // Mobile akan mengirim pemanfaatanId menggunakan key programKerjaId untuk kompatibilitas form lama
     // Kita baca dari pemanfaatanId atau programKerjaId
-    const targetId = payload.pemanfaatanId || payload.programKerjaId;
+    const targetId = payload.pemanfaatanId || payload.programKerjaId || payload.id;
     const { beratOutputKg, nilaiEkonomiRp, fotoDokumentasiUrl } = payload;
-    
+
     if (!targetId) {
       throw new Error("ID Logbook Pemanfaatan wajib diisi untuk mencatat panen.");
     }
-    
+
     const existing = await prisma.pemanfaatan.findUnique({ where: { id: targetId } });
     if (!existing) {
       throw new Error("Laporan pemanfaatan tidak ditemukan atau tidak valid.");
@@ -4043,36 +4414,55 @@ export class KknService {
     });
 
     if (student.kelompokId && existing.program) {
-      await prisma.programKerjaKkn.updateMany({
-        where: {
-          kelompokId: student.kelompokId,
-          deskripsi: existing.program,
-        },
-        data: {
-          statusPelaksanaan: "SELESAI",
-        }
-      }).catch((e) => console.error("Update proker SELESAI gagal:", e));
+      await prisma.programKerjaKkn
+        .updateMany({
+          where: {
+            kelompokId: student.kelompokId,
+            deskripsi: existing.program,
+          },
+          data: {
+            statusPelaksanaan: "SELESAI",
+          },
+        })
+        .catch((e) => console.error("Update proker SELESAI gagal:", e));
     }
 
-    await prisma.pointHistory.create({
-      data: {
-        userId,
-        points: 25,
-        description: `Panen Hasil KKN`,
-        kategori: "REDUKSI_TONASE",
-      },
-    }).catch(() => {});
+    // Poin untuk seluruh anggota kelompok (+25 Poin)
+    let memberUserIds: string[] = [userId];
+    if (student.kelompokId) {
+      const groupStudents = await prisma.studentKkn.findMany({
+        where: { kelompokId: student.kelompokId },
+        select: { userId: true },
+      });
+      const ids = groupStudents.map((s) => s.userId).filter(Boolean);
+      if (ids.length > 0) {
+        memberUserIds = Array.from(new Set(ids));
+      }
+    }
+
+    const pointRecords = memberUserIds.map((uid) => ({
+      userId: uid,
+      points: 25,
+      description: `Panen Hasil KKN [ReportID:${targetId}]`,
+      kategori: "REDUKSI_TONASE",
+    }));
+
+    await prisma.pointHistory
+      .createMany({
+        data: pointRecords,
+      })
+      .catch((e) => console.warn("[createPanenHasil] pointHistory.createMany warning:", e));
 
     // Notifikasi ke RW
     try {
       const rwUsers = await prisma.user.findMany({
-        where: { rwId: targetRwId, role: { name: "RW" } }
+        where: { rwId: targetRwId, role: { name: "RW" } },
       });
       if (rwUsers.length > 0) {
-        const rwNotifs = rwUsers.map(rw => ({
+        const rwNotifs = rwUsers.map((rw) => ({
           userId: rw.id,
           title: "Catat Hasil Panen",
-          message: `Mahasiswa KKN (${student.user?.name || 'Mahasiswa'}) mencatat hasil panen dari aksi pemanfaatan sampah.`,
+          message: `Mahasiswa KKN (${student.user?.name || "Mahasiswa"}) mencatat hasil panen dari aksi pemanfaatan sampah.`,
         }));
         await prisma.notification.createMany({ data: rwNotifs });
       }
@@ -4081,6 +4471,126 @@ export class KknService {
     }
 
     return report;
+  }
+
+  async updatePanenHasil(userId: string, id: string, payload: any) {
+    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
+    if (!existing) {
+      throw new Error("Laporan panen hasil tidak ditemukan.");
+    }
+
+    const {
+      beratOutputKg,
+      hasil,
+      nilaiEkonomiRp,
+      luasLahanM2,
+      fotoDokumentasiUrl,
+      foto,
+      jenisKomoditas,
+    } = payload;
+    const updateData: any = {};
+
+    const rawOutput = beratOutputKg !== undefined ? beratOutputKg : hasil;
+    if (rawOutput !== undefined && rawOutput !== null && rawOutput !== "") {
+      const numOutput =
+        typeof rawOutput === "string"
+          ? parseFloat(rawOutput.replace(/[^\d.-]/g, ""))
+          : Number(rawOutput);
+      if (!isNaN(numOutput)) {
+        updateData.hasil = numOutput;
+      }
+    }
+
+    const rawNilai = nilaiEkonomiRp !== undefined ? nilaiEkonomiRp : luasLahanM2;
+    if (rawNilai !== undefined && rawNilai !== null && rawNilai !== "") {
+      const numNilai =
+        typeof rawNilai === "string"
+          ? parseFloat(rawNilai.replace(/[^\d.-]/g, ""))
+          : Number(rawNilai);
+      if (!isNaN(numNilai)) {
+        updateData.luasLahanM2 = numNilai;
+      }
+    }
+
+    const finalFoto = fotoDokumentasiUrl || foto;
+    if (
+      finalFoto &&
+      typeof finalFoto === "string" &&
+      finalFoto.trim() !== "" &&
+      finalFoto !== "null"
+    ) {
+      updateData.fotoDokumentasiUrl = finalFoto.trim();
+    }
+
+    if (jenisKomoditas !== undefined) {
+      updateData.jenisKomoditas = jenisKomoditas;
+    }
+
+    // Rule 2: PUT/UPDATE murni hanya mengubah data teks, angka beban, dan foto. DILARANG mengubah PointHistory.
+    const report = await prisma.pemanfaatan.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return report;
+  }
+
+  async deletePanenHasil(userId: string, id: string) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { kelompok: true },
+    });
+
+    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
+    if (!existing) {
+      throw new Error("Laporan panen hasil tidak ditemukan.");
+    }
+
+    // Reset hasil panen ke 0 dan nilai ekonomi ke 0 pada pemanfaatan record
+    const report = await prisma.pemanfaatan.update({
+      where: { id },
+      data: {
+        hasil: 0,
+        luasLahanM2: 0,
+      },
+    });
+
+    // Revert status proker dari SELESAI menjadi SEDANG_BERJALAN jika ada
+    const targetKelompokId = student?.kelompokId;
+    if (targetKelompokId && existing.program) {
+      await prisma.programKerjaKkn
+        .updateMany({
+          where: {
+            kelompokId: targetKelompokId,
+            deskripsi: existing.program,
+            statusPelaksanaan: "SELESAI",
+          },
+          data: {
+            statusPelaksanaan: "SEDANG_BERJALAN",
+          },
+        })
+        .catch(() => {});
+    }
+
+    // Rule 1: Tarik kembali (hapus) riwayat poin panen dari SELURUH anggota kelompok terkait ID laporan ini
+    await prisma.pointHistory
+      .deleteMany({
+        where: {
+          AND: [
+            { description: { contains: id } },
+            {
+              OR: [{ description: { contains: "Panen" } }, { points: 25 }],
+            },
+          ],
+        },
+      })
+      .catch((e) => console.warn("[deletePanenHasil] delete pointHistory warning:", e));
+
+    return {
+      success: true,
+      message: "Hasil panen berhasil dihapus dan poin ditarik kembali.",
+      data: report,
+    };
   }
 
   async claimWargaMandiri(kknUserId: string, wargaId: string) {
@@ -4221,10 +4731,20 @@ export class KknService {
     if (kelompok.poskoKkn?.latitude != null && kelompok.poskoKkn?.longitude != null) {
       poskoLat = Number(kelompok.poskoKkn.latitude);
       poskoLng = Number(kelompok.poskoKkn.longitude);
-    } else if (kelompok.facilities && kelompok.facilities.length > 0 && kelompok.facilities[0].latitude != null && kelompok.facilities[0].longitude != null) {
+    } else if (
+      kelompok.facilities &&
+      kelompok.facilities.length > 0 &&
+      kelompok.facilities[0].latitude != null &&
+      kelompok.facilities[0].longitude != null
+    ) {
       poskoLat = Number(kelompok.facilities[0].latitude);
       poskoLng = Number(kelompok.facilities[0].longitude);
-    } else if (kelompok.schedules && kelompok.schedules.length > 0 && kelompok.schedules[0].latitude != null && kelompok.schedules[0].longitude != null) {
+    } else if (
+      kelompok.schedules &&
+      kelompok.schedules.length > 0 &&
+      kelompok.schedules[0].latitude != null &&
+      kelompok.schedules[0].longitude != null
+    ) {
       poskoLat = Number(kelompok.schedules[0].latitude);
       poskoLng = Number(kelompok.schedules[0].longitude);
     } else if (student?.assignedRw?.latitude != null && student?.assignedRw?.longitude != null) {
@@ -4247,13 +4767,13 @@ export class KknService {
         poskoLng = 107.6083;
       } else if (kel.includes("sadang serang")) {
         poskoLat = -6.8917;
-        poskoLng = 107.6250;
+        poskoLng = 107.625;
       } else if (kel.includes("sekeloa")) {
-        poskoLat = -6.8900;
-        poskoLng = 107.6200;
+        poskoLat = -6.89;
+        poskoLng = 107.62;
       } else if (kel.includes("cibiru")) {
         poskoLat = -6.914744;
-        poskoLng = 107.609810;
+        poskoLng = 107.60981;
       }
     }
 
@@ -4293,7 +4813,9 @@ export class KknService {
   }
 }
 
-export function parsePolygonCoordinates(rawPolygon: any): Array<{ lat: number; lng: number }> | null {
+export function parsePolygonCoordinates(
+  rawPolygon: any
+): Array<{ lat: number; lng: number }> | null {
   if (!rawPolygon) return null;
   let parsed = rawPolygon;
   if (typeof rawPolygon === "string") {
@@ -4346,6 +4868,3 @@ export function parsePolygonCoordinates(rawPolygon: any): Array<{ lat: number; l
 }
 
 export const kknService = new KknService();
-
-
-

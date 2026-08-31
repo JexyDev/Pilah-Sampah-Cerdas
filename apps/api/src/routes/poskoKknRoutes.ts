@@ -19,13 +19,29 @@ const router = Router();
 router.get("/", authMiddleware, poskoKknController.getAll.bind(poskoKknController));
 
 // Mahasiswa cek posko kelompoknya sendiri (primary)
-router.get("/me", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), poskoKknController.getMyPosko.bind(poskoKknController));
+router.get(
+  "/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  poskoKknController.getMyPosko.bind(poskoKknController)
+);
 
 // Daftar / update posko - Ketua KKN, Admin, Developer
-router.post("/", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]), safeUploadSingleImage("foto"), poskoKknController.upsert.bind(poskoKknController));
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  safeUploadSingleImage("foto"),
+  poskoKknController.upsert.bind(poskoKknController)
+);
 
 // Hapus posko utama - Admin & Developer saja
-router.delete("/:kelompokId", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]), poskoKknController.deletePosko.bind(poskoKknController));
+router.delete(
+  "/:kelompokId",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  poskoKknController.deletePosko.bind(poskoKknController)
+);
 
 // ─── SMART ZONE: Endpoint Sinkronisasi Zona Lengkap (Mobile) ────────────────
 
@@ -34,7 +50,12 @@ router.delete("/:kelompokId", authMiddleware, roleMiddleware(["SUPER_USER", "ADM
  * Endpoint utama mobile mahasiswa: semua posko + auto-polygon kelompok sendiri.
  * Panggil saat login dan saat menerima FCM event MULTI_POSKO_UPDATED.
  */
-router.get("/me/all-zones", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), smartZoneController.getMyGroupAllZones);
+router.get(
+  "/me/all-zones",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  smartZoneController.getMyGroupAllZones
+);
 
 /**
  * [MOBILE / ADMIN] GET /posko-kkn/kelompok/:kelompokId/all-zones
@@ -54,19 +75,34 @@ router.get("/kelompok/:kelompokId/multi", authMiddleware, smartZoneController.ge
  * POST /posko-kkn/multi
  * Daftar posko tambahan. Ketua KKN bisa tambah posko untuk kelompoknya.
  */
-router.post("/multi", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]), smartZoneController.addMultiPosko);
+router.post(
+  "/multi",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  smartZoneController.addMultiPosko
+);
 
 /**
  * PUT /posko-kkn/multi/:poskoId
  * Update posko tambahan.
  */
-router.put("/multi/:poskoId", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]), smartZoneController.updateMultiPosko);
+router.put(
+  "/multi/:poskoId",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  smartZoneController.updateMultiPosko
+);
 
 /**
  * DELETE /posko-kkn/multi/:poskoId
  * Hapus posko tambahan.
  */
-router.delete("/multi/:poskoId", authMiddleware, roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]), smartZoneController.deleteMultiPosko);
+router.delete(
+  "/multi/:poskoId",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  smartZoneController.deleteMultiPosko
+);
 
 // ─── Smart Zone Admin Endpoints ──────────────────────────────────────────────
 
@@ -80,7 +116,12 @@ router.get("/smart-zone/:kelompokId/preview", authMiddleware, smartZoneControlle
  * POST /posko-kkn/smart-zone/:kelompokId/regenerate
  * Force regenerate polygon (admin/developer action).
  */
-router.post("/smart-zone/:kelompokId/regenerate", authMiddleware, roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]), smartZoneController.forceRegeneratePolygon);
+router.post(
+  "/smart-zone/:kelompokId/regenerate",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  smartZoneController.forceRegeneratePolygon
+);
 
 /**
  * POST /posko-kkn/smart-zone/check-position

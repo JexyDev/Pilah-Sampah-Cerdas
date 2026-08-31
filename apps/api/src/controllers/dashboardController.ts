@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { dashboardService } from "../services/dashboardService.js";
 
-
 export const dashboardController = {
   getKpi: async (req: Request, res: Response) => {
     try {
@@ -25,7 +24,6 @@ export const dashboardController = {
         w === "all";
 
       if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
-
         const dplGroups = await prisma.kelompokKkn.findMany({
           where: { dplId: user.userId || (user as any).id },
           select: { kelurahan: true },
@@ -55,7 +53,6 @@ export const dashboardController = {
           }
         }
       } else if (user && (user.role === "RW" || user.role === "RT") && user.rwId) {
-
         const rwArea = await prisma.rw.findUnique({
           where: { id: user.rwId },
           include: { kelurahan: true },
@@ -64,7 +61,6 @@ export const dashboardController = {
           wilayah = `${rwArea.name} ${rwArea.kelurahan?.name || ""}`.trim();
         }
       } else if (!wilayah && user && (user.role === "LURAH" || user.role === "CAMAT")) {
-
         if (user.rwId) {
           const userArea = await prisma.rw.findUnique({
             where: { id: user.rwId },
@@ -115,7 +111,6 @@ export const dashboardController = {
       const user = req.user;
 
       if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
-
         const dplGroups = await prisma.kelompokKkn.findMany({
           where: { dplId: user.userId || (user as any).id },
           select: { kelurahan: true },
@@ -124,13 +119,17 @@ export const dashboardController = {
           new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
         ) as string[];
 
-        if (!wilayah || wilayah === "ALL" || wilayah === "Semua Kelurahan" || wilayah === "Kecamatan Coblong") {
+        if (
+          !wilayah ||
+          wilayah === "ALL" ||
+          wilayah === "Semua Kelurahan" ||
+          wilayah === "Kecamatan Coblong"
+        ) {
           if (dplKelurahans.length > 0) {
             wilayah = dplKelurahans.join(",");
           }
         }
       } else if (!wilayah && user && user.role === "LURAH" && user.rwId) {
-
         const userArea = await prisma.rw.findUnique({
           where: { id: user.rwId },
           include: { kelurahan: true },
@@ -165,7 +164,6 @@ export const dashboardController = {
         w === "all";
 
       if (user && (user.role === "DPL" || user.role === "DOSEN_PEMBIMBING")) {
-
         const dplGroups = await prisma.kelompokKkn.findMany({
           where: { dplId: user.userId || (user as any).id },
           select: { kelurahan: true },
@@ -178,7 +176,6 @@ export const dashboardController = {
           wilayah = dplKelurahans.join(",");
         }
       } else if (!wilayah && user && user.role === "LURAH" && user.rwId) {
-
         const userArea = await prisma.rw.findUnique({
           where: { id: user.rwId },
           include: { kelurahan: true },

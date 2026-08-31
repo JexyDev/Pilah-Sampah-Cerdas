@@ -12,7 +12,6 @@ import { facilityService } from "../services/facilityService.js";
 import { timelineKknService } from "../services/timelineKknService.js";
 import { extractUploadedFileUrls } from "../middlewares/uploadMiddleware.js";
 
-
 export class KknController {
   async validateQrMaster(req: Request, res: Response): Promise<void> {
     try {
@@ -29,7 +28,8 @@ export class KknController {
       if (!existingBin) {
         res.status(404).json({
           error: "QR_NOT_FOUND",
-          message: "QR Code Master tidak ditemukan dalam database sistem. Pastikan QR dicetak melalui sistem BERSEKA.",
+          message:
+            "QR Code Master tidak ditemukan dalam database sistem. Pastikan QR dicetak melalui sistem BERSEKA.",
         });
         return;
       }
@@ -199,7 +199,8 @@ export class KknController {
       });
       res.status(201).json({
         success: true,
-        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Dosen Pendamping Lapangan (DPL).",
+        message:
+          "Pengajuan izin berhasil dikirim. Menunggu verifikasi Dosen Pendamping Lapangan (DPL).",
         data,
       });
     } catch (error: any) {
@@ -354,7 +355,12 @@ export class KknController {
           req.body.fotoBukti ||
           req.body.fotoUrl ||
           req.body.evidencePhotoUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoDokumentasiUrl = bodyFoto.trim();
         }
       }
@@ -403,13 +409,13 @@ export class KknController {
       const lat = req.query.latitude
         ? parseFloat(req.query.latitude as string)
         : req.query.lat
-        ? parseFloat(req.query.lat as string)
-        : undefined;
+          ? parseFloat(req.query.lat as string)
+          : undefined;
       const lng = req.query.longitude
         ? parseFloat(req.query.longitude as string)
         : req.query.lng
-        ? parseFloat(req.query.lng as string)
-        : undefined;
+          ? parseFloat(req.query.lng as string)
+          : undefined;
 
       const data = await kknService.getActiveZone(kknUserId, lat, lng);
       res.status(200).json({ success: true, data });
@@ -448,7 +454,8 @@ export class KknController {
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
-      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
+      const parsedRadius =
+        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
       const payload = {
         ...req.body,
         foto: fotoUrl,
@@ -485,7 +492,8 @@ export class KknController {
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
-      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : undefined;
+      const parsedRadius =
+        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : undefined;
       const payload = {
         ...req.body,
         foto: fotoUrl,
@@ -575,7 +583,8 @@ export class KknController {
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
-      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
+      const parsedRadius =
+        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
       const payload = {
         nama: req.body.nama,
         alamat: req.body.alamat,
@@ -695,24 +704,29 @@ export class KknController {
       }
 
       const data = await kknService.createProgramKerja(userId, payload);
-      
+
       try {
-        const { notificationIntegrationService } = await import("../services/notificationIntegrationService.js");
+        const { notificationIntegrationService } =
+          await import("../services/notificationIntegrationService.js");
         const title = "Pengajuan Program Kerja ✅";
         const message = `Program ${data.judul} berhasil diajukan dan sedang direview oleh DPL.`;
-        
-        await prisma.notification.create({
-          data: {
-            userId,
-            title,
-            message,
-            isRead: false,
-          },
-        }).catch(() => {});
+
+        await prisma.notification
+          .create({
+            data: {
+              userId,
+              title,
+              message,
+              isRead: false,
+            },
+          })
+          .catch(() => {});
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (user?.fcmToken) {
-          await notificationIntegrationService.sendPushNotification(user.fcmToken, title, message).catch(() => {});
+          await notificationIntegrationService
+            .sendPushNotification(user.fcmToken, title, message)
+            .catch(() => {});
         }
       } catch (e) {
         console.error("Failed to send notification for program kerja", e);
@@ -805,11 +819,13 @@ export class KknController {
       if (uploadedUrls.length > 0) {
         fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
       } else {
-        const bodyFoto =
-          req.body.fotoDokumentasiUrl ||
-          req.body.fotoBuktiUrl ||
-          req.body.fotoUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+        const bodyFoto = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoDokumentasiUrl = bodyFoto.trim();
         }
       }
@@ -832,20 +848,38 @@ export class KknController {
         fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
       } else {
         const bodyFoto =
-          req.body.fotoDokumentasiUrl ||
-          req.body.fotoBuktiUrl ||
-          req.body.fotoUrl ||
-          req.body.foto;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.foto;
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoDokumentasiUrl = bodyFoto.trim();
         }
       }
 
       const payload = { ...req.body, fotoDokumentasiUrl };
-      const data = await kknService.updateLogbookPemanfaatan(req.user!.userId, req.params.id, payload);
-      res.status(200).json({ success: true, message: "Logbook pemanfaatan sampah berhasil diperbarui", data });
+      const data = await kknService.updateLogbookPemanfaatan(
+        req.user!.userId,
+        req.params.id,
+        payload
+      );
+      res
+        .status(200)
+        .json({ success: true, message: "Logbook pemanfaatan sampah berhasil diperbarui", data });
     } catch (error: any) {
       console.error("[KknController] updateLogbookPemanfaatan error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async deleteLogbookPemanfaatan(req: Request, res: Response) {
+    try {
+      const result = await kknService.deleteLogbookPemanfaatan(req.user!.userId, req.params.id);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[KknController] deleteLogbookPemanfaatan error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
@@ -868,11 +902,13 @@ export class KknController {
       if (uploadedUrls.length > 0) {
         fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
       } else {
-        const bodyFoto =
-          req.body.fotoDokumentasiUrl ||
-          req.body.fotoBuktiUrl ||
-          req.body.fotoUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+        const bodyFoto = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoDokumentasiUrl = bodyFoto.trim();
         }
       }
@@ -882,6 +918,45 @@ export class KknController {
       res.status(201).json({ success: true, message: "Hasil Panen berhasil dicatat.", data });
     } catch (error: any) {
       console.error("[KknController] createPanenHasil error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async updatePanenHasil(req: Request, res: Response) {
+    try {
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.foto;
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
+      }
+
+      const payload = { ...req.body, fotoDokumentasiUrl };
+      const data = await kknService.updatePanenHasil(req.user!.userId, req.params.id, payload);
+      res.status(200).json({ success: true, message: "Hasil panen berhasil diperbarui.", data });
+    } catch (error: any) {
+      console.error("[KknController] updatePanenHasil error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async deletePanenHasil(req: Request, res: Response) {
+    try {
+      const result = await kknService.deletePanenHasil(req.user!.userId, req.params.id);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[KknController] deletePanenHasil error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
@@ -900,15 +975,25 @@ export class KknController {
     } catch (error: any) {
       console.error("[KknController] claimWargaMandiri error:", error);
       if (error.message === "WARGA_NOT_FOUND") {
-        res.status(404).json({ success: false, error: "WARGA_NOT_FOUND", message: "Warga tidak ditemukan." });
+        res
+          .status(404)
+          .json({ success: false, error: "WARGA_NOT_FOUND", message: "Warga tidak ditemukan." });
         return;
       }
       if (error.message === "NO_ACTIVE_BINS") {
-        res.status(400).json({ success: false, error: "NO_ACTIVE_BINS", message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim." });
+        res.status(400).json({
+          success: false,
+          error: "NO_ACTIVE_BINS",
+          message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim.",
+        });
         return;
       }
       if (error.message === "ALREADY_CLAIMED") {
-        res.status(400).json({ success: false, error: "ALREADY_CLAIMED", message: "Warga ini sudah menjadi dampingan mahasiswa lain." });
+        res.status(400).json({
+          success: false,
+          error: "ALREADY_CLAIMED",
+          message: "Warga ini sudah menjadi dampingan mahasiswa lain.",
+        });
         return;
       }
       res.status(400).json({ success: false, message: error.message });
@@ -919,7 +1004,16 @@ export class KknController {
     try {
       const userRole = String(req.user?.role || "").toUpperCase();
       const userId = req.user?.userId || (req.user as any)?.id;
-      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+      const {
+        kelompokId,
+        kelurahan,
+        bidangKegiatan,
+        fase,
+        statusPelaksanaan,
+        search,
+        startDate,
+        endDate,
+      } = req.query;
 
       const result = await timelineKknService.getTimelineMahasiswa(
         {

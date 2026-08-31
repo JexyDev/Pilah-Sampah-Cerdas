@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Centralized Audit Trail & Activity Logging Service
  * Menyediakan pencatatan jejak audit dengan SHA-256 hash chaining,
  * penyimpanan detail terstruktur aktivitas presensi & KKN, serta WebSocket real-time broadcast.

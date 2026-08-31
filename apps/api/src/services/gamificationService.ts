@@ -6,8 +6,6 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
-
 export const gamificationService = {
   /**
    * Submit new recycle idea
@@ -434,7 +432,11 @@ export const gamificationService = {
       return {
         id: g.id,
         name: g.name,
-        dplName: dplName ? (dplName.toLowerCase().startsWith("dpl") ? dplName : `DPL: ${dplName}`) : "DPL: Belum Ditugaskan",
+        dplName: dplName
+          ? dplName.toLowerCase().startsWith("dpl")
+            ? dplName
+            : `DPL: ${dplName}`
+          : "DPL: Belum Ditugaskan",
         avgScore: parseFloat(avgScore.toFixed(2)),
         membersCount: studentCount,
       };

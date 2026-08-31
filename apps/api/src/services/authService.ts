@@ -14,7 +14,6 @@ import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { websocketService } from "./websocketService.js";
 import crypto from "crypto";
 
-
 export class AuthService {
   /**
    * Authenticate user with email and password, returning tokens if successful.
@@ -67,7 +66,14 @@ export class AuthService {
       throw new Error("WRONG_PASSWORD");
     }
     const userRoleName = user.role?.name || "WARGA";
-    const knownKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
+    const knownKelurahans = [
+      "Dago",
+      "Sadang Serang",
+      "Sekeloa",
+      "Lebak Gede",
+      "Lebak Siliwangi",
+      "Cipaganti",
+    ];
     let matchedKelurahan = "";
     if (user.address || user.name) {
       const combined = `${user.name || ""} ${user.address || ""}`.toLowerCase();
@@ -79,9 +85,17 @@ export class AuthService {
     const cRw = anyUser.studentProfile?.kelompok?.cakupanRw;
     if (cRw) {
       if (Array.isArray(cRw)) {
-        kelompokRwName = cRw.map((r: any) => String(r).replace(/^RW\s*/i, "").trim()).join(", ");
+        kelompokRwName = cRw
+          .map((r: any) =>
+            String(r)
+              .replace(/^RW\s*/i, "")
+              .trim()
+          )
+          .join(", ");
       } else if (typeof cRw === "string" || typeof cRw === "number") {
-        kelompokRwName = String(cRw).replace(/^RW\s*/i, "").trim();
+        kelompokRwName = String(cRw)
+          .replace(/^RW\s*/i, "")
+          .trim();
       }
     }
 
@@ -282,13 +296,15 @@ export class AuthService {
         autoTriggered: true,
       });
 
-      const updated = await prisma.activityAttendance.update({
-        where: { id: att.id },
-        data: {
-          status: "TERJEDA",
-          jedaLogs: currentLogs,
-        },
-      }).catch(() => null);
+      const updated = await prisma.activityAttendance
+        .update({
+          where: { id: att.id },
+          data: {
+            status: "TERJEDA",
+            jedaLogs: currentLogs,
+          },
+        })
+        .catch(() => null);
 
       if (updated) {
         websocketService.broadcastStudentAttendance({
@@ -495,7 +511,14 @@ export class AuthService {
       ) as string[];
     }
 
-    const knownKelurahans = ["Dago", "Sadang Serang", "Sekeloa", "Lebak Gede", "Lebak Siliwangi", "Cipaganti"];
+    const knownKelurahans = [
+      "Dago",
+      "Sadang Serang",
+      "Sekeloa",
+      "Lebak Gede",
+      "Lebak Siliwangi",
+      "Cipaganti",
+    ];
     let matchedKelurahan = "";
     if (user.address || user.name) {
       const combined = `${user.name || ""} ${user.address || ""}`.toLowerCase();
@@ -507,9 +530,17 @@ export class AuthService {
     const cRw = user.studentProfile?.kelompok?.cakupanRw;
     if (cRw) {
       if (Array.isArray(cRw)) {
-        kelompokRwName = cRw.map((r: any) => String(r).replace(/^RW\s*/i, "").trim()).join(", ");
+        kelompokRwName = cRw
+          .map((r: any) =>
+            String(r)
+              .replace(/^RW\s*/i, "")
+              .trim()
+          )
+          .join(", ");
       } else if (typeof cRw === "string" || typeof cRw === "number") {
-        kelompokRwName = String(cRw).replace(/^RW\s*/i, "").trim();
+        kelompokRwName = String(cRw)
+          .replace(/^RW\s*/i, "")
+          .trim();
       }
     }
 
@@ -537,9 +568,10 @@ export class AuthService {
       rwName = "Seluruh Kota";
       kelurahanName = "Kota Bandung";
     } else if (isDpl) {
-      rwName = user.dplKelompok && user.dplKelompok.length > 0
-        ? user.dplKelompok.map((k: any) => k.name).join(", ")
-        : "Kelompok Dampingan KKN";
+      rwName =
+        user.dplKelompok && user.dplKelompok.length > 0
+          ? user.dplKelompok.map((k: any) => k.name).join(", ")
+          : "Kelompok Dampingan KKN";
     }
 
     const kecamatanName =
@@ -575,7 +607,8 @@ export class AuthService {
       fakultas: studentProfile?.fakultas || null,
       kelompokId: studentProfile?.kelompok?.id || null,
       kelompokName: studentProfile?.kelompok?.name || null,
-      dplName: studentProfile?.kelompok?.dpl?.name || studentProfile?.kelompok?.dosenPembimbing || null,
+      dplName:
+        studentProfile?.kelompok?.dpl?.name || studentProfile?.kelompok?.dosenPembimbing || null,
       dplKelompok: user.dplKelompok || [],
       studentProfile: studentProfile || null,
       petugasProfile: user.petugasProfile || null,

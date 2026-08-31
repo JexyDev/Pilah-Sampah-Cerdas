@@ -7,7 +7,6 @@ import XLSX from "xlsx";
 import path from "path";
 import fs from "fs";
 
-
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "docs/raw_new_data.xlsx"),
   path.resolve(process.cwd(), "../../docs/raw_new_data.xlsx"),
@@ -33,7 +32,9 @@ export function standardizeKelompokName(rawName: string): string {
   clean = clean.replace(/^Kel\s+/i, "Kelompok ");
   clean = clean.replace(/-\s*/g, "");
 
-  const matchAreaNum = clean.match(/^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i);
+  const matchAreaNum = clean.match(
+    /^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i
+  );
   if (matchAreaNum) {
     clean = `Kelompok ${matchAreaNum[2]} ${matchAreaNum[1]}`;
   }

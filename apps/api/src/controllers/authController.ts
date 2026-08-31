@@ -12,7 +12,6 @@ import { authService } from "../services/authService.js";
 import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
 import { strongPasswordSchema } from "../utils/passwordValidator.js";
 
-
 /**
  * Normalize phone: 08xxx → +628xxx, 628xxx → +628xxx
  */
@@ -291,7 +290,9 @@ export class AuthController {
     try {
       const userId = req.user?.userId || (req as any).user?.id;
       if (!userId) {
-        res.status(401).json({ success: false, message: "Token otentikasi tidak valid atau tidak ditemukan." });
+        res
+          .status(401)
+          .json({ success: false, message: "Token otentikasi tidak valid atau tidak ditemukan." });
         return;
       }
 
@@ -309,7 +310,8 @@ export class AuthController {
           if (isNaN(rawFamilySize) || rawFamilySize < 0) {
             res.status(400).json({
               success: false,
-              message: "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka positif.",
+              message:
+                "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka positif.",
             });
             return;
           }
@@ -320,7 +322,8 @@ export class AuthController {
           if (isNaN(parsed) || !/^\d+$/.test(trimmed)) {
             res.status(400).json({
               success: false,
-              message: "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka murni.",
+              message:
+                "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka murni.",
             });
             return;
           }

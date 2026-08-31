@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -10,7 +9,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   calculateInZoneDurationMinutes,
   getScheduleTargetDurationMinutes,
-  calculateDistance,
   parseScheduleTimeString,
   parseScheduleTimeRange,
   KknAttendanceService,
@@ -169,7 +167,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     it("should ignore out-of-zone location points", () => {
       const logs = [
         { recordedAt: new Date("2026-08-19T08:00:00Z"), latitude: -6.8915, longitude: 107.6107 }, // inside
-        { recordedAt: new Date("2026-08-19T08:02:00Z"), latitude: -6.9500, longitude: 107.7000 }, // far outside
+        { recordedAt: new Date("2026-08-19T08:02:00Z"), latitude: -6.95, longitude: 107.7 }, // far outside
         { recordedAt: new Date("2026-08-19T08:05:00Z"), latitude: -6.8915, longitude: 107.6107 }, // inside (5 min gap from t1)
       ];
       // Inside points: 08:00 and 08:05 (diff = 5 min)
@@ -1095,4 +1093,3 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     });
   });
 });
-

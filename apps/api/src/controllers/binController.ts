@@ -85,7 +85,12 @@ export class BinController {
           if (codeStr.startsWith("BSK-") || codeStr.startsWith("TC-")) return codeStr;
           const upperCat = (catName || "").toUpperCase();
           let tag = "OGN";
-          if (upperCat.includes("ANORGANIK") || upperCat.includes("AGN") || upperCat.includes("ANG")) tag = "AGN";
+          if (
+            upperCat.includes("ANORGANIK") ||
+            upperCat.includes("AGN") ||
+            upperCat.includes("ANG")
+          )
+            tag = "AGN";
           else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
           const digits = codeStr.replace(/\D/g, "");
           const seq = digits
@@ -181,9 +186,7 @@ export class BinController {
             return st === "rusak" || rst === "broken" || st === "perbaikan";
           }
           if (targetStatus === "normal") {
-            return (
-              st === "normal" || rst === "active_bound" || rst === "active"
-            );
+            return st === "normal" || rst === "active_bound" || rst === "active";
           }
           return st === targetStatus || rst === targetStatus;
         });
@@ -525,7 +528,8 @@ export class BinController {
         res.status(400).json({
           success: false,
           error: "BIN_CATEGORY_DUPLICATE",
-          message: "Tidak boleh mengaktivasi dua Tempat Sampah dengan kategori yang sama sekaligus.",
+          message:
+            "Tidak boleh mengaktivasi dua Tempat Sampah dengan kategori yang sama sekaligus.",
         });
         return;
       }
@@ -620,7 +624,9 @@ export class BinController {
       });
 
       const qrCode = bin ? bin.qrCode : identifier;
-      const categoryName = bin?.category?.name || (identifier.toUpperCase().includes("-AGN-") ? "ANORGANIK" : "ORGANIK");
+      const categoryName =
+        bin?.category?.name ||
+        (identifier.toUpperCase().includes("-AGN-") ? "ANORGANIK" : "ORGANIK");
       const isAnorganik =
         categoryName.toUpperCase().includes("ANORGANIK") ||
         categoryName.toUpperCase().includes("NON_ORGANIC") ||
@@ -648,7 +654,9 @@ export class BinController {
           if (qrCode.startsWith("BSK-") || qrCode.startsWith("TC-")) return qrCode;
           const tag = isAnorganik ? "AGN" : "OGN";
           const digits = qrCode.replace(/\D/g, "");
-          const seq = digits ? String(parseInt(digits.slice(-4) || "1", 10)).padStart(4, "0") : "0001";
+          const seq = digits
+            ? String(parseInt(digits.slice(-4) || "1", 10)).padStart(4, "0")
+            : "0001";
           return `BSK-${tag}-250826-${seq}`;
         })();
 
@@ -1269,7 +1277,9 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[BinController] getPetugasStatus error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status petugas" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil status petugas" });
     }
   }
 
@@ -1284,7 +1294,9 @@ export class BinController {
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       console.error("[BinController] getPetugasByWilayah error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil daftar petugas" });
+      res
+        .status(500)
+        .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil daftar petugas" });
     }
   }
 
@@ -1315,7 +1327,9 @@ export class BinController {
           message: "Petugas tidak bertugas di wilayah Anda",
         });
       } else {
-        res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menyimpan petugas tetap" });
+        res
+          .status(500)
+          .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal menyimpan petugas tetap" });
       }
     }
   }
@@ -1677,12 +1691,16 @@ export class BinController {
         Number(maxCapacityLiter),
         evidencePhotoUrl || null
       );
-      res
-        .status(200)
-        .json({ success: true, data: result, message: "Kapasitas Tempat Sampah berhasil diperbarui" });
+      res.status(200).json({
+        success: true,
+        data: result,
+        message: "Kapasitas Tempat Sampah berhasil diperbarui",
+      });
     } catch (error: any) {
       console.error("[BinController] updateCapacity error:", error);
-      res.status(500).json({ success: false, message: "Gagal memperbarui kapasitas Tempat Sampah" });
+      res
+        .status(500)
+        .json({ success: false, message: "Gagal memperbarui kapasitas Tempat Sampah" });
     }
   }
 

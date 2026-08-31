@@ -149,7 +149,7 @@ describe("Mobile Findings Backend Tests", () => {
 
       vi.mocked(prisma.pointHistory.aggregate)
         .mockResolvedValueOnce({ _sum: { points: 150 } } as any) // Total
-        .mockResolvedValueOnce({ _sum: { points: 80 } } as any)  // Month
+        .mockResolvedValueOnce({ _sum: { points: 80 } } as any) // Month
         .mockResolvedValueOnce({ _sum: { points: 20 } } as any); // Today
 
       vi.mocked(prisma.pointHistory.findMany).mockResolvedValue([
@@ -363,7 +363,9 @@ describe("Mobile Findings Backend Tests", () => {
 
     it("should throw WARGA_NOT_FOUND when wargaId is not found", async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
-      await expect(kknService.getWargaDetail("kkn-1", "non-existent-warga")).rejects.toThrow("WARGA_NOT_FOUND");
+      await expect(kknService.getWargaDetail("kkn-1", "non-existent-warga")).rejects.toThrow(
+        "WARGA_NOT_FOUND"
+      );
     });
   });
 });

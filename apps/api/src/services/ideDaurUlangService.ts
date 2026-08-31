@@ -1,6 +1,5 @@
 import { prisma } from "../lib/prisma.js";
 
-
 export class IdeDaurUlangService {
   async createIde(
     userId: string,
@@ -90,7 +89,8 @@ export class IdeDaurUlangService {
   async approveDpl(id: string, dplUserId: string) {
     const ide = await prisma.ideDaurUlang.findUnique({ where: { id } });
     if (!ide) throw new Error("IDE_NOT_FOUND");
-    if (ide.sumber !== "MAHASISWA_KKN") throw new Error("Hanya ide dari Mahasiswa KKN yang bisa di-approve oleh DPL");
+    if (ide.sumber !== "MAHASISWA_KKN")
+      throw new Error("Hanya ide dari Mahasiswa KKN yang bisa di-approve oleh DPL");
     if (ide.statusApproval !== "PENDING") throw new Error("Ide sudah diproses sebelumnya");
 
     const updated = await prisma.ideDaurUlang.update({
@@ -146,4 +146,3 @@ export class IdeDaurUlangService {
 }
 
 export const ideDaurUlangService = new IdeDaurUlangService();
-

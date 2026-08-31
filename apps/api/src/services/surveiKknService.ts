@@ -14,7 +14,6 @@ export enum ImportStatus {
   FAILED = "FAILED",
 }
 
-
 /** Nama sheet wajib ada di workbook */
 const REQUIRED_SHEETS = [
   "kelurahan",
@@ -197,14 +196,17 @@ export async function importToDatabase(
         summary["kelurahan"] = data.kelurahan.length;
 
         // pemilahan_sampah
-        await tx.endlinePemilahanSampah.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        await tx.endlinePemilahanSampah.deleteMany({
+          where: { kelurahanId: { in: kelurahanIds } },
+        });
         for (const row of data.pemilahan_sampah) {
           await tx.endlinePemilahanSampah.create({
             data: {
               kelurahanId: row.kelurahan_id as number,
               jumlahRumahMemilah: (row.jumlah_rumah_memilah as number) || null,
               totalJumlahRumahDiRw: (row.total_jumlah_rumah_di_rw as number) || null,
-              persentasePemilahan: row.persentase_pemilahan != null ? (row.persentase_pemilahan as number) : null,
+              persentasePemilahan:
+                row.persentase_pemilahan != null ? (row.persentase_pemilahan as number) : null,
               tingkatPemilahan: (row.tingkat_pemilahan as string) || null,
               catatan: (row.catatan as string) || null,
             },
@@ -218,10 +220,16 @@ export async function importToDatabase(
           await tx.endlineVolumeSampah.create({
             data: {
               kelurahanId: row.kelurahan_id as number,
-              organikKgPerHari: row.organik_kg_per_hari != null ? (row.organik_kg_per_hari as number) : null,
-              anorganikKgPerHari: row.anorganik_kg_per_hari != null ? (row.anorganik_kg_per_hari as number) : null,
-              residuKgPerHari: row.residu_kg_per_hari != null ? (row.residu_kg_per_hari as number) : null,
-              totalVolumeKgPerHari: row.total_volume_kg_per_hari != null ? (row.total_volume_kg_per_hari as number) : null,
+              organikKgPerHari:
+                row.organik_kg_per_hari != null ? (row.organik_kg_per_hari as number) : null,
+              anorganikKgPerHari:
+                row.anorganik_kg_per_hari != null ? (row.anorganik_kg_per_hari as number) : null,
+              residuKgPerHari:
+                row.residu_kg_per_hari != null ? (row.residu_kg_per_hari as number) : null,
+              totalVolumeKgPerHari:
+                row.total_volume_kg_per_hari != null
+                  ? (row.total_volume_kg_per_hari as number)
+                  : null,
               catatan: (row.catatan as string) || null,
             },
           });
@@ -230,7 +238,9 @@ export async function importToDatabase(
 
         // bank_sampah_pengolahan
         const bankSampahRows = normalizeRows("bank_sampah_pengolahan", data.bank_sampah_pengolahan);
-        await tx.endlineBankSampahPengolahan.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        await tx.endlineBankSampahPengolahan.deleteMany({
+          where: { kelurahanId: { in: kelurahanIds } },
+        });
         for (const row of bankSampahRows) {
           await tx.endlineBankSampahPengolahan.create({
             data: {
@@ -242,16 +252,21 @@ export async function importToDatabase(
               buruanSae: row.buruan_sae as boolean | null,
               pengepulMitraDaurUlang: row.pengepul_mitra_daur_ulang as boolean | null,
               digitalisasiData: row.digitalisasi_data as boolean | null,
-              jumlahUnitKomposter: row.jumlah_unit_komposter != null ? String(row.jumlah_unit_komposter) : null,
-              jumlahTitikMaggotBsf: row.jumlah_titik_maggot_bsf != null ? String(row.jumlah_titik_maggot_bsf) : null,
-              aktivitasLainnyaKeterangan: (row.catatan as string) || (row.aktivitas_lainnya_keterangan as string) || null,
+              jumlahUnitKomposter:
+                row.jumlah_unit_komposter != null ? String(row.jumlah_unit_komposter) : null,
+              jumlahTitikMaggotBsf:
+                row.jumlah_titik_maggot_bsf != null ? String(row.jumlah_titik_maggot_bsf) : null,
+              aktivitasLainnyaKeterangan:
+                (row.catatan as string) || (row.aktivitas_lainnya_keterangan as string) || null,
             },
           });
         }
         summary["bank_sampah_pengolahan"] = bankSampahRows.length;
 
         // catatan_kesimpulan
-        await tx.endlineCatatanKesimpulan.deleteMany({ where: { kelurahanId: { in: kelurahanIds } } });
+        await tx.endlineCatatanKesimpulan.deleteMany({
+          where: { kelurahanId: { in: kelurahanIds } },
+        });
         for (const row of data.catatan_kesimpulan) {
           await tx.endlineCatatanKesimpulan.create({
             data: {

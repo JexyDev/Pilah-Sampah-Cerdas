@@ -19,10 +19,10 @@ import { calculateDistance } from "../services/kknAttendanceService.js";
  * Any coordinate outside this box is considered out-of-area and rejected.
  */
 export const COBLONG_BOUNDING_BOX = {
-  latMin: -6.9300,
-  latMax: -6.8600,
-  lngMin: 107.5900,
-  lngMax: 107.6500,
+  latMin: -6.93,
+  latMax: -6.86,
+  lngMin: 107.59,
+  lngMax: 107.65,
 } as const;
 
 /**
@@ -63,8 +63,10 @@ export function isValidCoordinate(lat: number, lng: number): boolean {
   return (
     Number.isFinite(lat) &&
     Number.isFinite(lng) &&
-    lat >= -90 && lat <= 90 &&
-    lng >= -180 && lng <= 180
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
   );
 }
 
@@ -96,9 +98,7 @@ export function isTeleportation(
   current: { latitude: number; longitude: number; recordedAt?: Date | string }
 ): boolean {
   const prevTime = new Date(previous.recordedAt).getTime();
-  const currTime = current.recordedAt
-    ? new Date(current.recordedAt).getTime()
-    : Date.now();
+  const currTime = current.recordedAt ? new Date(current.recordedAt).getTime() : Date.now();
 
   const dtMs = currTime - prevTime;
 
@@ -153,8 +153,7 @@ export function validateCoordinate(
     return {
       valid: false,
       errorCode: "LOCATION_TELEPORTATION_DETECTED",
-      message:
-        "Pergerakan lokasi tidak realistis. Pastikan GPS tidak dalam mode simulasi.",
+      message: "Pergerakan lokasi tidak realistis. Pastikan GPS tidak dalam mode simulasi.",
     };
   }
 

@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import os from "os";
 import fs from "fs";
 
-
 export interface VpsHealthMetrics {
   timestamp: string;
   os: {
@@ -81,7 +80,10 @@ export class VpsHealthService {
       totalIdle += cpu.times.idle;
     }
     const idlePercent = totalIdle / totalTick;
-    const cpuUsagePercent = Math.min(99.9, Math.max(1.5, Math.round((1 - idlePercent) * 1000) / 10));
+    const cpuUsagePercent = Math.min(
+      99.9,
+      Math.max(1.5, Math.round((1 - idlePercent) * 1000) / 10)
+    );
 
     // Memory calculation
     const totalMemBytes = os.totalmem();

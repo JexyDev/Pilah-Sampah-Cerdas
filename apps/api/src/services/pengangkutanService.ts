@@ -7,7 +7,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { DispatchStatus } from "@prisma/client";
 
-
 export class PengangkutanService {
   async getAll(filters?: { status?: string; rwId?: number }) {
     const whereClause: any = {};

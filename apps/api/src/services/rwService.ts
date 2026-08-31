@@ -1,7 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { notificationIntegrationService as notificationService } from "./notificationIntegrationService.js";
 
-
 /**
  * Helper to retrieve all RtRwArea IDs under the same RW number and Kelurahan.
  */
@@ -343,7 +342,8 @@ export const rwService = {
   },
 
   getPendingFacilities: async (rwId: number, userRole?: string) => {
-    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
+    const isAdmin =
+      userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
       where: {
@@ -369,7 +369,8 @@ export const rwService = {
     rwId: number,
     userRole?: string
   ) => {
-    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
+    const isAdmin =
+      userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({
       where: { id: facilityId },
@@ -409,11 +410,16 @@ export const rwService = {
     }
 
     // Kirim notifikasi ke pendaftar fasilitas jika belum ternotifikasi
-    if (facilityCheck.registeredByUserId && !notifiedUserIds.has(facilityCheck.registeredByUserId)) {
+    if (
+      facilityCheck.registeredByUserId &&
+      !notifiedUserIds.has(facilityCheck.registeredByUserId)
+    ) {
       await prisma.notification.create({
         data: {
           userId: facilityCheck.registeredByUserId,
-          title: isApproved ? `Fasilitas Disetujui: ${facilityCheck.nama}` : `Fasilitas Ditolak: ${facilityCheck.nama}`,
+          title: isApproved
+            ? `Fasilitas Disetujui: ${facilityCheck.nama}`
+            : `Fasilitas Ditolak: ${facilityCheck.nama}`,
           message: isApproved
             ? `Fasilitas ${facilityCheck.nama} (${facilityCheck.jenis}) telah disetujui oleh Ketua RW.`
             : `Pengajuan fasilitas ${facilityCheck.nama} (${facilityCheck.jenis}) telah ditolak oleh Ketua RW.`,
@@ -425,7 +431,8 @@ export const rwService = {
   },
 
   getFacilities: async (rwId: number, userRole?: string) => {
-    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
+    const isAdmin =
+      userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     return prisma.facility.findMany({
       where: {
@@ -455,7 +462,8 @@ export const rwService = {
     rwId: number,
     userRole?: string
   ) => {
-    const isAdmin = userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
+    const isAdmin =
+      userRole === "SUPER_USER" || userRole === "ADMIN_DLH" || userRole === "DEVELOPER";
     const areaIds = await getRwAreaIds(rwId, userRole);
     const facilityCheck = await prisma.facility.findUnique({ where: { id: facilityId } });
     if (!facilityCheck) {

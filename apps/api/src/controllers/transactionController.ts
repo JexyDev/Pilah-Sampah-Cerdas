@@ -22,11 +22,13 @@ export const transactionController = {
           .trim();
         if (!wargaName) wargaName = "Warga Coblong";
 
-        const rawConf = d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
-        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+        const rawConf =
+          d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
+        const confVal =
+          rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
         const rawClass = (d.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
         const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
-        const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+        const organikPercent = isOrgRaw ? confVal : 100 - confVal;
         const anorganikPercent = 100 - organikPercent;
         const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
@@ -98,11 +100,13 @@ export const transactionController = {
         const addr =
           d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
 
-        const rawConf = d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
-        const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+        const rawConf =
+          d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
+        const confVal =
+          rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
         const rawClass = (d.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
         const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
-        const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+        const organikPercent = isOrgRaw ? confVal : 100 - confVal;
         const anorganikPercent = 100 - organikPercent;
         const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
@@ -239,11 +243,15 @@ export const transactionController = {
         return;
       }
 
-      const rawConf = dep.confidenceAi !== null && dep.confidenceAi !== undefined ? Number(dep.confidenceAi) : null;
-      const confVal = rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+      const rawConf =
+        dep.confidenceAi !== null && dep.confidenceAi !== undefined
+          ? Number(dep.confidenceAi)
+          : null;
+      const confVal =
+        rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
       const rawClass = (dep.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
       const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
-      const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+      const organikPercent = isOrgRaw ? confVal : 100 - confVal;
       const anorganikPercent = 100 - organikPercent;
       const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
@@ -288,11 +296,7 @@ export const transactionController = {
         return;
       }
 
-      const result = await transactionService.updateTransactionStatus(
-        id,
-        status,
-        catatanPenolakan
-      );
+      const result = await transactionService.updateTransactionStatus(id, status, catatanPenolakan);
 
       res.status(200).json({
         success: true,
@@ -305,7 +309,9 @@ export const transactionController = {
         res.status(404).json({ success: false, message: "Transaksi setoran tidak ditemukan" });
         return;
       }
-      res.status(500).json({ success: false, message: "Gagal memperbarui status transaksi setoran" });
+      res
+        .status(500)
+        .json({ success: false, message: "Gagal memperbarui status transaksi setoran" });
     }
   },
 };

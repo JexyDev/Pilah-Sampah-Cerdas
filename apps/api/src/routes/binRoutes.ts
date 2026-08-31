@@ -388,10 +388,7 @@ router.get(
   binController.getPetugasByWilayah
 );
 
-router.get(
-  "/reset/debug-petugas",
-  binController.debugPetugas
-);
+router.get("/reset/debug-petugas", binController.debugPetugas);
 
 /**
  * @swagger

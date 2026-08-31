@@ -27,8 +27,17 @@ export const logbookController = {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      const { groupId, pekanKe, statusApproval, tipeAktivitas, search, startDate, endDate, page, limit } =
-        req.query;
+      const {
+        groupId,
+        pekanKe,
+        statusApproval,
+        tipeAktivitas,
+        search,
+        startDate,
+        endDate,
+        page,
+        limit,
+      } = req.query;
 
       const data = await logbookService.getMahasiswaLogbooks(userId, userRole, {
         groupId: groupId as string,
@@ -68,7 +77,9 @@ export const logbookController = {
         : error.message?.includes("Akses ditolak")
           ? 403
           : 500;
-      res.status(statusCode).json({ success: false, message: error.message || "Internal server error" });
+      res
+        .status(statusCode)
+        .json({ success: false, message: error.message || "Internal server error" });
     }
   },
 
@@ -125,7 +136,12 @@ export const logbookController = {
         waktuMulai: req.body.waktuMulai || req.body.jamMulai || undefined,
         waktuSelesai: req.body.waktuSelesai || req.body.jamSelesai || undefined,
         tempat: req.body.tempat || req.body.lokasi || req.body.lokasiKegiatan || "Posko KKN",
-        deskripsi: req.body.deskripsi || req.body.kegiatan || req.body.namaKegiatan || req.body.deskripsiKegiatan || "",
+        deskripsi:
+          req.body.deskripsi ||
+          req.body.kegiatan ||
+          req.body.namaKegiatan ||
+          req.body.deskripsiKegiatan ||
+          "",
         fotoBuktiUrl: fotoBuktiUrl || null,
         attachmentUrls:
           uploadedFileUrls.length > 0
@@ -210,7 +226,11 @@ export const logbookController = {
         waktuMulai: req.body.waktuMulai || req.body.jamMulai,
         waktuSelesai: req.body.waktuSelesai || req.body.jamSelesai,
         tempat: req.body.tempat || req.body.lokasi || req.body.lokasiKegiatan,
-        deskripsi: req.body.deskripsi || req.body.kegiatan || req.body.namaKegiatan || req.body.deskripsiKegiatan,
+        deskripsi:
+          req.body.deskripsi ||
+          req.body.kegiatan ||
+          req.body.namaKegiatan ||
+          req.body.deskripsiKegiatan,
         fotoBuktiUrl: fotoBuktiUrl || undefined,
         attachmentUrls:
           uploadedFileUrls.length > 0
@@ -323,12 +343,10 @@ export const logbookController = {
       const { logbookIds, action, catatanDpl } = req.body;
 
       if (!Array.isArray(logbookIds) || logbookIds.length === 0) {
-        res
-          .status(400)
-          .json({
-            success: false,
-            message: "Daftar logbookIds wajib berupa array dan tidak kosong",
-          });
+        res.status(400).json({
+          success: false,
+          message: "Daftar logbookIds wajib berupa array dan tidak kosong",
+        });
         return;
       }
 

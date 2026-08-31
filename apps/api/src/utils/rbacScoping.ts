@@ -6,8 +6,6 @@ import { prisma } from "../lib/prisma.js";
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-
-
 export interface ScopingFilters {
   userFilter?: any;
   binFilter?: any;
@@ -43,19 +41,20 @@ export async function getScopingFilters(user: {
   const role = normalizeRole(user.role);
 
   // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN, and PANITIA_TASKFORCE see all data
-  if (
-    ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(role)
-  ) {
+  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(role)) {
     return {};
   }
 
   // 1b. DPL (Dosen Pendamping Lapangan) is strictly scoped to their assigned Kelompok KKN Kelurahan
-  if (role === "DPL" || role === "DOSEN_PEMBIMBING" || role === "DOSEN_PENDAMPING" || role === "DOSEN_PENDAMPING_LAPANGAN") {
-    const dplOr: any[] = [
-      { dplId: dbUser.id },
-      { dpl: { id: dbUser.id } },
-    ];
-    if (dbUser.name) dplOr.push({ dplNamaMentah: { equals: dbUser.name.trim(), mode: "insensitive" } });
+  if (
+    role === "DPL" ||
+    role === "DOSEN_PEMBIMBING" ||
+    role === "DOSEN_PENDAMPING" ||
+    role === "DOSEN_PENDAMPING_LAPANGAN"
+  ) {
+    const dplOr: any[] = [{ dplId: dbUser.id }, { dpl: { id: dbUser.id } }];
+    if (dbUser.name)
+      dplOr.push({ dplNamaMentah: { equals: dbUser.name.trim(), mode: "insensitive" } });
     if (dbUser.nip) dplOr.push({ dpl: { nip: dbUser.nip } });
     if (dbUser.phone) dplOr.push({ dpl: { phone: dbUser.phone } });
 
@@ -101,7 +100,10 @@ export async function getScopingFilters(user: {
     return {
       userFilter: {
         OR: [
-          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } }, role: { name: "WARGA" } },
+          {
+            rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } },
+            role: { name: "WARGA" },
+          },
           { studentProfile: { kelompok: { dplId: dbUser.id } } },
         ],
       },
@@ -120,7 +122,9 @@ export async function getScopingFilters(user: {
           { bin: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
           { bin: { kelurahanId: { in: kelurahanIds } } },
           { bin: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
-          { warga: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
+          {
+            warga: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          },
         ],
       },
       pemanfaatanFilter: {
@@ -129,11 +133,11 @@ export async function getScopingFilters(user: {
           { rw: { kelurahanId: { in: kelurahanIds } } },
         ],
       },
-      facilityFilter: { 
+      facilityFilter: {
         OR: [
           { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
-          { kelompok: { dplId: dbUser.id } }
-        ]
+          { kelompok: { dplId: dbUser.id } },
+        ],
       },
       kelompokKknFilter: { OR: dplOr },
       studentKknFilter: { kelompok: { OR: dplOr } },
@@ -158,10 +162,7 @@ export async function getScopingFilters(user: {
     return {
       userFilter: { rw: { kelurahan: { kecamatanId } } },
       binFilter: {
-        OR: [
-          { kelurahan: { kecamatanId } },
-          { rw: { kelurahan: { kecamatanId } } },
-        ],
+        OR: [{ kelurahan: { kecamatanId } }, { rw: { kelurahan: { kecamatanId } } }],
       },
       householdFilter: { rw: { kelurahan: { kecamatanId } } },
       wasteLogFilter: {
@@ -221,10 +222,18 @@ export async function getScopingFilters(user: {
       userOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
       binOr.push({ kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } });
       binOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
-      householdOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
-      wasteLogOr.push({ bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
-      wasteLogOr.push({ bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
-      wasteLogOr.push({ warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } } });
+      householdOr.push({
+        rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+      });
+      wasteLogOr.push({
+        bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+      });
+      wasteLogOr.push({
+        bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+      });
+      wasteLogOr.push({
+        warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+      });
     }
 
     return {
@@ -232,10 +241,22 @@ export async function getScopingFilters(user: {
       binFilter: { OR: binOr },
       householdFilter: { OR: householdOr },
       wasteLogFilter: { OR: wasteLogOr },
-      pemanfaatanFilter: { OR: [{ rw: { kelurahanId } }, { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } }] },
-      facilityFilter: { OR: [{ rw: { kelurahanId } }, { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } }] },
+      pemanfaatanFilter: {
+        OR: [
+          { rw: { kelurahanId } },
+          { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+        ],
+      },
+      facilityFilter: {
+        OR: [
+          { rw: { kelurahanId } },
+          { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+        ],
+      },
       kelompokKknFilter: { OR: [{ kelurahan: { equals: kelurahanName, mode: "insensitive" } }] },
-      studentKknFilter: { kelompok: { OR: [{ kelurahan: { equals: kelurahanName, mode: "insensitive" } }] } },
+      studentKknFilter: {
+        kelompok: { OR: [{ kelurahan: { equals: kelurahanName, mode: "insensitive" } }] },
+      },
     };
   }
 

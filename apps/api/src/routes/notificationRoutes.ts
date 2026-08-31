@@ -386,11 +386,7 @@ router.get("/", authMiddleware, async (req, res) => {
           }
         }
 
-        formattedNotifications = [
-          ...criticalBinNotifs,
-          ...reqNotifications,
-          ...userNotifs,
-        ];
+        formattedNotifications = [...criticalBinNotifs, ...reqNotifications, ...userNotifs];
       } catch (err) {
         console.error("[NotificationRoute] Error fetching admin notifications:", err);
       }

@@ -320,7 +320,8 @@ export const systemService = {
         .then((items) => {
           const validSum = items.reduce((acc, curr) => {
             const unit = (curr.unitBahanBaku || "").toLowerCase();
-            if (unit.includes("rp") || unit.includes("uang") || unit.includes("kegiatan")) return acc;
+            if (unit.includes("rp") || unit.includes("uang") || unit.includes("kegiatan"))
+              return acc;
             return acc + Number(curr.volumeBahanBaku || 0);
           }, 0);
           return { sum: validSum };
@@ -329,23 +330,71 @@ export const systemService = {
       prisma.pointHistory
         .aggregate({ _sum: { points: true } })
         .catch(() => ({ _sum: { points: null } })),
-      prisma.ideDaurUlang
-        .count({ where: { statusApproval: "APPROVED" } })
-        .catch(() => 0),
-      systemService.getCuratedLandingActivities().catch(() => systemService.getDefaultCuratedActivities()),
+      prisma.ideDaurUlang.count({ where: { statusApproval: "APPROVED" } }).catch(() => 0),
+      systemService
+        .getCuratedLandingActivities()
+        .catch(() => systemService.getDefaultCuratedActivities()),
       // Aggregates for daily trend
-      prisma.setoranOtomatis.aggregate({ where: { createdAt: { gte: startOfToday } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.setoranManual.aggregate({ where: { createdAt: { gte: startOfToday } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.pemanfaatan.findMany({ where: { createdAt: { gte: startOfToday } }, select: { volumeBahanBaku: true, unitBahanBaku: true } }).catch(() => []),
-      prisma.setoranOtomatis.aggregate({ where: { createdAt: { gte: startOfYesterday, lt: startOfToday } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.setoranManual.aggregate({ where: { createdAt: { gte: startOfYesterday, lt: startOfToday } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.pemanfaatan.findMany({ where: { createdAt: { gte: startOfYesterday, lt: startOfToday } }, select: { volumeBahanBaku: true, unitBahanBaku: true } }).catch(() => []),
-      prisma.setoranOtomatis.aggregate({ where: { createdAt: { gte: startOf2DaysAgo, lt: startOfYesterday } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.setoranManual.aggregate({ where: { createdAt: { gte: startOf2DaysAgo, lt: startOfYesterday } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.pemanfaatan.findMany({ where: { createdAt: { gte: startOf2DaysAgo, lt: startOfYesterday } }, select: { volumeBahanBaku: true, unitBahanBaku: true } }).catch(() => []),
-      prisma.setoranOtomatis.aggregate({ where: { createdAt: { gte: startOf7DaysAgo } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.setoranManual.aggregate({ where: { createdAt: { gte: startOf7DaysAgo } }, _sum: { berat: true } }).catch(() => ({ _sum: { berat: null } })),
-      prisma.pemanfaatan.findMany({ where: { createdAt: { gte: startOf7DaysAgo } }, select: { volumeBahanBaku: true, unitBahanBaku: true } }).catch(() => []),
+      prisma.setoranOtomatis
+        .aggregate({ where: { createdAt: { gte: startOfToday } }, _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.setoranManual
+        .aggregate({ where: { createdAt: { gte: startOfToday } }, _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.pemanfaatan
+        .findMany({
+          where: { createdAt: { gte: startOfToday } },
+          select: { volumeBahanBaku: true, unitBahanBaku: true },
+        })
+        .catch(() => []),
+      prisma.setoranOtomatis
+        .aggregate({
+          where: { createdAt: { gte: startOfYesterday, lt: startOfToday } },
+          _sum: { berat: true },
+        })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.setoranManual
+        .aggregate({
+          where: { createdAt: { gte: startOfYesterday, lt: startOfToday } },
+          _sum: { berat: true },
+        })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.pemanfaatan
+        .findMany({
+          where: { createdAt: { gte: startOfYesterday, lt: startOfToday } },
+          select: { volumeBahanBaku: true, unitBahanBaku: true },
+        })
+        .catch(() => []),
+      prisma.setoranOtomatis
+        .aggregate({
+          where: { createdAt: { gte: startOf2DaysAgo, lt: startOfYesterday } },
+          _sum: { berat: true },
+        })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.setoranManual
+        .aggregate({
+          where: { createdAt: { gte: startOf2DaysAgo, lt: startOfYesterday } },
+          _sum: { berat: true },
+        })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.pemanfaatan
+        .findMany({
+          where: { createdAt: { gte: startOf2DaysAgo, lt: startOfYesterday } },
+          select: { volumeBahanBaku: true, unitBahanBaku: true },
+        })
+        .catch(() => []),
+      prisma.setoranOtomatis
+        .aggregate({ where: { createdAt: { gte: startOf7DaysAgo } }, _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.setoranManual
+        .aggregate({ where: { createdAt: { gte: startOf7DaysAgo } }, _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.pemanfaatan
+        .findMany({
+          where: { createdAt: { gte: startOf7DaysAgo } },
+          select: { volumeBahanBaku: true, unitBahanBaku: true },
+        })
+        .catch(() => []),
     ]);
 
     const otomatisKg = Number(setoranOtomatisAggregate._sum?.berat || 0);
@@ -417,7 +466,10 @@ export const systemService = {
       yesterdayWasteKg: Math.round(yesterdayWasteKg * 100) / 100,
       wasteTrendPercentage,
       wasteTrendDirection,
-      recentSchedules: publishedActivities.length > 0 ? publishedActivities : systemService.getDefaultCuratedActivities(),
+      recentSchedules:
+        publishedActivities.length > 0
+          ? publishedActivities
+          : systemService.getDefaultCuratedActivities(),
     };
   },
 
@@ -442,7 +494,8 @@ export const systemService = {
       : "24.80 MB";
 
     const targetVersion = data.latestVersion || data.version || "1.0.0";
-    const targetUrl = data.downloadUrl || data.apkUrl || "http://157.10.252.252:3000/api/v1/system/download-apk";
+    const targetUrl =
+      data.downloadUrl || data.apkUrl || "http://157.10.252.252:3000/api/v1/system/download-apk";
 
     const releaseData = {
       version: targetVersion,

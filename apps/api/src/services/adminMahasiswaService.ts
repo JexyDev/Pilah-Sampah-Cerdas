@@ -4,7 +4,6 @@ import { getScopingFilters } from "../utils/rbacScoping.js";
 import bcrypt from "bcryptjs";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 
-
 export const adminMahasiswaService = {
   getAllMahasiswa: async (page = 1, limit = 10, search = "", user?: any) => {
     const skip = (page - 1) * limit;
@@ -86,7 +85,8 @@ export const adminMahasiswaService = {
       throw new Error("Nomor telepon (+62) sudah terdaftar di sistem BERSEKA");
     }
 
-    const cleanNim = data.nim && data.nim.trim() !== "" && data.nim !== "-" ? data.nim.trim() : null;
+    const cleanNim =
+      data.nim && data.nim.trim() !== "" && data.nim !== "-" ? data.nim.trim() : null;
     if (cleanNim) {
       const existingNim = await prisma.studentKkn.findUnique({ where: { nim: cleanNim } });
       if (existingNim) {
@@ -140,7 +140,12 @@ export const adminMahasiswaService = {
       status_aktif?: string;
     }
   ) => {
-    const cleanNim = data.nim !== undefined ? (data.nim && data.nim.trim() !== "" && data.nim !== "-" ? data.nim.trim() : null) : undefined;
+    const cleanNim =
+      data.nim !== undefined
+        ? data.nim && data.nim.trim() !== "" && data.nim !== "-"
+          ? data.nim.trim()
+          : null
+        : undefined;
     if (cleanNim) {
       const existingNim = await prisma.studentKkn.findFirst({
         where: { nim: cleanNim, userId: { not: id } },

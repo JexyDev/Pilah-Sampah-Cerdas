@@ -195,6 +195,8 @@ describe("kknService.getWilayahKelompok", () => {
     (prisma.studentKkn.findUnique as any).mockResolvedValue(null);
     (prisma.user.findUnique as any).mockResolvedValue({ role: { name: "MAHASISWA_KKN" } });
 
-    await expect(kknService.getWilayahKelompok("unknown-user")).rejects.toThrow("KELOMPOK_NOT_FOUND");
+    await expect(kknService.getWilayahKelompok("unknown-user")).rejects.toThrow(
+      "KELOMPOK_NOT_FOUND"
+    );
   });
 });

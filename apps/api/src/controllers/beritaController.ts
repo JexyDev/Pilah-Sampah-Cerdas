@@ -182,8 +182,8 @@ export const beritaController = {
         status === "PUBLISHED"
           ? "Berita berhasil diterbitkan dan tampil di landing page."
           : status === "ARCHIVED"
-          ? "Berita berhasil diarsipkan."
-          : "Berita dikembalikan ke draft.";
+            ? "Berita berhasil diarsipkan."
+            : "Berita dikembalikan ke draft.";
 
       res.json({ success: true, message: msg, data });
     } catch (error: any) {

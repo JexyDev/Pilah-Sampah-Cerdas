@@ -12,11 +12,7 @@ import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-router.get(
-  "/rule-engine",
-  authMiddleware,
-  configController.getRuleEngine
-);
+router.get("/rule-engine", authMiddleware, configController.getRuleEngine);
 router.post(
   "/rule-engine",
   authMiddleware,

@@ -29,19 +29,11 @@ router.put(
 
 // ── ASSIGN DPL ke kelompok (PUT /:id/assign-dpl) ────────────────────────────
 // Body: { dplId: string | null }
-router.put(
-  "/:id/assign-dpl",
-  roleMiddleware(KKN_WRITE_ROLES),
-  kelompokController.assignDpl
-);
+router.put("/:id/assign-dpl", roleMiddleware(KKN_WRITE_ROLES), kelompokController.assignDpl);
 
 // ── ASSIGN RW ke kelompok (PUT /:id/assign-rw) ──────────────────────────────
 // Body: { rwIds: number[] }
-router.put(
-  "/:id/assign-rw",
-  roleMiddleware(KKN_WRITE_ROLES),
-  kelompokController.assignRw
-);
+router.put("/:id/assign-rw", roleMiddleware(KKN_WRITE_ROLES), kelompokController.assignRw);
 
 // ── PINDAH MAHASISWA antar kelompok (PATCH /:id/mahasiswa/:studentKknId/pindah) ─
 // Body: { targetKelompokId: string }

@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { pemanfaatanService } from "../services/pemanfaatanService.js";
 
-
 export class PemanfaatanController {
   async create(req: Request, res: Response): Promise<void> {
     try {
@@ -146,7 +145,8 @@ export class PemanfaatanController {
       const user = (req as any).user;
       const userId = user?.userId || user?.id;
       const { judul, isiKritikSaran, kategori, rating, rwId, programKerjaId } = req.body;
-      let fotoBuktiUrl = req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.buktiUrl || req.body.foto;
+      let fotoBuktiUrl =
+        req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.buktiUrl || req.body.foto;
 
       // Handle multipart uploaded files
       if (req.file) {
@@ -195,7 +195,9 @@ export class PemanfaatanController {
         fotoBuktiUrl: fotoBuktiUrl ? String(fotoBuktiUrl).trim() : undefined,
       });
 
-      res.status(201).json({ success: true, data: result, message: "Kritik & saran berhasil dikirim" });
+      res
+        .status(201)
+        .json({ success: true, data: result, message: "Kritik & saran berhasil dikirim" });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
@@ -244,7 +246,10 @@ export class PemanfaatanController {
       res.status(200).json({ success: true, message: "Kritik & saran berhasil dihapus" });
     } catch (error: any) {
       if (error.message === "FORBIDDEN_DELETE_FEEDBACK") {
-        res.status(403).json({ success: false, message: "Anda tidak memiliki izin untuk menghapus kritik & saran ini" });
+        res.status(403).json({
+          success: false,
+          message: "Anda tidak memiliki izin untuk menghapus kritik & saran ini",
+        });
         return;
       }
       res.status(400).json({ success: false, message: error.message });

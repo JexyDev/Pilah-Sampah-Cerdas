@@ -14,7 +14,6 @@ import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
 
-
 // Density configurations (Kg per Liter)
 const DENSITY = {
   ORGANIC: 0.4, // Organic waste is denser
@@ -86,18 +85,12 @@ export class BinService {
           whereClause = { status: "PRINTED" };
         } else if (reqStatus && reqStatus !== "ALL") {
           whereClause = {
-            AND: [
-              scoping.binFilter,
-              { status: reqStatus }
-            ]
+            AND: [scoping.binFilter, { status: reqStatus }],
           };
         } else {
           // Bypass scoping to also return unassigned PRINTED bins
           whereClause = {
-            OR: [
-              scoping.binFilter,
-              { status: "PRINTED" }
-            ]
+            OR: [scoping.binFilter, { status: "PRINTED" }],
           };
         }
       } else {
@@ -118,10 +111,7 @@ export class BinService {
         if (!isNaN(parsedAreaId)) {
           if (whereClause.OR) {
             whereClause = {
-              AND: [
-                whereClause,
-                { rwId: parsedAreaId }
-              ]
+              AND: [whereClause, { rwId: parsedAreaId }],
             };
           } else {
             whereClause.rwId = parsedAreaId;
@@ -131,10 +121,7 @@ export class BinService {
       if (filters.categoryId) {
         if (whereClause.OR) {
           whereClause = {
-            AND: [
-              whereClause,
-              { categoryId: filters.categoryId }
-            ]
+            AND: [whereClause, { categoryId: filters.categoryId }],
           };
         } else {
           whereClause.categoryId = filters.categoryId;
@@ -147,10 +134,7 @@ export class BinService {
         ];
         if (whereClause.OR || whereClause.AND) {
           whereClause = {
-            AND: [
-              whereClause,
-              { OR: searchCondition }
-            ]
+            AND: [whereClause, { OR: searchCondition }],
           };
         } else {
           whereClause.OR = searchCondition;
@@ -1326,7 +1310,7 @@ export class BinService {
         select: { id: true, name: true, rwId: true, role: { select: { name: true } } },
       });
     }
-    
+
     const petugasList = await prisma.user.findMany({
       where: { role: { name: "PETUGAS_RESIDU" } },
       select: { id: true, name: true, rwId: true, status: true },
@@ -1335,7 +1319,7 @@ export class BinService {
     const wargaList = await prisma.user.findMany({
       where: { role: { name: "WARGA" } },
       select: { id: true, name: true, rwId: true },
-      take: 20
+      take: 20,
     });
 
     return {
@@ -1522,15 +1506,17 @@ export class BinService {
           },
         });
         if (!existingReward) {
-          await prisma.pointHistory.create({
-            data: {
-              userId: reviewedById,
-              points: 15,
-              description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
-              kategori: "VALIDASI_PENGOSONGAN",
-              redeemable: false,
-            },
-          }).catch(() => {});
+          await prisma.pointHistory
+            .create({
+              data: {
+                userId: reviewedById,
+                points: 15,
+                description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
+                kategori: "VALIDASI_PENGOSONGAN",
+                redeemable: false,
+              },
+            })
+            .catch(() => {});
         }
       }
 

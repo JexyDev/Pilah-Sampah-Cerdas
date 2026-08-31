@@ -22,7 +22,7 @@ export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
     const lngJ = polygon[j].lng;
 
     const intersect =
-      (latI > point.lat) !== (latJ > point.lat) &&
+      latI > point.lat !== latJ > point.lat &&
       point.lng < ((lngJ - lngI) * (point.lat - latI)) / (latJ - latI) + lngI;
     if (intersect) isInside = !isInside;
   }
@@ -92,7 +92,10 @@ export function distToSegmentInMeters(p: Point, a: Point, b: Point): number {
   const dLng = b.lng - a.lng;
   const t = Math.max(
     0,
-    Math.min(1, ((p.lat - a.lat) * dLat + (p.lng - a.lng) * dLng) / (dLat * dLat + dLng * dLng || 1))
+    Math.min(
+      1,
+      ((p.lat - a.lat) * dLat + (p.lng - a.lng) * dLng) / (dLat * dLat + dLng * dLng || 1)
+    )
   );
   const projection: Point = {
     lat: a.lat + t * dLat,
@@ -104,7 +107,11 @@ export function distToSegmentInMeters(p: Point, a: Point, b: Point): number {
 /**
  * Checks if point is inside polygon OR within bufferMeters from any polygon edge.
  */
-export function isPointInPolygonWithBuffer(point: Point, polygon: Point[], bufferMeters = 15): boolean {
+export function isPointInPolygonWithBuffer(
+  point: Point,
+  polygon: Point[],
+  bufferMeters = 15
+): boolean {
   if (isPointInPolygon(point, polygon)) return true;
   if (bufferMeters <= 0) return false;
 

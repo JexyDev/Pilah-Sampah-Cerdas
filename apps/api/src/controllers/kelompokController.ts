@@ -224,8 +224,10 @@ export const kelompokController = {
         STUDENT_KKN_NOT_FOUND: [404, "Data mahasiswa KKN tidak ditemukan"],
         TARGET_KELOMPOK_NOT_FOUND: [404, "Kelompok tujuan tidak ditemukan"],
       };
-      const [status, msg] =
-        errorMap[error.message] || [500, error.message || "Gagal memindahkan mahasiswa"];
+      const [status, msg] = errorMap[error.message] || [
+        500,
+        error.message || "Gagal memindahkan mahasiswa",
+      ];
       res.status(status).json({ success: false, message: msg });
     }
   },

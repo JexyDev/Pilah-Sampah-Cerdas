@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { Household, Prisma } from "@prisma/client";
 
-
 export class HouseholdRepository {
   /**
    * Create a new household registration.

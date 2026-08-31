@@ -1,12 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { websocketService } from "../services/websocketService.js";
-import {
-  Bin,
-  SetoranOtomatis,
-  PointHistory,
-  Notification,
-  BinStatus,
-} from "@prisma/client";
+import { Bin, SetoranOtomatis, PointHistory, Notification, BinStatus } from "@prisma/client";
 
 export class BinRepository {
   /**
@@ -330,8 +324,9 @@ export class BinRepository {
         categoryName.toLowerCase().includes("ano") ||
         categoryName.toLowerCase().includes("agn");
       const isOrgRaw = !isAnorgRaw;
-      const confVal = aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : 95;
-      const organikPercent = isOrgRaw ? confVal : (100 - confVal);
+      const confVal =
+        aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : 95;
+      const organikPercent = isOrgRaw ? confVal : 100 - confVal;
       const anorganikPercent = 100 - organikPercent;
       const isOrg = isOrgRaw;
 
