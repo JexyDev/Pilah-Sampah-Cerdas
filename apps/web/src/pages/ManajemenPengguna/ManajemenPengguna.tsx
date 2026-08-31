@@ -15,6 +15,7 @@ import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import { useSearchParams } from "react-router-dom";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 /** Pemetaan enum peran ke label bahasa Indonesia baku */
 const ROLE_LABEL_MAP: Record<string, string> = {
@@ -198,7 +199,7 @@ const ManajemenPengguna: React.FC = () => {
     const fetchData = async () => {
       try {
         const [resK, resA, resP, resD, resProv, resKab, resKec, resKel] = await Promise.all([
-          api.get("/kelompok?limit=100"),
+          api.get("/kelompok?limit=0"),
           api.get("/areas/rt-rw"),
           api.get("/users?roleName=PETUGAS_RESIDU"),
           api.get("/users?roleName=DPL"),
@@ -207,7 +208,7 @@ const ManajemenPengguna: React.FC = () => {
           api.get("/areas/kecamatan"),
           api.get("/areas/kelurahan"),
         ]);
-        const listK = resK.data?.groups || resK.data?.data || [];
+        const listK = sortKelompokList(resK.data?.groups || resK.data?.data || [], (k: any) => k.name || "");
         setKelompokList(listK);
         const listA = resA.data?.data || resA.data || [];
         setAreasList(listA);

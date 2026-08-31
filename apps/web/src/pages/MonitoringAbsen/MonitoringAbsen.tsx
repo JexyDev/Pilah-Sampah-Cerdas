@@ -3519,9 +3519,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
                           <th className="py-3.5 px-3 text-center">JAM MASUK</th>
                           <th className="py-3.5 px-3 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
-                          <th className="py-3.5 px-3 text-center">TARGET MINIMAL</th>
-                          <th className="py-3.5 px-4 text-center">RASIO KEHADIRAN</th>
+                          <th className="py-3.5 px-4 text-center">DURASI HARI INI</th>
+                          <th className="py-3.5 px-3 text-center">TARGET HARIAN (4 JAM)</th>
+                          <th className="py-3.5 px-4 text-center">RASIO HARIAN</th>
                           <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
                           <th className="py-3.5 px-4 text-center">DETAIL</th>
                         </tr>
@@ -3533,8 +3533,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
                           <th className="py-3.5 px-4 text-center">JAM MASUK</th>
                           <th className="py-3.5 px-4 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL / TARGET</th>
-                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN</th>
+                          <th className="py-3.5 px-4 text-center">DURASI HARIAN / TARGET (4 JAM)</th>
+                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN (TARGET 200 JAM)</th>
                           <th className="py-3.5 px-4 text-center">POIN</th>
                           <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
                         </tr>
@@ -5349,6 +5349,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
               const isMemenuhi = rec.isMemenuhiDurasi !== undefined ? Boolean(rec.isMemenuhiDurasi) : durationMins >= targetMins;
 
+              const modalTargetKumulatif = configTargets.targetTotalJam || 200;
+              const modalTargetKumulatifMins = modalTargetKumulatif * 60;
+              const modalActualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
+              const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2)) : 0;
+
               const liveLoc = studentLocations.find(
                 (l) => l.studentId === rec.student?.id || l.student?.id === rec.student?.id
               );
@@ -5372,23 +5377,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Durasi Aktual</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Durasi Hari Ini</span>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
                         {isLeaveOrPending ? "0 menit" : formatDurasiIndo(durationMins)}
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Jam</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Harian</span>
                       <span className="text-xs font-black text-slate-800 dark:text-slate-100">
                         {targetHours} jam
                       </span>
                     </div>
                   </div>
 
-                  {/* Rasio Progress Bar */}
+                  {/* Rasio Target Harian (4 Jam) */}
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Kehadiran &amp; Pemenuhan:</span>
+                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Target Harian ({targetHours} Jam):</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{ratioPercent}%</span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
@@ -5396,7 +5401,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : "bg-rose-50 text-rose-600 border border-rose-200"
                         }`}>
-                          {isMemenuhi ? "Memenuhi" : "Tidak Memenuhi"}
+                          {isMemenuhi ? "Memenuhi Target Harian" : "Kurang dari Target Harian"}
                         </span>
                       </div>
                     </div>
@@ -5414,7 +5419,27 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
 
-                  {/* Catatan / Dokumentasi CRUD Presensi Mahasiswa */}
+                  {/* Total Akumulasi KKN (Target 200 Jam Kumulatif) */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-600 dark:text-slate-400">Total Akumulasi KKN (Target {modalTargetKumulatif} Jam):</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                          {formatDurationUnits(modalActualCumMinutes)} / {formatHoursToUnits(modalTargetKumulatif)}
+                        </span>
+                        <span className="font-mono font-black text-xs text-emerald-700 dark:text-emerald-400">
+                          ({modalPercentCapaian}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all bg-emerald-600"
+                        style={{ width: `${Math.min(100, modalPercentCapaian)}%` }}
+                      />
+                    </div>
+                  </div>
+
                   {(rec.deskripsiKegiatan || rec.fotoUrl) && (
                     <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                       <span className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">

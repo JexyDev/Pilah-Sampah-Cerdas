@@ -36,6 +36,7 @@ import { dplService, type ProgramKerjaItem } from "../../services/dplService";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 // Google Drive Official Logo Icon Component
 const GoogleDriveIcon = () => (
@@ -345,10 +346,11 @@ export const ProgramKerjaKkn: React.FC = () => {
         } else {
           // Fallback if DPL getGroupSummary returned empty:
           try {
-            const kelRes = await api.get("/kelompok");
+            const kelRes = await api.get("/kelompok?limit=0");
             const list =
-              kelRes.data?.data?.kelompok ||
-              (Array.isArray(kelRes.data?.data) ? kelRes.data?.data : []);
+              kelRes.data?.groups ||
+              kelRes.data?.data ||
+              (Array.isArray(kelRes.data) ? kelRes.data : []);
             if (Array.isArray(list) && list.length > 0) {
               groups = list.map((g: any) => ({
                 id: g.id,
@@ -364,22 +366,26 @@ export const ProgramKerjaKkn: React.FC = () => {
       } else {
         // Management / Super User gets all groups
         try {
-          const kelRes = await api.get("/kelompok");
+          const kelRes = await api.get("/kelompok?limit=0");
           const list =
-            kelRes.data?.data?.kelompok ||
-            (Array.isArray(kelRes.data?.data) ? kelRes.data?.data : []);
-          groups = list.map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            kelurahan: g.kelurahan,
-            cakupanRw: g.cakupanRw,
-          }));
+            kelRes.data?.groups ||
+            kelRes.data?.data ||
+            (Array.isArray(kelRes.data) ? kelRes.data : []);
+          if (Array.isArray(list) && list.length > 0) {
+            groups = list.map((g: any) => ({
+              id: g.id,
+              name: g.name,
+              kelurahan: g.kelurahan,
+              cakupanRw: g.cakupanRw,
+            }));
+          }
         } catch (e) {
           console.error("Gagal memuat daftar kelompok master:", e);
         }
       }
 
-      setKelompokList(groups);
+      const sortedGroups = sortKelompokList(groups, (g: any) => g.name || "");
+      setKelompokList(sortedGroups);
 
       // Auto set default selected group for DPL if only 1 group assigned
       let activeGroupId: string | undefined = undefined;

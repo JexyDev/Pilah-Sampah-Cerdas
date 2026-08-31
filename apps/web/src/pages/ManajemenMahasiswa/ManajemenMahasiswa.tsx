@@ -20,6 +20,7 @@ import {
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 const ManajemenMahasiswa: React.FC = () => {
   const { user } = useAuthStore();
@@ -90,7 +91,7 @@ const ManajemenMahasiswa: React.FC = () => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, kelompokFilter]);
 
-  // Extract unique Kelompok KKN list
+  // Extract unique Kelompok KKN list (Natural Sorted)
   const uniqueKelompoks = useMemo(() => {
     const set = new Set<string>();
     mahasiswas.forEach((m) => {
@@ -98,7 +99,7 @@ const ManajemenMahasiswa: React.FC = () => {
         set.add(m.studentProfile.kelompok.name);
       }
     });
-    return Array.from(set).sort();
+    return sortKelompokList(Array.from(set), (s) => s);
   }, [mahasiswas]);
 
   // Filtered List

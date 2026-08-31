@@ -25,7 +25,7 @@ export const kelompokController = {
         dplUserId,
         (req as any).user
       );
-      res.status(200).json({ success: true, ...result });
+      res.status(200).json({ success: true, ...result, data: result.groups });
     } catch (error) {
       console.error("[KelompokController] getAll error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });

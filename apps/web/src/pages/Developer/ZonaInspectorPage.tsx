@@ -67,6 +67,7 @@ import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { sortKelompokList } from "../../utils/sortUtils";
 import {
   KELURAHAN_GEODATA,
   CoblongGeo,
@@ -330,7 +331,7 @@ export const ZonaInspectorPage: React.FC = () => {
       const scheds = scheduleRes.data?.data || [];
       const locs = studentLocRes.data?.data || [];
 
-      setKelompokList(Array.isArray(groups) ? groups : []);
+      setKelompokList(Array.isArray(groups) ? sortKelompokList(groups, (k: any) => k.name || "") : []);
       setPoskoList(Array.isArray(poskos) ? poskos : []);
       setSchedules(Array.isArray(scheds) ? scheds : []);
       setStudentLocations(Array.isArray(locs) ? locs : []);

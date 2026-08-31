@@ -52,6 +52,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo } from "../../constants/coblongGeoData";
 import { resolveImageUrl, handlePoskoImageError, getPoskoFallbackImage } from "../../utils/imageUrl";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 export interface PoskoItem {
   id: string;
@@ -231,10 +232,10 @@ export const PoskoKknPage: React.FC = () => {
 
   const fetchKelompokList = useCallback(async () => {
     try {
-      const res = await api.get("/kelompok?limit=100");
-      const list = res.data?.data || res.data?.groups || res.data?.kelompoks || res.data || [];
+      const res = await api.get("/kelompok?limit=0");
+      const list = res.data?.groups || res.data?.data || res.data?.kelompoks || (Array.isArray(res.data) ? res.data : []);
       if (Array.isArray(list)) {
-        setKelompokList(list);
+        setKelompokList(sortKelompokList(list, (k: any) => k.name || ""));
       }
     } catch (err) {
       console.warn("Gagal memuat kelompok list:", err);
@@ -252,13 +253,12 @@ export const PoskoKknPage: React.FC = () => {
     const totalKelompok = Math.max(kelompokList.length, items.length);
     const verified = items.filter((i) => i.statusApproval === "APPROVED").length;
 
-    // Total Mahasiswa KKN riil se-Coblong
-    let totalMahasiswa = 0;
-    if (kelompokList.length > 0) {
-      totalMahasiswa = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
-    }
-    if (totalMahasiswa === 0) {
-      totalMahasiswa = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
+    // Total Mahasiswa dari 15 Posko yang sudah terdaftar
+    const totalMahasiswaPosko = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
+    // Total Mahasiswa KKN keseluruhan se-Kecamatan Coblong (32 Kelompok)
+    let totalMahasiswaSemua = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
+    if (totalMahasiswaSemua === 0) {
+      totalMahasiswaSemua = totalMahasiswaPosko;
     }
 
     const dplSet = new Set<string>();
@@ -271,7 +271,7 @@ export const PoskoKknPage: React.FC = () => {
     });
     const totalDpl = dplSet.size;
 
-    return { totalPosko, totalKelompok, verified, totalMahasiswa, totalDpl };
+    return { totalPosko, totalKelompok, verified, totalMahasiswaPosko, totalMahasiswaSemua, totalDpl };
   }, [items, kelompokList]);
 
   // Kelompok yang belum mendaftarkan titik Posko KKN
@@ -1098,11 +1098,11 @@ export const PoskoKknPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 3: Total Mahasiswa */}
+          {/* Card 3: Mahasiswa di Posko Terdaftar */}
           <div className="p-4 sm:p-5 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                Mahasiswa Terdata
+                Mahasiswa di Posko
               </span>
               <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                 <Users size={18} />
@@ -1110,10 +1110,10 @@ export const PoskoKknPage: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                {metrics.totalMahasiswa > 0 ? metrics.totalMahasiswa : "-"}
+                {metrics.totalMahasiswaPosko > 0 ? metrics.totalMahasiswaPosko : "-"}
               </div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-                Anggota di Seluruh Kelompok
+                Anggota di {metrics.totalPosko} Posko {metrics.totalMahasiswaSemua > metrics.totalMahasiswaPosko ? `(dari ${metrics.totalMahasiswaSemua} Total Mhs)` : ""}
               </p>
             </div>
           </div>
@@ -1122,7 +1122,7 @@ export const PoskoKknPage: React.FC = () => {
           <div className="p-4 sm:p-5 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-400">
-                DPL Pendamping
+                DPL Pendamping Posko
               </span>
               <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
                 <Sparkles size={18} />
@@ -1133,7 +1133,7 @@ export const PoskoKknPage: React.FC = () => {
                 {metrics.totalDpl > 0 ? metrics.totalDpl : "-"}
               </div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-                Dosen Pendamping Aktif
+                DPL Terhubung di {metrics.totalPosko} Posko Aktif
               </p>
             </div>
           </div>

@@ -31,6 +31,10 @@ import {
   ListFilter,
   ArrowRight,
   TrendingUp,
+  Pencil,
+  Trash2,
+  Save,
+  SlidersHorizontal,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -166,6 +170,95 @@ export const LaporanPresensiPage: React.FC = () => {
   // Modals
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; title: string; desc?: string | null } | null>(null);
   const [previewDesc, setPreviewDesc] = useState<{ student: string; desc: string; time: string } | null>(null);
+
+  // Presensi CRUD & Manipulation Modals
+  const [editItem, setEditItem] = useState<LaporanItem | null>(null);
+  const [editForm, setEditForm] = useState<{
+    tanggal: string;
+    jamMasuk: string;
+    jamPulang: string;
+    durasiMenit: number;
+    status: string;
+    deskripsiKegiatan: string;
+  }>({
+    tanggal: "",
+    jamMasuk: "",
+    jamPulang: "",
+    durasiMenit: 240,
+    status: "HADIR_MEMENUHI",
+    deskripsiKegiatan: "",
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
+  const [deleteItem, setDeleteItem] = useState<LaporanItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  const handleOpenEdit = (item: LaporanItem) => {
+    setEditItem(item);
+    setEditForm({
+      tanggal: item.tanggal !== "-" ? item.tanggal : new Date().toISOString().slice(0, 10),
+      jamMasuk: item.jamMasuk !== "-" ? item.jamMasuk : "08:00",
+      jamPulang: item.jamPulang !== "-" ? item.jamPulang : "12:00",
+      durasiMenit: item.durasiMenit || 240,
+      status: item.status || "HADIR_MEMENUHI",
+      deskripsiKegiatan: item.deskripsiKegiatan || "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem) return;
+    try {
+      setIsSavingEdit(true);
+      const startDateTime = `${editForm.tanggal}T${editForm.jamMasuk}:00+07:00`;
+      const endDateTime = editForm.jamPulang && editForm.jamPulang !== "-" ? `${editForm.tanggal}T${editForm.jamPulang}:00+07:00` : undefined;
+
+      await api.put(`/kkn-attendance/${editItem.id}`, {
+        attendedAt: new Date(startDateTime).toISOString(),
+        checkOutAt: endDateTime ? new Date(endDateTime).toISOString() : null,
+        actualInZoneMinutes: Number(editForm.durasiMenit),
+        status: editForm.status,
+        deskripsiKegiatan: editForm.deskripsiKegiatan,
+        clearJedaLogs: true,
+      });
+
+      toast.success("Presensi dan durasi jam pulang berhasil diperbarui!");
+      setEditItem(null);
+      fetchLaporan();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal menyimpan perubahan presensi");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleForceCheckout = async (item: LaporanItem) => {
+    if (!confirm(`Selesaikan sesi presensi untuk mahasiswa ${item.namaMahasiswa}? Jam pulang dan durasi akan otomatis diselesaikan.`)) return;
+    try {
+      await api.post(`/kkn-attendance/${item.id}/force-checkout`, {
+        status: "HADIR_MEMENUHI",
+        actualInZoneMinutes: Math.max(240, item.durasiMenit || 240),
+        alasan: "Force check-out sesi lapangan oleh Admin/DPL",
+      });
+      toast.success(`Sesi presensi ${item.namaMahasiswa} berhasil diselesaikan!`);
+      fetchLaporan();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal force check-out");
+    }
+  };
+
+  const handleDeletePresensi = async () => {
+    if (!deleteItem) return;
+    try {
+      setIsDeleting(true);
+      await api.delete(`/kkn-attendance/${deleteItem.id}`);
+      toast.success("Data presensi berhasil dihapus");
+      setDeleteItem(null);
+      fetchLaporan();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || "Gagal menghapus presensi");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Compute period target hours dynamically
   const periodTargetHours = useMemo(() => {
@@ -1116,19 +1209,20 @@ export const LaporanPresensiPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-center">Status Kehadiran</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Deskripsi Kegiatan</th>
                   <th className="py-3.5 px-4 text-center">Foto Bukti</th>
+                  <th className="py-3.5 px-4 text-center min-w-[100px]">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                    <td colSpan={9} className="py-12 text-center text-slate-400">
                       <RefreshCw size={24} className="animate-spin text-emerald-600 mx-auto mb-2" />
                       <span>Memuat data log presensi detail...</span>
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12">
+                    <td colSpan={9} className="py-12">
                       <EmptyTableState
                         title="Tidak Ada Log Sesi Presensi"
                         description="Tidak ditemukan riwayat kehadiran dengan filter yang dipilih."
@@ -1297,6 +1391,37 @@ export const LaporanPresensiPage: React.FC = () => {
                             <span className="text-slate-400 text-xs italic">-</span>
                           )}
                         </td>
+
+                        {/* Aksi Manipulasi & Selesaikan */}
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {(isBerlangsung || isTerjeda) && (
+                              <button
+                                onClick={() => handleForceCheckout(item)}
+                                title="Selesaikan Sesi Terjeda / Lapangan"
+                                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 dark:text-emerald-300 rounded-lg text-xs font-bold transition border border-emerald-300 dark:border-emerald-700 cursor-pointer"
+                              >
+                                <CheckCircle2 size={13} />
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              title="Edit / Manipulasi Jam & Durasi Presensi"
+                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 dark:text-blue-300 rounded-lg text-xs font-bold transition border border-blue-300 dark:border-blue-700 cursor-pointer"
+                            >
+                              <Pencil size={13} />
+                            </button>
+
+                            <button
+                              onClick={() => setDeleteItem(item)}
+                              title="Hapus Presensi"
+                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 dark:text-rose-300 rounded-lg text-xs font-bold transition border border-rose-300 dark:border-rose-700 cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })
@@ -1410,8 +1535,198 @@ export const LaporanPresensiPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Edit / Manipulasi Presensi */}
+      {editItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-100 dark:bg-blue-950/60 rounded-xl text-blue-700 dark:text-blue-400">
+                  <SlidersHorizontal size={18} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    Edit &amp; Manipulasi Presensi
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {editItem.namaMahasiswa} ({editItem.nim})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditItem(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Tanggal Presensi
+                </label>
+                <input
+                  type="date"
+                  value={editForm.tanggal}
+                  onChange={(e) => setEditForm((f) => ({ ...f, tanggal: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Jam Masuk (Mulai)
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.jamMasuk}
+                    onChange={(e) => setEditForm((f) => ({ ...f, jamMasuk: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Jam Pulang (Selesai)
+                  </label>
+                  <input
+                    type="time"
+                    value={editForm.jamPulang}
+                    onChange={(e) => setEditForm((f) => ({ ...f, jamPulang: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Durasi (Menit)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={600}
+                    value={editForm.durasiMenit}
+                    onChange={(e) => setEditForm((f) => ({ ...f, durasiMenit: Number(e.target.value) }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    {Math.floor(editForm.durasiMenit / 60)} jam {editForm.durasiMenit % 60} menit
+                  </span>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Status Kehadiran
+                  </label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                  >
+                    <option value="HADIR_MEMENUHI">HADIR_MEMENUHI (Hadir &amp; Memenuhi)</option>
+                    <option value="HADIR_TIDAK_MEMENUHI">HADIR_TIDAK_MEMENUHI (Kurang Jam)</option>
+                    <option value="BERLANGSUNG">BERLANGSUNG (Sedang di Lapangan)</option>
+                    <option value="TERJEDA">TERJEDA</option>
+                    <option value="IZIN">IZIN (Disetujui)</option>
+                    <option value="SAKIT">SAKIT (Disetujui)</option>
+                    <option value="ALPA">ALPA (Tanpa Keterangan)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Deskripsi / Catatan Kegiatan
+                </label>
+                <textarea
+                  rows={3}
+                  value={editForm.deskripsiKegiatan}
+                  onChange={(e) => setEditForm((f) => ({ ...f, deskripsiKegiatan: e.target.value }))}
+                  placeholder="Deskripsi aktivitas kegiatan presensi..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setEditItem(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                disabled={isSavingEdit}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+              >
+                {isSavingEdit ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <Save size={14} />
+                )}
+                <span>Simpan Perubahan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Presensi */}
+      {deleteItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-rose-100 dark:bg-rose-950/60 rounded-2xl text-rose-600 dark:text-rose-400">
+                <Trash2 size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  Hapus Data Presensi?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Tindakan ini permanen dan tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 mb-4">
+              Presensi milik <span className="font-bold text-slate-900 dark:text-white">{deleteItem.namaMahasiswa}</span> pada tanggal{" "}
+              <span className="font-bold text-slate-900 dark:text-white">{deleteItem.tanggal}</span> ({deleteItem.jamMasuk} - {deleteItem.jamPulang}) akan dihapus dari sistem.
+            </p>
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeleteItem(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletePresensi}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                <span>Ya, Hapus Presensi</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default LaporanPresensiPage;
+

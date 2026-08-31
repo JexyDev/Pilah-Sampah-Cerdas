@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 interface KelompokItem {
   id: number;
@@ -70,7 +71,7 @@ export const TaskforceDashboardPage: React.FC = () => {
       // 1. Fetch KKN Groups (limit=0 = semua kelompok)
       const resKelompok = await api.get("/kelompok?limit=0");
       const groupsData = resKelompok.data?.groups || resKelompok.data?.data || (Array.isArray(resKelompok.data) ? resKelompok.data : []);
-      const safeGroups = Array.isArray(groupsData) ? groupsData : [];
+      const safeGroups = Array.isArray(groupsData) ? sortKelompokList(groupsData, (k: any) => k.name) : [];
       setKelompokList(safeGroups);
 
       // 2. Fetch total mahasiswa KKN dari DB (bukan dari kelompok list)

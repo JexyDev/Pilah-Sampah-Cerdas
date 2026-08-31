@@ -435,4 +435,43 @@ router.get(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// CRUD & MANIPULASI PRESENSI MAHASISWA (Admin, DPL, Super User, Developer)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+router.post(
+  ["/manual", "/kkn/attendance/manual", "/admin/manual"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.createAttendanceManual
+);
+
+router.get(
+  ["/:id", "/kkn/attendance/:id"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN"]),
+  kknAttendanceController.getAttendanceById
+);
+
+router.put(
+  ["/:id", "/kkn/attendance/:id", "/admin/:id"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.updateAttendanceAdmin
+);
+
+router.delete(
+  ["/:id", "/kkn/attendance/:id", "/admin/:id"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.deleteAttendanceAdmin
+);
+
+router.post(
+  ["/:id/force-checkout", "/kkn/attendance/:id/force-checkout", "/admin/:id/force-checkout"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DLH_ADMIN", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.forceCheckoutAttendance
+);
+
 export default router;

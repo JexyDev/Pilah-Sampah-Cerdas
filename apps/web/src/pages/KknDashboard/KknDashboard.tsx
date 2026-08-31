@@ -110,13 +110,8 @@ const createWargaMarkerIcon = (compliance: number) => {
   });
 };
 
-const KknDashboard: React.FC = () => {
+const KknDashboardContent: React.FC = () => {
   const { user } = useAuthStore();
-
-  // If logged in as Mahasiswa KKN, render the dedicated mobile experience
-  if (user?.peran === "MAHASISWA_KKN") {
-    return <MahasiswaMobileApp />;
-  }
 
   const [stats, setStats] = useState<any>(null);
   const [wargaList, setWargaList] = useState<any[]>([]);
@@ -1335,6 +1330,17 @@ const KknDashboard: React.FC = () => {
       )}
     </div>
   );
+};
+
+const KknDashboard: React.FC = () => {
+  const { user } = useAuthStore();
+
+  // If logged in as Mahasiswa KKN, render the dedicated mobile experience
+  if (user?.peran === "MAHASISWA_KKN") {
+    return <MahasiswaMobileApp />;
+  }
+
+  return <KknDashboardContent />;
 };
 
 export default KknDashboard;
