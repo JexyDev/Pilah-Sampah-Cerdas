@@ -144,6 +144,64 @@ export function calculateLiveInZoneMinutes(att: {
   return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
 }
 
+/**
+ * Helper: Calculate live in-zone SECONDS with per-second precision.
+ * Digunakan untuk response ping ke mobile agar timer mobile bisa sync
+ * per detik, bukan loncat per 60 detik akibat pembulatan menit.
+ *
+ * Logika sama dengan calculateLiveInZoneMinutes tapi resolusi detik penuh.
+ * Tetap menghormati jedaLogs dan daily cap (8 jam = 28800 detik).
+ */
+export function calculateLiveInZoneSeconds(att: {
+  attendedAt: Date | string;
+  actualInZoneMinutes?: number | null;
+  jedaLogs?: any;
+  status?: string;
+}): number {
+  const storedMins = Math.max(0, att.actualInZoneMinutes ?? 0);
+  const storedSecs = storedMins * 60;
+  if (!att.attendedAt) return storedSecs;
+
+  const MAX_DAILY_SECONDS_CAP = 480 * 60; // 8 jam
+
+  const attendedDate = new Date(att.attendedAt);
+  const now = new Date();
+
+  // Cek apakah sesi dari hari sebelumnya (WIB +7)
+  const attendedWibDay = new Date(attendedDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const isPastDay = attendedWibDay < nowWibDay;
+
+  if (isPastDay || att.status === "TERJEDA") {
+    return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+  }
+
+  const jedaLogsArray = (att.jedaLogs as any[]) || [];
+  if (jedaLogsArray.length === 0) {
+    // Presisi detik penuh — tidak ada Math.floor ke menit
+    const elapsedSecs = Math.floor((now.getTime() - attendedDate.getTime()) / 1000);
+    const computed = Math.max(storedSecs, elapsedSecs);
+    return Math.min(computed, MAX_DAILY_SECONDS_CAP);
+  }
+
+  const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
+  if (!lastLog) return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+
+  if (lastLog.waktuResume) {
+    const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
+    const baseSecs = (Number(lastLog.durasiSebelumResumeMenit) || storedMins) * 60;
+    const elapsedSinceResumeSecs = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 1000));
+    return Math.min(Math.max(storedSecs, baseSecs + elapsedSinceResumeSecs), MAX_DAILY_SECONDS_CAP);
+  }
+
+  if (lastLog.waktuJeda) {
+    const baseSecs = (Number(lastLog.durasiSebelumJedaMenit) || storedMins) * 60;
+    return Math.min(Math.max(storedSecs, baseSecs), MAX_DAILY_SECONDS_CAP);
+  }
+
+  return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+}
+
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
@@ -610,7 +668,9 @@ export class KknAttendanceService {
         currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
         attendanceStatus,
         inZoneMinutes,
-        actualInZoneSeconds: inZoneMinutes * 60,
+        // Gunakan nilai detik presisi (bukan menit bulat × 60) agar mobile bisa
+        // sync timer per detik tanpa loncat setiap 60 detik
+        actualInZoneSeconds: activeActualInZoneSeconds > 0 ? activeActualInZoneSeconds : inZoneMinutes * 60,
         actualInZoneMinutes: inZoneMinutes,
         autoAttendanceTriggered,
         poskoArea: null,
@@ -959,7 +1019,9 @@ export class KknAttendanceService {
             });
           }
 
-          activeActualInZoneSeconds = durationInZone * 60;
+          activeActualInZoneSeconds = (isCurrInside && currentAttStatus === "BERLANGSUNG")
+            ? calculateLiveInZoneSeconds(existingAtt)
+            : durationInZone * 60;
           inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
         }
 
@@ -2721,7 +2783,8 @@ export class KknAttendanceService {
       const att = sch.attendances?.[0];
       if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
         actualInZoneMinutes = calculateLiveInZoneMinutes(att);
-        actualInZoneSeconds = actualInZoneMinutes * 60;
+        // Gunakan presisi detik agar mobile tidak loncat tiap 60 detik
+        actualInZoneSeconds = calculateLiveInZoneSeconds(att);
       } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR_MEMENUHI" || att.status === "HADIR_TIDAK_MEMENUHI")) {
         // Sesi terjeda / selesai — gunakan nilai tersimpan di DB secara pasti tanpa penambahan elapsed time
         actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
