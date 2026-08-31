@@ -664,6 +664,14 @@ router.post(
   kknController.createLogbookPemanfaatan
 );
 
+router.put(
+  "/pemanfaatan-sampah/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  kknController.updateLogbookPemanfaatan
+);
+
 router.get(
   "/pemanfaatan-sampah/unharvested",
   authMiddleware,
@@ -677,6 +685,14 @@ router.post(
   roleMiddleware(["MAHASISWA_KKN"]),
   upload.single("filePdf"),
   kknController.createProgramKerja
+);
+
+router.put(
+  "/program-kerja/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  upload.single("filePdf"),
+  kknController.updateProgramKerja
 );
 
 router.get(

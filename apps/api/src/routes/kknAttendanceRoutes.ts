@@ -199,7 +199,7 @@ router.get(
 router.get(
   ["/laporan-rekap", "/kkn/attendance/laporan-rekap", "/laporan-presensi"],
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   kknAttendanceController.getLaporanPresensi
 );
 

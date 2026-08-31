@@ -700,7 +700,11 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.success).toBe(true);
       expect(updatedData.actualInZoneMinutes).toBe(20);
       expect(result.data.actualInZoneMinutes).toBe(20);
-      expect(result.data.actualInZoneSeconds).toBe(20 * 60);
+      // actualInZoneSeconds sekarang presisi detik dari calculateLiveInZoneSeconds(),
+      // bukan lagi menit * 60. Nilai sekitar 1200 detik (20 menit) dengan toleransi
+      // beberapa detik untuk waktu eksekusi test.
+      expect(result.data.actualInZoneSeconds).toBeGreaterThanOrEqual(20 * 60);
+      expect(result.data.actualInZoneSeconds).toBeLessThan(20 * 60 + 30);
       expect(result.data.inZoneMinutes).toBe(20);
     });
   });

@@ -668,6 +668,35 @@ export class KknController {
     }
   }
 
+  async updateProgramKerja(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const payload = { ...req.body };
+      if (req.file) {
+        const fileUrl = `/uploads/${req.file.filename}`;
+        payload.attachmentFile = fileUrl;
+        payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
+        payload.attachmentUrls = [fileUrl];
+      }
+      const data = await prisma.programKerjaKkn.update({
+        where: { id },
+        data: {
+          ...(payload.judul && { judul: payload.judul }),
+          ...(payload.deskripsi && { deskripsi: payload.deskripsi }),
+          ...(payload.tujuan && { tujuan: payload.tujuan }),
+          ...(payload.targetSasaran && { targetSasaran: payload.targetSasaran }),
+          ...(payload.status && { status: payload.status }),
+          ...(payload.attachmentFile && { attachmentFile: payload.attachmentFile }),
+          ...(payload.linkGoogleDrive && { linkGoogleDrive: payload.linkGoogleDrive }),
+        },
+      });
+      res.status(200).json({ success: true, message: "Program Kerja berhasil diperbarui.", data });
+    } catch (error: any) {
+      console.error("[KknController] updateProgramKerja error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async getProgramKerja(req: Request, res: Response) {
     try {
       const targetGroupId = (req.query.groupId || req.query.kelompokId) as string | undefined;
@@ -746,6 +775,52 @@ export class KknController {
       res.status(201).json({ success: true, message: "Aksi Pemanfaatan berhasil dicatat.", data });
     } catch (error: any) {
       console.error("[KknController] createLogbookPemanfaatan error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async updateLogbookPemanfaatan(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl ||
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
+      }
+
+      const payload = { ...req.body };
+      if (fotoDokumentasiUrl) {
+        payload.fotoDokumentasiUrl = fotoDokumentasiUrl;
+      }
+
+      const data = await prisma.pemanfaatan.update({
+        where: { id },
+        data: {
+          ...(payload.program && { program: payload.program }),
+          ...(payload.teknologi && { teknologi: payload.teknologi }),
+          ...(payload.bahanBaku && { bahanBaku: payload.bahanBaku }),
+          ...(payload.volumeBahanBaku !== undefined && { volumeBahanBaku: Number(payload.volumeBahanBaku) }),
+          ...(payload.unitBahanBaku && { unitBahanBaku: payload.unitBahanBaku }),
+          ...(payload.hasil !== undefined && { hasil: Number(payload.hasil) }),
+          ...(payload.unitHasil && { unitHasil: payload.unitHasil }),
+          ...(payload.fotoDokumentasiUrl && { fotoDokumentasiUrl: payload.fotoDokumentasiUrl }),
+          ...(payload.status && { status: payload.status }),
+          ...(payload.jenisKomoditas && { jenisKomoditas: payload.jenisKomoditas }),
+        },
+      });
+
+      res.status(200).json({ success: true, message: "Aksi Pemanfaatan berhasil diperbarui.", data });
+    } catch (error: any) {
+      console.error("[KknController] updateLogbookPemanfaatan error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
