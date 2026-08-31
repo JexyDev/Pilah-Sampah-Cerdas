@@ -766,7 +766,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2"
                 >
                   <Download size={14} />
-                  Download CSV
+                  Download XLSX
                 </button>
               </div>
             </div>

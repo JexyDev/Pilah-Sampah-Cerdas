@@ -908,7 +908,7 @@ export const ProgramKerjaKkn: React.FC = () => {
             className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
           >
             <Download size={14} className="text-emerald-600" />
-            Ekspor CSV
+            Ekspor XLSX
           </button>
           {canModifyProker && (
             <button

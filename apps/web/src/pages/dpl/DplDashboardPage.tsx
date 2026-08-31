@@ -1111,7 +1111,7 @@ export const DplDashboardPage: React.FC = () => {
                 title={`Ekspor ${filteredApprovalHistory.length} data riwayat izin/sakit ke format CSV`}
               >
                 <Download size={14} />
-                <span>Ekspor CSV</span>
+                <span>Ekspor XLSX</span>
                 <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
                   {filteredApprovalHistory.length}
                 </span>

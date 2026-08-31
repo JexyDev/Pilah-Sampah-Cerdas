@@ -1018,7 +1018,7 @@ export const RwFacilityInput: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-100 transition-all self-start sm:self-auto"
               >
                 <FileSpreadsheet size={14} />
-                <span>Ekspor CSV</span>
+                <span>Ekspor XLSX</span>
               </button>
             </div>
 

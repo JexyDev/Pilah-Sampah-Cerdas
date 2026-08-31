@@ -139,7 +139,7 @@ const MasterWilayah: React.FC = () => {
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <Download size={14} className="text-slate-500" />
-                <span>Ekspor CSV</span>
+                <span>Ekspor XLSX</span>
               </button>
               <button
                 onClick={() => toast.error("Penambahan wilayah administratif dikelola terpusat oleh Administrator Kota.")}

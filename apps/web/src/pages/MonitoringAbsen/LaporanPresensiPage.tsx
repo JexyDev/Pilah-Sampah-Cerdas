@@ -897,11 +897,18 @@ export const LaporanPresensiPage: React.FC = () => {
             <button
               type="button"
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition cursor-pointer active:scale-95"
-              title={activeTab === "REKAP_MAHASISWA" ? "Ekspor Rekap Akumulasi Mahasiswa ke CSV" : "Ekspor Log Detail ke CSV"}
+              disabled={datePreset === "ALL" && !startDate && !endDate}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white shadow-2xs transition cursor-pointer active:scale-95"
+              title={
+                datePreset === "ALL" && !startDate && !endDate
+                  ? "Pilih filter tanggal terlebih dahulu sebelum ekspor"
+                  : activeTab === "REKAP_MAHASISWA"
+                  ? "Ekspor Rekap Akumulasi Mahasiswa ke XLSX"
+                  : "Ekspor Log Detail ke XLSX"
+              }
             >
               <Download size={14} />
-              <span>Ekspor CSV {activeTab === "REKAP_MAHASISWA" ? "Rekapitulasi" : "Log Detail"}</span>
+              <span>Ekspor XLSX {activeTab === "REKAP_MAHASISWA" ? "Rekapitulasi" : "Log Detail"}</span>
             </button>
           </div>
         </div>
