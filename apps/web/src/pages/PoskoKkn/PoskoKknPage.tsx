@@ -240,21 +240,43 @@ export const PoskoKknPage: React.FC = () => {
 
   useEffect(() => {
     fetchPoskoList();
-    if (isDeveloperOrAdmin || isDpl) {
-      fetchKelompokList();
-    }
-  }, [fetchPoskoList, fetchKelompokList, isDeveloperOrAdmin, isDpl]);
+    fetchKelompokList();
+  }, [fetchPoskoList, fetchKelompokList]);
 
-  // Metrik Penghitungan Posko
+  // Metrik Penghitungan Posko Terpadu (Sinkron dengan Inspeksi Geofence Zona KKN)
   const metrics = useMemo(() => {
-    const total = items.length;
+    const totalPosko = items.length;
+    const totalKelompok = Math.max(kelompokList.length, items.length);
     const verified = items.filter((i) => i.statusApproval === "APPROVED").length;
-    const totalMahasiswa = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
-    const dplSet = new Set(items.map((i) => i.dplName).filter((d) => d && !d.includes("Belum")));
+
+    // Total Mahasiswa KKN riil se-Coblong
+    let totalMahasiswa = 0;
+    if (kelompokList.length > 0) {
+      totalMahasiswa = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
+    }
+    if (totalMahasiswa === 0) {
+      totalMahasiswa = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
+    }
+
+    const dplSet = new Set<string>();
+    items.forEach((i) => {
+      if (i.dplName && !i.dplName.includes("Belum")) dplSet.add(i.dplName.trim());
+    });
+    kelompokList.forEach((k) => {
+      if (k.dpl?.name && !k.dpl.name.includes("Belum")) dplSet.add(k.dpl.name.trim());
+      else if (k.dplNamaMentah && !k.dplNamaMentah.includes("Belum")) dplSet.add(k.dplNamaMentah.trim());
+    });
     const totalDpl = dplSet.size;
 
-    return { total, verified, totalMahasiswa, totalDpl };
-  }, [items]);
+    return { totalPosko, totalKelompok, verified, totalMahasiswa, totalDpl };
+  }, [items, kelompokList]);
+
+  // Kelompok yang belum mendaftarkan titik Posko KKN
+  const groupsWithoutPosko = useMemo(() => {
+    if (!kelompokList.length) return [];
+    const registeredKelompokIds = new Set(items.map((i) => String(i.kelompokId || "")));
+    return kelompokList.filter((k) => !registeredKelompokIds.has(String(k.id)));
+  }, [kelompokList, items]);
 
   // Filtered Items
   const filteredItems = useMemo(() => {
@@ -1029,10 +1051,14 @@ export const PoskoKknPage: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                {metrics.total}
+                {metrics.totalPosko} {metrics.totalKelompok > metrics.totalPosko && (
+                  <span className="text-sm font-bold text-slate-400">/ {metrics.totalKelompok}</span>
+                )}
               </div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-                Pangkalan Basecamp Mahasiswa
+                {metrics.totalKelompok > metrics.totalPosko
+                  ? `${metrics.totalKelompok - metrics.totalPosko} Kelompok Belum Ada Posko`
+                  : "Pangkalan Basecamp Mahasiswa"}
               </p>
             </div>
           </div>
@@ -1049,7 +1075,7 @@ export const PoskoKknPage: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-                {metrics.verified} <span className="text-sm font-bold text-slate-400">/ {metrics.total}</span>
+                {metrics.verified} <span className="text-sm font-bold text-slate-400">/ {metrics.totalPosko}</span>
               </div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
                 Disetujui Wilayah Setempat
@@ -1098,6 +1124,28 @@ export const PoskoKknPage: React.FC = () => {
           </div>
 
         </div>
+
+        {/* Informasi Kelompok yang Belum Menentukan Titik Posko */}
+        {groupsWithoutPosko.length > 0 && (
+          <div className="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 font-black">
+                !
+              </span>
+              <div>
+                <span className="font-bold text-amber-900 dark:text-amber-200">
+                  {groupsWithoutPosko.length} Kelompok Belum Mendaftarkan Titik Posko:
+                </span>
+                <span className="text-amber-800 dark:text-amber-300 ml-1.5 font-medium">
+                  {groupsWithoutPosko.map((g) => g.name).join(", ")}
+                </span>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100/70 dark:bg-amber-900/50 px-2.5 py-1 rounded-lg shrink-0">
+              Memakai Titik Default Kelurahan
+            </span>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* 2. PETA SEBARAN POSKO KKN (LEAFLET GIS INTERAKTIF DENGAN POLIGON COBLONG) */}
