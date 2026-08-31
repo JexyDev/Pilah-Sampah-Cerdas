@@ -2160,13 +2160,21 @@ export class KknAttendanceService {
       let statusDisplay = att.status;
       let isMemenuhiDurasi = false;
 
-      const actualMins = att.actualInZoneMinutes ?? 0;
+      let actualMins = att.actualInZoneMinutes ?? 0;
+      if (att.status === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
+        actualMins = calculateLiveInZoneMinutes(att as any);
+      } else if (actualMins === 0 && att.attendedAt && att.checkOutAt) {
+        actualMins = Math.max(0, Math.floor((new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime()) / 60000));
+      }
+
       const percentRatio = durasiWajib > 0 ? Math.round((actualMins / durasiWajib) * 100) : 0;
+      const isDurMet = durasiWajib <= 0 || actualMins >= durasiWajib;
 
       if (att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT")) {
         currentStatus = "IZIN_DISETUJUI";
         status = String(att.status).toUpperCase().includes("SAKIT") ? "SAKIT" : "IZIN";
         statusDisplay = status === "SAKIT" ? "Sakit (Disetujui)" : "Izin (Disetujui)";
+        isMemenuhiDurasi = false;
       } else if (att.method === "OVERRIDE_DPL" || String(att.status).toUpperCase().includes("OVERRIDE") || att.status === "OVERRIDDEN_HADIR") {
         currentStatus = "OVERRIDDEN_HADIR";
         status = "HADIR_MEMENUHI";
@@ -2184,7 +2192,6 @@ export class KknAttendanceService {
           isMemenuhiDurasi = false;
         } else {
           // Legacy HADIR or SELESAI
-          const isDurMet = durasiWajib <= 0 || actualMins >= durasiWajib;
           status = isDurMet ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
           statusDisplay = isDurMet ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
           isMemenuhiDurasi = isDurMet;
@@ -2193,13 +2200,16 @@ export class KknAttendanceService {
         status = "BERLANGSUNG";
         currentStatus = "MASIH_DI_LOKASI";
         statusDisplay = "Sedang di Lapangan";
+        isMemenuhiDurasi = isDurMet;
       } else if (att.status === "TERJEDA") {
         status = "TERJEDA";
         currentStatus = "TERJEDA";
         statusDisplay = "Terjeda";
+        isMemenuhiDurasi = isDurMet;
       } else {
         status = att.status;
         statusDisplay = att.status;
+        isMemenuhiDurasi = isDurMet;
       }
 
       const isLeave = att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT");
@@ -2844,19 +2854,33 @@ export class KknAttendanceService {
         }
       }
 
+      // Hitung actualInZoneSeconds real-time dari record attendance
+      let actualInZoneSeconds = 0;
+      let actualInZoneMinutes = 0;
+      const att = sch.attendances?.[0];
+      if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
+        actualInZoneMinutes = calculateLiveInZoneMinutes(att);
+        actualInZoneSeconds = actualInZoneMinutes * 60;
+      } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR_MEMENUHI" || att.status === "HADIR_TIDAK_MEMENUHI")) {
+        actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
+        actualInZoneSeconds = actualInZoneMinutes * 60;
+      }
+
       // Status Kehadiran mahasiswa
       let statusKehadiran: string | null = null;
       let isMemenuhiDurasi = false;
+      const isMemenuhi = durasiWajibMenit <= 0 || actualInZoneMinutes >= durasiWajibMenit;
+
       if (approvedLeave) {
         statusKehadiran = approvedLeave.type.toUpperCase() === "SAKIT" ? "SAKIT" : "IZIN";
-      } else if (sch.attendances && sch.attendances.length > 0) {
-        const att = sch.attendances[0];
-        const actualMins = att.actualInZoneMinutes ?? 0;
-        const isMemenuhi = durasiWajibMenit <= 0 || actualMins >= durasiWajibMenit;
+        isMemenuhiDurasi = false;
+      } else if (att) {
         if (att.status === "ALPA") {
           statusKehadiran = "ALPA";
+          isMemenuhiDurasi = false;
         } else if (att.status === "TIDAK_ADA_KEGIATAN" || att.status === "SKIP_KEGIATAN") {
           statusKehadiran = "TIDAK_ADA_KEGIATAN";
+          isMemenuhiDurasi = false;
         } else if (att.status === "HADIR_MEMENUHI") {
           statusKehadiran = "HADIR_MEMENUHI";
           isMemenuhiDurasi = true;
@@ -2868,42 +2892,17 @@ export class KknAttendanceService {
           isMemenuhiDurasi = isMemenuhi;
         } else if (att.status === "BERLANGSUNG") {
           statusKehadiran = "BERLANGSUNG";
+          isMemenuhiDurasi = isMemenuhi;
         } else if (att.status === "TERJEDA") {
           statusKehadiran = "TERJEDA";
+          isMemenuhiDurasi = isMemenuhi;
         } else if (att.status === "DALAM_RADIUS" || att.status === "DI_ZONA") {
           statusKehadiran = "DI_ZONA";
+          isMemenuhiDurasi = isMemenuhi;
         }
       } else if (scheduleStatus === "SELESAI") {
         statusKehadiran = "ALPA";
-      }
-
-      const officialPosko = (sch.kelompok as any)?.poskoKkn;
-      const latNum = officialPosko?.latitude
-        ? Number(officialPosko.latitude)
-        : sch.latitude
-        ? Number(sch.latitude)
-        : -6.8906;
-      const lngNum = officialPosko?.longitude
-        ? Number(officialPosko.longitude)
-        : sch.longitude
-        ? Number(sch.longitude)
-        : 107.615;
-      const titleStr = officialPosko?.nama
-        ? `Kegiatan Harian ${officialPosko.nama}`
-        : sch.title;
-      const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
-
-      // Hitung actualInZoneSeconds real-time dari record attendance
-      let actualInZoneSeconds = 0;
-      let actualInZoneMinutes = 0;
-      const att = sch.attendances?.[0];
-      if (att && (att.status === "BERLANGSUNG" || att.status === "DALAM_RADIUS" || att.status === "DI_ZONA")) {
-        actualInZoneMinutes = calculateLiveInZoneMinutes(att);
-        actualInZoneSeconds = actualInZoneMinutes * 60;
-      } else if (att && (att.status === "TERJEDA" || att.status === "HADIR" || att.status === "SELESAI" || att.status === "SELESAI_TELAT" || att.status === "HADIR_MEMENUHI" || att.status === "HADIR_TIDAK_MEMENUHI")) {
-        // Sesi terjeda / selesai — gunakan nilai tersimpan di DB secara pasti tanpa penambahan elapsed time
-        actualInZoneMinutes = att.actualInZoneMinutes ?? 0;
-        actualInZoneSeconds = actualInZoneMinutes * 60;
+        isMemenuhiDurasi = false;
       }
 
       const statusDisplay = statusKehadiran === "HADIR_MEMENUHI"
@@ -4581,7 +4580,9 @@ export class KknAttendanceService {
       }
     }
 
-    const targetMinutes = 240;
+    const targetMinutes = existing.schedule
+      ? await getScheduleTargetDurationMinutes(existing.schedule)
+      : 240;
     const finalStatus = payload?.status || (finalMinutes >= targetMinutes ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI");
 
     const updated = await prisma.activityAttendance.update({

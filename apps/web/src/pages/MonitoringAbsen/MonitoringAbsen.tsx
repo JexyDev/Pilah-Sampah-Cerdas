@@ -1026,12 +1026,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }).length;
     const fulfilledTarget = attendance.filter((a) => {
       const st = String(a.status || "").toUpperCase();
+      const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
+      if (isIzinSakit) return false;
       if (st === "HADIR_MEMENUHI") return true;
       if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT") return false;
-      if (a.isMemenuhiDurasi !== undefined) return a.isMemenuhiDurasi;
-      if (!a.completedAt) return false;
-      const mins = calculateDurationMinutes(a.attendedAt, a.completedAt);
-      return mins >= scheduleTargetHours * 60;
+      const aAny = a as any;
+      const targetMins = (aAny.targetDurationMinutes && Number(aAny.targetDurationMinutes) > 0)
+        ? Number(aAny.targetDurationMinutes)
+        : (scheduleTargetHours * 60);
+      const storedMins = (aAny.actualInZoneMinutes !== null && aAny.actualInZoneMinutes !== undefined) ? Number(aAny.actualInZoneMinutes) : 0;
+      const liveMins = a.attendedAt ? calculateDurationMinutes(a.attendedAt, a.completedAt) : 0;
+      const durMins = storedMins > 0 ? storedMins : liveMins;
+      if (durMins >= targetMins && durMins > 0) return true;
+      if (a.isMemenuhiDurasi !== undefined) return Boolean(a.isMemenuhiDurasi);
+      return false;
     }).length;
 
     return { total, active, completed, izinSakit, notAttended, fulfilledTarget };
@@ -1556,10 +1564,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       } else if (statusUpper.includes("ALPA")) {
         statusStr = "Alpa";
       } else if (isAttended && !isFinished) {
-        statusStr = "Sedang di Lapangan";
+        const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
+        statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
         const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? rec.isMemenuhiDurasi
+          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
           : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
@@ -1632,17 +1641,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       } else if (statusUpper.includes("ALPA") || statusUpper.includes("ALPHA")) {
         statusStr = "Alpa";
       } else if (isAttended && !isFinished) {
-        statusStr = "Sedang di Lapangan";
+        const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
+        statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
         const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? rec.isMemenuhiDurasi
+          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
           : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
       const kelompokName = groups.find((g) => g.id === (recAny.groupId || rec.student?.groupId || selectedKelompokId))?.name || (selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId)?.name : "-");
       const kegiatanTitle = activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-");
-      const isTargetMet = durationMins >= (scheduleTargetHours * 60);
+      const isTargetMet = durationMins >= (scheduleTargetHours * 60) || Boolean(rec.isMemenuhiDurasi);
 
       return [
         index + 1,
@@ -1655,7 +1665,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
         durationMins,
         scheduleTargetHours,
-        `"${isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-"}"`,
+        `"${isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-"}"`,
       ].join(",");
     });
 
@@ -3593,13 +3603,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ? Number(recAny.targetRatioPercent)
                           : (targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0);
 
-                        const isMemenuhiDurasi = rec.isMemenuhiDurasi !== undefined
-                          ? rec.isMemenuhiDurasi
+                        const isMemenuhiDurasi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+                          ? false
+                          : rec.isMemenuhiDurasi !== undefined
+                          ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetZonaMins && durationMins > 0) || percentZona >= 100)
                           : (statusUpper === "HADIR_MEMENUHI"
                             ? true
                             : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
                             ? false
-                            : (durationMins >= targetZonaMins && (isHadir || isFinished)));
+                            : (durationMins >= targetZonaMins));
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
@@ -3803,7 +3815,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                               {/* 9. STATUS PEMENUHAN */}
                               <td className="py-4 px-4 text-center">
-                                {isMemenuhiDurasi ? (
+                                {isLeaveOrPending ? (
+                                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                    {isSakit ? "Sakit" : isIzin ? "Izin" : "Izin/Sakit"}
+                                  </span>
+                                ) : isBelumAdaJadwal || (!isAttended && !isBerlangsung && !isHadir && !isFinished) ? (
+                                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                    -
+                                  </span>
+                                ) : isMemenuhiDurasi ? (
                                   <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                     Memenuhi
                                   </span>
