@@ -4950,7 +4950,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={handleExportCSV}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={
+                    exportPeriod === "SEMUA" ||
+                    (exportPeriod === "CUSTOM" && (!exportStartDate || !exportEndDate))
+                  }
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  title={
+                    exportPeriod === "SEMUA"
+                      ? "Pilih periode terlebih dahulu"
+                      : exportPeriod === "CUSTOM" && (!exportStartDate || !exportEndDate)
+                      ? "Isi tanggal mulai dan selesai"
+                      : "Download XLSX"
+                  }
                 >
                   <Download size={14} />
                   Download XLSX
