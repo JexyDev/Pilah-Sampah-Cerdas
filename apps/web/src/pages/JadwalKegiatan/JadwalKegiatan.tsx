@@ -33,7 +33,7 @@ import {
 
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
+import { exportToXlsx } from "../../utils/exportXlsx";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
@@ -513,29 +513,21 @@ const JadwalKegiatan: React.FC = () => {
     ];
     const rows = timelineList.map((item, idx) => [
       idx + 1,
-      `"${(item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan").replace(/"/g, '""')}"`,
-      `"${item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)"}"`,
-      `"${(item.tahapMinggu || "").replace(/"/g, '""')}"`,
-      `"${(item.tanggal || "").replace(/"/g, '""')}"`,
-      `"${(item.fase || "").replace(/"/g, '""')}"`,
-      `"${(item.bidangKegiatan || "Tata Kelola & Koordinasi").replace(/"/g, '""')}"`,
-      `"${(item.kegiatanUtama || "").replace(/"/g, '""')}"`,
-      `"${(item.outputTarget || "").replace(/"/g, '""')}"`,
-      `"${(item.picKeterangan || "").replace(/"/g, '""')}"`,
-      `"${(item.linkGoogleDrive || "-").replace(/"/g, '""')}"`,
-      `"${item.statusPelaksanaan || "BELUM_DIMULAI"}"`,
+      item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan",
+      item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)",
+      item.tahapMinggu || "",
+      item.tanggal || "",
+      item.fase || "",
+      item.bidangKegiatan || "Tata Kelola & Koordinasi",
+      item.kegiatanUtama || "",
+      item.outputTarget || "",
+      item.picKeterangan || "",
+      item.linkGoogleDrive || "-",
+      item.statusPelaksanaan || "BELUM_DIMULAI",
     ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Timeline_KKN_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Tabel Timeline KKN berhasil diunduh (CSV)");
+    exportToXlsx(headers, rows, `Timeline_KKN_${new Date().toISOString().split("T")[0]}`, "Timeline KKN");
+    toast.success("Tabel Timeline KKN berhasil diunduh (XLSX)");
   };
 
 

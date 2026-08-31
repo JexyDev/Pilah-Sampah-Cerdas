@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { exportToXlsx } from "../../utils/exportXlsx";
 import { evaluasiDampakApiService } from "../../services/evaluasiDampakService";
 import type { BaselineData, EndlineData, KomparasiData } from "../../services/evaluasiDampakService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
@@ -131,29 +132,19 @@ export const EvaluasiDampakKkn: React.FC = () => {
       return;
     }
 
-    let csvContent = "";
     if (activeTab === "BASELINE" || activeTab === "ENDLINE") {
       const headers = [
-        "No",
-        "Kelurahan",
-        "Kecamatan",
-        "Tanggal Survei",
-        "Enumerator",
-        "Rumah Memilah",
-        "Total Rumah",
-        "Tingkat Pemilahan (%)",
-        "Volume Organik (kg/hari)",
-        "Volume Anorganik (kg/hari)",
-        "Volume Residu (kg/hari)",
-        "Total Volume (kg/hari)",
-        "Status Validasi",
+        "No", "Kelurahan", "Kecamatan", "Tanggal Survei", "Enumerator",
+        "Rumah Memilah", "Total Rumah", "Tingkat Pemilahan (%)",
+        "Volume Organik (kg/hari)", "Volume Anorganik (kg/hari)",
+        "Volume Residu (kg/hari)", "Total Volume (kg/hari)", "Status Validasi",
       ];
       const rows = filtered.map((item, idx) => [
         idx + 1,
-        `"${item.namaKelurahan || "-"}"`,
-        `"${item.kecamatan || "-"}"`,
-        `"${item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-"}"`,
-        `"${item.enumerator || "-"}"`,
+        item.namaKelurahan || "-",
+        item.kecamatan || "-",
+        item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-",
+        item.enumerator || "-",
         item.pemilahanSampah?.jumlahRumahMemilah ?? 0,
         item.pemilahanSampah?.totalJumlahRumahDiRw ?? 0,
         item.pemilahanSampah?.persentasePemilahan ?? 0,
@@ -161,42 +152,28 @@ export const EvaluasiDampakKkn: React.FC = () => {
         item.volumeSampah?.anorganikKgPerHari ?? 0,
         item.volumeSampah?.residuKgPerHari ?? 0,
         item.volumeSampah?.totalVolumeKgPerHari ?? 0,
-        `"${item.statusValidasi || "-"}"`,
+        item.statusValidasi || "-",
       ]);
-      csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      exportToXlsx(headers, rows, `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}`, activeTab);
     } else {
       const headers = [
-        "No",
-        "Kelurahan",
-        "Baseline Pemilahan (%)",
-        "Endline Pemilahan (%)",
-        "Delta Pemilahan (%)",
-        "Baseline Vol (kg/hari)",
-        "Endline Vol (kg/hari)",
-        "Reduksi Residu (kg/hari)",
-        "Status Dampak",
+        "No", "Kelurahan", "Baseline Pemilahan (%)", "Endline Pemilahan (%)",
+        "Delta Pemilahan (%)", "Baseline Vol (kg/hari)", "Endline Vol (kg/hari)",
+        "Reduksi Residu (kg/hari)", "Status Dampak",
       ];
       const rows = filtered.map((item, idx) => [
         idx + 1,
-        `"${item.namaKelurahan || "-"}"`,
+        item.namaKelurahan || "-",
         item.baseline?.persentasePemilahan ?? 0,
         item.endline?.persentasePemilahan ?? 0,
         item.delta?.persentasePemilahan ?? 0,
         item.baseline?.totalVolumeKgPerHari ?? 0,
         item.endline?.totalVolumeKgPerHari ?? 0,
         item.delta?.residuKgPerHari ?? 0,
-        `"${item.statusEvaluasi || "TERVERIFIKASI"}"`,
+        item.statusEvaluasi || "TERVERIFIKASI",
       ]);
-      csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      exportToXlsx(headers, rows, `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}`, "Komparasi");
     }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 
     setIsExportModalOpen(false);
     toast.success(`Data ${activeTab.toLowerCase()} berhasil diekspor!`);

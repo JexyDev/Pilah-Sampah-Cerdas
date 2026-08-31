@@ -37,6 +37,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { wsClient } from "../../utils/websocket";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 export interface LaporanItem {
   id: string;
@@ -433,35 +434,33 @@ export const LaporanPresensiPage: React.FC = () => {
         const percent = Number(((s.totalHours / (periodTargetHours || 1)) * 100).toFixed(1));
         return [
           idx + 1,
-          `"${s.nim}"`,
-          `"${s.namaMahasiswa}"`,
-          `"${s.isKetua ? "Ketua Kelompok" : "Anggota"}"`,
-          `"${s.jurusan}"`,
-          `"${s.kelompok?.name ?? "-"}"`,
-          `"${s.kelompok?.kelurahan ?? "-"}"`,
-          `"${s.kelompok?.dplName ?? "-"}"`,
+          s.nim,
+          s.namaMahasiswa,
+          s.isKetua ? "Ketua Kelompok" : "Anggota",
+          s.jurusan,
+          s.kelompok?.name ?? "-",
+          s.kelompok?.kelurahan ?? "-",
+          s.kelompok?.dplName ?? "-",
           s.totalSessions,
           s.totalMinutes,
           s.totalHours,
           periodTargetHours,
-          `"${percent}%"`,
+          `${percent}%`,
           s.avgMinutesPerDay,
-          `"${s.avgFormatted}"`,
+          s.avgFormatted,
           s.hadirMemenuhi,
           s.hadirKurang,
           s.izinSakit,
         ];
       });
 
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Rekap_Akumulasi_Mahasiswa_KKN_${periodLabel.replace(/[\s\(\)\.]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Berhasil mengunduh rekapitulasi akumulasi CSV.");
+      exportToXlsx(
+        headers,
+        rows,
+        `Rekap_Akumulasi_Mahasiswa_KKN_${periodLabel.replace(/[\s\(\)\.]+/g, "_")}_${new Date().toISOString().slice(0, 10)}`,
+        "Rekap Mahasiswa"
+      );
+      toast.success("Berhasil mengunduh rekapitulasi akumulasi XLSX.");
     } else {
       if (items.length === 0) {
         toast.error("Tidak ada data log sesi untuk diekspor.");
@@ -488,31 +487,29 @@ export const LaporanPresensiPage: React.FC = () => {
 
       const rows = items.map((it, idx) => [
         (page - 1) * limit + idx + 1,
-        `"${it.nim}"`,
-        `"${it.namaMahasiswa}"`,
-        `"${it.jurusan}"`,
-        `"${it.kelompok?.name ?? "-"}"`,
-        `"${it.kelompok?.kelurahan ?? "-"}"`,
-        `"${it.kelompok?.dplName ?? "-"}"`,
-        `"${it.tanggal}"`,
-        `"${it.jamMasuk}"`,
-        `"${it.jamPulang}"`,
+        it.nim,
+        it.namaMahasiswa,
+        it.jurusan,
+        it.kelompok?.name ?? "-",
+        it.kelompok?.kelurahan ?? "-",
+        it.kelompok?.dplName ?? "-",
+        it.tanggal,
+        it.jamMasuk,
+        it.jamPulang,
         it.durasiMenit,
-        `"${it.durasiFormatted}"`,
-        `"${it.statusDisplay}"`,
-        `"${(it.deskripsiKegiatan || "-").replace(/"/g, '""')}"`,
-        `"${it.fotoUrl || "-"}"`,
+        it.durasiFormatted,
+        it.statusDisplay,
+        it.deskripsiKegiatan || "-",
+        it.fotoUrl || "-",
       ]);
 
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Log_Detail_Presensi_KKN_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Berhasil mengunduh log detail presensi CSV.");
+      exportToXlsx(
+        headers,
+        rows,
+        `Log_Detail_Presensi_KKN_${new Date().toISOString().slice(0, 10)}`,
+        "Log Detail"
+      );
+      toast.success("Berhasil mengunduh log detail presensi XLSX.");
     }
   };
 

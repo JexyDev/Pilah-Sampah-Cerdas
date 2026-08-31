@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../services/api";
 import { toast } from "react-hot-toast";
+import { exportToXlsx } from "../../utils/exportXlsx";
 import {
   Loader2,
   Plus,
@@ -208,30 +209,22 @@ const ManajemenMahasiswa: React.FC = () => {
     }
 
     const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "Dosen Pendamping (DPL)", "Wilayah RT/RW", "Status"];
-    const csvRows = [headers.join(",")];
 
-    filteredMahasiswas.forEach((m) => {
+    const rows = filteredMahasiswas.map((m) => {
       const dplName = m.studentProfile?.kelompok?.dplName || m.studentProfile?.kelompok?.dpl?.name || m.studentProfile?.kelompok?.dplNamaMentah || "-";
-      const row = [
-        `"${m.name || ""}"`,
-        `"${m.studentProfile?.nim || ""}"`,
-        `"${m.studentProfile?.fakultas || "UNIKOM"}"`,
-        `"${m.phone || ""}"`,
-        `"${m.studentProfile?.kelompok?.name || "-"}"`,
-        `"${dplName}"`,
-        `"${m.rtRw?.name || "-"}"`,
-        `"${m.status || "Aktif"}"`,
+      return [
+        m.name || "",
+        m.studentProfile?.nim || "",
+        m.studentProfile?.fakultas || "UNIKOM",
+        m.phone || "",
+        m.studentProfile?.kelompok?.name || "-",
+        dplName,
+        m.rtRw?.name || "-",
+        m.status || "Aktif",
       ];
-      csvRows.push(row.join(","));
     });
 
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `data-mahasiswa-kkn-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportToXlsx(headers, rows, `data-mahasiswa-kkn-${new Date().toISOString().slice(0, 10)}`, "Mahasiswa KKN");
     toast.success(`Berhasil mengunduh ${filteredMahasiswas.length} data mahasiswa!`);
   };
 

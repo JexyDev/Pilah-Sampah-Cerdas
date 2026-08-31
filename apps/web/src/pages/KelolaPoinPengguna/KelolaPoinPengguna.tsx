@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 interface UserPointItem {
   id: string;
@@ -495,25 +496,18 @@ export const KelolaPoinPengguna: React.FC = () => {
     const headers = ["ID", "Nama", "Email", "Telepon", "Peran", "Wilayah", "Total Poin", "Jumlah Transaksi", "Terakhir Aktif"];
     const rows = users.map((u) => [
       u.id,
-      `"${u.name}"`,
-      `"${u.email || ""}"`,
-      `"${u.phone || ""}"`,
+      u.name,
+      u.email || "",
+      u.phone || "",
       u.role,
-      `"${u.rw ? `${u.rw}, ${u.kelurahan || ""}` : u.kelompok || ""}"`,
+      u.rw ? `${u.rw}, ${u.kelurahan || ""}` : u.kelompok || "",
       u.totalPoints,
       u.transactionCount,
-      `"${u.lastTransactionAt ? new Date(u.lastTransactionAt).toLocaleString("id-ID") : "-"}"`,
+      u.lastTransactionAt ? new Date(u.lastTransactionAt).toLocaleString("id-ID") : "-",
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Data_Poin_Pengguna_Berseka_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast.success("Data poin berhasil diekspor ke CSV!");
+    exportToXlsx(headers, rows, `Data_Poin_Pengguna_Berseka_${new Date().toISOString().slice(0, 10)}`, "Poin Pengguna");
+    showToast.success("Data poin berhasil diekspor ke XLSX!");
   };
 
   // Helper Badge Color

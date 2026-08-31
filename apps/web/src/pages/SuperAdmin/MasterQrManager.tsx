@@ -10,6 +10,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 interface BinQr {
   id: string;
@@ -289,27 +290,18 @@ export const MasterQrManager: React.FC = () => {
     }
     const headers = ["Kode QR", "Status", "Kategori", "Batch Asal", "Wilayah", "Pemegang Warga", "Email Pemegang", "Tanggal Dibuat"];
     const rows = qrs.map((q) => [
-      `"${q.qrCode}"`,
-      `"${q.status}"`,
-      `"${q.category?.name || "-"}"`,
-      `"${q.qrBatch?.batchCode || "-"}"`,
-      `"${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-"}"`,
-      `"${q.user?.name || "-"}"`,
-      `"${q.user?.email || "-"}"`,
-      `"${new Date(q.createdAt).toLocaleString("id-ID")}"`,
+      q.qrCode,
+      q.status,
+      q.category?.name || "-",
+      q.qrBatch?.batchCode || "-",
+      q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-",
+      q.user?.name || "-",
+      q.user?.email || "-",
+      new Date(q.createdAt).toLocaleString("id-ID"),
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("File CSV Master QR berhasil didownload!");
+    exportToXlsx(headers, rows, `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}`, "Master QR");
+    toast.success("File XLSX Master QR berhasil didownload!");
   };
 
   const handleInactivateQr = async (qrCode: string) => {

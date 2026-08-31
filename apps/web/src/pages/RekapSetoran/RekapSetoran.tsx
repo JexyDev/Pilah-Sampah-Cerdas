@@ -34,6 +34,7 @@ import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import PageHeader from "../../components/common/PageHeader";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 export default function RekapSetoran() {
   const [deposits, setDeposits] = useState<any[]>([]);
@@ -159,33 +160,21 @@ export default function RekapSetoran() {
     }
 
     const headers = ["ID", "Warga", "No. Telepon", "Rukun Warga", "Kelurahan", "Jenis Sampah", "Berat (Kg)", "Poin", "Waktu Setor", "Akurasi AI (%)", "Status"];
-    const csvRows = [headers.join(",")];
+    const rows = filteredDeposits.map((d) => [
+      d.id,
+      d.warga || "-",
+      d.phone || "-",
+      formatRukunWarga(d.rw || d.rtRw),
+      d.kelurahan || "Coblong",
+      d.jenis || "Organik",
+      d.berat || 0,
+      Math.round(d.poin || 0),
+      new Date(d.waktu).toLocaleString("id-ID"),
+      `${d.confidence || 95}%`,
+      d.status || "Selesai",
+    ]);
 
-    filteredDeposits.forEach((d) => {
-      const row = [
-        `"${d.id}"`,
-        `"${d.warga || "-"}"`,
-        `"${d.phone || "-"}"`,
-        `"${formatRukunWarga(d.rw || d.rtRw)}"`,
-        `"${d.kelurahan || "Coblong"}"`,
-        `"${d.jenis || "Organik"}"`,
-        d.berat || 0,
-        Math.round(d.poin || 0),
-        `"${new Date(d.waktu).toLocaleString("id-ID")}"`,
-        `${d.confidence || 95}%`,
-        `"${d.status || "Selesai"}"`,
-      ];
-      csvRows.push(row.join(","));
-    });
-
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rekapitulasi-setoran-sampah-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-
+    exportToXlsx(headers, rows, `rekapitulasi-setoran-sampah-${new Date().toISOString().slice(0, 10)}`, "Rekapitulasi Setoran");
     showToast.success(`Berhasil mengekspor ${filteredDeposits.length} data setoran!`);
   };
 

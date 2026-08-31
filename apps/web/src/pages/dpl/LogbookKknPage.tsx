@@ -34,7 +34,7 @@ import {
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import {
+import { exportToXlsx } from "../../utils/exportXlsx";import {
   logbookApiService,
   type LogbookMahasiswaItem,
 } from "../../services/logbookService";
@@ -470,27 +470,19 @@ export const LogbookKknPage: React.FC = () => {
       item.tanggalKegiatan,
       item.waktuMulai,
       item.waktuSelesai,
-      `"${(item.kelompokNama || "").replace(/"/g, '""')}"`,
-      `"${(item.penulisNama || "").replace(/"/g, '""')}"`,
+      item.kelompokNama || "",
+      item.penulisNama || "",
       item.penulisNim,
-      `"${resolveKategori(item)}"`,
-      `"${(item.tempat || "").replace(/"/g, '""')}"`,
-      `"${(item.deskripsi || "").replace(/"/g, '""')}"`,
+      resolveKategori(item),
+      item.tempat || "",
+      item.deskripsi || "",
       item.statusApproval,
-      `"${(item.catatanDpl || "").replace(/"/g, '""')}"`,
+      item.catatanDpl || "",
     ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
     const filenamePrefix = labelPrefix ? `Rekap_Logbook_${labelPrefix}` : "Rekap_Logbook_Mahasiswa";
-    link.setAttribute("download", `${filenamePrefix}_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`File CSV (${itemsToExport.length} data) berhasil diekspor`);
+    exportToXlsx(headers, rows, `${filenamePrefix}_${new Date().toISOString().split("T")[0]}`, "Logbook");
+    toast.success(`File XLSX (${itemsToExport.length} data) berhasil diekspor`);
   };
 
   // Render Status Badge

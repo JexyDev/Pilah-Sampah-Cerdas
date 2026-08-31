@@ -37,6 +37,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 interface AuditTrail {
   id: string;
@@ -377,22 +378,15 @@ export const AuditTrailList: React.FC = () => {
       setIsExporting(true);
       const headers = ["Waktu Kejadian", "Kode Aksi", "Nama Pengguna", "Peran", "Referensi ID", "Kategori"];
       const rows = filteredLogs.map((l) => [
-        `"${new Date(l.timestamp).toLocaleString("id-ID")}"`,
-        `"${l.action}"`,
-        `"${l.user?.name || "Sistem Otomatis"}"`,
-        `"${l.user?.role?.name || "-"}"`,
-        `"${l.referenceId || "-"}"`,
-        `"${getActionMeta(l.action).label}"`,
+        new Date(l.timestamp).toLocaleString("id-ID"),
+        l.action,
+        l.user?.name || "Sistem Otomatis",
+        l.user?.role?.name || "-",
+        l.referenceId || "-",
+        getActionMeta(l.action).label,
       ]);
 
-      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `BERSEKA_Log_Aktivitas_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      exportToXlsx(headers, rows, `BERSEKA_Log_Aktivitas_${new Date().toISOString().slice(0, 10)}`, "Log Aktivitas");
       toast.success("Laporan log aktivitas berhasil diekspor!");
     } catch {
       toast.error("Gagal mengekspor laporan");

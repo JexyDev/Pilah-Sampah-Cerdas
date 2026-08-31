@@ -12,6 +12,7 @@ import toast from "react-hot-toast";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 interface DiscrepancyLog {
   id: string;
@@ -222,15 +223,8 @@ export const ReviewDiscrepancy: React.FC = () => {
       l.weightKg,
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `laporan_diskrepansi_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Laporan diskrepansi berhasil di-export ke CSV!");
+    exportToXlsx(headers, rows, `laporan_diskrepansi_${new Date().toISOString().slice(0, 10)}`, "Diskrepansi");
+    toast.success("Laporan diskrepansi berhasil di-export ke XLSX!");
   };
 
 

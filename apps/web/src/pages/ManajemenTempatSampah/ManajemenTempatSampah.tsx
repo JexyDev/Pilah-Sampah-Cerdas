@@ -10,6 +10,7 @@ import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Ta
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import { exportToXlsx } from "../../utils/exportXlsx";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Pagination } from "../../components/common/Pagination";
@@ -651,25 +652,18 @@ const ManajemenTempatSampah: React.FC = () => {
     }
     const headers = ["ID", "Kode QR", "Kategori", "Status", "Kapasitas (L)", "Pemilik / Warga", "Wilayah RW", "Kelurahan", "Tanggal Aktivasi"];
     const rows = bins.map((b) => [
-      `"${b.id}"`,
-      `"${b.qrCode || b.kode || "-"}"`,
-      `"${b.category?.name || b.kategori || "-"}"`,
-      `"${b.status}"`,
+      b.id,
+      b.qrCode || b.kode || "-",
+      b.category?.name || b.kategori || "-",
+      b.status,
       b.kapasitasLiter || 50,
-      `"${b.user?.name || b.pemilik || "-"}"`,
-      `"${b.rw?.name || b.rwNama || "-"}"`,
-      `"${b.rw?.kelurahan?.name || b.kelurahanNama || "-"}"`,
-      `"${b.activatedAt ? new Date(b.activatedAt).toLocaleString("id-ID") : "-"}"`,
+      b.user?.name || b.pemilik || "-",
+      b.rw?.name || b.rwNama || "-",
+      b.rw?.kelurahan?.name || b.kelurahanNama || "-",
+      b.activatedAt ? new Date(b.activatedAt).toLocaleString("id-ID") : "-",
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Master_Tempat_Sampah_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToXlsx(headers, rows, `Master_Tempat_Sampah_${new Date().toISOString().slice(0, 10)}`, "Tempat Sampah");
     toast.success(`Berhasil mengekspor ${bins.length} tempat sampah!`);
   };
 

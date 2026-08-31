@@ -30,6 +30,7 @@ import {
   Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { exportToXlsx } from "../../utils/exportXlsx";
 import {
   dplService,
   type GroupSummary,
@@ -451,33 +452,24 @@ export const DplDashboardPage: React.FC = () => {
 
       return [
         index + 1,
-        `"${(log.studentName || "-").replace(/"/g, '""')}"`,
-        `"${log.type || "-"}"`,
-        `"${startDateFormatted}"`,
-        `"${endDateFormatted}"`,
-        `"${(log.reason || "-").replace(/"/g, '""')}"`,
-        `"${statusLabel}"`,
-        `"${reviewedAtFormatted}"`,
-        `"${(log.rejectionReason || "-").replace(/"/g, '""')}"`,
-      ].join(",");
+        log.studentName || "-",
+        log.type || "-",
+        startDateFormatted,
+        endDateFormatted,
+        log.reason || "-",
+        statusLabel,
+        reviewedAtFormatted,
+        log.rejectionReason || "-",
+      ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `Rekap_Riwayat_Absensi_Izin_Sakit_KKN_${new Date().toISOString().slice(0, 10)}.csv`
+    exportToXlsx(
+      headers,
+      rows,
+      `Rekap_Riwayat_Absensi_Izin_Sakit_KKN_${new Date().toISOString().slice(0, 10)}`,
+      "Riwayat Izin"
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(
-      `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor`
-    );
+    toast.success(`Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor`);
   };
 
   // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)

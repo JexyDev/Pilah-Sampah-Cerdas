@@ -36,6 +36,7 @@ import { dplService, type ProgramKerjaItem } from "../../services/dplService";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 // Google Drive Official Logo Icon Component
 const GoogleDriveIcon = () => (
@@ -727,51 +728,43 @@ export const ProgramKerjaKkn: React.FC = () => {
       if (isDeveloper) {
         return [
           p.nomor || idx + 1,
-          `"${formatIndonesianTimestamp(p.createdAt).full}"`,
-          `"${p.kelompokName || "-"}"`,
-          `"${p.kelurahan || "-"}"`,
-          `"${rwText}"`,
-          `"${p.dplName || "-"}"`,
-          `"${p.penginput?.nama || (p.sumber === "DPL" ? "DPL" : "Mahasiswa")}"`,
-          `"${p.penginput?.nim || "-"}"`,
-          `"${p.kategori || "Pemilahan"}"`,
-          `"${p.sumber || "Mahasiswa"}"`,
-          `"${(p.judul || "-").replace(/"/g, '""')}"`,
-          `"${p.deskripsi.replace(/"/g, '""')}"`,
-          `"${p.waktuPelaksanaan || "-"}"`,
+          formatIndonesianTimestamp(p.createdAt).full,
+          p.kelompokName || "-",
+          p.kelurahan || "-",
+          rwText,
+          p.dplName || "-",
+          p.penginput?.nama || (p.sumber === "DPL" ? "DPL" : "Mahasiswa"),
+          p.penginput?.nim || "-",
+          p.kategori || "Pemilahan",
+          p.sumber || "Mahasiswa",
+          p.judul || "-",
+          p.deskripsi,
+          p.waktuPelaksanaan || "-",
           p.kebutuhanBiaya,
-          `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
-          `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
-          `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
-          `"${p.linkGoogleDrive || "-"}"`,
+          normalizeStatusUsulan(p.statusUsulan, p.status),
+          normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status),
+          p.catatanDpl || "-",
+          p.linkGoogleDrive || "-",
         ];
       }
 
       return [
         p.nomor || idx + 1,
-        `"${p.kelompokName || "-"}"`,
-        `"${p.kategori || "Pemilahan"}"`,
-        `"${p.sumber || "Mahasiswa"}"`,
-        `"${p.deskripsi.replace(/"/g, '""')}"`,
-        `"${formatIndonesianTimestamp(p.createdAt).full}"`,
-        `"${p.waktuPelaksanaan || "-"}"`,
+        p.kelompokName || "-",
+        p.kategori || "Pemilahan",
+        p.sumber || "Mahasiswa",
+        p.deskripsi,
+        formatIndonesianTimestamp(p.createdAt).full,
+        p.waktuPelaksanaan || "-",
         p.kebutuhanBiaya,
-        `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
-        `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
-        `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
-        `"${p.linkGoogleDrive || "-"}"`,
+        normalizeStatusUsulan(p.statusUsulan, p.status),
+        normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status),
+        p.catatanDpl || "-",
+        p.linkGoogleDrive || "-",
       ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Program_Kerja_KKN_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    exportToXlsx(headers, rows, `Program_Kerja_KKN_${new Date().toISOString().slice(0, 10)}`, "Program Kerja");
   };
 
   const renderKategoriBadge = (kat?: string) => {

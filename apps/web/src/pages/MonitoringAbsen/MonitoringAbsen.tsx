@@ -63,6 +63,7 @@ import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
 import { wsClient } from "../../utils/websocket";
+import { exportToXlsx } from "../../utils/exportXlsx";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
@@ -1566,28 +1567,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       }
 
       return [
-        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
-        `"${rec.student?.studentProfile?.nim || "-"}"`,
-        `"${statusStr}"`,
-        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
-        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        rec.student?.name || "",
+        rec.student?.studentProfile?.nim || "-",
+        statusStr,
+        rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
+        rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
         durationMins,
-      ].join(",");
+      ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.csv`
+    exportToXlsx(
+      headers,
+      rows,
+      `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}`,
+      "Presensi KKN"
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
     setIsExportModalOpen(false);
     toast.success(
       `Laporan Presensi (${filtered.length} baris) berhasil diunduh`
@@ -1647,33 +1641,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       return [
         index + 1,
-        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
-        `"${rec.student?.studentProfile?.nim || "-"}"`,
-        `"${(kelompokName || "-").replace(/"/g, '""')}"`,
-        `"${(kegiatanTitle || "-").replace(/"/g, '""')}"`,
-        `"${statusStr}"`,
-        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
-        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        rec.student?.name || "",
+        rec.student?.studentProfile?.nim || "-",
+        kelompokName || "-",
+        kegiatanTitle || "-",
+        statusStr,
+        rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
+        rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
         durationMins,
         scheduleTargetHours,
-        `"${isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-"}"`,
-      ].join(",");
+        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-",
+      ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
     const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
-    link.setAttribute(
-      "download",
-      `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.csv`
+    exportToXlsx(
+      headers,
+      rows,
+      `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}`,
+      "Presensi"
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
     toast.success(
       `Data presensi (${filteredAttendance.length} baris) berhasil diekspor`
     );
