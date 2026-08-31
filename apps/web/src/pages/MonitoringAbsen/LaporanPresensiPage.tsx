@@ -309,9 +309,9 @@ export const LaporanPresensiPage: React.FC = () => {
     fetchLaporan();
   }, [fetchLaporan]);
 
-  // WebSocket Live Telemetry & Real-Time Auto Refresh for Developer
+  // WebSocket Live Telemetry & Real-Time Auto Refresh untuk Developer dan DPL
   useEffect(() => {
-    if (!isDeveloper) return;
+    if (!isDeveloper && !isDpl) return;
 
     const unsubStatus = wsClient.onStatusChange((status) => {
       setWsStatus(status);

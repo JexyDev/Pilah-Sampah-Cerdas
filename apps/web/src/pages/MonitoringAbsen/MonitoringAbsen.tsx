@@ -971,10 +971,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const m = Number(configTargets.attendanceMinDurationMinutes || 0);
     const s = Number(configTargets.attendanceMinDurationSeconds || 0);
     const totalH = (h * 3600 + m * 60 + s) / 3600;
-    if (totalH > 0) return Math.min(8, Math.max(4, totalH));
+    // Hapus clamp hardcoded Min 4 - Max 8 jam agar mengikuti konfigurasi admin
+    if (totalH > 0) return Math.min(24, totalH);
 
     const harian = Number(configTargets.targetHarianJam);
-    if (!isNaN(harian) && harian > 0) return Math.min(8, Math.max(4, harian));
+    if (!isNaN(harian) && harian > 0) return Math.min(24, harian);
 
     if (configTargets.targetTotalJam && configTargets.targetTotalHari && configTargets.targetTotalHari > 0) {
       const calculated = configTargets.targetTotalJam / configTargets.targetTotalHari;

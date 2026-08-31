@@ -2069,7 +2069,13 @@ export class KknAttendanceService {
       let statusDisplay = att.status;
       let isMemenuhiDurasi = false;
 
-      const actualMins = att.actualInZoneMinutes ?? 0;
+      const storedMins = att.actualInZoneMinutes ?? 0;
+      // Untuk sesi BERLANGSUNG, gunakan kalkulasi live dari server agar nilai
+      // tidak outdated (hanya nilai ping terakhir). Fallback ke storedMins jika
+      // sesi sudah selesai atau TERJEDA.
+      const actualMins = (att.status === "BERLANGSUNG")
+        ? calculateLiveInZoneMinutes(att)
+        : storedMins;
       const percentRatio = durasiWajib > 0 ? Math.round((actualMins / durasiWajib) * 100) : 0;
 
       if (att.method === "IZIN_DPL" || String(att.status).toUpperCase().includes("IZIN") || String(att.status).toUpperCase().includes("SAKIT")) {
