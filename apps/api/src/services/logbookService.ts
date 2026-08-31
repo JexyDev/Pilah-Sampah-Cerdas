@@ -115,6 +115,8 @@ export class LogbookService {
       search?: string;
       startDate?: string;
       endDate?: string;
+      page?: number;
+      limit?: number;
     }
   ) {
     const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole.toUpperCase());
@@ -180,8 +182,16 @@ export class LogbookService {
       ];
     }
 
+    const take = filters.limit && Number(filters.limit) > 0 ? Number(filters.limit) : undefined;
+    const skip =
+      take && filters.page && Number(filters.page) > 0
+        ? (Number(filters.page) - 1) * take
+        : undefined;
+
     const logbooks = await prisma.logbookKkn.findMany({
       where,
+      take,
+      skip,
       include: {
         penulis: {
           select: {
@@ -243,6 +253,8 @@ export class LogbookService {
             nama: true,
             jenis: true,
             alamat: true,
+            latitude: true,
+            longitude: true,
           },
         },
         disetujuiKetuaOleh: { select: { id: true, name: true } },
@@ -308,6 +320,8 @@ export class LogbookService {
             nama: item.fasilitas.nama,
             jenis: item.fasilitas.jenis,
             alamat: item.fasilitas.alamat,
+            latitude: item.fasilitas.latitude ? Number(item.fasilitas.latitude) : null,
+            longitude: item.fasilitas.longitude ? Number(item.fasilitas.longitude) : null,
           }
         : null,
       fasilitasNama: item.fasilitas?.nama || null,
@@ -1586,7 +1600,7 @@ export class LogbookService {
       where: { id: logbookId },
     });
 
-    return { success: true, message: "Logbook aktivitas berhasil dihapus" };
+    return { success: true, message: "Logbook aktivitas berhasil dihapus", data: { id: logbookId } };
   }
 
   /**

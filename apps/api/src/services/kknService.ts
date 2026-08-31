@@ -3041,13 +3041,47 @@ export class KknService {
   // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   async createProgramKerja(userId: string, payload: any) {
-    const student = await prisma.studentKkn.findUnique({
-      where: { userId },
-      include: { kelompok: { include: { dpl: true, students: { include: { user: true } } } }, user: true },
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: true,
+        studentProfile: {
+          include: {
+            kelompok: {
+              include: {
+                dpl: true,
+                students: { include: { user: true } },
+              },
+            },
+            user: true,
+          },
+        },
+      },
     });
-    if (!student || !student.kelompok) {
-      throw new Error("User belum terdaftar di kelompok KKN");
+    if (!user) {
+      throw new Error("User tidak ditemukan");
     }
+
+    const student = user.studentProfile;
+    const targetKelompokId = payload.kelompokId || student?.kelompokId;
+
+    if (!targetKelompokId) {
+      throw new Error("User belum terdaftar di kelompok KKN atau kelompokId belum ditentukan");
+    }
+
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: targetKelompokId },
+      include: {
+        dpl: true,
+        students: { include: { user: true } },
+      },
+    });
+    if (!kelompok) {
+      throw new Error("Kelompok KKN tidak ditemukan");
+    }
+
+    const targetStudentId = student?.id || kelompok.students[0]?.id || null;
+    const authorName = student?.user?.name || user.name || "Mahasiswa";
 
     const {
       judul,
@@ -3086,7 +3120,6 @@ export class KknService {
           execDate.getDate()
         );
         if (checkDateMidnight.getTime() < minDate.getTime()) {
-          // Hanya warning/log jika mendesak, tapi bila perlu tetap validasi
           console.warn("[Proker] Waktu pelaksanaan dekat dengan tanggal pengajuan.");
         }
       }
@@ -3108,7 +3141,7 @@ export class KknService {
 
     let finalJudul = judul.trim();
     if (finalKategori === "LAPORAN_AKHIR") {
-      finalJudul = `[${student.user?.name || "Mahasiswa"}] ${finalJudul}`;
+      finalJudul = `[${authorName}] ${finalJudul}`;
     }
     const cleanDesc = (deskripsi || "").trim();
     const combinedDeskripsi = cleanDesc.startsWith(`**${finalJudul}**`)
@@ -3118,14 +3151,14 @@ export class KknService {
     // Hitung nomor urut proker dalam kelompok
     const existingCount = await prisma.programKerjaKkn
       .count({
-        where: { kelompokId: student.kelompok.id },
+        where: { kelompokId: kelompok.id },
       })
       .catch(() => 0);
 
     const proker = await prisma.programKerjaKkn.create({
       data: {
-        kelompokId: student.kelompok.id,
-        studentId: student.id,
+        kelompokId: kelompok.id,
+        studentId: targetStudentId,
         nomor: existingCount + 1,
         kategori: finalKategori,
         deskripsi: combinedDeskripsi,
@@ -3143,13 +3176,13 @@ export class KknService {
     });
 
     // Notify DPL
-    if (student.kelompok?.dplId) {
+    if (kelompok.dplId) {
       await prisma.notification
         .create({
           data: {
-            userId: student.kelompok.dplId,
+            userId: kelompok.dplId,
             title: "Pengajuan Program Kerja Baru",
-            message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
+            message: `Mahasiswa ${authorName} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
             isRead: false,
           },
         })

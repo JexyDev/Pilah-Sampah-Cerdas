@@ -677,6 +677,7 @@ export class KknController {
 
   async createProgramKerja(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id || "";
       const payload = { ...req.body };
       const uploadedUrls = extractUploadedFileUrls(req);
       if (uploadedUrls.length > 0) {
@@ -690,7 +691,7 @@ export class KknController {
         payload.attachmentUrls = [fileUrl];
       }
 
-      const data = await kknService.createProgramKerja(req.user!.userId, payload);
+      const data = await kknService.createProgramKerja(userId, payload);
       
       try {
         const { notificationIntegrationService } = await import("../services/notificationIntegrationService.js");
@@ -699,14 +700,14 @@ export class KknController {
         
         await prisma.notification.create({
           data: {
-            userId: req.user!.userId,
+            userId,
             title,
             message,
             isRead: false,
           },
         }).catch(() => {});
 
-        const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (user?.fcmToken) {
           await notificationIntegrationService.sendPushNotification(user.fcmToken, title, message).catch(() => {});
         }
@@ -723,9 +724,10 @@ export class KknController {
 
   async getProgramKerja(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id || "";
       const targetGroupId = (req.query.groupId || req.query.kelompokId) as string | undefined;
       const { kategori, statusUsulan, statusPelaksanaan, search } = req.query;
-      const data = await kknService.getProgramKerja(req.user!.userId, targetGroupId, {
+      const data = await kknService.getProgramKerja(userId, targetGroupId, {
         kategori: kategori as string,
         statusUsulan: statusUsulan as string,
         statusPelaksanaan: statusPelaksanaan as string,
@@ -740,8 +742,9 @@ export class KknController {
 
   async getProgramKerjaById(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id || "";
       const { id } = req.params;
-      const data = await kknService.getProgramKerjaById(req.user!.userId, id);
+      const data = await kknService.getProgramKerjaById(userId, id);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getProgramKerjaById error:", error);
@@ -752,6 +755,7 @@ export class KknController {
 
   async updateProgramKerja(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id || "";
       const { id } = req.params;
       const payload = { ...req.body };
       const uploadedUrls = extractUploadedFileUrls(req);
@@ -765,7 +769,7 @@ export class KknController {
         payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
         payload.attachmentUrls = [fileUrl];
       }
-      const data = await kknService.updateProgramKerja(req.user!.userId, id, payload);
+      const data = await kknService.updateProgramKerja(userId, id, payload);
       res.status(200).json({ success: true, message: "Program Kerja berhasil diperbarui.", data });
     } catch (error: any) {
       console.error("[KknController] updateProgramKerja error:", error);
@@ -775,8 +779,9 @@ export class KknController {
 
   async deleteProgramKerja(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id || "";
       const { id } = req.params;
-      const result = await kknService.deleteProgramKerja(req.user!.userId, id);
+      const result = await kknService.deleteProgramKerja(userId, id);
       res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknController] deleteProgramKerja error:", error);

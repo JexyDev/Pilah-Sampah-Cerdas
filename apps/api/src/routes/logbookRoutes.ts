@@ -11,6 +11,7 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { uploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
 import { logbookController } from "../controllers/logbookController.js";
+import { kknController } from "../controllers/kknController.js";
 
 const router = Router();
 
@@ -146,6 +147,50 @@ router.patch(
   "/config/toleransi",
   roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
   logbookController.updateToleranceConfig
+);
+
+/**
+ * ─────────────────────────────────────────────
+ * ALIAS PROGRAM KERJA (PROKER) DI ROUTE LOGBOOK
+ * ─────────────────────────────────────────────
+ */
+router.get(
+  ["/program-kerja", "/proker"],
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  kknController.getProgramKerja
+);
+
+router.get(
+  ["/program-kerja/:id", "/proker/:id"],
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  kknController.getProgramKerjaById
+);
+
+router.post(
+  ["/program-kerja", "/proker"],
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  kknController.createProgramKerja
+);
+
+router.put(
+  ["/program-kerja/:id", "/proker/:id"],
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.patch(
+  ["/program-kerja/:id", "/proker/:id"],
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.delete(
+  ["/program-kerja/:id", "/proker/:id"],
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  kknController.deleteProgramKerja
 );
 
 export default router;

@@ -27,7 +27,7 @@ export const logbookController = {
     try {
       const userId = getUserId(req);
       const userRole = getUserRole(req);
-      const { groupId, pekanKe, statusApproval, tipeAktivitas, search, startDate, endDate } =
+      const { groupId, pekanKe, statusApproval, tipeAktivitas, search, startDate, endDate, page, limit } =
         req.query;
 
       const data = await logbookService.getMahasiswaLogbooks(userId, userRole, {
@@ -38,9 +38,12 @@ export const logbookController = {
         search: search as string,
         startDate: startDate as string,
         endDate: endDate as string,
+        page: page ? parseInt(page as string, 10) : undefined,
+        limit: limit ? parseInt(limit as string, 10) : undefined,
       });
 
-      res.status(200).json({ success: true, data });
+      const total = Array.isArray(data) ? data.length : 0;
+      res.status(200).json({ success: true, total, data });
     } catch (error: any) {
       console.error("[logbookController.getMahasiswaLogbooks] error:", error);
       res.status(500).json({ success: false, message: error.message || "Internal server error" });
