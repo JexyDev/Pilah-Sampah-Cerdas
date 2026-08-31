@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import { Router } from "express";
 import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
-import { logbookController } from "../controllers/logbookController.js";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage, upload } from "../middlewares/uploadMiddleware.js";
@@ -665,14 +664,6 @@ router.post(
   kknController.createLogbookPemanfaatan
 );
 
-router.put(
-  "/pemanfaatan-sampah/:id",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
-  uploadPemanfaatanImage,
-  kknController.updateLogbookPemanfaatan
-);
-
 router.get(
   "/pemanfaatan-sampah/unharvested",
   authMiddleware,
@@ -688,27 +679,11 @@ router.post(
   kknController.createProgramKerja
 );
 
-router.put(
-  "/program-kerja/:id",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
-  upload.single("filePdf"),
-  kknController.updateProgramKerja
-);
-
 router.get(
   "/program-kerja",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER"]),
   kknController.getProgramKerja
-);
-
-router.put(
-  "/logbook/:id",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
-  uploadPemanfaatanImage,
-  logbookController.updateMahasiswaLogbook
 );
 
 router.post(

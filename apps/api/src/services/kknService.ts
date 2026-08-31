@@ -3422,10 +3422,8 @@ export class KknService {
         where: { id },
         data: {
           deskripsi: payload.deskripsi || payload.uraianKegiatan || logbook.deskripsi,
-          kendala: payload.kendala !== undefined ? payload.kendala : logbook.kendala,
-          solusi: payload.solusi !== undefined ? payload.solusi : logbook.solusi,
-          statusKehadiran: payload.statusKehadiran || logbook.statusKehadiran,
-          fotoDokumentasiUrl: payload.fotoDokumentasiUrl || logbook.fotoDokumentasiUrl,
+          tempat: payload.tempat || logbook.tempat,
+          fotoBuktiUrl: payload.fotoDokumentasiUrl || payload.fotoBuktiUrl || logbook.fotoBuktiUrl,
         },
       });
     }
