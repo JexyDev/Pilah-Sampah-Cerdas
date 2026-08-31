@@ -5367,7 +5367,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const ratioPercent = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
                 ? Number(recAny.targetRatioPercent)
                 : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
-              const isMemenuhi = rec.isMemenuhiDurasi !== undefined ? Boolean(rec.isMemenuhiDurasi) : durationMins >= targetMins;
+              const isMemenuhi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+                ? false
+                : rec.isMemenuhiDurasi !== undefined
+                ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetMins && durationMins > 0) || ratioPercent >= 100)
+                : (durationMins >= targetMins || ratioPercent >= 100);
 
               const modalTargetKumulatif = configTargets.targetTotalJam || 200;
               const modalTargetKumulatifMins = modalTargetKumulatif * 60;
