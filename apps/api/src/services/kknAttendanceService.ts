@@ -3828,10 +3828,13 @@ export class KknAttendanceService {
 
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
-      let mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
+      const storedMinsAgg = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
 
+      let mins = storedMinsAgg;
       if (st === "BERLANGSUNG" && !r.checkOutAt && r.attendedAt) {
-        mins = calculateLiveInZoneMinutes(r as any);
+        // Prioritaskan DB, fallback live kalau DB masih 0
+        const liveMins = calculateLiveInZoneMinutes(r as any);
+        mins = storedMinsAgg > 0 ? storedMinsAgg : liveMins;
       } else if (mins === 0 && r.attendedAt && r.checkOutAt) {
         const diff = Math.floor((new Date(r.checkOutAt).getTime() - new Date(r.attendedAt).getTime()) / 60000);
         mins = Math.min(480, Math.max(0, diff));
@@ -3908,10 +3911,14 @@ export class KknAttendanceService {
 
     const items = records.map((att) => {
       const st = String(att.status || "").toUpperCase();
-      let actualMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      const storedMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
 
+      let actualMins = storedMins;
       if (st === "BERLANGSUNG" && !att.checkOutAt) {
-        actualMins = calculateLiveInZoneMinutes(att);
+        // Prioritaskan nilai DB (storedMins) yang sudah mencerminkan jeda/keluar zona.
+        // Fallback ke live kalkulasi hanya jika DB masih 0 (baru mulai, belum ada ping).
+        const liveMins = calculateLiveInZoneMinutes(att);
+        actualMins = storedMins > 0 ? storedMins : liveMins;
       } else if (actualMins === 0 && att.attendedAt && att.checkOutAt) {
         const diff = Math.floor((att.checkOutAt.getTime() - att.attendedAt.getTime()) / 60000);
         actualMins = Math.min(480, Math.max(0, diff));
