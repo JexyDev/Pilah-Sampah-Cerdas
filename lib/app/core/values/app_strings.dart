@@ -92,11 +92,11 @@ class AppStrings {
   static const String aktivasiSuccess = 'Tempat Sampah berhasil diaktivasi!';
 
   // --- Reset Tempat Sampah ---
-  static const String resetTitle = 'Ajukan Pengosongan Tempat Sampah';
+  static const String resetTitle = 'Pengosongan Tempat Sampah';
   static const String resetSubtitle =
       'Foto tempat sampah yang KOSONG (setelah diangkut) sebagai bukti';
-  static const String resetButton = 'Ajukan Reset';
-  static const String resetSuccess = 'Pengajuan pengosongan terkirim!';
+  static const String resetButton = 'Ajukan Pengosongan';
+  static const String resetSuccess = 'Pengosongan tempat sampah terkirim!';
   static const String resetPending = 'Menunggu persetujuan Petugas Pemilah';
 
   // --- Offline ---

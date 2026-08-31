@@ -26,7 +26,6 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   double _compressedKB = 0;
   final Set<String> _selectedBinIds = {};
 
-
   String _mapError(String code, String? message) {
     switch (code) {
       case 'BIN_NOT_CRITICAL':
@@ -58,7 +57,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal memilih foto: $e')),
         );
       }
@@ -88,7 +88,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     // Error listener
     ref.listen(resetBinProvider, (_, next) {
       if (next.errorCode != null && !next.isLoading) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_mapError(next.errorCode!, next.errorMessage)),
             backgroundColor: AppColors.dangerRed,
@@ -102,12 +103,12 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           if (mounted) {
             setState(() {
               _selectedBinIds.clear();
-              
             });
             ref.invalidate(binsProvider);
             ref.invalidate(notificationsProvider);
             NotificationEngine().showResetPendingNotification();
-            ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Pengosongan berhasil! Tempat sampah siap digunakan kembali.'),
                 backgroundColor: AppColors.primaryGreen,
@@ -193,10 +194,32 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       );
     }
 
-    // Removed auto selection so user is free to choose or not
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: AppDimensions.md),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primaryGreen.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Pengosongan dilakukan setelah sampah diangkut oleh petugas. Anda WAJIB memfoto tempat sampah yang sudah KOSONG sebagai bukti pengosongan.',
+                  style: TextStyle(fontSize: 12.5, color: AppColors.textPrimary, height: 1.4),
+                ),
+              ),
+            ],
+          ),
+        ),
         Text('Status Tempat Sampah', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: AppDimensions.sm),
         Expanded(
@@ -245,7 +268,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               return InkWell(
                 onTap: () {
                   if (!isBinActive) {
-                    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah ini dalam status NON-AKTIF dan tidak dapat dipilih.'),
                         duration: Duration(seconds: 2),
@@ -255,7 +279,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                   }
 
                   if (isPendingBin) {
-                    ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tempat sampah ini sedang dalam proses pengajuan (PENDING).'),
                         duration: Duration(seconds: 2),
@@ -372,12 +397,12 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                               !isBinActive
                                   ? 'Tempat Sampah Dinonaktifkan di Web — '
                                   : (isPendingBin
-                                      ? 'Pengajuan pengosongan sedang diproses — '
+                                      ? 'Pengosongan sedang diproses — '
                                       : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — '),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
                             Text(
-                              '${bin.currentVolumeL.toStringAsFixed(1)} L',
+                              '${bin.currentVolumeL.toStringAsFixed(1)} kg',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
                             ),
                             Text(
@@ -385,7 +410,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
                             Text(
-                              '${bin.maxCapacityL.toStringAsFixed(0)} L',
+                              '${bin.maxCapacityL.toStringAsFixed(0)} kg',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -452,11 +477,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
         ],
         
         (() {
-          
-          
           final bool isFotoEmpty = _evidencePhotoPath == null;
-          
-          
           final bool canSubmit = !isFotoEmpty && _selectedBinIds.isNotEmpty;
 
           return SizedBox(
@@ -464,7 +485,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             child: ElevatedButton(
               onPressed: isPending
                   ? () {
-                      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Sedang mengajukan pengosongan tempat sampah. Silakan tunggu hingga dikosongkan oleh petugas.'),
                           backgroundColor: AppColors.warningYellow,
@@ -475,7 +497,8 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                     }
                   : isFotoEmpty
                           ? () {
-                              ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+                              ScaffoldMessenger.of(context).clearSnackBars();
+                              ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Silakan upload foto bukti terlebih dahulu.'),
                                   backgroundColor: AppColors.dangerRed,

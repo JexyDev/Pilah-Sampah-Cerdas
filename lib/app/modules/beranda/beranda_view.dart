@@ -903,7 +903,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                         ),
                         const SizedBox(width: 8),
                         const Text(
-                          'Pengajuan',
+                          'Pengosongan',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 14,

@@ -720,8 +720,14 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
 
     // Cari info bin untuk progress
     final double newVol = result.newBinVolumeL;
-    const double maxVol = 25.0;
-    final double pct = (newVol / maxVol).clamp(0.0, 1.0);
+    final bins = ref.watch(binsProvider).asData?.value ?? [];
+    final aiResult = state.aiResult;
+    final activeBin = bins.firstWhere(
+      (b) => b.isActive && b.binType == aiResult?.detectedType,
+      orElse: () => bins.isEmpty ? const BinEntity(id: '', qrSerial: '', binType: WasteType.organic, currentVolumeL: 0, maxCapacityL: 25.0, lat: 0, lng: 0, householdName: '', rw: '', isActive: true) : bins.first,
+    );
+    final double maxVol = activeBin.maxCapacityL > 0 ? activeBin.maxCapacityL : 25.0;
+    final double pct = (maxVol > 0 ? newVol / maxVol : 0.0).clamp(0.0, 1.0);
 
     return Container(
       color: Colors.black54,
@@ -862,7 +868,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                             ),
                           ),
                           Text(
-                            '${newVol.toStringAsFixed(1)} L',
+                            '${newVol.toStringAsFixed(1)} kg',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -899,7 +905,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                                 ),
                               ),
                               Text(
-                                '${maxVol.toStringAsFixed(0)} L',
+                                '${maxVol.toStringAsFixed(0)} kg',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,

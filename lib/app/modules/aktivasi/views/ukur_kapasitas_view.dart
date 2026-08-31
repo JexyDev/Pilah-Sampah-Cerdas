@@ -360,7 +360,7 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
             DropdownButtonFormField<String>(
               initialValue: standardSize,
               decoration: InputDecoration(
-                labelText: 'Ukuran Kapasitas (Liter)',
+                labelText: 'Ukuran Kapasitas (kg)',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
