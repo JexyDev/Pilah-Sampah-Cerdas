@@ -1594,6 +1594,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
       return;
     }
+    if (!startDateFilter && !endDateFilter) {
+      toast.error("Isi filter tanggal terlebih dahulu sebelum mengekspor.");
+      return;
+    }
 
     const headers = [
       "No",
@@ -3446,8 +3450,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <button
               type="button"
               onClick={handleExportFilteredAttendanceCSV}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-              title={`Ekspor ${filteredAttendance.length} data presensi terfilter ke format CSV`}
+              disabled={!startDateFilter && !endDateFilter}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+              title={(!startDateFilter && !endDateFilter) ? "Isi filter tanggal terlebih dahulu untuk mengekspor" : `Ekspor ${filteredAttendance.length} data presensi terfilter ke XLSX`}
             >
               <Download size={14} />
               <span>Ekspor XLSX</span>
