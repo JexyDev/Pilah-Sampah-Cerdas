@@ -3207,8 +3207,10 @@ export class KknAttendanceService {
       attendanceId: attendance.id,
       attendanceStatus: attendance.status,
       statusKehadiran: attendance.status,
-      actualInZoneSeconds: 0,
-      actualInZoneMinutes: 0,
+      // Kembalikan durasi aktual yang sudah terakumulasi agar mobile tidak
+      // mulai dari 0 saat resume/mulai kegiatan yang sudah berjalan sebelumnya.
+      actualInZoneSeconds: calculateLiveInZoneSeconds(attendance),
+      actualInZoneMinutes: calculateLiveInZoneMinutes(attendance),
       gpsActive: true,
       statusGps: "ACTIVE",
     };
