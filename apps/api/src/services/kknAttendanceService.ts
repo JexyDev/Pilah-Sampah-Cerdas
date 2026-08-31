@@ -631,6 +631,41 @@ export class KknAttendanceService {
             });
           }
 
+          // [TAMBAHAN] Auto-Resume saat kembali ke zona (HANYA jika sebelumnya di-jeda otomatis)
+          if (isCurrInside && currentAttStatus === "TERJEDA") {
+            if (currentLogs.length > 0) {
+              const lastJeda = currentLogs[currentLogs.length - 1];
+              // Hanya lanjutkan otomatis jika yang menjeda adalah sistem (autoTriggered) 
+              // dan belum ada waktuResume-nya
+              if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
+                lastJeda.waktuResume = new Date().toISOString();
+                lastJeda.durasiSebelumResumeMenit = existingAtt.actualInZoneMinutes || 0;
+                currentAttStatus = "BERLANGSUNG";
+                
+                await prisma.activityAttendance.update({
+                  where: { id: existingAtt.id },
+                  data: {
+                    status: "BERLANGSUNG",
+                    jedaLogs: currentLogs,
+                  },
+                });
+                
+                existingAtt.status = "BERLANGSUNG";
+                existingAtt.jedaLogs = currentLogs as any;
+                
+                websocketService.broadcastStudentAttendance({
+                  id: existingAtt.id,
+                  studentId: existingAtt.studentId,
+                  scheduleId: existingAtt.scheduleId,
+                  status: "BERLANGSUNG",
+                  currentStatus: "DI_ZONA",
+                  attendedAt: existingAtt.attendedAt.toISOString(),
+                  actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+                });
+              }
+            }
+          }
+
 
           // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
           // [SSOT Backend]: Durasi mutlak hanya berasal dari kalkulasi internal backend
@@ -1021,6 +1056,41 @@ export class KknAttendanceService {
               attendedAt: existingAtt.attendedAt.toISOString(),
               actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
             });
+          }
+
+          // [TAMBAHAN] Auto-Resume saat kembali ke zona (HANYA jika sebelumnya di-jeda otomatis)
+          if (isCurrInside && currentAttStatus === "TERJEDA") {
+            if (currentLogs.length > 0) {
+              const lastJeda = currentLogs[currentLogs.length - 1];
+              // Hanya lanjutkan otomatis jika yang menjeda adalah sistem (autoTriggered) 
+              // dan belum ada waktuResume-nya
+              if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
+                lastJeda.waktuResume = new Date().toISOString();
+                lastJeda.durasiSebelumResumeMenit = existingAtt.actualInZoneMinutes || 0;
+                currentAttStatus = "BERLANGSUNG";
+
+                await prisma.activityAttendance.update({
+                  where: { id: existingAtt.id },
+                  data: {
+                    status: "BERLANGSUNG",
+                    jedaLogs: currentLogs,
+                  },
+                });
+
+                existingAtt.status = "BERLANGSUNG";
+                existingAtt.jedaLogs = currentLogs as any;
+
+                websocketService.broadcastStudentAttendance({
+                  id: existingAtt.id,
+                  studentId: existingAtt.studentId,
+                  scheduleId: existingAtt.scheduleId,
+                  status: "BERLANGSUNG",
+                  currentStatus: "DI_ZONA",
+                  attendedAt: existingAtt.attendedAt.toISOString(),
+                  actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+                });
+              }
+            }
           }
 
 

@@ -709,6 +709,167 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     });
   });
 
+  describe("Auto-Pause & Auto-Resume Geofence", () => {
+    const studentId = "mhs-autoresume-1";
+    const scheduleId = "sch-autoresume-1";
+
+    it("should auto-resume when student returns inside zone after auto-pause (autoTriggered: true)", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: studentId,
+        name: "Mahasiswa AutoResume",
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: studentId,
+        nim: "130121003",
+        jurusan: "Informatika",
+        kelompokId: "kel-1",
+      } as any);
+
+      vi.mocked(prisma.studentLocation.create).mockResolvedValue({
+        id: "loc-ar-1",
+        studentId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        recordedAt: new Date(),
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.schedule.findMany).mockResolvedValue([
+        {
+          id: scheduleId,
+          title: "Kegiatan Posko KKN",
+          date: new Date(),
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          time: "00:00 - 23:59",
+          isActive: true,
+        } as any,
+      ]);
+
+      const attendedAt = new Date(Date.now() - 30 * 60 * 1000);
+      const mockAtt = {
+        id: "att-ar-1",
+        studentId,
+        scheduleId,
+        status: "TERJEDA",
+        attendedAt,
+        actualInZoneMinutes: 10,
+        jedaLogs: [
+          {
+            alasan: "Keluar Zona Geofence (Otomatis)",
+            waktuJeda: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+            durasiSebelumJedaMenit: 10,
+            autoTriggered: true,
+          },
+        ],
+      };
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(mockAtt as any);
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        ...mockAtt,
+        status: "BERLANGSUNG",
+      } as any);
+
+      const updates: any[] = [];
+      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+        updates.push(data);
+        return {
+          ...mockAtt,
+          ...data,
+        } as any;
+      });
+
+      // Ping inside the geofence radius
+      const result = await service.pingLocation(studentId, -6.8915, 107.6107);
+
+      expect(result.success).toBe(true);
+      // Verify that status was updated to BERLANGSUNG and waktuResume was set
+      const resumeUpdate = updates.find((u) => u.status === "BERLANGSUNG");
+      expect(resumeUpdate).toBeDefined();
+      expect(resumeUpdate.jedaLogs[0].waktuResume).toBeDefined();
+      expect(mockAtt.status).toBe("BERLANGSUNG");
+    });
+
+    it("should NOT auto-resume when student is TERJEDA manually by user (autoTriggered: false/undefined)", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({
+        id: studentId,
+        name: "Mahasiswa ManualPause",
+        role: { name: "MAHASISWA_KKN" },
+      } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue({
+        userId: studentId,
+        nim: "130121003",
+        jurusan: "Informatika",
+        kelompokId: "kel-1",
+      } as any);
+
+      vi.mocked(prisma.studentLocation.create).mockResolvedValue({
+        id: "loc-ar-2",
+        studentId,
+        latitude: -6.8915,
+        longitude: 107.6107,
+        recordedAt: new Date(),
+      } as any);
+
+      vi.mocked(prisma.studentLocation.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.schedule.findMany).mockResolvedValue([
+        {
+          id: scheduleId,
+          title: "Kegiatan Posko KKN",
+          date: new Date(),
+          latitude: -6.8915,
+          longitude: 107.6107,
+          radius: 200,
+          time: "00:00 - 23:59",
+          isActive: true,
+        } as any,
+      ]);
+
+      const attendedAt = new Date(Date.now() - 30 * 60 * 1000);
+      const mockAtt = {
+        id: "att-ar-2",
+        studentId,
+        scheduleId,
+        status: "TERJEDA",
+        attendedAt,
+        actualInZoneMinutes: 10,
+        jedaLogs: [
+          {
+            alasan: "Istirahat Makan",
+            waktuJeda: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+            durasiSebelumJedaMenit: 10,
+            // manual pause does not have autoTriggered: true
+          },
+        ],
+      };
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(mockAtt as any);
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
+
+      const updates: any[] = [];
+      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+        updates.push(data);
+        return {
+          ...mockAtt,
+          ...data,
+        } as any;
+      });
+
+      // Ping inside the geofence radius
+      const result = await service.pingLocation(studentId, -6.8915, 107.6107);
+
+      expect(result.success).toBe(true);
+      // Status should remain TERJEDA
+      const resumeUpdate = updates.find((u) => u.status === "BERLANGSUNG");
+      expect(resumeUpdate).toBeUndefined();
+      expect(mockAtt.status).toBe("TERJEDA");
+    });
+  });
+
   describe("getKegiatanAktif", () => {
     it("should return only today's schedule and filter out yesterday finished schedule", async () => {
       const studentId = "student-test-active";
