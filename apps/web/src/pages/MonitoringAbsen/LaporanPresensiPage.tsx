@@ -1096,7 +1096,7 @@ export const LaporanPresensiPage: React.FC = () => {
                   <th className="py-3.5 px-4 min-w-[190px]">Mahasiswa &amp; NIM</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; DPL</th>
                   <th className="py-3.5 px-4">Tanggal &amp; Waktu</th>
-                  <th className="py-3.5 px-4 text-center">Durasi Aktual di Zona</th>
+                  <th className="py-3.5 px-4 text-center">Durasi Aktual / Target</th>
                   <th className="py-3.5 px-4 text-center">Status Kehadiran</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Deskripsi Kegiatan</th>
                   <th className="py-3.5 px-4 text-center">Foto Bukti</th>
@@ -1191,7 +1191,7 @@ export const LaporanPresensiPage: React.FC = () => {
                           </p>
                         </td>
 
-                        {/* Durasi Aktual di Zona */}
+                        {/* Durasi Aktual / Target */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1">
                             <span>{item.durasiFormatted}</span>
@@ -1199,8 +1199,8 @@ export const LaporanPresensiPage: React.FC = () => {
                               <span className="text-[10px] text-emerald-600 font-bold animate-pulse">(Live)</span>
                             )}
                           </div>
-                          <span className="text-[10px] text-slate-400">
-                            {item.durasiMenit} Menit di Zona
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                            / 4 Jam Target ({item.durasiMenit} mnt)
                           </span>
                         </td>
 

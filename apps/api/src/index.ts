@@ -260,7 +260,7 @@ app.post(
 app.get(
   ["/api/v1/laporan-rekap", "/api/laporan-rekap", "/api/v1/laporan-presensi", "/api/laporan-presensi"],
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]),
   kknAttendanceController.getLaporanPresensi
 );
 
