@@ -212,6 +212,15 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
           return;
         }
         
+        // [FIX DURASI] Selalu sync durasi dari backend jika data mengandung
+        // actualInZoneSeconds, terlepas dari ada/tidaknya activeScheduleId.
+        // Sebelumnya sync hanya terjadi di blok `else` (saat activeScheduleId ada),
+        // sehingga jika backend tidak mengembalikan field itu, timer mobile tidak
+        // pernah dikoreksi → selisih durasi mobile vs backend.
+        if (data.containsKey('actualInZoneSeconds') && data['actualInZoneSeconds'] != null) {
+          _ref.read(kknLocationProvider.notifier).syncWithPingData(data);
+        }
+
         // Hanya matikan jika server bilang tidak ada jadwal DAN state lokal juga BUKAN berlangsung
         if (!data.containsKey('activeScheduleId') || data['activeScheduleId'] == null) {
           final localStatus = _ref.read(kknLocationProvider).activeActivity?['attendanceStatus']
@@ -226,7 +235,7 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
           }
           // Jika lokal masih berlangsung, jangan matikan — biarkan ping berikutnya
         } else {
-          // Sinkronkan status Terjeda dan inZoneSeconds dengan backend
+          // Sinkronkan status dan inZoneSeconds dengan backend (termasuk status BERLANGSUNG/TERJEDA)
           _ref.read(kknLocationProvider.notifier).syncWithPingData(data);
         }
 

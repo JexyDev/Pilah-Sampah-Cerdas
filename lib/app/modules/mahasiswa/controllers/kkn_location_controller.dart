@@ -692,27 +692,58 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     final attendanceStatus =
         data['attendanceStatus']?.toString().toUpperCase() ?? '';
-    if (attendanceStatus == 'TERJEDA' || attendanceStatus == 'BERLANGSUNG') {
+
+    // [FIX DURASI] Sync durasi dari server SELALU jika actualInZoneSeconds tersedia,
+    // tidak bergantung pada nilai attendanceStatus. Sebelumnya sync hanya terjadi
+    // jika status tepat 'BERLANGSUNG' atau 'TERJEDA' — jika backend return format
+    // status berbeda (lowercase, null, atau field lain), durasi tidak pernah
+    // dikoreksi sehingga timer mobile bisa tertinggal jauh dari backend.
+    if (data['actualInZoneSeconds'] != null) {
+      final serverSecs = math.max(
+        0,
+        int.tryParse(data['actualInZoneSeconds'].toString()) ?? _accumulatedSeconds,
+      );
+
+      // Backend saat ini menghitung dalam satuan menit bulat (Math.floor) lalu × 60,
+      // sehingga nilai loncat per 60 detik (misal: 2460 → 2520 → 2580).
+      // Strategi: hanya koreksi jika server LEBIH BESAR dari lokal (mobile tertinggal),
+      // atau jika selisih terlalu jauh (>90 detik) yang menandakan mobile lari sendiri.
+      // Jika lokal sudah lebih maju dalam rentang wajar (<= 90 detik),
+      // biarkan timer lokal jalan smooth tanpa loncat/reset.
+      final diff = serverSecs - _accumulatedSeconds;
+      final shouldSync = diff > 0 || diff < -90;
+
+      if (shouldSync) {
+        // Ambil nilai terbesar antara server dan lokal untuk hindari mundur
+        final corrected = math.max(serverSecs, _accumulatedSeconds);
+        _accumulatedSeconds = corrected;
+        // Reset zoneEntryTime hanya jika koreksi signifikan agar timer detik
+        // tidak loncat saat server return nilai menit bulat berikutnya.
+        _zoneEntryTime = DateTime.now();
+        state = state.copyWith(inZoneDurationSeconds: corrected);
+
+        // Sync juga ke background service agar isolate background tidak hitung
+        // dari entry time lama dan kirim nilai yang jauh lebih besar ke backend.
+        if (_backgroundServiceStarted) {
+          FlutterForegroundTask.sendDataToTask({
+            'type': 'SYNC_DURATION',
+            'seconds': corrected,
+          });
+        }
+      }
+    }
+
+    // Update attendanceStatus di activeActivity jika status dikenal
+    final isKnownStatus =
+        attendanceStatus == 'TERJEDA' || attendanceStatus == 'BERLANGSUNG';
+    if (isKnownStatus) {
       final updatedActivity = Map<String, dynamic>.from(
         state.activeActivity ?? {},
       );
       updatedActivity['attendanceStatus'] = attendanceStatus;
       updatedActivity['statusKehadiran'] = attendanceStatus;
 
-      int serverSecs = _accumulatedSeconds;
-      if (data['actualInZoneSeconds'] != null) {
-        serverSecs =
-            int.tryParse(data['actualInZoneSeconds'].toString()) ?? serverSecs;
-      }
-
-      // Guard Minus (Kalkulasi Timer dengan Math.max)
-      serverSecs = math.max(0, serverSecs);
-      _accumulatedSeconds = serverSecs;
-
-      state = state.copyWith(
-        activeActivity: updatedActivity,
-        inZoneDurationSeconds: serverSecs,
-      );
+      state = state.copyWith(activeActivity: updatedActivity);
 
       if (attendanceStatus == 'TERJEDA') {
         _zoneEntryTime = null; // Prevent double addition from local difference
@@ -1630,7 +1661,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final pingData =
             (pingResponse['data'] as Map<String, dynamic>?) ?? pingResponse;
 
-        // Sinkronkan status Terjeda dan nilai inZoneSeconds dari server
+        // Debug: log nilai dari server untuk trace selisih durasi mobile vs backend
+        debugPrint('[KKN-PING] server actualInZoneSeconds=${pingData['actualInZoneSeconds']} '
+            '| local _accumulated=$_accumulatedSeconds '
+            '| sent currentTotal=$currentTotalSeconds '
+            '| status=${pingData['attendanceStatus']} '
+            '| hasActiveScheduleId=${pingData.containsKey('activeScheduleId')}');
+
+        // Sinkronkan status dan durasi dari server
         syncWithPingData(pingData);
 
         // Jika backend me-trigger auto attendance (karena durasi cukup dll)

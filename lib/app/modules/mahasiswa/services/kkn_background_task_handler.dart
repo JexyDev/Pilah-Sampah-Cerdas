@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:geolocator/geolocator.dart';
@@ -438,11 +439,13 @@ class KknBackgroundTaskHandler extends TaskHandler {
           break;
         case 'SYNC_DURATION':
           final seconds = (data['seconds'] as num?)?.toInt() ?? 0;
-          if (seconds > _accumulatedSeconds) {
-            _accumulatedSeconds = seconds;
-            _zoneEntryTime = DateTime.now(); 
-            _saveDuration(_accumulatedSeconds, entryTime: _zoneEntryTime);
-          }
+          // [FIX] Selalu terima nilai dari server (UI isolate), tanpa guard
+          // satu arah. Guard lama (seconds > _accumulatedSeconds) mencegah
+          // koreksi turun — padahal sumber nilai adalah backend (server truth),
+          // bukan estimasi lokal, sehingga koreksi ke bawah pun valid.
+          _accumulatedSeconds = math.max(0, seconds);
+          _zoneEntryTime = DateTime.now();
+          _saveDuration(_accumulatedSeconds, entryTime: _zoneEntryTime);
           break;
       }
     }
