@@ -134,6 +134,9 @@ class WargaDampingan extends Equatable {
     this.totalPoints = 0,
     this.totalKg = 0.0,
     this.apiCorrectPercentage,
+    this.backendTotalActivities,
+    this.backendCorrectCount,
+    this.backendIncorrectCount,
   });
 
   final String wargaId;
