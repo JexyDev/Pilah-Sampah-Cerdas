@@ -1443,6 +1443,7 @@ export class KknService {
       rwId?: number;
       latitude: number;
       longitude: number;
+      radius?: number;
       foto?: string;
     }
   ) {
@@ -1483,6 +1484,7 @@ export class KknService {
       alamat: payload.alamat || "-",
       latitude: lat,
       longitude: lng,
+      radius: payload.radius != null ? Number(payload.radius) : 150,
       fotoUrl: payload.foto,
     });
 
@@ -1495,6 +1497,7 @@ export class KknService {
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
+          radius: Number((posko as any).radius) || 150,
           status: "APPROVED",
         },
       },
@@ -1511,6 +1514,7 @@ export class KknService {
       rwId?: number;
       latitude?: number;
       longitude?: number;
+      radius?: number;
       foto?: string;
     }
   ) {
@@ -1553,12 +1557,14 @@ export class KknService {
 
     const poskoName = payload.nama || existingPosko?.nama || `Posko KKN ${student.kelompok.name}`;
     const { poskoKknService } = await import("./poskoKknService.js");
+    const parsedRadius = payload.radius !== undefined ? Number(payload.radius) : (Number((existingPosko as any)?.radius) || 150);
     const posko = await poskoKknService.upsertPosko(student.kelompokId, {
       nama: poskoName,
       alamat: payload.alamat !== undefined ? payload.alamat : (existingPosko?.alamat || "-"),
       latitude: lat,
       longitude: lng,
-      fotoUrl: payload.foto || existingPosko?.fotoUrl || undefined,
+      radius: parsedRadius,
+      fotoUrl: (payload.foto !== undefined && payload.foto !== "") ? payload.foto : (existingPosko?.fotoUrl || undefined),
     });
 
     await prisma.auditTrail.create({
@@ -1571,12 +1577,14 @@ export class KknService {
           longitude: existingPosko?.longitude ? Number(existingPosko.longitude) : null,
           nama: existingPosko?.nama,
           alamat: existingPosko?.alamat,
+          radius: Number((existingPosko as any)?.radius) || 150,
         },
         newValue: {
           poskoId: posko.id,
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
+          radius: Number((posko as any).radius) || 150,
           nama: posko.nama,
           alamat: posko.alamat,
           status: "APPROVED",
@@ -1773,6 +1781,7 @@ export class KknService {
       rwId?: number;
       latitude: number;
       longitude: number;
+      radius?: number;
       foto?: string;
       pic?: string;
       kontak?: string;
@@ -1799,25 +1808,10 @@ export class KknService {
       alamat: payload.alamat?.trim() || "-",
       latitude: lat,
       longitude: lng,
+      radius: payload.radius != null ? Number(payload.radius) : 150,
       fotoUrl: payload.foto || undefined,
       keterangan: payload.statusApproval || undefined,
     });
-
-    // ─── SINKRONISASI KE POSKOKKN & JADWAL SMART ZONE UNTUK PRESENSI MOBILE & INSPEKSI ZONA ───
-    if (targetKelompokId) {
-      try {
-        const { poskoKknService } = await import("./poskoKknService.js");
-        await poskoKknService.upsertPosko(targetKelompokId, {
-          nama: payload.nama.trim(),
-          alamat: payload.alamat?.trim() || "-",
-          latitude: lat,
-          longitude: lng,
-          fotoUrl: payload.foto || undefined,
-        });
-      } catch (syncErr) {
-        console.warn("[KknService.createPoskoAdmin] Failed to sync PoskoKkn:", syncErr);
-      }
-    }
 
     try {
       await prisma.auditTrail.create({
@@ -1830,6 +1824,7 @@ export class KknService {
             kelompokId: posko.kelompokId,
             latitude: lat,
             longitude: lng,
+            radius: Number((posko as any).radius) || 150,
             status: "APPROVED",
           },
         },
@@ -1849,6 +1844,7 @@ export class KknService {
       rwId?: number | null;
       latitude?: number;
       longitude?: number;
+      radius?: number;
       foto?: string;
       pic?: string;
       kontak?: string;
@@ -1875,32 +1871,16 @@ export class KknService {
       : Number(existing.longitude);
 
     const { poskoKknService } = await import("./poskoKknService.js");
+    const parsedRadius = payload.radius !== undefined ? Number(payload.radius) : (Number((existing as any)?.radius) || 150);
     const posko = await poskoKknService.upsertPosko(targetKelompokId, {
       nama: payload.nama !== undefined ? payload.nama.trim() : existing.nama,
       alamat: payload.alamat !== undefined ? payload.alamat.trim() : existing.alamat,
       latitude: lat,
       longitude: lng,
-      fotoUrl: payload.foto !== undefined ? payload.foto : existing.fotoUrl || undefined,
+      radius: parsedRadius,
+      fotoUrl: (payload.foto !== undefined && payload.foto !== "") ? payload.foto : (existing.fotoUrl || undefined),
       keterangan: payload.statusApproval || existing.keterangan || undefined,
     });
-
-    // ─── SINKRONISASI KE POSKOKKN & JADWAL SMART ZONE ───
-    const poskoAny = posko as any;
-    const finalKelompokId = poskoAny?.kelompokId || existing.kelompokId;
-    if (finalKelompokId) {
-      try {
-        const { poskoKknService } = await import("./poskoKknService.js");
-        await poskoKknService.upsertPosko(finalKelompokId, {
-          nama: poskoAny?.nama || existing.nama,
-          alamat: poskoAny?.alamat || existing.alamat || "-",
-          latitude: Number(poskoAny?.latitude ?? lat),
-          longitude: Number(poskoAny?.longitude ?? lng),
-          fotoUrl: poskoAny?.foto || poskoAny?.fotoUrl || undefined,
-        });
-      } catch (syncErr) {
-        console.warn("[KknService.updatePoskoAdmin] Failed to sync PoskoKkn:", syncErr);
-      }
-    }
 
     try {
       await prisma.auditTrail.create({
@@ -1912,12 +1892,14 @@ export class KknService {
             alamat: existing.alamat,
             latitude: Number(existing.latitude),
             longitude: Number(existing.longitude),
+            radius: Number((existing as any)?.radius) || 150,
           },
           newValue: {
-            poskoId: posko.id,
             nama: posko.nama,
-            latitude: lat,
-            longitude: lng,
+            alamat: posko.alamat,
+            latitude: Number(posko.latitude),
+            longitude: Number(posko.longitude),
+            radius: Number((posko as any).radius) || 150,
           },
         },
       });

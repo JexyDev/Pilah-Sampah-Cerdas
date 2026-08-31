@@ -453,31 +453,23 @@ export const dashboardService = {
 
     setoranWithBin.forEach((log: any) => {
       const targetCategory = (log.bin?.category?.name || "Organik").toLowerCase();
-      const detected = (log.hasilKlasifikasiAi || "organik").toLowerCase();
-
-      let isMatch = false;
+      
+      // Ambil nilai akurasi (pastikan formatnya persentase 0-100)
+      const conf = log.confidenceAi !== null && log.confidenceAi !== undefined ? Number(log.confidenceAi) : 100;
+      const accuracy = conf > 1 ? conf : conf * 100;
+      // RULE BARU: Benar jika >= 50%, Gagal/Salah jika < 50%
+      const isMatch = accuracy >= 50;
       if (targetCategory.includes("organik") && !targetCategory.includes("anorganik")) {
         organikBinTotal++;
-        if (detected.includes("organik") && !detected.includes("anorganik")) {
-          isMatch = true;
-          organikBinCorrect++;
-        }
+        if (isMatch) organikBinCorrect++;
       } else if (targetCategory.includes("anorganik")) {
         anorganikBinTotal++;
-        if (detected.includes("anorganik")) {
-          isMatch = true;
-          anorganikBinCorrect++;
-        }
-      } else {
-        if (detected === targetCategory) {
-          isMatch = true;
-        }
+        if (isMatch) anorganikBinCorrect++;
       }
-
       if (isMatch) {
-        compliantCount++;
+        compliantCount++;    // Masuk Statistik Benar
       } else {
-        nonCompliantCount++;
+        nonCompliantCount++; // Masuk Statistik Salah/Gagal
       }
     });
 

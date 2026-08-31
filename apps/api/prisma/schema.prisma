@@ -412,6 +412,7 @@ model PoskoKkn {
   alamat     String
   latitude   Decimal     @db.Decimal(11, 8)
   longitude  Decimal     @db.Decimal(11, 8)
+  radius     Int         @default(150)
   fotoUrl    String?     @map("foto_url")
   keterangan String?
   createdAt  DateTime    @default(now()) @map("dibuat_pada")

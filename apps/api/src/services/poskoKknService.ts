@@ -14,6 +14,7 @@ export class PoskoKknService {
       alamat: string;
       latitude: number;
       longitude: number;
+      radius?: number;
       fotoUrl?: string;
       keterangan?: string;
     }
@@ -25,6 +26,7 @@ export class PoskoKknService {
         alamat: data.alamat,
         latitude: data.latitude,
         longitude: data.longitude,
+        ...(data.radius !== undefined ? { radius: data.radius } : {}),
         fotoUrl: data.fotoUrl ?? undefined,
         keterangan: data.keterangan ?? undefined,
       },
@@ -34,6 +36,7 @@ export class PoskoKknService {
         alamat: data.alamat,
         latitude: data.latitude,
         longitude: data.longitude,
+        radius: data.radius ?? 150,
         fotoUrl: data.fotoUrl ?? null,
         keterangan: data.keterangan ?? null,
       },
@@ -287,7 +290,7 @@ export class PoskoKknService {
           foto: p.fotoUrl || null,
           fotoUrl: p.fotoUrl || null,
           keterangan: p.keterangan || null,
-          radius: 150,
+          radius: Number((p as any).radius) || 150,
           isUtama: true,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
@@ -499,7 +502,7 @@ export class PoskoKknService {
     const [primary, multi, kelompok] = await Promise.all([
       prisma.poskoKkn.findUnique({
         where: { kelompokId },
-        select: { id: true, nama: true, alamat: true, latitude: true, longitude: true, fotoUrl: true, keterangan: true, createdAt: true },
+        select: { id: true, nama: true, alamat: true, latitude: true, longitude: true, fotoUrl: true, keterangan: true, createdAt: true, radius: true } as any,
       }),
       (prisma as any).poskoKknMulti.findMany({
         where: { kelompokId },
@@ -524,8 +527,9 @@ export class PoskoKknService {
         latitude: Number(primary.latitude),
         longitude: Number(primary.longitude),
         isUtama: true,
-        radius: 150,
+        radius: Number((primary as any).radius) || 150,
         type: "POSKO_UTAMA",
+        foto: primary.fotoUrl ?? null,
         fotoUrl: primary.fotoUrl ?? null,
         keterangan: primary.keterangan ?? null,
       });
@@ -538,8 +542,9 @@ export class PoskoKknService {
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
         isUtama: p.isUtama,
-        radius: p.radius,
+        radius: p.radius || 150,
         type: "POSKO_MULTI",
+        foto: p.fotoUrl ?? null,
         fotoUrl: p.fotoUrl ?? null,
         keterangan: p.keterangan ?? null,
       });

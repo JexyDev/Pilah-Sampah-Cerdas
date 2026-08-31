@@ -86,10 +86,10 @@ export class SmartZoneService {
     const result: any[] = [];
     const primary = await prisma.poskoKkn.findUnique({
       where: { kelompokId },
-      select: { id: true, nama: true, latitude: true, longitude: true },
+      select: { id: true, nama: true, latitude: true, longitude: true, radius: true } as any,
     });
     if (primary) {
-      result.push({ id: primary.id, nama: primary.nama, lat: Number(primary.latitude), lng: Number(primary.longitude), isUtama: true, radius: DEFAULT_POSKO_RADIUS_M, source: "POSKO_KKN" });
+      result.push({ id: primary.id, nama: primary.nama, lat: Number(primary.latitude), lng: Number(primary.longitude), isUtama: true, radius: Number((primary as any).radius) || DEFAULT_POSKO_RADIUS_M, source: "POSKO_KKN" });
     }
     const multi = await (prisma as any).poskoKknMulti.findMany({
       where: { kelompokId },

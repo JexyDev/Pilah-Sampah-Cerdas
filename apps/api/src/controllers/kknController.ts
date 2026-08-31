@@ -441,23 +441,32 @@ export class KknController {
   async registerPosko(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-      let fotoUrl = req.body.foto;
+      let fotoUrl = req.body.foto || req.body.fotoUrl;
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
+      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 150;
       const payload = {
         ...req.body,
         foto: fotoUrl,
+        fotoUrl: fotoUrl,
         latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
         longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
         rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
+        radius: parsedRadius,
       };
 
       const data = await kknService.registerPoskoKkn(kknUserId, payload);
+      const resData = {
+        ...data,
+        foto: (data as any).fotoUrl || (data as any).foto || null,
+        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
+        radius: Number((data as any).radius) || 150,
+      };
       res.status(201).json({
         success: true,
         message: "Pendaftaran Posko KKN berhasil dikirim dan menunggu verifikasi RW.",
-        data,
+        data: resData,
       });
     } catch (error: any) {
       console.error("[KknController] registerPosko error:", error);
@@ -469,23 +478,32 @@ export class KknController {
   async updateMyPosko(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-      let fotoUrl = req.body.foto;
+      let fotoUrl = req.body.foto || req.body.fotoUrl;
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
+      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : undefined;
       const payload = {
         ...req.body,
         foto: fotoUrl,
+        fotoUrl: fotoUrl,
         latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
         longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
         rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
+        radius: parsedRadius,
       };
 
       const data = await kknService.updatePoskoKkn(kknUserId, payload);
+      const resData = {
+        ...data,
+        foto: (data as any).fotoUrl || (data as any).foto || null,
+        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
+        radius: Number((data as any).radius) || 150,
+      };
       res.status(200).json({
         success: true,
         message: "Data Posko KKN berhasil diperbarui.",
-        data,
+        data: resData,
       });
     } catch (error: any) {
       console.error("[KknController] updatePosko error:", error);
@@ -506,10 +524,22 @@ export class KknController {
         });
         return;
       }
+      const poskoAny = (data as any).posko;
+      const enrichedData = {
+        ...data,
+        posko: poskoAny
+          ? {
+              ...poskoAny,
+              foto: poskoAny.fotoUrl || poskoAny.foto || null,
+              fotoUrl: poskoAny.fotoUrl || poskoAny.foto || null,
+              radius: Number(poskoAny.radius) || 150,
+            }
+          : null,
+      };
       res.status(200).json({
         success: true,
         message: data.posko ? "Data posko berhasil diambil" : "Data posko belum terdaftar",
-        data,
+        data: enrichedData,
       });
     } catch (error: any) {
       console.error("[KknController] getMyPosko error:", error);
@@ -538,10 +568,11 @@ export class KknController {
   async createPosko(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      let fotoUrl = req.body.foto;
+      let fotoUrl = req.body.foto || req.body.fotoUrl;
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
+      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 150;
       const payload = {
         nama: req.body.nama,
         alamat: req.body.alamat,
@@ -550,16 +581,24 @@ export class KknController {
         latitude: req.body.latitude != null ? Number(req.body.latitude) : 0,
         longitude: req.body.longitude != null ? Number(req.body.longitude) : 0,
         foto: fotoUrl,
+        fotoUrl: fotoUrl,
+        radius: parsedRadius,
         pic: req.body.pic,
         kontak: req.body.kontak,
         statusApproval: req.body.statusApproval || "APPROVED",
       };
 
       const data = await kknService.createPoskoAdmin(userId, payload);
+      const resData = {
+        ...data,
+        foto: (data as any).fotoUrl || (data as any).foto || null,
+        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
+        radius: Number((data as any).radius) || 150,
+      };
       res.status(201).json({
         success: true,
         message: "Posko KKN berhasil ditambahkan.",
-        data,
+        data: resData,
       });
     } catch (error: any) {
       console.error("[KknController] createPosko error:", error);
@@ -572,7 +611,7 @@ export class KknController {
     try {
       const { id } = req.params;
       const userId = req.user!.userId;
-      let fotoUrl = req.body.foto;
+      let fotoUrl = req.body.foto || req.body.fotoUrl;
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
@@ -581,6 +620,7 @@ export class KknController {
       };
       if (fotoUrl !== undefined) {
         payload.foto = fotoUrl;
+        payload.fotoUrl = fotoUrl;
       }
       if (req.body.latitude != null && req.body.latitude !== "") {
         payload.latitude = Number(req.body.latitude);
@@ -591,12 +631,21 @@ export class KknController {
       if (req.body.rwId != null && req.body.rwId !== "") {
         payload.rwId = Number(req.body.rwId);
       }
+      if (req.body.radius != null && req.body.radius !== "") {
+        payload.radius = Number(req.body.radius);
+      }
 
       const data = await kknService.updatePoskoAdmin(id, userId, payload);
+      const resData = {
+        ...data,
+        foto: (data as any).fotoUrl || (data as any).foto || null,
+        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
+        radius: Number((data as any).radius) || 150,
+      };
       res.status(200).json({
         success: true,
         message: "Posko KKN berhasil diperbarui.",
-        data,
+        data: resData,
       });
     } catch (error: any) {
       console.error("[KknController] updatePosko error:", error);
