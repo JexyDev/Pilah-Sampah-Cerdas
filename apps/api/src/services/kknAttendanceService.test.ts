@@ -668,7 +668,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       ]);
 
       const attendedAt = new Date(Date.now() - 20 * 60 * 1000);
-      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue({
+      const mockAtt = {
         id: "att-ssot-2",
         studentId,
         scheduleId,
@@ -676,7 +676,9 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         attendedAt,
         actualInZoneMinutes: 0,
         jedaLogs: [],
-      } as any);
+      };
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(mockAtt as any);
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
 
       let updatedData: any = null;
       vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
@@ -697,7 +699,11 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.success).toBe(true);
       expect(updatedData.actualInZoneMinutes).toBe(20);
       expect(result.data.actualInZoneMinutes).toBe(20);
-      expect(result.data.actualInZoneSeconds).toBe(20 * 60);
+      // actualInZoneSeconds sekarang presisi detik dari calculateLiveInZoneSeconds(),
+      // bukan lagi menit * 60. Nilai sekitar 1200 detik (20 menit) dengan toleransi
+      // beberapa detik untuk waktu eksekusi test.
+      expect(result.data.actualInZoneSeconds).toBeGreaterThanOrEqual(20 * 60);
+      expect(result.data.actualInZoneSeconds).toBeLessThan(20 * 60 + 30);
       expect(result.data.inZoneMinutes).toBe(20);
     });
   });

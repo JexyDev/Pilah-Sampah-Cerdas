@@ -66,6 +66,10 @@ import logbookRouter from "./routes/logbookRoutes.js";
 import beritaRouter from "./routes/beritaRoutes.js";
 import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import { systemController } from "./controllers/systemController.js";
+import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
+import { authMiddleware } from "./middlewares/authMiddleware.js";
+import { roleMiddleware } from "./middlewares/roleMiddleware.js";
+import { safeUploadSingleImage } from "./middlewares/uploadMiddleware.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
@@ -156,18 +160,17 @@ app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/petugas-residu", residuRouter);
-app.use("/api/v1/petugas-pemilahan", residuRouter);
-app.use("/api/v1/pemilahan", residuRouter);
+// NOTE: /api/v1/petugas-pemilahan dan /api/v1/pemilahan dihapus — alias duplikat, gunakan /api/v1/petugas-residu
 app.use("/api/v1/super-user", superUserRouter);
 app.use("/api/v1/rw", rwRouter);
-app.use("/api/v1/rt", rwRouter);
+// NOTE: /api/v1/rt dihapus — rwRouter sudah menangani RT, gunakan /api/v1/rw
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/posko-kkn", poskoKknRouter);
 app.use("/api/v1/areas", areaRouter);
-app.use("/api/v1/wilayah", areaRouter);
+// NOTE: /api/v1/wilayah dihapus — alias duplikat areaRouter, gunakan /api/v1/areas
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
 app.use("/api/v1/kkn-attendance", kknAttendanceRouter);
-app.use("/api/v1", kknAttendanceRouter);
+// REMOVED: app.use("/api/v1", kknAttendanceRouter) — menyebabkan collision masif dengan semua router lain
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
@@ -185,23 +188,76 @@ app.use("/api/v1/berita", beritaRouter);
 app.use("/api/v1/presensi", presensiMandiriRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
+// NOTE: Alias ini dipertahankan hanya untuk backward-compat client lama.
+// Jangan tambah alias baru — gunakan /api/v1/* sebagai canonical URL.
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
 app.use("/api/logbook", logbookRouter);
 app.use("/api/berita", beritaRouter);
 app.use("/api/kkn-attendance", kknAttendanceRouter);
-app.use("/api", kknAttendanceRouter);
+// REMOVED: app.use("/api", kknAttendanceRouter) — menyebabkan collision dengan seluruh /api/* route
 app.use("/api/residu", residuRouter);
 app.use("/api/petugas-residu", residuRouter);
-app.use("/api/petugas-pemilahan", residuRouter);
-app.use("/api/pemilahan", residuRouter);
+// REMOVED: /api/petugas-pemilahan dan /api/pemilahan — alias duplikat, gunakan /api/petugas-residu
 app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rw", rwRouter);
-app.use("/api/rt", rwRouter);
+// REMOVED: /api/rt — alias duplikat rwRouter
 app.use("/api/areas", areaRouter);
-app.use("/api/wilayah", areaRouter);
+// REMOVED: /api/wilayah — alias duplikat areaRouter
 app.use("/api/penilaian-kkn", penilaianKknRouter);
+
+// Dedicated Direct Endpoints for Web Dashboard Monitoring & Mobile Background Worker
+// (Explicitly mapped without root wildcards to eliminate router collision while guaranteeing 100% compatibility)
+app.post(
+  ["/api/v1/location-ping", "/api/location-ping"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.pingLocation
+);
+app.get(
+  ["/api/v1/mahasiswa/lokasi-aktif", "/api/mahasiswa/lokasi-aktif"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.getActiveStudentsLocations
+);
+app.get(
+  ["/api/v1/timesheet/summary", "/api/timesheet/summary"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  kknAttendanceController.getTimesheetSummary
+);
+app.get(
+  ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.getAttendanceList
+);
+app.get(
+  ["/api/v1/kegiatan/:id/lokasi", "/api/kegiatan/:id/lokasi"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]),
+  kknAttendanceController.getActivityLocation
+);
+app.post(
+  ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.recordAttendance
+);
+app.post(
+  [
+    "/api/v1/kegiatan/:id/check-out",
+    "/api/v1/kegiatan/:id/checkout",
+    "/api/kegiatan/:id/check-out",
+    "/api/kegiatan/:id/checkout",
+  ],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.checkOutAttendance
+);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {

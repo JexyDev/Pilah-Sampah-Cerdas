@@ -671,19 +671,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 
   const hasAccess = (allowed?: UserRole[]) => {
     if (!allowed) return true;
-    // Pengecekan ketat: jika menu dikunci khusus DEVELOPER, role lain tidak boleh melihat
-    if (allowed.length === 1 && allowed[0] === "DEVELOPER") {
-      return userRole === "DEVELOPER";
-    }
-    if (allowed.includes("DEVELOPER") && !allowed.includes("SUPER_USER") && !allowed.includes("PEMIMPIN")) {
-      return userRole === "DEVELOPER";
-    }
-    return (
-      userRole === "DEVELOPER" ||
-      userRole === "SUPER_USER" ||
-      userRole === "PEMIMPIN" ||
-      allowed.includes(userRole)
-    );
+    if (userRole === "DEVELOPER") return true;
+    return allowed.includes(userRole);
   };
 
   const getFilteredGroupChildren = (
@@ -792,6 +781,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "MAHASISWA_KKN",
               ] as UserRole[],
             },
           ],
@@ -825,6 +816,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
+                "PEMIMPIN",
+                "CAMAT",
+                "LURAH",
+                "RW",
               ] as UserRole[],
             },
             {
@@ -834,6 +829,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DEVELOPER",
                 "DPL",
                 "DOSEN_PEMBIMBING",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
               ] as UserRole[],
             },
             {
@@ -893,6 +891,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
+                "PEMIMPIN",
               ] as UserRole[],
             },
             {
@@ -1010,7 +1009,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/hasil-survei/data-survei",
               label: "Data Survei",
-              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
+              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
             },
           ],
         },
@@ -1064,6 +1063,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
               ] as UserRole[],
             },
             {
@@ -1115,6 +1117,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "PETUGAS_RESIDU",
                 "WARGA",
+                "PEMIMPIN",
+                "PANITIA_TASKFORCE",
+                "MAHASISWA_KKN",
               ] as UserRole[],
             },
             {
@@ -1143,6 +1148,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
+                "PANITIA_TASKFORCE",
+                "PEMIMPIN",
               ] as UserRole[],
             },
             {
@@ -1196,10 +1203,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
             { to: "/pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
-            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW"] as UserRole[] },
+            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PEMIMPIN"] as UserRole[] },
             // { to: "/pengguna?role=dlh", label: "Dinas Lingkungan Hidup", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             // { to: "/pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             // { to: "/pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
