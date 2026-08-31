@@ -1693,13 +1693,14 @@ export class KknService {
 
     const facilityPoskoMap = new Set(poskos.map((p) => String(p.kelompokId)));
     const mapped = poskos.map((p) => {
+      const pAny = p as any;
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
-      const ketuaName = p.pic || ketua?.user?.name || "Ketua Kelompok KKN";
-      const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
-      const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
-      const kelurahan = p.kelompok?.kelurahan || p.rw?.kelurahan?.name || ketua?.assignedRw?.kelurahan?.name || "Coblong";
-      const rwName = p.rw?.name || (ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-");
-      const rwId = p.rwId || ketua?.assignedRwId || ketua?.user?.rwId || null;
+      const ketuaName = pAny.pic || ketua?.user?.name || "Ketua Kelompok KKN";
+      const kontak = pAny.kontak && pAny.kontak !== "-" ? pAny.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
+      const dplName = p.kelompok?.dpl?.name || (p.kelompok as any)?.dplNamaMentah || "DPL Belum Diset";
+      const kelurahan = p.kelompok?.kelurahan || pAny.rw?.kelurahan?.name || ketua?.assignedRw?.kelurahan?.name || "Coblong";
+      const rwName = pAny.rw?.name || (ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-");
+      const rwId = pAny.rwId || ketua?.assignedRwId || ketua?.user?.rwId || null;
 
       return {
         id: p.id,
@@ -1718,9 +1719,9 @@ export class KknService {
         kontak,
         dplName,
         totalAnggota: p.kelompok?.students.length || 0,
-        statusApproval: p.statusApproval || "APPROVED",
+        statusApproval: pAny.statusApproval || "APPROVED",
         isUtama: true,
-        radius: (p as any).radius || 150,
+        radius: pAny.radius || 150,
         createdAt: p.createdAt,
       };
     });
@@ -1743,19 +1744,22 @@ export class KknService {
             rwName: off.rwName || "-",
             latitude: Number(off.latitude),
             longitude: Number(off.longitude),
-            foto: off.foto || null,
+            foto: off.foto || off.fotoUrl || null,
+            fotoUrl: off.fotoUrl || off.foto || null,
             pic: off.pic || "Ketua Kelompok",
             kontak: off.kontak || "-",
             dplName: off.dplName || "DPL Belum Diset",
             totalAnggota: off.totalAnggota || 0,
-            statusApproval: "APPROVED",
+            statusApproval: off.statusApproval || "APPROVED",
             isUtama: off.isUtama,
             radius: off.radius || 150,
             createdAt: off.createdAt,
           });
         }
       }
-    } catch (_) {}
+    } catch (_poskoServiceErr) {
+      // silent fallback
+    }
 
     return mapped;
   }
@@ -1881,16 +1885,17 @@ export class KknService {
     });
 
     // ─── SINKRONISASI KE POSKOKKN & JADWAL SMART ZONE ───
-    const finalKelompokId = updated.kelompokId || existing.kelompokId;
+    const poskoAny = posko as any;
+    const finalKelompokId = poskoAny?.kelompokId || existing.kelompokId;
     if (finalKelompokId) {
       try {
         const { poskoKknService } = await import("./poskoKknService.js");
         await poskoKknService.upsertPosko(finalKelompokId, {
-          nama: updated.nama,
-          alamat: updated.alamat || "-",
-          latitude: Number(updated.latitude),
-          longitude: Number(updated.longitude),
-          fotoUrl: updated.foto || undefined,
+          nama: poskoAny?.nama || existing.nama,
+          alamat: poskoAny?.alamat || existing.alamat || "-",
+          latitude: Number(poskoAny?.latitude ?? lat),
+          longitude: Number(poskoAny?.longitude ?? lng),
+          fotoUrl: poskoAny?.foto || poskoAny?.fotoUrl || undefined,
         });
       } catch (syncErr) {
         console.warn("[KknService.updatePoskoAdmin] Failed to sync PoskoKkn:", syncErr);
