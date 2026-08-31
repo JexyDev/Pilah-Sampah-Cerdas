@@ -889,6 +889,60 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>?> getProgramKerjaById(String id) async {
+    try {
+      final response = await apiClient.dio.get('${ApiEndpoints.kknProgramKerja}/$id');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[KKN] getProgramKerjaById error: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> updateProgramKerja(String id, Map<String, dynamic> data) async {
+    try {
+      dynamic requestData = data;
+      if (data.containsKey('filePdfPath') && data['filePdfPath'] != null) {
+        final formData = FormData.fromMap(data);
+        formData.files.add(MapEntry(
+          'filePdf',
+          await MultipartFile.fromFile(data['filePdfPath']),
+        ));
+        formData.fields.removeWhere((e) => e.key == 'filePdfPath');
+        requestData = formData;
+      }
+
+      final response = await apiClient.dio.put(
+        '${ApiEndpoints.kknProgramKerja}/$id',
+        data: requestData,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal memperbarui program kerja'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> deleteProgramKerja(String id) async {
+    try {
+      final response = await apiClient.dio.delete('${ApiEndpoints.kknProgramKerja}/$id');
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal menghapus program kerja'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
     try {
       dynamic requestData;
@@ -976,6 +1030,115 @@ class ApiKknRepository implements KknRepository {
         final snippet = rawData.length > 50 ? rawData.substring(0, 50) : rawData;
         final msg = _extractError(e.response?.data, 'HTTP ${e.response?.statusCode}: $snippet');
         throw Exception(msg);
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMahasiswaLogbooks({
+    int? page,
+    int? limit,
+    String? statusApproval,
+    int? pekanKe,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        if (page != null) 'page': page,
+        if (limit != null) 'limit': limit,
+        if (statusApproval != null) 'statusApproval': statusApproval,
+        if (pekanKe != null) 'pekanKe': pekanKe,
+      };
+
+      final response = await apiClient.dio.get(
+        ApiEndpoints.logbookMahasiswa,
+        queryParameters: queryParams,
+      );
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('[KKN] getMahasiswaLogbooks error: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getMahasiswaLogbookById(String id) async {
+    try {
+      final response = await apiClient.dio.get('${ApiEndpoints.logbookMahasiswa}/$id');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('[KKN] getMahasiswaLogbookById error: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> updateMahasiswaLogbook(
+    String id,
+    Map<String, dynamic> data, {
+    String? imagePath,
+    List<String>? imagePaths,
+  }) async {
+    try {
+      dynamic requestData;
+      final allImagePaths = <String>[
+        if (imagePath != null && imagePath.trim().isNotEmpty) imagePath.trim(),
+        if (imagePaths != null) ...imagePaths.where((p) => p.trim().isNotEmpty),
+      ];
+
+      if (allImagePaths.isNotEmpty) {
+        final formMap = Map<String, dynamic>.from(data);
+        final List<MultipartFile> files = [];
+        for (int i = 0; i < allImagePaths.length; i++) {
+          final p = allImagePaths[i];
+          final fileExt = p.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (fileExt == 'png') mimeType = 'image/png';
+          if (fileExt == 'webp') mimeType = 'image/webp';
+          if (fileExt == 'pdf') mimeType = 'application/pdf';
+
+          files.add(await MultipartFile.fromFile(
+            p,
+            filename: 'logbook_update_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt',
+            contentType: MediaType.parse(mimeType),
+          ));
+        }
+        formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
+        requestData = FormData.fromMap(formMap);
+      } else {
+        requestData = data;
+      }
+
+      final response = await apiClient.dio.put(
+        '${ApiEndpoints.logbookMahasiswa}/$id',
+        data: requestData,
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal memperbarui logbook'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> deleteMahasiswaLogbook(String id) async {
+    try {
+      final response = await apiClient.dio.delete('${ApiEndpoints.logbookMahasiswa}/$id');
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal menghapus logbook'));
       }
       rethrow;
     }

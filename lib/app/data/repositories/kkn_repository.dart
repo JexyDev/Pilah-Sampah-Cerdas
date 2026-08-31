@@ -160,12 +160,41 @@ abstract class KknRepository {
   /// GET /api/v1/kkn/program-kerja
   Future<List<Map<String, dynamic>>> getProgramKerja();
 
+  /// Pilar 1: Mendapatkan detail satu Program Kerja
+  /// GET /api/v1/kkn/program-kerja/:id
+  Future<Map<String, dynamic>?> getProgramKerjaById(String id);
+
+  /// Pilar 1: Update Program Kerja
+  /// PUT /api/v1/kkn/program-kerja/:id
+  Future<bool> updateProgramKerja(String id, Map<String, dynamic> data);
+
+  /// Pilar 1: Hapus Program Kerja
+  /// DELETE /api/v1/kkn/program-kerja/:id
+  Future<bool> deleteProgramKerja(String id);
+
   /// Pilar 2: Logbook Pemanfaatan (Mewarisi/menggantikan submitPemanfaatanSampah lama)
   /// POST /api/v1/kkn/pemanfaatan-sampah
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
 
   /// Input Logbook Harian (Umum) oleh Mahasiswa
+  /// POST /api/v1/logbook/mahasiswa
   Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// Mendapatkan daftar riwayat Logbook Harian Mahasiswa
+  /// GET /api/v1/logbook/mahasiswa
+  Future<List<Map<String, dynamic>>> getMahasiswaLogbooks({int? page, int? limit, String? statusApproval, int? pekanKe});
+
+  /// Mendapatkan detail satu Logbook Harian Mahasiswa
+  /// GET /api/v1/logbook/mahasiswa/:id
+  Future<Map<String, dynamic>?> getMahasiswaLogbookById(String id);
+
+  /// Update / Koreksi Logbook Harian Mahasiswa
+  /// PUT /api/v1/logbook/mahasiswa/:id
+  Future<bool> updateMahasiswaLogbook(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// Hapus Logbook Harian Mahasiswa
+  /// DELETE /api/v1/logbook/mahasiswa/:id
+  Future<bool> deleteMahasiswaLogbook(String id);
 
   /// Pilar 3: Catat Panen / Hasil
   /// GET /api/v1/kkn/pemanfaatan-sampah/unharvested

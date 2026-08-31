@@ -52,7 +52,8 @@ class ApiEndpoints {
   static const String kknWargaDampingan = '/kkn/warga-dampingan';
   static const String kknActivityLog = '/kkn/activity-log';
   static const String kknActiveZone = '/kkn/active-zone';
-  static const String kknLocationPing = '/kkn/location-ping';
+  // [FIX] Route /location-ping ada di kknAttendanceRouter → mount prefix /api/v1/kkn-attendance
+  static const String kknLocationPing = '/kkn-attendance/location-ping';
   static const String kknCheckIn = '/kkn/attendance/check-in';
   static const String kknAbsen = '/kkn/absen';
   static const String kknWarga = '/kkn/warga';
@@ -91,6 +92,8 @@ class ApiEndpoints {
   static String kknMulaiKegiatan(String id) => '/kkn/kegiatan/$id/mulai';
   static String kknSelesaiKegiatan(String id) => '/kkn/kegiatan/$id/selesai';
   static String kknJedaKegiatan(String id) => '/kkn/kegiatan/$id/jeda';
+  /// Legacy alias — tidak dipakai di flow aktif.
+  /// Flow selesai kegiatan menggunakan [kknSelesaiKegiatan]. URL backend sudah benar.
   static String kknCheckOut(String id) => '/kkn-attendance/kegiatan/$id/check-out';
   static String kknPresensiHistory(String id) => '/kkn/kegiatan/$id/presensi-history';
   static const String kknOutOfZoneViolation = '/kkn/out-of-zone-violation';
