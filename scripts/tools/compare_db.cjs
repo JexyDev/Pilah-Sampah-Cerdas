@@ -59,7 +59,7 @@ async function runComparison() {
       ORDER BY table_name ASC;
     `;
 
-    const cmd = `echo 'Makerdotindo2026' | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -t -A -F ',' -c "${countQuery.replace(/\n/g, ' ')}"`;
+    const cmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -t -A -F ',' -c "${countQuery.replace(/\n/g, ' ')}"`;
 
     conn.exec(cmd, (err, stream) => {
       if (err) throw err;
@@ -138,7 +138,7 @@ async function runComparison() {
     host: '157.10.252.252',
     port: 22,
     username: 'maker',
-    password: 'Makerdotindo2026',
+    password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
     readyTimeout: 40000,
     keepaliveInterval: 5000
   });

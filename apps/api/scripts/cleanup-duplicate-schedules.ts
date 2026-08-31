@@ -6,7 +6,7 @@ const vpsConfig = {
   host: "157.10.252.252",
   port: 22,
   username: "maker",
-  password: "Makerdotindo2026",
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
 };
 
 function execCommand(conn: Client, cmd: string): Promise<{ code: number; output: string; error: string }> {
@@ -75,7 +75,7 @@ async function main() {
           DELETE FROM jadwal WHERE id IN (SELECT id FROM duplicates_to_delete);
         `;
 
-        const executeCleanupCmd = `echo Makerdotindo2026 | sudo -S docker exec -i psc-postgres psql -U psc_user -d psc_db << 'EOF'
+        const executeCleanupCmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec -i psc-postgres psql -U psc_user -d psc_db << 'EOF'
 ${cleanVpsSql}
 EOF`;
 
@@ -83,7 +83,7 @@ EOF`;
         console.log("VPS Cleanup output:\n", vpsCleanRes.output);
 
         // Check remaining duplicates on VPS
-        const checkDuplicatesCmd = `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
+        const checkDuplicatesCmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
           SELECT j.title, (j.date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')::date as wib_date, j.id_kelompok, k.nama as kelompok_nama, COUNT(*) as count
           FROM jadwal j
           LEFT JOIN kelompok_kkn k ON j.id_kelompok = k.id
@@ -95,7 +95,7 @@ EOF`;
         console.log("VPS Remaining Duplicates (should be 0 rows):\n", dupCheckRes.output);
 
         // Check Lebak Gede schedules on VPS
-        const checkLebakGede = `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
+        const checkLebakGede = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
           SELECT j.id, j.title, (j.date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta')::date as wib_date, j.location, j.latitude, j.longitude, k.nama as kelompok_nama
           FROM jadwal j
           JOIN kelompok_kkn k ON j.id_kelompok = k.id

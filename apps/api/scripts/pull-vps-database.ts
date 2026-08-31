@@ -6,7 +6,7 @@ const config = {
   host: "157.10.252.252",
   port: 22,
   username: "maker",
-  password: "Makerdotindo2026",
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
 };
 
 function execCommand(conn: Client, cmd: string): Promise<{ code: number; output: string; error: string }> {
@@ -39,7 +39,7 @@ async function main() {
 
       // 1. Run pg_dump inside psc-postgres on VPS to /tmp/psc_db_dump.sql
       console.log("Creating database dump on VPS...");
-      const dumpCmd = `echo Makerdotindo2026 | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db > /tmp/psc_db_dump.sql`;
+      const dumpCmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db > /tmp/psc_db_dump.sql`;
       const dumpRes = await execCommand(conn, dumpCmd);
       if (dumpRes.error && !dumpRes.error.includes("password")) {
         console.warn("Dump warning/error:", dumpRes.error);

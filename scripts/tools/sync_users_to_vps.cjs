@@ -42,7 +42,7 @@ conn.on('ready', () => {
       console.log('✓ File dump database lokal berhasil diunggah ke VPS.');
       console.log('Memulihkan data ke container psc-postgres di VPS...');
 
-      const restoreCmd = `echo 'Makerdotindo2026' | sudo -S docker exec -i psc-postgres psql -U psc_user -d psc_db < ${remoteTempPath} && echo 'Makerdotindo2026' | sudo -S rm -f ${remoteTempPath}`;
+      const restoreCmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec -i psc-postgres psql -U psc_user -d psc_db < ${remoteTempPath} && echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S rm -f ${remoteTempPath}`;
 
       conn.exec(restoreCmd, (err, stream) => {
         if (err) {
@@ -84,7 +84,7 @@ conn.on('ready', () => {
   host: '157.10.252.252',
   port: 22,
   username: 'maker',
-  password: 'Makerdotindo2026',
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
   readyTimeout: 40000,
   keepaliveInterval: 5000,
 });

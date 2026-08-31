@@ -4,7 +4,7 @@ const vpsConfig = {
   host: "157.10.252.252",
   port: 22,
   username: "maker",
-  password: "Makerdotindo2026",
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
 };
 
 function execCommand(conn: Client, cmd: string): Promise<{ code: number; output: string; error: string }> {
@@ -36,7 +36,7 @@ async function main() {
       console.log("SSH Connected.");
 
       // Check current duplicates
-      const countBefore = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -t -c "SELECT count(*) FROM jadwal;"`);
+      const countBefore = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -t -c "SELECT count(*) FROM jadwal;"`);
       console.log("Total schedules on VPS before cleanup:", countBefore.output.trim());
 
       // Use Node script on VPS or exact psql deletion query
@@ -47,7 +47,7 @@ async function main() {
           AND j1.date = j2.date
           AND j1.id > j2.id;
       `;
-      const delRes = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "${deleteSql}"`);
+      const delRes = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "${deleteSql}"`);
       console.log("Direct Delete Result:\n", delRes.output);
 
       // Now check if any different titles/times exist for same kelompok & date
@@ -60,14 +60,14 @@ async function main() {
         )
         DELETE FROM jadwal WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
       `;
-      const delSameDayRes = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "${deleteSameDaySql}"`);
+      const delSameDayRes = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "${deleteSameDaySql}"`);
       console.log("Same Day Clean Result:\n", delSameDayRes.output);
 
-      const countAfter = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -t -c "SELECT count(*) FROM jadwal;"`);
+      const countAfter = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -t -c "SELECT count(*) FROM jadwal;"`);
       console.log("Total schedules on VPS after cleanup:", countAfter.output.trim());
 
       // Check Lebak Gede schedules
-      const checkLebak = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
+      const checkLebak = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
         SELECT j.id, j.title, j.date, j.location, j.latitude, j.longitude, k.nama as kelompok_nama
         FROM jadwal j
         JOIN kelompok_kkn k ON j.id_kelompok = k.id

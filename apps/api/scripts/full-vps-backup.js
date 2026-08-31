@@ -6,7 +6,7 @@ const config = {
   host: "157.10.252.252",
   port: 22,
   username: "maker",
-  password: "Makerdotindo2026",
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
 };
 
 const localBackupDir = "C:\\Users\\USER\\.gemini\\antigravity-ide\\scratch\\pilahsampah-id\\vps_backup";
