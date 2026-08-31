@@ -8,7 +8,8 @@ import '../../../core/utils/thousands_formatter.dart';
 import '../../../data/providers/repository_providers.dart';
 
 class PengajuanProgramKerjaView extends ConsumerStatefulWidget {
-  const PengajuanProgramKerjaView({super.key});
+  final Map<String, dynamic>? initialData;
+  const PengajuanProgramKerjaView({super.key, this.initialData});
 
   @override
   ConsumerState<PengajuanProgramKerjaView> createState() => _PengajuanProgramKerjaViewState();
@@ -59,6 +60,28 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
       'icon': Icons.more_horiz_rounded,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      final data = widget.initialData!;
+      _judulCtrl.text = data['judul'] ?? data['deskripsi'] ?? '';
+      _kategori = data['kategori']?.toString().toUpperCase();
+      _anggaranCtrl.text = data['rencanaAnggaran']?.toString() ?? data['kebutuhanBiaya']?.toString() ?? '';
+      _deskripsiCtrl.text = data['deskripsi'] ?? '';
+      _linkDriveCtrl.text = data['linkGoogleDrive'] ?? '';
+      
+      final waktuPelaksanaan = data['waktuPelaksanaan'] ?? data['targetTanggal'] ?? '';
+      if (waktuPelaksanaan.toString().contains(' s/d ')) {
+        final split = waktuPelaksanaan.split(' s/d ');
+        if (split.length == 2) {
+          _tanggalMulaiCtrl.text = split[0];
+          _tanggalSelesaiCtrl.text = split[1];
+        }
+      }
+    }
+  }
 
   Future<void> _showAttachmentPicker() async {
     showModalBottomSheet(
@@ -129,7 +152,7 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(kknRepositoryProvider);
-      await repo.submitProgramKerja({
+      final payload = {
         'judul': _judulCtrl.text.trim(),
         'kategori': _kategori!,
         'rencanaAnggaran': double.tryParse(_anggaranCtrl.text.trim().replaceAll('.', '')) ?? 0,
@@ -137,7 +160,13 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
         'deskripsi': _deskripsiCtrl.text.trim(),
         'linkGoogleDrive': _linkDriveCtrl.text.trim(),
         if (_attachmentFile != null) 'filePdfPath': _attachmentFile!.path,
-      });
+      };
+
+      if (widget.initialData != null) {
+        await repo.editProgramKerja(widget.initialData!['id'], payload);
+      } else {
+        await repo.submitProgramKerja(payload);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil diajukan!')));
         Navigator.pop(context);
@@ -401,8 +430,11 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
       },
       child: Scaffold(
       appBar: AppBar(
-        title: const Text('Pengajuan Program Kerja', style: TextStyle(fontSize: 18)),
-        backgroundColor: Colors.white,
+        title: Text(
+          widget.initialData != null ? 'Edit Program Kerja' : 'Ajukan Program Kerja',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppColors.primaryGreen,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         bottom: PreferredSize(
@@ -653,19 +685,18 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
                 onPressed: _isLoading ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 child: _isLoading
                     ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.send_rounded, size: 20),
-                          SizedBox(width: 10),
-                          Text('Ajukan Program Kerja', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          const Icon(Icons.send_rounded, size: 20, color: Colors.white),
+                          const SizedBox(width: 10),
+                          Text(widget.initialData != null ? 'Simpan Perubahan' : 'Ajukan Program Kerja', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                         ],
                       ),
               ),
@@ -678,6 +709,106 @@ class _PengajuanProgramKerjaViewState extends ConsumerState<PengajuanProgramKerj
     );
   }
   Widget _buildHeaderBanner() {
+    final isEdit = widget.initialData != null;
+    final statusUsulan = widget.initialData?['statusUsulan']?.toString().toUpperCase() ?? '';
+    final catatanDpl = widget.initialData?['catatanDpl']?.toString() ?? '';
+
+    // Mode edit: PERLU_REVISI_DPL — tampilkan banner merah revisi
+    if (isEdit && statusUsulan == 'PERLU_REVISI_DPL') {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.shade300),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.rate_review_rounded, color: Colors.orange.shade700, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '⚠️ Program Kerja Perlu Direvisi',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'DPL meminta perubahan pada program kerja ini. Silakan perbaiki sesuai catatan di bawah, lalu simpan ulang.',
+              style: TextStyle(fontSize: 12, color: Colors.orange.shade800, height: 1.4),
+            ),
+            if (catatanDpl.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Catatan dari DPL:',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      catatanDpl,
+                      style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // Mode edit: BELUM_DISETUJUI — banner biru informasi
+    if (isEdit && (statusUsulan == 'BELUM_DISETUJUI' || statusUsulan.isEmpty)) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.shade200),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline_rounded, color: Colors.blue.shade600, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Edit Program Kerja',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade800, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Usulan Anda masih menunggu persetujuan DPL. Anda masih bisa mengubah detail sebelum DPL merespons.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mode submit baru — banner hijau default
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(

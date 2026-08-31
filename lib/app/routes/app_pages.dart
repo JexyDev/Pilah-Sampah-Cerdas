@@ -51,6 +51,10 @@ import '../modules/mahasiswa/views/pengajuan_program_kerja_view.dart';
 import '../modules/mahasiswa/views/riwayat_program_kerja_view.dart';
 import '../modules/mahasiswa/views/logbook_pemanfaatan_view.dart';
 import '../modules/mahasiswa/views/catat_panen_view.dart';
+import '../modules/mahasiswa/views/data_logbook_harian_view.dart';
+import '../modules/mahasiswa/views/edit_logbook_kkn_view.dart';
+import '../modules/mahasiswa/views/data_proker_view.dart';
+import '../modules/mahasiswa/views/edit_program_kerja_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 import '../modules/profil/views/ketersediaan_qr_view.dart';
@@ -77,7 +81,8 @@ class AppPages {
       case AppRoutes.dashboard:
         return _buildRoute(const DashboardView(), settings);
       case AppRoutes.pengajuanProgramKerja:
-        return _buildRoute(const PengajuanProgramKerjaView(), settings);
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(PengajuanProgramKerjaView(initialData: args), settings);
       case AppRoutes.riwayatProgramKerja:
         return _buildRoute(const RiwayatProgramKerjaView(), settings);
       case AppRoutes.logbookPemanfaatan:
@@ -158,7 +163,8 @@ class AppPages {
       case AppRoutes.inputLaporanAkhir:
         return _buildRoute(const InputLaporanAkhirView(), settings);
       case AppRoutes.inputLogbookKkn:
-        return _buildRoute(const InputLogbookKknView(), settings);
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(InputLogbookKknView(initialData: args), settings);
       case AppRoutes.riwayatKkn:
         return _buildRoute(const RiwayatKknView(), settings);
       case AppRoutes.poin:
@@ -178,6 +184,20 @@ class AppPages {
           ),
           settings,
         );
+      case AppRoutes.dataLogbookHarian:
+        return _buildRoute(const DataLogbookHarianView(), settings);
+
+      case AppRoutes.editLogbookKkn:
+        final args = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(EditLogbookKknView(logbookId: args['id'] as String), settings);
+
+      case AppRoutes.dataProker:
+        return _buildRoute(const DataProkerView(), settings);
+
+      case AppRoutes.editProgramKerja:
+        final editArgs = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(EditProgramKerjaView(prokerId: editArgs['id'] as String), settings);
+
       default:
         return _buildRoute(const _NotFoundScreen(), settings);
     }

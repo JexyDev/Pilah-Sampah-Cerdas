@@ -16,7 +16,8 @@ final fasilitasWargaListProvider =
     });
 
 class InputLogbookKknView extends ConsumerStatefulWidget {
-  const InputLogbookKknView({super.key});
+  final Map<String, dynamic>? initialData;
+  const InputLogbookKknView({super.key, this.initialData});
 
   @override
   ConsumerState<InputLogbookKknView> createState() =>
@@ -46,8 +47,49 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   @override
   void initState() {
     super.initState();
-    _tanggalCtrl.text =
-        "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+    if (widget.initialData != null) {
+      final data = widget.initialData!;
+      final dateStr = data['tanggalKegiatan'] ?? data['tanggal'] ?? '';
+      if (dateStr.isNotEmpty) {
+        try {
+          _selectedDate = DateTime.parse(dateStr);
+        } catch (_) {}
+      }
+      _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+      
+      _waktuMulaiCtrl.text = data['waktuMulai'] ?? '';
+      if (_waktuMulaiCtrl.text.isNotEmpty) {
+        final parts = _waktuMulaiCtrl.text.split(':');
+        if (parts.length >= 2) {
+          _startTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+        }
+      }
+      
+      _waktuSelesaiCtrl.text = data['waktuSelesai'] ?? '';
+      if (_waktuSelesaiCtrl.text.isNotEmpty) {
+        final parts = _waktuSelesaiCtrl.text.split(':');
+        if (parts.length >= 2) {
+          _endTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+        }
+      }
+      
+      _lokasiCtrl.text = data['tempat'] ?? '';
+      _deskripsiCtrl.text = data['deskripsi'] ?? '';
+      
+      if (data['programKerjaId'] != null) {
+        _selectedProkerId = data['programKerjaId'];
+      } else if (data['programKerja'] != null && data['programKerja']['id'] != null) {
+        _selectedProkerId = data['programKerja']['id'];
+      }
+      
+      if (data['fasilitasId'] != null) {
+        _selectedFasilitasId = data['fasilitasId'];
+      } else if (data['fasilitas'] != null && data['fasilitas']['id'] != null) {
+        _selectedFasilitasId = data['fasilitas']['id'];
+      }
+    } else {
+      _tanggalCtrl.text = "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+    }
   }
 
   Future<void> _showPickerOptions() async {
@@ -237,7 +279,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
     ScaffoldMessenger.of(context).clearSnackBars();
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedFiles.isEmpty) {
+    if (_selectedFiles.isEmpty && widget.initialData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto bukti kegiatan wajib diunggah (minimal 1 foto)!'),
@@ -256,7 +298,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
           ? 'ANDROID'
           : 'WEB';
 
-      await repo.submitLogbookHarian({
+      final payload = {
         'tanggalKegiatan': _tanggalCtrl.text,
         'waktuMulai': _waktuMulaiCtrl.text,
         'waktuSelesai': _waktuSelesaiCtrl.text,
@@ -266,7 +308,20 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         if (_isPastReport) 'isPastReport': 'true',
         if (_selectedProkerId != null) 'programKerjaId': _selectedProkerId,
         if (_selectedFasilitasId != null) 'fasilitasId': _selectedFasilitasId,
-      }, imagePaths: _selectedFiles.map((f) => f.path).toList());
+      };
+
+      if (widget.initialData != null) {
+        await repo.editLogbookHarian(
+          widget.initialData!['id'], 
+          payload, 
+          imagePath: _selectedFiles.isNotEmpty ? _selectedFiles.first.path : null
+        );
+      } else {
+        await repo.submitLogbookHarian(
+          payload, 
+          imagePaths: _selectedFiles.map((f) => f.path).toList()
+        );
+      }
 
       if (mounted) {
         NotificationEngine().showGenericNotification(
@@ -379,7 +434,7 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
         backgroundColor: AppColors.backgroundCanvas,
         appBar: AppBar(
           title: Text(
-            _isPastReport ? 'Input Logbook (Masa Lampau)' : 'Input Logbook Harian',
+            widget.initialData != null ? 'Edit Logbook' : (_isPastReport ? 'Input Logbook (Masa Lampau)' : 'Input Logbook Harian'),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           backgroundColor: _isPastReport ? AppColors.warningOrange.withValues(alpha: 0.1) : Colors.white,
@@ -894,14 +949,14 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Row(
+                      : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.send_rounded, size: 20),
-                            SizedBox(width: 10),
+                            const Icon(Icons.send_rounded, size: 20),
+                            const SizedBox(width: 10),
                             Text(
-                              'Kirim Logbook Harian',
-                              style: TextStyle(
+                              widget.initialData != null ? 'Simpan Perubahan' : 'Kirim Logbook Harian',
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -919,23 +974,203 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
   }
 
   Widget _buildHeaderBanner() {
+    final isEdit = widget.initialData != null;
+    final statusApproval = widget.initialData?['statusApproval']?.toString().toUpperCase() ?? '';
+    final catatanDpl = widget.initialData?['catatanDpl']?.toString() ?? '';
+    final catatanKetua = widget.initialData?['catatanKetua']?.toString() ?? '';
+
+    // Mode edit: PERLU_REVISI_DPL — banner oranye dengan catatan DPL
+    if (isEdit && statusApproval == 'PERLU_REVISI_DPL') {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.shade300),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.rate_review_rounded, color: Colors.orange.shade700, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '⚠️ Logbook Perlu Direvisi',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade800, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'DPL meminta perubahan pada logbook ini. Silakan perbaiki sesuai catatan, lalu simpan ulang.',
+              style: TextStyle(fontSize: 12, color: Colors.orange.shade800, height: 1.4),
+            ),
+            if (catatanDpl.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Catatan dari DPL:',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(catatanDpl, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // Mode edit: DITOLAK_KETUA — banner merah dengan catatan Ketua
+    if (isEdit && statusApproval == 'DITOLAK_KETUA') {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.cancel_rounded, color: Colors.red.shade700, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '❌ Logbook Ditolak oleh Ketua',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Ketua kelompok menolak logbook ini. Silakan perbaiki dan kirim ulang.',
+              style: TextStyle(fontSize: 12, color: Colors.red.shade800, height: 1.4),
+            ),
+            if (catatanKetua.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Alasan penolakan Ketua:',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(catatanKetua, style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // Mode edit: MENUNGGU_VERIFIKASI_DPL — banner kuning
+    if (isEdit && statusApproval == 'MENUNGGU_VERIFIKASI_DPL') {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.amber.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.amber.shade300),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.hourglass_empty_rounded, color: Colors.amber.shade700, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Sedang Ditinjau oleh DPL',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber.shade800, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Logbook sedang dalam proses verifikasi DPL. Anda masih bisa mengubah isinya sebelum DPL merespons.',
+                    style: TextStyle(fontSize: 12, color: Colors.amber.shade800, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mode edit: MENUNGGU_VERIFIKASI_KETUA — banner biru
+    if (isEdit && statusApproval == 'MENUNGGU_VERIFIKASI_KETUA') {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.shade200),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.hourglass_top_rounded, color: Colors.blue.shade600, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Menunggu Persetujuan Ketua',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade800, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Logbook sedang menunggu persetujuan Ketua Kelompok. Anda masih bisa melakukan perubahan.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue.shade700, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Default: Mode submit baru — banner hijau
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.primaryGreen.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.primaryGreen.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            color: AppColors.primaryGreen,
-            size: 24,
-          ),
+          Icon(Icons.info_outline_rounded, color: AppColors.primaryGreen, size: 24),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -943,20 +1178,12 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
               children: [
                 Text(
                   'Catat Aktivitas Harian',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 14),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Laporan harian ini akan menjadi dasar penilaian kinerja individu maupun kelompok oleh DPL Anda.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    height: 1.3,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
                 ),
               ],
             ),

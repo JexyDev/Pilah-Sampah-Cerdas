@@ -114,6 +114,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             statusDisplay: data['statusDisplay']?.toString(),
             durasiAktualMenit: data['durasiAktualMenit'] as int?,
             durasiTargetMenit: data['durasiTargetMenit'] as int?,
+            rawData: data,
           ));
         }
       } catch (_) {}
@@ -146,6 +147,7 @@ class RiwayatKknNotifier extends StateNotifier<RiwayatKknState> {
             statusDisplay: data['statusDisplay']?.toString(),
             durasiAktualMenit: data['durasiAktualMenit'] as int?,
             durasiTargetMenit: data['durasiTargetMenit'] as int?,
+            rawData: data,
           ));
         }
       } catch (e) {

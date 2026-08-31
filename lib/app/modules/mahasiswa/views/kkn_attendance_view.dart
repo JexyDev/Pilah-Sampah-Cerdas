@@ -1039,9 +1039,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         .toString()
                         .toUpperCase();
 
-                if (statusAktifSekarang == 'BERLANGSUNG') {
-                  if (mounted) setState(() => _showDetail = true);
-                  return;
+                if (statusAktifSekarang == 'BERLANGSUNG' || statusAktifSekarang == 'TERJEDA') {
+                  // Kami HAPUS early return di sini agar selalu menembak API mulai/resume
+                  // untuk mensinkronkan ulang state backend dan memaksa timer berjalan.
                 }
 
                 // Cek kegiatan LAIN yang sedang BERLANGSUNG
@@ -1055,11 +1055,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         .toString()
                         .toUpperCase();
                 final isDifferentActive =
-                    state.isTracking &&
                     state.activeActivity != null &&
                     activeId != null &&
                     activeId != id &&
-                    statusAktifLain == 'BERLANGSUNG' &&
+                    (statusAktifLain == 'BERLANGSUNG' || statusAktifLain == 'TERJEDA') &&
                     !state.isSuccessAttendance;
 
                 if (isDifferentActive) {
@@ -1084,9 +1083,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          statusAktifSekarang == 'TERJEDA' 
+                          statusAktifSekarang == 'TERJEDA'
                             ? 'Sesi berhasil dilanjutkan.'
-                            : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
+                            : statusAktifSekarang == 'BERLANGSUNG'
+                                ? 'Sinkronisasi sesi aktif berhasil.'
+                                : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
                         ),
                         backgroundColor: AppColors.primaryGreen,
                       ),
@@ -1826,6 +1827,48 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
             ),
           const SizedBox(height: 16),
+          if (!isSuccess && !isAlpa && (state.activeActivity?['statusKehadiran']?.toString().toUpperCase() == 'TERJEDA' || state.activeActivity?['attendanceStatus']?.toString().toUpperCase() == 'TERJEDA'))
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await notifier.mulaiKegiatan(state.activeActivity!['id'].toString());
+                  if (mounted) {
+                    if (result == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Sesi berhasil dilanjutkan.'),
+                          backgroundColor: AppColors.primaryGreen,
+                        ),
+                      );
+                    } else if (result != 'CONFLICT') {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(result),
+                          backgroundColor: AppColors.dangerRed,
+                        ),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+                label: const Text(
+                  'Lanjutkan Sesi',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber.shade700,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           if (!isSuccess && !isAlpa && state.isTracking)
             StopTrackingButton(
               onStop: (String alasan) async {
@@ -1947,8 +1990,8 @@ class KegiatanKknCard extends StatelessWidget {
     } else if (statusKehadiran == 'BERLANGSUNG') {
       statusText = '⏱️ BERLANGSUNG';
       badgeColor = Colors.orange.withValues(alpha: 0.1);
-      textColor = Colors.orange;
-      buttonText = 'Sedang Berlangsung';
+      textColor = AppColors.primaryGreen;
+      buttonText = 'Lihat Sesi Aktif';
     } else if (statusKehadiran == 'TERJEDA') {
       statusText = '⏸️ TERJEDA';
       badgeColor = Colors.grey.withValues(alpha: 0.1);
@@ -2074,17 +2117,18 @@ class KegiatanKknCard extends StatelessWidget {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          (canStart &&
-                              statusKehadiran != 'HADIR' &&
-                              statusKehadiran != 'HADIR_MEMENUHI' &&
-                              statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
-                              statusKehadiran != 'SELESAI' &&
-                              statusKehadiran != 'SELESAI_TELAT' &&
-                              statusKehadiran != 'ALPA' &&
-                              statusKehadiran != 'TANPA_KETERANGAN')
-                          ? AppColors.primaryGreen
-                          : Colors.grey.shade400,
+                      backgroundColor: statusKehadiran == 'TERJEDA'
+                          ? Colors.amber.shade700
+                          : (canStart &&
+                                  statusKehadiran != 'HADIR' &&
+                                  statusKehadiran != 'HADIR_MEMENUHI' &&
+                                  statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
+                                  statusKehadiran != 'SELESAI' &&
+                                  statusKehadiran != 'SELESAI_TELAT' &&
+                                  statusKehadiran != 'ALPA' &&
+                                  statusKehadiran != 'TANPA_KETERANGAN')
+                              ? AppColors.primaryGreen
+                              : Colors.grey.shade400,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

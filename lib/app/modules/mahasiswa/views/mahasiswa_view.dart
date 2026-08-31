@@ -892,15 +892,16 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                           ),
                           ListTile(
                             leading: const Icon(
-                              Icons.history,
+                              Icons.list_alt_rounded,
                               color: AppColors.primaryBlue,
                             ),
-                            title: const Text('Riwayat & Status Program'),
+                            title: const Text('Data Program Kerja'),
+                            subtitle: const Text('Lihat & edit usulan proker', style: TextStyle(fontSize: 11)),
                             onTap: () {
                               Navigator.pop(context);
                               Navigator.pushNamed(
                                 context,
-                                AppRoutes.riwayatProgramKerja,
+                                AppRoutes.dataProker,
                               );
                             },
                           ),
@@ -999,7 +1000,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, AppRoutes.inputLogbookKkn),
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.dataLogbookHarian),
                 icon: const Icon(Icons.edit_document),
                 label: const Text('Input Logbook', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 style: ElevatedButton.styleFrom(

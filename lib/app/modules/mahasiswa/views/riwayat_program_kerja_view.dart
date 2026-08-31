@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
+import '../../../routes/app_routes.dart';
 
 final programKerjaListProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final repo = ref.read(kknRepositoryProvider);
@@ -259,6 +260,40 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                 ],
                               ),
                             ),
+                            if (statusUsulan == 'BELUM_DISETUJUI' || legacyStatus == 'BELUM_DISETUJUI' ||
+                                statusUsulan == 'PERLU_REVISI_DPL')
+                              IconButton(
+                                icon: Icon(
+                                  Icons.edit_rounded,
+                                  color: statusUsulan == 'PERLU_REVISI_DPL'
+                                      ? Colors.orange.shade700
+                                      : AppColors.primary,
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  final id = item['id']?.toString();
+                                  if (id == null) return;
+                                  // Loading indicator
+                                  if (context.mounted) {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) => const Center(child: CircularProgressIndicator()),
+                                    );
+                                  }
+                                  final detail = await ref.read(kknRepositoryProvider).getProgramKerjaDetail(id);
+                                  if (context.mounted) Navigator.pop(context); // tutup loading
+                                  if (detail != null && context.mounted) {
+                                    await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.pengajuanProgramKerja,
+                                      arguments: detail,
+                                    );
+                                    ref.invalidate(programKerjaListProvider);
+                                  }
+                                },
+                                tooltip: 'Edit Program Kerja',
+                              ),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -269,6 +304,26 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                             _buildKategoriBadge(item['kategori']),
                             _buildUsulanBadge(statusUsulan, legacyStatus),
                             _buildPelaksanaanBadge(statusPelaksanaan, legacyStatus, waktuPelaksanaanStr),
+                            if (statusUsulan == 'PERLU_REVISI_DPL')
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.orange.shade300),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.rate_review_rounded, size: 12, color: Colors.orange.shade700),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Perlu Revisi',
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.orange.shade700),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -347,19 +402,51 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.backgroundCanvas,
+                              color: statusUsulan == 'PERLU_REVISI_DPL'
+                                  ? Colors.orange.shade50
+                                  : AppColors.backgroundCanvas,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(
+                                color: statusUsulan == 'PERLU_REVISI_DPL'
+                                    ? Colors.orange.shade300
+                                    : AppColors.border,
+                              ),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.feedback_outlined, size: 16, color: AppColors.dangerRed),
+                                Icon(
+                                  statusUsulan == 'PERLU_REVISI_DPL'
+                                      ? Icons.rate_review_rounded
+                                      : Icons.feedback_outlined,
+                                  size: 16,
+                                  color: statusUsulan == 'PERLU_REVISI_DPL'
+                                      ? Colors.orange.shade700
+                                      : AppColors.dangerRed,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(
-                                    'Catatan DPL: $catatanDpl',
-                                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        statusUsulan == 'PERLU_REVISI_DPL'
+                                            ? 'Catatan Revisi dari DPL:'
+                                            : 'Catatan DPL:',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: statusUsulan == 'PERLU_REVISI_DPL'
+                                              ? Colors.orange.shade700
+                                              : AppColors.dangerRed,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '$catatanDpl',
+                                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

@@ -71,6 +71,10 @@ abstract class KknRepository {
   /// Mengambil riwayat aktivitas KKN
   Future<List<dynamic>> getKknHistory();
 
+  /// Mengambil daftar semua logbook harian milik mahasiswa yang sedang login
+  /// GET /api/v1/logbook/mahasiswa
+  Future<List<Map<String, dynamic>>> getLogbookList();
+
   /// Mengambil data kelompok KKN mahasiswa yang sedang login (GET /kkn/kelompok/me)
   Future<KelompokKknData?> getKelompokKkn();
 
@@ -160,12 +164,40 @@ abstract class KknRepository {
   /// GET /api/v1/kkn/program-kerja
   Future<List<Map<String, dynamic>>> getProgramKerja();
 
+  /// Edit Program Kerja
+  /// PUT /api/v1/kkn/program-kerja/:id
+  Future<bool> editProgramKerja(String id, Map<String, dynamic> data);
+
+  /// Detail Program Kerja
+  /// GET /api/v1/kkn/program-kerja/:id
+  Future<Map<String, dynamic>?> getProgramKerjaDetail(String id);
+
+  /// Hapus Program Kerja
+  /// DELETE /api/v1/kkn/program-kerja/:id
+  Future<bool> deleteProgramKerja(String id);
+
   /// Pilar 2: Logbook Pemanfaatan (Mewarisi/menggantikan submitPemanfaatanSampah lama)
   /// POST /api/v1/kkn/pemanfaatan-sampah
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
 
+  /// Edit Logbook Pemanfaatan
+  /// PUT /api/v1/kkn/pemanfaatan-sampah/:id
+  Future<bool> editLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath});
+
   /// Input Logbook Harian (Umum) oleh Mahasiswa
   Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// Edit Logbook Harian
+  /// PUT /api/v1/logbook/mahasiswa/:id
+  Future<bool> editLogbookHarian(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// Detail satu Logbook Harian
+  /// GET /api/v1/logbook/mahasiswa/:id
+  Future<Map<String, dynamic>?> getLogbookDetail(String id);
+
+  /// Hapus Logbook Harian
+  /// DELETE /api/v1/logbook/mahasiswa/:id
+  Future<bool> deleteLogbook(String id);
 
   /// Pilar 3: Catat Panen / Hasil
   /// GET /api/v1/kkn/pemanfaatan-sampah/unharvested

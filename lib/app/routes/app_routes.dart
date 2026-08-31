@@ -51,5 +51,11 @@ class AppRoutes {
   static const String inputLaporanAkhir = '/mahasiswa/laporan-akhir/input';
   static const String inputLogbookKkn = '/mahasiswa/logbook-kkn/input';
   static const String ketersediaanQr = '/ketersediaan-qr';
+
+  // Halaman Data & Edit Logbook / Proker
+  static const String dataLogbookHarian = '/mahasiswa/logbook-kkn/data';
+  static const String editLogbookKkn    = '/mahasiswa/logbook-kkn/edit';
+  static const String dataProker        = '/mahasiswa/program-kerja/data';
+  static const String editProgramKerja  = '/mahasiswa/program-kerja/edit';
 }
 

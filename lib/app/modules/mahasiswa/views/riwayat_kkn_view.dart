@@ -23,6 +23,7 @@ class KknHistoryLog {
   final String? statusDisplay;
   final int? durasiAktualMenit;
   final int? durasiTargetMenit;
+  final Map<String, dynamic>? rawData;
 
   KknHistoryLog({
     required this.title,
@@ -38,6 +39,7 @@ class KknHistoryLog {
     this.statusDisplay,
     this.durasiAktualMenit,
     this.durasiTargetMenit,
+    this.rawData,
   });
 }
 
@@ -60,7 +62,7 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   List<KknHistoryLog> _getFilteredLogs(List<KknHistoryLog> logs) {
-    return logs.where((log) => log.points == null || log.points == 0).toList();
+    return logs.where((log) => log.points == null || log.points == 0 || log.type == KknHistoryType.gps).toList();
   }
 
 
@@ -254,6 +256,36 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
                     color: AppColors.textPrimary,
                   ),
                 ),
+                if (log.type == KknHistoryType.laporan && (log.statusKehadiran == 'BELUM_DISETUJUI' || log.statusKehadiran == 'MENUNGGU_VERIFIKASI_DPL'))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: InkWell(
+                      onTap: () {
+                        if (log.rawData != null) {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.inputLogbookKkn,
+                            arguments: log.rawData,
+                          ).then((_) => ref.refresh(riwayatKknControllerProvider.notifier).refresh());
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.edit_rounded, size: 14, color: AppColors.primaryGreen),
+                            SizedBox(width: 4),
+                            Text('Edit Logbook', style: TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 4),
                 Text(
                   _formatSubtitle(log.subtitle),
