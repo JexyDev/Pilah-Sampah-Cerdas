@@ -670,7 +670,7 @@ router.put(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   uploadPemanfaatanImage,
-  kknController.updateLogbookPemanfaatan
+  kknController.createLogbookPemanfaatan
 );
 
 router.get(
@@ -693,7 +693,7 @@ router.put(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
   upload.single("filePdf"),
-  kknController.updateProgramKerja
+  kknController.createProgramKerja
 );
 
 router.get(
