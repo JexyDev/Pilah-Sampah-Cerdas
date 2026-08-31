@@ -417,58 +417,88 @@ export const dashboardService = {
       activeUsers.forEach((u) => {
         const roleName = (u.role?.name || "").toUpperCase();
 
-        // 1. Dosen DPL (Prioritas: role DPL/Dosen/MPL atau memiliki relasi kelompok DPL atau NIP Dosen)
-        const isDpl =
-          roleName.includes("DPL") ||
-          roleName.includes("DOSEN") ||
-          roleName.includes("PENDAMPING") ||
-          roleName.includes("MPL") ||
-          (u.dplKelompok && u.dplKelompok.length > 0) ||
-          (Boolean(u.nip) && !roleName.includes("SUPER") && !roleName.includes("DEVELOPER") && !roleName.includes("CAMAT") && !roleName.includes("LURAH"));
-
-        // 2. Operator (DLH / Camat / Lurah / Pimpinan)
-        const isOperator =
-          roleName.includes("DLH") ||
-          roleName.includes("CAMAT") ||
-          roleName.includes("LURAH") ||
-          roleName.includes("PEMIMPIN") ||
-          roleName.includes("PIMPINAN") ||
-          roleName.includes("OPERATOR");
-
-        // 3. Mahasiswa KKN
+        // 1. Mahasiswa KKN (Role MAHASISWA_KKN atau memiliki studentProfile)
         const isKkn =
+          roleName === "MAHASISWA_KKN" ||
           roleName.includes("KKN") ||
           roleName.includes("MAHASISWA") ||
           Boolean(u.studentProfile);
 
+        // 2. Dosen DPL (Role DPL / DOSEN / PENDAMPING / MPL atau memiliki kelompok bimbingan KKN)
+        const isDpl =
+          !isKkn &&
+          (roleName === "DPL" ||
+            roleName === "DOSEN_PEMBIMBING" ||
+            roleName === "DOSEN_PENDAMPING" ||
+            roleName === "DOSEN_PENDAMPING_LAPANGAN" ||
+            roleName.includes("DPL") ||
+            roleName.includes("DOSEN") ||
+            roleName.includes("PENDAMPING") ||
+            roleName.includes("MPL") ||
+            (u.dplKelompok && u.dplKelompok.length > 0));
+
+        // 3. Operator (DLH / Camat / Lurah / Pemimpin / Pimpinan)
+        const isOperator =
+          !isKkn &&
+          !isDpl &&
+          (roleName === "ADMIN_DLH" ||
+            roleName === "CAMAT" ||
+            roleName === "LURAH" ||
+            roleName === "PEMIMPIN" ||
+            roleName.includes("DLH") ||
+            roleName.includes("CAMAT") ||
+            roleName.includes("LURAH") ||
+            roleName.includes("PEMIMPIN") ||
+            roleName.includes("PIMPINAN") ||
+            roleName.includes("OPERATOR"));
+
         // 4. Petugas Residu & Pengangkut
         const isResidu =
-          roleName.includes("RESIDU") ||
-          roleName.includes("PENGANGKUT") ||
-          roleName.includes("PETUGAS") ||
-          Boolean(u.petugasProfile);
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          (roleName === "PETUGAS_RESIDU" ||
+            roleName === "PENGANGKUT" ||
+            roleName.includes("RESIDU") ||
+            roleName.includes("PENGANGKUT") ||
+            roleName.includes("PETUGAS") ||
+            Boolean(u.petugasProfile));
 
-        // 5. Rukun Warga & Rukun Tetangga (RW / RT)
+        // 5. Rukun Warga & RT (RW / RT)
         const isRw =
-          roleName.includes("RW") ||
-          roleName.includes("RT");
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          !isResidu &&
+          (roleName === "RW" ||
+            roleName === "RT" ||
+            roleName.includes("RW") ||
+            roleName.includes("RT"));
 
         // 6. Admin / Task Force / Developer
         const isAdmin =
-          roleName.includes("SUPER") ||
-          roleName.includes("DEVELOPER") ||
-          roleName.includes("TASKFORCE") ||
-          roleName.includes("TASK_FORCE") ||
-          roleName.includes("PANITIA") ||
-          roleName.includes("ADMIN") ||
-          roleName.includes("DEV");
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          !isResidu &&
+          !isRw &&
+          (roleName === "SUPER_USER" ||
+            roleName === "DEVELOPER" ||
+            roleName === "PANITIA_TASKFORCE" ||
+            roleName.includes("SUPER") ||
+            roleName.includes("DEVELOPER") ||
+            roleName.includes("TASKFORCE") ||
+            roleName.includes("TASK_FORCE") ||
+            roleName.includes("PANITIA") ||
+            roleName.includes("ADMIN") ||
+            roleName.includes("DEV"));
 
-        if (isDpl) {
+        if (isKkn) {
+          activeKkn += 1;
+        } else if (isDpl) {
           activeDpl += 1;
         } else if (isOperator) {
           activeOperator += 1;
-        } else if (isKkn) {
-          activeKkn += 1;
         } else if (isResidu) {
           activeResidu += 1;
         } else if (isRw) {
@@ -476,7 +506,7 @@ export const dashboardService = {
         } else if (isAdmin) {
           activeAdmin += 1;
         } else {
-          // Fallback untuk peran lain (misal ADMIN default jika tidak dikenal tapi memiliki sesi)
+          // Fallback role lain (misal role admin tidak terdefinisi)
           activeAdmin += 1;
         }
       });
