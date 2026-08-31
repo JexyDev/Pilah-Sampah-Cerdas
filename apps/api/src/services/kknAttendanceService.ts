@@ -807,13 +807,21 @@ export class KknAttendanceService {
       const binOrganik = u.bins.find((b: any) => isOrganikBin(b));
       const binAnorganik = u.bins.find((b: any) => isAnorganikBin(b));
       const primaryBin = u.bins[0];
+      const household = u.user.households?.[0];
 
       return {
+        wargaId: u.user.id,
+        id: u.user.id,
         binId: primaryBin?.qrCode || primaryBin?.id || "",
         binOrganikId: binOrganik?.qrCode || binOrganik?.id || null,
         binAnorganikId: binAnorganik?.qrCode || binAnorganik?.id || null,
         wargaName: u.user.name || "Unknown",
-        address: u.user.households?.[0]?.address || "-",
+        address: household?.address || "-",
+        kelurahan: household?.kelurahan || "",
+        rw: household?.rw || "",
+        rt: household?.rt || "",
+        totalPoints: u.user.totalPoints || 0,
+        totalKg: Math.round(u.recentLogs.reduce((sum: number, l: any) => sum + Number(l.berat || 0), 0) * 100) / 100,
         recentLogs: u.recentLogs.slice(0, 10).map((log: any) => ({
           ...log,
           weightKg: Number(log.berat || 0),
