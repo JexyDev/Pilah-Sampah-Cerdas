@@ -60,6 +60,30 @@ export function isOrganikBin(bin?: { category?: { name?: string | null } | null;
   );
 }
 
+export function checkClassificationMatch(
+  hasilKlasifikasiAi?: string | null,
+  binCategory?: { name?: string | null; type?: string | null } | null
+): boolean {
+  const aiType = (hasilKlasifikasiAi || "").toLowerCase().trim();
+  const binType = (binCategory?.name || binCategory?.type || "").toLowerCase().trim();
+
+  if (!binType || !aiType) {
+    return true;
+  }
+
+  const isAiOrg = aiType.includes("organik") && !aiType.includes("anorganik") && !aiType.includes("non");
+  const isAiAnorg = aiType.includes("anorganik") || aiType.includes("non");
+  const isBinOrg = (binType.includes("organik") || binType.includes("organic")) && !binType.includes("anorganik") && !binType.includes("non");
+  const isBinAnorg = binType.includes("anorganik") || binType.includes("non_organic") || binType.includes("non");
+
+  if (isAiOrg && isBinAnorg) return false;
+  if (isAiAnorg && isBinOrg) return false;
+  if (isAiOrg && isBinOrg) return true;
+  if (isAiAnorg && isBinAnorg) return true;
+
+  return binType.includes(aiType) || aiType.includes(binType);
+}
+
 export class KknService {
   async getDashboardStats(userId: string) {
     const user = await prisma.user.findUnique({
@@ -357,7 +381,11 @@ export class KknService {
         setoranOtomatis: {
           take: 5,
           orderBy: { createdAt: "desc" },
-          include: { bin: true },
+          include: {
+            bin: {
+              include: { category: true },
+            },
+          },
         },
         binOwnerships: {
           include: {
@@ -413,11 +441,14 @@ export class KknService {
           ? Number(warga.rw.longitude)
           : 107.610123;
 
+    // 1. Agregasi totalKg dan totalActivities
     const totalSetoranAgg = await prisma.setoranOtomatis.aggregate({
       where: { wargaId: warga.id },
       _sum: { berat: true, poin: true },
+      _count: { id: true },
     });
     const totalKg = Math.round(Number(totalSetoranAgg._sum.berat || 0) * 10) / 10;
+    const totalActivities = totalSetoranAgg._count.id || 0;
 
     const pointsSum = await prisma.pointHistory.aggregate({
       where: { userId: warga.id },
@@ -428,15 +459,43 @@ export class KknService {
         ? Number(pointsSum._sum.points)
         : Math.round(totalKg * 10);
 
-    const recentLogs =
-      warga.setoranOtomatis?.map((log: any) => ({
-        id: log.id,
-        weightKg: Number(log.berat),
-        volumeLiter: 0,
-        category: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        createdAt: log.createdAt,
-      })) || [];
+    // 2. Hitung Rasio Pemilahan Benar & Salah Secara Global
+    const allLogsForCount = await prisma.setoranOtomatis.findMany({
+      where: { wargaId: warga.id },
+      select: {
+        hasilKlasifikasiAi: true,
+        bin: {
+          select: { category: true },
+        },
+      },
+    });
 
+    let correctCount = 0;
+    let incorrectCount = 0;
+    for (const log of allLogsForCount) {
+      const isMatch = checkClassificationMatch(log.hasilKlasifikasiAi, log.bin?.category);
+      if (isMatch) {
+        correctCount++;
+      } else {
+        incorrectCount++;
+      }
+    }
+
+    // 3. Status Benar/Salah (discrepancyStatus) di recentLogs
+    const recentLogs =
+      warga.setoranOtomatis?.map((log: any) => {
+        const isMatch = checkClassificationMatch(log.hasilKlasifikasiAi, log.bin?.category);
+        return {
+          id: log.id,
+          weightKg: Number(log.berat || 0),
+          volumeLiter: 0,
+          category: (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
+          createdAt: log.createdAt,
+          discrepancyStatus: isMatch ? "NONE" : "MISMATCH",
+        };
+      }) || [];
+
+    // 4. Return semua field di response
     return {
       wargaId: warga.id,
       id: warga.id,
@@ -453,6 +512,9 @@ export class KknService {
       totalKg,
       totalPoin,
       totalPoints: totalPoin,
+      totalActivities,
+      correctCount,
+      incorrectCount,
       binOrganikId: binOrganik?.qrCode || null,
       binAnorganikId: binAnorganik?.qrCode || null,
       binId: primaryBin?.qrCode || "",
@@ -3121,10 +3183,10 @@ export class KknService {
 
     const finalKategori = normalizeProkerKategori(kategori);
 
-    // Evaluasi 26-08-2026: Lapor/Pengajuan Program Kerja Kelompok hanya oleh Ketua Kelompok
-    if (!student.isKetua && finalKategori !== "LAPORAN_AKHIR") {
-      throw new Error("Akses ditolak: Pengajuan Program Kerja Kelompok hanya dapat dilakukan oleh Ketua Kelompok.");
-    }
+    // (Dihapus) Semua anggota kelompok sekarang diizinkan untuk mengajukan Program Kerja
+    // if (!student.isKetua && finalKategori !== "LAPORAN_AKHIR") {
+    //   throw new Error("Akses ditolak: Pengajuan Program Kerja Kelompok hanya dapat dilakukan oleh Ketua Kelompok.");
+    // }
 
     // Validasi waktu pelaksanaan tidak boleh masa lampau dan minimal 3 hari dari pengajuan
     const executionDateRaw = targetTanggal || waktuPelaksanaan;

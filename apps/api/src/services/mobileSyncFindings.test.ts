@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { residuService } from "./residuService.js";
-import { kknService } from "./kknService.js";
+import { kknService, checkClassificationMatch } from "./kknService.js";
 import { prisma } from "../lib/prisma.js";
 
 vi.mock("../lib/prisma.js", () => {
@@ -22,6 +22,7 @@ vi.mock("../lib/prisma.js", () => {
       },
       setoranOtomatis: {
         findMany: vi.fn(),
+        aggregate: vi.fn(),
       },
       setoranManual: {
         findMany: vi.fn(),
@@ -202,6 +203,167 @@ describe("Mobile Findings Backend Tests", () => {
           }),
         })
       );
+    });
+  });
+
+  describe("getWargaDetail - Sync Statistik Mobile & Warga Dashboard", () => {
+    it("should return totalKg, totalActivities, correctCount, incorrectCount, and recentLogs with discrepancyStatus", async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({
+          id: "warga-1",
+          name: "Warga Test",
+          email: "warga@test.com",
+          phone: "081234567890",
+          address: "Jl. Ganesha",
+          rw: { name: "01", kelurahan: { name: "Coblong" } },
+          households: [{ address: "Jl. Ganesha", latitude: -6.89, longitude: 107.61 }],
+          pointHistory: [],
+          setoranOtomatis: [
+            {
+              id: "log-1",
+              berat: 2.5,
+              hasilKlasifikasiAi: "organik",
+              createdAt: new Date("2026-08-31T10:00:00Z"),
+              bin: { category: { name: "ORGANIC" } },
+            },
+            {
+              id: "log-2",
+              berat: 1.0,
+              hasilKlasifikasiAi: "anorganik",
+              createdAt: new Date("2026-08-31T09:00:00Z"),
+              bin: { category: { name: "ORGANIC" } },
+            },
+          ],
+          binOwnerships: [
+            {
+              bin: {
+                id: "b-1",
+                qrCode: "QR-ORG-01",
+                category: { name: "ORGANIC" },
+                currentVolumeLiter: 10,
+                maxCapacityLiter: 25,
+              },
+            },
+          ],
+        } as any)
+        .mockResolvedValueOnce({
+          id: "kkn-1",
+          role: { name: "MAHASISWA_KKN" },
+        } as any);
+
+      vi.mocked(prisma.setoranOtomatis.aggregate).mockResolvedValueOnce({
+        _sum: { berat: 12.54, poin: 120 },
+        _count: { id: 5 },
+      } as any);
+
+      vi.mocked(prisma.pointHistory.aggregate).mockResolvedValueOnce({
+        _sum: { points: 120 },
+      } as any);
+
+      vi.mocked(prisma.setoranOtomatis.findMany).mockResolvedValueOnce([
+        {
+          hasilKlasifikasiAi: "organik",
+          bin: { category: { name: "ORGANIC" } },
+        },
+        {
+          hasilKlasifikasiAi: "organik",
+          bin: { category: { name: "ORGANIC" } },
+        },
+        {
+          hasilKlasifikasiAi: "anorganik",
+          bin: { category: { name: "ORGANIC" } }, // Mismatch!
+        },
+        {
+          hasilKlasifikasiAi: "anorganik",
+          bin: { category: { name: "ANORGANIK" } },
+        },
+        {
+          hasilKlasifikasiAi: "organik",
+          bin: { category: { name: "ANORGANIK" } }, // Mismatch!
+        },
+      ] as any);
+
+      const detail = await kknService.getWargaDetail("kkn-1", "warga-1");
+
+      expect(detail.wargaId).toBe("warga-1");
+      expect(detail.totalKg).toBe(12.5);
+      expect(detail.totalActivities).toBe(5);
+      expect(detail.correctCount).toBe(3);
+      expect(detail.incorrectCount).toBe(2);
+      expect(detail.totalPoin).toBe(120);
+
+      expect(detail.recentLogs).toHaveLength(2);
+      expect(detail.recentLogs[0].discrepancyStatus).toBe("NONE");
+      expect(detail.recentLogs[1].discrepancyStatus).toBe("MISMATCH");
+    });
+
+    it("should handle new warga with 0 activities cleanly without NaN or null errors", async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({
+          id: "warga-new",
+          name: "Warga Baru",
+          phone: "089999999999",
+          households: [],
+          binOwnerships: [],
+          setoranOtomatis: [],
+        } as any)
+        .mockResolvedValueOnce({
+          id: "kkn-1",
+          role: { name: "MAHASISWA_KKN" },
+        } as any);
+
+      vi.mocked(prisma.setoranOtomatis.aggregate).mockResolvedValueOnce({
+        _sum: { berat: null, poin: null },
+        _count: { id: 0 },
+      } as any);
+
+      vi.mocked(prisma.pointHistory.aggregate).mockResolvedValueOnce({
+        _sum: { points: null },
+      } as any);
+
+      vi.mocked(prisma.setoranOtomatis.findMany).mockResolvedValueOnce([]);
+
+      const detail = await kknService.getWargaDetail("kkn-1", "warga-new");
+
+      expect(detail.wargaId).toBe("warga-new");
+      expect(detail.totalKg).toBe(0);
+      expect(detail.totalActivities).toBe(0);
+      expect(detail.correctCount).toBe(0);
+      expect(detail.incorrectCount).toBe(0);
+      expect(detail.totalPoin).toBe(0);
+      expect(detail.recentLogs).toEqual([]);
+    });
+
+    describe("checkClassificationMatch logic verification", () => {
+      it("should return true for matching organic classifications", () => {
+        expect(checkClassificationMatch("organik", { name: "ORGANIC" })).toBe(true);
+        expect(checkClassificationMatch("organik", { name: "ORGANIK" })).toBe(true);
+        expect(checkClassificationMatch("organik", { type: "organik" })).toBe(true);
+      });
+
+      it("should return true for matching inorganic classifications", () => {
+        expect(checkClassificationMatch("anorganik", { name: "ANORGANIK" })).toBe(true);
+        expect(checkClassificationMatch("anorganik", { name: "NON_ORGANIC" })).toBe(true);
+        expect(checkClassificationMatch("anorganik", { type: "anorganik" })).toBe(true);
+      });
+
+      it("should return false for mismatches between organic and inorganic", () => {
+        expect(checkClassificationMatch("organik", { name: "ANORGANIK" })).toBe(false);
+        expect(checkClassificationMatch("organik", { name: "NON_ORGANIC" })).toBe(false);
+        expect(checkClassificationMatch("anorganik", { name: "ORGANIC" })).toBe(false);
+        expect(checkClassificationMatch("anorganik", { name: "ORGANIK" })).toBe(false);
+      });
+
+      it("should return true when category or classification is empty/unspecified", () => {
+        expect(checkClassificationMatch(null, { name: "ORGANIC" })).toBe(true);
+        expect(checkClassificationMatch("organik", null)).toBe(true);
+        expect(checkClassificationMatch(undefined, undefined)).toBe(true);
+      });
+    });
+
+    it("should throw WARGA_NOT_FOUND when wargaId is not found", async () => {
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      await expect(kknService.getWargaDetail("kkn-1", "non-existent-warga")).rejects.toThrow("WARGA_NOT_FOUND");
     });
   });
 });

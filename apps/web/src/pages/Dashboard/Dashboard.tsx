@@ -1821,7 +1821,7 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING") return <DplDashboardPage />;
 
-  if (user?.peran === "PANITIA_TASKFORCE" || user?.peran === "PEMIMPIN") {
+  if (user?.peran === "PANITIA_TASKFORCE") {
     return <TaskforceDashboardPage />;
   }
 
@@ -1962,7 +1962,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.tempatSampahAktif?.trend}
           trendLabel={stats?.tempatSampahAktif?.trendLabel}
           trendUp={stats?.tempatSampahAktif?.trendUp}
-          linkTo="/master-data/manajemen-tempat-sampah"
+          linkTo="/monitoring-pengelolaan/tempat-sampah"
         />
         <KpiCard
           iconName="location_on"
@@ -1972,7 +1972,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.lokasiTerdaftar?.trend}
           trendLabel={stats?.lokasiTerdaftar?.trendLabel}
           trendUp={stats?.lokasiTerdaftar?.trendUp}
-          linkTo="/master-data/rukun-warga"
+          linkTo="/wilayah/rw"
         />
         <KpiCard
           iconName="shopping_bag"
@@ -1988,7 +1988,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.setoranHariIni?.trend}
           trendLabel={stats?.setoranHariIni?.trendLabel}
           trendUp={stats?.setoranHariIni?.trendUp}
-          linkTo="/rekapitulasi-setoran"
+          linkTo="/monitoring-pemilahan/rekapitulasi-setoran"
         />
         <KpiCard
           iconName="stars"
@@ -1998,7 +1998,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPoin?.trend}
           trendLabel={stats?.totalPoin?.trendLabel}
           trendUp={stats?.totalPoin?.trendUp}
-          linkTo="/peringkat"
+          linkTo="/monitoring-pemilahan/peringkat-warga"
         />
       </div>
 
@@ -2530,7 +2530,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
             <Link
-              to="/master-data/manajemen-tempat-sampah"
+              to="/monitoring-pengelolaan/tempat-sampah"
               className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30"
             >
               Lihat Semua <ChevronRight size={14} />
@@ -2642,7 +2642,7 @@ const Dashboard: React.FC = () => {
                               <Eye size={15} />
                             </button>
                             <button
-                              onClick={() => navigate(`/master-data/manajemen-tempat-sampah?edit=${bin.id || bin.kode}`)}
+                              onClick={() => navigate(`/monitoring-pengelolaan/tempat-sampah?edit=${bin.id || bin.kode}`)}
                               className="p-1.5 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Edit Tempat Sampah"
                             >
@@ -2750,10 +2750,10 @@ const Dashboard: React.FC = () => {
 
           <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
             <Link
-              to="/pengguna-online"
+              to="/pengguna-daring"
               className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all flex items-center justify-center gap-2 group cursor-pointer"
             >
-              Kelola Pengguna Online <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
+              Kelola Pengguna Daring <ChevronRight size={15} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
             </Link>
           </div>
         </div>
