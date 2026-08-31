@@ -87,47 +87,14 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
 
-      if (isAktivasiBinMode) {
-        final wRwClean = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
-        final wKelClean = cleanKel(w.kelurahan);
-        final wAddr = w.address.toLowerCase();
+      final wRwClean = w.rw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+      final wKelClean = cleanKel(w.kelurahan);
+      final wAddr = w.address.toLowerCase();
 
-        final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
-        final kelMatches = targetKelClean.isEmpty || wKelClean.contains(targetKelClean) || targetKelClean.contains(wKelClean) || wAddr.contains(targetKelClean);
+      final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
+      final kelMatches = targetKelClean.isEmpty || wKelClean.contains(targetKelClean) || targetKelClean.contains(wKelClean) || wAddr.contains(targetKelClean);
 
-        if (!rwMatches || !kelMatches) return false;
-      } else {
-        // ── Filter WAJIB: hanya tampilkan warga dari kelurahan mahasiswa ──
-        // Ini mencegah warga dari kelurahan lain muncul di monitoring
-        if (targetKelClean.isNotEmpty) {
-          final wKelClean = cleanKel(w.kelurahan);
-          final wAddr = w.address.toLowerCase();
-          final kelMatches = wKelClean.contains(targetKelClean) ||
-              targetKelClean.contains(wKelClean) ||
-              wAddr.contains(targetKelClean);
-          if (!kelMatches) return false;
-        }
-
-        // ── Filter tambahan dari dropdown pilihan user ──
-        if (_selectedKelurahan != 'Semua') {
-          final targetKel = _selectedKelurahan.toLowerCase();
-          final matches = w.kelurahan.toLowerCase().contains(targetKel) || 
-              w.address.toLowerCase().contains(targetKel);
-          if (!matches) return false;
-        }
-        
-        if (_selectedRtRw != 'Semua') {
-          final cleanSelected = _selectedRtRw.replaceAll(RegExp(r'[^\d]'), '');
-          final cleanWarga = w.rw.replaceAll(RegExp(r'[^\d]'), '');
-          final cleanAddr = w.address.replaceAll(RegExp(r'[^\d]'), '');
-
-          final matches = (cleanWarga.isNotEmpty && cleanWarga.contains(cleanSelected)) ||
-              (cleanAddr.isNotEmpty && cleanAddr.contains(cleanSelected)) ||
-              w.rw.contains(_selectedRtRw) ||
-              w.address.contains(_selectedRtRw);
-          if (!matches) return false;
-        }
-      }
+      if (!rwMatches || !kelMatches) return false;
 
       if (_searchController.text.isNotEmpty) {
         final query = _searchController.text.toLowerCase();

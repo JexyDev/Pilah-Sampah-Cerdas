@@ -933,6 +933,20 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                               );
                             },
                           ),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.history_edu_rounded,
+                              color: AppColors.primaryBlue,
+                            ),
+                            title: const Text('Riwayat Pemanfaatan & Panen'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.riwayatPemanfaatan,
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),

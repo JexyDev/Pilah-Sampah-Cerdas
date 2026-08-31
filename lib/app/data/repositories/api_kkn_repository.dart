@@ -1217,6 +1217,116 @@ class ApiKknRepository implements KknRepository {
     }
   }
 
+  @override
+  Future<List<dynamic>> getPemanfaatanLogs() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.pemanfaatan);
+      if (response.statusCode == 200) {
+        return response.data['data'] as List<dynamic>;
+      }
+      throw Exception('Gagal memuat riwayat pemanfaatan');
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal memuat riwayat pemanfaatan'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> updateLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+    try {
+      dynamic requestData;
+      final allImagePaths = <String>[
+        if (imagePath != null && imagePath.trim().isNotEmpty) imagePath.trim(),
+        if (imagePaths != null) ...imagePaths.where((p) => p.trim().isNotEmpty),
+      ];
+
+      if (allImagePaths.isNotEmpty) {
+        final formMap = Map<String, dynamic>.from(data);
+        final List<MultipartFile> files = [];
+        for (int i = 0; i < allImagePaths.length; i++) {
+          final p = allImagePaths[i];
+          final fileExt = p.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (fileExt == 'png') mimeType = 'image/png';
+          if (fileExt == 'webp') mimeType = 'image/webp';
+          if (fileExt == 'pdf') mimeType = 'application/pdf';
+
+          files.add(await MultipartFile.fromFile(p, filename: 'update_pemanfaatan_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt', contentType: MediaType.parse(mimeType)));
+        }
+        formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
+        requestData = FormData.fromMap(formMap);
+      } else {
+        requestData = data;
+      }
+
+      final response = await apiClient.dio.put('${ApiEndpoints.kknPemanfaatanSampah}/$id', data: requestData);
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal update pemanfaatan'));
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> deleteLogbookPemanfaatan(String id) async {
+    try {
+      final response = await apiClient.dio.delete('${ApiEndpoints.kknPemanfaatanSampah}/$id');
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal hapus pemanfaatan'));
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> updatePanenHasil(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths}) async {
+    try {
+      dynamic requestData;
+      final allImagePaths = <String>[
+        if (imagePath != null && imagePath.trim().isNotEmpty) imagePath.trim(),
+        if (imagePaths != null) ...imagePaths.where((p) => p.trim().isNotEmpty),
+      ];
+
+      if (allImagePaths.isNotEmpty) {
+        final formMap = Map<String, dynamic>.from(data);
+        final List<MultipartFile> files = [];
+        for (int i = 0; i < allImagePaths.length; i++) {
+          final p = allImagePaths[i];
+          final fileExt = p.split('.').last.toLowerCase();
+          String mimeType = 'image/jpeg';
+          if (fileExt == 'png') mimeType = 'image/png';
+          if (fileExt == 'webp') mimeType = 'image/webp';
+          if (fileExt == 'pdf') mimeType = 'application/pdf';
+
+          files.add(await MultipartFile.fromFile(p, filename: 'update_panen_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt', contentType: MediaType.parse(mimeType)));
+        }
+        formMap['fotoDokumentasi'] = files.length == 1 ? files.first : files;
+        requestData = FormData.fromMap(formMap);
+      } else {
+        requestData = data;
+      }
+
+      final response = await apiClient.dio.put('${ApiEndpoints.kknPanenHasil}/$id', data: requestData);
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal update panen'));
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> deletePanenHasil(String id) async {
+    try {
+      final response = await apiClient.dio.delete('${ApiEndpoints.kknPanenHasil}/$id');
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) throw Exception(_extractError(e.response?.data, 'Gagal hapus panen'));
+      rethrow;
+    }
+  }
+
   // ──────────────────────────────────────────────────────────
   // Smart Multi-Zone Geofence
   // ──────────────────────────────────────────────────────────

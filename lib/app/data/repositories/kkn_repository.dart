@@ -176,6 +176,9 @@ abstract class KknRepository {
   /// DELETE /api/v1/kkn/program-kerja/:id
   Future<bool> deleteProgramKerja(String id);
 
+  /// GET /api/v1/pemanfaatan
+  Future<List<dynamic>> getPemanfaatanLogs();
+
   /// Pilar 2: Logbook Pemanfaatan (Mewarisi/menggantikan submitPemanfaatanSampah lama)
   /// POST /api/v1/kkn/pemanfaatan-sampah
   Future<bool> submitLogbookPemanfaatan(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
@@ -183,6 +186,12 @@ abstract class KknRepository {
   /// Edit Logbook Pemanfaatan
   /// PUT /api/v1/kkn/pemanfaatan-sampah/:id
   Future<bool> editLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath});
+
+  /// PUT /api/v1/kkn/pemanfaatan-sampah/:id
+  Future<bool> updateLogbookPemanfaatan(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// DELETE /api/v1/kkn/pemanfaatan-sampah/:id
+  Future<bool> deleteLogbookPemanfaatan(String id);
 
   /// Input Logbook Harian (Umum) oleh Mahasiswa
   Future<bool> submitLogbookHarian(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
@@ -205,6 +214,12 @@ abstract class KknRepository {
 
   /// POST /api/v1/kkn/panen-hasil
   Future<bool> submitPanenHasil(Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// PUT /api/v1/kkn/panen-hasil/:id
+  Future<bool> updatePanenHasil(String id, Map<String, dynamic> data, {String? imagePath, List<String>? imagePaths});
+
+  /// DELETE /api/v1/kkn/panen-hasil/:id
+  Future<bool> deletePanenHasil(String id);
 
   // ──────────────────────────────────────────────────────────
   // Smart Multi-Zone Geofence

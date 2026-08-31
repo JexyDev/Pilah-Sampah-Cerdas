@@ -55,6 +55,7 @@ import '../modules/mahasiswa/views/data_logbook_harian_view.dart';
 import '../modules/mahasiswa/views/edit_logbook_kkn_view.dart';
 import '../modules/mahasiswa/views/data_proker_view.dart';
 import '../modules/mahasiswa/views/edit_program_kerja_view.dart';
+import '../modules/mahasiswa/views/riwayat_pemanfaatan_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
 import '../modules/profil/views/ketersediaan_qr_view.dart';
@@ -85,6 +86,8 @@ class AppPages {
         return _buildRoute(PengajuanProgramKerjaView(initialData: args), settings);
       case AppRoutes.riwayatProgramKerja:
         return _buildRoute(const RiwayatProgramKerjaView(), settings);
+      case AppRoutes.riwayatPemanfaatan:
+        return _buildRoute(const RiwayatPemanfaatanView(), settings);
       case AppRoutes.logbookPemanfaatan:
         return _buildRoute(const LogbookPemanfaatanView(), settings);
       case AppRoutes.catatPanen:
