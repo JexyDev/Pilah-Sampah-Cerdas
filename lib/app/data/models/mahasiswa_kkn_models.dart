@@ -269,11 +269,112 @@ class WargaDampingan extends Equatable {
       }
     }
 
+    String? extractBinOrganikId() {
+      final candidates = [
+        json['binOrganikId'],
+        json['bin_organik_id'],
+        json['organikBinId'],
+        json['organik_bin_id'],
+        json['binOrganikQr'],
+        json['binOrganikQrCode'],
+        json['organikQr'],
+        json['organik_qr'],
+        if (json['binOrganik'] is Map) json['binOrganik']['qrCode'] ?? json['binOrganik']['qrSerial'] ?? json['binOrganik']['id'],
+        if (json['binOrganik'] is String) json['binOrganik'],
+        if (json['organikBin'] is Map) json['organikBin']['qrCode'] ?? json['organikBin']['qrSerial'] ?? json['organikBin']['id'],
+        if (json['organikBin'] is String) json['organikBin'],
+        if (json['user'] is Map) ...[
+          json['user']['binOrganikId'],
+          json['user']['bin_organik_id'],
+          if (json['user']['binOrganik'] is Map) json['user']['binOrganik']['qrCode'] ?? json['user']['binOrganik']['qrSerial'] ?? json['user']['binOrganik']['id'],
+          if (json['user']['binOrganik'] is String) json['user']['binOrganik'],
+        ],
+      ];
+      for (final c in candidates) {
+        if (c != null && c.toString().trim().isNotEmpty && c.toString().toLowerCase() != 'null') {
+          return c.toString().trim();
+        }
+      }
+      final binsList = json['bins'] ?? json['user']?['bins'] ?? json['user']?['tempatSampah'];
+      if (binsList is List) {
+        for (final b in binsList) {
+          if (b is Map) {
+            final type = (b['binType'] ?? b['type'] ?? b['kategori'])?.toString().toUpperCase() ?? '';
+            if (type.contains('ORGANIC') && !type.contains('NON') && !type.contains('AN')) {
+              final qr = (b['qrSerial'] ?? b['qrCode'] ?? b['id'])?.toString();
+              if (qr != null && qr.isNotEmpty) return qr;
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    String? extractBinAnorganikId() {
+      final candidates = [
+        json['binAnorganikId'],
+        json['bin_anorganik_id'],
+        json['anorganikBinId'],
+        json['anorganik_bin_id'],
+        json['binAnorganicId'],
+        json['bin_anorganic_id'],
+        json['anorganicBinId'],
+        json['binAnorganikQr'],
+        json['binAnorganikQrCode'],
+        json['anorganikQr'],
+        json['anorganik_qr'],
+        json['anorganicQr'],
+        if (json['binAnorganik'] is Map) json['binAnorganik']['qrCode'] ?? json['binAnorganik']['qrSerial'] ?? json['binAnorganik']['id'],
+        if (json['binAnorganik'] is String) json['binAnorganik'],
+        if (json['anorganikBin'] is Map) json['anorganikBin']['qrCode'] ?? json['anorganikBin']['qrSerial'] ?? json['anorganikBin']['id'],
+        if (json['anorganikBin'] is String) json['anorganikBin'],
+        if (json['binAnorganic'] is Map) json['binAnorganic']['qrCode'] ?? json['binAnorganic']['qrSerial'] ?? json['binAnorganic']['id'],
+        if (json['binNonOrganic'] is Map) json['binNonOrganic']['qrCode'] ?? json['binNonOrganic']['qrSerial'] ?? json['binNonOrganic']['id'],
+        if (json['binNonOrganik'] is Map) json['binNonOrganik']['qrCode'] ?? json['binNonOrganik']['qrSerial'] ?? json['binNonOrganik']['id'],
+        if (json['user'] is Map) ...[
+          json['user']['binAnorganikId'],
+          json['user']['bin_anorganik_id'],
+          if (json['user']['binAnorganik'] is Map) json['user']['binAnorganik']['qrCode'] ?? json['user']['binAnorganik']['qrSerial'] ?? json['user']['binAnorganik']['id'],
+          if (json['user']['binAnorganik'] is String) json['user']['binAnorganik'],
+        ],
+      ];
+      for (final c in candidates) {
+        if (c != null && c.toString().trim().isNotEmpty && c.toString().toLowerCase() != 'null') {
+          return c.toString().trim();
+        }
+      }
+      final binsList = json['bins'] ?? json['user']?['bins'] ?? json['user']?['tempatSampah'];
+      if (binsList is List) {
+        for (final b in binsList) {
+          if (b is Map) {
+            final type = (b['binType'] ?? b['type'] ?? b['kategori'])?.toString().toUpperCase() ?? '';
+            if (type.contains('NON') || type.contains('ANORGANIK') || type.contains('ANORGANIC')) {
+              final qr = (b['qrSerial'] ?? b['qrCode'] ?? b['id'])?.toString();
+              if (qr != null && qr.isNotEmpty) return qr;
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    String? parsedBinOrganikId = extractBinOrganikId();
+    String? parsedBinAnorganikId = extractBinAnorganikId();
+
+    // Fallback: If binId contains multiple IDs separated by comma/slash/space
+    if ((parsedBinOrganikId == null || parsedBinAnorganikId == null) && extractedBinId.contains(RegExp(r'[,/|]'))) {
+      final parts = extractedBinId.split(RegExp(r'[,/|]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      if (parts.length >= 2) {
+        parsedBinOrganikId ??= parts[0];
+        parsedBinAnorganikId ??= parts[1];
+      }
+    }
+
     return WargaDampingan(
       wargaId: extractedWargaId,
       binId: extractedBinId,
-      binOrganikId: json['binOrganikId']?.toString(),
-      binAnorganikId: json['binAnorganikId']?.toString(),
+      binOrganikId: parsedBinOrganikId,
+      binAnorganikId: parsedBinAnorganikId,
       wargaName: json['wargaName']?.toString() ?? json['name']?.toString() ?? json['warga_name']?.toString() ?? 'Warga',
       address: rawAddr,
       kecamatan: parsedKecamatan,

@@ -345,6 +345,43 @@ class _WargaListItem extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 2),
+                      Builder(builder: (_) {
+                        final org = warga.binOrganikId;
+                        final anorg = warga.binAnorganikId;
+                        final hasOrg = org != null && org.trim().isNotEmpty;
+                        final hasAnorg = anorg != null && anorg.trim().isNotEmpty;
+                        if (hasOrg && hasAnorg && org != anorg) {
+                          return Text(
+                            'Organik: $org • Anorganik: $anorg',
+                            style: const TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        } else if (hasOrg) {
+                          return Text(
+                            'Organik: $org',
+                            style: const TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        } else if (hasAnorg) {
+                          return Text(
+                            'Anorganik: $anorg',
+                            style: const TextStyle(fontSize: 11, color: AppColors.primaryGreen, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        } else if (warga.binId.isNotEmpty && warga.binId != 'Belum Ada Tempat Sampah') {
+                          return Text(
+                            'ID: ${warga.binId}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
                       if (warga.isActivated) ...[
                         const SizedBox(height: 5),
                         Container(
