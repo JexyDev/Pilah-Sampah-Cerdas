@@ -66,6 +66,10 @@ import logbookRouter from "./routes/logbookRoutes.js";
 import beritaRouter from "./routes/beritaRoutes.js";
 import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import { systemController } from "./controllers/systemController.js";
+import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
+import { authMiddleware } from "./middlewares/authMiddleware.js";
+import { roleMiddleware } from "./middlewares/roleMiddleware.js";
+import { safeUploadSingleImage } from "./middlewares/uploadMiddleware.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
@@ -202,6 +206,58 @@ app.use("/api/rw", rwRouter);
 app.use("/api/areas", areaRouter);
 // REMOVED: /api/wilayah — alias duplikat areaRouter
 app.use("/api/penilaian-kkn", penilaianKknRouter);
+
+// Dedicated Direct Endpoints for Web Dashboard Monitoring & Mobile Background Worker
+// (Explicitly mapped without root wildcards to eliminate router collision while guaranteeing 100% compatibility)
+app.post(
+  ["/api/v1/location-ping", "/api/location-ping"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.pingLocation
+);
+app.get(
+  ["/api/v1/mahasiswa/lokasi-aktif", "/api/mahasiswa/lokasi-aktif"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.getActiveStudentsLocations
+);
+app.get(
+  ["/api/v1/timesheet/summary", "/api/timesheet/summary"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  kknAttendanceController.getTimesheetSummary
+);
+app.get(
+  ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  kknAttendanceController.getAttendanceList
+);
+app.get(
+  ["/api/v1/kegiatan/:id/lokasi", "/api/kegiatan/:id/lokasi"],
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]),
+  kknAttendanceController.getActivityLocation
+);
+app.post(
+  ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.recordAttendance
+);
+app.post(
+  [
+    "/api/v1/kegiatan/:id/check-out",
+    "/api/v1/kegiatan/:id/checkout",
+    "/api/kegiatan/:id/check-out",
+    "/api/kegiatan/:id/checkout",
+  ],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.checkOutAttendance
+);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {
