@@ -147,6 +147,8 @@ export const LaporanPresensiPage: React.FC = () => {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("7DAYS");
+  // Track apakah user sudah memilih filter tanggal secara eksplisit
+  const [hasDateFilter, setHasDateFilter] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(20);
@@ -209,17 +211,21 @@ export const LaporanPresensiPage: React.FC = () => {
     if (preset === "ALL") {
       setStartDate("");
       setEndDate("");
+      setHasDateFilter(false);
     } else if (preset === "TODAY") {
       setStartDate(todayStr);
       setEndDate(todayStr);
+      setHasDateFilter(true);
     } else if (preset === "7DAYS") {
       const past7 = new Date(nowWib.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       setStartDate(past7);
       setEndDate(todayStr);
+      setHasDateFilter(true);
     } else if (preset === "30DAYS") {
       const past30 = new Date(nowWib.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       setStartDate(past30);
       setEndDate(todayStr);
+      setHasDateFilter(true);
     }
   };
 
@@ -364,6 +370,7 @@ export const LaporanPresensiPage: React.FC = () => {
     const past7 = new Date(nowWib.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     setStartDate(past7);
     setEndDate(todayStr);
+    setHasDateFilter(false);
     setSearchQuery("");
     setPage(1);
     if (!isDpl && typeof window !== "undefined") {
@@ -396,10 +403,13 @@ export const LaporanPresensiPage: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    // Validasi: filter tanggal wajib diisi sebelum ekspor
-    const isAllTimeWithNoDate = datePreset === "ALL" && !startDate && !endDate;
-    if (isAllTimeWithNoDate) {
-      toast.error("Filter tanggal wajib diisi sebelum ekspor. Pilih preset periode atau isi tanggal awal dan akhir secara manual.");
+    // Validasi: user wajib memilih filter tanggal secara eksplisit sebelum ekspor
+    if (!hasDateFilter) {
+      toast.error("Pilih filter tanggal terlebih dahulu sebelum ekspor (Hari Ini, 7 Hari, 30 Hari, atau isi manual).");
+      return;
+    }
+    if (!startDate || !endDate) {
+      toast.error("Tanggal awal dan akhir wajib diisi sebelum ekspor.");
       return;
     }
 
@@ -807,6 +817,7 @@ export const LaporanPresensiPage: React.FC = () => {
               onChange={(e) => {
                 setStartDate(e.target.value);
                 setDatePreset("ALL");
+                setHasDateFilter(true);
                 setPage(1);
               }}
               className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium"
@@ -825,6 +836,7 @@ export const LaporanPresensiPage: React.FC = () => {
                 onChange={(e) => {
                   setEndDate(e.target.value);
                   setDatePreset("ALL");
+                  setHasDateFilter(true);
                   setPage(1);
                 }}
                 className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium"
@@ -897,10 +909,10 @@ export const LaporanPresensiPage: React.FC = () => {
             <button
               type="button"
               onClick={handleExportCSV}
-              disabled={datePreset === "ALL" && !startDate && !endDate}
+              disabled={!hasDateFilter}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white shadow-2xs transition cursor-pointer active:scale-95"
               title={
-                datePreset === "ALL" && !startDate && !endDate
+                !hasDateFilter
                   ? "Pilih filter tanggal terlebih dahulu sebelum ekspor"
                   : activeTab === "REKAP_MAHASISWA"
                   ? "Ekspor Rekap Akumulasi Mahasiswa ke XLSX"
