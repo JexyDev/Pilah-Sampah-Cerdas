@@ -34,6 +34,7 @@ import {
   Download,
   Navigation,
   CheckCircle2,
+  FileSpreadsheet,
   Map as MapIcon,
   ChevronDown,
   Target,
@@ -58,6 +59,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -1327,10 +1329,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   }, [selectedKelompokId, activeSchedule, groups, isDeveloper]);
 
-  // Reset page when filter or search changes
+  // Reset halaman ke 1 HANYA saat user mengubah filter/pencarian secara eksplisit.
+  // selectedScheduleId SENGAJA dikeluarkan dari sini karena bisa berubah otomatis dari
+  // WebSocket/polling, yang akan menyebabkan halaman ke-reset saat user sedang scroll/browse.
   useEffect(() => {
     setCurrentPage(1);
-  }, [studentSearch, attendanceFilterTab, selectedKelompokId, selectedScheduleId]);
+  }, [studentSearch, attendanceFilterTab, selectedKelompokId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // WebSocket Live GPS & Attendance Tracking for Developer & Super Admin (and seamless real-time map/table updates)
   useEffect(() => {
@@ -1585,36 +1589,40 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       }
 
       return [
-        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
-        `"${rec.student?.studentProfile?.nim || "-"}"`,
-        `"${statusStr}"`,
-        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
-        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        rec.student?.name || "",
+        rec.student?.studentProfile?.nim || "-",
+        statusStr,
+        rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
+        rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
         durationMins,
-      ].join(",");
+      ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 28 }, // Nama
+      { wch: 18 }, // NIM
+      { wch: 25 }, // Status
+      { wch: 22 }, // Waktu Masuk
+      { wch: 22 }, // Waktu Pulang
+      { wch: 16 }, // Durasi
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap Presensi");
+    XLSX.writeFile(wb, `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     setIsExportModalOpen(false);
     toast.success(
-      `Laporan Presensi (${filtered.length} baris) berhasil diunduh`
+      `Laporan Presensi (${filtered.length} baris) berhasil diunduh ke Excel (.xlsx)`
     );
   };
 
-  // Export CSV langsung dari data tabel yang tersaring (Filtered Table Export)
-  const handleExportFilteredAttendanceCSV = () => {
+  // Export XLSX langsung dari data tabel yang tersaring (Filtered Table Export)
+  const handleExportFilteredAttendanceXLSX = () => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
+      return;
+    }
+
     if (!filteredAttendance || filteredAttendance.length === 0) {
       toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
       return;
@@ -1667,35 +1675,39 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       return [
         index + 1,
-        `"${(rec.student?.name || "").replace(/"/g, '""')}"`,
-        `"${rec.student?.studentProfile?.nim || "-"}"`,
-        `"${(kelompokName || "-").replace(/"/g, '""')}"`,
-        `"${(kegiatanTitle || "-").replace(/"/g, '""')}"`,
-        `"${statusStr}"`,
-        `"${rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-"}"`,
-        `"${rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-"}"`,
+        rec.student?.name || "",
+        rec.student?.studentProfile?.nim || "-",
+        kelompokName || "-",
+        kegiatanTitle || "-",
+        statusStr,
+        rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
+        rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
         durationMins,
         scheduleTargetHours,
-        `"${isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-"}"`,
-      ].join(",");
+        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-",
+      ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 15 },
+      { wch: 14 },
+      { wch: 25 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Presensi");
     const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
-    link.setAttribute(
-      "download",
-      `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    XLSX.writeFile(wb, `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     toast.success(
-      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor`
+      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor ke XLSX`
     );
   };
 
@@ -3411,9 +3423,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <X size={13} />
               </button>
             )}
+
+            {/* Standar 1 Tombol Ekspor XLSX */}
+            <button
+              type="button"
+              onClick={handleExportFilteredAttendanceXLSX}
+              disabled={!startDateFilter || !endDateFilter}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data presensi terfilter ke XLSX"}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
+            </button>
           </div>
 
-          {/* Filter Status Chips & Export Button */}
+          {/* Filter Status Chips */}
           <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
             {!isDpl && (
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
@@ -3474,20 +3498,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </button>
               </div>
             )}
-
-            {/* Tombol Ekspor CSV dekat tabel setelah seleksi filter */}
-            <button
-              type="button"
-              onClick={handleExportFilteredAttendanceCSV}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-              title={`Ekspor ${filteredAttendance.length} data presensi terfilter ke format CSV`}
-            >
-              <Download size={14} />
-              <span>Ekspor CSV</span>
-              <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
-                {filteredAttendance.length}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -3538,11 +3548,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-3 w-12 text-center">NO.</th>
                           <th className="py-3.5 px-4 min-w-[200px] text-left">MAHASISWA &amp; NIM</th>
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
-                          <th className="py-3.5 px-3 text-center">JAM MASUK</th>
-                          <th className="py-3.5 px-3 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
-                          <th className="py-3.5 px-3 text-center">TARGET MINIMAL</th>
-                          <th className="py-3.5 px-4 text-center min-w-[170px]">RASIO KEHADIRAN (PER HARI)</th>
+                          <th className="py-3.5 px-3 text-center" title="Jam Masuk (JM) — waktu mahasiswa pertama kali hadir di zona">
+                            JAM MASUK (JM)
+                          </th>
+                          <th className="py-3.5 px-3 text-center" title="Jam Pulang (JP) — waktu mahasiswa selesai kegiatan">
+                            JAM PULANG (JP)
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title="Durasi Aktual (DA) = JP − JM, dalam menit">
+                            DURASI AKTUAL (DA)
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">DA = JP − JM (menit)</span>
+                          </th>
+                          <th className="py-3.5 px-3 text-center" title="Target Minimal per hari — durasi wajib kehadiran">
+                            TARGET MIN (TM)
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">menit/hari</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center min-w-[170px]" title="Rasio Kehadiran = DA / TM × 100%">
+                            RASIO (DA/TM×100%)
+                          </th>
                           <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
                           <th className="py-3.5 px-4 text-center">DETAIL</th>
                         </tr>
@@ -3552,10 +3574,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 min-w-[200px]">MAHASISWA</th>
                           {!selectedKelompokId && <th className="py-3.5 px-4 text-center">KELOMPOK &amp; WILAYAH</th>}
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
-                          <th className="py-3.5 px-4 text-center">JAM MASUK</th>
-                          <th className="py-3.5 px-4 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI HARIAN / TARGET ({formatHoursToUnits(scheduleTargetHours).toUpperCase()})</th>
-                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN (TARGET {formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50))).toUpperCase()})</th>
+                          <th className="py-3.5 px-4 text-center" title="Jam Masuk (JM) — waktu check-in pertama di zona">
+                            JAM MASUK
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">(JM)</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title="Jam Pulang (JP) — waktu check-out / selesai kegiatan">
+                            JAM PULANG
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">(JP)</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title={`Durasi Aktual (DA) = JP − JM. Target harian: ${formatHoursToUnits(scheduleTargetHours)}`}>
+                            DURASI AKTUAL (DA)
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">
+                              DA = JP−JM / TM: {formatHoursToUnits(scheduleTargetHours)}
+                            </span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center min-w-[180px]" title={`Total akumulasi KKN. Target kumulatif: ${formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50)))}`}>
+                            AKUMULASI KKN
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">
+                              TARGET {formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50))).toUpperCase()}
+                            </span>
+                          </th>
                           <th className="py-3.5 px-4 text-center">POIN</th>
                           <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
                         </tr>
@@ -4004,14 +4042,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               {jamPulangStr}
                             </td>
 
-                            {/* 7. DURASI AKTUAL / TARGET */}
+                            {/* 7. DURASI AKTUAL (DA) = JP − JM */}
                             <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                               <div className="flex flex-col items-center gap-0.5">
                                 <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                                   {durasiText}
                                 </span>
+                                {/* Tampilkan menit aktual / target dalam menit agar satuan konsisten */}
                                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                                  / {formatHoursToUnits(targetZonaHours)} Target
+                                  {isLeaveOrPending ? "0" : durationMins} mnt / {targetZonaMins} mnt ({formatHoursToUnits(targetZonaHours)})
                                 </span>
                               </div>
                             </td>
@@ -4998,7 +5037,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download size={14} />
-                  Download CSV
+                  Ekspor Excel (.xlsx)
                 </button>
               </div>
             </div>
@@ -5400,35 +5439,43 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <div className="space-y-3.5">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk (JM)</span>
                       <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
                         {!isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-"}
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Pulang</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Pulang (JP)</span>
                       <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
                         {!isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-"}
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Durasi Hari Ini</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = JP − JM</span>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
                         {isLeaveOrPending ? "0 menit" : formatDurasiIndo(durationMins)}
                       </span>
+                      {/* Sub-label: menit aktual */}
+                      {!isLeaveOrPending && durationMins > 0 && (
+                        <span className="block text-[9px] text-slate-400 font-medium">{durationMins} mnt</span>
+                      )}
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Harian</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Min (TM)</span>
                       <span className="text-xs font-black text-slate-800 dark:text-slate-100">
-                        {targetHours} jam
+                        {formatHoursToUnits(targetHours)}
                       </span>
+                      {/* Sub-label: menit agar konsisten */}
+                      <span className="block text-[9px] text-slate-400 font-medium">{targetMins} mnt</span>
                     </div>
                   </div>
 
-                  {/* Rasio Kehadiran (Per Hari) */}
+                  {/* Rasio Kehadiran (Per Hari) — DA/TM×100% */}
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Kehadiran (Per Hari - Target {targetHours} Jam):</span>
+                      <span className="font-bold text-slate-600 dark:text-slate-400">
+                        Rasio (DA/TM×100%) — {durationMins} mnt / {targetMins} mnt ({formatHoursToUnits(targetHours)}):
+                      </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{ratioPercent}%</span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
