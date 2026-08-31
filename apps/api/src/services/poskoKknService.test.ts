@@ -92,7 +92,7 @@ describe("poskoKknService - Radius & Dual Photo Properties (QC Unit Test)", () =
       expect(result.radius).toBe(200);
     });
 
-    it("should fallback to default radius 150 in create when radius is not provided", async () => {
+    it("should fallback to default radius 500 in create when radius is not provided", async () => {
       const mockResult = {
         id: "posko-2",
         kelompokId: "kel-2",
@@ -101,7 +101,7 @@ describe("poskoKknService - Radius & Dual Photo Properties (QC Unit Test)", () =
         latitude: -6.892,
         longitude: 107.612,
         fotoUrl: null,
-        radius: 150,
+        radius: 500,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -119,7 +119,7 @@ describe("poskoKknService - Radius & Dual Photo Properties (QC Unit Test)", () =
         expect.objectContaining({
           where: { kelompokId: "kel-2" },
           create: expect.objectContaining({
-            radius: 150,
+            radius: 500,
           }),
         })
       );
