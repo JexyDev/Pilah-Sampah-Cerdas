@@ -395,6 +395,13 @@ export const LaporanPresensiPage: React.FC = () => {
   };
 
   const handleExportCSV = () => {
+    // Validasi: filter tanggal wajib diisi sebelum ekspor
+    const isAllTimeWithNoDate = datePreset === "ALL" && !startDate && !endDate;
+    if (isAllTimeWithNoDate) {
+      toast.error("Filter tanggal wajib diisi sebelum ekspor. Pilih preset periode atau isi tanggal awal dan akhir secara manual.");
+      return;
+    }
+
     if (activeTab === "REKAP_MAHASISWA") {
       if (filteredStudentAggregates.length === 0) {
         toast.error("Tidak ada data rekapitulasi untuk diekspor.");

@@ -1487,6 +1487,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       return;
     }
 
+    // Validasi: filter tanggal wajib diisi sebelum ekspor
+    if (exportPeriod === "SEMUA") {
+      toast.error("Filter tanggal wajib dipilih sebelum ekspor. Pilih Bulan Ini, 30 Hari, atau Custom.");
+      return;
+    }
+    if (exportPeriod === "CUSTOM" && (!exportStartDate || !exportEndDate)) {
+      toast.error("Tanggal awal dan tanggal akhir wajib diisi untuk ekspor periode custom.");
+      return;
+    }
+
     let filtered = [...attendance];
     if (exportPeriod === "BULAN_INI") {
       const now = new Date();
