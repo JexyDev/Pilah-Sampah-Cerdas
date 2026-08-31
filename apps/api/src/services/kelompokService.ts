@@ -58,6 +58,9 @@ export const kelompokService = {
       prisma.kelompokKkn.count({ where: whereClause }),
     ]);
 
+    // Natural sort: Kelompok 1, Kelompok 2, ..., Kelompok 10, Kelompok 11
+    groups.sort((a, b) => (a.name || "").localeCompare(b.name || "", "id", { numeric: true, sensitivity: "base" }));
+
     return { groups, total, page, limit: isAll ? total : limit };
   },
 

@@ -15,7 +15,7 @@ conn.on('ready', () => {
   console.log('✓ Terhubung ke VPS (157.10.252.252).');
   console.log('1. Mengambil dump PostgreSQL dari VPS secara real-time streaming...');
 
-  const dumpCmd = `echo 'Makerdotindo2026' | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges`;
+  const dumpCmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges`;
 
   const writeStream = fs.createWriteStream(SQL_OUTPUT_PATH);
   let downloadedBytes = 0;
@@ -62,7 +62,7 @@ conn.on('ready', () => {
   host: '157.10.252.252',
   port: 22,
   username: 'maker',
-  password: 'Makerdotindo2026',
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
   readyTimeout: 60000,
   keepaliveInterval: 10000,
 });

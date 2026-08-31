@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { LineChart, Grid, Download, TrendingUp, MoreVertical, Cpu, Network, ArrowUpDown } from "lucide-react";
+import { LineChart, Grid, Download, TrendingUp, MoreVertical, Cpu, Network, ArrowUpDown, X, Calendar, CheckCircle2, FileSpreadsheet } from "lucide-react";
 
 import React, { useState, useEffect } from "react";
 import api from "../../services/api";
@@ -14,6 +14,48 @@ import toast from "react-hot-toast";
 const LaporanAnalitik: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+
+  // Export Modal & Strict Date Range Validation States
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState("");
+  const [exportEndDate, setExportEndDate] = useState("");
+  const [exportPreset, setExportPreset] = useState<"TODAY" | "7d" | "30d" | "THIS_MONTH" | "CUSTOM">("7d");
+  const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    const today = new Date();
+    const endStr = today.toISOString().slice(0, 10);
+    const start7d = new Date(today);
+    start7d.setDate(start7d.getDate() - 7);
+    setExportStartDate(start7d.toISOString().slice(0, 10));
+    setExportEndDate(endStr);
+  }, []);
+
+  const handleApplyExportPreset = (preset: "TODAY" | "7d" | "30d" | "THIS_MONTH" | "CUSTOM") => {
+    setExportPreset(preset);
+    const today = new Date();
+    const endStr = today.toISOString().slice(0, 10);
+    if (preset === "TODAY") {
+      setExportStartDate(endStr);
+      setExportEndDate(endStr);
+    } else if (preset === "7d") {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 7);
+      setExportStartDate(d.toISOString().slice(0, 10));
+      setExportEndDate(endStr);
+    } else if (preset === "30d") {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 30);
+      setExportStartDate(d.toISOString().slice(0, 10));
+      setExportEndDate(endStr);
+    } else if (preset === "THIS_MONTH") {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      setExportStartDate(firstDay.toISOString().slice(0, 10));
+      setExportEndDate(endStr);
+    }
+  };
+
+  const isExportDateRangeValid = !!exportStartDate && !!exportEndDate && exportStartDate <= exportEndDate;
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -48,30 +90,34 @@ const LaporanAnalitik: React.FC = () => {
     );
   }
 
-  const handleExportCSV = async () => {
-    if (!data) {
-      toast.error("Tidak ada data analitik dalam tabel untuk diekspor.");
+  const handleExecuteExportCSV = async () => {
+    if (!isExportDateRangeValid) {
+      toast.error("Rentang waktu filter ekspor wajib diisi dengan benar (Mulai <= Selesai).");
       return;
     }
+    setIsExporting(true);
     try {
-      toast.loading("Menyiapkan CSV...", { id: "export" });
-      const response = await api.get("/dashboard/export-dataset", {
+      toast.loading("Menyiapkan dataset analitik...", { id: "export" });
+      const response = await api.get(`/dashboard/export-dataset?startDate=${exportStartDate}&endDate=${exportEndDate}`, {
         responseType: "blob",
       });
       if (!response.data || response.data.size === 0) {
-        toast.error("Tidak ada data untuk diekspor pada periode ini.", { id: "export" });
+        toast.error("Tidak ada data untuk diekspor pada rentang waktu ini.", { id: "export" });
         return;
       }
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `laporan_analitik_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.setAttribute("download", `laporan_analitik_${exportStartDate}_sd_${exportEndDate}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      setIsExportModalOpen(false);
       toast.success("Berhasil mengunduh CSV", { id: "export" });
     } catch (error) {
       toast.error("Gagal mengunduh CSV", { id: "export" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -106,13 +152,13 @@ const LaporanAnalitik: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2 ml-auto sm:ml-0">
             <button
-              onClick={handleExportCSV}
+              onClick={() => setIsExportModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all text-xs border border-slate-200 dark:border-slate-800 cursor-pointer active:scale-95"
             >
               <Grid size={14} /> <span>Ekspor CSV</span>
             </button>
             <button
-              onClick={handleExportCSV}
+              onClick={() => setIsExportModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#009966] hover:bg-[#008055] text-white font-bold rounded-xl transition-all text-xs shadow-xs cursor-pointer active:scale-95"
             >
               <Download size={14} /> <span>Ekspor Dataset AI</span>
@@ -420,6 +466,138 @@ const LaporanAnalitik: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* EXPORT VALIDATION MODAL WITH DATE RANGE ENFORCEMENT */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                  <FileSpreadsheet size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Ekspor Dataset Laporan Analitik</h3>
+                  <p className="text-xs text-slate-500 font-medium">Pilih rentang waktu filter untuk mengaktifkan unduhan CSV</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-slate-400 block tracking-wider">
+                1. Pilih Preset Rentang Waktu
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "TODAY", label: "Hari Ini" },
+                  { id: "7d", label: "7 Hari" },
+                  { id: "30d", label: "30 Hari" },
+                  { id: "THIS_MONTH", label: "Bulan Ini" },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleApplyExportPreset(p.id as any)}
+                    className={`py-2 px-1 text-xs font-bold rounded-xl transition border cursor-pointer text-center ${
+                      exportPreset === p.id
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Date Range Inputs */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black uppercase text-slate-400 block tracking-wider">
+                2. Rentang Tanggal Mulai &amp; Selesai (Wajib)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 block mb-1">Tanggal Mulai</span>
+                  <input
+                    type="date"
+                    value={exportStartDate}
+                    onChange={(e) => {
+                      setExportStartDate(e.target.value);
+                      setExportPreset("CUSTOM");
+                    }}
+                    className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 block mb-1">Tanggal Selesai</span>
+                  <input
+                    type="date"
+                    value={exportEndDate}
+                    onChange={(e) => {
+                      setExportEndDate(e.target.value);
+                      setExportPreset("CUSTOM");
+                    }}
+                    className="w-full px-3 py-2 text-xs font-bold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Validation Feedback Box */}
+            <div className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center justify-between ${
+              !isExportDateRangeValid
+                ? "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200"
+                : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+            }`}>
+              <div className="flex items-center gap-2">
+                {!isExportDateRangeValid ? (
+                  <>
+                    <Calendar size={16} className="shrink-0 text-amber-600" />
+                    <span>Tentukan tanggal mulai dan selesai yang valid.</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+                    <span>Rentang tanggal valid: <strong>{exportStartDate} s/d {exportEndDate}</strong></span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteExportCSV}
+                disabled={!isExportDateRangeValid || isExporting}
+                className={`px-5 py-2.5 rounded-xl text-xs font-black transition flex items-center gap-2 shadow-xs ${
+                  isExportDateRangeValid && !isExporting
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700"
+                }`}
+                title={!isExportDateRangeValid ? "Set rentang waktu filter terlebih dahulu" : undefined}
+              >
+                <Download size={15} />
+                <span>{isExporting ? "Mengunduh..." : "Unduh CSV Dataset"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

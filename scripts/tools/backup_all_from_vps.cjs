@@ -36,7 +36,7 @@ conn.on('ready', () => {
   console.log('⏳ [2/3] Memulai dump database PostgreSQL (psc_db)...');
 
   // 1. Dump Database PostgreSQL
-  const dumpCmd = `echo 'Makerdotindo2026' | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges`;
+  const dumpCmd = `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges`;
   const sqlStream = fs.createWriteStream(SQL_BACKUP_FILE);
   let dbBytes = 0;
 
@@ -113,7 +113,7 @@ conn.on('ready', () => {
   host: '157.10.252.252',
   port: 22,
   username: 'maker',
-  password: 'Makerdotindo2026',
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
   readyTimeout: 60000,
   keepaliveInterval: 10000,
 });

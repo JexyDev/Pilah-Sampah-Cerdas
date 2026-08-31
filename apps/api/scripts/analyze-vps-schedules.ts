@@ -4,7 +4,7 @@ const config = {
   host: "157.10.252.252",
   port: 22,
   username: "maker",
-  password: "Makerdotindo2026",
+  password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
 };
 
 function execCommand(conn: Client, cmd: string): Promise<{ code: number; output: string; error: string }> {
@@ -35,7 +35,7 @@ async function main() {
     .on("ready", async () => {
       console.log("SSH Connected.");
 
-      const queryLebakGede = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
+      const queryLebakGede = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
         SELECT j.id, j.title, j.date, j.dibuat_pada, j.location, j.latitude, j.longitude, j.radius, j.is_aktif, k.nama as kelompok_nama
         FROM jadwal j
         JOIN kelompok_kkn k ON j.id_kelompok = k.id
@@ -45,7 +45,7 @@ async function main() {
       console.log("=== DETAIL SCHEDULES LEBAK GEDE ===\n", queryLebakGede.output);
 
       // Check if there are any presensi_kegiatan linked to any schedule
-      const queryAllPresensi = await execCommand(conn, `echo Makerdotindo2026 | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
+      const queryAllPresensi = await execCommand(conn, `echo "${process.env.VPS_PASSWORD || process.env.VPS_PASS || ''}" | sudo -S docker exec psc-postgres psql -U psc_user -d psc_db -c "
         SELECT a.id, a.id_jadwal, u.nama, a.hadir_pada, a.status
         FROM presensi_kegiatan a
         JOIN pengguna u ON a.id_mahasiswa = u.id

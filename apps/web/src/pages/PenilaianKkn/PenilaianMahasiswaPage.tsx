@@ -17,15 +17,16 @@ import { dplService, type StudentDetail } from "../../services/dplService";
 import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 export const PenilaianMahasiswaPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<StudentDetail[]>([]);
   const [kelompokList, setKelompokList] = useState<any[]>([]);
   const [selectedKelompokId, setSelectedKelompokId] = useState<string>("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   
-  // Pagination states
+  // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
@@ -37,9 +38,10 @@ export const PenilaianMahasiswaPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const kelRes = await api.get("/kelompok");
-      if (kelRes.data?.success && Array.isArray(kelRes.data.data)) {
-        setKelompokList(kelRes.data.data);
+      const kelRes = await api.get("/kelompok?limit=0");
+      const list = kelRes.data?.groups || kelRes.data?.data || (Array.isArray(kelRes.data) ? kelRes.data : []);
+      if (Array.isArray(list)) {
+        setKelompokList(sortKelompokList(list, (k: any) => k.name || ""));
       }
 
       const data = await dplService.getStudents(

@@ -50,28 +50,19 @@ class BERSEKAWebSocketClient {
   private getWsUrl(): string {
     if (typeof window === "undefined") return "ws://localhost:3000";
 
-    // 1. Explicit WS env var
-    const envWs = (import.meta as any).env?.VITE_WS_URL;
-    if (envWs) return envWs;
-
-    // 2. Derive from VITE_API_BASE_URL if available
-    const envApi = (import.meta as any).env?.VITE_API_BASE_URL;
-    if (envApi && (envApi.startsWith("http://") || envApi.startsWith("https://"))) {
-      try {
-        const apiUrl = new URL(envApi);
-        const wsProto = apiUrl.protocol === "https:" ? "wss:" : "ws:";
-        const path = apiUrl.pathname && apiUrl.pathname !== "/" ? apiUrl.pathname : "/api";
-        const normalizedPath = path.endsWith("/") ? path : `${path}/`;
-        return `${wsProto}//${apiUrl.host}${normalizedPath}`;
-      } catch (_e) {
-        // Fallback below
-      }
-    }
-
     const isHttps = window.location.protocol === "https:";
     const protocol = isHttps ? "wss:" : "ws:";
     const hostname = window.location.hostname;
     const port = window.location.port;
+
+    // Jika di production domain (bukan localhost), selalu gunakan WebSocket reverse proxy Nginx (/api/)
+    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `${protocol}//${window.location.host}/api/`;
+    }
+
+    // 1. Explicit WS env var
+    const envWs = (import.meta as any).env?.VITE_WS_URL;
+    if (envWs) return envWs;
 
     // In local dev (Vite running on port 5173/5174/etc, backend on port 3000):
     if (
@@ -86,7 +77,7 @@ class BERSEKAWebSocketClient {
       return `${protocol}//${hostname}:3000`;
     }
 
-    // Default: use window host + /api/ path with trailing slash to match Nginx proxy_pass location block without 301 redirects
+    // Default: use window host + /api/ path
     return `${protocol}//${window.location.host}/api/`;
   }
 

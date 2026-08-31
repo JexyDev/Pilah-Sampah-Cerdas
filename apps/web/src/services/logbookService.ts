@@ -173,6 +173,17 @@ export const logbookApiService = {
   },
 
   /**
+   * Update / Edit logbook aktivitas mahasiswa (Developer / DPL)
+   */
+  updateMahasiswaLogbook: async (id: string, data: FormData | Record<string, any>) => {
+    const isFormData = data instanceof FormData;
+    const res = await api.put(`/logbook/mahasiswa/${id}`, data, {
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : undefined,
+    });
+    return res.data;
+  },
+
+  /**
    * Persetujuan / Penolakan oleh Ketua Kelompok
    */
   approveByKetua: async (

@@ -15,9 +15,12 @@ const connection = getRedisConfig();
 
 let auditWorker: Worker | null = null;
 
-try {
-  auditWorker = new Worker(
-    'audit-log-queue',
+const isPrimaryWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === "0";
+
+if (isPrimaryWorker) {
+  try {
+    auditWorker = new Worker(
+      'audit-log-queue',
     async (job: Job) => {
       const { action, userId, roleName, featureCategory, endpoint, ipAddress, oldValue, newValue } = job.data;
 
@@ -82,8 +85,9 @@ try {
   auditWorker.on('failed', (job, err) => {
     console.error(`[Audit Worker] Job ${job?.id} has failed with ${err.message}`);
   });
-} catch (err: any) {
-  console.warn(`[Audit Worker Init Warning] Failed to initialize audit worker: ${err.message}`);
+  } catch (err: any) {
+    console.warn(`[Audit Worker Init Warning] Failed to initialize audit worker: ${err.message}`);
+  }
 }
 
 export { auditWorker };

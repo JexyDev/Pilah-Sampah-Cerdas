@@ -168,3 +168,5 @@ export const RwApproval = () => {
     </div>
   );
 };
+
+export default RwApproval;

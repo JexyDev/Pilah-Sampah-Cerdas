@@ -27,6 +27,7 @@ import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
@@ -167,12 +168,9 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [dplForm, setDplForm] = useState({ name: "", email: "", phone: "", password: "", nip: "" });
   const [submittingDpl, setSubmittingDpl] = useState(false);
 
-  // Universitas State
+  // Universitas State (Hanya UNIKOM)
   const [uniList, setUniList] = useState<string[]>([
-    "Universitas Komputer Indonesia (UNIKOM)",
-    "Institut Teknologi Bandung (ITB)",
-    "Universitas Padjadjaran (UNPAD)",
-    "Universitas Pendidikan Indonesia (UPI)"
+    "Universitas Komputer Indonesia (UNIKOM)"
   ]);
   const [newUniName, setNewUniName] = useState("");
 
@@ -183,7 +181,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       // Fetch all groups with limit=0 so client-side search, filtering, and pagination are instantaneous
       const res = await api.get("/kelompok?limit=0");
       if (res.data?.success) {
-        setKelompokList(res.data.groups || []);
+        const rawGroups = res.data.groups || res.data.data || (Array.isArray(res.data) ? res.data : []);
+        setKelompokList(sortKelompokList(rawGroups, (k: any) => k.name));
       }
     } catch (err) {
       console.error(err);

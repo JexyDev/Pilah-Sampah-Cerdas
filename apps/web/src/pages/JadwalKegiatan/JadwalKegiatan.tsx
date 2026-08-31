@@ -40,6 +40,7 @@ import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle }
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { sortKelompokList } from "../../utils/sortUtils";
 import {
   TIMELINE_KKN_HEADER,
   TIMELINE_KKN_DATA,
@@ -218,7 +219,8 @@ const JadwalKegiatan: React.FC = () => {
   const fetchGroups = async () => {
     try {
       const res = await api.get("/kelompok?limit=0");
-      const list = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      const rawList = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      const list = sortKelompokList(rawList, (g: any) => g.name || "");
       setGroups(list);
 
       const groupKelurahans = list

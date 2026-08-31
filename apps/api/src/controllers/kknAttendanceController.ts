@@ -709,5 +709,151 @@ export const kknAttendanceController = {
       });
     }
   },
+
+  skipKegiatan: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).user?.userId || (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+      const { id } = req.params;
+      const alasan = req.body.alasan || "Tidak ada kegiatan";
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: "UNAUTHORIZED",
+          message: "Autentikasi diperlukan",
+        });
+        return;
+      }
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "ID Kegiatan wajib disertakan",
+        });
+        return;
+      }
+
+      const result = await kknAttendanceService.skipKegiatan(userId, userRole, id, { alasan });
+
+      res.status(200).json({
+        success: true,
+        message: "Kegiatan berhasil ditandai sebagai Tidak Ada Kegiatan.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] skipKegiatan error:", error);
+      const isConflict = error.message && (error.message.includes("CONFLICT") || error.message.includes("sudah dimulai"));
+      const isForbidden = error.message && (error.message.includes("FORBIDDEN") || error.message.includes("tidak memiliki izin"));
+      const isNotFound = error.message && (error.message.includes("NOT_FOUND") || error.message.includes("tidak ditemukan"));
+
+      let statusCode = 500;
+      let errCode = "INTERNAL_SERVER_ERROR";
+      let message = error.message || "Gagal melewati kegiatan KKN";
+
+      if (isConflict) {
+        statusCode = 409;
+        errCode = "CONFLICT";
+        message = error.message.replace(/^CONFLICT:\s*/, "");
+      } else if (isForbidden) {
+        statusCode = 403;
+        errCode = "FORBIDDEN";
+        message = error.message.replace(/^FORBIDDEN:\s*/, "");
+      } else if (isNotFound) {
+        statusCode = 404;
+        errCode = "NOT_FOUND";
+        message = error.message.replace(/^NOT_FOUND:\s*/, "");
+      }
+
+      res.status(statusCode).json({
+        success: false,
+        error: errCode,
+        message,
+      });
+    }
+  },
+
+  createAttendanceManual: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.createAttendanceManual(authorUserId, authorRole, req.body);
+      res.status(201).json({
+        success: true,
+        message: "Presensi mahasiswa berhasil dibuat manual.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] createAttendanceManual error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  getAttendanceById: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const data = await kknAttendanceService.getAttendanceById(id);
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] getAttendanceById error:", error);
+      res.status(404).json({ success: false, message: error.message });
+    }
+  },
+
+  updateAttendanceAdmin: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.updateAttendanceAdmin(id, authorUserId, authorRole, req.body);
+      res.status(200).json({
+        success: true,
+        message: "Data presensi & durasi jam pulang berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] updateAttendanceAdmin error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  deleteAttendanceAdmin: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.deleteAttendanceAdmin(id, authorUserId, authorRole);
+      res.status(200).json({
+        success: true,
+        message: "Data presensi berhasil dihapus.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] deleteAttendanceAdmin error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  forceCheckoutAttendance: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.forceCheckoutAttendance(id, authorUserId, authorRole, req.body);
+      res.status(200).json({
+        success: true,
+        message: "Sesi presensi yang terjeda berhasil diselesaikan (Force Check-out).",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] forceCheckoutAttendance error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
 };
+
 

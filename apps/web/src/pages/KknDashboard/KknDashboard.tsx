@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { MahasiswaMobileApp } from "./MahasiswaMobileApp";
 import LeaderboardWidget from "../../components/LeaderboardWidget";
 import {
   Users,
@@ -109,8 +110,9 @@ const createWargaMarkerIcon = (compliance: number) => {
   });
 };
 
-const KknDashboard: React.FC = () => {
+const KknDashboardContent: React.FC = () => {
   const { user } = useAuthStore();
+
   const [stats, setStats] = useState<any>(null);
   const [wargaList, setWargaList] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
@@ -1328,6 +1330,17 @@ const KknDashboard: React.FC = () => {
       )}
     </div>
   );
+};
+
+const KknDashboard: React.FC = () => {
+  const { user } = useAuthStore();
+
+  // If logged in as Mahasiswa KKN, render the dedicated mobile experience
+  if (user?.peran === "MAHASISWA_KKN") {
+    return <MahasiswaMobileApp />;
+  }
+
+  return <KknDashboardContent />;
 };
 
 export default KknDashboard;

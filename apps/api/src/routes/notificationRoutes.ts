@@ -569,7 +569,7 @@ router.post("/device-token", authMiddleware, async (req, res) => {
  *       200:
  *         description: Device token berhasil dihapus
  */
-router.post("/unregister-token", authMiddleware, async (req, res) => {
+router.post(["/unregister-token", "/fcm-token/unregister"], authMiddleware, async (req, res) => {
   try {
     const userId = req.user!.userId;
     await prisma.user.update({

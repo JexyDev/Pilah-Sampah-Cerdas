@@ -65,7 +65,7 @@ jobs:
         run: |
           cd apps/web
           npm ci --prefer-offline --no-audit 2>/dev/null || npm install --silent --legacy-peer-deps
-          npm run build
+          VITE_API_BASE_URL=/api/v1 npm run build
           test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
           tar -czf dist.tar.gz -C dist .
 

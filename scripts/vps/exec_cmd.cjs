@@ -27,7 +27,7 @@ function runSSH(retries = 3) {
     host: '157.10.252.252',
     port: 22,
     username: 'maker',
-    password: 'Makerdotindo2026',
+    password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
     readyTimeout: 40000,
     keepaliveInterval: 5000
   });

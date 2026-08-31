@@ -6,11 +6,13 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
   Marker,
   Popup,
   Polygon,
+  Circle,
   useMap
 } from "react-leaflet";
 import {
@@ -38,7 +40,8 @@ import {
   Info,
   CheckCircle2,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Radio
 } from "lucide-react";
 import L from "leaflet";
 import api from "../../services/api";
@@ -50,6 +53,7 @@ import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { KELURAHAN_GEODATA, CoblongGeo } from "../../constants/coblongGeoData";
 import { resolveImageUrl, handlePoskoImageError, getPoskoFallbackImage } from "../../utils/imageUrl";
+import { sortKelompokList } from "../../utils/sortUtils";
 
 export interface PoskoItem {
   id: string;
@@ -62,7 +66,9 @@ export interface PoskoItem {
   rwName: string;
   latitude: number | string;
   longitude: number | string;
+  radius?: number;
   foto?: string | null;
+  fotoUrl?: string | null;
   pic: string;
   kontak: string;
   dplName: string;
@@ -147,6 +153,7 @@ const INITIAL_FORM_STATE = {
   rwName: "01",
   latitude: "",
   longitude: "",
+  radius: "150",
   pic: "",
   kontak: "",
   dplName: "",
@@ -154,6 +161,7 @@ const INITIAL_FORM_STATE = {
 };
 
 export const PoskoKknPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const userRole = String(user?.peran || "").toUpperCase();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PEMBIMBING_LAPANGAN"].some((r) => userRole.includes(r));
@@ -228,10 +236,10 @@ export const PoskoKknPage: React.FC = () => {
 
   const fetchKelompokList = useCallback(async () => {
     try {
-      const res = await api.get("/kelompok?limit=100");
-      const list = res.data?.data || res.data?.groups || res.data?.kelompoks || res.data || [];
+      const res = await api.get("/kelompok?limit=0");
+      const list = res.data?.groups || res.data?.data || res.data?.kelompoks || (Array.isArray(res.data) ? res.data : []);
       if (Array.isArray(list)) {
-        setKelompokList(list);
+        setKelompokList(sortKelompokList(list, (k: any) => k.name || ""));
       }
     } catch (err) {
       console.warn("Gagal memuat kelompok list:", err);
@@ -249,13 +257,12 @@ export const PoskoKknPage: React.FC = () => {
     const totalKelompok = Math.max(kelompokList.length, items.length);
     const verified = items.filter((i) => i.statusApproval === "APPROVED").length;
 
-    // Total Mahasiswa KKN riil se-Coblong
-    let totalMahasiswa = 0;
-    if (kelompokList.length > 0) {
-      totalMahasiswa = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
-    }
-    if (totalMahasiswa === 0) {
-      totalMahasiswa = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
+    // Total Mahasiswa dari 15 Posko yang sudah terdaftar
+    const totalMahasiswaPosko = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
+    // Total Mahasiswa KKN keseluruhan se-Kecamatan Coblong (32 Kelompok)
+    let totalMahasiswaSemua = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
+    if (totalMahasiswaSemua === 0) {
+      totalMahasiswaSemua = totalMahasiswaPosko;
     }
 
     const dplSet = new Set<string>();
@@ -268,7 +275,7 @@ export const PoskoKknPage: React.FC = () => {
     });
     const totalDpl = dplSet.size;
 
-    return { totalPosko, totalKelompok, verified, totalMahasiswa, totalDpl };
+    return { totalPosko, totalKelompok, verified, totalMahasiswaPosko, totalMahasiswaSemua, totalDpl };
   }, [items, kelompokList]);
 
   // Kelompok yang belum mendaftarkan titik Posko KKN
@@ -347,6 +354,7 @@ export const PoskoKknPage: React.FC = () => {
       ...INITIAL_FORM_STATE,
       latitude: "-6.89030",
       longitude: "107.61100",
+      radius: "150",
     });
     setSelectedFile(null);
     setPreviewPhotoUrl(null);
@@ -365,13 +373,14 @@ export const PoskoKknPage: React.FC = () => {
       rwName: item.rwName === "-" ? "01" : item.rwName || "01",
       latitude: String(item.latitude || ""),
       longitude: String(item.longitude || ""),
+      radius: String(item.radius || 150),
       pic: item.pic || "",
       kontak: item.kontak === "-" ? "" : item.kontak || "",
       dplName: item.dplName || "",
       statusApproval: (item.statusApproval as "APPROVED" | "PENDING") || "APPROVED",
     });
     setSelectedFile(null);
-    setPreviewPhotoUrl(item.foto ? resolveImageUrl(item.foto) : null);
+    setPreviewPhotoUrl(item.foto || item.fotoUrl ? resolveImageUrl(item.foto || item.fotoUrl) : null);
     setIsFormModalOpen(true);
   };
 
@@ -485,6 +494,12 @@ export const PoskoKknPage: React.FC = () => {
       return;
     }
 
+    const radiusNum = Number(formData.radius);
+    if (isNaN(radiusNum) || radiusNum <= 0) {
+      showToast.error("Radius geofence presensi wajib berupa angka positif (contoh: 150 meter).");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payloadData = new FormData();
@@ -495,12 +510,16 @@ export const PoskoKknPage: React.FC = () => {
       }
       payloadData.append("latitude", String(latNum));
       payloadData.append("longitude", String(lngNum));
+      payloadData.append("radius", String(radiusNum));
       payloadData.append("pic", formData.pic.trim());
       payloadData.append("kontak", formData.kontak.trim());
       payloadData.append("statusApproval", formData.statusApproval);
 
       if (selectedFile) {
         payloadData.append("foto", selectedFile);
+      } else if (previewPhotoUrl && !previewPhotoUrl.startsWith("blob:") && !previewPhotoUrl.startsWith("data:")) {
+        // Teruskan URL foto lama agar tidak terhapus saat pembaruan data
+        payloadData.append("foto", previewPhotoUrl);
       }
 
       if (formMode === "add") {
@@ -773,7 +792,7 @@ export const PoskoKknPage: React.FC = () => {
               const latNum = Number(posko.latitude);
               const lngNum = Number(posko.longitude);
               const isValidCoord = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
-              const resolvedFoto = resolveImageUrl(posko.foto);
+              const resolvedFoto = resolveImageUrl(posko.foto || posko.fotoUrl);
 
               return (
                 <div className="space-y-6 animate-in fade-in duration-200">
@@ -817,6 +836,18 @@ export const PoskoKknPage: React.FC = () => {
                             <span>Buka di Google Maps</span>
                             <ExternalLink size={12} />
                           </a>
+                        )}
+                        {/* Tombol Inspeksi Zona & Geofence */}
+                        {posko.kelompokId && (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/developer/inspeksi-zona?kelompokId=${posko.kelompokId}`)}
+                            className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                            title="Buka Inspeksi Geofence & Zona Presensi Kelompok Ini"
+                          >
+                            <Radio size={14} className="text-emerald-600 dark:text-emerald-400" />
+                            <span>Inspeksi Zona &amp; Geofence</span>
+                          </button>
                         )}
                         {canEditPosko && (
                           <button
@@ -870,28 +901,34 @@ export const PoskoKknPage: React.FC = () => {
 
                       <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
                         <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                          Koordinat GPS
+                          Koordinat &amp; Geofence
                         </span>
                         <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-1 font-mono block">
                           {isValidCoord ? `${latNum.toFixed(5)}, ${lngNum.toFixed(5)}` : "Belum diset"}
                         </span>
-                        {isValidCoord && (
-                          <button
-                            type="button"
-                            onClick={() => handleCopyCoordinate(posko.id, posko.latitude, posko.longitude)}
-                            className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 mt-1 cursor-pointer"
-                          >
-                            {copiedCoordId === posko.id ? (
-                              <span className="text-emerald-600 flex items-center gap-1">
-                                <Check size={12} /> Tersalin!
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <Copy size={12} /> Salin Koordinat
-                              </span>
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-2 py-0.5 rounded-md">
+                            <Radio size={10} className="text-indigo-500" />
+                            Radius {Number(posko.radius) || 150}m
+                          </span>
+                          {isValidCoord && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyCoordinate(posko.id, posko.latitude, posko.longitude)}
+                              className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedCoordId === posko.id ? (
+                                <span className="text-emerald-600 flex items-center gap-1">
+                                  <Check size={12} /> Tersalin!
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Copy size={12} /> Salin
+                                </span>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -914,7 +951,7 @@ export const PoskoKknPage: React.FC = () => {
                               className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1 cursor-pointer shadow-2xs"
                             >
                               <Upload size={12} />
-                              <span>{posko.foto ? "Ubah Foto" : "Unggah Foto"}</span>
+                              <span>{posko.foto || posko.fotoUrl ? "Ubah Foto" : "Unggah Foto"}</span>
                             </button>
                           )}
                         </div>
@@ -929,24 +966,22 @@ export const PoskoKknPage: React.FC = () => {
                               onError={(e) => handlePoskoImageError(e, posko.nama)}
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                             />
-                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1.5">
-                              <Eye size={16} />
-                              <span>Perbesar Foto</span>
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
+                              <Eye size={18} />
                             </div>
                           </div>
                         ) : (
-                          <div
-                            onClick={() => (canEditPosko ? handleOpenEditModal(posko) : null)}
-                            className={`aspect-video rounded-2xl bg-slate-100 dark:bg-slate-800/80 flex flex-col items-center justify-center text-slate-400 p-4 border border-dashed border-slate-300 dark:border-slate-700 ${
-                              canEditPosko ? "cursor-pointer hover:bg-slate-200/50 dark:hover:bg-slate-800 transition group" : ""
-                            }`}
-                          >
-                            <Upload size={28} className="mb-1.5 text-indigo-500 group-hover:scale-110 transition" />
-                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Foto posko belum diunggah</span>
+                          <div className="aspect-video rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-800/80 dark:to-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 p-6 text-center">
+                            <GraduationCap size={32} />
+                            <span className="font-bold text-xs">Belum ada foto posko</span>
                             {canEditPosko && (
-                              <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
-                                Klik di sini untuk unggah foto posko
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(posko)}
+                                className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-2xs mt-1"
+                              >
+                                Upload Foto Sekarang
+                              </button>
                             )}
                           </div>
                         )}
@@ -969,7 +1004,7 @@ export const PoskoKknPage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <Compass size={16} className="text-indigo-600" />
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              Lokasi Presisi Posko (Peta GIS)
+                              Lokasi Presisi Posko (Peta GIS &amp; Geofence)
                             </span>
                           </div>
                           {isValidCoord && (
@@ -1006,12 +1041,26 @@ export const PoskoKknPage: React.FC = () => {
                                   }}
                                 />
                               )}
+                              <Circle
+                                center={[latNum, lngNum]}
+                                radius={Number(posko.radius) || 150}
+                                pathOptions={{
+                                  color: "#4f46e5",
+                                  fillColor: "#6366f1",
+                                  fillOpacity: 0.15,
+                                  weight: 1.5,
+                                  dashArray: "4, 4",
+                                }}
+                              />
                               <Marker position={[latNum, lngNum]} icon={createPoskoMarkerIcon(posko.nama)}>
                                 <Popup>
                                   <div className="p-1 space-y-1 text-xs">
                                     <strong className="text-slate-900 font-bold">{posko.nama}</strong>
                                     <p className="text-slate-500">{posko.alamat}</p>
                                     <p className="text-indigo-600 font-semibold">{posko.kelompokName}</p>
+                                    <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1 pt-1 border-t border-slate-100">
+                                      <Radio size={11} /> Radius Geofence: {Number(posko.radius) || 150}m
+                                    </p>
                                   </div>
                                 </Popup>
                               </Marker>
@@ -1083,11 +1132,11 @@ export const PoskoKknPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 3: Total Mahasiswa */}
+          {/* Card 3: Mahasiswa di Posko Terdaftar */}
           <div className="p-4 sm:p-5 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">
-                Mahasiswa Terdata
+                Mahasiswa di Posko
               </span>
               <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                 <Users size={18} />
@@ -1095,10 +1144,10 @@ export const PoskoKknPage: React.FC = () => {
             </div>
             <div>
               <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                {metrics.totalMahasiswa > 0 ? metrics.totalMahasiswa : "-"}
+                {metrics.totalMahasiswaPosko > 0 ? metrics.totalMahasiswaPosko : "-"}
               </div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-                Anggota di Seluruh Kelompok
+                Anggota di {metrics.totalPosko} Posko {metrics.totalMahasiswaSemua > metrics.totalMahasiswaPosko ? `(dari ${metrics.totalMahasiswaSemua} Total Mhs)` : ""}
               </p>
             </div>
           </div>
@@ -1107,7 +1156,7 @@ export const PoskoKknPage: React.FC = () => {
           <div className="p-4 sm:p-5 rounded-2xl border bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between w-full mb-3">
               <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-400">
-                DPL Pendamping
+                DPL Pendamping Posko
               </span>
               <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
                 <Sparkles size={18} />
@@ -1118,7 +1167,7 @@ export const PoskoKknPage: React.FC = () => {
                 {metrics.totalDpl > 0 ? metrics.totalDpl : "-"}
               </div>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1 truncate">
-                Dosen Pendamping Aktif
+                DPL Terhubung di {metrics.totalPosko} Posko Aktif
               </p>
             </div>
           </div>
@@ -1258,94 +1307,112 @@ export const PoskoKknPage: React.FC = () => {
                 </Polygon>
               ))}
 
-              {/* Marker Posko KKN */}
+              {/* Marker & Radius Circle Posko KKN */}
               {filteredItems.map((item) => {
                 const latNum = Number(item.latitude);
                 const lngNum = Number(item.longitude);
                 if (isNaN(latNum) || isNaN(lngNum) || latNum === 0 || lngNum === 0) return null;
 
-                const resolvedFoto = resolveImageUrl(item.foto);
+                const resolvedFoto = resolveImageUrl(item.foto || item.fotoUrl);
                 const isApproved = item.statusApproval === "APPROVED";
+                const itemRadius = Number(item.radius) || 150;
 
                 return (
-                  <Marker
-                    key={item.id}
-                    position={[latNum, lngNum]}
-                    icon={createPoskoMarkerIcon(item.nama)}
-                  >
-                    <Popup maxWidth={320} className="custom-facility-popup">
-                      <div className="p-2 space-y-2.5 text-xs text-slate-800 dark:text-slate-100">
-                        {resolvedFoto && (
-                          <div 
-                            className="relative w-full h-32 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer group"
-                            onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
-                          >
-                            <img
-                              src={resolvedFoto}
-                              alt={item.nama}
-                              onError={(e) => handlePoskoImageError(e, item.nama)}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
-                              <Eye size={16} />
+                  <React.Fragment key={item.id}>
+                    <Circle
+                      center={[latNum, lngNum]}
+                      radius={itemRadius}
+                      pathOptions={{
+                        color: "#4f46e5",
+                        fillColor: "#6366f1",
+                        fillOpacity: 0.12,
+                        weight: 1.5,
+                        dashArray: "4, 4",
+                      }}
+                    />
+                    <Marker
+                      position={[latNum, lngNum]}
+                      icon={createPoskoMarkerIcon(item.nama)}
+                    >
+                      <Popup maxWidth={320} className="custom-facility-popup">
+                        <div className="p-2 space-y-2.5 text-xs text-slate-800 dark:text-slate-100">
+                          {resolvedFoto && (
+                            <div 
+                              className="relative w-full h-32 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer group"
+                              onClick={() => setPreviewImage({ url: resolvedFoto, title: item.nama, subtitle: item.alamat })}
+                            >
+                              <img
+                                src={resolvedFoto}
+                                alt={item.nama}
+                                onError={(e) => handlePoskoImageError(e, item.nama)}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
+                                <Eye size={16} />
+                              </div>
+                            </div>
+                          )}
+
+                          <div>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200">
+                                Posko KKN
+                              </span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                isApproved ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300" : "bg-amber-100 text-amber-800"
+                              }`}>
+                                {isApproved ? "Aktif & Terverifikasi" : "Menunggu Approval"}
+                              </span>
+                            </div>
+                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 leading-tight">
+                              {item.nama}
+                            </h4>
+                            <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">
+                              {item.kelompokName}
+                            </p>
+                          </div>
+
+                          <div className="space-y-1 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between">
+                              <span><strong className="text-slate-800 dark:text-slate-200">Ketua Posko:</strong> {item.pic}</span>
+                            </div>
+                            <div>
+                              <strong className="text-slate-800 dark:text-slate-200">DPL:</strong> {item.dplName}
+                            </div>
+                            <div className="flex items-start gap-1.5 text-slate-600 dark:text-slate-300">
+                              <MapPin size={13} className="shrink-0 mt-0.5 text-emerald-500" />
+                              <span className="line-clamp-2">{item.alamat || `Kel. ${item.kelurahan}`}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 pt-1 border-t border-slate-100 dark:border-slate-800 font-bold">
+                              <Radio size={12} className="text-indigo-500" />
+                              <span>Radius Geofence: {itemRadius} meter</span>
                             </div>
                           </div>
-                        )}
 
-                        <div>
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200">
-                              Posko KKN
-                            </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                              isApproved ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300" : "bg-amber-100 text-amber-800"
-                            }`}>
-                              {isApproved ? "Aktif & Terverifikasi" : "Menunggu Approval"}
-                            </span>
-                          </div>
-                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 leading-tight">
-                            {item.nama}
-                          </h4>
-                          <p className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 mt-0.5">
-                            {item.kelompokName}
-                          </p>
-                        </div>
-
-                        <div className="space-y-1 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <div className="flex items-center justify-between">
-                            <span><strong className="text-slate-800 dark:text-slate-200">Ketua Posko:</strong> {item.pic}</span>
-                          </div>
-                          <div>
-                            <strong className="text-slate-800 dark:text-slate-200">DPL:</strong> {item.dplName}
-                          </div>
-                          <div className="flex items-start gap-1.5 text-slate-600 dark:text-slate-300">
-                            <MapPin size={13} className="shrink-0 mt-0.5 text-emerald-500" />
-                            <span className="line-clamp-2">{item.alamat || `Kel. ${item.kelurahan}`}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-1 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setDetailModalPosko(item)}
-                            className="flex-1 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
-                          >
-                            <Info size={12} /> Detail
-                          </button>
-                          {formatWhatsAppUrl(item.kontak) && (
-                            <a
-                              href={formatWhatsAppUrl(item.kontak)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex-1 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-1"
+                          <div className="pt-1 flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setDetailModalPosko(item)}
+                              className="flex-1 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer"
                             >
-                              <Phone size={12} /> WhatsApp
-                            </a>
-                          )}
+                              <Info size={12} /> Detail
+                            </button>
+                            {formatWhatsAppUrl(item.kontak) && (
+                              <a
+                                href={formatWhatsAppUrl(item.kontak)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center justify-center gap-1 shadow-2xs"
+                                title="Chat WhatsApp Ketua Posko"
+                              >
+                                <Phone size={12} /> WA
+                              </a>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </Popup>
-                  </Marker>
+                      </Popup>
+                    </Marker>
+                  </React.Fragment>
                 );
               })}
             </MapContainer>
@@ -1444,7 +1511,7 @@ export const PoskoKknPage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
                   {paginatedItems.map((item, index) => {
-                    const resolvedFoto = resolveImageUrl(item.foto);
+                    const resolvedFoto = resolveImageUrl(item.foto || item.fotoUrl);
                     const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
                     const latNum = Number(item.latitude);
                     const lngNum = Number(item.longitude);
@@ -1504,9 +1571,11 @@ export const PoskoKknPage: React.FC = () => {
                               <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
                                 {item.alamat || "Alamat posko belum diisi"}
                               </p>
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md mt-1">
-                                Posko KKN
-                              </span>
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-2 py-0.5 rounded-md">
+                                  Posko KKN
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -1565,23 +1634,29 @@ export const PoskoKknPage: React.FC = () => {
                               {formatCleanRw(item.rwName)} &bull; Kel. {item.kelurahan}
                             </span>
                             
-                            {hasValidCoords ? (
-                              <button
-                                type="button"
-                                onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
-                                className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer group/btn"
-                                title="Klik untuk menyalin koordinat"
-                              >
-                                <span>{latNum.toFixed(5)}, {lngNum.toFixed(5)}</span>
-                                {copiedCoordId === item.id ? (
-                                  <Check size={12} className="text-emerald-600" />
-                                ) : (
-                                  <Copy size={12} className="opacity-0 group-hover/btn:opacity-100 transition" />
-                                )}
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 italic">Koordinat belum diatur</span>
-                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-1.5 py-0.5 rounded-md">
+                                <Radio size={10} className="text-indigo-500" />
+                                {Number(item.radius) || 150}m
+                              </span>
+                              {hasValidCoords ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCoordinate(item.id, latNum, lngNum)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer group/btn"
+                                  title="Klik untuk menyalin koordinat"
+                                >
+                                  <span>{latNum.toFixed(5)}, {lngNum.toFixed(5)}</span>
+                                  {copiedCoordId === item.id ? (
+                                    <Check size={12} className="text-emerald-600" />
+                                  ) : (
+                                    <Copy size={12} className="opacity-0 group-hover/btn:opacity-100 transition" />
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-slate-400 italic">Koordinat belum diatur</span>
+                              )}
+                            </div>
                           </div>
                         </td>
 
@@ -1608,6 +1683,18 @@ export const PoskoKknPage: React.FC = () => {
                                 title="Tampilkan titik di peta"
                               >
                                 <MapPin size={15} />
+                              </button>
+                            )}
+
+                            {/* Tombol Inspeksi Zona KKN */}
+                            {item.kelompokId && (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/developer/inspeksi-zona?kelompokId=${item.kelompokId}`)}
+                                className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 dark:text-emerald-300 transition duration-150 flex items-center justify-center cursor-pointer shadow-2xs"
+                                title="Buka Inspeksi Zona & Geofence Kelompok Ini"
+                              >
+                                <Radio size={15} />
                               </button>
                             )}
 
@@ -1717,17 +1804,17 @@ export const PoskoKknPage: React.FC = () => {
             <div className="p-6 overflow-y-auto space-y-6">
               
               {/* Foto Banner Posko */}
-              {detailModalPosko.foto ? (
+              {detailModalPosko.foto || detailModalPosko.fotoUrl ? (
                 <div 
                   className="relative w-full h-48 rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 group cursor-pointer"
                   onClick={() => setPreviewImage({ 
-                    url: resolveImageUrl(detailModalPosko.foto) || "", 
+                    url: resolveImageUrl(detailModalPosko.foto || detailModalPosko.fotoUrl) || "", 
                     title: detailModalPosko.nama, 
                     subtitle: detailModalPosko.alamat 
                   })}
                 >
                   <img
-                    src={resolveImageUrl(detailModalPosko.foto) || ""}
+                    src={resolveImageUrl(detailModalPosko.foto || detailModalPosko.fotoUrl) || ""}
                     alt={detailModalPosko.nama}
                     onError={(e) => handlePoskoImageError(e, detailModalPosko.nama)}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
@@ -1877,6 +1964,22 @@ export const PoskoKknPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Radius Geofence Presensi */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                    Radius Geofence Presensi
+                  </span>
+                  <p className="font-extrabold text-sm text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                    <Radio size={14} className="text-indigo-500" />
+                    <span>{Number(detailModalPosko.radius) || 150} Meter</span>
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 sm:text-right">
+                  Batas area presensi otomatis mahasiswa di sekitar posko.
+                </p>
+              </div>
+
             </div>
 
             {/* Modal Footer */}
@@ -1895,6 +1998,19 @@ export const PoskoKknPage: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-2">
+                {detailModalPosko.kelompokId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const kId = detailModalPosko.kelompokId;
+                      setDetailModalPosko(null);
+                      navigate(`/developer/inspeksi-zona?kelompokId=${kId}`);
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <Radio size={13} /> Inspeksi Zona
+                  </button>
+                )}
                 {canEditPosko && (
                   <button
                     type="button"
@@ -2144,7 +2260,64 @@ export const PoskoKknPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Field 7: Foto Posko Upload */}
+              {/* Field 7: Radius Geofence Presensi (Meter) */}
+              <div className="space-y-2 p-4 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Radio size={14} className="text-indigo-600 dark:text-indigo-400" />
+                    Radius Geofence Presensi (Meter)
+                  </label>
+                  <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-lg">
+                    {formData.radius || 150} meter
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      required
+                      min={10}
+                      max={5000}
+                      step={10}
+                      placeholder="150"
+                      value={formData.radius}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, radius: e.target.value }))}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-900 dark:text-slate-100 pr-16"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      Meter
+                    </span>
+                  </div>
+                </div>
+
+                {/* Preset Radius Buttons */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Pilihan Cepat:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[50, 100, 150, 200, 300, 500].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, radius: String(r) }))}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                          formData.radius === String(r)
+                            ? "bg-indigo-600 text-white shadow-2xs"
+                            : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        {r} m {r === 150 ? "(Standar)" : ""}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                  Jarak toleransi batas radius dari titik posko agar mahasiswa dapat melakukan presensi kehadiran secara otomatis.
+                </p>
+              </div>
+
+              {/* Field 8: Foto Posko Upload */}
               <div className="space-y-1.5">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Foto Posko KKN

@@ -1443,6 +1443,7 @@ export class KknService {
       rwId?: number;
       latitude: number;
       longitude: number;
+      radius?: number;
       foto?: string;
     }
   ) {
@@ -1483,6 +1484,7 @@ export class KknService {
       alamat: payload.alamat || "-",
       latitude: lat,
       longitude: lng,
+      radius: payload.radius != null ? Number(payload.radius) : 150,
       fotoUrl: payload.foto,
     });
 
@@ -1495,6 +1497,7 @@ export class KknService {
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
+          radius: Number((posko as any).radius) || 150,
           status: "APPROVED",
         },
       },
@@ -1511,6 +1514,7 @@ export class KknService {
       rwId?: number;
       latitude?: number;
       longitude?: number;
+      radius?: number;
       foto?: string;
     }
   ) {
@@ -1553,12 +1557,14 @@ export class KknService {
 
     const poskoName = payload.nama || existingPosko?.nama || `Posko KKN ${student.kelompok.name}`;
     const { poskoKknService } = await import("./poskoKknService.js");
+    const parsedRadius = payload.radius !== undefined ? Number(payload.radius) : (Number((existingPosko as any)?.radius) || 150);
     const posko = await poskoKknService.upsertPosko(student.kelompokId, {
       nama: poskoName,
       alamat: payload.alamat !== undefined ? payload.alamat : (existingPosko?.alamat || "-"),
       latitude: lat,
       longitude: lng,
-      fotoUrl: payload.foto || existingPosko?.fotoUrl || undefined,
+      radius: parsedRadius,
+      fotoUrl: (payload.foto !== undefined && payload.foto !== "") ? payload.foto : (existingPosko?.fotoUrl || undefined),
     });
 
     await prisma.auditTrail.create({
@@ -1571,12 +1577,14 @@ export class KknService {
           longitude: existingPosko?.longitude ? Number(existingPosko.longitude) : null,
           nama: existingPosko?.nama,
           alamat: existingPosko?.alamat,
+          radius: Number((existingPosko as any)?.radius) || 150,
         },
         newValue: {
           poskoId: posko.id,
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
+          radius: Number((posko as any).radius) || 150,
           nama: posko.nama,
           alamat: posko.alamat,
           status: "APPROVED",
@@ -1691,14 +1699,16 @@ export class KknService {
       orderBy: { createdAt: "desc" },
     });
 
-    return poskos.map((p) => {
+    const facilityPoskoMap = new Set(poskos.map((p) => String(p.kelompokId)));
+    const mapped = poskos.map((p) => {
+      const pAny = p as any;
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
-      const ketuaName = ketua?.user?.name || "Ketua Kelompok KKN";
-      const kontak = ketua?.user?.phone || ketua?.noWa || "-";
+      const ketuaName = pAny.pic || ketua?.user?.name || "Ketua Kelompok KKN";
+      const kontak = pAny.kontak && pAny.kontak !== "-" ? pAny.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || (p.kelompok as any)?.dplNamaMentah || "DPL Belum Diset";
-      const kelurahan = p.kelompok?.kelurahan || ketua?.assignedRw?.kelurahan?.name || "Coblong";
-      const rwName = ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-";
-      const rwId = ketua?.assignedRwId || ketua?.user?.rwId || null;
+      const kelurahan = p.kelompok?.kelurahan || pAny.rw?.kelurahan?.name || ketua?.assignedRw?.kelurahan?.name || "Coblong";
+      const rwName = pAny.rw?.name || (ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-");
+      const rwId = pAny.rwId || ketua?.assignedRwId || ketua?.user?.rwId || null;
 
       return {
         id: p.id,
@@ -1717,10 +1727,49 @@ export class KknService {
         kontak,
         dplName,
         totalAnggota: p.kelompok?.students.length || 0,
-        statusApproval: "APPROVED",
+        statusApproval: pAny.statusApproval || "APPROVED",
+        isUtama: true,
+        radius: pAny.radius || 150,
         createdAt: p.createdAt,
       };
     });
+
+    // Merge any missing official PoskoKkn and PoskoKknMulti directly from PoskoKknService
+    try {
+      const { poskoKknService } = await import("./poskoKknService.js");
+      const allOfficialPoskos = await poskoKknService.getAllPosko(filters?.userId, filters?.role);
+      for (const off of allOfficialPoskos) {
+        const alreadyExists = mapped.some((m) => m.id === off.id || (m.kelompokId === off.kelompokId && off.isUtama));
+        if (!alreadyExists) {
+          mapped.push({
+            id: off.id,
+            nama: off.nama,
+            alamat: off.alamat || "-",
+            kelompokId: off.kelompokId,
+            kelompokName: off.kelompokName || "Kelompok KKN",
+            kelurahan: off.kelurahan || "Coblong",
+            rwId: null,
+            rwName: off.rwName || "-",
+            latitude: Number(off.latitude),
+            longitude: Number(off.longitude),
+            foto: off.foto || off.fotoUrl || null,
+            fotoUrl: off.fotoUrl || off.foto || null,
+            pic: off.pic || "Ketua Kelompok",
+            kontak: off.kontak || "-",
+            dplName: off.dplName || "DPL Belum Diset",
+            totalAnggota: off.totalAnggota || 0,
+            statusApproval: off.statusApproval || "APPROVED",
+            isUtama: off.isUtama,
+            radius: off.radius || 150,
+            createdAt: off.createdAt,
+          });
+        }
+      }
+    } catch (_poskoServiceErr) {
+      // silent fallback
+    }
+
+    return mapped;
   }
 
   async createPoskoAdmin(
@@ -1732,6 +1781,7 @@ export class KknService {
       rwId?: number;
       latitude: number;
       longitude: number;
+      radius?: number;
       foto?: string;
       pic?: string;
       kontak?: string;
@@ -1758,6 +1808,7 @@ export class KknService {
       alamat: payload.alamat?.trim() || "-",
       latitude: lat,
       longitude: lng,
+      radius: payload.radius != null ? Number(payload.radius) : 150,
       fotoUrl: payload.foto || undefined,
       keterangan: payload.statusApproval || undefined,
     });
@@ -1773,6 +1824,7 @@ export class KknService {
             kelompokId: posko.kelompokId,
             latitude: lat,
             longitude: lng,
+            radius: Number((posko as any).radius) || 150,
             status: "APPROVED",
           },
         },
@@ -1792,6 +1844,7 @@ export class KknService {
       rwId?: number | null;
       latitude?: number;
       longitude?: number;
+      radius?: number;
       foto?: string;
       pic?: string;
       kontak?: string;
@@ -1818,12 +1871,14 @@ export class KknService {
       : Number(existing.longitude);
 
     const { poskoKknService } = await import("./poskoKknService.js");
+    const parsedRadius = payload.radius !== undefined ? Number(payload.radius) : (Number((existing as any)?.radius) || 150);
     const posko = await poskoKknService.upsertPosko(targetKelompokId, {
       nama: payload.nama !== undefined ? payload.nama.trim() : existing.nama,
       alamat: payload.alamat !== undefined ? payload.alamat.trim() : existing.alamat,
       latitude: lat,
       longitude: lng,
-      fotoUrl: payload.foto !== undefined ? payload.foto : existing.fotoUrl || undefined,
+      radius: parsedRadius,
+      fotoUrl: (payload.foto !== undefined && payload.foto !== "") ? payload.foto : (existing.fotoUrl || undefined),
       keterangan: payload.statusApproval || existing.keterangan || undefined,
     });
 
@@ -1837,12 +1892,14 @@ export class KknService {
             alamat: existing.alamat,
             latitude: Number(existing.latitude),
             longitude: Number(existing.longitude),
+            radius: Number((existing as any)?.radius) || 150,
           },
           newValue: {
-            poskoId: posko.id,
             nama: posko.nama,
-            latitude: lat,
-            longitude: lng,
+            alamat: posko.alamat,
+            latitude: Number(posko.latitude),
+            longitude: Number(posko.longitude),
+            radius: Number((posko as any).radius) || 150,
           },
         },
       });
@@ -1864,6 +1921,16 @@ export class KknService {
 
     const { poskoKknService } = await import("./poskoKknService.js");
     await poskoKknService.deletePosko(existing.kelompokId);
+
+    // ─── SINKRONISASI HAPUS POSKOKKN ───
+    if (existing.kelompokId) {
+      try {
+        const { poskoKknService } = await import("./poskoKknService.js");
+        await poskoKknService.deletePosko(existing.kelompokId);
+      } catch (syncErr) {
+        console.warn("[KknService.deletePoskoAdmin] Failed to sync delete PoskoKkn:", syncErr);
+      }
+    }
 
     try {
       await prisma.auditTrail.create({
@@ -2652,6 +2719,8 @@ export class KknService {
         attendanceStatus = "sakit";
       } else if (attStatUpper.includes("ALPA")) {
         attendanceStatus = "alpa";
+      } else if (attStatUpper.includes("TIDAK_ADA_KEGIATAN") || attStatUpper.includes("SKIP")) {
+        attendanceStatus = "tidak_ada_kegiatan";
       } else if (attStatUpper === "BERLANGSUNG" || attStatUpper === "DALAM_RADIUS" || attStatUpper === "DI_ZONA") {
         attendanceStatus = "berlangsung";
       } else if (attStatUpper === "HADIR_MEMENUHI") {
@@ -2734,7 +2803,7 @@ export class KknService {
       }
     }
 
-    if (isExpired && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung" || attendanceStatus === "di_zona" || attendanceStatus === "dalam_radius")) {
+    if (isExpired && attendanceStatus !== "tidak_ada_kegiatan" && (attendanceStatus === "belum_absen" || attendanceStatus === "berlangsung" || attendanceStatus === "di_zona" || attendanceStatus === "dalam_radius")) {
       attendanceStatus = "alpa";
       if (attendanceForActiveSchedule && (attendanceForActiveSchedule.status === "BERLANGSUNG" || attendanceForActiveSchedule.status === "DI_ZONA" || attendanceForActiveSchedule.status === "DALAM_RADIUS")) {
         await prisma.activityAttendance.update({
@@ -3163,6 +3232,65 @@ export class KknService {
         tanggal: item.createdAt.toISOString(),
         createdAt: item.createdAt.toISOString(),
       };
+    });
+  }
+
+  async updateProgramKerja(userId: string, id: string, payload: any) {
+    const proker = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!proker) throw new Error("Program kerja tidak ditemukan");
+    
+    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive, attachmentFile, attachmentUrls, statusUsulan } = payload;
+    
+    const updateData: any = {};
+    if (judul !== undefined) updateData.judul = judul.trim();
+    if (kategori !== undefined) updateData.kategori = normalizeProkerKategori(kategori);
+    if (rencanaAnggaran !== undefined) updateData.kebutuhanBiaya = Number(rencanaAnggaran) || 0;
+    if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
+    if (targetTanggal !== undefined || waktuPelaksanaan !== undefined) {
+      const execDate = targetTanggal || waktuPelaksanaan;
+      updateData.targetTanggal = execDate ? new Date(execDate) : undefined;
+      updateData.waktuPelaksanaan = execDate ? String(execDate) : undefined;
+    }
+    const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || attachmentFile;
+    if (finalGoogleDriveUrl !== undefined) {
+      updateData.linkGoogleDrive = finalGoogleDriveUrl;
+    }
+    if (statusUsulan !== undefined) {
+      updateData.statusUsulan = statusUsulan;
+    }
+
+    return await prisma.programKerjaKkn.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
+    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
+    if (!existing) {
+      const logbook = await prisma.logbookKkn.findUnique({ where: { id } });
+      if (!logbook) throw new Error("Logbook pemanfaatan tidak ditemukan");
+      return await prisma.logbookKkn.update({
+        where: { id },
+        data: {
+          deskripsi: payload.deskripsi || payload.uraianKegiatan || logbook.deskripsi,
+          tempat: payload.tempat || logbook.tempat,
+          fotoBuktiUrl: payload.fotoDokumentasiUrl || payload.fotoBuktiUrl || logbook.fotoBuktiUrl,
+        },
+      });
+    }
+
+    const { teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl, program } = payload;
+    const updateData: any = {};
+    if (teknologi !== undefined) updateData.teknologi = teknologi;
+    if (bahanBaku !== undefined) updateData.bahanBaku = bahanBaku;
+    if (beratInputKg !== undefined) updateData.volumeBahanBaku = Number(beratInputKg) || 0;
+    if (fotoDokumentasiUrl !== undefined) updateData.fotoDokumentasiUrl = fotoDokumentasiUrl;
+    if (program !== undefined) updateData.program = program;
+
+    return await prisma.pemanfaatan.update({
+      where: { id },
+      data: updateData,
     });
   }
 

@@ -30,6 +30,13 @@ import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { dplService, type RekapNilaiStudent, type RekapNilaiResponse } from "../../services/dplService";
 import { useAuthStore } from "../../store/useAuthStore";
+import {
+  formatPersonName,
+  formatKelompokName,
+  formatWilayahName,
+  formatProdiName,
+} from "../../utils/textFormatter";
+import { sortKelompokList, sortNatural } from "../../utils/sortUtils";
 
 // Fallback demo data jika offline
 const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
@@ -276,13 +283,13 @@ export const RekapNilaiKknPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // Unique list of groups for filter dropdown
+  // Unique list of groups for filter dropdown (Sorted naturally)
   const kelompokOptions = useMemo(() => {
     const setGroups = new Set<string>();
     students.forEach((s) => {
       if (s.kelompokName) setGroups.add(s.kelompokName);
     });
-    return Array.from(setGroups).sort();
+    return sortKelompokList(Array.from(setGroups), (k) => k);
   }, [students]);
 
   // Helper for sorting by score
@@ -906,12 +913,12 @@ export const RekapNilaiKknPage: React.FC = () => {
 
                       {/* Nama Mahasiswa */}
                       <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-left">
-                        {st.name}
+                        {formatPersonName(st.name)}
                       </td>
 
                       {/* Kelompok */}
                       <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-left">
-                        {st.kelompokName}
+                        {formatKelompokName(st.kelompokName)}
                       </td>
 
                       {/* Otomatis: Kehadiran */}
