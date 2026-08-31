@@ -1694,19 +1694,12 @@ export class KknService {
     const facilityPoskoMap = new Set(poskos.map((p) => String(p.kelompokId)));
     const mapped = poskos.map((p) => {
       const ketua = p.kelompok?.students.find((s) => s.isKetua) || p.kelompok?.students[0];
-<<<<<<< HEAD
       const ketuaName = p.pic || ketua?.user?.name || "Ketua Kelompok KKN";
       const kontak = p.kontak && p.kontak !== "-" ? p.kontak : (ketua?.user?.phone || (ketua as any)?.noWa || "-");
       const dplName = p.kelompok?.dpl?.name || p.kelompok?.dplNamaMentah || "DPL Belum Diset";
-      const kelurahan = p.kelompok?.kelurahan || p.rw?.kelurahan?.name || "Coblong";
-=======
-      const ketuaName = ketua?.user?.name || "Ketua Kelompok KKN";
-      const kontak = ketua?.user?.phone || ketua?.noWa || "-";
-      const dplName = p.kelompok?.dpl?.name || (p.kelompok as any)?.dplNamaMentah || "DPL Belum Diset";
-      const kelurahan = p.kelompok?.kelurahan || ketua?.assignedRw?.kelurahan?.name || "Coblong";
-      const rwName = ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-";
-      const rwId = ketua?.assignedRwId || ketua?.user?.rwId || null;
->>>>>>> fix/mobile-backend-endpoint-overlap
+      const kelurahan = p.kelompok?.kelurahan || p.rw?.kelurahan?.name || ketua?.assignedRw?.kelurahan?.name || "Coblong";
+      const rwName = p.rw?.name || (ketua?.assignedRw?.name ? (ketua.assignedRw.name.startsWith("RW") ? ketua.assignedRw.name : `RW ${ketua.assignedRw.name}`) : "-");
+      const rwId = p.rwId || ketua?.assignedRwId || ketua?.user?.rwId || null;
 
       return {
         id: p.id,
@@ -1727,7 +1720,7 @@ export class KknService {
         totalAnggota: p.kelompok?.students.length || 0,
         statusApproval: p.statusApproval || "APPROVED",
         isUtama: true,
-        radius: 150,
+        radius: (p as any).radius || 150,
         createdAt: p.createdAt,
       };
     });
