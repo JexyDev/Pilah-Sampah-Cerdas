@@ -668,7 +668,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       ]);
 
       const attendedAt = new Date(Date.now() - 20 * 60 * 1000);
-      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue({
+      const mockAtt = {
         id: "att-ssot-2",
         studentId,
         scheduleId,
@@ -676,7 +676,9 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         attendedAt,
         actualInZoneMinutes: 0,
         jedaLogs: [],
-      } as any);
+      };
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(mockAtt as any);
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
 
       let updatedData: any = null;
       vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {

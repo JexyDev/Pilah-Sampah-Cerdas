@@ -185,7 +185,7 @@ export const TaskforceDashboardPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
-              to="/manajemen-ekosistem-kkn"
+              to="/pelaksanaan/kelompok"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-2xl font-extrabold text-xs shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
             >
               <GraduationCap size={16} />
@@ -280,7 +280,7 @@ export const TaskforceDashboardPage: React.FC = () => {
       {/* Quick Action Navigation Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Link
-          to="/manajemen-ekosistem-kkn"
+          to="/pelaksanaan/kelompok"
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-teal-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
@@ -296,7 +296,7 @@ export const TaskforceDashboardPage: React.FC = () => {
         </Link>
 
         <Link
-          to="/monitoring-absen"
+          to="/monitoring-kegiatan/presensi"
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-indigo-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ export const TaskforceDashboardPage: React.FC = () => {
         </Link>
 
         <Link
-          to="/superUser/data-survei-kkn"
+          to="/hasil-survei/baseline"
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
@@ -328,7 +328,7 @@ export const TaskforceDashboardPage: React.FC = () => {
         </Link>
 
         <Link
-          to="/evaluasi-dampak-kkn"
+          to="/hasil-survei/evaluasi-dan-dampak"
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
         >
           <div className="flex items-center gap-3">
@@ -336,7 +336,7 @@ export const TaskforceDashboardPage: React.FC = () => {
               <BarChart3 size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Evaluasi & Dampak</h4>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Evaluasi &amp; Dampak</h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">Validasi Baseline vs Endline</p>
             </div>
           </div>
@@ -503,7 +503,7 @@ export const TaskforceDashboardPage: React.FC = () => {
 
                       <td className="px-6 py-4 text-right">
                         <Link
-                          to="/manajemen-ekosistem-kkn"
+                          to="/pelaksanaan/kelompok"
                           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition cursor-pointer border border-slate-200 dark:border-slate-700"
                         >
                           <span>Kelola / Plotting</span>
