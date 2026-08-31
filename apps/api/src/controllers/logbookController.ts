@@ -122,10 +122,10 @@ export const logbookController = {
 
       const payload = {
         tanggalKegiatan: req.body.tanggalKegiatan || req.body.tanggal,
-        waktuMulai: req.body.waktuMulai,
-        waktuSelesai: req.body.waktuSelesai,
-        tempat: req.body.tempat,
-        deskripsi: req.body.deskripsi,
+        waktuMulai: req.body.waktuMulai || req.body.jamMulai || undefined,
+        waktuSelesai: req.body.waktuSelesai || req.body.jamSelesai || undefined,
+        tempat: req.body.tempat || req.body.lokasi || req.body.lokasiKegiatan || "Posko KKN",
+        deskripsi: req.body.deskripsi || req.body.kegiatan || req.body.namaKegiatan || req.body.deskripsiKegiatan || "",
         fotoBuktiUrl: fotoBuktiUrl || null,
         attachmentUrls:
           uploadedFileUrls.length > 0
@@ -135,7 +135,7 @@ export const logbookController = {
               : undefined,
         platformOs:
           req.body.platformOs || (userRole === "DEVELOPER" ? "DEVELOPER_OVERRIDE" : "ANDROID"),
-        tipeAktivitas: req.body.tipeAktivitas,
+        tipeAktivitas: req.body.tipeAktivitas || req.body.kategori || undefined,
         programKerjaId: req.body.programKerjaId || undefined,
         fasilitasId: req.body.fasilitasId || undefined,
         pekanKe: req.body.pekanKe ? parseInt(req.body.pekanKe, 10) : undefined,
@@ -205,10 +205,10 @@ export const logbookController = {
 
       const payload = {
         tanggalKegiatan: req.body.tanggalKegiatan || req.body.tanggal,
-        waktuMulai: req.body.waktuMulai,
-        waktuSelesai: req.body.waktuSelesai,
-        tempat: req.body.tempat,
-        deskripsi: req.body.deskripsi,
+        waktuMulai: req.body.waktuMulai || req.body.jamMulai,
+        waktuSelesai: req.body.waktuSelesai || req.body.jamSelesai,
+        tempat: req.body.tempat || req.body.lokasi || req.body.lokasiKegiatan,
+        deskripsi: req.body.deskripsi || req.body.kegiatan || req.body.namaKegiatan || req.body.deskripsiKegiatan,
         fotoBuktiUrl: fotoBuktiUrl || undefined,
         attachmentUrls:
           uploadedFileUrls.length > 0
@@ -216,7 +216,7 @@ export const logbookController = {
             : fotoBuktiUrl
               ? [fotoBuktiUrl]
               : undefined,
-        tipeAktivitas: req.body.tipeAktivitas,
+        tipeAktivitas: req.body.tipeAktivitas || req.body.kategori,
         programKerjaId: req.body.programKerjaId,
         fasilitasId: req.body.fasilitasId,
         pekanKe: req.body.pekanKe ? parseInt(req.body.pekanKe, 10) : undefined,

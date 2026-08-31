@@ -7,6 +7,7 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw } from "lucide-react";
 import { printQrStickers } from "../../utils/printQrStickers";
+import { exportToXlsx } from "../../utils/exportXlsx";
 
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -272,27 +273,18 @@ export const MasterQrManager: React.FC = () => {
     }
     const headers = ["Kode QR", "Status", "Kategori", "Batch Asal", "Wilayah", "Pemegang Warga", "Email Pemegang", "Tanggal Dibuat"];
     const rows = qrs.map((q) => [
-      `"${q.qrCode}"`,
-      `"${q.status}"`,
-      `"${q.category?.name || "-"}"`,
-      `"${q.qrBatch?.batchCode || "-"}"`,
-      `"${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-"}"`,
-      `"${q.user?.name || "-"}"`,
-      `"${q.user?.email || "-"}"`,
-      `"${new Date(q.createdAt).toLocaleString("id-ID")}"`,
+      q.qrCode,
+      q.status,
+      q.category?.name || "-",
+      q.qrBatch?.batchCode || "-",
+      q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-",
+      q.user?.name || "-",
+      q.user?.email || "-",
+      new Date(q.createdAt).toLocaleString("id-ID"),
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("File CSV Master QR berhasil didownload!");
+    exportToXlsx(headers, rows, `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}`, "Master QR");
+    toast.success("File XLSX Master QR berhasil didownload!");
   };
 
   // Available unassigned PRINTED QRs for replacement modal
@@ -332,7 +324,7 @@ export const MasterQrManager: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
           >
             <Download size={15} className="text-emerald-600 dark:text-emerald-400" />
-            Ekspor CSV
+            Ekspor XLSX
           </button>
           {!isReadOnly && (
             <button
