@@ -132,6 +132,7 @@ class WargaDampingan extends Equatable {
     this.isActivated = true,
     this.role = 'WARGA',
     this.totalPoints = 0,
+    this.totalKg = 0.0,
     this.apiCorrectPercentage,
   });
 
@@ -151,16 +152,20 @@ class WargaDampingan extends Equatable {
   final String role;
   final List<WasteLogEntry> recentLogs;
   final int totalPoints;
+  final double totalKg;
   final double? apiCorrectPercentage;
+  final int? backendTotalActivities;
+  final int? backendCorrectCount;
+  final int? backendIncorrectCount;
 
   /// Total aktivitas pemilahan
-  int get totalActivities => recentLogs.length;
+  int get totalActivities => backendTotalActivities ?? recentLogs.length;
 
   /// Jumlah pemilahan yang benar
-  int get correctCount => recentLogs.where((l) => l.isCorrect).length;
+  int get correctCount => backendCorrectCount ?? recentLogs.where((l) => l.isCorrect).length;
 
   /// Jumlah pemilahan yang salah
-  int get incorrectCount => recentLogs.where((l) => !l.isCorrect).length;
+  int get incorrectCount => backendIncorrectCount ?? recentLogs.where((l) => !l.isCorrect).length;
 
   /// Persentase pemilahan benar (0–100)
   double get correctPercentage =>
@@ -396,12 +401,18 @@ class WargaDampingan extends Equatable {
                    (json['user']?['totalPoints'] as num?)?.toInt() ??
                    (json['user']?['poin'] as num?)?.toInt() ?? 
                    0,
+      totalKg: (json['totalKg'] as num?)?.toDouble() ?? 
+               (json['totalWeightKg'] as num?)?.toDouble() ?? 
+               0.0,
       apiCorrectPercentage: (json['complianceScore'] as num?)?.toDouble() ?? (json['correctPercentage'] as num?)?.toDouble(),
+      backendTotalActivities: (json['totalActivities'] as num?)?.toInt() ?? (json['totalSetoran'] as num?)?.toInt(),
+      backendCorrectCount: (json['correctCount'] as num?)?.toInt() ?? (json['benarCount'] as num?)?.toInt(),
+      backendIncorrectCount: (json['incorrectCount'] as num?)?.toInt() ?? (json['salahCount'] as num?)?.toInt(),
     );
   }
 
   @override
-  List<Object?> get props => [wargaId, binId, wargaName, totalPoints, mahasiswaId, pendampingName, status];
+  List<Object?> get props => [wargaId, binId, wargaName, totalPoints, totalKg, mahasiswaId, pendampingName, status];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────

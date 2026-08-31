@@ -13,8 +13,11 @@ class DetailWargaState {
   final WargaDampingan? warga;
 
   /// Total berat sampah yang sudah dipilah (kg)
-  double get totalWeightKg =>
-      warga?.recentLogs.fold<double>(0, (sum, e) => sum + e.weightKg) ?? 0;
+  double get totalWeightKg {
+    if (warga == null) return 0.0;
+    if (warga!.totalKg > 0) return warga!.totalKg;
+    return warga!.recentLogs.fold<double>(0, (sum, e) => sum + e.weightKg);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
