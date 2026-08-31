@@ -160,17 +160,18 @@ app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/petugas-residu", residuRouter);
-// NOTE: /api/v1/petugas-pemilahan dan /api/v1/pemilahan dihapus — alias duplikat, gunakan /api/v1/petugas-residu
+app.use("/api/v1/petugas-pemilahan", residuRouter);
+app.use("/api/v1/pemilahan", residuRouter);
 app.use("/api/v1/super-user", superUserRouter);
 app.use("/api/v1/rw", rwRouter);
-// NOTE: /api/v1/rt dihapus — rwRouter sudah menangani RT, gunakan /api/v1/rw
+app.use("/api/v1/rt", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/posko-kkn", poskoKknRouter);
 app.use("/api/v1/areas", areaRouter);
-// NOTE: /api/v1/wilayah dihapus — alias duplikat areaRouter, gunakan /api/v1/areas
+app.use("/api/v1/wilayah", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
 app.use("/api/v1/kkn-attendance", kknAttendanceRouter);
-// REMOVED: app.use("/api/v1", kknAttendanceRouter) — menyebabkan collision masif dengan semua router lain
+// REMOVED: app.use("/api/v1", kknAttendanceRouter) — root wildcard mount dihapus, digantikan explicit dedicated endpoints di bawah
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
@@ -188,23 +189,21 @@ app.use("/api/v1/berita", beritaRouter);
 app.use("/api/v1/presensi", presensiMandiriRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
-// NOTE: Alias ini dipertahankan hanya untuk backward-compat client lama.
-// Jangan tambah alias baru — gunakan /api/v1/* sebagai canonical URL.
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
 app.use("/api/logbook", logbookRouter);
 app.use("/api/berita", beritaRouter);
 app.use("/api/kkn-attendance", kknAttendanceRouter);
-// REMOVED: app.use("/api", kknAttendanceRouter) — menyebabkan collision dengan seluruh /api/* route
 app.use("/api/residu", residuRouter);
 app.use("/api/petugas-residu", residuRouter);
-// REMOVED: /api/petugas-pemilahan dan /api/pemilahan — alias duplikat, gunakan /api/petugas-residu
+app.use("/api/petugas-pemilahan", residuRouter);
+app.use("/api/pemilahan", residuRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rw", rwRouter);
-// REMOVED: /api/rt — alias duplikat rwRouter
+app.use("/api/rt", rwRouter);
 app.use("/api/areas", areaRouter);
-// REMOVED: /api/wilayah — alias duplikat areaRouter
+app.use("/api/wilayah", areaRouter);
 app.use("/api/penilaian-kkn", penilaianKknRouter);
 
 // Dedicated Direct Endpoints for Web Dashboard Monitoring & Mobile Background Worker
@@ -257,6 +256,12 @@ app.post(
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("foto"),
   kknAttendanceController.checkOutAttendance
+);
+app.get(
+  ["/api/v1/laporan-rekap", "/api/laporan-rekap", "/api/v1/laporan-presensi", "/api/laporan-presensi"],
+  authMiddleware,
+  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  kknAttendanceController.getLaporanPresensi
 );
 
 // Global Error Handler Middleware
