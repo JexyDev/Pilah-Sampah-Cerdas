@@ -1036,7 +1036,7 @@ class ApiAuthRepository implements AuthRepository {
     List<Map<String, dynamic>> kecamatanListRaw = [];
 
     try {
-      final provResp = await apiClient.dio.get('/wilayah/provinsi');
+      final provResp = await apiClient.dio.get('/areas/provinsi');
       if (provResp.statusCode == 200 && provResp.data != null) {
         final list = provResp.data is List ? provResp.data as List : (provResp.data['data'] as List? ?? []);
         for (final item in list) {
@@ -1047,7 +1047,7 @@ class ApiAuthRepository implements AuthRepository {
     } catch (e) { debugPrint('Silenced error: $e'); }
 
     try {
-      final kotaResp = await apiClient.dio.get('/wilayah/kabupaten');
+      final kotaResp = await apiClient.dio.get('/areas/kabupaten');
       if (kotaResp.statusCode == 200 && kotaResp.data != null) {
         final list = kotaResp.data is List ? kotaResp.data as List : (kotaResp.data['data'] as List? ?? []);
         for (final item in list) {
@@ -1080,7 +1080,7 @@ class ApiAuthRepository implements AuthRepository {
 
     // 1. Coba endpoint dedicated baru /wilayah/rw dan /wilayah/rt
     try {
-      final rwResp = await apiClient.dio.get('/wilayah/rw');
+      final rwResp = await apiClient.dio.get('/areas/rw');
       if (rwResp.statusCode == 200 && rwResp.data != null) {
         final list = rwResp.data is List ? rwResp.data as List : (rwResp.data['data'] as List? ?? []);
         for (final item in list) {
@@ -1093,7 +1093,7 @@ class ApiAuthRepository implements AuthRepository {
     } catch (e) { debugPrint('Silenced error: $e'); }
 
     try {
-      final rtResp = await apiClient.dio.get('/wilayah/rt');
+      final rtResp = await apiClient.dio.get('/areas/rt');
       if (rtResp.statusCode == 200 && rtResp.data != null) {
         final list = rtResp.data is List ? rtResp.data as List : (rtResp.data['data'] as List? ?? []);
         for (final item in list) {
