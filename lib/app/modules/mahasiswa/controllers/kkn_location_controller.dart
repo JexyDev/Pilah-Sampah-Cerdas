@@ -251,23 +251,27 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         await _loadPersistentTimer();
         //penambahan untuk commitqq
 
-        // [BUGFIX] Server (sama seperti yang tampil di web) adalah sumber kebenaran durasi.
-        // Sebelumnya nilai server DIABAIKAN jika selisihnya <= 60 detik (guard yang justru
-        // mempertahankan nilai lokal yang sudah menyimpang/menggembung dari disk), sehingga
-        // mobile bisa menampilkan durasi lebih besar dari yang sebenarnya tercatat di web
-        // (mis. mobile +37dtk vs web 7dtk hanya karena selisih 30dtk dianggap "wajar").
-        // Sekarang: SELALU sinkron ke nilai server saat data tersedia.
+        // [FIX] Gunakan max(server, lokal) agar durasi tidak mundur saat user back → buka
+        // halaman presensi lagi. Server adalah sumber kebenaran JIKA nilainya lebih besar
+        // dari yang sudah akumulasi di device (misal: server belum sinkron dari ping terakhir).
+        // Ini mencegah timer ke-reset ke nilai server yang lebih kecil dari akumulasi lokal.
         if (activeZone['actualInZoneSeconds'] != null) {
           final serverSecs =
               int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          _accumulatedSeconds = serverSecs;
+          // Ambil nilai terbesar: jika lokal lebih besar (belum ter-sync ke server), pertahankan
+          if (serverSecs > _accumulatedSeconds) {
+            _accumulatedSeconds = serverSecs;
+          }
           _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins =
               num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
-          _accumulatedSeconds = serverSecs;
+          // Ambil nilai terbesar
+          if (serverSecs > _accumulatedSeconds) {
+            _accumulatedSeconds = serverSecs;
+          }
           _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
         }
@@ -384,8 +388,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                     60)
                 .toInt();
 
-        // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
-        _accumulatedSeconds = serverSecs;
+        // [FIX] Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur.
+        // Server bisa saja belum menerima ping terakhir dari device, sehingga nilai lokal
+        // bisa lebih besar dari server — dalam kasus itu pertahankan nilai lokal.
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+        }
 
         final durasiWajib =
             int.tryParse(activeItem['durasiWajibMenit']?.toString() ?? '120') ??
@@ -481,14 +489,19 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       if (response['actualInZoneSeconds'] != null) {
         final serverSecs =
             int.tryParse(response['actualInZoneSeconds'].toString()) ?? 0;
-        // Ambil nilai terbesar antara server dan lokal
-        _accumulatedSeconds = serverSecs;
+        // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+        }
       } else if (response['actualInZoneMinutes'] != null) {
         final serverSecs =
             ((num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0) *
                     60)
                 .toInt();
-        _accumulatedSeconds = serverSecs;
+        // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
+        if (serverSecs > _accumulatedSeconds) {
+          _accumulatedSeconds = serverSecs;
+        }
       }
       // Jika server tidak return durasi sama sekali, _accumulatedSeconds tetap dari nilai lokal sebelumnya
       _zoneEntryTime = DateTime.now();
