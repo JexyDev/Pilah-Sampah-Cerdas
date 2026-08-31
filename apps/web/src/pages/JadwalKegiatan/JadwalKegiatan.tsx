@@ -440,62 +440,6 @@ const JadwalKegiatan: React.FC = () => {
     }
   };
 
-  const handleExportTimelineExcel = () => {
-    try {
-      const headers = [
-        "No",
-        "Kelurahan",
-        "Kelompok",
-        "Tahap / Minggu",
-        "Tanggal",
-        "Fase",
-        "Bidang Kegiatan",
-        "Kegiatan Utama",
-        "Output / Target",
-        "PIC / Keterangan",
-        "URL Google Drive",
-        "Status",
-      ];
-      const rows = timelineList.map((item, idx) => [
-        idx + 1,
-        item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan",
-        item.kelompok ? `Kelompok ${item.kelompok.name}` : "Global (Semua Kelompok)",
-        item.tahapMinggu,
-        item.tanggal,
-        item.fase,
-        item.bidangKegiatan || "Tata Kelola & Koordinasi",
-        item.kegiatanUtama,
-        item.outputTarget,
-        item.picKeterangan,
-        item.linkGoogleDrive || "-",
-        item.statusPelaksanaan || "BELUM_DIMULAI",
-      ]);
-
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      ws["!cols"] = [
-        { wch: 8 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 18 },
-        { wch: 25 },
-        { wch: 30 },
-        { wch: 25 },
-        { wch: 45 },
-        { wch: 45 },
-        { wch: 30 },
-        { wch: 40 },
-        { wch: 20 },
-      ];
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Linimasa_KKN");
-      XLSX.writeFile(wb, `Linimasa_KKN_${new Date().toISOString().split("T")[0]}.xlsx`);
-      toast.success("Data linimasa berhasil diexport ke Excel (.xlsx)!");
-    } catch (err: any) {
-      toast.error("Gagal export Excel: " + err.message);
-    }
-  };
-
   const handleExportTimelineCsv = () => {
     const headers = [
       "No",
@@ -904,26 +848,6 @@ const JadwalKegiatan: React.FC = () => {
 
               {/* Action Buttons Toolbar */}
               <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleExportTimelineExcel}
-                  className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/60 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-2xs"
-                  title="Unduh Linimasa KKN dalam format Excel (.xlsx)"
-                >
-                  <FileSpreadsheet size={15} className="text-emerald-600 dark:text-emerald-400" />
-                  <span>Export Excel (.xlsx)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleExportTimelineCsv}
-                  className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  title="Unduh Linimasa KKN dalam format XLSX"
-                >
-                  <Download size={14} className="text-slate-500 dark:text-slate-400" />
-                  <span>Export XLSX</span>
-                </button>
-
                 {canManageTimeline && (
                   <>
                     <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-800 hidden sm:block mx-1"></div>
@@ -1173,6 +1097,18 @@ const JadwalKegiatan: React.FC = () => {
                     <RotateCcw size={11} /> Reset Filter
                   </button>
                 )}
+
+                {/* Tombol Ekspor — aktif hanya jika filter tanggal sudah diisi */}
+                <button
+                  type="button"
+                  onClick={handleExportTimelineCsv}
+                  disabled={!startDateFilter && !endDateFilter}
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60"
+                  title={(!startDateFilter && !endDateFilter) ? "Isi filter tanggal terlebih dahulu untuk mengekspor" : "Ekspor data linimasa sesuai filter tanggal ke XLSX"}
+                >
+                  <FileSpreadsheet size={13} />
+                  <span>Ekspor XLSX</span>
+                </button>
               </div>
 
               <div className="text-xs font-bold text-slate-500">
