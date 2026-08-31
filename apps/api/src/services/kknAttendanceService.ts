@@ -491,6 +491,15 @@ export class KknAttendanceService {
       },
     });
 
+    // 1. Cari attendance aktif yang sedang dijalankan user (BERLANGSUNG atau TERJEDA)
+    const activeAtt = await prisma.activityAttendance.findFirst({
+      where: {
+        studentId: userId,
+        status: { in: ["BERLANGSUNG", "TERJEDA"] },
+      },
+      orderBy: { attendedAt: "desc" },
+    });
+
     if (activeSchedules.length > 0) {
       const todayLogs = await prisma.studentLocation.findMany({
         where: {
@@ -636,22 +645,27 @@ export class KknAttendanceService {
             activeAttendanceForSeconds = existingAtt;
           }
 
-          inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
+          // Hanya ambil durasi jika sesuai dengan schedule yang sedang dikerjakan saat ini
+          // atau jika belum ada sesi aktif, hindari penggabungan silang (cross-merging)
+          if (activeAtt && activeAtt.scheduleId === sch.id) {
+            inZoneMinutes = durationInZone;
+          } else if (!activeAtt) {
+            inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
+          }
         }
       }
     }
 
-    let currentScheduleId = activeSchedules.length > 0 ? activeSchedules[0].id : null;
-    if (!currentScheduleId) {
-      const activeAtt = await prisma.activityAttendance.findFirst({
-        where: {
-          studentId: userId,
-          status: { in: ["BERLANGSUNG", "TERJEDA"] },
-        },
+    let currentScheduleId = null;
+    if (activeAtt) {
+      currentScheduleId = activeAtt.scheduleId;
+    } else if (activeSchedules.length > 0) {
+      // Prioritaskan jadwal HARI INI
+      const todaySch = activeSchedules.find((s) => {
+        const d = new Date(s.date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return d === todayWibStrPing;
       });
-      if (activeAtt) {
-        currentScheduleId = activeAtt.scheduleId;
-      }
+      currentScheduleId = todaySch ? todaySch.id : activeSchedules[0].id;
     }
 
     let attendanceStatus = "TIDAK_ADA_KEGIATAN";
@@ -2992,13 +3006,13 @@ export class KknAttendanceService {
       throw new Error("FORBIDDEN: Anda sudah menyelesaikan kegiatan ini (Hadir). Anda tidak dapat memulainya kembali.");
     }
 
-    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG
+    // Concurrency check: Pastikan tidak ada kegiatan lain yang sedang BERLANGSUNG / TERJEDA
     const activeOtherSession = await prisma.activityAttendance.findFirst({
       where: {
         studentId: studentUserId,
         scheduleId: { not: scheduleId },
         checkOutAt: null,
-        status: "BERLANGSUNG",
+        status: { in: ["BERLANGSUNG", "TERJEDA", "DI_ZONA", "DALAM_RADIUS"] },
       },
       include: { schedule: true },
     });
@@ -3941,16 +3955,16 @@ export class KknAttendanceService {
       const mins = actualMins % 60;
       const durasiFormatted = hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
 
-      const kknGroup = att.student.studentProfile?.kelompok || att.schedule?.kelompok;
+      const kknGroup = att.student?.studentProfile?.kelompok || att.schedule?.kelompok;
 
       return {
         id: att.id,
         studentId: att.studentId,
-        namaMahasiswa: att.student.name,
-        nim: att.student.studentProfile?.nim ?? "-",
-        jurusan: att.student.studentProfile?.jurusan ?? "-",
-        fotoProfil: att.student.fotoProfil ?? null,
-        isKetua: att.student.studentProfile?.isKetua ?? false,
+        namaMahasiswa: att.student?.name || "Mahasiswa",
+        nim: att.student?.studentProfile?.nim ?? "-",
+        jurusan: att.student?.studentProfile?.jurusan ?? "-",
+        fotoProfil: att.student?.fotoProfil ?? null,
+        isKetua: att.student?.studentProfile?.isKetua ?? false,
         kelompok: kknGroup ? {
           id: kknGroup.id,
           name: kknGroup.name,

@@ -3509,8 +3509,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
                           <th className="py-3.5 px-3 text-center">JAM MASUK</th>
                           <th className="py-3.5 px-3 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI</th>
-                          <th className="py-3.5 px-3 text-center">TARGET JAM</th>
+                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
+                          <th className="py-3.5 px-3 text-center">TARGET MINIMAL</th>
                           <th className="py-3.5 px-4 text-center">RASIO KEHADIRAN</th>
                           <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
                           <th className="py-3.5 px-4 text-center">DETAIL</th>
@@ -3523,7 +3523,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
                           <th className="py-3.5 px-4 text-center">JAM MASUK</th>
                           <th className="py-3.5 px-4 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
+                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL / TARGET</th>
                           <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN</th>
                           <th className="py-3.5 px-4 text-center">POIN</th>
                           <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
@@ -3743,14 +3743,28 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 {jamPulangStr}
                               </td>
 
-                              {/* 6. DURASI */}
+                              {/* 6. DURASI AKTUAL */}
                               <td className="py-4 px-4 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
-                                {durasiText}
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                                    {durasiText}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    ({durationMins} mnt)
+                                  </span>
+                                </div>
                               </td>
 
-                              {/* 7. TARGET JAM */}
+                              {/* 7. TARGET MINIMAL */}
                               <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
-                                {targetZonaHours} jam
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] border border-slate-200/80 dark:border-slate-700">
+                                    {targetZonaHours} Jam
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-mono">
+                                    ({targetZonaMins} mnt)
+                                  </span>
+                                </div>
                               </td>
 
                               {/* 8. RASIO KEHADIRAN */}
@@ -3947,9 +3961,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               {jamPulangStr}
                             </td>
 
-                            {/* 7. DURASI AKTUAL */}
+                            {/* 7. DURASI AKTUAL / TARGET */}
                             <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
-                              {durasiText}
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
+                                  {durasiText}
+                                </span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                                  / {targetZonaHours} Jam Target
+                                </span>
+                              </div>
                             </td>
 
                             {/* 8. TOTAL AKUMULASI KKN */}

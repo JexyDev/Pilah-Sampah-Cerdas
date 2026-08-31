@@ -85,6 +85,47 @@ export class PoskoKknService {
       console.warn("[PoskoKknService.upsertPosko] Failed to cascade update schedules:", syncErr);
     }
 
+    // Sync to facility table for legacy RW monitoring compatibility
+    try {
+      const existingFacility = await prisma.facility.findFirst({
+        where: { kelompokId, jenis: "posko_kkn" },
+      });
+      if (existingFacility) {
+        await prisma.facility.update({
+          where: { id: existingFacility.id },
+          data: {
+            nama: data.nama,
+            alamat: data.alamat,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            foto: data.fotoUrl,
+            statusApproval: "APPROVED",
+          },
+        });
+      } else {
+        const student = await prisma.studentKkn.findFirst({
+          where: { kelompokId, isKetua: true },
+          include: { user: true },
+        });
+        await prisma.facility.create({
+          data: {
+            nama: data.nama,
+            alamat: data.alamat,
+            jenis: "posko_kkn",
+            kelompokId,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            foto: data.fotoUrl || null,
+            pic: student?.user?.name || "Ketua Kelompok",
+            kontak: student?.user?.phone || student?.noWa || "-",
+            statusApproval: "APPROVED",
+          },
+        });
+      }
+    } catch (facErr) {
+      console.warn("[PoskoKknService.upsertPosko] Failed to sync facility:", facErr);
+    }
+
     return posko;
   }
 
@@ -174,6 +215,11 @@ export class PoskoKknService {
   }
 
   async deletePosko(kelompokId: string) {
+    try {
+      await prisma.facility.deleteMany({
+        where: { kelompokId, jenis: "posko_kkn" },
+      });
+    } catch (_) {}
     return prisma.poskoKkn.delete({ where: { kelompokId } });
   }
 
