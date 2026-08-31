@@ -337,24 +337,9 @@ router.post(
   kknController.inputFacility
 );
 
-/**
- * @swagger
- * /api/v1/kkn/location-ping:
- *   post:
- *     summary: Presensi & ping lokasi GPS real-time Mahasiswa KKN di lapangan
- *     tags: [Mahasiswa KKN]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lokasi GPS berhasil dicatat
- */
-router.post(
-  "/location-ping",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.updateLocation
-);
+// REMOVED: /location-ping — dipindahkan ke kknAttendanceRoutes.ts dengan handler
+// pingLocation() yang lebih lengkap (sync durasi, out-of-zone detection, dll).
+// Gunakan POST /api/v1/kkn-attendance/location-ping sebagai canonical endpoint.
 
 /**
  * @swagger
@@ -580,35 +565,15 @@ router.get(
   kknController.getActiveZone
 );
 
-router.get(
-  "/kegiatan-aktif",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
-  kknAttendanceController.getKegiatanAktif
-);
+// REMOVED: /kegiatan-aktif — sudah ada di kknAttendanceRoutes.ts (canonical).
+// Gunakan GET /api/v1/kkn-attendance/kkn/kegiatan-aktif.
 
-router.post(
-  "/kegiatan/:id/mulai",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  safeUploadSingleImage("foto"),
-  kknAttendanceController.mulaiKegiatan
-);
+// REMOVED: /kegiatan/:id/mulai — sudah ada di kknAttendanceRoutes.ts (canonical).
+// Gunakan POST /api/v1/kkn-attendance/kkn/kegiatan/:id/mulai.
 
-router.post(
-  "/kegiatan/:id/jeda",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.jedaKegiatan
-);
+// REMOVED: /kegiatan/:id/jeda — sudah ada di kknAttendanceRoutes.ts (canonical).
 
-router.post(
-  "/kegiatan/:id/selesai",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  safeUploadSingleImage("foto"),
-  kknAttendanceController.selesaiKegiatan
-);
+// REMOVED: /kegiatan/:id/selesai — sudah ada di kknAttendanceRoutes.ts (canonical).
 
 router.post(
   ["/absen", "/kegiatan/:id/absen"],
@@ -618,12 +583,7 @@ router.post(
   kknAttendanceController.absenAlias
 );
 
-router.post(
-  "/out-of-zone-violation",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.recordOutOfZoneViolation
-);
+// REMOVED: /out-of-zone-violation — sudah ada di kknAttendanceRoutes.ts (canonical).
 
 /**
  * @swagger
@@ -783,24 +743,20 @@ router.get(
 
 /**
  * @swagger
- * /api/v1/kkn/kegiatan/{id}/lokasi:
+ * /api/v1/kkn/target-lokasi:
  *   get:
- *     summary: Mendapatkan lokasi kegiatan (Target Lokasi)
+ *     summary: Mendapatkan lokasi kegiatan (Target Lokasi) — alias untuk mobile spec lama
  *     tags: [Mahasiswa KKN]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
  *     responses:
  *       200:
  *         description: Lokasi target kegiatan
  */
+// NOTE: /kegiatan/:id/lokasi dihapus dari sini — canonical ada di kknAttendanceRoutes.ts.
+// /target-lokasi dipertahankan sebagai alias backward-compat untuk client lama.
 router.get(
-  ["/kegiatan/:id/lokasi", "/target-lokasi"],
+  "/target-lokasi",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
   kknAttendanceController.getActivityLocation

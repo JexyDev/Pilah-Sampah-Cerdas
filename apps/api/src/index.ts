@@ -156,18 +156,17 @@ app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/petugas-residu", residuRouter);
-app.use("/api/v1/petugas-pemilahan", residuRouter);
-app.use("/api/v1/pemilahan", residuRouter);
+// NOTE: /api/v1/petugas-pemilahan dan /api/v1/pemilahan dihapus — alias duplikat, gunakan /api/v1/petugas-residu
 app.use("/api/v1/super-user", superUserRouter);
 app.use("/api/v1/rw", rwRouter);
-app.use("/api/v1/rt", rwRouter);
+// NOTE: /api/v1/rt dihapus — rwRouter sudah menangani RT, gunakan /api/v1/rw
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
 app.use("/api/v1/posko-kkn", poskoKknRouter);
 app.use("/api/v1/areas", areaRouter);
-app.use("/api/v1/wilayah", areaRouter);
+// NOTE: /api/v1/wilayah dihapus — alias duplikat areaRouter, gunakan /api/v1/areas
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
 app.use("/api/v1/kkn-attendance", kknAttendanceRouter);
-app.use("/api/v1", kknAttendanceRouter);
+// REMOVED: app.use("/api/v1", kknAttendanceRouter) — menyebabkan collision masif dengan semua router lain
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
@@ -185,22 +184,23 @@ app.use("/api/v1/berita", beritaRouter);
 app.use("/api/v1/presensi", presensiMandiriRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
+// NOTE: Alias ini dipertahankan hanya untuk backward-compat client lama.
+// Jangan tambah alias baru — gunakan /api/v1/* sebagai canonical URL.
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
 app.use("/api/logbook", logbookRouter);
 app.use("/api/berita", beritaRouter);
 app.use("/api/kkn-attendance", kknAttendanceRouter);
-app.use("/api", kknAttendanceRouter);
+// REMOVED: app.use("/api", kknAttendanceRouter) — menyebabkan collision dengan seluruh /api/* route
 app.use("/api/residu", residuRouter);
 app.use("/api/petugas-residu", residuRouter);
-app.use("/api/petugas-pemilahan", residuRouter);
-app.use("/api/pemilahan", residuRouter);
+// REMOVED: /api/petugas-pemilahan dan /api/pemilahan — alias duplikat, gunakan /api/petugas-residu
 app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rw", rwRouter);
-app.use("/api/rt", rwRouter);
+// REMOVED: /api/rt — alias duplikat rwRouter
 app.use("/api/areas", areaRouter);
-app.use("/api/wilayah", areaRouter);
+// REMOVED: /api/wilayah — alias duplikat areaRouter
 app.use("/api/penilaian-kkn", penilaianKknRouter);
 
 // Global Error Handler Middleware

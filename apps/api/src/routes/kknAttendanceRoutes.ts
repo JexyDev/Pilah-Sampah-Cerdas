@@ -194,6 +194,8 @@ router.get(
   kknAttendanceController.getTimesheetSummary
 );
 
+// Canonical: /api/v1/kkn-attendance/kkn/attendance/laporan-rekap
+// Alias /laporan-rekap dan /laporan-presensi dipertahankan untuk backward-compat.
 router.get(
   ["/laporan-rekap", "/kkn/attendance/laporan-rekap", "/laporan-presensi"],
   authMiddleware,
@@ -201,19 +203,18 @@ router.get(
   kknAttendanceController.getLaporanPresensi
 );
 
-
 import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 
 router.get(
-  ["/kkn/kegiatan-aktif", "/kegiatan-aktif"],
+  "/kkn/kegiatan-aktif",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
   kknAttendanceController.getKegiatanAktif
 );
 
 router.post(
-  ["/kkn/kegiatan/:id/mulai", "/kegiatan/:id/mulai"],
+  "/kkn/kegiatan/:id/mulai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("foto"),
@@ -221,7 +222,14 @@ router.post(
 );
 
 router.post(
-  ["/kkn/kegiatan/:id/selesai", "/kegiatan/:id/selesai"],
+  "/kkn/kegiatan/:id/jeda",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.jedaKegiatan
+);
+
+router.post(
+  "/kkn/kegiatan/:id/selesai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("foto"),
@@ -229,21 +237,23 @@ router.post(
 );
 
 router.post(
-  ["/kkn/out-of-zone-violation", "/out-of-zone-violation"],
+  "/kkn/out-of-zone-violation",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknAttendanceController.recordOutOfZoneViolation
 );
 
 router.get(
-  ["/kkn/kegiatan/:id/presensi-history", "/kegiatan/:id/presensi-history"],
+  "/kkn/kegiatan/:id/presensi-history",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   kknAttendanceController.getPresensiHistory
 );
 
+// Canonical location-ping endpoint. /kkn/location-ping dipertahankan
+// sebagai alias untuk backward-compat mobile client yang masih pakai prefix /kkn.
 router.post(
-  ["/location-ping", "/kkn/location-ping", "/mahasiswa/location-ping", "/mahasiswa/ping"],
+  ["/location-ping", "/kkn/location-ping"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   async (req, res) => {
@@ -313,7 +323,7 @@ router.get(
  * Returns current active schedules, latest location, geofence status, and attendance records
  */
 router.get(
-  ["/location-ping/debug", "/kkn/location-ping/debug"],
+  "/kkn/location-ping/debug",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   async (req, res) => {
