@@ -3529,9 +3529,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
                           <th className="py-3.5 px-3 text-center">JAM MASUK</th>
                           <th className="py-3.5 px-3 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI HARI INI</th>
-                          <th className="py-3.5 px-3 text-center">TARGET HARIAN (4 JAM)</th>
-                          <th className="py-3.5 px-4 text-center">RASIO HARIAN</th>
+                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
+                          <th className="py-3.5 px-3 text-center">TARGET MINIMAL</th>
+                          <th className="py-3.5 px-4 text-center min-w-[170px]">RASIO KEHADIRAN (PER HARI)</th>
                           <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
                           <th className="py-3.5 px-4 text-center">DETAIL</th>
                         </tr>
@@ -5414,10 +5414,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
 
-                  {/* Rasio Target Harian (4 Jam) */}
+                  {/* Rasio Kehadiran (Per Hari) */}
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Target Harian ({targetHours} Jam):</span>
+                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Kehadiran (Per Hari - Target {targetHours} Jam):</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{ratioPercent}%</span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
