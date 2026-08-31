@@ -692,6 +692,14 @@ router.post(
   kknController.createProgramKerja
 );
 
+router.put(
+  "/program-kerja/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  upload.single("filePdf"),
+  kknController.updateProgramKerja
+);
+
 router.get(
   ["/program-kerja", "/proker"],
   authMiddleware,
@@ -709,7 +717,7 @@ router.get(
 router.put(
   ["/program-kerja/:id", "/proker/:id"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
   uploadPemanfaatanImage,
   kknController.updateProgramKerja
 );
@@ -717,7 +725,7 @@ router.put(
 router.patch(
   ["/program-kerja/:id", "/proker/:id"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
   uploadPemanfaatanImage,
   kknController.updateProgramKerja
 );
@@ -758,7 +766,7 @@ router.post(
 router.put(
   ["/logbook/:id", "/logbook-aktivitas/:id"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
   uploadPemanfaatanImage,
   logbookController.updateMahasiswaLogbook
 );
@@ -766,7 +774,7 @@ router.put(
 router.patch(
   ["/logbook/:id", "/logbook-aktivitas/:id"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
   uploadPemanfaatanImage,
   logbookController.updateMahasiswaLogbook
 );
@@ -777,7 +785,6 @@ router.delete(
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
   logbookController.deleteMahasiswaLogbook
 );
-
 router.post(
   "/panen-hasil",
   authMiddleware,

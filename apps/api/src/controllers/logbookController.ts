@@ -176,6 +176,8 @@ export const logbookController = {
         req.body.fotoUrl ||
         req.body.evidencePhotoUrl ||
         req.body.fotoDokumentasiUrl ||
+        req.body.fotoDokumentasi ||
+        req.body.foto ||
         undefined;
       const uploadedFileUrls: string[] = [];
 

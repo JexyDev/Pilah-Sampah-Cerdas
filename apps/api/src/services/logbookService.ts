@@ -795,10 +795,35 @@ export class LogbookService {
     const isAuthor = existing.penulisId === userId;
 
     if (!isDeveloper && !isAssignedDpl && !isAuthor) {
-      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengedit logbook ini.");
+      const studentCaller = await prisma.studentKkn.findUnique({ where: { userId } });
+      const isKetua = Boolean(studentCaller?.isKetua) && studentCaller?.kelompokId === existing.kelompokId;
+      if (!isKetua) {
+        throw new Error("Akses ditolak: Anda tidak memiliki izin untuk mengedit logbook ini.");
+      }
+    }
+
+    // Business guard for Mahasiswa (if not developer/dpl)
+    if (!isDeveloper && !isAssignedDpl) {
+      if (existing.statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {
+        throw new Error("Logbook yang telah disetujui DPL tidak dapat diubah kembali.");
+      }
     }
 
     const updateData: any = {};
+
+    // Reset status approval if mahasiswa edits a rejected/revision logbook
+    if (!isDeveloper && !isAssignedDpl && !payload.statusApproval) {
+      if (
+        existing.statusApproval === StatusLogbookKkn.DITOLAK_KETUA ||
+        existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL
+      ) {
+        const studentProfile = await prisma.studentKkn.findUnique({ where: { userId: existing.penulisId } });
+        updateData.statusApproval = studentProfile?.isKetua
+          ? StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL
+          : StatusLogbookKkn.MENUNGGU_PERSETUJUAN_KETUA;
+      }
+    }
+
     if (payload.tanggalKegiatan) {
       const actDate = new Date(payload.tanggalKegiatan);
       if (!isNaN(actDate.getTime())) {

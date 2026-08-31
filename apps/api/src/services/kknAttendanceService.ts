@@ -517,7 +517,6 @@ export class KknAttendanceService {
       });
       currentScheduleId = todaySch ? todaySch.id : activeSchedules[0].id;
     }
-
     if (activeSchedules.length > 0) {
       const todayLogs = await prisma.studentLocation.findMany({
         where: {
@@ -714,6 +713,7 @@ export class KknAttendanceService {
         }
       }
     }
+
 
 
     let attendanceStatus = "TIDAK_ADA_KEGIATAN";

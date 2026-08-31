@@ -3679,35 +3679,6 @@ export class KknService {
     return { success: true, message: "Program kerja berhasil dihapus", data: { id } };
   }
 
-  async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
-    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
-    if (!existing) {
-      const logbook = await prisma.logbookKkn.findUnique({ where: { id } });
-      if (!logbook) throw new Error("Logbook pemanfaatan tidak ditemukan");
-      return await prisma.logbookKkn.update({
-        where: { id },
-        data: {
-          deskripsi: payload.deskripsi || payload.uraianKegiatan || logbook.deskripsi,
-          tempat: payload.tempat || logbook.tempat,
-          fotoBuktiUrl: payload.fotoDokumentasiUrl || payload.fotoBuktiUrl || logbook.fotoBuktiUrl,
-        },
-      });
-    }
-
-    const { teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl, program } = payload;
-    const updateData: any = {};
-    if (teknologi !== undefined) updateData.teknologi = teknologi;
-    if (bahanBaku !== undefined) updateData.bahanBaku = bahanBaku;
-    if (beratInputKg !== undefined) updateData.volumeBahanBaku = Number(beratInputKg) || 0;
-    if (fotoDokumentasiUrl !== undefined) updateData.fotoDokumentasiUrl = fotoDokumentasiUrl;
-    if (program !== undefined) updateData.program = program;
-
-    return await prisma.pemanfaatan.update({
-      where: { id },
-      data: updateData,
-    });
-  }
-
   async createLogbookPemanfaatan(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
@@ -3837,6 +3808,162 @@ export class KknService {
     }
 
     return report;
+  }
+
+  async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId },
+      include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
+    });
+
+    // Check existing pemanfaatan
+    let existing = await prisma.pemanfaatan.findUnique({
+      where: { id },
+      include: { programKerja: true },
+    });
+
+    // Fallback: if mobile passed logbookKkn id instead of pemanfaatan id
+    let matchedLogbook: any = null;
+    if (!existing) {
+      matchedLogbook = await prisma.logbookKkn.findUnique({
+        where: { id },
+        include: { programKerja: true },
+      });
+      if (matchedLogbook?.programKerjaId) {
+        existing = await prisma.pemanfaatan.findFirst({
+          where: { programKerjaId: matchedLogbook.programKerjaId },
+          include: { programKerja: true },
+        });
+      }
+    }
+
+    if (!existing && !matchedLogbook) {
+      throw new Error("Logbook pemanfaatan sampah tidak ditemukan.");
+    }
+
+    const {
+      programKerjaId,
+      fasilitasId,
+      jenisPemanfaatan,
+      teknologi,
+      kategoriSampah,
+      bahanBaku,
+      wilayahDampingan,
+      rwId,
+      waktuPelaksanaan,
+      tanggalPencatatan,
+      volumeBahanBaku,
+      beratInputKg,
+      volumePanen,
+      beratOutputKg,
+      catatan,
+      fotoDokumentasiUrl,
+      foto,
+      fotoBukti,
+    } = payload;
+
+    const updatePemanfaatanData: any = {};
+
+    const cleanTeknologi = jenisPemanfaatan || teknologi;
+    if (cleanTeknologi) {
+      updatePemanfaatanData.teknologi = cleanTeknologi;
+    }
+
+    const cleanBahanBaku = kategoriSampah || bahanBaku;
+    if (cleanBahanBaku) {
+      updatePemanfaatanData.bahanBaku = cleanBahanBaku;
+    }
+
+    const rawInputKg = beratInputKg !== undefined ? beratInputKg : volumeBahanBaku;
+    if (rawInputKg !== undefined) {
+      const numInput = typeof rawInputKg === "string" ? parseFloat(rawInputKg.replace(/[^\d.-]/g, "")) : Number(rawInputKg);
+      if (!isNaN(numInput)) {
+        updatePemanfaatanData.volumeBahanBaku = numInput;
+      }
+    }
+
+    const rawOutputKg = beratOutputKg !== undefined ? beratOutputKg : volumePanen;
+    if (rawOutputKg !== undefined && rawOutputKg !== null && rawOutputKg !== "") {
+      const numOutput = typeof rawOutputKg === "string" ? parseFloat(rawOutputKg.replace(/[^\d.-]/g, "")) : Number(rawOutputKg);
+      if (!isNaN(numOutput)) {
+        updatePemanfaatanData.hasil = numOutput;
+      }
+    }
+
+    const rawDate = waktuPelaksanaan || tanggalPencatatan;
+    if (rawDate) {
+      const parsedDate = new Date(rawDate);
+      if (!isNaN(parsedDate.getTime())) {
+        updatePemanfaatanData.tanggalPencatatan = parsedDate;
+      }
+    }
+
+    if (programKerjaId) {
+      updatePemanfaatanData.programKerjaId = programKerjaId;
+    }
+
+    const finalFoto = fotoDokumentasiUrl || foto || fotoBukti;
+    if (finalFoto && typeof finalFoto === "string" && finalFoto.trim() !== "" && finalFoto !== "null") {
+      updatePemanfaatanData.fotoDokumentasiUrl = finalFoto.trim();
+    }
+
+    if (rwId != null) {
+      updatePemanfaatanData.rwId = Number(rwId);
+    }
+
+    let updatedPemanfaatan = null;
+    if (existing) {
+      updatedPemanfaatan = await prisma.pemanfaatan.update({
+        where: { id: existing.id },
+        data: updatePemanfaatanData,
+      });
+    }
+
+    // Sync to logbookKkn if available
+    const logbookTarget = matchedLogbook || (existing?.programKerjaId
+      ? await prisma.logbookKkn.findFirst({
+          where: { programKerjaId: existing.programKerjaId },
+          orderBy: { createdAt: "desc" },
+        })
+      : null);
+
+    if (logbookTarget) {
+      const logbookUpdate: any = {};
+      if (updatePemanfaatanData.tanggalPencatatan) {
+        logbookUpdate.tanggalKegiatan = updatePemanfaatanData.tanggalPencatatan;
+      }
+      if (updatePemanfaatanData.fotoDokumentasiUrl) {
+        logbookUpdate.fotoBuktiUrl = updatePemanfaatanData.fotoDokumentasiUrl;
+        logbookUpdate.attachmentUrls = [updatePemanfaatanData.fotoDokumentasiUrl];
+      }
+      if (catatan) {
+        logbookUpdate.deskripsi = catatan;
+      } else if (cleanTeknologi || rawInputKg !== undefined) {
+        const inputVol = updatePemanfaatanData.volumeBahanBaku ?? (existing ? Number(existing.volumeBahanBaku) : 0);
+        logbookUpdate.deskripsi = `Aksi Pemanfaatan Sampah: ${cleanTeknologi || existing?.teknologi || "Kompos"} (${cleanBahanBaku || existing?.bahanBaku || "Sampah Organik"} - ${inputVol} Kg)`;
+      }
+      if (programKerjaId) {
+        logbookUpdate.programKerjaId = programKerjaId;
+      }
+      if (fasilitasId) {
+        logbookUpdate.fasilitasId = fasilitasId;
+      }
+
+      await prisma.logbookKkn.update({
+        where: { id: logbookTarget.id },
+        data: logbookUpdate,
+      }).catch((e) => console.warn("[updateLogbookPemanfaatan] sync logbook warning:", e));
+    }
+
+    return {
+      id: updatedPemanfaatan?.id || logbookTarget?.id,
+      teknologi: updatedPemanfaatan?.teknologi || cleanTeknologi,
+      bahanBaku: updatedPemanfaatan?.bahanBaku || cleanBahanBaku,
+      volumeBahanBaku: updatedPemanfaatan ? Number(updatedPemanfaatan.volumeBahanBaku) : Number(rawInputKg) || 0,
+      hasil: updatedPemanfaatan ? Number(updatedPemanfaatan.hasil) : Number(rawOutputKg) || 0,
+      fotoDokumentasiUrl: updatedPemanfaatan?.fotoDokumentasiUrl || finalFoto,
+      tanggalPencatatan: updatedPemanfaatan?.tanggalPencatatan || new Date(),
+    };
   }
 
   async getUnharvestedLogbooks(userId: string) {

@@ -1644,7 +1644,8 @@ const Dashboard: React.FC = () => {
       user?.peran === "PETUGAS_RESIDU" ||
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
-      user?.peran === "DOSEN_PEMBIMBING"
+      user?.peran === "DOSEN_PEMBIMBING" ||
+      user?.peran === "PANITIA_TASKFORCE"
     ) {
       setLoading(false);
       return;

@@ -67,10 +67,10 @@ router.post(
   logbookController.batchVerifikasiByDpl
 );
 
-// Update / Koreksi Logbook Aktivitas Mahasiswa (Developer, DPL, Super User, Mahasiswa)
+// Update / Koreksi Logbook Aktivitas Mahasiswa (Mahasiswa, Developer, DPL, Super User)
 router.put(
   "/mahasiswa/:id",
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING", "MAHASISWA_KKN"]),
+  roleMiddleware(["MAHASISWA_KKN", "DEVELOPER", "SUPER_USER", "DPL", "DOSEN_PEMBIMBING"]),
   uploadPemanfaatanImage,
   logbookController.updateMahasiswaLogbook
 );

@@ -101,6 +101,9 @@ export class KknController {
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaDetail error:", error);
+      if (error.message === "WARGA_NOT_FOUND") {
+        return res.status(404).json({ success: false, message: "Warga tidak ditemukan." });
+      }
       const code = error.message === "FORBIDDEN_SCOPE" ? 403 : 500;
       res.status(code).json({ success: false, message: error.message });
     }
@@ -794,33 +797,6 @@ export class KknController {
     }
   }
 
-  async updateLogbookPemanfaatan(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const uploadedUrls = extractUploadedFileUrls(req);
-      let fotoDokumentasiUrl: string | undefined = undefined;
-
-      if (uploadedUrls.length > 0) {
-        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
-      } else {
-        const bodyFoto =
-          req.body.fotoDokumentasiUrl ||
-          req.body.fotoBuktiUrl ||
-          req.body.fotoUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
-          fotoDokumentasiUrl = bodyFoto.trim();
-        }
-      }
-
-      const payload = { ...req.body, ...(fotoDokumentasiUrl ? { fotoDokumentasiUrl } : {}) };
-      const data = await kknService.updateLogbookPemanfaatan(req.user!.userId, id, payload);
-      res.status(200).json({ success: true, message: "Logbook pemanfaatan berhasil diperbarui.", data });
-    } catch (error: any) {
-      console.error("[KknController] updateLogbookPemanfaatan error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
   async createLogbookPemanfaatan(req: Request, res: Response) {
     try {
       const uploadedUrls = extractUploadedFileUrls(req);
@@ -843,6 +819,33 @@ export class KknController {
       res.status(201).json({ success: true, message: "Aksi Pemanfaatan berhasil dicatat.", data });
     } catch (error: any) {
       console.error("[KknController] createLogbookPemanfaatan error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async updateLogbookPemanfaatan(req: Request, res: Response) {
+    try {
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl ||
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl ||
+          req.body.foto;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
+      }
+
+      const payload = { ...req.body, fotoDokumentasiUrl };
+      const data = await kknService.updateLogbookPemanfaatan(req.user!.userId, req.params.id, payload);
+      res.status(200).json({ success: true, message: "Logbook pemanfaatan sampah berhasil diperbarui", data });
+    } catch (error: any) {
+      console.error("[KknController] updateLogbookPemanfaatan error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
