@@ -144,6 +144,68 @@ export function calculateLiveInZoneMinutes(att: {
   return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
 }
 
+/**
+ * Helper: Calculate live in-zone SECONDS with per-second precision.
+ * Versi presisi detik dari calculateLiveInZoneMinutes — logika identik
+ * tapi menggunakan / 1000 (bukan / 60000) sehingga nilai bertambah tiap
+ * detik, bukan loncat setiap 60 detik.
+ *
+ * Digunakan khusus untuk field `actualInZoneSeconds` di response ping
+ * agar mobile dapat sync timer per detik tanpa ada lompatan 60 detik.
+ * Daily cap: 8 jam = 28800 detik.
+ */
+export function calculateLiveInZoneSeconds(att: {
+  attendedAt: Date | string;
+  actualInZoneMinutes?: number | null;
+  jedaLogs?: any;
+  status?: string;
+}): number {
+  const storedMins = Math.max(0, att.actualInZoneMinutes ?? 0);
+  const storedSecs = storedMins * 60;
+  if (!att.attendedAt) return storedSecs;
+
+  const MAX_DAILY_SECONDS_CAP = 480 * 60; // 8 jam = 28800 detik
+
+  const attendedDate = new Date(att.attendedAt);
+  const now = new Date();
+
+  // Cek apakah sesi dari hari sebelumnya (WIB +7)
+  const attendedWibDay = new Date(attendedDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const isPastDay = attendedWibDay < nowWibDay;
+
+  // Sesi dari hari sebelumnya atau TERJEDA → gunakan nilai tersimpan
+  if (isPastDay || att.status === "TERJEDA") {
+    return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+  }
+
+  const jedaLogsArray = (att.jedaLogs as any[]) || [];
+  if (jedaLogsArray.length === 0) {
+    // Presisi detik — bagi 1000, bukan 60000
+    const elapsedSecs = Math.floor((now.getTime() - attendedDate.getTime()) / 1000);
+    const computed = Math.max(storedSecs, elapsedSecs);
+    return Math.min(computed, MAX_DAILY_SECONDS_CAP);
+  }
+
+  const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
+  if (!lastLog) return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+
+  if (lastLog.waktuResume) {
+    const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
+    const baseSecs = (Number(lastLog.durasiSebelumResumeMenit) || storedMins) * 60;
+    const elapsedSinceResumeSecs = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 1000));
+    return Math.min(Math.max(storedSecs, baseSecs + elapsedSinceResumeSecs), MAX_DAILY_SECONDS_CAP);
+  }
+
+  if (lastLog.waktuJeda) {
+    // Sesi terjeda — gunakan durasi sebelum jeda (dalam detik)
+    const baseSecs = (Number(lastLog.durasiSebelumJedaMenit) || storedMins) * 60;
+    return Math.min(Math.max(storedSecs, baseSecs), MAX_DAILY_SECONDS_CAP);
+  }
+
+  return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+}
+
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
@@ -404,6 +466,8 @@ export class KknAttendanceService {
     let autoAttendanceTriggered = false;
     let inZoneMinutes = 0;
     let isInsideZone = false;
+    // Track attendance aktif untuk kalkulasi actualInZoneSeconds presisi detik di response
+    let activeAttendanceForSeconds: any = null;
 
     // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
     const ruleConfigs = await configService.getRuleEngineConfigs();
@@ -567,6 +631,9 @@ export class KknAttendanceService {
               attendedAt: existingAtt.attendedAt.toISOString(),
               actualInZoneMinutes: durationInZone,
             });
+
+            // Simpan referensi untuk kalkulasi actualInZoneSeconds presisi detik di response
+            activeAttendanceForSeconds = existingAtt;
           }
 
           inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
@@ -610,7 +677,11 @@ export class KknAttendanceService {
         currentStatus: isInsideZone ? "LAPANGAN" : "DI_LUAR_ZONA",
         attendanceStatus,
         inZoneMinutes,
-        actualInZoneSeconds: inZoneMinutes * 60,
+        // Gunakan presisi detik saat sesi BERLANGSUNG di dalam zona agar mobile
+        // dapat sync timer per detik. Fallback ke menit * 60 untuk sesi TERJEDA/selesai.
+        actualInZoneSeconds: activeAttendanceForSeconds
+          ? calculateLiveInZoneSeconds(activeAttendanceForSeconds)
+          : inZoneMinutes * 60,
         actualInZoneMinutes: inZoneMinutes,
         autoAttendanceTriggered,
         poskoArea: null,
