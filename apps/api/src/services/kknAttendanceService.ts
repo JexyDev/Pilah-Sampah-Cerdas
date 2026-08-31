@@ -2451,7 +2451,9 @@ export class KknAttendanceService {
         }
 
         if (att.status === "BERLANGSUNG" || att.status === "DI_ZONA" || att.status === "DALAM_RADIUS") {
-          durationMins = Math.max(storedMins, timeDiffMins);
+          // Prioritaskan storedMins dari DB (mencerminkan jeda/keluar zona).
+          // Fallback ke timeDiffMins hanya jika DB masih 0 (sesi baru mulai).
+          durationMins = storedMins > 0 ? storedMins : timeDiffMins;
         } else {
           durationMins = storedMins > 0 ? storedMins : timeDiffMins;
         }
