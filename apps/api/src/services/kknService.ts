@@ -3383,6 +3383,67 @@ export class KknService {
     });
   }
 
+  async updateProgramKerja(userId: string, id: string, payload: any) {
+    const proker = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!proker) throw new Error("Program kerja tidak ditemukan");
+    
+    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive, attachmentFile, attachmentUrls, statusUsulan } = payload;
+    
+    const updateData: any = {};
+    if (judul !== undefined) updateData.judul = judul.trim();
+    if (kategori !== undefined) updateData.kategori = normalizeProkerKategori(kategori);
+    if (rencanaAnggaran !== undefined) updateData.kebutuhanBiaya = Number(rencanaAnggaran) || 0;
+    if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
+    if (targetTanggal !== undefined || waktuPelaksanaan !== undefined) {
+      const execDate = targetTanggal || waktuPelaksanaan;
+      updateData.targetTanggal = execDate ? new Date(execDate) : undefined;
+      updateData.waktuPelaksanaan = execDate ? String(execDate) : undefined;
+    }
+    const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || attachmentFile;
+    if (finalGoogleDriveUrl !== undefined) {
+      updateData.linkGoogleDrive = finalGoogleDriveUrl;
+    }
+    if (statusUsulan !== undefined) {
+      updateData.statusUsulan = statusUsulan;
+    }
+
+    return await prisma.programKerjaKkn.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
+    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
+    if (!existing) {
+      const logbook = await prisma.logbookKkn.findUnique({ where: { id } });
+      if (!logbook) throw new Error("Logbook pemanfaatan tidak ditemukan");
+      return await prisma.logbookKkn.update({
+        where: { id },
+        data: {
+          deskripsi: payload.deskripsi || payload.uraianKegiatan || logbook.deskripsi,
+          kendala: payload.kendala !== undefined ? payload.kendala : logbook.kendala,
+          solusi: payload.solusi !== undefined ? payload.solusi : logbook.solusi,
+          statusKehadiran: payload.statusKehadiran || logbook.statusKehadiran,
+          fotoDokumentasiUrl: payload.fotoDokumentasiUrl || logbook.fotoDokumentasiUrl,
+        },
+      });
+    }
+
+    const { teknologi, bahanBaku, beratInputKg, fotoDokumentasiUrl, program } = payload;
+    const updateData: any = {};
+    if (teknologi !== undefined) updateData.teknologi = teknologi;
+    if (bahanBaku !== undefined) updateData.bahanBaku = bahanBaku;
+    if (beratInputKg !== undefined) updateData.volumeBahanBaku = Number(beratInputKg) || 0;
+    if (fotoDokumentasiUrl !== undefined) updateData.fotoDokumentasiUrl = fotoDokumentasiUrl;
+    if (program !== undefined) updateData.program = program;
+
+    return await prisma.pemanfaatan.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
   async createLogbookPemanfaatan(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },

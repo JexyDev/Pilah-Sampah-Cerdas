@@ -679,6 +679,51 @@ export class KknController {
     }
   }
 
+  async updateProgramKerja(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const payload = { ...req.body };
+      if (req.file) {
+        const fileUrl = `/uploads/${req.file.filename}`;
+        payload.attachmentFile = fileUrl;
+        payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
+        payload.attachmentUrls = [fileUrl];
+      }
+      const data = await kknService.updateProgramKerja(req.user!.userId, id, payload);
+      res.status(200).json({ success: true, message: "Program Kerja berhasil diperbarui.", data });
+    } catch (error: any) {
+      console.error("[KknController] updateProgramKerja error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async updateLogbookPemanfaatan(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const uploadedUrls = extractUploadedFileUrls(req);
+      let fotoDokumentasiUrl: string | undefined = undefined;
+
+      if (uploadedUrls.length > 0) {
+        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
+      } else {
+        const bodyFoto =
+          req.body.fotoDokumentasiUrl ||
+          req.body.fotoBuktiUrl ||
+          req.body.fotoUrl;
+        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+          fotoDokumentasiUrl = bodyFoto.trim();
+        }
+      }
+
+      const payload = { ...req.body, ...(fotoDokumentasiUrl ? { fotoDokumentasiUrl } : {}) };
+      const data = await kknService.updateLogbookPemanfaatan(req.user!.userId, id, payload);
+      res.status(200).json({ success: true, message: "Logbook pemanfaatan berhasil diperbarui.", data });
+    } catch (error: any) {
+      console.error("[KknController] updateLogbookPemanfaatan error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
   async createLogbookPemanfaatan(req: Request, res: Response) {
     try {
       const uploadedUrls = extractUploadedFileUrls(req);
