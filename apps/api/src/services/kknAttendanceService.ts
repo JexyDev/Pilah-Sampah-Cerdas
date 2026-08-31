@@ -38,7 +38,7 @@ async function buildGeofence(
           polygon: schedule.polygon,
         };
       }
-    } catch (_err) {
+    } catch {
       // Ignored
     }
   }
@@ -250,9 +250,6 @@ export function calculateInZoneDurationMinutes(
     (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
   );
 
-  const tFirst = new Date(sorted[0].recordedAt).getTime();
-  const tLast = new Date(sorted[sorted.length - 1].recordedAt).getTime();
-
   let totalMs = 0;
   for (let i = 0; i < sorted.length - 1; i++) {
     const t1 = new Date(sorted[i].recordedAt).getTime();
@@ -398,7 +395,7 @@ export class KknAttendanceService {
     userId: string,
     latitude: number,
     longitude: number,
-    accumulatedDurationSeconds?: number
+    _accumulatedDurationSeconds?: number
   ) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -491,7 +488,6 @@ export class KknAttendanceService {
     // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
-    const autoHadirOutsideZone = (ruleConfigs as any).attendanceAutoHadirOutsideZone !== false;
 
     const nowForPing = new Date();
     const nowWibPing = new Date(nowForPing.getTime() + 7 * 60 * 60 * 1000);
@@ -536,14 +532,6 @@ export class KknAttendanceService {
       currentScheduleId = todaySch ? todaySch.id : activeSchedules[0].id;
     }
     if (activeSchedules.length > 0) {
-      const todayLogs = await prisma.studentLocation.findMany({
-        where: {
-          studentId: userId,
-          recordedAt: { gte: todayStart },
-        },
-        orderBy: { recordedAt: "asc" },
-      });
-
       for (const sch of activeSchedules) {
         const existingAtt = await prisma.activityAttendance.findUnique({
           where: {
@@ -568,41 +556,6 @@ export class KknAttendanceService {
         }
 
         const geofence = await buildGeofence(sch);
-
-        // Cek apakah jadwal kegiatan ini masih "AKAN_DATANG" (belum waktunya)
-        const scheduleDateWibStrPing = new Date(sch.date.getTime() + 7 * 60 * 60 * 1000)
-          .toISOString()
-          .slice(0, 10);
-        let isFutureDatePing = false;
-
-        const timeRangePing = parseScheduleTimeRange(sch.time);
-        const startMinutesTotal = timeRangePing.startMinutesTotal;
-        const endMinutesTotal = timeRangePing.endMinutesTotal;
-        const isOvernightPing = timeRangePing.isOvernight;
-        let isExpiredDatePing = false;
-        if (isOvernightPing) {
-          if (scheduleDateWibStrPing === todayWibStrPing) {
-            // Hari pertama overnight
-          } else if (scheduleDateWibStrPing > todayWibStrPing) {
-            isFutureDatePing = true;
-          } else {
-            const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
-            if (currentMinutesTotal > endMinutesTotal) isExpiredDatePing = true;
-          }
-        } else {
-          if (scheduleDateWibStrPing > todayWibStrPing) {
-            isFutureDatePing = true;
-          } else if (scheduleDateWibStrPing === todayWibStrPing) {
-            const currentMinutesTotal = nowWibPing.getUTCHours() * 60 + nowWibPing.getUTCMinutes();
-            if (currentMinutesTotal < startMinutesTotal) {
-              isFutureDatePing = true;
-            } else if (currentMinutesTotal > endMinutesTotal) {
-              isExpiredDatePing = true;
-            }
-          } else {
-            isExpiredDatePing = true;
-          }
-        }
 
         // 1. Cek posisi saat ini terhadap geofence kegiatan ini
         const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
@@ -931,7 +884,6 @@ export class KknAttendanceService {
     // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
-    const autoHadirOutsideZone = (ruleConfigs as any).attendanceAutoHadirOutsideZone !== false;
 
     const nowForPing3 = new Date();
     const nowWibPing3 = new Date(nowForPing3.getTime() + 7 * 60 * 60 * 1000);
@@ -972,14 +924,6 @@ export class KknAttendanceService {
     });
 
     if (activeSchedules.length > 0 && latestLoc) {
-      const todayLogs = await prisma.studentLocation.findMany({
-        where: {
-          studentId,
-          recordedAt: { gte: todayStart },
-        },
-        orderBy: { recordedAt: "asc" },
-      });
-
       for (const sch of activeSchedules) {
         const existingAtt = await prisma.activityAttendance.findUnique({
           where: {
@@ -992,7 +936,6 @@ export class KknAttendanceService {
 
         // Hitung batas menit untuk mengetahui apakah jadwal ini sudah SELESAI
         const timeRangeBatch = parseScheduleTimeRange(sch.time);
-        const startMinutesTotal = timeRangeBatch.startMinutesTotal;
         const endMinutesTotal = timeRangeBatch.endMinutesTotal;
         const isOvernight = timeRangeBatch.isOvernight;
 
@@ -1091,7 +1034,7 @@ export class KknAttendanceService {
               isCurrInside = true;
               smartZoneResult = szResult;
             }
-          } catch (_szErr) {
+          } catch {
             // Non-critical: fallback ke schedule geofence saja
           }
         }
@@ -1293,21 +1236,6 @@ export class KknAttendanceService {
         ? Number(schedule.longitude)
         : defaultLng;
 
-    // Always fetch target duration from Rule Engine or schedule duration as the single source of truth!
-    let scheduleDurationMinutes = 0;
-    if (schedule?.time && schedule.time.includes("-")) {
-      const parts = schedule.time.split("-");
-      const startParts = parts[0].trim().replace(".", ":").split(":");
-      const endParts = parts[1].trim().replace(".", ":").split(":");
-      if (startParts.length >= 2 && endParts.length >= 2) {
-        const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
-        const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-        if (endMins > startMins) {
-          scheduleDurationMinutes = endMins - startMins;
-        }
-      }
-    }
-
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const ruleTargetMinutes =
       ruleConfigs.attendanceMinDurationHours * 60 +
@@ -1442,7 +1370,7 @@ export class KknAttendanceService {
           scheduleStartTotal = range.startMinutesTotal;
           scheduleEndTotal = range.endMinutesTotal;
         }
-      } catch (_) {
+      } catch {
         /* keep defaults */
       }
 
@@ -1509,7 +1437,7 @@ export class KknAttendanceService {
               isInside = true;
             }
           }
-        } catch (_szErr) {
+        } catch {
           // Smart zone check failed — fall through to OUT_OF_RADIUS
         }
       }
@@ -1742,15 +1670,7 @@ export class KknAttendanceService {
     fotoUrl?: string;
     totalDurasiDalamZonaMenit?: number;
   }) {
-    const {
-      studentId,
-      scheduleId,
-      latitude,
-      longitude,
-      deskripsiKegiatan,
-      fotoUrl,
-      totalDurasiDalamZonaMenit,
-    } = params;
+    const { studentId, scheduleId, latitude, longitude, deskripsiKegiatan, fotoUrl } = params;
 
     const nowForCheckout = new Date();
     const nowWibCheckout = new Date(nowForCheckout.getTime() + 7 * 60 * 60 * 1000);
@@ -2017,7 +1937,7 @@ export class KknAttendanceService {
       if (ttlConfig && !isNaN(Number(ttlConfig)) && Number(ttlConfig) > 0) {
         ttlMinutes = Number(ttlConfig);
       }
-    } catch (_err) {
+    } catch {
       ttlMinutes = 5;
     }
 
@@ -2304,7 +2224,6 @@ export class KknAttendanceService {
 
     const attendedList = list.map((att) => {
       attendedStudentIds.add(att.studentId);
-      const latestLoc = locMap.get(att.studentId);
       const leave = leaveMap.get(att.studentId);
 
       const isFinished =
@@ -2475,7 +2394,7 @@ export class KknAttendanceService {
               data: { status: attStatus, method: "IZIN_DPL" },
             });
           }
-        } catch (_syncErr) {
+        } catch {
           // Continue if sync fails
         }
 
@@ -2736,7 +2655,6 @@ export class KknAttendanceService {
 
     const summary = students.map((s) => {
       let totalMinutes = 0;
-      let validSessionsCount = 0;
       let fulfilledTargetDays = 0;
 
       const sessionDetails = s.user.attendances.map((att) => {
@@ -2773,7 +2691,6 @@ export class KknAttendanceService {
           durationMins = storedMins > 0 ? storedMins : timeDiffMins;
         }
         totalMinutes += durationMins;
-        if (durationMins > 0) validSessionsCount++;
         if (durationMins >= TARGET_HARIAN_MINUTES) fulfilledTargetDays++;
 
         return {
@@ -2983,7 +2900,7 @@ export class KknAttendanceService {
           },
         });
         schedules = [defaultDailySchedule];
-      } catch (_createErr) {
+      } catch {
         // Fallback query jika sudah dibuat secara concurrent oleh rekan sekelompok
         schedules = await prisma.schedule.findMany({
           where: {
@@ -3223,7 +3140,7 @@ export class KknAttendanceService {
       fotoUrl?: string;
     }
   ) {
-    const { latitude, longitude, deviceInfo, deskripsiKegiatan, fotoUrl } = payload;
+    const { latitude, longitude, deskripsiKegiatan, fotoUrl } = payload;
 
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -3732,7 +3649,7 @@ export class KknAttendanceService {
         actualInZoneMinutes: calculatedMins,
         attendedAt: updated.attendedAt.toISOString(),
       });
-    } catch (_) {}
+    } catch {}
 
     // Record into system history / audit trail
     prisma.user
@@ -4650,7 +4567,7 @@ export class KknAttendanceService {
           status: "TIDAK_ADA_KEGIATAN",
         },
       });
-    } catch (_err) {
+    } catch {
       // Non-blocking audit failure
     }
 
@@ -4764,7 +4681,7 @@ export class KknAttendanceService {
           actualInZoneMinutes: calculatedMinutes,
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return record;
   }
@@ -4900,7 +4817,7 @@ export class KknAttendanceService {
         },
         newValue: updateData,
       });
-    } catch (_) {}
+    } catch {}
 
     return updated;
   }
@@ -4931,7 +4848,7 @@ export class KknAttendanceService {
           attendedAt: existing.attendedAt,
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return { id, success: true, message: "Data presensi berhasil dihapus" };
   }
@@ -5014,7 +4931,7 @@ export class KknAttendanceService {
           actualInZoneMinutes: finalMinutes,
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return updated;
   }
