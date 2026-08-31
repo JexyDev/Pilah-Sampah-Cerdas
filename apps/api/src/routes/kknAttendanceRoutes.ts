@@ -207,14 +207,14 @@ import { KknAttendanceService } from "../services/kknAttendanceService.js";
 const kknAttendanceServiceInstance = new KknAttendanceService();
 
 router.get(
-  "/kkn/kegiatan-aktif",
+  ["/kkn/kegiatan-aktif", "/kegiatan-aktif"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
   kknAttendanceController.getKegiatanAktif
 );
 
 router.post(
-  "/kkn/kegiatan/:id/mulai",
+  ["/kkn/kegiatan/:id/mulai", "/kegiatan/:id/mulai"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("foto"),
@@ -222,14 +222,14 @@ router.post(
 );
 
 router.post(
-  "/kkn/kegiatan/:id/jeda",
+  ["/kkn/kegiatan/:id/jeda", "/kegiatan/:id/jeda"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknAttendanceController.jedaKegiatan
 );
 
 router.post(
-  "/kkn/kegiatan/:id/selesai",
+  ["/kkn/kegiatan/:id/selesai", "/kegiatan/:id/selesai"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("foto"),
@@ -237,14 +237,14 @@ router.post(
 );
 
 router.post(
-  "/kkn/out-of-zone-violation",
+  ["/kkn/out-of-zone-violation", "/out-of-zone-violation"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknAttendanceController.recordOutOfZoneViolation
 );
 
 router.get(
-  "/kkn/kegiatan/:id/presensi-history",
+  ["/kkn/kegiatan/:id/presensi-history", "/kegiatan/:id/presensi-history"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   kknAttendanceController.getPresensiHistory
@@ -256,48 +256,7 @@ router.post(
   ["/location-ping", "/kkn/location-ping"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
-  async (req, res) => {
-    try {
-      const latRaw = req.body.latitude ?? req.body.lat;
-      const lngRaw = req.body.longitude ?? req.body.lng;
-      const latitude = Number(latRaw);
-      const longitude = Number(lngRaw);
-
-      if (isNaN(latitude) || isNaN(longitude)) {
-        return res.status(400).json({
-          success: false,
-          error: "INVALID_COORDINATES",
-          message: "Koordinat latitude dan longitude yang valid diperlukan",
-        });
-      }
-
-      // Baca durasi dari mobile — menerima 'accumulatedDurationSeconds', 'accumulatedDuration', atau 'inZoneSeconds'
-      const rawDuration = req.body.accumulatedDurationSeconds ?? req.body.accumulatedDuration ?? req.body.inZoneSeconds;
-      const accumulatedDuration = rawDuration !== undefined ? Number(rawDuration) : undefined;
-
-      const result = await kknAttendanceServiceInstance.pingLocation(
-        req.user!.userId,
-        latitude,
-        longitude,
-        accumulatedDuration
-      );
-      res.json(result);
-    } catch (error: any) {
-      const errorCode: string = error.message ?? "INTERNAL_ERROR";
-
-      // Map known error codes to appropriate HTTP status
-      const statusMap: Record<string, number> = {
-        USER_NOT_FOUND: 404,
-        STUDENT_PROFILE_INCOMPLETE: 403,
-        INVALID_COORDINATES: 400,
-        OUT_OF_COBLONG_BOUNDS: 422,
-        LOCATION_TELEPORTATION_DETECTED: 422,
-      };
-
-      const status = statusMap[errorCode] ?? 400;
-      res.status(status).json({ success: false, error: errorCode, message: error.message });
-    }
-  }
+  kknAttendanceController.pingLocation
 );
 
 
@@ -323,7 +282,7 @@ router.get(
  * Returns current active schedules, latest location, geofence status, and attendance records
  */
 router.get(
-  "/kkn/location-ping/debug",
+  ["/location-ping/debug", "/kkn/location-ping/debug"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   async (req, res) => {
