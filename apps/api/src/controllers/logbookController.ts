@@ -48,6 +48,28 @@ export const logbookController = {
   },
 
   /**
+   * Mengambil detail satu logbook aktivitas mahasiswa berdasarkan ID
+   */
+  getMahasiswaLogbookById: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = getUserId(req);
+      const userRole = getUserRole(req);
+
+      const data = await logbookService.getMahasiswaLogbookById(id, userId, userRole);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[logbookController.getMahasiswaLogbookById] error:", error);
+      const statusCode = error.message?.includes("tidak ditemukan")
+        ? 404
+        : error.message?.includes("Akses ditolak")
+          ? 403
+          : 500;
+      res.status(statusCode).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
+
+  /**
    * Submit logbook aktivitas baru oleh Mahasiswa
    */
   createMahasiswaLogbook: async (req: Request, res: Response): Promise<void> => {

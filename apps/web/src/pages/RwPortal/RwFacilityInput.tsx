@@ -9,6 +9,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   MapContainer,
   Marker,
@@ -43,6 +44,8 @@ import {
   AlertCircle,
   User,
   Sprout,
+  Calendar,
+  RotateCcw,
   FileSpreadsheet
 } from "lucide-react";
 
@@ -106,6 +109,8 @@ export const RwFacilityInput: React.FC = () => {
   // Production Log filters
   const [prodSearchQuery, setProdSearchQuery] = useState("");
   const [prodFacilityFilter, setProdFacilityFilter] = useState("ALL");
+  const [prodStartDate, setProdStartDate] = useState("");
+  const [prodEndDate, setProdEndDate] = useState("");
 
   // Idea review filter & states
   const [ideaSearchQuery, setIdeaSearchQuery] = useState("");
@@ -252,9 +257,19 @@ export const RwFacilityInput: React.FC = () => {
         (log.facilityName && log.facilityName.toLowerCase().includes(prodSearchQuery.toLowerCase())) ||
         (log.jenisOutput && log.jenisOutput.toLowerCase().includes(prodSearchQuery.toLowerCase())) ||
         (log.periode && log.periode.toLowerCase().includes(prodSearchQuery.toLowerCase()));
-      return matchFac && matchSearch;
+
+      let matchDate = true;
+      if (prodStartDate && log.createdAt) {
+        const startTs = new Date(`${prodStartDate}T00:00:00`).getTime();
+        if (new Date(log.createdAt).getTime() < startTs) matchDate = false;
+      }
+      if (prodEndDate && log.createdAt) {
+        const endTs = new Date(`${prodEndDate}T23:59:59`).getTime();
+        if (new Date(log.createdAt).getTime() > endTs) matchDate = false;
+      }
+      return matchFac && matchSearch && matchDate;
     });
-  }, [allProductionLogs, prodFacilityFilter, prodSearchQuery]);
+  }, [allProductionLogs, prodFacilityFilter, prodSearchQuery, prodStartDate, prodEndDate]);
 
   // Filtered Recycle Ideas
   const filteredIdeas = useMemo(() => {
@@ -367,32 +382,52 @@ export const RwFacilityInput: React.FC = () => {
     }
   };
 
-  // Quick export CSV
-  const handleExportCsv = () => {
-    if (filteredProductionLogs.length === 0) {
-      toast.error("Tidak ada data produksi untuk diekspor");
+  // Standardized export XLSX
+  const handleExportXlsx = () => {
+    if (!prodStartDate || !prodEndDate) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
-    const headers = ["Nama Fasilitas", "Jenis", "Periode", "Material Masuk (Kg)", "Hasil Output (Kg)", "Jenis Output", "Tanggal Catat"];
-    const rows = filteredProductionLogs.map((log) => [
-      `"${log.facilityName || "-"}"`,
-      `"${log.facilityJenis || "-"}"`,
-      `"${log.periode || "-"}"`,
-      log.materialMasukKg,
-      log.outputKg,
-      `"${log.jenisOutput || "-"}"`,
-      `"${new Date(log.createdAt).toLocaleDateString("id-ID")}"`
+    if (filteredProductionLogs.length === 0) {
+      toast.error("Tidak ada data produksi pada rentang tanggal yang dipilih untuk diekspor.");
+      return;
+    }
+    const headers = [
+      "No",
+      "Nama Fasilitas",
+      "Jenis Fasilitas",
+      "Periode",
+      "Material Masuk (Kg)",
+      "Hasil Panen/Output (Kg)",
+      "Jenis Output",
+      "Tanggal Catat"
+    ];
+    const rows = filteredProductionLogs.map((log, idx) => [
+      idx + 1,
+      log.facilityName || "-",
+      log.facilityJenis || "-",
+      log.periode || "-",
+      Number(log.materialMasukKg || 0),
+      Number(log.outputKg || 0),
+      log.jenisOutput || "-",
+      new Date(log.createdAt).toLocaleDateString("id-ID")
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Data_Produksi_Fasilitas_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Laporan data produksi berhasil diunduh (CSV)");
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 25 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 18 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Produksi_Fasilitas");
+    XLSX.writeFile(wb, `Data_Produksi_Fasilitas_${prodStartDate}_sd_${prodEndDate}.xlsx`);
+    toast.success("Laporan data produksi berhasil diekspor ke XLSX!");
   };
 
   if (loading) {
@@ -1019,40 +1054,81 @@ export const RwFacilityInput: React.FC = () => {
                   Total {filteredProductionLogs.length} catatan panen terdaftar
                 </p>
               </div>
-              <button
-                onClick={handleExportCsv}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl hover:bg-emerald-100 transition-all self-start sm:self-auto"
-              >
-                <FileSpreadsheet size={14} />
-                <span>Ekspor CSV</span>
-              </button>
             </div>
 
             {/* Log Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari log hasil atau periode..."
-                  value={prodSearchQuery}
-                  onChange={(e) => setProdSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
-                />
+            <div className="flex flex-col gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Cari log hasil atau periode..."
+                    value={prodSearchQuery}
+                    onChange={(e) => setProdSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+
+                <select
+                  value={prodFacilityFilter}
+                  onChange={(e) => setProdFacilityFilter(e.target.value)}
+                  className="w-full py-1.5 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium"
+                >
+                  <option value="ALL">Semua Fasilitas</option>
+                  {facilities.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.nama}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <select
-                value={prodFacilityFilter}
-                onChange={(e) => setProdFacilityFilter(e.target.value)}
-                className="w-full py-1.5 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium"
-              >
-                <option value="ALL">Semua Fasilitas</option>
-                {facilities.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.nama}
-                  </option>
-                ))}
-              </select>
+              {/* Sub Filter Row: Date Range & Ekspor XLSX */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="text-slate-400 font-semibold flex items-center gap-1 text-[11px]">
+                    <Calendar size={12} /> Tanggal:
+                  </span>
+                  <input
+                    type="date"
+                    value={prodStartDate}
+                    onChange={(e) => setProdStartDate(e.target.value)}
+                    className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  />
+                  <span className="text-slate-400 text-xs">s/d</span>
+                  <input
+                    type="date"
+                    value={prodEndDate}
+                    onChange={(e) => setProdEndDate(e.target.value)}
+                    className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  />
+                  {(prodStartDate || prodEndDate || prodSearchQuery || prodFacilityFilter !== "ALL") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProdStartDate("");
+                        setProdEndDate("");
+                        setProdSearchQuery("");
+                        setProdFacilityFilter("ALL");
+                      }}
+                      className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 ml-1 cursor-pointer"
+                    >
+                      <RotateCcw size={11} /> Reset
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleExportXlsx}
+                    disabled={!prodStartDate || !prodEndDate}
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+                    title={(!prodStartDate || !prodEndDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data produksi ke XLSX"}
+                  >
+                    <FileSpreadsheet size={13} />
+                    <span>Ekspor XLSX</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Log Table */}

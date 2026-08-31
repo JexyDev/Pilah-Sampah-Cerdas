@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import * as XLSX from "xlsx";
 
 interface UserPointItem {
   id: string;
@@ -124,6 +125,8 @@ export const KelolaPoinPengguna: React.FC = () => {
   const [pointRangePreset, setPointRangePreset] = useState("ALL");
   const [sortBy, setSortBy] = useState<"totalPoints" | "name" | "createdAt" | "lastTransactionAt">("totalPoints");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
 
   // Ledger Specific Filters
   const [ledgerSearch, setLedgerSearch] = useState("");
@@ -485,35 +488,57 @@ export const KelolaPoinPengguna: React.FC = () => {
     }
   };
 
-  // Export Data to CSV
-  const handleExportCSV = () => {
-    if (users.length === 0) {
-      showToast.error("Tidak ada data untuk diekspor");
+  // Export Data to XLSX
+  const handleExportXLSX = () => {
+    if (!startDateFilter || !endDateFilter) {
+      showToast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
 
-    const headers = ["ID", "Nama", "Email", "Telepon", "Peran", "Wilayah", "Total Poin", "Jumlah Transaksi", "Terakhir Aktif"];
-    const rows = users.map((u) => [
+    const startTs = new Date(`${startDateFilter}T00:00:00`).getTime();
+    const endTs = new Date(`${endDateFilter}T23:59:59`).getTime();
+    const exportUsers = users.filter((u) => {
+      if (!u.createdAt && !u.lastTransactionAt) return true;
+      const t = new Date(u.createdAt || u.lastTransactionAt || 0).getTime();
+      return t >= startTs && t <= endTs;
+    });
+
+    if (exportUsers.length === 0) {
+      showToast.error("Tidak ada data pengguna pada rentang tanggal yang dipilih.");
+      return;
+    }
+
+    const headers = ["No", "ID", "Nama", "Email", "Telepon", "Peran", "Wilayah", "Total Poin", "Jumlah Transaksi", "Terakhir Aktif"];
+    const rows = exportUsers.map((u, idx) => [
+      idx + 1,
       u.id,
-      `"${u.name}"`,
-      `"${u.email || ""}"`,
-      `"${u.phone || ""}"`,
+      u.name,
+      u.email || "-",
+      u.phone || "-",
       u.role,
-      `"${u.rw ? `${u.rw}, ${u.kelurahan || ""}` : u.kelompok || ""}"`,
+      u.rw ? `${u.rw}, ${u.kelurahan || ""}` : u.kelompok || "-",
       u.totalPoints,
       u.transactionCount,
-      `"${u.lastTransactionAt ? new Date(u.lastTransactionAt).toLocaleString("id-ID") : "-"}"`,
+      u.lastTransactionAt ? new Date(u.lastTransactionAt).toLocaleString("id-ID") : "-",
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Data_Poin_Pengguna_Berseka_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast.success("Data poin berhasil diekspor ke CSV!");
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 20 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 18 },
+      { wch: 22 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Data_Poin_Pengguna");
+    XLSX.writeFile(wb, `Data_Poin_Pengguna_${startDateFilter}_sd_${endDateFilter}.xlsx`);
+    showToast.success(`Data poin (${exportUsers.length} pengguna) berhasil diekspor ke XLSX!`);
   };
 
   // Helper Badge Color
@@ -580,14 +605,6 @@ export const KelolaPoinPengguna: React.FC = () => {
             >
               <RefreshCw size={14} className={loadingUsers || loadingLedger ? "animate-spin" : ""} />
               Segarkan
-            </button>
-
-            <button
-              onClick={handleExportCSV}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#035941] hover:bg-[#02402f] text-white transition-all flex items-center gap-2 shadow-sm cursor-pointer"
-            >
-              <FileSpreadsheet size={14} />
-              Ekspor CSV
             </button>
           </div>
         </div>
@@ -876,6 +893,52 @@ export const KelolaPoinPengguna: React.FC = () => {
               >
                 Saldo Nol (0)
               </button>
+            </div>
+
+            {/* Sub Filter Row: Date Range & Ekspor XLSX */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-slate-400 font-semibold flex items-center gap-1 text-[11px]">
+                  Rentang Tanggal:
+                </span>
+                <input
+                  type="date"
+                  value={startDateFilter}
+                  onChange={(e) => setStartDateFilter(e.target.value)}
+                  className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+                <span className="text-slate-400 text-xs">s/d</span>
+                <input
+                  type="date"
+                  value={endDateFilter}
+                  onChange={(e) => setEndDateFilter(e.target.value)}
+                  className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+                {(startDateFilter || endDateFilter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDateFilter("");
+                      setEndDateFilter("");
+                    }}
+                    className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 ml-1 cursor-pointer"
+                  >
+                    <RotateCcw size={11} /> Reset
+                  </button>
+                )}
+
+                {/* 1 Tombol Standar Ekspor XLSX */}
+                <button
+                  type="button"
+                  onClick={handleExportXLSX}
+                  disabled={!startDateFilter || !endDateFilter}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+                  title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data saldo pengguna ke XLSX"}
+                >
+                  <FileSpreadsheet size={13} />
+                  <span>Ekspor XLSX</span>
+                </button>
+              </div>
             </div>
           </div>
 

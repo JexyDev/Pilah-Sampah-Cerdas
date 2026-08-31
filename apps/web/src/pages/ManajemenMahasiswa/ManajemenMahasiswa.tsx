@@ -15,8 +15,11 @@ import {
   Eye,
   Phone,
   Download,
-  Filter
+  Filter,
+  FileSpreadsheet,
+  RotateCcw,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import Sidebar from "../../components/layout/Sidebar/Sidebar";
@@ -34,6 +37,8 @@ const ManajemenMahasiswa: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [kelompokFilter, setKelompokFilter] = useState("Semua");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,30 +49,30 @@ const ManajemenMahasiswa: React.FC = () => {
   const [formData, setFormData] = useState({
     nama_lengkap: "",
     nim: "",
-    universitas: "UNIKOM",
     no_telepon: "",
+    universitas: "UNIKOM",
+    kelompok: "",
+    dpl_nama: "",
     area_tugas: "",
-    status_aktif: "Aktif",
+    is_ketua: false,
   });
 
+  const [studentToDelete, setStudentToDelete] = useState<any | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-
-  // Delete Modal State
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [studentToDelete, setStudentToDelete] = useState<any>(null);
+  const rowsPerPage = 10;
 
   const fetchMahasiswas = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/admin/mahasiswa?search=${searchTerm}&limit=500`);
-      setMahasiswas(response.data.users || []);
-    } catch (err: any) {
-      setError("Gagal memuat data mahasiswa dari server.");
-      toast.error(err.response?.data?.message || "Gagal memuat data mahasiswa");
+      const res = await api.get("/admin/mahasiswa");
+      setMahasiswas(res.data?.data || []);
+      setError("");
+    } catch (err) {
+      setError("Gagal memuat data mahasiswa");
     } finally {
       setLoading(false);
     }
@@ -89,7 +94,7 @@ const ManajemenMahasiswa: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, kelompokFilter]);
+  }, [searchTerm, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
 
   // Extract unique Kelompok KKN list (Natural Sorted)
   const uniqueKelompoks = useMemo(() => {
@@ -117,9 +122,19 @@ const ManajemenMahasiswa: React.FC = () => {
         kelompokFilter === "Semua" ||
         m.studentProfile?.kelompok?.name === kelompokFilter;
 
-      return matchesSearch && matchesStatus && matchesKelompok;
+      let matchesDate = true;
+      if (startDateFilter && m.createdAt) {
+        const startTs = new Date(`${startDateFilter}T00:00:00`).getTime();
+        if (new Date(m.createdAt).getTime() < startTs) matchesDate = false;
+      }
+      if (endDateFilter && m.createdAt) {
+        const endTs = new Date(`${endDateFilter}T23:59:59`).getTime();
+        if (new Date(m.createdAt).getTime() > endTs) matchesDate = false;
+      }
+
+      return matchesSearch && matchesStatus && matchesKelompok && matchesDate;
     });
-  }, [mahasiswas, searchTerm, statusFilter, kelompokFilter]);
+  }, [mahasiswas, searchTerm, statusFilter, kelompokFilter, startDateFilter, endDateFilter]);
 
   const handleOpenAddModal = () => {
     setModalType("add");
@@ -202,38 +217,51 @@ const ManajemenMahasiswa: React.FC = () => {
     }
   };
 
-  const handleExportCSV = () => {
-    if (!filteredMahasiswas || filteredMahasiswas.length === 0) {
-      toast.error("Tidak ada data mahasiswa dalam tabel untuk diekspor.");
+  const handleExportXLSX = () => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
 
-    const headers = ["Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "Dosen Pendamping (DPL)", "Wilayah RT/RW", "Status"];
-    const csvRows = [headers.join(",")];
+    if (!filteredMahasiswas || filteredMahasiswas.length === 0) {
+      toast.error("Tidak ada data mahasiswa pada rentang tanggal yang dipilih.");
+      return;
+    }
 
-    filteredMahasiswas.forEach((m) => {
+    const headers = ["No", "Nama Lengkap", "NIM", "Universitas", "No WhatsApp", "Kelompok KKN", "Dosen Pendamping (DPL)", "Wilayah RT/RW", "Status", "Tanggal Terdaftar"];
+    const rows = filteredMahasiswas.map((m, idx) => {
       const dplName = m.studentProfile?.kelompok?.dplName || m.studentProfile?.kelompok?.dpl?.name || m.studentProfile?.kelompok?.dplNamaMentah || "-";
-      const row = [
-        `"${m.name || ""}"`,
-        `"${m.studentProfile?.nim || ""}"`,
-        `"${m.studentProfile?.fakultas || "UNIKOM"}"`,
-        `"${m.phone || ""}"`,
-        `"${m.studentProfile?.kelompok?.name || "-"}"`,
-        `"${dplName}"`,
-        `"${m.rtRw?.name || "-"}"`,
-        `"${m.status || "Aktif"}"`,
+      return [
+        idx + 1,
+        m.name || "-",
+        m.studentProfile?.nim || "-",
+        m.studentProfile?.fakultas || "UNIKOM",
+        m.phone || "-",
+        m.studentProfile?.kelompok?.name || "-",
+        dplName,
+        m.rtRw?.name || "-",
+        m.status || "Aktif",
+        m.createdAt ? new Date(m.createdAt).toLocaleDateString("id-ID") : "-",
       ];
-      csvRows.push(row.join(","));
     });
 
-    const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `data-mahasiswa-kkn-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Berhasil mengunduh ${filteredMahasiswas.length} data mahasiswa!`);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 18 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mahasiswa_KKN");
+    XLSX.writeFile(wb, `Data_Mahasiswa_KKN_${startDateFilter}_sd_${endDateFilter}.xlsx`);
+    toast.success(`Data mahasiswa (${filteredMahasiswas.length} data) berhasil diekspor ke XLSX!`);
   };
 
   // Pagination logic
@@ -275,12 +303,6 @@ const ManajemenMahasiswa: React.FC = () => {
             >
               <Plus size={15} /> Tambah Mahasiswa
             </button>
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all text-xs border border-slate-200 dark:border-slate-800 cursor-pointer"
-            >
-              <Download size={15} /> Ekspor CSV
-            </button>
           </div>
         </div>
 
@@ -319,14 +341,14 @@ const ManajemenMahasiswa: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 flex-1 justify-end">
+          <div className="flex flex-wrap items-center gap-2 flex-1 justify-end">
             <Filter size={15} className="text-slate-400" />
             <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Filter:</span>
             
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
             >
               <option value="Semua">Semua Status</option>
               <option value="Aktif">Aktif</option>
@@ -336,7 +358,7 @@ const ManajemenMahasiswa: React.FC = () => {
             <select
               value={kelompokFilter}
               onChange={(e) => setKelompokFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+              className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
             >
               <option value="Semua">Semua Kelompok</option>
               {uniqueKelompoks.map((k) => (
@@ -345,6 +367,50 @@ const ManajemenMahasiswa: React.FC = () => {
                 </option>
               ))}
             </select>
+
+            <div className="flex items-center gap-1 text-xs">
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+              />
+              <span className="text-slate-400 text-xs">s/d</span>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                className="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+              />
+            </div>
+
+            {(searchTerm || statusFilter !== "Semua" || kelompokFilter !== "Semua" || startDateFilter || endDateFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("Semua");
+                  setKelompokFilter("Semua");
+                  setStartDateFilter("");
+                  setEndDateFilter("");
+                }}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer ml-1"
+                title="Reset Filter"
+              >
+                <RotateCcw size={11} /> Reset
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleExportXLSX}
+              disabled={!startDateFilter || !endDateFilter}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data mahasiswa ke XLSX"}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
+            </button>
           </div>
         </div>
 

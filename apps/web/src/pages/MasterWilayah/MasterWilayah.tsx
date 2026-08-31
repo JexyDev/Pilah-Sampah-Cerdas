@@ -6,7 +6,8 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Loader2, MapPin, Search, Download, CheckCircle, Map } from "lucide-react";
+import { Loader2, MapPin, Search, Download, CheckCircle, Map, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { Pagination } from "../../components/common/Pagination";
@@ -83,30 +84,35 @@ const MasterWilayah: React.FC = () => {
     setSearchParams({ tab: e.target.value });
   };
 
-  const handleExportCsv = () => {
+  const handleExportXlsx = () => {
     if (!filteredData || filteredData.length === 0) {
       toast.error("Tidak ada data wilayah dalam tabel untuk diekspor.");
       return;
     }
 
-    const headers = ["ID", "Nama Wilayah", "Kelurahan", "RW", "Keterangan"];
-    const rows = filteredData.map((item) => [
-      `"${item.id || ""}"`,
-      `"${item.name || ""}"`,
-      `"${item.kelurahan?.name || item.kelurahanNama || "-"}"`,
-      `"${item.rw?.name || item.rwNama || "-"}"`,
-      `"${activeTab.toUpperCase()}"`,
+    const headers = ["No", "ID", "Nama Wilayah", "Kelurahan", "RW", "Kategori"];
+    const rows = filteredData.map((item, idx) => [
+      idx + 1,
+      item.id || "-",
+      item.name || "-",
+      item.kelurahan?.name || item.kelurahanNama || "-",
+      item.rw?.name || item.rwNama || "-",
+      activeTab.toUpperCase(),
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `master_wilayah_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Berhasil mengekspor data ${activeTab}!`);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 15 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Wilayah_${activeTab}`);
+    XLSX.writeFile(wb, `master_wilayah_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Berhasil mengekspor data ${activeTab} ke XLSX!`);
   };
 
   return (
@@ -140,13 +146,6 @@ const MasterWilayah: React.FC = () => {
 
           {!isReadOnly && (
             <div className="flex items-center gap-2 ml-auto sm:ml-0">
-              <button
-                onClick={handleExportCsv}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
-              >
-                <Download size={14} className="text-slate-500" />
-                <span>Ekspor CSV</span>
-              </button>
               <button
                 onClick={() => toast.error("Penambahan wilayah administratif dikelola terpusat oleh Administrator Kota.")}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
@@ -219,7 +218,7 @@ const MasterWilayah: React.FC = () => {
             />
           </div>
 
-          {/* Filter Dropdowns */}
+          {/* Filter Dropdowns & Export */}
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <select
               value={activeTab}
@@ -230,6 +229,17 @@ const MasterWilayah: React.FC = () => {
               <option value="kelurahan">Kelurahan</option>
               <option value="rw">Rukun Warga</option>
             </select>
+
+            <button
+              type="button"
+              onClick={handleExportXlsx}
+              disabled={filteredData.length === 0}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer"
+              title={`Ekspor ${filteredData.length} data wilayah (${activeTab}) ke XLSX`}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
+            </button>
           </div>
         </div>
       </div>

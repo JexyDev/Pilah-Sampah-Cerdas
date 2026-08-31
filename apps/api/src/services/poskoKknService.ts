@@ -78,11 +78,20 @@ export class PoskoKknService {
       keterangan?: string;
     }
   ) {
-    const existingFacility = await prisma.facility.findFirst({
-      where: { kelompokId, jenis: "posko_kkn" },
+    const existingPosko = await prisma.poskoKkn.findUnique({
+      where: { kelompokId },
+      select: { fotoUrl: true },
     });
 
-    const effectiveFotoUrl = data.fotoUrl !== undefined ? data.fotoUrl : (existingFacility?.foto ?? undefined);
+    const existingFacility = await prisma.facility.findFirst({
+      where: { kelompokId, jenis: "posko_kkn" },
+      select: { id: true, foto: true },
+    });
+
+    const isDataFotoProvided = typeof data.fotoUrl === "string" && data.fotoUrl.trim() !== "" && data.fotoUrl !== "null";
+    const effectiveFotoUrl = isDataFotoProvided
+      ? data.fotoUrl.trim()
+      : (existingPosko?.fotoUrl || existingFacility?.foto || undefined);
 
     const posko = await prisma.poskoKkn.upsert({
       where: { kelompokId },
@@ -101,7 +110,7 @@ export class PoskoKknService {
         alamat: data.alamat,
         latitude: data.latitude,
         longitude: data.longitude,
-        radius: data.radius ?? 150,
+        radius: data.radius ?? 500,
         fotoUrl: effectiveFotoUrl ?? null,
         keterangan: data.keterangan ?? null,
       },
@@ -192,7 +201,7 @@ export class PoskoKknService {
         if (firstRw) targetRwId = firstRw.id;
       }
 
-      const syncFoto = data.fotoUrl ?? posko.fotoUrl ?? existingFacility?.foto ?? null;
+      const syncFoto = effectiveFotoUrl ?? posko.fotoUrl ?? existingFacility?.foto ?? null;
 
       if (existingFacility) {
         await prisma.facility.update({
@@ -363,7 +372,7 @@ export class PoskoKknService {
           foto: resolvedFoto,
           fotoUrl: resolvedFoto,
           keterangan: p.keterangan || null,
-          radius: Number((p as any).radius) || 150,
+          radius: Number((p as any).radius) || 500,
           isUtama: true,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
@@ -401,7 +410,7 @@ export class PoskoKknService {
           foto: resolvedFoto,
           fotoUrl: resolvedFoto,
           keterangan: p.keterangan || null,
-          radius: p.radius || 150,
+          radius: p.radius || 500,
           isUtama: p.isUtama ?? false,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
@@ -493,7 +502,7 @@ export class PoskoKknService {
         latitude: data.latitude,
         longitude: data.longitude,
         isUtama: data.isUtama ?? false,
-        radius: data.radius ?? 150,
+        radius: data.radius ?? 500,
         fotoUrl: data.fotoUrl ?? null,
         keterangan: data.keterangan ?? null,
       },
@@ -620,7 +629,7 @@ export class PoskoKknService {
         latitude: Number(primary.latitude),
         longitude: Number(primary.longitude),
         isUtama: true,
-        radius: Number((primary as any).radius) || 150,
+        radius: Number((primary as any).radius) || 500,
         type: "POSKO_UTAMA",
         foto: primary.fotoUrl ?? null,
         fotoUrl: primary.fotoUrl ?? null,
@@ -635,7 +644,7 @@ export class PoskoKknService {
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
         isUtama: p.isUtama,
-        radius: p.radius || 150,
+        radius: p.radius || 500,
         type: "POSKO_MULTI",
         foto: p.fotoUrl ?? null,
         fotoUrl: p.fotoUrl ?? null,

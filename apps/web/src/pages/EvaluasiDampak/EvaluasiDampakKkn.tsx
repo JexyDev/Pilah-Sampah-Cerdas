@@ -18,7 +18,9 @@ import {
   Download,
   Calendar,
   X,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { evaluasiDampakApiService } from "../../services/evaluasiDampakService";
@@ -131,9 +133,11 @@ export const EvaluasiDampakKkn: React.FC = () => {
       return;
     }
 
-    let csvContent = "";
+    let headers: string[] = [];
+    let rows: any[][] = [];
+
     if (activeTab === "BASELINE" || activeTab === "ENDLINE") {
-      const headers = [
+      headers = [
         "No",
         "Kelurahan",
         "Kecamatan",
@@ -148,12 +152,12 @@ export const EvaluasiDampakKkn: React.FC = () => {
         "Total Volume (kg/hari)",
         "Status Validasi",
       ];
-      const rows = filtered.map((item, idx) => [
+      rows = filtered.map((item, idx) => [
         idx + 1,
-        `"${item.namaKelurahan || "-"}"`,
-        `"${item.kecamatan || "-"}"`,
-        `"${item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-"}"`,
-        `"${item.enumerator || "-"}"`,
+        item.namaKelurahan || "-",
+        item.kecamatan || "-",
+        item.tanggalSurvei ? new Date(item.tanggalSurvei).toLocaleDateString("id-ID") : "-",
+        item.enumerator || "-",
         item.pemilahanSampah?.jumlahRumahMemilah ?? 0,
         item.pemilahanSampah?.totalJumlahRumahDiRw ?? 0,
         item.pemilahanSampah?.persentasePemilahan ?? 0,
@@ -161,11 +165,10 @@ export const EvaluasiDampakKkn: React.FC = () => {
         item.volumeSampah?.anorganikKgPerHari ?? 0,
         item.volumeSampah?.residuKgPerHari ?? 0,
         item.volumeSampah?.totalVolumeKgPerHari ?? 0,
-        `"${item.statusValidasi || "-"}"`,
+        item.statusValidasi || "-",
       ]);
-      csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     } else {
-      const headers = [
+      headers = [
         "No",
         "Kelurahan",
         "Baseline Pemilahan (%)",
@@ -176,30 +179,26 @@ export const EvaluasiDampakKkn: React.FC = () => {
         "Reduksi Residu (kg/hari)",
         "Status Dampak",
       ];
-      const rows = filtered.map((item, idx) => [
+      rows = filtered.map((item, idx) => [
         idx + 1,
-        `"${item.namaKelurahan || "-"}"`,
+        item.namaKelurahan || "-",
         item.baseline?.persentasePemilahan ?? 0,
         item.endline?.persentasePemilahan ?? 0,
         item.delta?.persentasePemilahan ?? 0,
         item.baseline?.totalVolumeKgPerHari ?? 0,
         item.endline?.totalVolumeKgPerHari ?? 0,
         item.delta?.residuKgPerHari ?? 0,
-        `"${item.statusEvaluasi || "TERVERIFIKASI"}"`,
+        item.statusEvaluasi || "TERVERIFIKASI",
       ]);
-      csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     }
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Evaluasi_${activeTab}`);
+    XLSX.writeFile(wb, `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}.xlsx`);
 
     setIsExportModalOpen(false);
-    toast.success(`Data ${activeTab.toLowerCase()} berhasil diekspor!`);
+    toast.success(`Data ${activeTab.toLowerCase()} berhasil diekspor ke XLSX!`);
   };
 
   const handleValidate = async (status: "VALID" | "REVISI") => {
@@ -264,8 +263,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setIsExportModalOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all active:scale-95"
           >
-            <Download size={15} />
-            Ekspor Data
+            <FileSpreadsheet size={15} />
+            Ekspor XLSX
           </button>
         </div>
       </div>
@@ -788,8 +787,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   onClick={handleExportData}
                   className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2"
                 >
-                  <Download size={14} />
-                  Download CSV
+                  <FileSpreadsheet size={14} />
+                  Ekspor XLSX
                 </button>
               </div>
             </div>

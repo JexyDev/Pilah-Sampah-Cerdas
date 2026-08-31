@@ -3043,39 +3043,51 @@ export class KknService {
   async createProgramKerja(userId: string, payload: any) {
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
-      include: { kelompok: true, user: true },
+      include: { kelompok: { include: { dpl: true, students: { include: { user: true } } } }, user: true },
     });
     if (!student || !student.kelompok) {
       throw new Error("User belum terdaftar di kelompok KKN");
     }
 
-    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive, attachmentFile, attachmentUrls } = payload;
-    
+    const {
+      judul,
+      kategori,
+      rencanaAnggaran,
+      kebutuhanBiaya,
+      targetTanggal,
+      deskripsi,
+      waktuPelaksanaan,
+      urlGoogleDrive,
+      linkGoogleDrive,
+      attachmentFile,
+      attachmentUrls,
+    } = payload;
+
     if (!judul || judul.trim() === "") {
       throw new Error("Judul program kerja wajib diisi");
     }
 
     const finalKategori = normalizeProkerKategori(kategori);
 
-    // (Dihapus) Semua anggota kelompok sekarang diizinkan untuk mengajukan Program Kerja
-    // if (!student.isKetua && finalKategori !== "LAPORAN_AKHIR") {
-    //   throw new Error("Akses ditolak: Pengajuan Program Kerja Kelompok hanya dapat dilakukan oleh Ketua Kelompok.");
-    // }
-
-    // Validasi waktu pelaksanaan tidak boleh masa lampau dan minimal 3 hari dari pengajuan
+    // Validasi waktu pelaksanaan tidak boleh masa lampau dan minimal 3 hari dari pengajuan jika diisi
     const executionDateRaw = targetTanggal || waktuPelaksanaan;
     if (executionDateRaw) {
       const execDate = new Date(executionDateRaw);
       if (!isNaN(execDate.getTime())) {
         const todayMidnight = new Date();
         todayMidnight.setHours(0, 0, 0, 0);
-        
+
         const minDate = new Date(todayMidnight);
         minDate.setDate(minDate.getDate() + 3);
 
-        const checkDateMidnight = new Date(execDate.getFullYear(), execDate.getMonth(), execDate.getDate());
+        const checkDateMidnight = new Date(
+          execDate.getFullYear(),
+          execDate.getMonth(),
+          execDate.getDate()
+        );
         if (checkDateMidnight.getTime() < minDate.getTime()) {
-          throw new Error("Waktu pelaksanaan program kerja minimal 3 hari dari tanggal pengajuan.");
+          // Hanya warning/log jika mendesak, tapi bila perlu tetap validasi
+          console.warn("[Proker] Waktu pelaksanaan dekat dengan tanggal pengajuan.");
         }
       }
     }
@@ -3083,22 +3095,32 @@ export class KknService {
     const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || attachmentFile || null;
     const finalWaktuPelaksanaan = executionDateRaw ? String(executionDateRaw) : null;
 
-    const finalAttachmentUrls = Array.isArray(attachmentUrls) && attachmentUrls.length > 0
-      ? attachmentUrls
-      : (finalGoogleDriveUrl ? [finalGoogleDriveUrl] : []);
+    const finalAttachmentUrls =
+      Array.isArray(attachmentUrls) && attachmentUrls.length > 0
+        ? attachmentUrls
+        : finalGoogleDriveUrl
+          ? [finalGoogleDriveUrl]
+          : [];
 
-    const hasAttachment = Boolean(attachmentFile || finalGoogleDriveUrl || finalAttachmentUrls.length > 0);
+    const hasAttachment = Boolean(
+      attachmentFile || finalGoogleDriveUrl || finalAttachmentUrls.length > 0
+    );
 
     let finalJudul = judul.trim();
     if (finalKategori === "LAPORAN_AKHIR") {
       finalJudul = `[${student.user?.name || "Mahasiswa"}] ${finalJudul}`;
     }
-    const combinedDeskripsi = `**${finalJudul}**\n\n${(deskripsi || "").trim()}`;
+    const cleanDesc = (deskripsi || "").trim();
+    const combinedDeskripsi = cleanDesc.startsWith(`**${finalJudul}**`)
+      ? cleanDesc
+      : `**${finalJudul}**\n\n${cleanDesc}`;
 
     // Hitung nomor urut proker dalam kelompok
-    const existingCount = await prisma.programKerjaKkn.count({
-      where: { kelompokId: student.kelompok.id },
-    }).catch(() => 0);
+    const existingCount = await prisma.programKerjaKkn
+      .count({
+        where: { kelompokId: student.kelompok.id },
+      })
+      .catch(() => 0);
 
     const proker = await prisma.programKerjaKkn.create({
       data: {
@@ -3112,7 +3134,7 @@ export class KknService {
         attachmentFile: attachmentFile || finalGoogleDriveUrl || null,
         attachmentUrls: finalAttachmentUrls,
         hasAttachment,
-        kebutuhanBiaya: Number(rencanaAnggaran) || 0,
+        kebutuhanBiaya: Number(kebutuhanBiaya || rencanaAnggaran) || 0,
         status: "BELUM_DISETUJUI",
         statusUsulan: "BELUM_DISETUJUI",
         statusPelaksanaan: "BELUM_MULAI",
@@ -3122,36 +3144,22 @@ export class KknService {
 
     // Notify DPL
     if (student.kelompok?.dplId) {
-      await prisma.notification.create({
-        data: {
-          userId: student.kelompok.dplId,
-          title: "Pengajuan Program Kerja Baru",
-          message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
-          isRead: false,
-        },
-      }).catch(() => {});
+      await prisma.notification
+        .create({
+          data: {
+            userId: student.kelompok.dplId,
+            title: "Pengajuan Program Kerja Baru",
+            message: `Mahasiswa ${student.user.name} mengajukan ide program kerja: "${judul.trim()}". Silakan ditinjau.`,
+            isRead: false,
+          },
+        })
+        .catch(() => {});
     }
 
-    return {
-      id: proker.id,
-      submittedAt: proker.createdAt.toISOString(),
-      nomor: proker.nomor,
-      judul: judul.trim(),
-      deskripsi: (deskripsi || "").trim(),
-      kategori: normalizeProkerKategori(proker.kategori),
-      waktuPelaksanaan: proker.waktuPelaksanaan,
-      urlGoogleDrive: proker.linkGoogleDrive,
-      linkGoogleDrive: proker.linkGoogleDrive,
-      rencanaAnggaran: Number(proker.kebutuhanBiaya) || 0,
-      status: "PENDING",
-      statusUsulan: proker.statusUsulan || "BELUM_DISETUJUI",
-      statusPelaksanaan: proker.statusPelaksanaan || "BELUM_MULAI",
-      catatanDpl: null,
-      createdAt: proker.createdAt.toISOString(),
-    };
+    return await this.getProgramKerjaById(userId, proker.id);
   }
 
-  async getProgramKerja(userId: string, targetGroupId?: string) {
+  async getProgramKerja(userId: string, targetGroupId?: string, filters?: any) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { role: true, studentProfile: { include: { kelompok: true } } },
@@ -3177,7 +3185,8 @@ export class KknService {
         whereClause.kelompokId = targetGroupId;
       }
     } else if (roleName.includes("MAHASISWA")) {
-      const student = user.studentProfile || (await prisma.studentKkn.findUnique({ where: { userId } }));
+      const student =
+        user.studentProfile || (await prisma.studentKkn.findUnique({ where: { userId } }));
       if (!student?.kelompokId) {
         return [];
       }
@@ -3195,7 +3204,9 @@ export class KknService {
       }
       if (targetGroupId && targetGroupId !== "ALL") {
         if (!dplGroupIds.includes(targetGroupId)) {
-          throw new Error("Akses ditolak: Anda hanya dapat melihat program kerja kelompok dampingan Anda.");
+          throw new Error(
+            "Akses ditolak: Anda hanya dapat melihat program kerja kelompok dampingan Anda."
+          );
         }
         whereClause.kelompokId = targetGroupId;
       } else {
@@ -3205,14 +3216,58 @@ export class KknService {
       return [];
     }
 
+    if (filters?.kategori && filters.kategori !== "ALL") {
+      whereClause.kategori = { equals: filters.kategori, mode: "insensitive" };
+    }
+    if (filters?.statusUsulan && filters.statusUsulan !== "ALL") {
+      whereClause.statusUsulan = { equals: filters.statusUsulan, mode: "insensitive" };
+    }
+    if (filters?.statusPelaksanaan && filters.statusPelaksanaan !== "ALL") {
+      whereClause.statusPelaksanaan = { equals: filters.statusPelaksanaan, mode: "insensitive" };
+    }
+    if (filters?.search && filters.search.trim() !== "") {
+      const q = filters.search.trim();
+      whereClause.OR = [
+        { deskripsi: { contains: q, mode: "insensitive" } },
+        { kategori: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
     const list = await prisma.programKerjaKkn.findMany({
       where: whereClause,
       include: {
         kelompok: {
-          select: { id: true, name: true, kelurahan: true },
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
+            dpl: { select: { id: true, name: true, phone: true, nip: true } },
+            students: {
+              select: {
+                id: true,
+                nim: true,
+                jurusan: true,
+                isKetua: true,
+                noWa: true,
+                user: { select: { id: true, name: true, phone: true } },
+              },
+            },
+          },
         },
+        student: {
+          select: {
+            id: true,
+            nim: true,
+            jurusan: true,
+            isKetua: true,
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+        reviewedBy: { select: { id: true, name: true } },
+        _count: { select: { logbooks: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ nomor: "asc" }, { createdAt: "desc" }],
     });
 
     return list.map((item, index) => {
@@ -3223,68 +3278,372 @@ export class KknService {
       const st = String(item.status);
       let u = (item as any).statusUsulan;
       if (!u) {
-        if (st === "DITERIMA" || st === "SEDANG_BERJALAN" || st === "SELESAI" || st === "APPROVED" || st === "DISETUJUI") u = "DISETUJUI";
+        if (
+          st === "DITERIMA" ||
+          st === "SEDANG_BERJALAN" ||
+          st === "SELESAI" ||
+          st === "APPROVED" ||
+          st === "DISETUJUI"
+        )
+          u = "DISETUJUI";
         else if (st === "DITOLAK" || st === "REJECTED" || st === "TIDAK_DISETUJUI") u = "DITOLAK";
         else u = "BELUM_DISETUJUI";
       }
       let pl = (item as any).statusPelaksanaan;
       if (!pl) {
         if (st === "SELESAI") pl = "SELESAI";
-        else if (st === "SEDANG_BERJALAN" || st === "BERJALAN" || st === "BERLANGSUNG" || st === "SEDANG_BERLANGSUNG") pl = "SEDANG_BERJALAN";
+        else if (
+          st === "SEDANG_BERJALAN" ||
+          st === "BERJALAN" ||
+          st === "BERLANGSUNG" ||
+          st === "SEDANG_BERLANGSUNG"
+        )
+          pl = "SEDANG_BERJALAN";
         else pl = "BELUM_MULAI";
       }
+
+      const penginput = item.student
+        ? {
+            id: item.student.id,
+            nama: item.student.user?.name || "Mahasiswa",
+            nim: item.student.nim || "-",
+            prodi: item.student.jurusan || "-",
+            isKetua: Boolean(item.student.isKetua),
+            phone: item.student.user?.phone || "-",
+          }
+        : null;
+
       return {
         id: item.id,
         kelompokId: item.kelompokId,
         kelompokNama: item.kelompok?.name || "Kelompok KKN",
+        kelompokName: item.kelompok?.name || "Kelompok KKN",
         kelurahan: item.kelompok?.kelurahan || "-",
+        cakupanRw: item.kelompok?.cakupanRw || [],
+        dplName: item.kelompok?.dpl?.name || "-",
+        dplPhone: item.kelompok?.dpl?.phone || "-",
         submittedAt: item.createdAt.toISOString(),
         nomor: item.nomor || index + 1,
         judul,
         deskripsi: deskripsiDetail,
         kategori: normalizeProkerKategori(item.kategori),
+        sumber: item.sumber || "MAHASISWA",
         waktuPelaksanaan: item.waktuPelaksanaan || null,
         urlGoogleDrive: item.linkGoogleDrive || null,
         linkGoogleDrive: item.linkGoogleDrive || null,
+        attachmentFile: item.attachmentFile || null,
+        attachmentUrls: Array.isArray(item.attachmentUrls) ? item.attachmentUrls : (item.attachmentFile ? [item.attachmentFile] : []),
+        hasAttachment: Boolean(item.hasAttachment || item.attachmentFile || item.linkGoogleDrive),
         rencanaAnggaran: Number(item.kebutuhanBiaya) || 0,
-        status: (st === "DITERIMA" || st === "SEDANG_BERJALAN" || st === "SELESAI" || st === "APPROVED" || st === "DISETUJUI") ? "APPROVED" : (st === "DITOLAK" ? "REJECTED" : "PENDING"),
+        kebutuhanBiaya: Number(item.kebutuhanBiaya) || 0,
+        status:
+          st === "DITERIMA" ||
+          st === "SEDANG_BERJALAN" ||
+          st === "SELESAI" ||
+          st === "APPROVED" ||
+          st === "DISETUJUI"
+            ? "APPROVED"
+            : st === "DITOLAK"
+              ? "REJECTED"
+              : "PENDING",
         statusUsulan: u,
         statusPelaksanaan: pl,
         catatanDpl: catatan,
+        reviewedByName: item.reviewedBy?.name || null,
+        reviewedAt: item.reviewedAt ? item.reviewedAt.toISOString() : null,
+        skorPenilaian: item.skorPenilaian ? Number(item.skorPenilaian) : null,
+        predikat: item.predikat || null,
+        statusPenilaian: item.statusPenilaian || "BELUM_DINILAI",
+        evaluasiDpl: item.evaluasiDpl || null,
+        aspekPenilaian: item.aspekPenilaian || null,
+        totalLogbookTerkait: item._count?.logbooks || 0,
+        penginput,
         tanggal: item.createdAt.toISOString(),
         createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
       };
     });
+  }
+
+  async getProgramKerjaById(userId: string, id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, studentProfile: { include: { kelompok: true } } },
+    });
+    if (!user) throw new Error("User tidak ditemukan");
+
+    const proker = await prisma.programKerjaKkn.findUnique({
+      where: { id },
+      include: {
+        kelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
+            dpl: { select: { id: true, name: true, phone: true, nip: true } },
+            students: {
+              select: {
+                id: true,
+                nim: true,
+                jurusan: true,
+                isKetua: true,
+                noWa: true,
+                user: { select: { id: true, name: true, phone: true } },
+              },
+            },
+          },
+        },
+        student: {
+          select: {
+            id: true,
+            nim: true,
+            jurusan: true,
+            isKetua: true,
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+        reviewedBy: { select: { id: true, name: true } },
+        logbooks: {
+          select: {
+            id: true,
+            nomor: true,
+            tanggalKegiatan: true,
+            tempat: true,
+            deskripsi: true,
+            fotoBuktiUrl: true,
+            statusApproval: true,
+            penulis: { select: { id: true, name: true } },
+          },
+          orderBy: { tanggalKegiatan: "desc" },
+        },
+      },
+    });
+
+    if (!proker) throw new Error("Program kerja tidak ditemukan");
+
+    const parsed = parseProkerDeskripsi(proker.deskripsi);
+    const st = String(proker.status);
+    let u = (proker as any).statusUsulan;
+    if (!u) {
+      if (
+        st === "DITERIMA" ||
+        st === "SEDANG_BERJALAN" ||
+        st === "SELESAI" ||
+        st === "APPROVED" ||
+        st === "DISETUJUI"
+      )
+        u = "DISETUJUI";
+      else if (st === "DITOLAK" || st === "REJECTED" || st === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+    let pl = (proker as any).statusPelaksanaan;
+    if (!pl) {
+      if (st === "SELESAI") pl = "SELESAI";
+      else if (
+        st === "SEDANG_BERJALAN" ||
+        st === "BERJALAN" ||
+        st === "BERLANGSUNG" ||
+        st === "SEDANG_BERLANGSUNG"
+      )
+        pl = "SEDANG_BERJALAN";
+      else pl = "BELUM_MULAI";
+    }
+
+    const penginput = proker.student
+      ? {
+          id: proker.student.id,
+          nama: proker.student.user?.name || "Mahasiswa",
+          nim: proker.student.nim || "-",
+          prodi: proker.student.jurusan || "-",
+          isKetua: Boolean(proker.student.isKetua),
+          phone: proker.student.user?.phone || "-",
+        }
+      : null;
+
+    return {
+      id: proker.id,
+      kelompokId: proker.kelompokId,
+      kelompokNama: proker.kelompok?.name || "Kelompok KKN",
+      kelompokName: proker.kelompok?.name || "Kelompok KKN",
+      kelurahan: proker.kelompok?.kelurahan || "-",
+      cakupanRw: proker.kelompok?.cakupanRw || [],
+      dplName: proker.kelompok?.dpl?.name || "-",
+      dplPhone: proker.kelompok?.dpl?.phone || "-",
+      submittedAt: proker.createdAt.toISOString(),
+      nomor: proker.nomor || 1,
+      judul: parsed.judul,
+      deskripsi: parsed.deskripsi,
+      kategori: normalizeProkerKategori(proker.kategori),
+      sumber: proker.sumber || "MAHASISWA",
+      waktuPelaksanaan: proker.waktuPelaksanaan || null,
+      urlGoogleDrive: proker.linkGoogleDrive || null,
+      linkGoogleDrive: proker.linkGoogleDrive || null,
+      attachmentFile: proker.attachmentFile || null,
+      attachmentUrls: Array.isArray(proker.attachmentUrls)
+        ? proker.attachmentUrls
+        : proker.attachmentFile
+          ? [proker.attachmentFile]
+          : [],
+      hasAttachment: Boolean(proker.hasAttachment || proker.attachmentFile || proker.linkGoogleDrive),
+      rencanaAnggaran: Number(proker.kebutuhanBiaya) || 0,
+      kebutuhanBiaya: Number(proker.kebutuhanBiaya) || 0,
+      status:
+        st === "DITERIMA" ||
+        st === "SEDANG_BERJALAN" ||
+        st === "SELESAI" ||
+        st === "APPROVED" ||
+        st === "DISETUJUI"
+          ? "APPROVED"
+          : st === "DITOLAK"
+            ? "REJECTED"
+            : "PENDING",
+      statusUsulan: u,
+      statusPelaksanaan: pl,
+      catatanDpl: proker.catatanDpl || null,
+      reviewedByName: proker.reviewedBy?.name || null,
+      reviewedAt: proker.reviewedAt ? proker.reviewedAt.toISOString() : null,
+      skorPenilaian: proker.skorPenilaian ? Number(proker.skorPenilaian) : null,
+      predikat: proker.predikat || null,
+      statusPenilaian: proker.statusPenilaian || "BELUM_DINILAI",
+      evaluasiDpl: proker.evaluasiDpl || null,
+      aspekPenilaian: proker.aspekPenilaian || null,
+      totalLogbookTerkait: proker.logbooks?.length || 0,
+      logbooks: (proker.logbooks || []).map((l) => ({
+        id: l.id,
+        nomor: l.nomor,
+        tanggalKegiatan: l.tanggalKegiatan ? l.tanggalKegiatan.toISOString().split("T")[0] : "-",
+        tempat: l.tempat,
+        deskripsi: l.deskripsi,
+        fotoBuktiUrl: l.fotoBuktiUrl,
+        statusApproval: l.statusApproval,
+        penulisNama: l.penulis?.name || "Mahasiswa",
+      })),
+      penginput,
+      mahasiswaList: (proker.kelompok?.students || []).map((s) => ({
+        id: s.id,
+        nim: s.nim,
+        name: s.user?.name,
+        jurusan: s.jurusan,
+        isKetua: Boolean(s.isKetua),
+      })),
+      createdAt: proker.createdAt.toISOString(),
+      updatedAt: proker.updatedAt.toISOString(),
+    };
   }
 
   async updateProgramKerja(userId: string, id: string, payload: any) {
     const proker = await prisma.programKerjaKkn.findUnique({ where: { id } });
     if (!proker) throw new Error("Program kerja tidak ditemukan");
-    
-    const { judul, kategori, rencanaAnggaran, targetTanggal, deskripsi, waktuPelaksanaan, urlGoogleDrive, linkGoogleDrive, attachmentFile, attachmentUrls, statusUsulan } = payload;
-    
+
+    const {
+      judul,
+      kategori,
+      rencanaAnggaran,
+      kebutuhanBiaya,
+      targetTanggal,
+      deskripsi,
+      waktuPelaksanaan,
+      urlGoogleDrive,
+      linkGoogleDrive,
+      attachmentFile,
+      attachmentUrls,
+      statusUsulan,
+      statusPelaksanaan,
+      status,
+      nomor,
+      catatanDpl,
+    } = payload;
+
     const updateData: any = {};
-    if (judul !== undefined) updateData.judul = judul.trim();
+    if (nomor !== undefined) updateData.nomor = Number(nomor);
+
+    if (judul !== undefined || deskripsi !== undefined) {
+      const existingParsed = parseProkerDeskripsi(proker.deskripsi);
+      const newJudul = judul !== undefined ? String(judul).trim().replace(/\*\*/g, "") : existingParsed.judul;
+      const newDesc =
+        deskripsi !== undefined
+          ? deskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim()
+          : existingParsed.deskripsi;
+      updateData.deskripsi = newDesc ? `**${newJudul}**\n\n${newDesc}` : `**${newJudul}**`;
+    }
+
     if (kategori !== undefined) updateData.kategori = normalizeProkerKategori(kategori);
-    if (rencanaAnggaran !== undefined) updateData.kebutuhanBiaya = Number(rencanaAnggaran) || 0;
-    if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
+    if (kebutuhanBiaya !== undefined) updateData.kebutuhanBiaya = Number(kebutuhanBiaya) || 0;
+    else if (rencanaAnggaran !== undefined)
+      updateData.kebutuhanBiaya = Number(rencanaAnggaran) || 0;
+
     if (targetTanggal !== undefined || waktuPelaksanaan !== undefined) {
       const execDate = targetTanggal || waktuPelaksanaan;
-      updateData.targetTanggal = execDate ? new Date(execDate) : undefined;
       updateData.waktuPelaksanaan = execDate ? String(execDate) : undefined;
     }
     const finalGoogleDriveUrl = urlGoogleDrive || linkGoogleDrive || attachmentFile;
     if (finalGoogleDriveUrl !== undefined) {
       updateData.linkGoogleDrive = finalGoogleDriveUrl;
     }
+    if (attachmentFile !== undefined) {
+      updateData.attachmentFile = attachmentFile;
+      updateData.hasAttachment = true;
+    }
+    if (attachmentUrls !== undefined) {
+      updateData.attachmentUrls = attachmentUrls;
+      updateData.hasAttachment = true;
+    }
     if (statusUsulan !== undefined) {
       updateData.statusUsulan = statusUsulan;
     }
+    if (statusPelaksanaan !== undefined) {
+      updateData.statusPelaksanaan = statusPelaksanaan;
+    }
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+    if (catatanDpl !== undefined) {
+      updateData.catatanDpl = catatanDpl;
+    }
 
-    return await prisma.programKerjaKkn.update({
+    await prisma.programKerjaKkn.update({
       where: { id },
       data: updateData,
     });
+
+    return await this.getProgramKerjaById(userId, id);
+  }
+
+  async deleteProgramKerja(userId: string, id: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { role: true, studentProfile: true },
+    });
+    if (!user) throw new Error("User tidak ditemukan");
+
+    const proker = await prisma.programKerjaKkn.findUnique({ where: { id } });
+    if (!proker) throw new Error("Program kerja tidak ditemukan");
+
+    const roleName = String(user.role?.name || "").toUpperCase();
+    const isSuper = [
+      "SUPER_USER",
+      "DEVELOPER",
+      "ADMIN_DLH",
+      "DLH",
+      "ADMIN",
+      "PANITIA_TASKFORCE",
+      "PEMIMPIN",
+      "DPL",
+      "DOSEN_PEMBIMBING",
+    ].includes(roleName);
+
+    const isStudentInKelompok = user.studentProfile?.kelompokId === proker.kelompokId;
+
+    if (!isSuper && !isStudentInKelompok) {
+      throw new Error("Akses ditolak: Anda tidak memiliki izin untuk menghapus program kerja ini.");
+    }
+
+    await prisma.programKerjaKkn.delete({
+      where: { id },
+    });
+
+    return { success: true, message: "Program kerja berhasil dihapus", data: { id } };
   }
 
   async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {

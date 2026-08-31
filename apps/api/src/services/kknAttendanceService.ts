@@ -32,7 +32,7 @@ async function buildGeofence(schedule: any): Promise<{ latitude: number; longitu
         return {
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
-          radius: schedule.radius ? Number(schedule.radius) : 200,
+          radius: schedule.radius ? Number(schedule.radius) : 500,
           polygon: schedule.polygon,
         };
       }
@@ -46,7 +46,7 @@ async function buildGeofence(schedule: any): Promise<{ latitude: number; longitu
     return {
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
-      radius: schedule.radius ? Number(schedule.radius) : 200,
+      radius: schedule.radius ? Number(schedule.radius) : 500,
       polygon: schedule.polygon,
     };
   }
@@ -58,7 +58,7 @@ async function buildGeofence(schedule: any): Promise<{ latitude: number; longitu
 
   const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
   const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
 
   return {
     latitude: defaultLat,
@@ -325,7 +325,7 @@ export function parseScheduleTimeRange(timeStr?: string | null): {
   isOvernight: boolean;
 } {
   let jamMulai = "08:00";
-  let jamSelesai = "16:00";
+  let jamSelesai = "19:00";
   if (timeStr) {
     const normalized = timeStr
       .replace(/\s*(WIB|WITA|WIT)\s*/gi, "")
@@ -338,7 +338,7 @@ export function parseScheduleTimeRange(timeStr?: string | null): {
     }
   }
   const [startH, startM] = parseScheduleTimeString(jamMulai, 8, 0);
-  const [endH, endM] = parseScheduleTimeString(jamSelesai, 16, 0);
+  const [endH, endM] = parseScheduleTimeString(jamSelesai, 19, 0);
   const cleanStartH = startH === 24 ? 0 : startH;
   const cleanStartM = startM;
   const cleanEndH = endH === 24 ? 24 : endH;
@@ -384,7 +384,7 @@ export async function getScheduleTargetDurationMinutes(schedule: { time?: string
   if (scheduleDurationMinutes > 0) {
     return scheduleDurationMinutes;
   }
-  return 120;
+  return 240;
 }
 
 export class KknAttendanceService {
@@ -1204,7 +1204,7 @@ export class KknAttendanceService {
 
     const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-    const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200;
+    const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
 
     const effectiveLat = officialPosko?.latitude
       ? Number(officialPosko.latitude)
@@ -1703,7 +1703,7 @@ export class KknAttendanceService {
       const checkoutGeofence = {
         latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
         longitude: schedule.longitude ? Number(schedule.longitude) : 107.6107,
-        radius: schedule.radius ? Number(schedule.radius) : 200,
+        radius: schedule.radius ? Number(schedule.radius) : 500,
         polygon: schedule.polygon,
       };
       logsCalculatedMins = calculateInZoneDurationMinutes(todayLogsForCheckout, checkoutGeofence, checkoutBufferMeters, (attendance.jedaLogs as any[]) || []);
@@ -4128,6 +4128,10 @@ export class KknAttendanceService {
         jamPulang: att.checkOutAt ? new Date(att.checkOutAt.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(11, 16) : "-",
         durasiMenit: actualMins,
         durasiFormatted,
+        durasiAktualMenit: actualMins,
+        durasiAktualFormatted: durasiFormatted,
+        targetMinMenit: 240,
+        rasioKehadiran: Number(((actualMins / 240) * 100).toFixed(1)),
         status: att.status,
         statusDisplay,
         isMemenuhiDurasi: isMemenuhi,
@@ -4139,9 +4143,15 @@ export class KknAttendanceService {
       };
     });
 
+    const totalMahasiswaCount = studentAggregates.length;
+    const avgJamPerMahasiswa = totalMahasiswaCount > 0
+      ? Math.round((totalMenitKumulatif / 60 / totalMahasiswaCount) * 10) / 10
+      : 0;
+
     return {
       summary: {
         totalPresensi: total,
+        totalMahasiswa: totalMahasiswaCount,
         hadirMemenuhi: hadirMemenuhiCount,
         hadirKurang: hadirKurangCount,
         berlangsung: berlangsungCount,
@@ -4149,6 +4159,7 @@ export class KknAttendanceService {
         izinSakit: izinSakitCount,
         totalJamKumulatif: Math.round((totalMenitKumulatif / 60) * 10) / 10,
         totalMenitKumulatif,
+        avgJamPerMahasiswa,
       },
       studentAggregates,
       items,

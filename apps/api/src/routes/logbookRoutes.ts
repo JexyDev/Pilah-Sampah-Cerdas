@@ -30,6 +30,13 @@ router.get(
   logbookController.getMahasiswaLogbooks
 );
 
+// Mengambil detail satu logbook aktivitas mahasiswa berdasarkan ID
+router.get(
+  "/mahasiswa/:id",
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PANITIA_TASKFORCE", "MAHASISWA_KKN"]),
+  logbookController.getMahasiswaLogbookById
+);
+
 // Submit logbook aktivitas baru oleh Mahasiswa (Mendukung upload bukti foto via kamera)
 router.post(
   "/mahasiswa",

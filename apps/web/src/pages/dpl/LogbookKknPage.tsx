@@ -20,6 +20,7 @@ import {
   XCircle,
   Search,
   Download,
+  FileSpreadsheet,
   Eye,
   RefreshCw,
   Users,
@@ -34,6 +35,7 @@ import {
   Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
@@ -325,26 +327,22 @@ export const LogbookKknPage: React.FC = () => {
   }, [selectedKategori, selectedGroup, selectedStatus, searchQuery, startDateFilter, endDateFilter, isDateRangeInvalid]);
 
   const isExportReady = useMemo(() => {
-    if (isDateRangePartial || isDateRangeInvalid) return false;
-    if (!hasExplicitFilter) return false;
+    if (!startDateFilter || !endDateFilter || isDateRangeInvalid) return false;
     return filteredLogbooks.length > 0;
-  }, [isDateRangePartial, isDateRangeInvalid, hasExplicitFilter, filteredLogbooks.length]);
+  }, [startDateFilter, endDateFilter, isDateRangeInvalid, filteredLogbooks.length]);
 
   const exportTooltipMessage = useMemo(() => {
-    if (isDateRangePartial) {
-      return "Lengkapi kedua kolom tanggal (Dari dan Sampai) terlebih dahulu.";
+    if (!startDateFilter || !endDateFilter) {
+      return "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor.";
     }
     if (isDateRangeInvalid) {
       return "Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'.";
     }
-    if (!hasExplicitFilter) {
-      return "Tentukan rentang tanggal (Dari & Sampai) atau filter seleksi di sebelah kiri terlebih dahulu untuk mengekspor.";
-    }
     if (filteredLogbooks.length === 0) {
       return "Tidak ada data logbook yang sesuai filter untuk diekspor.";
     }
-    return `Ekspor ${filteredLogbooks.length} baris data logbook terfilter ke CSV`;
-  }, [isDateRangePartial, isDateRangeInvalid, hasExplicitFilter, filteredLogbooks.length]);
+    return `Ekspor ${filteredLogbooks.length} baris data logbook terfilter ke XLSX`;
+  }, [startDateFilter, endDateFilter, isDateRangeInvalid, filteredLogbooks.length]);
 
   // Open Detail Modal
   const handleOpenDetailModal = (item: LogbookMahasiswaItem) => {
@@ -446,8 +444,12 @@ export const LogbookKknPage: React.FC = () => {
     }
   };
 
-  // Export CSV (Mendukung Ekspor Data Terfilter atau Ekspor Data Terpilih)
-  const handleExportCsv = (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
+  // Export XLSX (Mendukung Ekspor Data Terfilter atau Ekspor Data Terpilih)
+  const handleExportXlsx = (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
+      return;
+    }
     const itemsToExport = customItems || filteredLogbooks;
     if (itemsToExport.length === 0) {
       toast.error("Tidak ada data logbook untuk diekspor");
@@ -469,30 +471,39 @@ export const LogbookKknPage: React.FC = () => {
     ];
     const rows = itemsToExport.map((item, index) => [
       index + 1,
-      item.tanggalKegiatan,
-      item.waktuMulai,
-      item.waktuSelesai,
-      `"${(item.kelompokNama || "").replace(/"/g, '""')}"`,
-      `"${(item.penulisNama || "").replace(/"/g, '""')}"`,
-      item.penulisNim,
-      `"${resolveKategori(item)}"`,
-      `"${(item.tempat || "").replace(/"/g, '""')}"`,
-      `"${(item.deskripsi || "").replace(/"/g, '""')}"`,
-      item.statusApproval,
-      `"${(item.catatanDpl || "").replace(/"/g, '""')}"`,
+      item.tanggalKegiatan || "-",
+      item.waktuMulai || "-",
+      item.waktuSelesai || "-",
+      item.kelompokNama || "-",
+      item.penulisNama || "-",
+      item.penulisNim || "-",
+      resolveKategori(item),
+      item.tempat || "-",
+      item.deskripsi || "-",
+      item.statusApproval || "-",
+      item.catatanDpl || "-",
     ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 25 },
+      { wch: 45 },
+      { wch: 22 },
+      { wch: 30 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Logbook");
     const filenamePrefix = labelPrefix ? `Rekap_Logbook_${labelPrefix}` : "Rekap_Logbook_Mahasiswa";
-    link.setAttribute("download", `${filenamePrefix}_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`File CSV (${itemsToExport.length} data) berhasil diekspor`);
+    XLSX.writeFile(wb, `${filenamePrefix}_${startDateFilter}_sd_${endDateFilter}.xlsx`);
+    toast.success(`Data logbook (${itemsToExport.length} data) berhasil diekspor ke XLSX!`);
   };
 
   // Render Status Badge
@@ -781,20 +792,16 @@ export const LogbookKknPage: React.FC = () => {
                   </button>
                 )}
 
-                {/* Button Ekspor (Gated: Aktif Jika Filter & Rentang Waktu Terisi Valid) */}
+                {/* Button Ekspor Standar 1 Tombol XLSX */}
                 <button
                   type="button"
-                  onClick={() => handleExportCsv()}
+                  onClick={() => handleExportXlsx()}
                   disabled={!isExportReady}
                   title={exportTooltipMessage}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs ${
-                    isExportReady
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer active:scale-95 shadow-sm"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-60"
-                  }`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Ekspor {isExportReady ? `(${filteredLogbooks.length})` : ""}</span>
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Ekspor XLSX</span>
                 </button>
 
                 {/* Button Validasi Semua / Validasi Terpilih (DPL & Admin) */}

@@ -11,6 +11,8 @@ import {
   Search,
   Download,
   Printer,
+  FileSpreadsheet,
+  RotateCcw,
   CheckCircle2,
   AlertTriangle,
   Clock,
@@ -38,6 +40,7 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
@@ -71,6 +74,10 @@ export interface LaporanItem {
   jamPulang: string;
   durasiMenit: number;
   durasiFormatted: string;
+  durasiAktualMenit?: number;
+  durasiAktualFormatted?: string;
+  targetMinMenit?: number;
+  rasioKehadiran?: number;
   status: string;
   statusDisplay: string;
   isMemenuhiDurasi: boolean;
@@ -109,6 +116,7 @@ export interface StudentAggregate {
 
 export interface LaporanSummary {
   totalPresensi: number;
+  totalMahasiswa?: number;
   hadirMemenuhi: number;
   hadirKurang: number;
   berlangsung: number;
@@ -116,6 +124,7 @@ export interface LaporanSummary {
   izinSakit: number;
   totalJamKumulatif: number;
   totalMenitKumulatif: number;
+  avgJamPerMahasiswa?: number;
 }
 
 export const LaporanPresensiPage: React.FC = () => {
@@ -133,6 +142,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const [studentAggregates, setStudentAggregates] = useState<StudentAggregate[]>([]);
   const [summary, setSummary] = useState<LaporanSummary>({
     totalPresensi: 0,
+    totalMahasiswa: 0,
     hadirMemenuhi: 0,
     hadirKurang: 0,
     berlangsung: 0,
@@ -140,6 +150,7 @@ export const LaporanPresensiPage: React.FC = () => {
     izinSakit: 0,
     totalJamKumulatif: 0,
     totalMenitKumulatif: 0,
+    avgJamPerMahasiswa: 0,
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [groups, setGroups] = useState<any[]>([]);
@@ -157,7 +168,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("7DAYS");
+  const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("TODAY");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(20);
@@ -351,13 +362,13 @@ export const LaporanPresensiPage: React.FC = () => {
     }
   };
 
-  // Set default initial date range to 7 days on mount
+  // Set default initial date range to TODAY on mount
   useEffect(() => {
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
     const todayStr = nowWib.toISOString().slice(0, 10);
-    const past7 = new Date(nowWib.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    setStartDate(past7);
+    setStartDate(todayStr);
     setEndDate(todayStr);
+    setDatePreset("TODAY");
   }, []);
 
   // Fetch groups for filter
@@ -487,11 +498,10 @@ export const LaporanPresensiPage: React.FC = () => {
   const handleResetFilter = () => {
     setSelectedKelompok("ALL");
     setSelectedStatus("ALL");
-    setDatePreset("7DAYS");
+    setDatePreset("TODAY");
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
     const todayStr = nowWib.toISOString().slice(0, 10);
-    const past7 = new Date(nowWib.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    setStartDate(past7);
+    setStartDate(todayStr);
     setEndDate(todayStr);
     setSearchQuery("");
     setPage(1);
@@ -532,11 +542,13 @@ export const LaporanPresensiPage: React.FC = () => {
     toast.success(`Menampilkan log presensi harian untuk: ${studentName}`);
   };
 
-  const handleExportCSV = () => {
+  // Gating status: Ekspor hanya aktif jika tanggal awal DAN tanggal akhir telah diisi
+  const isExportDisabled = !startDate || !endDate;
+
+  const handleExportExcel = () => {
     // Validasi: filter tanggal wajib diisi sebelum ekspor
-    const isAllTimeWithNoDate = datePreset === "ALL" && !startDate && !endDate;
-    if (isAllTimeWithNoDate) {
-      toast.error("Filter tanggal wajib diisi sebelum ekspor. Pilih preset periode atau isi tanggal awal dan akhir secara manual.");
+    if (!startDate || !endDate) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
 
@@ -551,106 +563,157 @@ export const LaporanPresensiPage: React.FC = () => {
         "NIM",
         "Nama Mahasiswa",
         "Jabatan",
-        "Jurusan",
-        "Kelompok",
+        "Jurusan / Program Studi",
+        "Kelompok KKN",
         "Kelurahan",
-        "DPL",
-        "Total Sesi Presensi",
-        "Total Menit Aktual",
+        "Dosen Pendamping Lapangan (DPL)",
+        "Total Hari/Sesi Hadir",
+        "Total Menit Aktual (DA)",
         "Total Jam Aktual",
-        `Target Jam (${periodLabel})`,
-        "Capaian (%)",
+        `Target Jam Periode (${periodLabel})`,
+        "Rasio Capaian (%)",
         "Rata-rata Menit / Hari",
         "Rata-rata Jam / Hari",
-        "Hadir Memenuhi",
-        "Hadir Kurang Jam",
+        "Sesi Memenuhi Target (>= 4 Jam)",
+        "Sesi Kurang Jam (< 4 Jam)",
         "Izin / Sakit",
+        "Status Akumulasi",
       ];
 
       const rows = filteredStudentAggregates.map((s, idx) => {
         const percent = Number(((s.totalHours / (periodTargetHours || 1)) * 100).toFixed(1));
+        const statusAkhir = s.totalHours >= periodTargetHours ? "TARGET TERCAPAI" : percent >= 70 ? "ON TRACK" : "PERLU PENINGKATAN";
         return [
           idx + 1,
-          `"${s.nim}"`,
-          `"${s.namaMahasiswa}"`,
-          `"${s.isKetua ? "Ketua Kelompok" : "Anggota"}"`,
-          `"${s.jurusan}"`,
-          `"${s.kelompok?.name ?? "-"}"`,
-          `"${s.kelompok?.kelurahan ?? "-"}"`,
-          `"${s.kelompok?.dplName ?? "-"}"`,
+          s.nim,
+          s.namaMahasiswa,
+          s.isKetua ? "Ketua Kelompok" : "Anggota",
+          s.jurusan,
+          s.kelompok?.name ?? "-",
+          s.kelompok?.kelurahan ?? "-",
+          s.kelompok?.dplName ?? "-",
           s.totalSessions,
           s.totalMinutes,
           s.totalHours,
           periodTargetHours,
-          `"${percent}%"`,
+          `${percent}%`,
           s.avgMinutesPerDay,
-          `"${s.avgFormatted}"`,
+          s.avgFormatted,
           s.hadirMemenuhi,
           s.hadirKurang,
           s.izinSakit,
+          statusAkhir,
         ];
       });
 
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Rekap_Akumulasi_Mahasiswa_KKN_${periodLabel.replace(/[\s\(\)\.]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Berhasil mengunduh rekapitulasi akumulasi CSV.");
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws["!cols"] = [
+        { wch: 5 },
+        { wch: 16 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 24 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 26 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 18 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, "Rekap Akumulasi");
+      const filename = `Rekap_Akumulasi_Mahasiswa_KKN_${periodLabel.replace(/[\s\(\)\.]+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success("Berhasil mengunduh rekapitulasi akumulasi Excel (.xlsx).");
     } else {
       if (items.length === 0) {
-        toast.error("Tidak ada data log sesi untuk diekspor.");
+        toast.error("Tidak ada data log sesi presensi untuk diekspor.");
         return;
       }
 
       const headers = [
         "No",
+        "Tanggal",
         "NIM",
         "Nama Mahasiswa",
-        "Jurusan",
-        "Kelompok",
+        "Jurusan / Prodi",
+        "Kelompok KKN",
         "Kelurahan",
         "DPL",
-        "Tanggal",
-        "Jam Masuk",
-        "Jam Pulang",
-        "Durasi Aktual di Zona (Menit)",
+        "Jam Masuk (JM)",
+        "Jam Pulang (JP)",
+        "Durasi Aktual Bersih (JP - JM / Menit)",
         "Durasi Formatted",
-        "Status",
+        "Target Minimal Harian (Menit)",
+        "Rasio Kehadiran (%)",
+        "Status Keterpenuhan (Target 4 Jam)",
+        "Status Kehadiran",
         "Deskripsi Kegiatan",
         "Foto Dokumentasi URL",
       ];
 
-      const rows = items.map((it, idx) => [
-        (page - 1) * limit + idx + 1,
-        `"${it.nim}"`,
-        `"${it.namaMahasiswa}"`,
-        `"${it.jurusan}"`,
-        `"${it.kelompok?.name ?? "-"}"`,
-        `"${it.kelompok?.kelurahan ?? "-"}"`,
-        `"${it.kelompok?.dplName ?? "-"}"`,
-        `"${it.tanggal}"`,
-        `"${it.jamMasuk}"`,
-        `"${it.jamPulang}"`,
-        it.durasiMenit,
-        `"${it.durasiFormatted}"`,
-        `"${it.statusDisplay}"`,
-        `"${(it.deskripsiKegiatan || "-").replace(/"/g, '""')}"`,
-        `"${it.fotoUrl || "-"}"`,
-      ]);
+      const rows = items.map((it, idx) => {
+        const actualMins = it.durasiAktualMenit ?? it.durasiMenit ?? 0;
+        const targetMin = it.targetMinMenit ?? 240;
+        const rasio = it.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1));
+        const keterpenuhan = it.isMemenuhiDurasi ? "MEMENUHI (>= 4 Jam)" : "KURANG DARI TARGET (< 4 Jam)";
 
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Log_Detail_Presensi_KKN_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Berhasil mengunduh log detail presensi CSV.");
+        return [
+          (page - 1) * limit + idx + 1,
+          it.tanggal,
+          it.nim,
+          it.namaMahasiswa,
+          it.jurusan,
+          it.kelompok?.name ?? "-",
+          it.kelompok?.kelurahan ?? "-",
+          it.kelompok?.dplName ?? "-",
+          it.jamMasuk,
+          it.jamPulang === "-" ? "Sedang Lapangan" : it.jamPulang,
+          actualMins,
+          it.durasiFormatted,
+          targetMin,
+          `${rasio}%`,
+          keterpenuhan,
+          it.statusDisplay,
+          it.deskripsiKegiatan || "-",
+          it.fotoUrl || "-",
+        ];
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws["!cols"] = [
+        { wch: 5 },
+        { wch: 12 },
+        { wch: 16 },
+        { wch: 28 },
+        { wch: 24 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 26 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 24 },
+        { wch: 20 },
+        { wch: 40 },
+        { wch: 35 },
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, "Log Detail Presensi");
+      const filename = `Log_Detail_Presensi_KKN_${startDate || "HariIni"}_sd_${endDate || "HariIni"}.xlsx`;
+      XLSX.writeFile(wb, filename);
+      toast.success("Berhasil mengunduh log detail presensi Excel (.xlsx).");
     }
   };
 
@@ -749,19 +812,21 @@ export const LaporanPresensiPage: React.FC = () => {
           <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 mt-1.5">
             {summary.totalPresensi}
           </p>
-          <span className="text-[10px] text-slate-400 font-medium">Sesi Kehadiran</span>
+          <span className="text-[10px] text-slate-400 font-medium">Sesi Kehadiran Terdata</span>
         </div>
 
-        {/* Total Jam Kumulatif Terverifikasi */}
-        <div className="bg-white dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        {/* Total Jam Kolektif & Rata-rata per Mahasiswa */}
+        <div className="bg-white dark:bg-slate-800/90 p-3.5 rounded-2xl border border-purple-200/80 dark:border-purple-900/50 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Total Jam Kumulatif</span>
+            <span>Total Jam Kolektif</span>
             <Clock size={15} className="text-purple-500" />
           </div>
           <p className="text-xl font-black text-purple-600 dark:text-purple-400 mt-1.5">
             {summary.totalJamKumulatif} <span className="text-xs font-bold text-slate-500">Jam</span>
           </p>
-          <span className="text-[10px] text-slate-400 font-medium">Durasi Terverifikasi</span>
+          <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">
+            Rata-rata: {studentAggregates.length > 0 ? (summary.totalJamKumulatif / studentAggregates.length).toFixed(1) : 0} Jam/mhs
+          </span>
         </div>
 
         {/* Sesi Memenuhi Target */}
@@ -771,25 +836,29 @@ export const LaporanPresensiPage: React.FC = () => {
             <CheckCircle2 size={15} className="text-emerald-500" />
           </div>
           <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5">
-            {summary.hadirMemenuhi}
+            {summary.hadirMemenuhi} <span className="text-xs font-bold text-slate-400">Sesi</span>
           </p>
           <span className="text-[10px] text-slate-400 font-medium">
             {summary.totalPresensi > 0
-              ? `${Math.round((summary.hadirMemenuhi / summary.totalPresensi) * 100)}% dari Total`
+              ? `${Math.round((summary.hadirMemenuhi / summary.totalPresensi) * 100)}% dari Total Sesi`
               : "0%"}
           </span>
         </div>
 
-        {/* Sesi Kurang Jam */}
+        {/* Sesi Durasi Kurang (Sebelumnya ambigu 'Kurang Jam: 11') */}
         <div className="bg-white dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
-            <span>Kurang Jam</span>
+            <span>Sesi Durasi Kurang</span>
             <AlertTriangle size={15} className="text-amber-500" />
           </div>
           <p className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1.5">
-            {summary.hadirKurang}
+            {summary.hadirKurang} <span className="text-xs font-bold text-slate-400">Sesi</span>
           </p>
-          <span className="text-[10px] text-slate-400 font-medium">Kurang dari Target</span>
+          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+            {summary.totalPresensi > 0
+              ? `${Math.round((summary.hadirKurang / summary.totalPresensi) * 100)}% di Bawah Target`
+              : "0%"}
+          </span>
         </div>
 
         {/* Sesi Sedang Lapangan / Terjeda */}
@@ -799,7 +868,7 @@ export const LaporanPresensiPage: React.FC = () => {
             <Activity size={15} className="text-emerald-500 animate-pulse" />
           </div>
           <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5">
-            {summary.berlangsung + summary.terjeda}
+            {summary.berlangsung + summary.terjeda} <span className="text-xs font-bold text-slate-400">Sesi</span>
           </p>
           <span className="text-[10px] text-slate-400 font-medium">
             {summary.berlangsung} Aktif • {summary.terjeda} Terjeda
@@ -954,8 +1023,8 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* End Date & Reset */}
-          <div className="lg:col-span-3 flex items-center gap-2">
+          {/* End Date & Reset & Ekspor */}
+          <div className="lg:col-span-4 flex items-end gap-2">
             <div className="flex-1">
               <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                 Sampai Tanggal
@@ -972,11 +1041,23 @@ export const LaporanPresensiPage: React.FC = () => {
               />
             </div>
             <button
+              type="button"
               onClick={handleResetFilter}
-              title="Reset Filter ke Default (7 Hari Terakhir)"
-              className="h-10 px-3.5 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition shrink-0 cursor-pointer"
+              title="Reset Filter"
+              className="h-10 px-3 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition shrink-0 cursor-pointer flex items-center gap-1"
             >
-              Reset
+              <RotateCcw size={12} />
+              <span>Reset</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={!startDate || !endDate}
+              className="h-10 px-3.5 text-xs font-bold rounded-xl border transition shadow-2xs shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer"
+              title={(!startDate || !endDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor rekapitulasi presensi ke XLSX"}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
             </button>
           </div>
         </div>
@@ -1025,7 +1106,7 @@ export const LaporanPresensiPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Export & Print Action Buttons */}
+          {/* Print Action Button */}
           <div className="flex items-center gap-2 self-end md:self-auto">
             <button
               type="button"
@@ -1034,15 +1115,6 @@ export const LaporanPresensiPage: React.FC = () => {
             >
               <Printer size={14} />
               <span>Cetak</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition cursor-pointer active:scale-95"
-              title={activeTab === "REKAP_MAHASISWA" ? "Ekspor Rekap Akumulasi Mahasiswa ke CSV" : "Ekspor Log Detail ke CSV"}
-            >
-              <Download size={14} />
-              <span>Ekspor CSV {activeTab === "REKAP_MAHASISWA" ? "Rekapitulasi" : "Log Detail"}</span>
             </button>
           </div>
         </div>
@@ -1057,7 +1129,7 @@ export const LaporanPresensiPage: React.FC = () => {
                   <th className="py-3.5 px-4 min-w-[200px]">Mahasiswa &amp; NIM</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; DPL</th>
                   <th className="py-3.5 px-4 text-center">Total Hari/Sesi</th>
-                  <th className="py-3.5 px-4 text-center min-w-[130px]">Total Akumulasi Aktual</th>
+                  <th className="py-3.5 px-4 text-center min-w-[130px]">Total Akumulasi Aktual (DA)</th>
                   <th className="py-3.5 px-4 text-center min-w-[170px]">
                     Target &amp; Capaian ({periodLabel})
                   </th>
@@ -1203,7 +1275,7 @@ export const LaporanPresensiPage: React.FC = () => {
                               <span>On Track</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-955 dark:text-amber-300 dark:border-amber-700">
                               <AlertTriangle size={12} className="text-amber-600" />
                               <span>Perlu Peningkatan</span>
                             </span>
@@ -1233,17 +1305,21 @@ export const LaporanPresensiPage: React.FC = () => {
 
         {/* TAB 2: LOG PRESENSI DETAIL SESI */}
         {activeTab === "LOG_DETAIL" && (
-          <div className="overflow-x-auto">
+          <div>
+            <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                   <th className="py-3.5 px-4 w-12 text-center text-emerald-700">#</th>
                   <th className="py-3.5 px-4 min-w-[190px]">Mahasiswa &amp; NIM</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Kelompok &amp; DPL</th>
-                  <th className="py-3.5 px-4">Tanggal &amp; Waktu</th>
-                  <th className="py-3.5 px-4 text-center">Durasi Aktual / Target</th>
-                  <th className="py-3.5 px-4 text-center">Status Kehadiran</th>
-                  <th className="py-3.5 px-4 min-w-[200px]">Deskripsi Kegiatan</th>
+                  <th className="py-3.5 px-4">Tanggal</th>
+                  <th className="py-3.5 px-4 text-center">Jam Masuk (JM)</th>
+                  <th className="py-3.5 px-4 text-center">Jam Pulang (JP)</th>
+                  <th className="py-3.5 px-4 text-center min-w-[130px]">Durasi Bersih (JP - JM)</th>
+                  <th className="py-3.5 px-4 text-center">Rasio Kehadiran (%)</th>
+                  <th className="py-3.5 px-4 text-center min-w-[150px]">Status Keterpenuhan</th>
+                  <th className="py-3.5 px-4 min-w-[180px]">Deskripsi Kegiatan</th>
                   <th className="py-3.5 px-4 text-center">Foto Bukti</th>
                   <th className="py-3.5 px-4 text-center min-w-[100px]">Aksi</th>
                 </tr>
@@ -1251,14 +1327,14 @@ export const LaporanPresensiPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <td colSpan={12} className="py-12 text-center text-slate-400">
                       <RefreshCw size={24} className="animate-spin text-emerald-600 mx-auto mb-2" />
                       <span>Memuat data log presensi detail...</span>
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-12">
+                    <td colSpan={12} className="py-12">
                       <EmptyTableState
                         title="Tidak Ada Log Sesi Presensi"
                         description="Tidak ditemukan riwayat kehadiran dengan filter yang dipilih."
@@ -1271,6 +1347,9 @@ export const LaporanPresensiPage: React.FC = () => {
                     const isTerjeda = item.status === "TERJEDA";
                     const isBerlangsung = item.status === "BERLANGSUNG";
                     const isIzinSakit = item.status.includes("IZIN") || item.status.includes("SAKIT");
+                    const actualMins = item.durasiAktualMenit ?? item.durasiMenit ?? 0;
+                    const targetMin = item.targetMinMenit ?? 240;
+                    const rasio = item.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1));
 
                     return (
                       <tr
@@ -1324,58 +1403,81 @@ export const LaporanPresensiPage: React.FC = () => {
                           </p>
                         </td>
 
-                        {/* Tanggal & Waktu */}
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">
-                            {item.tanggal}
-                          </div>
-                          <p className="text-[11px] text-slate-500 font-mono flex items-center gap-1">
-                            <span>{item.jamMasuk} – {item.jamPulang === "-" ? "Sekarang" : item.jamPulang} WIB</span>
-                            {isBerlangsung && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                            )}
-                          </p>
+                        {/* Tanggal */}
+                        <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                          {item.tanggal}
                         </td>
 
-                        {/* Durasi Aktual / Target */}
+                        {/* Jam Masuk (JM) */}
                         <td className="py-3.5 px-4 text-center">
-                          <div className="font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1">
+                          <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold text-xs border border-emerald-200 dark:border-emerald-800">
+                            {item.jamMasuk} WIB
+                          </span>
+                        </td>
+
+                        {/* Jam Pulang (JP) */}
+                        <td className="py-3.5 px-4 text-center">
+                          {item.jamPulang === "-" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 font-bold text-xs animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              <span>Aktif</span>
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-xs border border-slate-200 dark:border-slate-700">
+                              {item.jamPulang} WIB
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Durasi Bersih (JP - JM) */}
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="font-mono font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1">
                             <span>{item.durasiFormatted}</span>
                             {isBerlangsung && (
                               <span className="text-[10px] text-emerald-600 font-bold animate-pulse">(Live)</span>
                             )}
                           </div>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                            / {Number(configTargets.attendanceMinDurationHours || configTargets.targetHarianJam) || 4} Jam Target ({item.durasiMenit} mnt)
+                          <span className="text-[10px] text-slate-400 font-medium font-mono">
+                            {item.durasiMenit} Menit Bersih
                           </span>
                         </td>
 
-                        {/* Status Kehadiran */}
+                        {/* Rasio Kehadiran (%) */}
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
+                            {rasio}%
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-medium font-mono">
+                            DA/TM ({actualMins}/{targetMin}m)
+                          </span>
+                        </td>
+
+                        {/* Status Keterpenuhan */}
                         <td className="py-3.5 px-4 text-center">
                           {isMemenuhi ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs">
                               <CheckCircle2 size={12} className="text-emerald-600" />
-                              <span>{item.statusDisplay}</span>
-                            </span>
-                          ) : isTerjeda ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                              <PauseCircle size={12} className="text-slate-500" />
-                              <span>Terjeda</span>
+                              <span>Memenuhi (&ge; 4 Jam)</span>
                             </span>
                           ) : isBerlangsung ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
                               <span>Sedang Lapangan</span>
                             </span>
+                          ) : isTerjeda ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                              <PauseCircle size={12} className="text-slate-500" />
+                              <span>Terjeda</span>
+                            </span>
                           ) : isIzinSakit ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-700">
                               <FileText size={12} className="text-blue-600" />
                               <span>{item.statusDisplay}</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
                               <AlertTriangle size={12} className="text-amber-600" />
-                              <span>{item.statusDisplay}</span>
+                              <span>Kurang Jam (&lt; 4 Jam)</span>
                             </span>
                           )}
                         </td>
@@ -1403,7 +1505,7 @@ export const LaporanPresensiPage: React.FC = () => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-slate-400 text-xs italic">- Belum ada deskripsi -</span>
+                            <span className="text-slate-400 italic text-[11px]">Tidak ada catatan</span>
                           )}
                         </td>
 
@@ -1411,48 +1513,50 @@ export const LaporanPresensiPage: React.FC = () => {
                         <td className="py-3.5 px-4 text-center">
                           {item.fotoUrl ? (
                             <button
+                              type="button"
                               onClick={() =>
                                 setPreviewPhoto({
                                   url: item.fotoUrl!,
-                                  title: `Dokumentasi: ${item.namaMahasiswa} (${item.tanggal})`,
+                                  title: `Foto Dokumentasi - ${item.namaMahasiswa}`,
                                   desc: item.deskripsiKegiatan,
                                 })
                               }
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 dark:text-emerald-300 rounded-lg text-xs font-bold transition border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:hover:bg-emerald-900 dark:text-emerald-300 rounded-lg text-xs font-semibold transition border border-emerald-200 dark:border-emerald-800 cursor-pointer shadow-2xs"
                             >
-                              <ImageIcon size={13} />
-                              <span>Lihat Foto</span>
+                              <ImageIcon size={12} />
+                              <span>Lihat</span>
                             </button>
                           ) : (
-                            <span className="text-slate-400 text-xs italic">-</span>
+                            <span className="text-slate-400 text-xs">-</span>
                           )}
                         </td>
 
-                        {/* Aksi Manipulasi & Selesaikan */}
+                        {/* Aksi */}
                         <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {(isBerlangsung || isTerjeda) && (
+                          <div className="flex items-center justify-center gap-1">
+                            {isBerlangsung && (
                               <button
+                                type="button"
                                 onClick={() => handleForceCheckout(item)}
-                                title="Selesaikan Sesi Terjeda / Lapangan"
-                                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/80 dark:text-emerald-300 rounded-lg text-xs font-bold transition border border-emerald-300 dark:border-emerald-700 cursor-pointer"
+                                className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 dark:text-emerald-300 rounded-lg transition border border-emerald-200 dark:border-emerald-800 cursor-pointer"
+                                title="Selesaikan Sesi Lapangan (Force Check-Out)"
                               >
                                 <CheckCircle2 size={13} />
                               </button>
                             )}
-
                             <button
+                              type="button"
                               onClick={() => handleOpenEdit(item)}
-                              title="Edit / Manipulasi Jam & Durasi Presensi"
-                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:hover:bg-blue-900/80 dark:text-blue-300 rounded-lg text-xs font-bold transition border border-blue-300 dark:border-blue-700 cursor-pointer"
+                              className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-lg transition border border-slate-200 dark:border-slate-700 cursor-pointer"
+                              title="Edit Jam Masuk / Jam Pulang / Durasi Presensi"
                             >
                               <Pencil size={13} />
                             </button>
-
                             <button
+                              type="button"
                               onClick={() => setDeleteItem(item)}
-                              title="Hapus Presensi"
-                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:hover:bg-rose-900/80 dark:text-rose-300 rounded-lg text-xs font-bold transition border border-rose-300 dark:border-rose-700 cursor-pointer"
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/60 dark:hover:bg-red-900 dark:text-red-300 rounded-lg transition border border-red-200 dark:border-red-800 cursor-pointer"
+                              title="Hapus Data Presensi"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -1464,8 +1568,9 @@ export const LaporanPresensiPage: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
 
-            {/* Pagination Bar for Log Detail */}
+          {/* Pagination Bar for Log Detail */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
               <div className="text-slate-500">
                 Menampilkan <span className="font-bold text-slate-800 dark:text-slate-200">{items.length}</span> dari{" "}

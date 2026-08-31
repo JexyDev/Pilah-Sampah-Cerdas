@@ -87,7 +87,7 @@ export class PoskoKknController {
         ...posko,
         foto: posko.fotoUrl || null,
         fotoUrl: posko.fotoUrl || null,
-        radius: Number((posko as any).radius) || 150,
+        radius: Number((posko as any).radius) || 500,
       };
 
       res.status(200).json({ success: true, message: "Posko KKN berhasil disimpan", data: resData });

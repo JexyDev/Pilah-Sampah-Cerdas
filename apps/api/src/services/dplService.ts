@@ -3301,7 +3301,7 @@ export const dplService = {
         .replace(/\?{2,3}|â€“|–|—/g, " - ")
         .replace(/\s+-\s+/g, " - ")
         .trim(),
-      jamKerja: (configMap.get("kkn_jam_kerja") || "08:00 - 16:00 WIB")
+      jamKerja: (configMap.get("kkn_jam_kerja") || "08:00 - 19:00 WIB")
         .replace(/\?{2,3}|â€“|–|—/g, " - ")
         .replace(/\s+-\s+/g, " - ")
         .trim(),

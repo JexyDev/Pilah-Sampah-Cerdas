@@ -305,7 +305,7 @@ export const ZonaInspectorPage: React.FC = () => {
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [editMode, setEditMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [editPoints, setEditPoints] = useState<[number, number][]>([[-6.8906, 107.615]]);
-  const [editRadius, setEditRadius] = useState<number>(200);
+  const [editRadius, setEditRadius] = useState<number>(500);
   const [editPoskoForm, setEditPoskoForm] = useState({
     nama: "",
     alamat: "",
@@ -391,7 +391,7 @@ export const ZonaInspectorPage: React.FC = () => {
       let lat = CoblongGeo.CENTER[0];
       let lng = CoblongGeo.CENTER[1];
       let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
-      let radius = 200;
+      let radius = 500;
       let polygon: [number, number][] | null = null;
 
       if (primaryPosko && primaryPosko.latitude && primaryPosko.longitude) {
@@ -435,7 +435,7 @@ export const ZonaInspectorPage: React.FC = () => {
             for (const gp of groupPoskos) {
               const gpLat = Number(gp.latitude);
               const gpLng = Number(gp.longitude);
-              const gpRadius = gp.radius ? Number(gp.radius) : 150;
+              const gpRadius = gp.radius ? Number(gp.radius) : 500;
               const d = calculateDistance(gpLat, gpLng, sLat, sLng);
               if (d < minDistance) minDistance = d;
               if (d <= gpRadius) {
@@ -995,7 +995,7 @@ export const ZonaInspectorPage: React.FC = () => {
                         group.poskos.map((gp: any, pIdx: number) => {
                           const gpLat = Number(gp.latitude);
                           const gpLng = Number(gp.longitude);
-                          const gpRadius = gp.radius ? Number(gp.radius) : 150;
+                          const gpRadius = gp.radius ? Number(gp.radius) : 500;
                           return (
                             <Circle
                               key={`group-circle-${group.id}-posko-${gp.id || pIdx}`}

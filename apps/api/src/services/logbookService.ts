@@ -188,8 +188,10 @@ export class LogbookService {
             id: true,
             name: true,
             phone: true,
+            fotoProfil: true,
             studentProfile: {
               select: {
+                id: true,
                 nim: true,
                 jurusan: true,
                 fakultas: true,
@@ -203,7 +205,8 @@ export class LogbookService {
             id: true,
             name: true,
             kelurahan: true,
-            dpl: { select: { id: true, name: true, phone: true } },
+            cakupanRw: true,
+            dpl: { select: { id: true, name: true, phone: true, nip: true } },
             students: {
               select: {
                 id: true,
@@ -224,9 +227,14 @@ export class LogbookService {
         programKerja: {
           select: {
             id: true,
+            nomor: true,
             deskripsi: true,
             kategori: true,
             status: true,
+            statusUsulan: true,
+            statusPelaksanaan: true,
+            linkGoogleDrive: true,
+            waktuPelaksanaan: true,
           },
         },
         fasilitas: {
@@ -244,14 +252,18 @@ export class LogbookService {
     });
 
     return logbooks.map((item, index) => ({
-      nomor: index + 1,
+      nomor: item.nomor || index + 1,
       id: item.id,
       kelompokId: item.kelompokId,
       kelompokNama: item.kelompok?.name || "Kelompok KKN",
       kelurahan: item.kelompok?.kelurahan || "-",
+      cakupanRw: item.kelompok?.cakupanRw || [],
       penulisId: item.penulisId,
       penulisNama: item.penulis?.name || "Mahasiswa",
       penulisNim: item.penulis?.studentProfile?.nim || "-",
+      penulisJurusan: item.penulis?.studentProfile?.jurusan || "-",
+      penulisFakultas: item.penulis?.studentProfile?.fakultas || "-",
+      penulisFotoProfil: item.penulis?.fotoProfil || null,
       isKetua: Boolean(item.penulis?.studentProfile?.isKetua),
       tanggalKegiatan: item.tanggalKegiatan
         ? item.tanggalKegiatan.toISOString().split("T")[0]
@@ -264,14 +276,50 @@ export class LogbookService {
       tempat: item.tempat,
       deskripsi: item.deskripsi,
       fotoBuktiUrl: item.fotoBuktiUrl,
+      attachmentUrls: Array.isArray(item.attachmentUrls)
+        ? (item.attachmentUrls as string[])
+        : item.fotoBuktiUrl
+          ? [item.fotoBuktiUrl]
+          : [],
+      platformOs: item.platformOs || "ANDROID",
       tipeAktivitas: item.tipeAktivitas,
       pekanKe: item.pekanKe,
       statusApproval: item.statusApproval,
       programKerjaId: item.programKerjaId,
+      programKerja: item.programKerja
+        ? {
+            id: item.programKerja.id,
+            nomor: item.programKerja.nomor,
+            deskripsi: item.programKerja.deskripsi,
+            kategori: item.programKerja.kategori,
+            status: item.programKerja.status,
+            statusUsulan: (item.programKerja as any).statusUsulan,
+            statusPelaksanaan: (item.programKerja as any).statusPelaksanaan,
+            linkGoogleDrive: item.programKerja.linkGoogleDrive,
+            waktuPelaksanaan: item.programKerja.waktuPelaksanaan,
+          }
+        : null,
       programKerjaDeskripsi: item.programKerja?.deskripsi || null,
       programKerjaKategori: item.programKerja?.kategori || null,
       fasilitasId: item.fasilitasId,
+      fasilitas: item.fasilitas
+        ? {
+            id: item.fasilitas.id,
+            nama: item.fasilitas.nama,
+            jenis: item.fasilitas.jenis,
+            alamat: item.fasilitas.alamat,
+          }
+        : null,
       fasilitasNama: item.fasilitas?.nama || null,
+      dpl: item.kelompok?.dpl
+        ? {
+            id: item.kelompok.dpl.id,
+            name: item.kelompok.dpl.name,
+            phone: item.kelompok.dpl.phone,
+            nip: item.kelompok.dpl.nip,
+          }
+        : null,
+      dplNama: item.kelompok?.dpl?.name || "-",
       anggotaKelompok:
         item.kelompok?.students
           ?.filter((s) => s.user)
@@ -289,7 +337,200 @@ export class LogbookService {
       diverifikasiDplPada: item.diverifikasiDplPada,
       catatanDpl: item.catatanDpl,
       createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     }));
+  }
+
+  /**
+   * Mengambil detail satu logbook mahasiswa berdasarkan ID
+   */
+  async getMahasiswaLogbookById(logbookId: string, userId: string, userRole: string) {
+    const isSuper = [
+      "SUPER_USER",
+      "DEVELOPER",
+      "ADMIN_DLH",
+      "DLH",
+      "PEMIMPIN",
+      "PANITIA_TASKFORCE",
+    ].includes(userRole.toUpperCase());
+    const isMhs = userRole.toUpperCase() === "MAHASISWA_KKN";
+
+    const logbook = await prisma.logbookKkn.findUnique({
+      where: { id: logbookId },
+      include: {
+        penulis: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            fotoProfil: true,
+            studentProfile: {
+              select: {
+                id: true,
+                nim: true,
+                jurusan: true,
+                fakultas: true,
+                isKetua: true,
+              },
+            },
+          },
+        },
+        kelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
+            dpl: { select: { id: true, name: true, phone: true, nip: true } },
+            students: {
+              select: {
+                id: true,
+                userId: true,
+                nim: true,
+                isKetua: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        programKerja: {
+          select: {
+            id: true,
+            nomor: true,
+            deskripsi: true,
+            kategori: true,
+            status: true,
+            statusUsulan: true,
+            statusPelaksanaan: true,
+            linkGoogleDrive: true,
+            waktuPelaksanaan: true,
+          },
+        },
+        fasilitas: {
+          select: {
+            id: true,
+            nama: true,
+            jenis: true,
+            alamat: true,
+            latitude: true,
+            longitude: true,
+          },
+        },
+        disetujuiKetuaOleh: { select: { id: true, name: true } },
+        diverifikasiDplOleh: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!logbook) {
+      throw new Error("Logbook tidak ditemukan");
+    }
+
+    if (isMhs) {
+      const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
+      const sameKelompok = studentProfile?.kelompokId === logbook.kelompokId;
+      const isAuthor = logbook.penulisId === userId;
+      if (!sameKelompok && !isAuthor && !isSuper) {
+        throw new Error("Akses ditolak: Anda tidak memiliki akses ke logbook ini.");
+      }
+    }
+
+    const item = logbook;
+    return {
+      id: item.id,
+      nomor: item.nomor || 1,
+      kelompokId: item.kelompokId,
+      kelompokNama: item.kelompok?.name || "Kelompok KKN",
+      kelurahan: item.kelompok?.kelurahan || "-",
+      cakupanRw: item.kelompok?.cakupanRw || [],
+      penulisId: item.penulisId,
+      penulisNama: item.penulis?.name || "Mahasiswa",
+      penulisNim: item.penulis?.studentProfile?.nim || "-",
+      penulisJurusan: item.penulis?.studentProfile?.jurusan || "-",
+      penulisFakultas: item.penulis?.studentProfile?.fakultas || "-",
+      penulisFotoProfil: item.penulis?.fotoProfil || null,
+      isKetua: Boolean(item.penulis?.studentProfile?.isKetua),
+      tanggalKegiatan: item.tanggalKegiatan
+        ? item.tanggalKegiatan.toISOString().split("T")[0]
+        : "-",
+      waktuMulai: item.waktuMulai || "-",
+      waktuSelesai: item.waktuSelesai || "-",
+      waktuLengkap: item.waktuMulai
+        ? `${item.waktuMulai}${item.waktuSelesai ? ` - ${item.waktuSelesai}` : ""}`
+        : "-",
+      tempat: item.tempat,
+      deskripsi: item.deskripsi,
+      fotoBuktiUrl: item.fotoBuktiUrl,
+      attachmentUrls: Array.isArray(item.attachmentUrls)
+        ? (item.attachmentUrls as string[])
+        : item.fotoBuktiUrl
+          ? [item.fotoBuktiUrl]
+          : [],
+      platformOs: item.platformOs || "ANDROID",
+      tipeAktivitas: item.tipeAktivitas,
+      pekanKe: item.pekanKe,
+      statusApproval: item.statusApproval,
+      programKerjaId: item.programKerjaId,
+      programKerja: item.programKerja
+        ? {
+            id: item.programKerja.id,
+            nomor: item.programKerja.nomor,
+            deskripsi: item.programKerja.deskripsi,
+            kategori: item.programKerja.kategori,
+            status: item.programKerja.status,
+            statusUsulan: (item.programKerja as any).statusUsulan,
+            statusPelaksanaan: (item.programKerja as any).statusPelaksanaan,
+            linkGoogleDrive: item.programKerja.linkGoogleDrive,
+            waktuPelaksanaan: item.programKerja.waktuPelaksanaan,
+          }
+        : null,
+      programKerjaDeskripsi: item.programKerja?.deskripsi || null,
+      programKerjaKategori: item.programKerja?.kategori || null,
+      fasilitasId: item.fasilitasId,
+      fasilitas: item.fasilitas
+        ? {
+            id: item.fasilitas.id,
+            nama: item.fasilitas.nama,
+            jenis: item.fasilitas.jenis,
+            alamat: item.fasilitas.alamat,
+            latitude: item.fasilitas.latitude ? Number(item.fasilitas.latitude) : null,
+            longitude: item.fasilitas.longitude ? Number(item.fasilitas.longitude) : null,
+          }
+        : null,
+      fasilitasNama: item.fasilitas?.nama || null,
+      dpl: item.kelompok?.dpl
+        ? {
+            id: item.kelompok.dpl.id,
+            name: item.kelompok.dpl.name,
+            phone: item.kelompok.dpl.phone,
+            nip: item.kelompok.dpl.nip,
+          }
+        : null,
+      dplNama: item.kelompok?.dpl?.name || "-",
+      anggotaKelompok:
+        item.kelompok?.students
+          ?.filter((s) => s.user)
+          .map((s) => ({
+            id: s.id,
+            userId: s.userId || s.user?.id,
+            nim: s.nim || "-",
+            name: s.user?.name || "Mahasiswa",
+            isKetua: Boolean(s.isKetua),
+          })) || [],
+      disetujuiKetuaOleh: item.disetujuiKetuaOleh?.name || null,
+      disetujuiKetuaPada: item.disetujuiKetuaPada,
+      catatanKetua: item.catatanKetua,
+      diverifikasiDplOleh: item.diverifikasiDplOleh?.name || null,
+      diverifikasiDplPada: item.diverifikasiDplPada,
+      catatanDpl: item.catatanDpl,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    };
   }
 
   /**
@@ -575,6 +816,13 @@ export class LogbookService {
             existing.kelompok.dplId || (isDeveloper ? userId : null);
         }
       }
+    } else if (
+      isAuthor &&
+      (existing.statusApproval === StatusLogbookKkn.PERLU_REVISI_DPL ||
+        existing.statusApproval === StatusLogbookKkn.DITOLAK_KETUA)
+    ) {
+      // Otomatis ajukan kembali jika mahasiswa merevisi logbook yang sebelumnya ditolak/revisi
+      updateData.statusApproval = StatusLogbookKkn.MENUNGGU_VERIFIKASI_DPL;
     }
     if (payload.programKerjaId !== undefined)
       updateData.programKerjaId = payload.programKerjaId || null;
@@ -588,16 +836,12 @@ export class LogbookService {
       if (payload.kelompokId) updateData.kelompokId = payload.kelompokId;
     }
 
-    const updated = await prisma.logbookKkn.update({
+    await prisma.logbookKkn.update({
       where: { id: logbookId },
       data: updateData,
-      include: {
-        penulis: { select: { name: true } },
-        kelompok: { select: { name: true } },
-      },
     });
 
-    return updated;
+    return await this.getMahasiswaLogbookById(logbookId, userId, userRole);
   }
 
   /**

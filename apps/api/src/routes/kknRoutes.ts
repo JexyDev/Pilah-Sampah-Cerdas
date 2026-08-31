@@ -9,6 +9,7 @@ import { prisma } from "../lib/prisma.js";
 import { Router } from "express";
 import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
+import { logbookController } from "../controllers/logbookController.js";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage, upload } from "../middlewares/uploadMiddleware.js";
@@ -679,27 +680,102 @@ router.get(
   kknController.getUnharvestedLogbooks
 );
 
+// ──────────────────────────────────────────────────────────
+// PROGRAM KERJA (PROKER) MAHASISWA KKN
+// ──────────────────────────────────────────────────────────
+
 router.post(
-  "/program-kerja",
+  ["/program-kerja", "/proker"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  upload.single("filePdf"),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
   kknController.createProgramKerja
 );
 
-router.put(
-  "/program-kerja/:id",
+router.get(
+  ["/program-kerja", "/proker"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
-  upload.single("filePdf"),
-  kknController.updateProgramKerja
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  kknController.getProgramKerja
 );
 
 router.get(
-  "/program-kerja",
+  ["/program-kerja/:id", "/proker/:id"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER"]),
-  kknController.getProgramKerja
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  kknController.getProgramKerjaById
+);
+
+router.put(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.patch(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.delete(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  kknController.deleteProgramKerja
+);
+
+// ──────────────────────────────────────────────────────────
+// LOGBOOK MAHASISWA (ALIAS UNDER /api/v1/kkn)
+// ──────────────────────────────────────────────────────────
+
+router.get(
+  ["/logbook", "/logbook-aktivitas"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  logbookController.getMahasiswaLogbooks
+);
+
+router.get(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  logbookController.getMahasiswaLogbookById
+);
+
+router.post(
+  ["/logbook", "/logbook-aktivitas"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  logbookController.createMahasiswaLogbook
+);
+
+router.put(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
+router.patch(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
+router.delete(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  logbookController.deleteMahasiswaLogbook
 );
 
 router.post(

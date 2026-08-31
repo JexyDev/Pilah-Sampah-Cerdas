@@ -28,8 +28,11 @@ import {
   Clock,
   Crown,
   Download,
+  FileSpreadsheet,
+  RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   dplService,
   type GroupSummary,
@@ -190,6 +193,8 @@ export const DplDashboardPage: React.FC = () => {
 
   // Filter & Pagination States
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
+  const [approvalStartDate, setApprovalStartDate] = useState<string>("");
+  const [approvalEndDate, setApprovalEndDate] = useState<string>("");
 
   const [approvalPage, setApprovalPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -400,9 +405,21 @@ export const DplDashboardPage: React.FC = () => {
   // Filtered & Paginated Approvals History
   const filteredApprovalHistory = useMemo(() => {
     return approvalHistory.filter((log) => {
-      return selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
+      const matchStatus = selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
+      let matchDate = true;
+      if (approvalStartDate && (log.startDate || log.reviewedAt)) {
+        const itemDate = (log.startDate || log.reviewedAt) as string;
+        const startTs = new Date(`${approvalStartDate}T00:00:00`).getTime();
+        if (new Date(itemDate).getTime() < startTs) matchDate = false;
+      }
+      if (approvalEndDate && (log.endDate || log.reviewedAt)) {
+        const itemDate = (log.endDate || log.reviewedAt) as string;
+        const endTs = new Date(`${approvalEndDate}T23:59:59`).getTime();
+        if (new Date(itemDate).getTime() > endTs) matchDate = false;
+      }
+      return matchStatus && matchDate;
     });
-  }, [approvalHistory, selectedApprovalStatus]);
+  }, [approvalHistory, selectedApprovalStatus, approvalStartDate, approvalEndDate]);
 
   const paginatedApprovalHistory = useMemo(() => {
     const start = (approvalPage - 1) * ITEMS_PER_PAGE;
@@ -411,10 +428,15 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
-  // Export CSV Riwayat Validasi Izin & Sakit (Absensi)
-  const handleExportAbsensiCSV = () => {
+  // Export Excel (.xlsx) Riwayat Validasi Izin & Sakit (Absensi)
+  const handleExportAbsensiExcel = () => {
+    if (!approvalStartDate || !approvalEndDate) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
+      return;
+    }
+
     if (!filteredApprovalHistory || filteredApprovalHistory.length === 0) {
-      toast.error("Tidak ada data riwayat izin & sakit yang sesuai filter untuk diekspor.");
+      toast.error("Tidak ada data riwayat izin & sakit pada rentang tanggal yang dipilih.");
       return;
     }
 
@@ -451,33 +473,108 @@ export const DplDashboardPage: React.FC = () => {
 
       return [
         index + 1,
-        `"${(log.studentName || "-").replace(/"/g, '""')}"`,
-        `"${log.type || "-"}"`,
-        `"${startDateFormatted}"`,
-        `"${endDateFormatted}"`,
-        `"${(log.reason || "-").replace(/"/g, '""')}"`,
-        `"${statusLabel}"`,
-        `"${reviewedAtFormatted}"`,
-        `"${(log.rejectionReason || "-").replace(/"/g, '""')}"`,
-      ].join(",");
+        log.studentName || "-",
+        log.type || "-",
+        startDateFormatted,
+        endDateFormatted,
+        log.reason || "-",
+        statusLabel,
+        reviewedAtFormatted,
+        log.rejectionReason || "-",
+      ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `Rekap_Riwayat_Absensi_Izin_Sakit_KKN_${new Date().toISOString().slice(0, 10)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 5 },
+      { wch: 25 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Izin & Sakit");
+    XLSX.writeFile(wb, `Rekap_Riwayat_Absensi_Izin_Sakit_${approvalStartDate}_sd_${approvalEndDate}.xlsx`);
     toast.success(
-      `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor`
+      `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor ke XLSX`
     );
+  };
+
+  // Export Excel (.xlsx) Program Kerja DPL
+  const handleExportProkerExcel = () => {
+    if (!effectiveProkers || effectiveProkers.length === 0) {
+      toast.error("Tidak ada program kerja untuk diekspor.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Nomor Proker",
+      "Judul / Deskripsi Proker",
+      "Kategori",
+      "Sumber Usulan",
+      "Kelompok KKN",
+      "Kelurahan",
+      "Waktu Pelaksanaan",
+      "Kebutuhan Biaya (Rp)",
+      "Status Usulan",
+      "Status Pelaksanaan",
+      "Status Penilaian",
+      "Skor Penilaian",
+      "Predikat",
+      "Link Google Drive / Lampiran",
+      "Catatan DPL",
+    ];
+
+    const rows = effectiveProkers.map((p: any, idx: number) => {
+      const kelompok = groups.find((g: any) => g.id === p.kelompokId);
+      return [
+        idx + 1,
+        p.nomor ?? idx + 1,
+        p.deskripsi || p.judul || "-",
+        p.kategori || "LAINNYA",
+        p.sumber || "MAHASISWA",
+        kelompok?.name || p.kelompokName || "-",
+        kelompok?.kelurahan || p.kelurahan || "-",
+        p.waktuPelaksanaan || "-",
+        Number(p.kebutuhanBiaya || 0),
+        p.statusUsulan || p.status || "BELUM_DISETUJUI",
+        p.statusPelaksanaan || "BELUM_MULAI",
+        p.statusPenilaian || "BELUM_DINILAI",
+        p.skorPenilaian ? Number(p.skorPenilaian) : "-",
+        p.predikat || "-",
+        p.linkGoogleDrive || p.attachmentFile || "-",
+        p.catatanDpl || "-",
+      ];
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 5 },
+      { wch: 14 },
+      { wch: 35 },
+      { wch: 18 },
+      { wch: 16 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 35 },
+      { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Program Kerja KKN");
+    XLSX.writeFile(wb, `Rekap_Program_Kerja_KKN_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Berhasil mengunduh rekap ${effectiveProkers.length} program kerja ke Excel (.xlsx).`);
   };
 
   // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)
@@ -1098,31 +1195,67 @@ export const DplDashboardPage: React.FC = () => {
               <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin dan sakit mahasiswa bimbingan.</p>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 value={selectedApprovalStatus}
                 onChange={(e) => {
                   setSelectedApprovalStatus(e.target.value);
                   setApprovalPage(1);
                 }}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
               >
                 <option value="ALL">Semua Keputusan</option>
                 <option value="APPROVED">Disetujui</option>
                 <option value="REJECTED">Ditolak</option>
               </select>
 
+              <div className="flex items-center gap-1 text-xs">
+                <input
+                  type="date"
+                  value={approvalStartDate}
+                  onChange={(e) => {
+                    setApprovalStartDate(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+                <span className="text-slate-400 text-xs">s/d</span>
+                <input
+                  type="date"
+                  value={approvalEndDate}
+                  onChange={(e) => {
+                    setApprovalEndDate(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+              </div>
+
+              {(selectedApprovalStatus !== "ALL" || approvalStartDate || approvalEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedApprovalStatus("ALL");
+                    setApprovalStartDate("");
+                    setApprovalEndDate("");
+                    setApprovalPage(1);
+                  }}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                  title="Reset Filter"
+                >
+                  <RotateCcw size={11} /> Reset
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={handleExportAbsensiCSV}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-                title={`Ekspor ${filteredApprovalHistory.length} data riwayat izin/sakit ke format CSV`}
+                onClick={handleExportAbsensiExcel}
+                disabled={!approvalStartDate || !approvalEndDate}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+                title={(!approvalStartDate || !approvalEndDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data izin/sakit ke XLSX"}
               >
-                <Download size={14} />
-                <span>Ekspor CSV</span>
-                <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
-                  {filteredApprovalHistory.length}
-                </span>
+                <FileSpreadsheet size={13} />
+                <span>Ekspor XLSX</span>
               </button>
             </div>
           </div>
@@ -1480,14 +1613,27 @@ export const DplDashboardPage: React.FC = () => {
                 Program Kerja yang Diusulkan
               </h3>
             </div>
-            <Link
-              to="/program-kerja-kkn"
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
-              title="Buka Halaman Manajemen Program Kerja KKN"
-            >
-              <span>Semua Proker</span>
-              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
-            </Link>
+            <div className="flex items-center gap-2">
+              {effectiveProkers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExportProkerExcel}
+                  className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                  title={`Ekspor ${effectiveProkers.length} program kerja ke XLSX`}
+                >
+                  <FileSpreadsheet size={13} />
+                  <span>Ekspor XLSX</span>
+                </button>
+              )}
+              <Link
+                to="/program-kerja-kkn"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+                title="Buka Halaman Manajemen Program Kerja KKN"
+              >
+                <span>Semua Proker</span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
+              </Link>
+            </div>
           </div>
 
           <div className="space-y-2.5">

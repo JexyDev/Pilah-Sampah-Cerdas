@@ -445,7 +445,7 @@ export class KknController {
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
-      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 150;
+      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
       const payload = {
         ...req.body,
         foto: fotoUrl,
@@ -461,7 +461,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 150,
+        radius: Number((data as any).radius) || 500,
       };
       res.status(201).json({
         success: true,
@@ -498,7 +498,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 150,
+        radius: Number((data as any).radius) || 500,
       };
       res.status(200).json({
         success: true,
@@ -532,7 +532,7 @@ export class KknController {
               ...poskoAny,
               foto: poskoAny.fotoUrl || poskoAny.foto || null,
               fotoUrl: poskoAny.fotoUrl || poskoAny.foto || null,
-              radius: Number(poskoAny.radius) || 150,
+              radius: Number(poskoAny.radius) || 500,
             }
           : null,
       };
@@ -572,7 +572,7 @@ export class KknController {
       if (req.file) {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
-      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 150;
+      const parsedRadius = req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
       const payload = {
         nama: req.body.nama,
         alamat: req.body.alamat,
@@ -593,7 +593,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 150,
+        radius: Number((data as any).radius) || 500,
       };
       res.status(201).json({
         success: true,
@@ -640,7 +640,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 150,
+        radius: Number((data as any).radius) || 500,
       };
       res.status(200).json({
         success: true,
@@ -678,21 +678,24 @@ export class KknController {
   async createProgramKerja(req: Request, res: Response) {
     try {
       const payload = { ...req.body };
-      if (req.file) {
+      const uploadedUrls = extractUploadedFileUrls(req);
+      if (uploadedUrls.length > 0) {
+        payload.attachmentFile = uploadedUrls[0];
+        payload.linkGoogleDrive = payload.linkGoogleDrive || uploadedUrls[0];
+        payload.attachmentUrls = uploadedUrls;
+      } else if (req.file) {
         const fileUrl = `/uploads/${req.file.filename}`;
         payload.attachmentFile = fileUrl;
         payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
         payload.attachmentUrls = [fileUrl];
       }
+
       const data = await kknService.createProgramKerja(req.user!.userId, payload);
       
       try {
-        const { PrismaClient } = require("@prisma/client");
-        const prisma = new PrismaClient();
-        const { notificationIntegrationService } = require("../services/notificationIntegrationService");
-        
-        const title = "Pengajuan Program Kerja âœ…";
-        const message = `Program ${data.judul} berhasil diajukan dan sedang direview.`;
+        const { notificationIntegrationService } = await import("../services/notificationIntegrationService.js");
+        const title = "Pengajuan Program Kerja ✅";
+        const message = `Program ${data.judul} berhasil diajukan dan sedang direview oleh DPL.`;
         
         await prisma.notification.create({
           data: {
@@ -700,11 +703,12 @@ export class KknController {
             title,
             message,
             isRead: false,
-          }
-        });
+          },
+        }).catch(() => {});
+
         const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
         if (user?.fcmToken) {
-          await notificationIntegrationService.sendPushNotification(user.fcmToken, title, message);
+          await notificationIntegrationService.sendPushNotification(user.fcmToken, title, message).catch(() => {});
         }
       } catch (e) {
         console.error("Failed to send notification for program kerja", e);
@@ -720,7 +724,13 @@ export class KknController {
   async getProgramKerja(req: Request, res: Response) {
     try {
       const targetGroupId = (req.query.groupId || req.query.kelompokId) as string | undefined;
-      const data = await kknService.getProgramKerja(req.user!.userId, targetGroupId);
+      const { kategori, statusUsulan, statusPelaksanaan, search } = req.query;
+      const data = await kknService.getProgramKerja(req.user!.userId, targetGroupId, {
+        kategori: kategori as string,
+        statusUsulan: statusUsulan as string,
+        statusPelaksanaan: statusPelaksanaan as string,
+        search: search as string,
+      });
       res.status(200).json({ success: true, total: Array.isArray(data) ? data.length : 0, data });
     } catch (error: any) {
       console.error("[KknController] getProgramKerja error:", error);
@@ -728,11 +738,28 @@ export class KknController {
     }
   }
 
+  async getProgramKerjaById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const data = await kknService.getProgramKerjaById(req.user!.userId, id);
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[KknController] getProgramKerjaById error:", error);
+      const statusCode = error.message?.includes("tidak ditemukan") ? 404 : 400;
+      res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
   async updateProgramKerja(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const payload = { ...req.body };
-      if (req.file) {
+      const uploadedUrls = extractUploadedFileUrls(req);
+      if (uploadedUrls.length > 0) {
+        payload.attachmentFile = uploadedUrls[0];
+        payload.linkGoogleDrive = payload.linkGoogleDrive || uploadedUrls[0];
+        payload.attachmentUrls = uploadedUrls;
+      } else if (req.file) {
         const fileUrl = `/uploads/${req.file.filename}`;
         payload.attachmentFile = fileUrl;
         payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
@@ -743,6 +770,22 @@ export class KknController {
     } catch (error: any) {
       console.error("[KknController] updateProgramKerja error:", error);
       res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async deleteProgramKerja(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const result = await kknService.deleteProgramKerja(req.user!.userId, id);
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[KknController] deleteProgramKerja error:", error);
+      const statusCode = error.message?.includes("tidak ditemukan")
+        ? 404
+        : error.message?.includes("Akses ditolak")
+          ? 403
+          : 400;
+      res.status(statusCode).json({ success: false, message: error.message });
     }
   }
 

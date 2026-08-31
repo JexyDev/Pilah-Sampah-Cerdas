@@ -153,15 +153,9 @@ const LaporanAnalitik: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 ml-auto sm:ml-0">
             <button
               onClick={() => setIsExportModalOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all text-xs border border-slate-200 dark:border-slate-800 cursor-pointer active:scale-95"
-            >
-              <Grid size={14} /> <span>Ekspor CSV</span>
-            </button>
-            <button
-              onClick={() => setIsExportModalOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#009966] hover:bg-[#008055] text-white font-bold rounded-xl transition-all text-xs shadow-xs cursor-pointer active:scale-95"
             >
-              <Download size={14} /> <span>Ekspor Dataset AI</span>
+              <FileSpreadsheet size={14} /> <span>Ekspor Dataset XLSX</span>
             </button>
           </div>
         </div>

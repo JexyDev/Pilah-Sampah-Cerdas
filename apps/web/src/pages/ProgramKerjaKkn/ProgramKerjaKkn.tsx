@@ -20,6 +20,7 @@ import {
   Coins,
   Clock,
   Calendar,
+  RotateCcw,
   Check,
   AlertCircle,
   ListFilter,
@@ -30,6 +31,7 @@ import {
   Building2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ProgramKerjaItem } from "../../services/dplService";
@@ -83,6 +85,8 @@ export const ProgramKerjaKkn: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>(
     searchParams.get("search") || searchParams.get("q") || ""
   );
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
 
   useEffect(() => {
     const q = searchParams.get("search") || searchParams.get("q");
@@ -659,13 +663,23 @@ export const ProgramKerjaKkn: React.FC = () => {
       const normP = normalizeStatusPelaksanaan(item.statusPelaksanaan, item.status);
       const matchesPelaksanaan = statusPelaksanaanFilter === "ALL" || normP === statusPelaksanaanFilter;
 
-      return matchesSearch && matchesCategory && matchesSource && matchesUsulan && matchesPelaksanaan;
+      let matchesDate = true;
+      if (startDateFilter && item.createdAt) {
+        const startTs = new Date(`${startDateFilter}T00:00:00`).getTime();
+        if (new Date(item.createdAt).getTime() < startTs) matchesDate = false;
+      }
+      if (endDateFilter && item.createdAt) {
+        const endTs = new Date(`${endDateFilter}T23:59:59`).getTime();
+        if (new Date(item.createdAt).getTime() > endTs) matchesDate = false;
+      }
+
+      return matchesSearch && matchesCategory && matchesSource && matchesUsulan && matchesPelaksanaan && matchesDate;
     });
-  }, [prokerList, searchQuery, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter]);
+  }, [prokerList, searchQuery, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter, startDateFilter, endDateFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedKelompokId, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter]);
+  }, [searchQuery, selectedKelompokId, categoryFilter, sourceFilter, statusUsulanFilter, statusPelaksanaanFilter, startDateFilter, endDateFilter]);
 
   const totalPages = Math.ceil(filteredProkers.length / itemsPerPage) || 1;
   const paginatedProkers = useMemo(() => {
@@ -686,98 +700,87 @@ export const ProgramKerjaKkn: React.FC = () => {
 
   const totalBiaya = prokerList.reduce((acc, p) => acc + (Number(p.kebutuhanBiaya) || 0), 0);
 
-  const handleExportCsv = () => {
-    if (filteredProkers.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
+  const handleExportXlsx = () => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
 
-    const headers = isDeveloper
-      ? [
-          "No",
-          "Waktu Dibuat",
-          "Kelompok",
-          "Kelurahan",
-          "RW",
-          "DPL Pembimbing",
-          "Pengisi Data / Mahasiswa",
-          "NIM Pengisi Data",
-          "Kategori",
-          "Sumber",
-          "Judul Program",
-          "Deskripsi Kegiatan",
-          "Waktu Pelaksanaan",
-          "Estimasi Biaya (Rp)",
-          "Status Usulan",
-          "Status Pelaksanaan",
-          "Catatan DPL",
-          "Bukti Google Drive",
-        ]
-      : [
-          "No",
-          "Kelompok",
-          "Kategori",
-          "Sumber",
-          "Deskripsi",
-          "Waktu Dibuat",
-          "Waktu Pelaksanaan",
-          "Biaya (Rp)",
-          "Status Usulan",
-          "Status Pelaksanaan",
-          "Catatan DPL",
-          "Bukti Google Drive",
-        ];
+    if (filteredProkers.length === 0) {
+      toast.error("Tidak ada data program kerja pada rentang tanggal yang dipilih.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Waktu Dibuat",
+      "Kelompok",
+      "Kelurahan",
+      "RW",
+      "DPL Pembimbing",
+      "Pengisi Data",
+      "NIM",
+      "Kategori",
+      "Sumber",
+      "Judul Program",
+      "Deskripsi Kegiatan",
+      "Waktu Pelaksanaan",
+      "Estimasi Biaya (Rp)",
+      "Status Usulan",
+      "Status Pelaksanaan",
+      "Catatan DPL",
+      "Bukti Google Drive",
+    ];
 
     const rows = filteredProkers.map((p, idx) => {
       const rwText = Array.isArray(p.cakupanRw) ? p.cakupanRw.join(", ") : "-";
-      if (isDeveloper) {
-        return [
-          p.nomor || idx + 1,
-          `"${formatIndonesianTimestamp(p.createdAt).full}"`,
-          `"${p.kelompokName || "-"}"`,
-          `"${p.kelurahan || "-"}"`,
-          `"${rwText}"`,
-          `"${p.dplName || "-"}"`,
-          `"${p.penginput?.nama || (p.sumber === "DPL" ? "DPL" : "Mahasiswa")}"`,
-          `"${p.penginput?.nim || "-"}"`,
-          `"${p.kategori || "Pemilahan"}"`,
-          `"${p.sumber || "Mahasiswa"}"`,
-          `"${(p.judul || "-").replace(/"/g, '""')}"`,
-          `"${p.deskripsi.replace(/"/g, '""')}"`,
-          `"${p.waktuPelaksanaan || "-"}"`,
-          p.kebutuhanBiaya,
-          `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
-          `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
-          `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
-          `"${p.linkGoogleDrive || "-"}"`,
-        ];
-      }
-
       return [
         p.nomor || idx + 1,
-        `"${p.kelompokName || "-"}"`,
-        `"${p.kategori || "Pemilahan"}"`,
-        `"${p.sumber || "Mahasiswa"}"`,
-        `"${p.deskripsi.replace(/"/g, '""')}"`,
-        `"${formatIndonesianTimestamp(p.createdAt).full}"`,
-        `"${p.waktuPelaksanaan || "-"}"`,
-        p.kebutuhanBiaya,
-        `"${normalizeStatusUsulan(p.statusUsulan, p.status)}"`,
-        `"${normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status)}"`,
-        `"${(p.catatanDpl || "-").replace(/"/g, '""')}"`,
-        `"${p.linkGoogleDrive || "-"}"`,
+        formatIndonesianTimestamp(p.createdAt).full,
+        p.kelompokName || "-",
+        p.kelurahan || "-",
+        rwText,
+        p.dplName || "-",
+        p.penginput?.nama || (p.sumber === "DPL" ? "DPL" : "Mahasiswa"),
+        p.penginput?.nim || "-",
+        p.kategori || "Pemilahan",
+        p.sumber || "Mahasiswa",
+        p.judul || "-",
+        p.deskripsi || "-",
+        p.waktuPelaksanaan || "-",
+        Number(p.kebutuhanBiaya || 0),
+        normalizeStatusUsulan(p.statusUsulan, p.status),
+        normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status),
+        p.catatanDpl || "-",
+        p.linkGoogleDrive || "-",
       ];
     });
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Program_Kerja_KKN_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 16 },
+      { wch: 10 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 25 },
+      { wch: 40 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 25 },
+      { wch: 25 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Program_Kerja");
+    XLSX.writeFile(wb, `Program_Kerja_KKN_${startDateFilter}_sd_${endDateFilter}.xlsx`);
+    toast.success(`Data program kerja (${filteredProkers.length} baris) berhasil diekspor ke XLSX!`);
   };
 
   const renderKategoriBadge = (kat?: string) => {
@@ -916,13 +919,6 @@ export const ProgramKerjaKkn: React.FC = () => {
             <Coins size={14} className="text-emerald-600 dark:text-emerald-400" />
             <span>Estimasi Biaya: Rp {totalBiaya.toLocaleString("id-ID")}</span>
           </div>
-          <button
-            onClick={handleExportCsv}
-            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-xl font-bold text-xs shadow-2xs transition-all cursor-pointer"
-          >
-            <Download size={14} className="text-emerald-600" />
-            Ekspor CSV
-          </button>
           {canModifyProker && (
             <button
               onClick={handleOpenAddModal}
@@ -1002,109 +998,157 @@ export const ProgramKerjaKkn: React.FC = () => {
       </div>
 
       {/* Toolbar Filter */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
-          {/* Filter 1: Kelompok */}
-          <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
-            {isDpl && kelompokList.length <= 1 ? (
-              <div className="w-full px-3 py-2 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-1.5 shadow-2xs">
-                <span className="truncate">{kelompokList[0]?.name || "Kelompok Binaan Anda"}</span>
-                <span className="text-[9.5px] uppercase font-black bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded shrink-0">
-                  Binaan
-                </span>
-              </div>
-            ) : (
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
+            {/* Filter 1: Kelompok */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
+              {isDpl && kelompokList.length <= 1 ? (
+                <div className="w-full px-3 py-2 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-1.5 shadow-2xs">
+                  <span className="truncate">{kelompokList[0]?.name || "Kelompok Binaan Anda"}</span>
+                  <span className="text-[9.5px] uppercase font-black bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded shrink-0">
+                    Binaan
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={selectedKelompokId}
+                  onChange={(e) => setSelectedKelompokId(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+                >
+                  {isManagement && <option value="ALL">Semua Kelompok</option>}
+                  {kelompokList.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Filter 2: Kategori */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kategori</span>
               <select
-                value={selectedKelompokId}
-                onChange={(e) => setSelectedKelompokId(e.target.value)}
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
               >
-                {isManagement && <option value="ALL">Semua Kelompok</option>}
-                {kelompokList.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
-                  </option>
-                ))}
+                <option value="ALL">Semua Kategori</option>
+                <option value="Pemilahan">Pemilahan</option>
+                <option value="Pengangkutan">Pengangkutan</option>
+                <option value="Pengolahan">Pengolahan</option>
+                <option value="Pemanfaatan">Pemanfaatan</option>
+                <option value="Edukasi & Sosialisasi">Edukasi & Sosialisasi</option>
+                <option value="Lainnya">Lainnya</option>
               </select>
-            )}
+            </div>
+
+            {/* Filter 3: Sumber */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Sumber</span>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              >
+                <option value="ALL">Semua Sumber</option>
+                <option value="Mahasiswa">Mahasiswa</option>
+                <option value="DPL">DPL</option>
+              </select>
+            </div>
+
+            {/* Filter 4: Status Usulan */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Usulan</span>
+              <select
+                value={statusUsulanFilter}
+                onChange={(e) => setStatusUsulanFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              >
+                <option value="ALL">Semua Usulan</option>
+                <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
+                <option value="DISETUJUI">Disetujui</option>
+                <option value="DITOLAK">Ditolak</option>
+              </select>
+            </div>
+
+            {/* Filter 5: Status Pelaksanaan */}
+            <div>
+              <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Pelaksanaan</span>
+              <select
+                value={statusPelaksanaanFilter}
+                onChange={(e) => setStatusPelaksanaanFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
+              >
+                <option value="ALL">Semua Pelaksanaan</option>
+                <option value="BELUM_MULAI">Belum Mulai</option>
+                <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
+                <option value="SELESAI">Selesai</option>
+              </select>
+            </div>
           </div>
 
-          {/* Filter 2: Kategori */}
-          <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kategori</span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-            >
-              <option value="ALL">Semua Kategori</option>
-              <option value="Pemilahan">Pemilahan</option>
-              <option value="Pengangkutan">Pengangkutan</option>
-              <option value="Pengolahan">Pengolahan</option>
-              <option value="Pemanfaatan">Pemanfaatan</option>
-              <option value="Edukasi & Sosialisasi">Edukasi & Sosialisasi</option>
-              <option value="Lainnya">Lainnya</option>
-            </select>
-          </div>
-
-          {/* Filter 3: Sumber */}
-          <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Sumber</span>
-            <select
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-            >
-              <option value="ALL">Semua Sumber</option>
-              <option value="Mahasiswa">Mahasiswa</option>
-              <option value="DPL">DPL</option>
-            </select>
-          </div>
-
-          {/* Filter 4: Status Usulan */}
-          <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Usulan</span>
-            <select
-              value={statusUsulanFilter}
-              onChange={(e) => setStatusUsulanFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-            >
-              <option value="ALL">Semua Usulan</option>
-              <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
-              <option value="DISETUJUI">Disetujui</option>
-              <option value="DITOLAK">Ditolak</option>
-            </select>
-          </div>
-
-          {/* Filter 5: Status Pelaksanaan */}
-          <div>
-            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Status Pelaksanaan</span>
-            <select
-              value={statusPelaksanaanFilter}
-              onChange={(e) => setStatusPelaksanaanFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer"
-            >
-              <option value="ALL">Semua Pelaksanaan</option>
-              <option value="BELUM_MULAI">Belum Mulai</option>
-              <option value="SEDANG_BERJALAN">Sedang Berlangsung</option>
-              <option value="SELESAI">Selesai</option>
-            </select>
+          {/* Filter 6: Cari Program Kerja */}
+          <div className="w-full md:w-64">
+            <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Cari program kerja</span>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Cari deskripsi kegiatan..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
+              />
+              <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
           </div>
         </div>
 
-        {/* Filter 6: Cari Program Kerja */}
-        <div className="w-full md:w-64">
-          <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Cari program kerja</span>
-          <div className="relative">
+        {/* Sub Filter Row: Date Range & Ekspor XLSX */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-slate-400 font-semibold flex items-center gap-1 text-[11px]">
+              <Calendar size={13} className="text-emerald-600" /> Filter Tanggal Dibuat:
+            </span>
             <input
-              type="text"
-              placeholder="Cari deskripsi kegiatan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:border-emerald-500 focus:bg-white transition font-medium"
+              type="date"
+              value={startDateFilter}
+              onChange={(e) => setStartDateFilter(e.target.value)}
+              className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
             />
-            <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <span className="text-slate-400 text-xs">s/d</span>
+            <input
+              type="date"
+              value={endDateFilter}
+              onChange={(e) => setEndDateFilter(e.target.value)}
+              className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+            />
+            {(startDateFilter || endDateFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDateFilter("");
+                  setEndDateFilter("");
+                }}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 ml-1 cursor-pointer"
+              >
+                <RotateCcw size={11} /> Reset
+              </button>
+            )}
+
+            {/* 1 Tombol Standar Ekspor XLSX */}
+            <button
+              type="button"
+              onClick={handleExportXlsx}
+              disabled={!startDateFilter || !endDateFilter}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data program kerja ke XLSX"}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
+            </button>
           </div>
         </div>
       </div>
