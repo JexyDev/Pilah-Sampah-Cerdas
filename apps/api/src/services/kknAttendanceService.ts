@@ -3982,6 +3982,10 @@ export class KknAttendanceService {
       }),
     ]);
 
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const minHours = Number(ruleConfigs?.attendanceMinDurationHours || ruleConfigs?.targetHarianJam || 4);
+    const targetMinMenit = minHours * 60;
+
     // Calculate aggregated summary and per-student cumulative stats
     let hadirMemenuhiCount = 0;
     let hadirKurangCount = 0;
@@ -3998,19 +4002,17 @@ export class KknAttendanceService {
 
       let mins = storedMinsAgg;
       if (st === "BERLANGSUNG" && !r.checkOutAt && r.attendedAt) {
-        // Prioritaskan DB, fallback live kalau DB masih 0
-        const liveMins = calculateLiveInZoneMinutes(r as any);
-        mins = storedMinsAgg > 0 ? storedMinsAgg : liveMins;
+        mins = calculateLiveInZoneMinutes(r);
       } else if (mins === 0 && r.attendedAt && r.checkOutAt) {
-        const diff = Math.floor((new Date(r.checkOutAt).getTime() - new Date(r.attendedAt).getTime()) / 60000);
+        const diff = Math.floor((r.checkOutAt.getTime() - r.attendedAt.getTime()) / 60000);
         mins = Math.min(480, Math.max(0, diff));
       }
 
       totalMenitKumulatif += mins;
 
-      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 240)) {
+      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= targetMinMenit)) {
         hadirMemenuhiCount++;
-      } else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < 240)) {
+      } else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < targetMinMenit)) {
         hadirKurangCount++;
       } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") {
         berlangsungCount++;
@@ -4050,8 +4052,8 @@ export class KknAttendanceService {
       const agg = studentAggMap.get(sId)!;
       agg.totalSessions++;
       agg.totalMinutes += mins;
-      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= 240)) agg.hadirMemenuhi++;
-      else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < 240)) agg.hadirKurang++;
+      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= targetMinMenit)) agg.hadirMemenuhi++;
+      else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT" || (st === "HADIR" && mins < targetMinMenit)) agg.hadirKurang++;
       else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") agg.berlangsung++;
       else if (st === "TERJEDA") agg.terjeda++;
       else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
@@ -4090,7 +4092,7 @@ export class KknAttendanceService {
         actualMins = Math.min(480, Math.max(0, diff));
       }
 
-      const isMemenuhi = st === "HADIR_MEMENUHI" || (["HADIR", "SELESAI"].includes(st) && actualMins >= 240);
+      const isMemenuhi = st === "HADIR_MEMENUHI" || (["HADIR", "SELESAI"].includes(st) && actualMins >= targetMinMenit);
 
       let statusDisplay = att.status;
       if (st === "HADIR_MEMENUHI") statusDisplay = "Hadir & Memenuhi";
@@ -4130,8 +4132,8 @@ export class KknAttendanceService {
         durasiFormatted,
         durasiAktualMenit: actualMins,
         durasiAktualFormatted: durasiFormatted,
-        targetMinMenit: 240,
-        rasioKehadiran: Number(((actualMins / 240) * 100).toFixed(1)),
+        targetMinMenit,
+        rasioKehadiran: Number(((actualMins / targetMinMenit) * 100).toFixed(1)),
         status: att.status,
         statusDisplay,
         isMemenuhiDurasi: isMemenuhi,
