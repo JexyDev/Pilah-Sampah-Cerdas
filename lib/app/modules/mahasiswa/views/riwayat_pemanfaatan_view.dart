@@ -131,6 +131,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryBlue,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: Size.zero,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -143,6 +144,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryGreen,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: Size.zero,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -155,6 +157,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                     foregroundColor: Colors.red,
                     side: const BorderSide(color: Colors.red),
                     padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: Size.zero,
                   ),
                 ),
               ],
