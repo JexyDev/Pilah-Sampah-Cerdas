@@ -408,7 +408,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               decoration: BoxDecoration(
                 color: AppColors.primaryBlue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(10),
-                border: Border(left: const BorderSide(color: AppColors.primaryBlue, width: 4)),
+                border: const Border(left: BorderSide(color: AppColors.primaryBlue, width: 4)),
               ),
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
