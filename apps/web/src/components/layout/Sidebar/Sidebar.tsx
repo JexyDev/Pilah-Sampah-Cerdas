@@ -29,6 +29,7 @@ import {
   Coins,
   Radio,
   BookOpen,
+  X,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -49,6 +50,7 @@ interface NavItemProps {
   icon: LucideIcon;
   label: string;
   badge?: number;
+  onClick?: () => void;
 }
 
 // Helper penentu rute aktif yang akurat
@@ -250,7 +252,7 @@ const checkRouteActive = (
   return true;
 };
 
-const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
+const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge, onClick }) => {
   const location = useLocation();
 
   const isCurrentActive = useMemo(() => {
@@ -260,6 +262,7 @@ const NavItem: React.FC<NavItemProps> = ({ to, icon: Icon, label, badge }) => {
   return (
     <Link
       to={to}
+      onClick={onClick}
       className={`relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-300 ease-out text-[12.5px] group overflow-hidden transform-gpu z-10 ${
         isCurrentActive
           ? "bg-[#f2f8f4]/90 dark:bg-emerald-950/80 text-[#035941] dark:text-emerald-300 font-bold shadow-xs border border-[#c8e6b2]/90 dark:border-emerald-700/50 scale-[1.01] backdrop-blur-[2px]"
@@ -537,7 +540,8 @@ const NavGroup: React.FC<{
   icon: LucideIcon;
   label: string;
   items: Array<{ to: string; label: string }>;
-}> = ({ icon: Icon, label, items }) => {
+  onItemClick?: () => void;
+}> = ({ icon: Icon, label, items, onItemClick }) => {
   const location = useLocation();
 
   const isSubActive = (subTo: string, index: number) => {
@@ -586,6 +590,7 @@ const NavGroup: React.FC<{
                 key={sub.to}
                 to={sub.to}
                 title={sub.label}
+                onClick={onItemClick}
                 className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[12px] transition-all duration-200 group ${
                   isActive
                     ? "bg-[#f2f8f4] dark:bg-emerald-950/70 text-[#035941] dark:text-emerald-400 font-bold border border-[#c8e6b2]/60 shadow-2xs"
@@ -649,6 +654,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleMobileItemClick = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      onClose();
+    }
+  };
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -1367,10 +1378,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           /* Render Full Sidebar */
           <div className="relative z-10 flex flex-col h-full justify-between overflow-hidden">
             {/* Top Brand Logo Header Section */}
-            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
+            <div className="pt-4 pb-4 px-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between relative overflow-hidden bg-white dark:bg-slate-900 shrink-0">
               {/* ponytail: FallingLeavesBackground di-hide sesuai permintaan */}
               {/* <FallingLeavesBackground /> */}
-              <Link to="/dasbor" className="flex items-center justify-center gap-3 group cursor-pointer relative z-10 px-2 w-full text-center">
+              <Link
+                to="/dasbor"
+                onClick={handleMobileItemClick}
+                className="flex items-center gap-3 group cursor-pointer relative z-10 px-1 text-left min-w-0 flex-1"
+              >
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
@@ -1378,7 +1393,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 />
                 <div className="flex flex-col justify-center text-left min-w-0">
                   {/* ponytail: static header layout; abstract to brand config if dynamic multi-tenant text is required */}
-                  <h1 className="text-[20px] font-black tracking-wide text-[#035941] dark:text-emerald-400 uppercase leading-none mb-1 truncate transition-opacity group-hover:opacity-90">
+                  <h1 className="text-[19px] font-black tracking-wide text-[#035941] dark:text-emerald-400 uppercase leading-none mb-1 truncate transition-opacity group-hover:opacity-90">
                     BERSEKA
                   </h1>
                   <p className="text-[10px] font-bold text-[#58A621] dark:text-emerald-500 tracking-tight leading-tight truncate">
@@ -1386,6 +1401,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                   </p>
                 </div>
               </Link>
+              {/* Mobile Close Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="lg:hidden w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition cursor-pointer shrink-0 ml-2"
+                title="Tutup Menu"
+              >
+                <X size={18} />
+              </button>
             </div>
 
             {/* Scrollable Navigation Sections */}
@@ -1410,20 +1434,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                               to={childrenToRender[0].to}
                               icon={item.icon}
                               label={childrenToRender[0].label}
+                              onClick={handleMobileItemClick}
                             />
                           );
                         }
                         return (
                           <NavGroup
-                              key={item.label}
-                              icon={item.icon}
-                              label={item.label}
-                              items={childrenToRender}
+                            key={item.label}
+                            icon={item.icon}
+                            label={item.label}
+                            items={childrenToRender}
+                            onItemClick={handleMobileItemClick}
                           />
                         );
                       }
                       return (
-                        <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+                        <NavItem
+                          key={item.to}
+                          to={item.to}
+                          icon={item.icon}
+                          label={item.label}
+                          onClick={handleMobileItemClick}
+                        />
                       );
                     })}
                   </div>

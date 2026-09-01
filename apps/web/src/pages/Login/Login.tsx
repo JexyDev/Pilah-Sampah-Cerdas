@@ -264,7 +264,7 @@ const Login: React.FC = () => {
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-6 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+        <div className="col-span-12 md:col-span-6 p-5 sm:p-8 md:p-10 flex flex-col justify-between bg-white space-y-6">
 
           <div className="space-y-5">
 
@@ -318,13 +318,14 @@ const Login: React.FC = () => {
                     onBlur={handleIdentifierBlur}
                     disabled={isStoreLoading || isLocalLoading}
                   />
-                  {identifierError && (
-                    <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 absolute -bottom-[18px] left-0">
-                      <AlertTriangle size={11} />
-                      {identifierError}
-                    </p>
-                  )}
                 </div>
+
+                {identifierError && (
+                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
+                    <AlertTriangle size={11} />
+                    {identifierError}
+                  </p>
+                )}
               </div>
 
               {/* Password Input */}
@@ -415,20 +416,20 @@ const Login: React.FC = () => {
       </div>
 
       {/* Floating Action Button: Download Aplikasi Seluler APK */}
-      <div className="fixed bottom-6 right-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">
         <div className="relative flex items-center justify-center">
           {/* Outer Animated Ping Ripple Effect */}
           <span className="absolute -inset-1.5 rounded-full bg-[#035941]/30 animate-ping opacity-75 pointer-events-none" />
           
           <Link
             to="/download"
-            className="relative w-14 h-14 bg-[#035941] hover:bg-[#024633] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#035941]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
+            className="relative w-12 h-12 sm:w-14 sm:h-14 bg-[#035941] hover:bg-[#024633] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#035941]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
             aria-label="Unduh Aplikasi Seluler BERSEKA (APK)"
           >
-            <Download size={22} className="text-white group-hover:rotate-12 transition-transform" />
+            <Download size={20} className="sm:w-[22px] sm:h-[22px] text-white group-hover:rotate-12 transition-transform" />
             
             {/* Tooltip on Hover */}
-            <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800">
+            <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800 hidden sm:block">
               Unduh Aplikasi Seluler BERSEKA (APK)
             </span>
           </Link>
