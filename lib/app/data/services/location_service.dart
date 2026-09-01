@@ -50,6 +50,29 @@ class LocationService {
     }
 
     if (permission == LocationPermission.deniedForever) {
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Izin Lokasi Diblokir', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: const Text('Fitur ini wajib menggunakan GPS. Silakan buka Pengaturan HP Anda dan izinkan akses lokasi.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  Geolocator.openAppSettings();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                child: const Text('Pengaturan'),
+              ),
+            ],
+          ),
+        );
+      }
       return LocationPermission.deniedForever;
     }
 

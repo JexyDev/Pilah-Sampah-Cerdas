@@ -116,7 +116,8 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
         }
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Izin lokasi ditolak permanen.');
+        await Geolocator.openAppSettings();
+        throw Exception('Akses GPS ditolak permanen. Silakan nyalakan di Pengaturan lalu coba lagi.');
       }
 
       final position = await Geolocator.getCurrentPosition(

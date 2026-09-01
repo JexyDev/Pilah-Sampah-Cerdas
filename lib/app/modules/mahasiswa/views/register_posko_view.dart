@@ -176,7 +176,8 @@ class _RegisterPoskoViewState extends ConsumerState<RegisterPoskoView> {
         }
       }
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Izin lokasi ditolak permanen.');
+        await Geolocator.openAppSettings();
+        throw Exception('Akses GPS ditolak permanen. Silakan nyalakan di Pengaturan lalu coba lagi.');
       }
 
       final position = await Geolocator.getCurrentPosition(
