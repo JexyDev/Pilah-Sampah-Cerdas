@@ -258,8 +258,12 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
   void _showEditPemanfaatanDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
     final id = item['id'].toString();
-    final tcTeknologi = TextEditingController(text: item['jenisProgram']?.toString());
-    final tcBerat = TextEditingController(text: item['jumlahBahanMasukKg']?.toString());
+    final tcProgram = TextEditingController(text: item['namaProgram']?.toString() ?? '');
+    final tcKategori = TextEditingController(text: item['bahanBaku']?.toString() ?? '');
+    final tcTeknologi = TextEditingController(text: item['jenisProgram']?.toString() ?? '');
+    final tcBerat = TextEditingController(text: item['jumlahBahanMasukKg']?.toString() ?? '');
+    final tcUnit = TextEditingController(text: item['unitBahanBaku']?.toString() ?? 'Kg');
+    final tcDeskripsi = TextEditingController(text: item['catatan']?.toString() ?? '');
     
     showDialog(
       context: context,
@@ -271,66 +275,74 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text('Program Pemanfaatan', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 4),
+              TextField(controller: tcProgram, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height: 12),
+              const Text('Kategori / Bahan Baku', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 4),
+              TextField(controller: tcKategori, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height: 12),
               const Text('Metode / Teknologi', style: TextStyle(fontSize: 12, color: Colors.black54)),
               const SizedBox(height: 4),
-              TextField(
-                controller: tcTeknologi,
-                decoration: InputDecoration(
-                  isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
+              TextField(controller: tcTeknologi, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Volume / Berat', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        TextField(controller: tcBerat, keyboardType: TextInputType.number, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Unit', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        TextField(controller: tcUnit, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text('Berat Sampah (Kg)', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 12),
+              const Text('Catatan / Deskripsi', style: TextStyle(fontSize: 12, color: Colors.black54)),
               const SizedBox(height: 4),
-              TextField(
-                controller: tcBerat,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'Maks. 50',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
+              TextField(controller: tcDeskripsi, maxLines: 2, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
             ],
           ),
         ),
         actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 16)),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 16)), child: const Text('Batal', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 0,
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0, minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
             onPressed: () async {
               final val = double.tryParse(tcBerat.text) ?? 0;
-              if (val <= 0 || val > 50) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Berat harus antara 0 - 50 Kg')));
-                return;
-              }
               Navigator.pop(ctx);
               try {
                 final repo = ref.read(kknRepositoryProvider);
                 await repo.updateLogbookPemanfaatan(id, {
+                  'program': tcProgram.text,
+                  'bahanBaku': tcKategori.text,
                   'teknologi': tcTeknologi.text,
                   'volumeBahanBaku': val,
+                  'unitBahanBaku': tcUnit.text,
+                  'deskripsi': tcDeskripsi.text,
                 });
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
-                }
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
                 ref.invalidate(riwayatPemanfaatanProvider);
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                }
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
               }
             },
             child: const Text('Simpan', style: TextStyle(color: Colors.white)),
@@ -342,7 +354,8 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
   void _showEditPanenDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
     final id = item['id'].toString();
-    final tcHasil = TextEditingController(text: item['jumlahHasilKg']?.toString());
+    final tcHasil = TextEditingController(text: item['jumlahHasilKg']?.toString() ?? '');
+    final tcNilaiEkonomi = TextEditingController(text: item['luasLahanM2']?.toString() ?? '');
     
     showDialog(
       context: context,
@@ -354,55 +367,35 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Jumlah Hasil (Kg/Liter)', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const Text('Jumlah Hasil Output', style: TextStyle(fontSize: 12, color: Colors.black54)),
               const SizedBox(height: 4),
-              TextField(
-                controller: tcHasil,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'Maks. 100',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
+              TextField(controller: tcHasil, keyboardType: TextInputType.number, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height: 12),
+              const Text('Nilai Ekonomi (Rp)', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 4),
+              TextField(controller: tcNilaiEkonomi, keyboardType: TextInputType.number, decoration: InputDecoration(isDense: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
             ],
           ),
         ),
         actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 16)),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 16)), child: const Text('Batal', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              elevation: 0,
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0, minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10)),
             onPressed: () async {
-              final val = double.tryParse(tcHasil.text) ?? 0;
-              if (val <= 0 || val > 100) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Hasil harus antara 0 - 100')));
-                return;
-              }
+              final valHasil = double.tryParse(tcHasil.text) ?? 0;
+              final valEkonomi = double.tryParse(tcNilaiEkonomi.text) ?? 0;
               Navigator.pop(ctx);
               try {
                 final repo = ref.read(kknRepositoryProvider);
                 await repo.updatePanenHasil(id, {
-                  'hasil': val,
+                  'hasil': valHasil,
+                  'luasLahanM2': valEkonomi,
                 });
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
-                }
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
                 ref.invalidate(riwayatPemanfaatanProvider);
               } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                }
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
               }
             },
             child: const Text('Simpan', style: TextStyle(color: Colors.white)),
