@@ -780,6 +780,45 @@ export class KknController {
     }
   }
 
+
+  async updatePanenHasil(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const data = await prisma.pemanfaatan.update({
+        where: { id },
+        data: {
+          ...(req.body.hasil !== undefined && { hasil: Number(req.body.hasil) }),
+        }
+      });
+      res.status(200).json({ success: true, message: "Berhasil update panen", data });
+    } catch (e: any) {
+      console.error("[KknController] updatePanenHasil error:", e);
+      res.status(400).json({ success: false, message: e.message });
+    }
+  }
+
+  async deleteLogbookPemanfaatan(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await prisma.pemanfaatan.delete({ where: { id } });
+      res.status(200).json({ success: true, message: "Berhasil hapus data" });
+    } catch (e: any) {
+      console.error("[KknController] deleteLogbookPemanfaatan error:", e);
+      res.status(400).json({ success: false, message: e.message });
+    }
+  }
+
+  async deletePanenHasil(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await prisma.pemanfaatan.update({ where: { id }, data: { hasil: 0 } });
+      res.status(200).json({ success: true, message: "Berhasil hapus panen (kembali ke PROSES)" });
+    } catch (e: any) {
+      console.error("[KknController] deletePanenHasil error:", e);
+      res.status(400).json({ success: false, message: e.message });
+    }
+  }
+
   async getUnharvestedLogbooks(req: Request, res: Response) {
     try {
       const data = await kknService.getUnharvestedLogbooks(req.user!.userId);
