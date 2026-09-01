@@ -213,11 +213,7 @@ export class TransactionService {
     });
   }
 
-  async updateTransactionStatus(
-    id: string,
-    status: string,
-    catatanPenolakan?: string
-  ) {
+  async updateTransactionStatus(id: string, status: string, catatanPenolakan?: string) {
     const formattedStatus = status.toUpperCase();
 
     return prisma.$transaction(async (tx) => {
@@ -280,7 +276,7 @@ export class TransactionService {
             if (setoranOtomatis.warga?.fcmToken) {
               await notificationIntegrationService.sendSilentDataPush(
                 setoranOtomatis.warga.fcmToken,
-                { event: 'REFRESH_POIN_WARGA', poinTambahan: pointsEarned.toString() }
+                { event: "REFRESH_POIN_WARGA", poinTambahan: pointsEarned.toString() }
               );
             }
           }

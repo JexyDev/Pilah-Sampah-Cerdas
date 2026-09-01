@@ -14,7 +14,12 @@ function sanitizeString(str?: string | null): string {
     .trim();
 }
 
-function calculateNilaiEkonomi(program: string, teknologi: string, hasil: number, _unitHasil: string): number {
+function calculateNilaiEkonomi(
+  program: string,
+  teknologi: string,
+  hasil: number,
+  _unitHasil: string
+): number {
   const h = Number(hasil) || 0;
   if (h <= 0) return 0;
   const t = (teknologi || "").toLowerCase();
@@ -27,7 +32,12 @@ function calculateNilaiEkonomi(program: string, teknologi: string, hasil: number
   if (combined.includes("poc") || combined.includes("cair") || combined.includes("pupuk cair")) {
     return Math.round(h * 15000); // Rp 15.000 / Liter
   }
-  if (combined.includes("bank") || combined.includes("anorganik") || combined.includes("dino") || combined.includes("hinodutro")) {
+  if (
+    combined.includes("bank") ||
+    combined.includes("anorganik") ||
+    combined.includes("dino") ||
+    combined.includes("hinodutro")
+  ) {
     return Math.round(h * 3000); // Rp 3.000 / Kg
   }
   return Math.round(h * 2500); // Rp 2.500 / Kg default kompos
@@ -41,10 +51,19 @@ function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string): strin
   if (combined.includes("maggot") || combined.includes("bsf")) {
     return "Maggot BSF";
   }
-  if (combined.includes("poc") || combined.includes("pupuk organik cair") || combined.includes("pupuk cair")) {
+  if (
+    combined.includes("poc") ||
+    combined.includes("pupuk organik cair") ||
+    combined.includes("pupuk cair")
+  ) {
     return "Pupuk Organik Cair (POC)";
   }
-  if (combined.includes("bank") || combined.includes("anorganik") || combined.includes("dino") || combined.includes("hinodutro")) {
+  if (
+    combined.includes("bank") ||
+    combined.includes("anorganik") ||
+    combined.includes("dino") ||
+    combined.includes("hinodutro")
+  ) {
     return "Bank Sampah Anorganik";
   }
   if (combined.includes("loseda")) {
@@ -56,7 +75,11 @@ function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string): strin
   if (combined.includes("takakura")) {
     return "Kompos Takakura";
   }
-  if (combined.includes("buruan sae") || combined.includes("kompos") || combined.includes("organik")) {
+  if (
+    combined.includes("buruan sae") ||
+    combined.includes("kompos") ||
+    combined.includes("organik")
+  ) {
     return "Kompos Organik (Buruan Sae)";
   }
   if (rawTeknologi && !rawTeknologi.includes(" - ")) {
@@ -106,9 +129,10 @@ function formatPemanfaatanRecord(item: any) {
 
   // Read recorded economic value if saved in luasLahanM2 / direct field, else calculate
   const recordedEkonomi = Number(item.luasLahanM2) || 0;
-  const nilaiEkonomi = recordedEkonomi > 0 && hasil > 0
-    ? recordedEkonomi
-    : calculateNilaiEkonomi(item.program, cleanCategory, hasil, item.unitHasil);
+  const nilaiEkonomi =
+    recordedEkonomi > 0 && hasil > 0
+      ? recordedEkonomi
+      : calculateNilaiEkonomi(item.program, cleanCategory, hasil, item.unitHasil);
 
   const rawProgram = item.program || "Program Pengolahan Mandiri";
   let cleanProgramName = rawProgram.replace(/\*\*/g, "").replace(/\*/g, "").split("\n")[0].trim();
@@ -126,7 +150,11 @@ function formatPemanfaatanRecord(item: any) {
     ...item,
     namaProgram: cleanProgramName || "Program Pengolahan Mandiri",
     jenisProgram: cleanCategory,
-    kategoriBahan: (item.bahanBaku || "").toLowerCase().includes("anorganik") || cleanCategory.includes("Bank Sampah") ? "ANORGANIK" : "ORGANIK",
+    kategoriBahan:
+      (item.bahanBaku || "").toLowerCase().includes("anorganik") ||
+      cleanCategory.includes("Bank Sampah")
+        ? "ANORGANIK"
+        : "ORGANIK",
     jumlahBahanMasukKg: bahanMasuk,
     jumlahHasilKg: hasil,
     unitHasil: item.unitHasil || "Kg",
@@ -337,7 +365,10 @@ export class PemanfaatanService {
         });
       }
     } catch (err) {
-      console.warn("[PemanfaatanService] Prisma delegate failed, using direct query fallback:", err);
+      console.warn(
+        "[PemanfaatanService] Prisma delegate failed, using direct query fallback:",
+        err
+      );
     }
 
     // Direct SQL Fallback
@@ -382,7 +413,13 @@ export class PemanfaatanService {
       rwId: r.rwId,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-      rw: r.rwName ? { id: r.rwId, name: r.rwName, kelurahan: r.kelurahanName ? { name: r.kelurahanName } : null } : null,
+      rw: r.rwName
+        ? {
+            id: r.rwId,
+            name: r.rwName,
+            kelurahan: r.kelurahanName ? { name: r.kelurahanName } : null,
+          }
+        : null,
     }));
   }
 
@@ -440,7 +477,9 @@ export class PemanfaatanService {
       const isiKritikSaran = cleanIsi.replace(/'/g, "''");
       const rwIdVal = data.rwId ? data.rwId : "NULL";
       const fotoVal = data.fotoBuktiUrl ? `'${data.fotoBuktiUrl.replace(/'/g, "''")}'` : "NULL";
-      const programKerjaIdVal = data.programKerjaId ? `'${data.programKerjaId.replace(/'/g, "''")}'` : "NULL";
+      const programKerjaIdVal = data.programKerjaId
+        ? `'${data.programKerjaId.replace(/'/g, "''")}'`
+        : "NULL";
 
       await prisma.$executeRawUnsafe(`
         INSERT INTO "kritik_saran_pemanfaatan" (
@@ -467,7 +506,10 @@ export class PemanfaatanService {
     }
 
     try {
-      websocketService.broadcastPemanfaatanFeedback({ action: "NEW_FEEDBACK", data: createdFeedback });
+      websocketService.broadcastPemanfaatanFeedback({
+        action: "NEW_FEEDBACK",
+        data: createdFeedback,
+      });
     } catch (_e) {}
 
     return createdFeedback;
@@ -523,11 +565,20 @@ export class PemanfaatanService {
         WHERE "id" = '${safeId}'
       `);
 
-      updatedFeedback = { id, tanggapan: cleanTanggapan, ditanggapiOleh: cleanPenanggap, status: cleanStatus, ditanggapiPada: new Date() };
+      updatedFeedback = {
+        id,
+        tanggapan: cleanTanggapan,
+        ditanggapiOleh: cleanPenanggap,
+        status: cleanStatus,
+        ditanggapiPada: new Date(),
+      };
     }
 
     try {
-      websocketService.broadcastPemanfaatanFeedback({ action: "RESPOND_FEEDBACK", data: updatedFeedback });
+      websocketService.broadcastPemanfaatanFeedback({
+        action: "RESPOND_FEEDBACK",
+        data: updatedFeedback,
+      });
     } catch (_e) {}
 
     return updatedFeedback;
@@ -537,11 +588,20 @@ export class PemanfaatanService {
     // Check ownership or admin permissions
     if (requestUser) {
       const userRole = String(requestUser.role || "").toUpperCase();
-      const isAdmin = ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "RW", "PANITIA_TASKFORCE"].includes(userRole);
-      
+      const isAdmin = [
+        "DEVELOPER",
+        "SUPER_USER",
+        "ADMIN_DLH",
+        "PEMIMPIN",
+        "RW",
+        "PANITIA_TASKFORCE",
+      ].includes(userRole);
+
       if (!isAdmin) {
         // If not admin, check if user is the author
-        const existing = await prisma.kritikSaranPemanfaatan.findUnique({ where: { id } }).catch(() => null);
+        const existing = await prisma.kritikSaranPemanfaatan
+          .findUnique({ where: { id } })
+          .catch(() => null);
         const userId = requestUser.userId || requestUser.id;
         if (existing && existing.userId !== userId) {
           throw new Error("FORBIDDEN_DELETE_FEEDBACK");
@@ -578,4 +638,3 @@ export class PemanfaatanService {
 }
 
 export const pemanfaatanService = new PemanfaatanService();
-

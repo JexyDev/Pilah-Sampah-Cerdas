@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { redisService } from "./redisService.js";
 
-
 interface ResolvedAreaContext {
   isFiltered: boolean;
   rwIds: number[];
@@ -47,8 +46,12 @@ function isWilayahFiltered(wilayah?: string): boolean {
 }
 
 // ponytail: majority-rule classification, mirrors transactionController.ts. Extract to shared util if a 3rd module needs it.
-function isOrganikMajority(log: { hasilKlasifikasiAi?: string | null; confidenceAi?: any }): boolean {
-  const conf = log.confidenceAi !== null && log.confidenceAi !== undefined ? Number(log.confidenceAi) : 95;
+function isOrganikMajority(log: {
+  hasilKlasifikasiAi?: string | null;
+  confidenceAi?: any;
+}): boolean {
+  const conf =
+    log.confidenceAi !== null && log.confidenceAi !== undefined ? Number(log.confidenceAi) : 95;
   const confVal = conf <= 1 ? conf * 100 : conf;
   const rawClass = (log.hasilKlasifikasiAi || "organik").toLowerCase();
   const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
@@ -61,7 +64,10 @@ async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext
     return { isFiltered: false, rwIds: [], kelurahanIds: [], kelurahanNames: [] };
   }
 
-  const parts = wilayah!.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = wilayah!
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   const foundRwIds = new Set<number>();
   const foundKelIds = new Set<string>();
   const foundKelNames = new Set<string>();
@@ -117,7 +123,9 @@ async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext
           { name: { contains: part, mode: "insensitive" } },
           { name: { contains: stripped, mode: "insensitive" } },
           ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
-          ...(rawRwNum ? [{ name: { contains: `RW ${rawRwNum}`, mode: "insensitive" as const } }] : []),
+          ...(rawRwNum
+            ? [{ name: { contains: `RW ${rawRwNum}`, mode: "insensitive" as const } }]
+            : []),
         ],
       },
       select: { id: true, kelurahanId: true, kelurahan: { select: { name: true } } },
@@ -148,8 +156,13 @@ export const dashboardService = {
       const conditions: any[] = [];
       if (rwIds.length > 0) conditions.push({ id: { in: rwIds } });
       if (kelurahanIds.length > 0) conditions.push({ kelurahanId: { in: kelurahanIds } });
-      if (kelurahanNames.length > 0) conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-      return conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : { OR: conditions }) : undefined;
+      if (kelurahanNames.length > 0)
+        conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+      return conditions.length > 0
+        ? conditions.length === 1
+          ? conditions[0]
+          : { OR: conditions }
+        : undefined;
     };
 
     const getBinMatch = () => {
@@ -162,9 +175,15 @@ export const dashboardService = {
       }
       if (kelurahanNames.length > 0) {
         conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-        conditions.push({ rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } });
+        conditions.push({
+          rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
+        });
       }
-      return conditions.length > 0 ? (conditions.length === 1 ? conditions[0] : { OR: conditions }) : undefined;
+      return conditions.length > 0
+        ? conditions.length === 1
+          ? conditions[0]
+          : { OR: conditions }
+        : undefined;
     };
 
     const rtRwMatch = getRtRwMatch();
@@ -205,10 +224,7 @@ export const dashboardService = {
     // 1. Total Warga Aktif
     const wargaWhere: any = { role: { name: "WARGA" } };
     if (isFiltered && rtRwMatch) {
-      wargaWhere.OR = [
-        { rw: rtRwMatch },
-        { households: { some: { rw: rtRwMatch } } },
-      ];
+      wargaWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
     if (dateFilter) wargaWhere.createdAt = dateFilter;
 
@@ -226,10 +242,7 @@ export const dashboardService = {
     // Total Users
     const usersWhere: any = {};
     if (isFiltered && rtRwMatch) {
-      usersWhere.OR = [
-        { rw: rtRwMatch },
-        { households: { some: { rw: rtRwMatch } } },
-      ];
+      usersWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
     }
     if (dateFilter) usersWhere.createdAt = dateFilter;
 
@@ -259,10 +272,7 @@ export const dashboardService = {
     const aiWhere: any = {};
     if (isFiltered && rtRwMatch) {
       aiWhere.user = {
-        OR: [
-          { rw: rtRwMatch },
-          { households: { some: { rw: rtRwMatch } } },
-        ],
+        OR: [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }],
       };
     }
     if (dateFilter) aiWhere.createdAt = dateFilter;
@@ -280,10 +290,7 @@ export const dashboardService = {
     // 4. Peringatan Tempat Sampah Penuh (volume > 90% of maxCapacity)
     const binsWhere: any = {};
     if (isFiltered && binMatch) {
-      binsWhere.OR = [
-        binMatch,
-        ...(rtRwMatch ? [{ rw: rtRwMatch }] : []),
-      ];
+      binsWhere.OR = [binMatch, ...(rtRwMatch ? [{ rw: rtRwMatch }] : [])];
     }
     if (dateFilter) binsWhere.createdAt = dateFilter;
 
@@ -330,10 +337,7 @@ export const dashboardService = {
     const pointsWhere: any = {};
     if (isFiltered && rtRwMatch) {
       pointsWhere.user = {
-        OR: [
-          { rw: rtRwMatch },
-          { households: { some: { rw: rtRwMatch } } },
-        ],
+        OR: [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }],
       };
     }
     if (dateFilter) pointsWhere.createdAt = dateFilter;
@@ -406,28 +410,114 @@ export const dashboardService = {
     if (activeUserIds.length > 0) {
       const activeUsers = await prisma.user.findMany({
         where: { id: { in: activeUserIds } },
-        include: { role: true },
+        include: {
+          role: true,
+          studentProfile: { select: { id: true } },
+          petugasProfile: { select: { id: true } },
+          dplKelompok: { select: { id: true } },
+        },
       });
 
       activeUsers.forEach((u) => {
         const roleName = (u.role?.name || "").toUpperCase();
-        if (roleName.includes("ADMIN") || roleName.includes("SUPER") || roleName.includes("TASKFORCE") || roleName.includes("DEVELOPER")) {
-          activeAdmin += 1;
-        } else if (roleName.includes("CAMAT") || roleName.includes("LURAH") || roleName.includes("PEMIMPIN")) {
-          activeOperator += 1;
-        } else if (roleName.includes("RW")) {
-          activeRw += 1;
-        } else if (roleName.includes("DPL") || roleName.includes("DOSEN")) {
-          activeDpl += 1;
-        } else if (roleName.includes("RESIDU")) {
-          activeResidu += 1;
-        } else if (roleName.includes("KKN") || roleName.includes("MAHASISWA")) {
+
+        // 1. Mahasiswa KKN (Role MAHASISWA_KKN atau memiliki studentProfile)
+        const isKkn =
+          roleName === "MAHASISWA_KKN" ||
+          roleName.includes("KKN") ||
+          roleName.includes("MAHASISWA") ||
+          Boolean(u.studentProfile);
+
+        // 2. Dosen DPL (Role DPL / DOSEN / PENDAMPING / MPL atau memiliki kelompok bimbingan KKN)
+        const isDpl =
+          !isKkn &&
+          (roleName === "DPL" ||
+            roleName === "DOSEN_PEMBIMBING" ||
+            roleName === "DOSEN_PENDAMPING" ||
+            roleName === "DOSEN_PENDAMPING_LAPANGAN" ||
+            roleName.includes("DPL") ||
+            roleName.includes("DOSEN") ||
+            roleName.includes("PENDAMPING") ||
+            roleName.includes("MPL") ||
+            (u.dplKelompok && u.dplKelompok.length > 0));
+
+        // 3. Operator (DLH / Camat / Lurah / Pemimpin / Pimpinan)
+        const isOperator =
+          !isKkn &&
+          !isDpl &&
+          (roleName === "ADMIN_DLH" ||
+            roleName === "CAMAT" ||
+            roleName === "LURAH" ||
+            roleName === "PEMIMPIN" ||
+            roleName.includes("DLH") ||
+            roleName.includes("CAMAT") ||
+            roleName.includes("LURAH") ||
+            roleName.includes("PEMIMPIN") ||
+            roleName.includes("PIMPINAN") ||
+            roleName.includes("OPERATOR"));
+
+        // 4. Petugas Residu & Pengangkut
+        const isResidu =
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          (roleName === "PETUGAS_RESIDU" ||
+            roleName === "PENGANGKUT" ||
+            roleName.includes("RESIDU") ||
+            roleName.includes("PENGANGKUT") ||
+            roleName.includes("PETUGAS") ||
+            Boolean(u.petugasProfile));
+
+        // 5. Rukun Warga & RT (RW / RT)
+        const isRw =
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          !isResidu &&
+          (roleName === "RW" ||
+            roleName === "RT" ||
+            roleName.includes("RW") ||
+            roleName.includes("RT"));
+
+        // 6. Admin / Task Force / Developer
+        const isAdmin =
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          !isResidu &&
+          !isRw &&
+          (roleName === "SUPER_USER" ||
+            roleName === "DEVELOPER" ||
+            roleName === "PANITIA_TASKFORCE" ||
+            roleName.includes("SUPER") ||
+            roleName.includes("DEVELOPER") ||
+            roleName.includes("TASKFORCE") ||
+            roleName.includes("TASK_FORCE") ||
+            roleName.includes("PANITIA") ||
+            roleName.includes("ADMIN") ||
+            roleName.includes("DEV"));
+
+        if (isKkn) {
           activeKkn += 1;
+        } else if (isDpl) {
+          activeDpl += 1;
+        } else if (isOperator) {
+          activeOperator += 1;
+        } else if (isResidu) {
+          activeResidu += 1;
+        } else if (isRw) {
+          activeRw += 1;
+        } else if (isAdmin) {
+          activeAdmin += 1;
+        } else {
+          // Fallback role lain (misal role admin tidak terdefinisi)
+          activeAdmin += 1;
         }
       });
     }
 
-    const totalActiveSessions = activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn;
+    const totalActiveSessions =
+      activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn;
 
     // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Tempat Sampah vs Deteksi AI)
     const setoranWithBin = await prisma.setoranOtomatis.findMany({
@@ -453,38 +543,40 @@ export const dashboardService = {
 
     setoranWithBin.forEach((log: any) => {
       const targetCategory = (log.bin?.category?.name || "Organik").toLowerCase();
-      const detected = (log.hasilKlasifikasiAi || "organik").toLowerCase();
 
-      let isMatch = false;
+      // Ambil nilai akurasi (pastikan formatnya persentase 0-100)
+      const conf =
+        log.confidenceAi !== null && log.confidenceAi !== undefined
+          ? Number(log.confidenceAi)
+          : 100;
+      const accuracy = conf > 1 ? conf : conf * 100;
+      // RULE BARU: Benar jika >= 50%, Gagal/Salah jika < 50%
+      const isMatch = accuracy >= 50;
       if (targetCategory.includes("organik") && !targetCategory.includes("anorganik")) {
         organikBinTotal++;
-        if (detected.includes("organik") && !detected.includes("anorganik")) {
-          isMatch = true;
-          organikBinCorrect++;
-        }
+        if (isMatch) organikBinCorrect++;
       } else if (targetCategory.includes("anorganik")) {
         anorganikBinTotal++;
-        if (detected.includes("anorganik")) {
-          isMatch = true;
-          anorganikBinCorrect++;
-        }
-      } else {
-        if (detected === targetCategory) {
-          isMatch = true;
-        }
+        if (isMatch) anorganikBinCorrect++;
       }
-
       if (isMatch) {
-        compliantCount++;
+        compliantCount++; // Masuk Statistik Benar
       } else {
-        nonCompliantCount++;
+        nonCompliantCount++; // Masuk Statistik Salah/Gagal
       }
     });
 
     const totalCheck = setoranWithBin.length;
-    const sortingComplianceRate = totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(2)) : 0;
-    const organikComplianceRate = organikBinTotal > 0 ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(2)) : 0;
-    const anorganikComplianceRate = anorganikBinTotal > 0 ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(2)) : 0;
+    const sortingComplianceRate =
+      totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(2)) : 0;
+    const organikComplianceRate =
+      organikBinTotal > 0
+        ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(2))
+        : 0;
+    const anorganikComplianceRate =
+      anorganikBinTotal > 0
+        ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(2))
+        : 0;
 
     // Real count of bins by category in filtered area
     const realOrganikBinCount = await prisma.bin.count({
@@ -548,9 +640,15 @@ export const dashboardService = {
     const rwCondition: any[] = [];
     if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
     if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
-    if (kelurahanNames.length > 0) rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+    if (kelurahanNames.length > 0)
+      rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
 
-    const rwFilter = rwCondition.length > 0 ? (rwCondition.length === 1 ? rwCondition[0] : { OR: rwCondition }) : undefined;
+    const rwFilter =
+      rwCondition.length > 0
+        ? rwCondition.length === 1
+          ? rwCondition[0]
+          : { OR: rwCondition }
+        : undefined;
 
     const binCondition: any[] = [];
     if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
@@ -560,9 +658,16 @@ export const dashboardService = {
     }
     if (kelurahanNames.length > 0) {
       binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-      binCondition.push({ rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } });
+      binCondition.push({
+        rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
+      });
     }
-    const binFilter = binCondition.length > 0 ? (binCondition.length === 1 ? binCondition[0] : { OR: binCondition }) : undefined;
+    const binFilter =
+      binCondition.length > 0
+        ? binCondition.length === 1
+          ? binCondition[0]
+          : { OR: binCondition }
+        : undefined;
 
     const transactionsWhere: any = {};
     if (isFiltered) {
@@ -604,8 +709,14 @@ export const dashboardService = {
     const rwCondition: any[] = [];
     if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
     if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
-    if (kelurahanNames.length > 0) rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-    const rwFilter = rwCondition.length > 0 ? (rwCondition.length === 1 ? rwCondition[0] : { OR: rwCondition }) : undefined;
+    if (kelurahanNames.length > 0)
+      rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
+    const rwFilter =
+      rwCondition.length > 0
+        ? rwCondition.length === 1
+          ? rwCondition[0]
+          : { OR: rwCondition }
+        : undefined;
 
     const binCondition: any[] = [];
     if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
@@ -615,9 +726,16 @@ export const dashboardService = {
     }
     if (kelurahanNames.length > 0) {
       binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-      binCondition.push({ rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } } });
+      binCondition.push({
+        rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
+      });
     }
-    const binFilter = binCondition.length > 0 ? (binCondition.length === 1 ? binCondition[0] : { OR: binCondition }) : undefined;
+    const binFilter =
+      binCondition.length > 0
+        ? binCondition.length === 1
+          ? binCondition[0]
+          : { OR: binCondition }
+        : undefined;
 
     const filterOr: any[] = [];
     if (isFiltered) {

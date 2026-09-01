@@ -11,7 +11,6 @@ import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
 
-
 export class AiController {
   /**
    * Mock AI Waste Detection using concurrent Redis queues

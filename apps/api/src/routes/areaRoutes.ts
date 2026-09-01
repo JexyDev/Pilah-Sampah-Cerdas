@@ -158,7 +158,9 @@ router.post("/kabupaten", async (req, res) => {
     const kabName = (name || nama || "").trim();
     const pId = Number(provinsiId || id_provinsi);
     if (!kabName) {
-      return res.status(400).json({ success: false, message: "Nama Kota/Kabupaten tidak boleh kosong" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Nama Kota/Kabupaten tidak boleh kosong" });
     }
     let targetProvId = pId;
     if (!targetProvId) {
@@ -177,7 +179,9 @@ router.post("/kabupaten", async (req, res) => {
       },
     });
     if (existing) {
-      return res.status(400).json({ success: false, message: `Kota/Kabupaten "${kabName}" sudah ada` });
+      return res
+        .status(400)
+        .json({ success: false, message: `Kota/Kabupaten "${kabName}" sudah ada` });
     }
     const data = await prisma.kabupaten.create({
       data: {
@@ -785,7 +789,10 @@ router.post("/rw", async (req, res) => {
       return res.status(400).json({ success: false, message: "Kelurahan ID tidak boleh kosong" });
     }
 
-    const names = rwName.split(",").map((s: string) => s.trim()).filter(Boolean);
+    const names = rwName
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
     const createdList = [];
     for (const item of names) {
       const formattedName = item.toUpperCase().startsWith("RW") ? item : `RW ${item}`;
@@ -810,7 +817,9 @@ router.post("/rw", async (req, res) => {
       createdList.push(rw);
     }
 
-    res.status(201).json({ success: true, data: createdList.length === 1 ? createdList[0] : createdList });
+    res
+      .status(201)
+      .json({ success: true, data: createdList.length === 1 ? createdList[0] : createdList });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

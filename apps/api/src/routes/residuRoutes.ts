@@ -11,7 +11,6 @@ import { residuController } from "../controllers/residuController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
-
 import { uploadResiduImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();

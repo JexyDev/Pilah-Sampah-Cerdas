@@ -76,7 +76,11 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
 
       if (resolvedPath && fs.existsSync(resolvedPath)) {
         const fileBuffer = fs.readFileSync(resolvedPath);
-        formData.append("image", new Blob([new Uint8Array(fileBuffer)], { type: "image/jpeg" }), "waste.jpg");
+        formData.append(
+          "image",
+          new Blob([new Uint8Array(fileBuffer)], { type: "image/jpeg" }),
+          "waste.jpg"
+        );
       } else if (payload.imageUrl && payload.imageUrl.startsWith("http")) {
         const imgResp = await fetch(payload.imageUrl);
         const arrayBuf = await imgResp.arrayBuffer();
@@ -110,12 +114,10 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
         data.organik_percent !== undefined
           ? Number(data.organik_percent)
           : detUpper === "ORGANIC" || detUpper === "ORGANIK"
-          ? 95
-          : 5;
+            ? 95
+            : 5;
       const inorgPct =
-        data.non_organik_percent !== undefined
-          ? Number(data.non_organik_percent)
-          : 100 - orgPct;
+        data.non_organik_percent !== undefined ? Number(data.non_organik_percent) : 100 - orgPct;
       const isOrganic = orgPct >= inorgPct;
 
       return {

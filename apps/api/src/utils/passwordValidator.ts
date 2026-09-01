@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Centralized Password Validation Engine (ISO 27001 / NIST SP 800-63B).
  * Single Source of Truth for password strength and character requirements.
  */

@@ -22,8 +22,7 @@ const OUTSIDE_COBLONG = { lat: -6.9218, lng: 107.6069 };
 // Koordinat absurd (luar Indonesia)
 const JAKARTA_PUSAT = { lat: -6.2088, lng: 106.8456 };
 
-const pastTime = (secondsAgo: number) =>
-  new Date(Date.now() - secondsAgo * 1000);
+const pastTime = (secondsAgo: number) => new Date(Date.now() - secondsAgo * 1000);
 
 // ─── isValidCoordinate ────────────────────────────────────────────────────────
 describe("isValidCoordinate", () => {
@@ -60,15 +59,21 @@ describe("isWithinCoblongBounds", () => {
   });
 
   it("returns false for coordinate outside Coblong (southern boundary)", () => {
-    expect(isWithinCoblongBounds(COBLONG_BOUNDING_BOX.latMin - 0.001, COBLONG_CENTER.lng)).toBe(false);
+    expect(isWithinCoblongBounds(COBLONG_BOUNDING_BOX.latMin - 0.001, COBLONG_CENTER.lng)).toBe(
+      false
+    );
   });
 
   it("returns false for coordinate outside Coblong (eastern boundary)", () => {
-    expect(isWithinCoblongBounds(COBLONG_CENTER.lat, COBLONG_BOUNDING_BOX.lngMax + 0.001)).toBe(false);
+    expect(isWithinCoblongBounds(COBLONG_CENTER.lat, COBLONG_BOUNDING_BOX.lngMax + 0.001)).toBe(
+      false
+    );
   });
 
   it("returns true for coordinate exactly on boundary edge", () => {
-    expect(isWithinCoblongBounds(COBLONG_BOUNDING_BOX.latMin, COBLONG_BOUNDING_BOX.lngMin)).toBe(true);
+    expect(isWithinCoblongBounds(COBLONG_BOUNDING_BOX.latMin, COBLONG_BOUNDING_BOX.lngMin)).toBe(
+      true
+    );
   });
 });
 

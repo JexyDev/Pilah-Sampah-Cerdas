@@ -27,7 +27,9 @@ export const smartZoneController = {
       const data = await poskoKknService.getGroupAllPoskos(kelompokId);
       res.status(200).json({ success: true, data });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message || "Gagal mengambil zona kelompok" });
+      res
+        .status(500)
+        .json({ success: false, message: err.message || "Gagal mengambil zona kelompok" });
     }
   },
 
@@ -39,7 +41,10 @@ export const smartZoneController = {
   getMyGroupAllZones: async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = (req as any).user?.userId;
-      const student = await prisma.studentKkn.findUnique({ where: { userId }, select: { kelompokId: true } });
+      const student = await prisma.studentKkn.findUnique({
+        where: { userId },
+        select: { kelompokId: true },
+      });
       if (!student?.kelompokId) {
         res.status(404).json({ success: false, message: "Kelompok tidak ditemukan" });
         return;
@@ -47,7 +52,9 @@ export const smartZoneController = {
       const data = await poskoKknService.getGroupAllPoskos(student.kelompokId);
       res.status(200).json({ success: true, data });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message || "Gagal mengambil zona kelompok" });
+      res
+        .status(500)
+        .json({ success: false, message: err.message || "Gagal mengambil zona kelompok" });
     }
   },
 
@@ -61,7 +68,9 @@ export const smartZoneController = {
       const data = await poskoKknService.getMultiPoskos(kelompokId);
       res.status(200).json({ success: true, data });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message || "Gagal mengambil multi-posko" });
+      res
+        .status(500)
+        .json({ success: false, message: err.message || "Gagal mengambil multi-posko" });
     }
   },
 
@@ -75,22 +84,33 @@ export const smartZoneController = {
     try {
       const userId = (req as any).user?.userId;
       const peran = (req as any).user?.role ?? "";
-      let { kelompokId, nama, alamat, latitude, longitude, radius, isUtama, keterangan, fotoUrl } = req.body;
+      let { kelompokId, nama, alamat, latitude, longitude, radius, isUtama, keterangan, fotoUrl } =
+        req.body;
 
       if (!nama || !alamat || latitude === undefined || longitude === undefined) {
-        res.status(400).json({ success: false, message: "nama, alamat, latitude, longitude wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, message: "nama, alamat, latitude, longitude wajib diisi" });
         return;
       }
 
       // Auto-resolve kelompokId untuk mahasiswa (wajib Ketua)
       if (peran === "MAHASISWA_KKN" && !kelompokId) {
-        const student = await prisma.studentKkn.findUnique({ where: { userId }, select: { kelompokId: true, isKetua: true } });
+        const student = await prisma.studentKkn.findUnique({
+          where: { userId },
+          select: { kelompokId: true, isKetua: true },
+        });
         if (!student?.kelompokId) {
-          res.status(400).json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
+          res
+            .status(400)
+            .json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
           return;
         }
         if (!student.isKetua) {
-          res.status(403).json({ success: false, message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko tambahan" });
+          res.status(403).json({
+            success: false,
+            message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko tambahan",
+          });
           return;
         }
         kelompokId = student.kelompokId;
@@ -102,7 +122,8 @@ export const smartZoneController = {
       }
 
       const posko = await poskoKknService.addMultiPosko(kelompokId, {
-        nama, alamat,
+        nama,
+        alamat,
         latitude: Number(latitude),
         longitude: Number(longitude),
         radius: radius ? Number(radius) : undefined,
@@ -111,9 +132,13 @@ export const smartZoneController = {
         fotoUrl: fotoUrl ?? undefined,
       });
 
-      res.status(201).json({ success: true, message: "Posko tambahan berhasil didaftarkan", data: posko });
+      res
+        .status(201)
+        .json({ success: true, message: "Posko tambahan berhasil didaftarkan", data: posko });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message || "Gagal menambah multi-posko" });
+      res
+        .status(500)
+        .json({ success: false, message: err.message || "Gagal menambah multi-posko" });
     }
   },
 
@@ -165,7 +190,9 @@ export const smartZoneController = {
       const data = await smartZoneService.getGroupZonePreview(kelompokId);
       res.status(200).json({ success: true, data });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message || "Gagal mengambil zona preview" });
+      res
+        .status(500)
+        .json({ success: false, message: err.message || "Gagal mengambil zona preview" });
     }
   },
 
@@ -178,7 +205,9 @@ export const smartZoneController = {
       const { kelompokId } = req.params;
       const info = await smartZoneService.forceRegeneratePolygon(kelompokId);
       if (!info) {
-        res.status(404).json({ success: false, message: "Kelompok tidak ditemukan atau tidak ada data GPS" });
+        res
+          .status(404)
+          .json({ success: false, message: "Kelompok tidak ditemukan atau tidak ada data GPS" });
         return;
       }
       res.status(200).json({
@@ -209,10 +238,16 @@ export const smartZoneController = {
     try {
       const { latitude, longitude, kelompokId } = req.body;
       if (!latitude || !longitude || !kelompokId) {
-        res.status(400).json({ success: false, message: "latitude, longitude, kelompokId diperlukan" });
+        res
+          .status(400)
+          .json({ success: false, message: "latitude, longitude, kelompokId diperlukan" });
         return;
       }
-      const result = await smartZoneService.isStudentInGroupZone(Number(latitude), Number(longitude), kelompokId);
+      const result = await smartZoneService.isStudentInGroupZone(
+        Number(latitude),
+        Number(longitude),
+        kelompokId
+      );
       res.status(200).json({ success: true, data: result });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message || "Gagal cek posisi" });

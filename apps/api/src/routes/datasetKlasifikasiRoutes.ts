@@ -16,9 +16,25 @@ router.get("/system/vps-health", authMiddleware, datasetKlasifikasiController.ge
 
 // Dataset Classification CRUD & Export endpoints (authenticated)
 router.get("/dataset-klasifikasi", authMiddleware, datasetKlasifikasiController.getDatasetList);
-router.get("/dataset-klasifikasi/export", authMiddleware, datasetKlasifikasiController.exportDataset);
-router.post("/dataset-klasifikasi/retrain-trigger", authMiddleware, datasetKlasifikasiController.triggerRetrainJob);
-router.put("/dataset-klasifikasi/:id", authMiddleware, datasetKlasifikasiController.updateDatasetItem);
-router.delete("/dataset-klasifikasi/:id", authMiddleware, datasetKlasifikasiController.deleteDatasetItem);
+router.get(
+  "/dataset-klasifikasi/export",
+  authMiddleware,
+  datasetKlasifikasiController.exportDataset
+);
+router.post(
+  "/dataset-klasifikasi/retrain-trigger",
+  authMiddleware,
+  datasetKlasifikasiController.triggerRetrainJob
+);
+router.put(
+  "/dataset-klasifikasi/:id",
+  authMiddleware,
+  datasetKlasifikasiController.updateDatasetItem
+);
+router.delete(
+  "/dataset-klasifikasi/:id",
+  authMiddleware,
+  datasetKlasifikasiController.deleteDatasetItem
+);
 
 export default router;

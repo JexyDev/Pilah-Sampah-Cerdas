@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * 
+ *
  * Controller Penilaian KKN Mahasiswa (Komposisi Mitra/MPL 50% + DPL 50%)
  */
 
@@ -17,14 +17,20 @@ export const penilaianKknController = {
     try {
       const { studentId } = req.params;
       if (!studentId) {
-        res.status(400).json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
+        res
+          .status(400)
+          .json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
         return;
       }
 
       const evaluatorId = req.user?.userId || (req.user as any)?.id || "";
       const evaluatorRole = String(req.user?.role || "").toUpperCase();
 
-      const data = await penilaianKknService.getStudentPenilaianData(studentId, evaluatorId, evaluatorRole);
+      const data = await penilaianKknService.getStudentPenilaianData(
+        studentId,
+        evaluatorId,
+        evaluatorRole
+      );
       res.status(200).json({
         success: true,
         data,
@@ -42,7 +48,9 @@ export const penilaianKknController = {
     try {
       const { studentId, ...payload } = req.body;
       if (!studentId) {
-        res.status(400).json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
+        res
+          .status(400)
+          .json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
         return;
       }
 
@@ -74,7 +82,9 @@ export const penilaianKknController = {
     try {
       const { studentId, ...payload } = req.body;
       if (!studentId) {
-        res.status(400).json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
+        res
+          .status(400)
+          .json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
         return;
       }
 
@@ -128,7 +138,11 @@ export const penilaianKknController = {
       const evaluatorRole = String(req.user?.role || "").toUpperCase();
       const evaluatorId = req.user?.userId || (req.user as any)?.id;
 
-      const data = await penilaianKknService.getLaporanAkhirList(groupId, evaluatorId, evaluatorRole);
+      const data = await penilaianKknService.getLaporanAkhirList(
+        groupId,
+        evaluatorId,
+        evaluatorRole
+      );
       res.status(200).json({
         success: true,
         data,
@@ -145,10 +159,13 @@ export const penilaianKknController = {
   saveLaporanAkhirKelompokScore: async (req: Request, res: Response) => {
     try {
       const { kelompokId } = req.params;
-      const { statusTelaah, rubrikScores, catatanBab, catatanUmum, judulLaporan, fileUrl } = req.body;
+      const { statusTelaah, rubrikScores, catatanBab, catatanUmum, judulLaporan, fileUrl } =
+        req.body;
 
       if (!kelompokId) {
-        res.status(400).json({ success: false, message: "ID Kelompok (kelompokId) wajib disertakan" });
+        res
+          .status(400)
+          .json({ success: false, message: "ID Kelompok (kelompokId) wajib disertakan" });
         return;
       }
 
@@ -176,7 +193,8 @@ export const penilaianKknController = {
 
       res.status(200).json({
         success: true,
-        message: "Penilaian laporan akhir kelompok KKN berhasil disimpan dan disinkronkan ke seluruh anggota",
+        message:
+          "Penilaian laporan akhir kelompok KKN berhasil disimpan dan disinkronkan ke seluruh anggota",
         data: result,
       });
     } catch (error: any) {
@@ -194,12 +212,16 @@ export const penilaianKknController = {
       const { score, catatan } = req.body;
 
       if (!studentId) {
-        res.status(400).json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
+        res
+          .status(400)
+          .json({ success: false, message: "ID Mahasiswa (studentId) wajib disertakan" });
         return;
       }
 
       if (score === undefined || score === null || isNaN(Number(score))) {
-        res.status(400).json({ success: false, message: "Nilai laporan akhir (score) wajib diisi angka" });
+        res
+          .status(400)
+          .json({ success: false, message: "Nilai laporan akhir (score) wajib diisi angka" });
         return;
       }
 

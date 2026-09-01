@@ -9,7 +9,6 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { pengangkutanService } from "./pengangkutanService.js";
 import { DispatchStatus } from "@prisma/client";
 
-
 describe("Pengangkutan Service CRUD Tests", () => {
   let bin: any;
   let petugas: any;

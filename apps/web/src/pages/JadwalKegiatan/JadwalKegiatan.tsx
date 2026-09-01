@@ -33,13 +33,14 @@ import {
 
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { exportToXlsx } from "../../utils/exportXlsx";
+import * as XLSX from "xlsx";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MapContainer, Marker, useMapEvents, useMap, Polygon, Polyline, Circle } from "react-leaflet";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import L from "leaflet";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { sortKelompokList } from "../../utils/sortUtils";
 import {
   TIMELINE_KKN_HEADER,
   TIMELINE_KKN_DATA,
@@ -218,7 +219,8 @@ const JadwalKegiatan: React.FC = () => {
   const fetchGroups = async () => {
     try {
       const res = await api.get("/kelompok?limit=0");
-      const list = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      const rawList = res.data?.groups || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      const list = sortKelompokList(rawList, (g: any) => g.name || "");
       setGroups(list);
 
       const groupKelurahans = list
@@ -440,6 +442,66 @@ const JadwalKegiatan: React.FC = () => {
     }
   };
 
+  const handleExportTimelineExcel = () => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
+      return;
+    }
+    try {
+      const headers = [
+        "No",
+        "Kelurahan",
+        "Kelompok",
+        "Tahap / Minggu",
+        "Tanggal",
+        "Fase",
+        "Bidang Kegiatan",
+        "Kegiatan Utama",
+        "Output / Target",
+        "PIC / Keterangan",
+        "URL Google Drive",
+        "Status",
+      ];
+      const rows = timelineList.map((item, idx) => [
+        idx + 1,
+        item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan",
+        item.kelompok ? `Kelompok ${item.kelompok.name}` : "Global (Semua Kelompok)",
+        item.tahapMinggu,
+        item.tanggal,
+        item.fase,
+        item.bidangKegiatan || "Tata Kelola & Koordinasi",
+        item.kegiatanUtama,
+        item.outputTarget,
+        item.picKeterangan,
+        item.linkGoogleDrive || "-",
+        item.statusPelaksanaan || "BELUM_DIMULAI",
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws["!cols"] = [
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 25 },
+        { wch: 30 },
+        { wch: 25 },
+        { wch: 45 },
+        { wch: 45 },
+        { wch: 30 },
+        { wch: 40 },
+        { wch: 20 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Linimasa_KKN");
+      XLSX.writeFile(wb, `Linimasa_KKN_${new Date().toISOString().split("T")[0]}.xlsx`);
+      toast.success("Data linimasa berhasil diexport ke Excel (.xlsx)!");
+    } catch (err: any) {
+      toast.error("Gagal export Excel: " + err.message);
+    }
+  };
+
   const handleExportTimelineCsv = () => {
     const headers = [
       "No",
@@ -457,21 +519,29 @@ const JadwalKegiatan: React.FC = () => {
     ];
     const rows = timelineList.map((item, idx) => [
       idx + 1,
-      item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan",
-      item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)",
-      item.tahapMinggu || "",
-      item.tanggal || "",
-      item.fase || "",
-      item.bidangKegiatan || "Tata Kelola & Koordinasi",
-      item.kegiatanUtama || "",
-      item.outputTarget || "",
-      item.picKeterangan || "",
-      item.linkGoogleDrive || "-",
-      item.statusPelaksanaan || "BELUM_DIMULAI",
+      `"${(item.kelurahan || item.kelompok?.kelurahan || "Semua Kelurahan").replace(/"/g, '""')}"`,
+      `"${item.kelompok ? "Kelompok " + item.kelompok.name : "Global (Semua Kelompok)"}"`,
+      `"${(item.tahapMinggu || "").replace(/"/g, '""')}"`,
+      `"${(item.tanggal || "").replace(/"/g, '""')}"`,
+      `"${(item.fase || "").replace(/"/g, '""')}"`,
+      `"${(item.bidangKegiatan || "Tata Kelola & Koordinasi").replace(/"/g, '""')}"`,
+      `"${(item.kegiatanUtama || "").replace(/"/g, '""')}"`,
+      `"${(item.outputTarget || "").replace(/"/g, '""')}"`,
+      `"${(item.picKeterangan || "").replace(/"/g, '""')}"`,
+      `"${(item.linkGoogleDrive || "-").replace(/"/g, '""')}"`,
+      `"${item.statusPelaksanaan || "BELUM_DIMULAI"}"`,
     ]);
 
-    exportToXlsx(headers, rows, `Timeline_KKN_${new Date().toISOString().split("T")[0]}`, "Timeline KKN");
-    toast.success("Tabel Timeline KKN berhasil diunduh (XLSX)");
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Timeline_KKN_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Tabel Timeline KKN berhasil diunduh (CSV)");
   };
 
 
@@ -1098,13 +1168,12 @@ const JadwalKegiatan: React.FC = () => {
                   </button>
                 )}
 
-                {/* Tombol Ekspor — aktif hanya jika filter tanggal sudah diisi */}
                 <button
                   type="button"
-                  onClick={handleExportTimelineCsv}
-                  disabled={!startDateFilter && !endDateFilter}
-                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60"
-                  title={(!startDateFilter && !endDateFilter) ? "Isi filter tanggal terlebih dahulu untuk mengekspor" : "Ekspor data linimasa sesuai filter tanggal ke XLSX"}
+                  onClick={handleExportTimelineExcel}
+                  disabled={!startDateFilter || !endDateFilter}
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+                  title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data linimasa sesuai filter tanggal ke XLSX"}
                 >
                   <FileSpreadsheet size={13} />
                   <span>Ekspor XLSX</span>

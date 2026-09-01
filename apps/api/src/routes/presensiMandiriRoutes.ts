@@ -12,7 +12,18 @@ import { safeUploadSingleImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
-const ADMIN_DPL_ROLES = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"];
+const ADMIN_DPL_ROLES = [
+  "SUPER_USER",
+  "DEVELOPER",
+  "ADMIN_DLH",
+  "CAMAT",
+  "LURAH",
+  "RW",
+  "DPL",
+  "DOSEN_PEMBIMBING",
+  "PANITIA_TASKFORCE",
+  "PEMIMPIN",
+];
 
 /**
  * @swagger

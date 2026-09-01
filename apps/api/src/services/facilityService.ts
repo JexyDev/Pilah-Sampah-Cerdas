@@ -45,7 +45,10 @@ export const facilityService = {
 
     let resolvedPic = (pic || "").trim();
     let resolvedKontak = kontak ? String(kontak).trim() : undefined;
-    if (resolvedPic && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedPic)) {
+    if (
+      resolvedPic &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedPic)
+    ) {
       const userObj = await prisma.user.findUnique({
         where: { id: resolvedPic },
         select: { name: true, phone: true },
@@ -196,15 +199,12 @@ export const facilityService = {
 
     if (user) {
       const scopes = await getScopingFilters(user);
-      
+
       // Merge the scope filters into whereClause
       // If whereClause already has a 'jenis', we use AND
       if (Object.keys(whereClause).length > 0) {
         whereClause = {
-          AND: [
-            whereClause,
-            scopes.facilityFilter || {}
-          ]
+          AND: [whereClause, scopes.facilityFilter || {}],
         };
       } else {
         whereClause = scopes.facilityFilter || {};
@@ -229,7 +229,10 @@ export const facilityService = {
     return list.map((fac) => {
       let resolvedPic = fac.pic;
       let resolvedKontak = fac.kontak;
-      if (fac.pic && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fac.pic.trim())) {
+      if (
+        fac.pic &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(fac.pic.trim())
+      ) {
         if (fac.registeredBy?.name) {
           resolvedPic = fac.registeredBy.name;
         }

@@ -289,10 +289,10 @@ const Leaderboard: React.FC = () => {
       pointsLabel = "Skor Akhir";
     } else if (s2Tab === "groups") {
       pageTitle = "Peringkat Kelompok KKN";
-      pageSubtitle = "Rata-rata skor akhir seluruh anggota kelompok KKN";
+      pageSubtitle = "Rerata skor akhir seluruh anggota kelompok KKN";
       nameHeader = "Nama Kelompok";
       subtitleHeader = "Jumlah Anggota";
-      pointsLabel = "Rata-rata Skor";
+      pointsLabel = "Rerata Skor";
     }
   }
 
@@ -537,7 +537,7 @@ const Leaderboard: React.FC = () => {
                 <Recycle size={20} />
               </div>
               <div>
-                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rata-rata Poin</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rerata Poin</p>
                 <p className="text-xl font-black text-slate-800 dark:text-slate-100">{stats.avgPoints.toLocaleString("id-ID")} <span className="text-xs text-slate-400 font-bold">poin</span></p>
               </div>
             </div>

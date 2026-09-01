@@ -94,7 +94,9 @@ describe("SystemService & SystemController - App Version & Updater", () => {
     });
 
     expect(releaseData.latestVersion).toBe("1.0.3");
-    expect(releaseData.downloadUrl).toBe("https://storage.googleapis.com/trashcare/BERSEKA-v1.0.3.apk");
+    expect(releaseData.downloadUrl).toBe(
+      "https://storage.googleapis.com/trashcare/BERSEKA-v1.0.3.apk"
+    );
     expect(prisma.systemConfig.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { key: "app_release_info" },

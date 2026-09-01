@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { vpsHealthService } from "../services/vpsHealthService.js";
 
-
 export class DatasetKlasifikasiController {
   /**
    * Get real-time VPS & system health metrics
@@ -144,8 +143,19 @@ export class DatasetKlasifikasiController {
 
       // Categorization breakdown (YOLOv8-seg ONNX 2-Class Model: ORGANIC & NON_ORGANIC)
       const [organikCount, anorganikCount] = await Promise.all([
-        prisma.setoranOtomatis.count({ where: { hasilKlasifikasiAi: { contains: "ORGANIK", mode: "insensitive" } } }).catch(() => 0),
-        prisma.setoranOtomatis.count({ where: { OR: [{ hasilKlasifikasiAi: { contains: "ANORGANIK", mode: "insensitive" } }, { hasilKlasifikasiAi: { contains: "NON_ORGANIC", mode: "insensitive" } }] } }).catch(() => 0),
+        prisma.setoranOtomatis
+          .count({ where: { hasilKlasifikasiAi: { contains: "ORGANIK", mode: "insensitive" } } })
+          .catch(() => 0),
+        prisma.setoranOtomatis
+          .count({
+            where: {
+              OR: [
+                { hasilKlasifikasiAi: { contains: "ANORGANIK", mode: "insensitive" } },
+                { hasilKlasifikasiAi: { contains: "NON_ORGANIC", mode: "insensitive" } },
+              ],
+            },
+          })
+          .catch(() => 0),
       ]);
 
       const formattedRecords = records.map((r) => {
@@ -153,8 +163,11 @@ export class DatasetKlasifikasiController {
         const rawConf = Number(r.confidenceAi || 0.95);
         const confidence = rawConf <= 1.0 ? Math.round(rawConf * 100) : Math.round(rawConf);
 
-        const isOrganikRaw = !rawClass.includes("ANORGANIK") && !rawClass.includes("NON_ORGANIC") && !rawClass.includes("RESIDU");
-        const organikPercent = isOrganikRaw ? confidence : (100 - confidence);
+        const isOrganikRaw =
+          !rawClass.includes("ANORGANIK") &&
+          !rawClass.includes("NON_ORGANIC") &&
+          !rawClass.includes("RESIDU");
+        const organikPercent = isOrganikRaw ? confidence : 100 - confidence;
         const anorganikPercent = 100 - organikPercent;
         const categoryFormatted = organikPercent >= anorganikPercent ? "ORGANIK" : "ANORGANIK";
 
@@ -189,7 +202,10 @@ export class DatasetKlasifikasiController {
       });
 
       const totalRatings = formattedRecords.reduce((acc, curr) => acc + (curr.ratingWarga || 5), 0);
-      const avgRating = formattedRecords.length > 0 ? Math.round((totalRatings / formattedRecords.length) * 100) / 100 : 0.0;
+      const avgRating =
+        formattedRecords.length > 0
+          ? Math.round((totalRatings / formattedRecords.length) * 100) / 100
+          : 0.0;
       const accuracyRatePercent = avgRating > 0 ? Math.round((avgRating / 5) * 1000) / 10 : 0.0;
 
       res.status(200).json({
@@ -239,7 +255,9 @@ export class DatasetKlasifikasiController {
 
       const existing = await prisma.setoranOtomatis.findUnique({ where: { id } });
       if (!existing) {
-        res.status(404).json({ error: "NOT_FOUND", message: "Data setoran klasifikasi tidak ditemukan" });
+        res
+          .status(404)
+          .json({ error: "NOT_FOUND", message: "Data setoran klasifikasi tidak ditemukan" });
         return;
       }
 

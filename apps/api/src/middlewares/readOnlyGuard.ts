@@ -59,7 +59,10 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
               req.originalUrl.includes("/auth/profile") ||
               req.originalUrl.includes("/auth/password") ||
               req.originalUrl.includes("/auth/change-password") ||
-              (role === "ADMIN_DLH" && (req.originalUrl.includes("/resolve") || req.originalUrl.includes("/ai/discrepancies") || req.originalUrl.includes("/discrepanc")));
+              (role === "ADMIN_DLH" &&
+                (req.originalUrl.includes("/resolve") ||
+                  req.originalUrl.includes("/ai/discrepancies") ||
+                  req.originalUrl.includes("/discrepanc")));
 
             if (!isUserNotificationAction) {
               res.status(403).json({

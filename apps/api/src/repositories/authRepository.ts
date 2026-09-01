@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import { User, RefreshToken, Role } from "@prisma/client";
 import { DatabaseUnavailableError } from "../utils/errors.js";
 
-
 function isDatabaseConnectionError(error: any): boolean {
   const code = error?.code;
   const message = error?.message || "";
@@ -32,7 +31,9 @@ import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 
 export class AuthRepository {
-  async findUserByPhone(phone: string): Promise<(User & { role: Role; rw?: any; studentProfile?: any }) | null> {
+  async findUserByPhone(
+    phone: string
+  ): Promise<(User & { role: Role; rw?: any; studentProfile?: any }) | null> {
     try {
       const raw = (phone || "").trim();
       if (!raw) return null;
@@ -122,7 +123,16 @@ export class AuthRepository {
             },
           },
         },
-      })) as (User & { role: Role; rw?: any; studentProfile?: any; dplKelompok?: any; petugasProfile?: any; households?: any[] }) | null;
+      })) as
+        | (User & {
+            role: Role;
+            rw?: any;
+            studentProfile?: any;
+            dplKelompok?: any;
+            petugasProfile?: any;
+            households?: any[];
+          })
+        | null;
 
       return user;
     } catch (error: any) {
@@ -385,7 +395,13 @@ export class AuthRepository {
    */
   async updateUser(
     id: string,
-    data: { name?: string; phone?: string; address?: string; fotoProfil?: string; jumlahAnggotaKeluarga?: number | null }
+    data: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      fotoProfil?: string;
+      jumlahAnggotaKeluarga?: number | null;
+    }
   ): Promise<User> {
     return prisma.user.update({
       where: { id },
@@ -492,7 +508,8 @@ export class AuthRepository {
       const user = await tx.user.create({
         data: {
           ...userData,
-          fotoProfil: userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          fotoProfil:
+            userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
           phone: formattedPhone,
           roleId: role.id,
           wargaSubtype: wargaSubtype || "UTAMA",
@@ -564,7 +581,8 @@ export class AuthRepository {
       const user = await tx.user.create({
         data: {
           ...userData,
-          fotoProfil: userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          fotoProfil:
+            userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
           roleId: role.id,
           status: "Aktif",
         },
@@ -593,7 +611,8 @@ export class AuthRepository {
       const user = await tx.user.create({
         data: {
           ...userData,
-          fotoProfil: userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          fotoProfil:
+            userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
           roleId: role.id,
           status: "Pending",
         },

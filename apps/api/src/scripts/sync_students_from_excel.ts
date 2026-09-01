@@ -6,7 +6,6 @@ import { prisma } from "../lib/prisma.js";
 import XLSX from "xlsx";
 import path from "path";
 
-
 const EXCEL_PATHS = [
   path.resolve(process.cwd(), "raw_data_kkn_2026.xlsx"),
   path.resolve(process.cwd(), "../../raw_data_kkn_2026.xlsx"),
@@ -22,7 +21,9 @@ export function standardizeKelompokName(rawName: string, kelurahanHint?: string)
   clean = clean.replace(/-\s*/g, ""); // remove dashes
 
   // Standardize "Dago 1" -> "Kelompok 1 Dago"
-  const matchAreaNum = clean.match(/^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i);
+  const matchAreaNum = clean.match(
+    /^(Sadang Serang|Cipaganti|Dago|Sekeloa|Lebak Gede|Lebak Siliwangi)\s+(\d+)$/i
+  );
   if (matchAreaNum) {
     clean = `Kelompok ${matchAreaNum[2]} ${matchAreaNum[1]}`;
   }
@@ -115,7 +116,9 @@ async function syncStudents() {
     const targetKelompokId = kelompokMap.get(stdKelompokName.toLowerCase());
 
     if (!targetKelompokId) {
-      console.warn(`[UNMATCHED KELOMPOK] NIM ${nim} (${name}) -> Raw: "${currentRawKelompok}" Std: "${stdKelompokName}"`);
+      console.warn(
+        `[UNMATCHED KELOMPOK] NIM ${nim} (${name}) -> Raw: "${currentRawKelompok}" Std: "${stdKelompokName}"`
+      );
       skippedCount++;
       continue;
     }
@@ -123,10 +126,7 @@ async function syncStudents() {
     // Find StudentKkn by NIM or User name
     let student = await prisma.studentKkn.findFirst({
       where: {
-        OR: [
-          { nim: nim },
-          { user: { name: { equals: name, mode: "insensitive" } } },
-        ],
+        OR: [{ nim: nim }, { user: { name: { equals: name, mode: "insensitive" } } }],
       },
     });
 
@@ -143,10 +143,7 @@ async function syncStudents() {
     } else {
       let user = await prisma.user.findFirst({
         where: {
-          OR: [
-            { phone: `+628000${nim}` },
-            { name: { equals: name, mode: "insensitive" } },
-          ],
+          OR: [{ phone: `+628000${nim}` }, { name: { equals: name, mode: "insensitive" } }],
         },
       });
 

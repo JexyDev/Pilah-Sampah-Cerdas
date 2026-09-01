@@ -5,7 +5,6 @@ import { verifyAccessToken } from "../utils/jwtUtils.js";
 import { configService } from "./configService.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
 
-
 // Map to store connected clients by userId
 const clients = new Map<string, WebSocket>();
 const allSockets = new Set<WebSocket>();
@@ -160,7 +159,9 @@ export const websocketService = {
       });
     });
 
-    console.log("WebSocket Server initialized and attached to HTTP Server with ping-pong heartbeat.");
+    console.log(
+      "WebSocket Server initialized and attached to HTTP Server with ping-pong heartbeat."
+    );
   },
 
   /**

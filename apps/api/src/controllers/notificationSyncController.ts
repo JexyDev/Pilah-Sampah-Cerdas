@@ -8,7 +8,7 @@ export const notificationSyncController = {
       const state = await prisma.userNotificationSync.findUnique({
         where: { userId },
       });
-      
+
       if (!state) {
         res.status(200).json({
           success: true,
@@ -16,18 +16,18 @@ export const notificationSyncController = {
             readIds: [],
             markAllTimestamp: 0,
             deleteAllTimestamp: 0,
-          }
+          },
         });
         return;
       }
-      
+
       res.status(200).json({
         success: true,
         data: {
           readIds: JSON.parse(state.readIds || "[]"),
           markAllTimestamp: Number(state.markAllTimestamp),
           deleteAllTimestamp: Number(state.deleteAllTimestamp),
-        }
+        },
       });
     } catch (error: any) {
       console.error("[NotificationSync] getSyncState error:", error);
@@ -39,7 +39,7 @@ export const notificationSyncController = {
     try {
       const userId = req.user!.userId;
       const { readIds, markAllTimestamp, deleteAllTimestamp } = req.body;
-      
+
       const payload: any = {};
       if (readIds !== undefined && Array.isArray(readIds)) {
         payload.readIds = JSON.stringify(readIds);
@@ -50,7 +50,7 @@ export const notificationSyncController = {
       if (deleteAllTimestamp !== undefined) {
         payload.deleteAllTimestamp = BigInt(deleteAllTimestamp);
       }
-      
+
       await prisma.userNotificationSync.upsert({
         where: { userId },
         update: payload,
@@ -61,11 +61,11 @@ export const notificationSyncController = {
           deleteAllTimestamp: payload.deleteAllTimestamp || 0n,
         },
       });
-      
+
       res.status(200).json({ success: true, message: "Sync state updated" });
     } catch (error: any) {
       console.error("[NotificationSync] updateSyncState error:", error);
       res.status(500).json({ success: false, message: error.message });
     }
-  }
+  },
 };

@@ -61,9 +61,8 @@ export class ResiduController {
 
       let filteredBins = bins;
       if (kelurahanFilter) {
-        filteredBins = bins.filter(
-          (b: any) =>
-            b.rw?.kelurahan?.name?.toLowerCase().includes(kelurahanFilter.toLowerCase())
+        filteredBins = bins.filter((b: any) =>
+          b.rw?.kelurahan?.name?.toLowerCase().includes(kelurahanFilter.toLowerCase())
         );
       }
 

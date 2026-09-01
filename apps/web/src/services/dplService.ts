@@ -14,6 +14,9 @@ export interface GroupSummary {
     alamat: string;
     latitude?: number | null;
     longitude?: number | null;
+    radius?: number | null;
+    foto?: string | null;
+    fotoUrl?: string | null;
   } | null;
   facilities?: Array<{
     id: string;
@@ -155,6 +158,7 @@ export interface ApprovalHistoryLog {
   endDate?: string;
   reviewedAt: string;
   rejectionReason?: string;
+  evidenceUrl?: string;
 }
 
 export interface AspekPenilaianItem {

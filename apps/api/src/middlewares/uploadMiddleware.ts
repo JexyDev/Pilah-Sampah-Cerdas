@@ -40,7 +40,7 @@ const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
   ];
   const mimetypeLower = (file.mimetype || "").toLowerCase();
   const extLower = path.extname(file.originalname || "").toLowerCase();
-  
+
   if (
     allowedMimeTypes.includes(mimetypeLower) ||
     [".jpg", ".jpeg", ".png", ".webp", ".pdf"].includes(extLower) ||
@@ -49,7 +49,9 @@ const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
     cb(null, true);
   } else {
     cb(
-      new Error("Format file tidak valid. Hanya JPG, PNG, WEBP, dan PDF yang diperbolehkan.") as any,
+      new Error(
+        "Format file tidak valid. Hanya JPG, PNG, WEBP, dan PDF yang diperbolehkan."
+      ) as any,
       false
     );
   }
@@ -59,7 +61,7 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB safe limit
   },
 });
 
@@ -69,7 +71,7 @@ export const uploadSingleImage = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB safe limit
   },
 });
 

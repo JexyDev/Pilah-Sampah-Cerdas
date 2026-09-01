@@ -1693,6 +1693,7 @@ export const dplService = {
       endDate: h.endDate,
       reviewedAt: h.reviewedAt || h.updatedAt,
       rejectionReason: h.rejectionReason,
+      evidenceUrl: h.evidenceUrl,
     }));
   },
 
@@ -3297,8 +3298,14 @@ export const dplService = {
       attendanceMinDurationHours: minHours,
       attendanceMinDurationMinutes: minMinutes,
       attendanceMinDurationSeconds: minSeconds,
-      hariKerja: (configMap.get("kkn_hari_kerja") || "Senin - Jumat").replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim(),
-      jamKerja: (configMap.get("kkn_jam_kerja") || "08:00 - 16:00 WIB").replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim(),
+      hariKerja: (configMap.get("kkn_hari_kerja") || "Senin - Jumat")
+        .replace(/\?{2,3}|â€“|–|—/g, " - ")
+        .replace(/\s+-\s+/g, " - ")
+        .trim(),
+      jamKerja: (configMap.get("kkn_jam_kerja") || "08:00 - 19:00 WIB")
+        .replace(/\?{2,3}|â€“|–|—/g, " - ")
+        .replace(/\s+-\s+/g, " - ")
+        .trim(),
       targetPekan: Number(configMap.get("kkn_target_pekan") || 10),
       targetTotalHari: targetHariTotal,
       catatanDpl:
@@ -3398,7 +3405,10 @@ export const dplService = {
       });
     }
     if (data.hariKerja !== undefined) {
-      const cleanVal = String(data.hariKerja).replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
+      const cleanVal = String(data.hariKerja)
+        .replace(/\?{2,3}|â€“|–|—/g, " - ")
+        .replace(/\s+-\s+/g, " - ")
+        .trim();
       updates.push({
         key: "kkn_hari_kerja",
         value: cleanVal,
@@ -3407,7 +3417,10 @@ export const dplService = {
       });
     }
     if (data.jamKerja !== undefined) {
-      const cleanVal = String(data.jamKerja).replace(/\?{2,3}|â€“|–|—/g, " - ").replace(/\s+-\s+/g, " - ").trim();
+      const cleanVal = String(data.jamKerja)
+        .replace(/\?{2,3}|â€“|–|—/g, " - ")
+        .replace(/\s+-\s+/g, " - ")
+        .trim();
       updates.push({
         key: "kkn_jam_kerja",
         value: cleanVal,
@@ -3628,9 +3641,17 @@ export const dplService = {
         // Bukti Label
         let buktiLabel = "—";
         const rawBukti = (item.fotoBuktiUrl || "").trim();
-        const validBuktiList = rawBukti && rawBukti !== "null" && rawBukti !== "undefined" && rawBukti !== "-"
-          ? Array.from(new Set(rawBukti.split(/[,;]/).map((u) => u.trim()).filter(Boolean)))
-          : [];
+        const validBuktiList =
+          rawBukti && rawBukti !== "null" && rawBukti !== "undefined" && rawBukti !== "-"
+            ? Array.from(
+                new Set(
+                  rawBukti
+                    .split(/[,;]/)
+                    .map((u) => u.trim())
+                    .filter(Boolean)
+                )
+              )
+            : [];
         const validBukti = validBuktiList.length > 0 ? validBuktiList.join(",") : null;
         if (validBukti) {
           if (validBuktiList.length > 1) {
@@ -3781,8 +3802,20 @@ export const dplService = {
     }
 
     let cleanFotoBukti: string | null = null;
-    if (data.fotoBuktiUrl && typeof data.fotoBuktiUrl === "string" && data.fotoBuktiUrl.trim() !== "" && data.fotoBuktiUrl !== "null") {
-      const uniqueUrls = Array.from(new Set(data.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)));
+    if (
+      data.fotoBuktiUrl &&
+      typeof data.fotoBuktiUrl === "string" &&
+      data.fotoBuktiUrl.trim() !== "" &&
+      data.fotoBuktiUrl !== "null"
+    ) {
+      const uniqueUrls = Array.from(
+        new Set(
+          data.fotoBuktiUrl
+            .split(/[,;]/)
+            .map((u) => u.trim())
+            .filter(Boolean)
+        )
+      );
       cleanFotoBukti = uniqueUrls.length > 0 ? uniqueUrls.join(",") : null;
     }
 
@@ -3863,8 +3896,19 @@ export const dplService = {
         data.arahanEvaluasi?.trim() || data.hasilTindakLanjut?.trim() || null;
     }
     if (data.fotoBuktiUrl !== undefined) {
-      if (typeof data.fotoBuktiUrl === "string" && data.fotoBuktiUrl.trim() !== "" && data.fotoBuktiUrl !== "null") {
-        const uniqueUrls = Array.from(new Set(data.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)));
+      if (
+        typeof data.fotoBuktiUrl === "string" &&
+        data.fotoBuktiUrl.trim() !== "" &&
+        data.fotoBuktiUrl !== "null"
+      ) {
+        const uniqueUrls = Array.from(
+          new Set(
+            data.fotoBuktiUrl
+              .split(/[,;]/)
+              .map((u) => u.trim())
+              .filter(Boolean)
+          )
+        );
         updateData.fotoBuktiUrl = uniqueUrls.length > 0 ? uniqueUrls.join(",") : null;
       } else {
         updateData.fotoBuktiUrl = null;

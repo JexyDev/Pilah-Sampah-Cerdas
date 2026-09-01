@@ -1,6 +1,5 @@
 import { prisma } from "../lib/prisma.js";
 
-
 async function checkStudents() {
   console.log("=== DIAGNOSTIK MAHASISWA & KELOMPOK KKN ===");
 
@@ -32,12 +31,16 @@ async function checkStudents() {
   let totalInKelompok = 0;
   kelompoks.forEach((k, idx) => {
     totalInKelompok += k._count.students;
-    console.log(`${idx + 1}. ${k.name} | DPL: ${k.dpl?.name || "-"} | Total Mahasiswa: ${k._count.students}`);
+    console.log(
+      `${idx + 1}. ${k.name} | DPL: ${k.dpl?.name || "-"} | Total Mahasiswa: ${k._count.students}`
+    );
   });
   console.log(`Total Mahasiswa Terdaftar di Kelompok: ${totalInKelompok}`);
 
   // Find any orphan StudentKkn whose kelompokId does not exist in KelompokKkn table
-  const validKelompokIds = (await prisma.kelompokKkn.findMany({ select: { id: true } })).map((k) => k.id);
+  const validKelompokIds = (await prisma.kelompokKkn.findMany({ select: { id: true } })).map(
+    (k) => k.id
+  );
   const orphanStudents = await prisma.studentKkn.findMany({
     where: {
       NOT: { kelompokId: { in: validKelompokIds } },

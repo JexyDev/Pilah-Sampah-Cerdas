@@ -16,7 +16,16 @@ export const timelineKknController = {
       const userRole = String(req.user?.role || "").toUpperCase();
       const userId = req.user?.userId || (req.user as any)?.id;
 
-      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+      const {
+        kelompokId,
+        kelurahan,
+        bidangKegiatan,
+        fase,
+        statusPelaksanaan,
+        search,
+        startDate,
+        endDate,
+      } = req.query;
 
       const items = await timelineKknService.getAll(
         {
@@ -38,8 +47,8 @@ export const timelineKknController = {
       res.status(200).json({
         success: true,
         data: items,
-        activeWeek: activeItem ? activeItem.tahapMinggu : (items[0]?.tahapMinggu || "Minggu 1"),
-        activeFase: activeItem ? activeItem.fase : (items[0]?.fase || "Tahap Pelaksanaan"),
+        activeWeek: activeItem ? activeItem.tahapMinggu : items[0]?.tahapMinggu || "Minggu 1",
+        activeFase: activeItem ? activeItem.fase : items[0]?.fase || "Tahap Pelaksanaan",
       });
     } catch (error: any) {
       console.error("[timelineKknController.getAll] error:", error);
@@ -58,7 +67,16 @@ export const timelineKknController = {
       const userRole = String(req.user?.role || "").toUpperCase();
       const userId = req.user?.userId || (req.user as any)?.id;
 
-      const { kelompokId, kelurahan, bidangKegiatan, fase, statusPelaksanaan, search, startDate, endDate } = req.query;
+      const {
+        kelompokId,
+        kelurahan,
+        bidangKegiatan,
+        fase,
+        statusPelaksanaan,
+        search,
+        startDate,
+        endDate,
+      } = req.query;
 
       const result = await timelineKknService.getTimelineMahasiswa(
         {
@@ -218,12 +236,9 @@ export const timelineKknController = {
         const notifBody = `Ada kegiatan baru: ${kegiatanUtama} pada ${tanggal || "jadwal terbaru"}. Cek aplikasi sekarang!`;
         // Tembak FCM ke semua token secara paralel (Fire & Forget)
         for (const token of validTokens) {
-          notificationIntegrationService.sendPushNotification(
-            token as string,
-            notifTitle,
-            notifBody,
-            "NEW_KEGIATAN"
-          ).catch((e) => console.error("Gagal kirim push notif kegiatan:", e));
+          notificationIntegrationService
+            .sendPushNotification(token as string, notifTitle, notifBody, "NEW_KEGIATAN")
+            .catch((e) => console.error("Gagal kirim push notif kegiatan:", e));
         }
       }
 

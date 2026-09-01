@@ -28,9 +28,11 @@ import {
   Clock,
   Crown,
   Download,
+  FileSpreadsheet,
+  RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { exportToXlsx } from "../../utils/exportXlsx";
+import * as XLSX from "xlsx";
 import {
   dplService,
   type GroupSummary,
@@ -39,6 +41,7 @@ import {
   type ApprovalHistoryLog,
   type ProgramKerjaItem,
 } from "../../services/dplService";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 // ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
 type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
@@ -191,6 +194,8 @@ export const DplDashboardPage: React.FC = () => {
 
   // Filter & Pagination States
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
+  const [approvalStartDate, setApprovalStartDate] = useState<string>("");
+  const [approvalEndDate, setApprovalEndDate] = useState<string>("");
 
   const [approvalPage, setApprovalPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -401,9 +406,21 @@ export const DplDashboardPage: React.FC = () => {
   // Filtered & Paginated Approvals History
   const filteredApprovalHistory = useMemo(() => {
     return approvalHistory.filter((log) => {
-      return selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
+      const matchStatus = selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
+      let matchDate = true;
+      if (approvalStartDate && (log.startDate || log.reviewedAt)) {
+        const itemDate = (log.startDate || log.reviewedAt) as string;
+        const startTs = new Date(`${approvalStartDate}T00:00:00`).getTime();
+        if (new Date(itemDate).getTime() < startTs) matchDate = false;
+      }
+      if (approvalEndDate && (log.endDate || log.reviewedAt)) {
+        const itemDate = (log.endDate || log.reviewedAt) as string;
+        const endTs = new Date(`${approvalEndDate}T23:59:59`).getTime();
+        if (new Date(itemDate).getTime() > endTs) matchDate = false;
+      }
+      return matchStatus && matchDate;
     });
-  }, [approvalHistory, selectedApprovalStatus]);
+  }, [approvalHistory, selectedApprovalStatus, approvalStartDate, approvalEndDate]);
 
   const paginatedApprovalHistory = useMemo(() => {
     const start = (approvalPage - 1) * ITEMS_PER_PAGE;
@@ -412,10 +429,15 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
-  // Export CSV Riwayat Validasi Izin & Sakit (Absensi)
-  const handleExportAbsensiCSV = () => {
+  // Export Excel (.xlsx) Riwayat Validasi Izin / Sakit (Absensi)
+  const handleExportAbsensiExcel = () => {
+    if (!approvalStartDate || !approvalEndDate) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
+      return;
+    }
+
     if (!filteredApprovalHistory || filteredApprovalHistory.length === 0) {
-      toast.error("Tidak ada data riwayat izin & sakit yang sesuai filter untuk diekspor.");
+      toast.error("Tidak ada data riwayat izin / sakit pada rentang tanggal yang dipilih.");
       return;
     }
 
@@ -426,6 +448,7 @@ export const DplDashboardPage: React.FC = () => {
       "Tanggal Mulai",
       "Tanggal Selesai",
       "Alasan / Keterangan",
+      "Lampiran / Link Bukti",
       "Status Keputusan",
       "Waktu Verifikasi",
       "Catatan Penolakan",
@@ -450,6 +473,10 @@ export const DplDashboardPage: React.FC = () => {
         ? new Date(log.reviewedAt).toLocaleString("id-ID")
         : "-";
 
+      const attachmentUrl = log.evidenceUrl
+        ? resolveImageUrl(log.evidenceUrl) || log.evidenceUrl
+        : "-";
+
       return [
         index + 1,
         log.studentName || "-",
@@ -457,20 +484,34 @@ export const DplDashboardPage: React.FC = () => {
         startDateFormatted,
         endDateFormatted,
         log.reason || "-",
+        attachmentUrl,
         statusLabel,
         reviewedAtFormatted,
         log.rejectionReason || "-",
       ];
     });
 
-    exportToXlsx(
-      headers,
-      rows,
-      `Rekap_Riwayat_Absensi_Izin_Sakit_KKN_${new Date().toISOString().slice(0, 10)}`,
-      "Riwayat Izin"
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 5 },
+      { wch: 25 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 35 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Izin / Sakit");
+    XLSX.writeFile(wb, `Rekap_Riwayat_Absensi_Izin_Sakit_${approvalStartDate}_sd_${approvalEndDate}.xlsx`);
+    toast.success(
+      `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor ke XLSX`
     );
-    toast.success(`Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor`);
   };
+
 
   // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)
   const dplKecamatanList = useMemo(() => {
@@ -940,7 +981,7 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Verifikasi Ajuan Izin &amp; Sakit
+              Verifikasi Ajuan Izin / Sakit
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
               Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan.
@@ -1021,8 +1062,8 @@ export const DplDashboardPage: React.FC = () => {
                         {req.evidenceUrl && (
                           <button
                             type="button"
-                            onClick={() => setPreviewEvidence({ url: req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition"
+                            onClick={() => setPreviewEvidence({ url: resolveImageUrl(req.evidenceUrl) || req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80"
                           >
                             <Eye size={12} /> Lihat Surat / Foto Bukti
                           </button>
@@ -1086,35 +1127,71 @@ export const DplDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin &amp; Sakit</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin dan sakit mahasiswa bimbingan.</p>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin / Sakit</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin / sakit mahasiswa bimbingan.</p>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 value={selectedApprovalStatus}
                 onChange={(e) => {
                   setSelectedApprovalStatus(e.target.value);
                   setApprovalPage(1);
                 }}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
               >
                 <option value="ALL">Semua Keputusan</option>
                 <option value="APPROVED">Disetujui</option>
                 <option value="REJECTED">Ditolak</option>
               </select>
 
+              <div className="flex items-center gap-1 text-xs">
+                <input
+                  type="date"
+                  value={approvalStartDate}
+                  onChange={(e) => {
+                    setApprovalStartDate(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+                <span className="text-slate-400 text-xs">s/d</span>
+                <input
+                  type="date"
+                  value={approvalEndDate}
+                  onChange={(e) => {
+                    setApprovalEndDate(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+              </div>
+
+              {(selectedApprovalStatus !== "ALL" || approvalStartDate || approvalEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedApprovalStatus("ALL");
+                    setApprovalStartDate("");
+                    setApprovalEndDate("");
+                    setApprovalPage(1);
+                  }}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                  title="Reset Filter"
+                >
+                  <RotateCcw size={11} /> Reset
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={handleExportAbsensiCSV}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-                title={`Ekspor ${filteredApprovalHistory.length} data riwayat izin/sakit ke format CSV`}
+                onClick={handleExportAbsensiExcel}
+                disabled={!approvalStartDate || !approvalEndDate}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+                title={(!approvalStartDate || !approvalEndDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data izin/sakit ke XLSX"}
               >
-                <Download size={14} />
+                <FileSpreadsheet size={13} />
                 <span>Ekspor XLSX</span>
-                <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
-                  {filteredApprovalHistory.length}
-                </span>
               </button>
             </div>
           </div>
@@ -1126,7 +1203,8 @@ export const DplDashboardPage: React.FC = () => {
                   <th className="px-4 py-3.5">Nama Mahasiswa</th>
                   <th className="px-4 py-3.5">Jenis Izin</th>
                   <th className="px-4 py-3.5">Tanggal / Periode</th>
-                  <th className="px-4 py-3.5 min-w-[240px]">Alasan / Catatan</th>
+                  <th className="px-4 py-3.5 min-w-[220px]">Alasan / Catatan</th>
+                  <th className="px-4 py-3.5 text-center">Lampiran / Bukti</th>
                   <th className="px-4 py-3.5 text-center">Status Keputusan</th>
                 </tr>
               </thead>
@@ -1187,6 +1265,26 @@ export const DplDashboardPage: React.FC = () => {
                         {log.reason}
                       </td>
                       <td className="px-4 py-3.5 text-center">
+                        {log.evidenceUrl ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewEvidence({
+                                url: resolveImageUrl(log.evidenceUrl) || log.evidenceUrl!,
+                                title: `Surat Bukti ${log.type}: ${log.studentName}`,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-1 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80 dark:hover:bg-emerald-900/60"
+                            title="Klik untuk melihat dokumen / foto surat bukti"
+                          >
+                            <Eye size={12} />
+                            <span>Lihat Bukti</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}>
                           {isAppr || isOverr ? <CheckCircle size={12} /> : isRej ? <XCircle size={12} /> : null}
                           {badgeLabel}
@@ -1198,7 +1296,7 @@ export const DplDashboardPage: React.FC = () => {
 
                 {paginatedApprovalHistory.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                    <td colSpan={6} className="p-4 text-center text-slate-400 italic">
                       Belum ada data riwayat persetujuan.
                     </td>
                   </tr>
@@ -1472,14 +1570,16 @@ export const DplDashboardPage: React.FC = () => {
                 Program Kerja yang Diusulkan
               </h3>
             </div>
-            <Link
-              to="/program-kerja-kkn"
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
-              title="Buka Halaman Manajemen Program Kerja KKN"
-            >
-              <span>Semua Proker</span>
-              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/program-kerja-kkn"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+                title="Buka Halaman Manajemen Program Kerja KKN"
+              >
+                <span>Semua Proker</span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
+              </Link>
+            </div>
           </div>
 
           <div className="space-y-2.5">

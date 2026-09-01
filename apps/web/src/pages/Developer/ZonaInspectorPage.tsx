@@ -64,8 +64,10 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { sortKelompokList } from "../../utils/sortUtils";
 import {
   KELURAHAN_GEODATA,
   CoblongGeo,
@@ -267,6 +269,9 @@ const DualGeofencePickerModalMap: React.FC<{
 };
 
 export const ZonaInspectorPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const initialKelompokId = searchParams.get("kelompokId");
+
   // Master Data States (Strict Relational Binding by ID)
   const [kelompokList, setKelompokList] = useState<any[]>([]);
   const [poskoList, setPoskoList] = useState<any[]>([]);
@@ -300,7 +305,7 @@ export const ZonaInspectorPage: React.FC = () => {
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [editMode, setEditMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [editPoints, setEditPoints] = useState<[number, number][]>([[-6.8906, 107.615]]);
-  const [editRadius, setEditRadius] = useState<number>(200);
+  const [editRadius, setEditRadius] = useState<number>(500);
   const [editPoskoForm, setEditPoskoForm] = useState({
     nama: "",
     alamat: "",
@@ -326,7 +331,7 @@ export const ZonaInspectorPage: React.FC = () => {
       const scheds = scheduleRes.data?.data || [];
       const locs = studentLocRes.data?.data || [];
 
-      setKelompokList(Array.isArray(groups) ? groups : []);
+      setKelompokList(Array.isArray(groups) ? sortKelompokList(groups, (k: any) => k.name || "") : []);
       setPoskoList(Array.isArray(poskos) ? poskos : []);
       setSchedules(Array.isArray(scheds) ? scheds : []);
       setStudentLocations(Array.isArray(locs) ? locs : []);
@@ -349,11 +354,13 @@ export const ZonaInspectorPage: React.FC = () => {
 
   // Map groups with their respective Posko, Geofence, and Students (Strict Relation by ID)
   const enrichedGroups = useMemo(() => {
-    // 1. Strict Map of Posko by Kelompok ID (UUID)
-    const poskoMap = new Map<string, any>();
+    // 1. Map of ALL Poskos by Kelompok ID (Multi-Posko support)
+    const poskoGroupMap = new Map<string, any[]>();
     poskoList.forEach((p) => {
       if (p && p.kelompokId) {
-        poskoMap.set(String(p.kelompokId), p);
+        const arr = poskoGroupMap.get(String(p.kelompokId)) || [];
+        arr.push(p);
+        poskoGroupMap.set(String(p.kelompokId), arr);
       }
     });
 
@@ -376,20 +383,22 @@ export const ZonaInspectorPage: React.FC = () => {
 
     return kelompokList.map((group, idx) => {
       const gId = String(group.id);
-      const posko = poskoMap.get(gId) || group.poskoKkn || null;
+      const groupPoskos = poskoGroupMap.get(gId) || (group.poskoKkn ? [group.poskoKkn] : []);
+      const primaryPosko = groupPoskos.find((p: any) => p.isUtama) || groupPoskos[0] || null;
       const activeSchedule = scheduleMap.get(gId) || null;
 
-      // Determine center coordinate: 1. Posko -> 2. Schedule -> 3. Kelurahan Centroid -> 4. Coblong Center
+      // Determine primary center coordinate: 1. Posko Utama -> 2. Schedule -> 3. Kelurahan Centroid -> 4. Coblong Center
       let lat = CoblongGeo.CENTER[0];
       let lng = CoblongGeo.CENTER[1];
       let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
-      let radius = 200;
+      let radius = 500;
       let polygon: [number, number][] | null = null;
 
-      if (posko && posko.latitude && posko.longitude) {
-        lat = Number(posko.latitude);
-        lng = Number(posko.longitude);
+      if (primaryPosko && primaryPosko.latitude && primaryPosko.longitude) {
+        lat = Number(primaryPosko.latitude);
+        lng = Number(primaryPosko.longitude);
         geofenceSource = "POSKO_RESMI";
+        if (primaryPosko.radius) radius = Number(primaryPosko.radius);
       } else if (activeSchedule && activeSchedule.latitude && activeSchedule.longitude) {
         lat = Number(activeSchedule.latitude);
         lng = Number(activeSchedule.longitude);
@@ -407,7 +416,7 @@ export const ZonaInspectorPage: React.FC = () => {
         }
       }
 
-      // Check students belonging strictly to this group by kelompokId & userId
+      // Check students belonging strictly to this group: Inside if near ANY group posko or polygon
       const groupStudents = (group.students || []).map((st: any) => {
         const sUserId = String(st.userId || st.user?.id || st.id);
         const loc = locMap.get(sUserId) || null;
@@ -417,10 +426,25 @@ export const ZonaInspectorPage: React.FC = () => {
         if (loc && loc.latitude && loc.longitude) {
           const sLat = Number(loc.latitude);
           const sLng = Number(loc.longitude);
-          dist = calculateDistance(lat, lng, sLat, sLng);
+
           if (polygon && polygon.length >= 3) {
             inZone = isPointInPolygon(sLat, sLng, polygon);
+            dist = calculateDistance(lat, lng, sLat, sLng);
+          } else if (groupPoskos.length > 0) {
+            let minDistance = Infinity;
+            for (const gp of groupPoskos) {
+              const gpLat = Number(gp.latitude);
+              const gpLng = Number(gp.longitude);
+              const gpRadius = gp.radius ? Number(gp.radius) : 500;
+              const d = calculateDistance(gpLat, gpLng, sLat, sLng);
+              if (d < minDistance) minDistance = d;
+              if (d <= gpRadius) {
+                inZone = true;
+              }
+            }
+            dist = minDistance;
           } else {
+            dist = calculateDistance(lat, lng, sLat, sLng);
             inZone = dist <= radius;
           }
         }
@@ -440,13 +464,14 @@ export const ZonaInspectorPage: React.FC = () => {
         ...group,
         index: idx,
         color: getGroupColor(idx),
-        posko,
+        posko: primaryPosko,
+        poskos: groupPoskos,
         activeSchedule,
         center: [lat, lng] as [number, number],
         radius,
         polygon,
         geofenceSource,
-        hasRegisteredPosko: !!posko,
+        hasRegisteredPosko: groupPoskos.length > 0,
         studentsDetailed: groupStudents,
         totalStudents: groupStudents.length,
         activeGpsStudentsCount: studentsWithGps.length,
@@ -544,6 +569,19 @@ export const ZonaInspectorPage: React.FC = () => {
     setMapCenter(group.center);
     setMapZoom(16);
   };
+
+  // Auto-focus jika dibuka dari Menu Posko via URL ?kelompokId=...
+  useEffect(() => {
+    if (initialKelompokId && enrichedGroups.length > 0) {
+      const target = enrichedGroups.find((g) => String(g.id) === String(initialKelompokId));
+      if (target) {
+        setSelectedKelompokId(target.id);
+        setMapCenter(target.center);
+        setMapZoom(17);
+        setDetailModalGroup(target);
+      }
+    }
+  }, [initialKelompokId, enrichedGroups]);
 
   // Reset to full view
   const handleResetView = () => {
@@ -723,12 +761,13 @@ export const ZonaInspectorPage: React.FC = () => {
         {/* Posko Terdaftar */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Posko Terdaftar</p>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Titik Posko</p>
             <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-              {enrichedGroups.filter((g) => g.hasRegisteredPosko).length}
-              <span className="text-xs text-slate-400 font-medium ml-1">/ {enrichedGroups.length}</span>
+              {poskoList.length}
             </h3>
-            <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">Titik Geofence Riil</span>
+            <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold">
+              {enrichedGroups.filter((g) => g.hasRegisteredPosko).length} / {enrichedGroups.length} Kelompok Ter-cover
+            </span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 size={20} />
@@ -738,11 +777,11 @@ export const ZonaInspectorPage: React.FC = () => {
         {/* Posko Belum Dibuat */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Belum Ada Posko</p>
+            <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kelompok Tanpa Posko</p>
             <h3 className="text-2xl font-black text-amber-500 dark:text-amber-400 mt-0.5">
               {enrichedGroups.filter((g) => !g.hasRegisteredPosko).length}
             </h3>
-            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Memakai Default System</span>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Memakai Estimasi Default</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <AlertCircle size={20} />
@@ -951,8 +990,52 @@ export const ZonaInspectorPage: React.FC = () => {
                             </div>
                           </Popup>
                         </Polygon>
+                      ) : group.poskos && group.poskos.length > 1 ? (
+                        /* Multi-Posko Circle Radius Geofences */
+                        group.poskos.map((gp: any, pIdx: number) => {
+                          const gpLat = Number(gp.latitude);
+                          const gpLng = Number(gp.longitude);
+                          const gpRadius = gp.radius ? Number(gp.radius) : 500;
+                          return (
+                            <Circle
+                              key={`group-circle-${group.id}-posko-${gp.id || pIdx}`}
+                              center={[gpLat, gpLng]}
+                              radius={gpRadius}
+                              pathOptions={{
+                                color: circleColor,
+                                weight: isSelected ? 3.5 : isOverlapping ? 2.5 : 1.8,
+                                fillColor: circleColor,
+                                fillOpacity: isSelected ? 0.35 : isOverlapping ? 0.22 : 0.15,
+                              }}
+                              eventHandlers={{
+                                click: () => handleFocusGroup(group),
+                              }}
+                            >
+                              <Popup>
+                                <div className="p-1 min-w-[240px] text-xs font-sans">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-black text-slate-900 text-sm">{group.name}</span>
+                                    <span className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-extrabold text-[9px]">
+                                      {gp.isUtama ? "POSKO UTAMA" : `POSKO SATELIT #${pIdx + 1}`}
+                                    </span>
+                                  </div>
+                                  <p className="text-slate-500 text-[11px] mt-0.5 font-medium">
+                                    {gp.nama} • Radius {gpRadius}m
+                                  </p>
+                                  <div className="mt-2 pt-1.5 border-t border-slate-100 space-y-1 text-slate-700">
+                                    <p><span className="font-semibold text-slate-500">Alamat:</span> {gp.alamat || "-"}</p>
+                                    <p><span className="font-semibold text-slate-500">DPL:</span> {group.dpl?.name || group.dplNamaMentah || "-"}</p>
+                                  </div>
+                                </div>
+                              </Popup>
+                              <Tooltip direction="top" offset={[0, -10]} opacity={0.9} className="custom-leaflet-tooltip font-bold text-[10px]">
+                                {group.name} ({gp.nama})
+                              </Tooltip>
+                            </Circle>
+                          );
+                        })
                       ) : (
-                        /* Circle Radius Geofence */
+                        /* Single Circle Radius Geofence */
                         <Circle
                           center={group.center}
                           radius={group.radius}
@@ -1020,56 +1103,73 @@ export const ZonaInspectorPage: React.FC = () => {
                   );
                 })}
 
-              {/* LAYER 3: Dedicated Distinct Posko KKN Pin Markers */}
+              {/* LAYER 3: Dedicated Distinct Posko KKN Pin Markers (Multi-Posko support) */}
               {showPoskoMarkers &&
-                filteredGroups.map((group) => {
+                filteredGroups.flatMap((group) => {
                   const isOverlapping = overlappingGroupIds.has(String(group.id));
                   const poskoStatus = group.hasRegisteredPosko ? "REGISTERED" : "UNREGISTERED";
+                  const poskoListToRender = group.poskos && group.poskos.length > 0 
+                    ? group.poskos 
+                    : [{ id: `default-${group.id}`, isDefault: true, latitude: group.center[0], longitude: group.center[1], nama: "Estimasi Default Kelurahan", isUtama: true }];
 
-                  return (
-                    <Marker
-                      key={`posko-marker-${group.id}`}
-                      position={group.center}
-                      icon={createPoskoKknIcon(
-                        poskoStatus,
-                        group.name,
-                        group.color,
-                        isOverlapping
-                      )}
-                      eventHandlers={{
-                        click: () => handleFocusGroup(group),
-                      }}
-                    >
-                      <Popup>
-                        <div className="p-1 min-w-[220px] text-xs">
-                          <span className="font-bold text-slate-900 text-sm block">{group.name}</span>
-                          <span className="text-[10px] text-slate-500 block mb-1.5">
-                            {group.hasRegisteredPosko ? "📍 Posko KKN Resmi Terverifikasi" : "⚠️ Posko Belum Didaftarkan (Titik Default)"}
-                          </span>
-                          {group.posko ? (
-                            <div className="space-y-1 text-slate-600 text-[11px]">
-                              <p><strong>Nama Posko:</strong> {group.posko.nama}</p>
-                              <p><strong>Alamat:</strong> {group.posko.alamat}</p>
-                              <p><strong>Koordinat:</strong> {group.posko.latitude}, {group.posko.longitude}</p>
+                  return poskoListToRender.map((poskoItem: any, pIdx: number) => {
+                    const lat = Number(poskoItem.latitude);
+                    const lng = Number(poskoItem.longitude);
+                    const isMulti = !poskoItem.isUtama && poskoListToRender.length > 1;
+
+                    return (
+                      <Marker
+                        key={`posko-marker-${group.id}-${poskoItem.id || pIdx}`}
+                        position={[lat, lng]}
+                        icon={createPoskoKknIcon(
+                          poskoStatus,
+                          `${group.name}${isMulti ? ` (Posko ${pIdx + 1})` : ""}`,
+                          group.color,
+                          isOverlapping
+                        )}
+                        eventHandlers={{
+                          click: () => handleFocusGroup(group),
+                        }}
+                      >
+                        <Popup>
+                          <div className="p-1 min-w-[220px] text-xs">
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className="font-bold text-slate-900 text-sm block">{group.name}</span>
+                              {poskoListToRender.length > 1 && (
+                                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-indigo-100 text-indigo-800">
+                                  {poskoItem.isUtama ? "Posko Utama" : `Posko ${pIdx + 1}`}
+                                </span>
+                              )}
                             </div>
-                          ) : (
-                            <p className="text-amber-600 font-medium text-[11px]">
-                              Mahasiswa kelompok ini belum menentukan titik posko pada aplikasi.
-                            </p>
-                          )}
-                          <div className="mt-2 pt-2 border-t border-slate-100">
-                            <button
-                              onClick={() => handleOpenEditModal(group)}
-                              className="w-full py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] flex items-center justify-center gap-1"
-                            >
-                              <Pencil size={11} />
-                              <span>Set Titik Posko Ini</span>
-                            </button>
+                            <span className="text-[10px] text-slate-500 block mb-1.5">
+                              {group.hasRegisteredPosko ? `📍 ${poskoItem.nama || "Posko KKN Resmi"}` : "⚠️ Posko Belum Didaftarkan (Titik Default)"}
+                            </span>
+                            {group.hasRegisteredPosko ? (
+                              <div className="space-y-1 text-slate-600 text-[11px]">
+                                <p><strong>Nama Posko:</strong> {poskoItem.nama}</p>
+                                <p><strong>Alamat:</strong> {poskoItem.alamat || `Kelurahan ${group.kelurahan}`}</p>
+                                <p><strong>Koordinat:</strong> {lat.toFixed(5)}, {lng.toFixed(5)}</p>
+                                <p><strong>Radius Geofence:</strong> {poskoItem.radius || 150}m</p>
+                              </div>
+                            ) : (
+                              <p className="text-amber-600 font-medium text-[11px]">
+                                Mahasiswa kelompok ini belum menentukan titik posko pada aplikasi.
+                              </p>
+                            )}
+                            <div className="mt-2 pt-2 border-t border-slate-100">
+                              <button
+                                onClick={() => handleOpenEditModal(group)}
+                                className="w-full py-1 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] flex items-center justify-center gap-1"
+                              >
+                                <Pencil size={11} />
+                                <span>Ubah / Set Titik Posko</span>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
+                        </Popup>
+                      </Marker>
+                    );
+                  });
                 })}
 
               {/* LAYER 4: Student Live GPS Markers */}

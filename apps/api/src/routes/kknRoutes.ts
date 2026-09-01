@@ -12,7 +12,12 @@ import { kknAttendanceController } from "../controllers/kknAttendanceController.
 import { logbookController } from "../controllers/logbookController.js";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { uploadSingleImage, safeUploadSingleImage, uploadPemanfaatanImage, upload } from "../middlewares/uploadMiddleware.js";
+import {
+  uploadSingleImage,
+  safeUploadSingleImage,
+  uploadPemanfaatanImage,
+  upload,
+} from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -324,11 +329,7 @@ router.get(
  *       400:
  *         description: Data input tidak valid
  */
-router.get(
-  "/fasilitas/jenis",
-  authMiddleware,
-  kknController.getJenisFasilitas
-);
+router.get("/fasilitas/jenis", authMiddleware, kknController.getJenisFasilitas);
 
 router.post(
   "/fasilitas/bantu-input",
@@ -533,16 +534,20 @@ router.put(
  *       200:
  *         description: Berhasil memuat daftar seluruh posko KKN
  */
-router.get(
-  "/posko",
-  authMiddleware,
-  kknController.getAllPosko
-);
+router.get("/posko", authMiddleware, kknController.getAllPosko);
 
 router.post(
   "/posko",
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "DPL",
+  ]),
   safeUploadSingleImage("foto"),
   kknController.createPosko
 );
@@ -550,7 +555,15 @@ router.post(
 router.put(
   "/posko/:id",
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "DPL",
+  ]),
   safeUploadSingleImage("foto"),
   kknController.updatePosko
 );
@@ -558,7 +571,14 @@ router.put(
 router.delete(
   "/posko/:id",
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "DLH_ADMIN", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknController.deletePosko
 );
 
@@ -665,12 +685,63 @@ router.post(
   kknController.createLogbookPemanfaatan
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/pemanfaatan-sampah/{id}:
+ *   put:
+ *     summary: Pembaruan logbook pemanfaatan sampah KKN (Murni edit data tanpa mengubah riwayat poin)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Logbook pemanfaatan sampah berhasil diperbarui
+ */
 router.put(
   "/pemanfaatan-sampah/:id",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   uploadPemanfaatanImage,
-  kknController.createLogbookPemanfaatan
+  kknController.updateLogbookPemanfaatan
+);
+
+router.patch(
+  "/pemanfaatan-sampah/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  kknController.updateLogbookPemanfaatan
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/pemanfaatan-sampah/{id}:
+ *   delete:
+ *     summary: Menghapus logbook pemanfaatan sampah KKN (Menarik kembali riwayat poin dari seluruh anggota kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Laporan pemanfaatan sampah berhasil dihapus
+ */
+router.delete(
+  "/pemanfaatan-sampah/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  kknController.deleteLogbookPemanfaatan
 );
 
 router.get(
@@ -680,11 +751,15 @@ router.get(
   kknController.getUnharvestedLogbooks
 );
 
+// ──────────────────────────────────────────────────────────
+// PROGRAM KERJA (PROKER) MAHASISWA KKN
+// ──────────────────────────────────────────────────────────
+
 router.post(
-  "/program-kerja",
+  ["/program-kerja", "/proker"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  upload.single("filePdf"),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
   kknController.createProgramKerja
 );
 
@@ -693,30 +768,203 @@ router.put(
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
   upload.single("filePdf"),
-  kknController.createProgramKerja
+  kknController.updateProgramKerja
 );
 
 router.get(
-  "/program-kerja",
+  ["/program-kerja", "/proker"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getProgramKerja
 );
 
+router.get(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getProgramKerjaById
+);
+
 router.put(
-  "/logbook/:id",
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.patch(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.delete(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  kknController.deleteProgramKerja
+);
+
+// ──────────────────────────────────────────────────────────
+// LOGBOOK MAHASISWA (ALIAS UNDER /api/v1/kkn)
+// ──────────────────────────────────────────────────────────
+
+router.get(
+  ["/logbook", "/logbook-aktivitas"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "DPL",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  logbookController.getMahasiswaLogbooks
+);
+
+router.get(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "DPL",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  logbookController.getMahasiswaLogbookById
+);
+
+router.post(
+  ["/logbook", "/logbook-aktivitas"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  logbookController.createMahasiswaLogbook
+);
+
+router.put(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
   uploadPemanfaatanImage,
   logbookController.updateMahasiswaLogbook
 );
 
+router.patch(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
+router.delete(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  logbookController.deleteMahasiswaLogbook
+);
+/**
+ * @swagger
+ * /api/v1/kkn/panen-hasil:
+ *   post:
+ *     summary: Pencatatan hasil panen (Pilar 3) oleh Mahasiswa KKN
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Hasil panen berhasil dicatat (+25 Poin untuk seluruh anggota kelompok)
+ */
 router.post(
   "/panen-hasil",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
   uploadPemanfaatanImage,
   kknController.createPanenHasil
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/panen-hasil/{id}:
+ *   put:
+ *     summary: Pembaruan data hasil panen KKN (Murni edit data tanpa mengubah riwayat poin)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Hasil panen berhasil diperbarui
+ */
+router.put(
+  "/panen-hasil/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+
+router.patch(
+  "/panen-hasil/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/panen-hasil/{id}:
+ *   delete:
+ *     summary: Menghapus hasil panen KKN (Menarik kembali riwayat poin panen seluruh anggota kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Hasil panen berhasil dihapus dan poin ditarik kembali
+ */
+router.delete(
+  "/panen-hasil/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  kknController.deletePanenHasil
 );
 
 /**
@@ -850,7 +1098,6 @@ router.get(
   kknAttendanceController.getActivityLocation
 );
 
-
 router.get(
   "/notifications",
   authMiddleware,
@@ -910,7 +1157,14 @@ router.get("/schedules", authMiddleware, scheduleController.getAllSchedules);
 router.get(
   "/dampak-rw",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getDampakRw
 );
 
@@ -929,7 +1183,14 @@ router.get(
 router.get(
   "/dampak-kelurahan",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DPL", "PEMIMPIN", "PANITIA_TASKFORCE"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getDampakKelurahan
 );
 
@@ -979,11 +1240,7 @@ router.get(
  *       200:
  *         description: Berhasil memuat linimasa KKN, rekomendasi aksi, dan pertanyaan kritis
  */
-router.get(
-  ["/timeline", "/linimasa"],
-  optionalAuthMiddleware,
-  kknController.getTimelineMahasiswa
-);
+router.get(["/timeline", "/linimasa"], optionalAuthMiddleware, kknController.getTimelineMahasiswa);
 
 /**
  * @swagger

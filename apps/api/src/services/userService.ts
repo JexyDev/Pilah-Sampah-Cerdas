@@ -11,7 +11,6 @@ import { hashPassword } from "../utils/hashUtils.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 
-
 function formatTitleCaseName(name?: string): string {
   if (!name) return "";
   const degrees: Record<string, string> = {
@@ -224,8 +223,12 @@ export class UserService {
         u.rw || u.rt?.rw || u.households?.[0]?.rw || u.studentProfile?.assignedRw || u.rwOwned;
       let kelurahanName = rwObj?.kelurahan?.name || "-";
       let kecamatanName = rwObj?.kelurahan?.kecamatan?.name || "-";
-      let kabupatenName = u.kabupaten || (rwObj?.kelurahan?.kecamatan as any)?.kabupaten?.name || "Kota Bandung";
-      let provinsiName = u.provinsi || ((rwObj?.kelurahan?.kecamatan as any)?.kabupaten as any)?.provinsi?.name || "Jawa Barat";
+      let kabupatenName =
+        u.kabupaten || (rwObj?.kelurahan?.kecamatan as any)?.kabupaten?.name || "Kota Bandung";
+      let provinsiName =
+        u.provinsi ||
+        ((rwObj?.kelurahan?.kecamatan as any)?.kabupaten as any)?.provinsi?.name ||
+        "Jawa Barat";
 
       if (u.address) {
         const provMatch = u.address.match(/(?:Prov\.?|Provinsi)\s*([^,]+)/i);
@@ -238,7 +241,11 @@ export class UserService {
         }
         const kecMatch = u.address.match(/(?:Kecamatan|Kec\.?)\s*([^,]+)/i);
         if (kecMatch && kecMatch[1] && kecamatanName === "-") {
-          const rawKec = kecMatch[1].trim().replace(/^amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
+          const rawKec = kecMatch[1]
+            .trim()
+            .replace(/^amatan\s*/i, "")
+            .replace(/^Kecamatan\s*/i, "")
+            .trim();
           if (rawKec && rawKec !== "-") {
             kecamatanName = `Kecamatan ${rawKec}`;
           }
@@ -284,7 +291,14 @@ export class UserService {
         if (kecamatanName.toLowerCase().includes("coblong")) {
           kecamatanName = "-";
         }
-        const coblongKels = ["cipaganti", "dago", "lebak gede", "lebak siliwangi", "sadang serang", "sekeloa"];
+        const coblongKels = [
+          "cipaganti",
+          "dago",
+          "lebak gede",
+          "lebak siliwangi",
+          "sadang serang",
+          "sekeloa",
+        ];
         if (coblongKels.some((k) => kelurahanName.toLowerCase().includes(k))) {
           kelurahanName = "-";
         }
@@ -355,7 +369,10 @@ export class UserService {
           userWilayah = [rwStr, kelStr].filter(Boolean).join(" ") || "-";
         }
       } else {
-        const parts = [rwName !== "-" ? rwName : "", kelurahanName !== "-" ? kelurahanName : ""].filter(Boolean);
+        const parts = [
+          rwName !== "-" ? rwName : "",
+          kelurahanName !== "-" ? kelurahanName : "",
+        ].filter(Boolean);
         userWilayah = parts.length > 0 ? parts.join(", ") : u.address || "-";
       }
 
@@ -372,16 +389,17 @@ export class UserService {
         }
       }
 
-      let formattedAddress = (u.address && u.address !== "-") ? u.address : "";
+      let formattedAddress = u.address && u.address !== "-" ? u.address : "";
       if (!formattedAddress) {
         if (["WARGA", "RW", "PETUGAS_RESIDU"].includes(u.role?.name)) {
           const locationParts = [
             rwName !== "-" ? rwName : "",
             kelurahanName !== "-" ? kelurahanName : "",
             kecamatanName !== "-" ? kecamatanName : "",
-            kabupatenName !== "-" ? kabupatenName : ""
+            kabupatenName !== "-" ? kabupatenName : "",
           ].filter(Boolean);
-          formattedAddress = locationParts.length > 0 ? `Sekretariat ${locationParts.join(", ")}` : (u.address || "-");
+          formattedAddress =
+            locationParts.length > 0 ? `Sekretariat ${locationParts.join(", ")}` : u.address || "-";
         } else {
           formattedAddress = u.address || "-";
         }
@@ -601,7 +619,8 @@ export class UserService {
 
       if (roleName === "MAHASISWA_KKN") {
         const rawNim = studentProfile?.nim || nim;
-        const targetNim = rawNim && String(rawNim).trim() !== "" && rawNim !== "-" ? String(rawNim).trim() : null;
+        const targetNim =
+          rawNim && String(rawNim).trim() !== "" && rawNim !== "-" ? String(rawNim).trim() : null;
 
         if (targetNim) {
           const existingNim = await tx.studentKkn.findUnique({ where: { nim: targetNim } });
@@ -643,9 +662,7 @@ export class UserService {
             fakultas: studentProfile?.fakultas || institusi || "UNIKOM",
             jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan || "S1",
             noWa: studentProfile?.noWa || u.phone || "",
-            startDate: studentProfile?.startDate
-              ? new Date(studentProfile.startDate)
-              : new Date(),
+            startDate: studentProfile?.startDate ? new Date(studentProfile.startDate) : new Date(),
             endDate: studentProfile?.endDate
               ? new Date(studentProfile.endDate)
               : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
@@ -687,7 +704,6 @@ export class UserService {
       return u;
     });
 
-
     return {
       id: newUser.id,
       name: newUser.name,
@@ -726,7 +742,11 @@ export class UserService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    if (currentUser?.userId === id && status && ["Nonaktif", "INACTIVE", "NONAKTIF"].includes(status)) {
+    if (
+      currentUser?.userId === id &&
+      status &&
+      ["Nonaktif", "INACTIVE", "NONAKTIF"].includes(status)
+    ) {
       throw new Error("CANNOT_DEACTIVATE_SELF");
     }
 
@@ -738,11 +758,17 @@ export class UserService {
       throw new Error("FORBIDDEN_ROLE_UPDATE");
     }
 
-    if ((user.role.name === "DEVELOPER" || roleName === "DEVELOPER") && currentUser?.role !== "DEVELOPER") {
+    if (
+      (user.role.name === "DEVELOPER" || roleName === "DEVELOPER") &&
+      currentUser?.role !== "DEVELOPER"
+    ) {
       throw new Error("FORBIDDEN_DEVELOPER_MUTATION");
     }
 
-    if (currentUser?.role === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(user.role.name)) {
+    if (
+      currentUser?.role === "PANITIA_TASKFORCE" &&
+      !["MAHASISWA_KKN", "DPL"].includes(user.role.name)
+    ) {
       throw new Error("FORBIDDEN_ROLE_UPDATE");
     }
 
@@ -955,7 +981,7 @@ export class UserService {
               : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
             assignedRwId: studentProfile?.assignedRwId
               ? parseInt(studentProfile.assignedRwId)
-              : (parsedRwId || u.rwId),
+              : parsedRwId || u.rwId,
             kelompokId: targetKelompokId,
             whitelistStatus: "APPROVED",
           },
@@ -1048,7 +1074,10 @@ export class UserService {
       throw new Error("FORBIDDEN_DEVELOPER_MUTATION");
     }
 
-    if (currentUserRole === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(user.role.name)) {
+    if (
+      currentUserRole === "PANITIA_TASKFORCE" &&
+      !["MAHASISWA_KKN", "DPL"].includes(user.role.name)
+    ) {
       throw new Error("FORBIDDEN_ROLE_DELETE");
     }
 

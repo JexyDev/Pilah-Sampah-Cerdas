@@ -34,6 +34,7 @@ import {
   Download,
   Navigation,
   CheckCircle2,
+  FileSpreadsheet,
   Map as MapIcon,
   ChevronDown,
   Target,
@@ -58,12 +59,21 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
 import { wsClient } from "../../utils/websocket";
-import { exportToXlsx } from "../../utils/exportXlsx";
+import {
+  toTitleCase,
+  formatPersonName,
+  formatKelompokName,
+  formatWilayahName,
+  formatProdiName,
+  formatStatusName,
+} from "../../utils/textFormatter";
+import { sortNatural, sortKelompokList, extractGroupNumber } from "../../utils/sortUtils";
 import {
   KELURAHAN_GEODATA,
   createKknMhsIcon as createStudentIcon,
@@ -1019,12 +1029,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }).length;
     const fulfilledTarget = attendance.filter((a) => {
       const st = String(a.status || "").toUpperCase();
+      const isIzinSakit = st.includes("IZIN") || st.includes("SAKIT");
+      if (isIzinSakit) return false;
       if (st === "HADIR_MEMENUHI") return true;
       if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT") return false;
-      if (a.isMemenuhiDurasi !== undefined) return a.isMemenuhiDurasi;
-      if (!a.completedAt) return false;
-      const mins = calculateDurationMinutes(a.attendedAt, a.completedAt);
-      return mins >= scheduleTargetHours * 60;
+      const aAny = a as any;
+      const targetMins = (aAny.targetDurationMinutes && Number(aAny.targetDurationMinutes) > 0)
+        ? Number(aAny.targetDurationMinutes)
+        : (scheduleTargetHours * 60);
+      const storedMins = (aAny.actualInZoneMinutes !== null && aAny.actualInZoneMinutes !== undefined) ? Number(aAny.actualInZoneMinutes) : 0;
+      const liveMins = a.attendedAt ? calculateDurationMinutes(a.attendedAt, a.completedAt) : 0;
+      const durMins = storedMins > 0 ? storedMins : liveMins;
+      if (durMins >= targetMins && durMins > 0) return true;
+      if (a.isMemenuhiDurasi !== undefined) return Boolean(a.isMemenuhiDurasi);
+      return false;
     }).length;
 
     return { total, active, completed, izinSakit, notAttended, fulfilledTarget };
@@ -1033,10 +1051,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const fetchGroups = async () => {
     try {
       const res = await api.get("/kelompok");
-      const list =
+      const rawList =
         res.data?.groups ||
         res.data?.data ||
         (Array.isArray(res.data) ? res.data : []);
+      const list = sortKelompokList(rawList, (g: any) => g.name || "");
       setGroups(list);
       if (isDpl && list.length > 0) {
         setSelectedKelompokId(list[0].id);
@@ -1310,10 +1329,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     }
   }, [selectedKelompokId, activeSchedule, groups, isDeveloper]);
 
-  // Reset page when filter or search changes
+  // Reset halaman ke 1 HANYA saat user mengubah filter/pencarian secara eksplisit.
+  // selectedScheduleId SENGAJA dikeluarkan dari sini karena bisa berubah otomatis dari
+  // WebSocket/polling, yang akan menyebabkan halaman ke-reset saat user sedang scroll/browse.
   useEffect(() => {
     setCurrentPage(1);
-  }, [studentSearch, attendanceFilterTab, selectedKelompokId, selectedScheduleId]);
+  }, [studentSearch, attendanceFilterTab, selectedKelompokId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // WebSocket Live GPS & Attendance Tracking for Developer & Super Admin (and seamless real-time map/table updates)
   useEffect(() => {
@@ -1558,10 +1579,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       } else if (statusUpper.includes("ALPA")) {
         statusStr = "Alpa";
       } else if (isAttended && !isFinished) {
-        statusStr = "Sedang di Lapangan";
+        const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
+        statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
         const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? rec.isMemenuhiDurasi
+          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
           : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
@@ -1576,26 +1598,33 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       ];
     });
 
-    exportToXlsx(
-      headers,
-      rows,
-      `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}`,
-      "Presensi KKN"
-    );
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 28 }, // Nama
+      { wch: 18 }, // NIM
+      { wch: 25 }, // Status
+      { wch: 22 }, // Waktu Masuk
+      { wch: 22 }, // Waktu Pulang
+      { wch: 16 }, // Durasi
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap Presensi");
+    XLSX.writeFile(wb, `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     setIsExportModalOpen(false);
     toast.success(
-      `Laporan Presensi (${filtered.length} baris) berhasil diunduh`
+      `Laporan Presensi (${filtered.length} baris) berhasil diunduh ke Excel (.xlsx)`
     );
   };
 
-  // Export CSV langsung dari data tabel yang tersaring (Filtered Table Export)
-  const handleExportFilteredAttendanceCSV = () => {
-    if (!filteredAttendance || filteredAttendance.length === 0) {
-      toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
+  // Export XLSX langsung dari data tabel yang tersaring (Filtered Table Export)
+  const handleExportFilteredAttendanceXLSX = () => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
-    if (!startDateFilter && !endDateFilter) {
-      toast.error("Isi filter tanggal terlebih dahulu sebelum mengekspor.");
+
+    if (!filteredAttendance || filteredAttendance.length === 0) {
+      toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
       return;
     }
 
@@ -1631,17 +1660,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       } else if (statusUpper.includes("ALPA") || statusUpper.includes("ALPHA")) {
         statusStr = "Alpa";
       } else if (isAttended && !isFinished) {
-        statusStr = "Sedang di Lapangan";
+        const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
+        statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
         const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? rec.isMemenuhiDurasi
+          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
           : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
       const kelompokName = groups.find((g) => g.id === (recAny.groupId || rec.student?.groupId || selectedKelompokId))?.name || (selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId)?.name : "-");
       const kegiatanTitle = activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-");
-      const isTargetMet = durationMins >= (scheduleTargetHours * 60);
+      const isTargetMet = durationMins >= (scheduleTargetHours * 60) || Boolean(rec.isMemenuhiDurasi);
 
       return [
         index + 1,
@@ -1654,19 +1684,30 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
         durationMins,
         scheduleTargetHours,
-        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-",
+        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-",
       ];
     });
 
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 28 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 22 },
+      { wch: 22 },
+      { wch: 15 },
+      { wch: 14 },
+      { wch: 25 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Presensi");
     const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
-    exportToXlsx(
-      headers,
-      rows,
-      `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}`,
-      "Presensi"
-    );
+    XLSX.writeFile(wb, `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     toast.success(
-      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor`
+      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor ke XLSX`
     );
   };
 
@@ -1776,14 +1817,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         return timeB - timeA;
       }
 
-      // Default fallback: urutkan alfabet kelompok lalu nama mahasiswa
+      // Default fallback: urutkan natural kelompok lalu nama mahasiswa
       const kelA = a.student?.studentProfile?.kelompok?.name || a.kelompokName || "";
       const kelB = b.student?.studentProfile?.kelompok?.name || b.kelompokName || "";
-      if (kelA !== kelB) return kelA.localeCompare(kelB);
+      if (kelA !== kelB) return sortNatural(kelA, kelB);
 
       const nameA = a.student?.name || "";
       const nameB = b.student?.name || "";
-      return nameA.localeCompare(nameB);
+      return nameA.localeCompare(nameB, "id", { sensitivity: "base" });
     });
   }, [attendance, attendanceFilterTab, studentSearch]);
 
@@ -2501,6 +2542,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <MapIcon size={14} className={showMap ? "text-emerald-600" : "text-slate-500"} />
             <span>{showMap ? "Sembunyikan Peta" : "Buka Peta GPS"}</span>
           </button>
+
+          {/* Tombol Akses Laporan & Log Presensi */}
+          <Link
+            to="/monitoring-kegiatan/laporan-presensi"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-300 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shadow-2xs active:scale-95"
+            title="Buka Laporan Rekapitulasi & Log Detail Presensi Mahasiswa"
+          >
+            <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>Laporan &amp; Log Presensi</span>
+          </Link>
 
           {isSuperUserOrDev && (
             <button
@@ -3382,9 +3433,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <X size={13} />
               </button>
             )}
+
+            {/* Standar 1 Tombol Ekspor XLSX */}
+            <button
+              type="button"
+              onClick={handleExportFilteredAttendanceXLSX}
+              disabled={!startDateFilter || !endDateFilter}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data presensi terfilter ke XLSX"}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
+            </button>
           </div>
 
-          {/* Filter Status Chips & Export Button */}
+          {/* Filter Status Chips */}
           <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
             {!isDpl && (
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
@@ -3445,21 +3508,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </button>
               </div>
             )}
-
-            {/* Tombol Ekspor CSV dekat tabel setelah seleksi filter */}
-            <button
-              type="button"
-              onClick={handleExportFilteredAttendanceCSV}
-              disabled={!startDateFilter && !endDateFilter}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
-              title={(!startDateFilter && !endDateFilter) ? "Isi filter tanggal terlebih dahulu untuk mengekspor" : `Ekspor ${filteredAttendance.length} data presensi terfilter ke XLSX`}
-            >
-              <Download size={14} />
-              <span>Ekspor XLSX</span>
-              <span className="bg-emerald-700/80 px-1.5 py-0.2 rounded-md text-[10.5px] font-extrabold text-emerald-100">
-                {filteredAttendance.length}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -3510,11 +3558,23 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-3 w-12 text-center">NO.</th>
                           <th className="py-3.5 px-4 min-w-[200px] text-left">MAHASISWA &amp; NIM</th>
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
-                          <th className="py-3.5 px-3 text-center">JAM MASUK</th>
-                          <th className="py-3.5 px-3 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL</th>
-                          <th className="py-3.5 px-3 text-center">TARGET MINIMAL</th>
-                          <th className="py-3.5 px-4 text-center">RASIO KEHADIRAN</th>
+                          <th className="py-3.5 px-3 text-center" title="Jam Masuk (JM) — waktu mahasiswa pertama kali hadir di zona">
+                            JAM MASUK (JM)
+                          </th>
+                          <th className="py-3.5 px-3 text-center" title="Jam Pulang (JP) — waktu mahasiswa selesai kegiatan">
+                            JAM PULANG (JP)
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title="Durasi Aktual (DA) = JP − JM, dalam menit">
+                            DURASI AKTUAL (DA)
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">DA = JP − JM (menit)</span>
+                          </th>
+                          <th className="py-3.5 px-3 text-center" title="Target Minimal per hari — durasi wajib kehadiran">
+                            TARGET MIN (TM)
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">menit/hari</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center min-w-[170px]" title="Rasio Kehadiran = (DA / TM) × 100%">
+                            RASIO (DA / TM) × 100%
+                          </th>
                           <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
                           <th className="py-3.5 px-4 text-center">DETAIL</th>
                         </tr>
@@ -3524,10 +3584,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-4 min-w-[200px]">MAHASISWA</th>
                           {!selectedKelompokId && <th className="py-3.5 px-4 text-center">KELOMPOK &amp; WILAYAH</th>}
                           <th className="py-3.5 px-4 text-center">STATUS PRESENSI</th>
-                          <th className="py-3.5 px-4 text-center">JAM MASUK</th>
-                          <th className="py-3.5 px-4 text-center">JAM PULANG</th>
-                          <th className="py-3.5 px-4 text-center">DURASI AKTUAL / TARGET</th>
-                          <th className="py-3.5 px-4 text-center min-w-[180px]">TOTAL AKUMULASI KKN</th>
+                          <th className="py-3.5 px-4 text-center" title="Jam Masuk (JM) — waktu check-in pertama di zona">
+                            JAM MASUK
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">(JM)</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title="Jam Pulang (JP) — waktu check-out / selesai kegiatan">
+                            JAM PULANG
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">(JP)</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title={`Durasi Aktual (DA) = JP − JM. Target harian: ${formatHoursToUnits(scheduleTargetHours)}`}>
+                            DURASI AKTUAL (DA)
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">
+                              DA = JP−JM / TM: {formatHoursToUnits(scheduleTargetHours)}
+                            </span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center min-w-[180px]" title={`Total akumulasi KKN. Target kumulatif: ${formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50)))}`}>
+                            AKUMULASI KKN
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">
+                              TARGET {formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50))).toUpperCase()}
+                            </span>
+                          </th>
                           <th className="py-3.5 px-4 text-center">POIN</th>
                           <th className="py-3.5 px-4 text-center min-w-[160px]">AKSI</th>
                         </tr>
@@ -3565,20 +3641,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-                        const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
                         const durationMins = isLeaveOrPending 
                           ? 0 
                           : isTerjeda
                           ? storedMins
-                          : isBerlangsung
-                          ? (storedMins > 0 ? storedMins : liveElapsedMins)
-                          : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
+                          : storedMins > 0
+                          ? storedMins
+                          : liveElapsedMins;
                         const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || checkOutTimestamp !== null && checkOutTimestamp !== undefined;
                         const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
                         const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                           ? Number(recAny.targetHours) 
-                          : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
+                          : scheduleTargetHours;
                         const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                           ? Number(recAny.targetDurationMinutes) 
                           : Math.round(targetZonaHours * 60);
@@ -3586,13 +3661,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ? Number(recAny.targetRatioPercent)
                           : (targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0);
 
-                        const isMemenuhiDurasi = rec.isMemenuhiDurasi !== undefined
-                          ? rec.isMemenuhiDurasi
+                        const isMemenuhiDurasi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+                          ? false
+                          : rec.isMemenuhiDurasi !== undefined
+                          ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetZonaMins && durationMins > 0) || percentZona >= 100)
                           : (statusUpper === "HADIR_MEMENUHI"
                             ? true
                             : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
                             ? false
-                            : (durationMins >= targetZonaMins && (isHadir || isFinished)));
+                            : (durationMins >= targetZonaMins && durationMins > 0));
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
@@ -3602,14 +3679,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ? formatDurasiIndo(durationMins)
                           : "0 menit";
 
-                        const cleanStudentName = rec.student?.name
+                        const rawStudentName = rec.student?.name
                           ? rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
                           : "Mahasiswa";
+                        const cleanStudentName = formatPersonName(rawStudentName);
 
                         const isKetua = Boolean(rec.student?.studentProfile?.isKetua || rec.student?.isKetua);
 
-                        const targetKumulatif = configTargets.targetTotalJam || 200;
-                        const percentCapaian = rec.totalHours !== undefined ? Number((((rec.totalHours || 0) / (targetKumulatif || 1)) * 100).toFixed(2)) : 0;
+                        const targetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
+                        const targetKumulatifMins = Math.round(targetKumulatif * 60);
+                        const actualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
+                        const percentCapaian = targetKumulatifMins > 0 ? Number(((actualCumMinutes / targetKumulatifMins) * 100).toFixed(2)) : 0;
                         const isExceeded = percentCapaian > 100;
                         const poinDampingan = (isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal || isBerlangsung) ? "0 PTS" : (isHadir ? "10 PTS" : "0 PTS");
 
@@ -3793,7 +3873,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                               {/* 9. STATUS PEMENUHAN */}
                               <td className="py-4 px-4 text-center">
-                                {isMemenuhiDurasi ? (
+                                {isLeaveOrPending ? (
+                                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                    {isSakit ? "Sakit" : isIzin ? "Izin" : "Izin/Sakit"}
+                                  </span>
+                                ) : isBelumAdaJadwal || (!isAttended && !isBerlangsung && !isHadir && !isFinished) ? (
+                                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                    -
+                                  </span>
+                                ) : isMemenuhiDurasi ? (
                                   <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                     Memenuhi
                                   </span>
@@ -3838,10 +3926,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   {rec.student.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 lowercase first-letter:capitalize">
-                                    {cleanStudentName}
+                                  <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                                    <span>{cleanStudentName}</span>
                                     {isKetua && (
-                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
+                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
                                         Ketua
                                       </span>
                                     )}
@@ -3964,14 +4052,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               {jamPulangStr}
                             </td>
 
-                            {/* 7. DURASI AKTUAL / TARGET */}
+                            {/* 7. DURASI AKTUAL (DA) = JP − JM */}
                             <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                               <div className="flex flex-col items-center gap-0.5">
                                 <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
                                   {durasiText}
                                 </span>
+                                {/* Tampilkan menit aktual / target dalam menit agar satuan konsisten */}
                                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                                  / {targetZonaHours} Jam Target
+                                  {isLeaveOrPending ? "0" : durationMins} mnt / {targetZonaMins} mnt ({formatHoursToUnits(targetZonaHours)})
                                 </span>
                               </div>
                             </td>
@@ -3980,10 +4069,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                               {isLeaveOrPending ? (
                                 <span className="text-slate-400 font-mono text-xs">0 Menit / {formatHoursToUnits(scheduleTargetHours)}</span>
-                              ) : rec.totalHours !== undefined ? (
+                              ) : (rec.totalMinutes !== undefined || rec.totalHours !== undefined) ? (
                                 <div className="flex flex-col items-center gap-1">
                                   <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">
-                                    {formatHoursToUnits(rec.totalHours)} / {formatHoursToUnits(targetKumulatif)}
+                                    {formatDurationUnits(actualCumMinutes)} / {formatHoursToUnits(targetKumulatif)}
                                   </span>
                                   {isExceeded ? (
                                     <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
@@ -4081,16 +4170,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       : 0;
                   const durationMins = isLeaveOrPending
                     ? 0
-                    : isActivePresence
-                    ? (storedMins > 0 ? storedMins : liveElapsedMins)
                     : storedMins > 0
                     ? storedMins
                     : liveElapsedMins;
 
-                  const isAttended =
-                    Boolean(rec.attendedAt) && !isLeaveOrPending;
-                  const targetZonaHours = scheduleTargetHours > 0 ? scheduleTargetHours : 4;
-                  const targetZonaMins = targetZonaHours * 60;
+                  const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
+                    ? Number(recAny.targetHours) 
+                    : scheduleTargetHours;
+                  const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
+                    ? Number(recAny.targetDurationMinutes) 
+                    : Math.round(targetZonaHours * 60);
                   const isDurationSufficient = durationMins >= targetZonaMins;
                   const percentZona = Math.min(100, Math.round((durationMins / targetZonaMins) * 100));
                   const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
@@ -4109,13 +4198,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             </div>
                             <div>
                               <div className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs">
-                                <span className="lowercase first-letter:capitalize">
-                                  {rec.student.name
-                                    .replace(/👑|\(Ketua Kelompok\)/g, "")
-                                    .trim()}
+                                <span>
+                                  {formatPersonName(
+                                    rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
+                                  )}
                                 </span>
                                 {rec.student.studentProfile?.isKetua && (
-                                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200 capitalize">
+                                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
                                     Ketua
                                   </span>
                                 )}
@@ -4955,21 +5044,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={handleExportCSV}
-                  disabled={
-                    exportPeriod === "SEMUA" ||
-                    (exportPeriod === "CUSTOM" && (!exportStartDate || !exportEndDate))
-                  }
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:dark:bg-slate-700 disabled:cursor-not-allowed text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                  title={
-                    exportPeriod === "SEMUA"
-                      ? "Pilih periode terlebih dahulu"
-                      : exportPeriod === "CUSTOM" && (!exportStartDate || !exportEndDate)
-                      ? "Isi tanggal mulai dan selesai"
-                      : "Download XLSX"
-                  }
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download size={14} />
-                  Download XLSX
+                  Ekspor Excel (.xlsx)
                 </button>
               </div>
             </div>
@@ -5339,18 +5417,26 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-              const timesheetMins = recAny.totalMinutes || (recAny.totalHours ? Number(recAny.totalHours) * 60 : 0);
-              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : isBerlangsung ? (storedMins > 0 ? storedMins : liveElapsedMins) : (storedMins > 0 ? storedMins : (liveElapsedMins > 0 ? liveElapsedMins : timesheetMins));
+              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
-                : (scheduleTargetHours > 0 ? scheduleTargetHours : 4);
+                : scheduleTargetHours;
               const targetMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                 ? Number(recAny.targetDurationMinutes) 
                 : Math.round(targetHours * 60);
               const ratioPercent = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
                 ? Number(recAny.targetRatioPercent)
                 : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
-              const isMemenuhi = rec.isMemenuhiDurasi !== undefined ? Boolean(rec.isMemenuhiDurasi) : durationMins >= targetMins;
+              const isMemenuhi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+                ? false
+                : rec.isMemenuhiDurasi !== undefined
+                ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetMins && durationMins > 0) || ratioPercent >= 100)
+                : (durationMins >= targetMins && durationMins > 0 || ratioPercent >= 100);
+
+              const modalTargetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
+              const modalTargetKumulatifMins = Math.round(modalTargetKumulatif * 60);
+              const modalActualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
+              const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2)) : 0;
 
               const liveLoc = studentLocations.find(
                 (l) => l.studentId === rec.student?.id || l.student?.id === rec.student?.id
@@ -5363,35 +5449,43 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <div className="space-y-3.5">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk (JM)</span>
                       <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
                         {!isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-"}
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Pulang</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Pulang (JP)</span>
                       <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
                         {!isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-"}
                       </span>
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Durasi Aktual</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = JP − JM</span>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
                         {isLeaveOrPending ? "0 menit" : formatDurasiIndo(durationMins)}
                       </span>
+                      {/* Sub-label: menit aktual */}
+                      {!isLeaveOrPending && durationMins > 0 && (
+                        <span className="block text-[9px] text-slate-400 font-medium">{durationMins} mnt</span>
+                      )}
                     </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Jam</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">Target Min (TM)</span>
                       <span className="text-xs font-black text-slate-800 dark:text-slate-100">
-                        {targetHours} jam
+                        {formatHoursToUnits(targetHours)}
                       </span>
+                      {/* Sub-label: menit agar konsisten */}
+                      <span className="block text-[9px] text-slate-400 font-medium">{targetMins} mnt</span>
                     </div>
                   </div>
 
-                  {/* Rasio Progress Bar */}
+                  {/* Rasio Kehadiran (Per Hari) — (DA / TM) × 100% */}
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-600 dark:text-slate-400">Rasio Kehadiran &amp; Pemenuhan:</span>
+                      <span className="font-bold text-slate-600 dark:text-slate-400">
+                        Rasio (DA / TM) × 100% — {durationMins} mnt / {targetMins} mnt ({formatHoursToUnits(targetHours)}):
+                      </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{ratioPercent}%</span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
@@ -5399,7 +5493,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             : "bg-rose-50 text-rose-600 border border-rose-200"
                         }`}>
-                          {isMemenuhi ? "Memenuhi" : "Tidak Memenuhi"}
+                          {isMemenuhi ? "Memenuhi Target Harian" : "Kurang dari Target Harian"}
                         </span>
                       </div>
                     </div>
@@ -5417,7 +5511,27 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
 
-                  {/* Catatan / Dokumentasi CRUD Presensi Mahasiswa */}
+                  {/* Total Akumulasi KKN (Target 200 Jam Kumulatif) */}
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-600 dark:text-slate-400">Total Akumulasi KKN (Target {modalTargetKumulatif} Jam):</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                          {formatDurationUnits(modalActualCumMinutes)} / {formatHoursToUnits(modalTargetKumulatif)}
+                        </span>
+                        <span className="font-mono font-black text-xs text-emerald-700 dark:text-emerald-400">
+                          ({modalPercentCapaian}%)
+                        </span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all bg-emerald-600"
+                        style={{ width: `${Math.min(100, modalPercentCapaian)}%` }}
+                      />
+                    </div>
+                  </div>
+
                   {(rec.deskripsiKegiatan || rec.fotoUrl) && (
                     <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                       <span className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">

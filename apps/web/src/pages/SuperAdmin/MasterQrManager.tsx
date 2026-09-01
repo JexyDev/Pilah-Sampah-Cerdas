@@ -10,7 +10,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
-import { exportToXlsx } from "../../utils/exportXlsx";
+import { printQrStickers } from "../../utils/printQrStickers";
 
 interface BinQr {
   id: string;
@@ -160,127 +160,23 @@ export const MasterQrManager: React.FC = () => {
     }
   };
 
-  const handlePrintAll = () => {
-    if (qrs.length === 0) {
-      toast.error("Tidak ada QR untuk dicetak");
+  const handlePrintAll = (itemsToPrint?: BinQr[]) => {
+    const list = itemsToPrint && itemsToPrint.length > 0 ? itemsToPrint : qrs;
+    if (!list || list.length === 0) {
+      toast.error("Tidak ada data QR Code untuk dicetak.");
       return;
     }
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      toast.error("Gagal membuka jendela cetak. Pastikan pop-up diizinkan.");
-      return;
-    }
-
-    const qrHtml = qrs
-      .map(
-        (q) => {
-          const isOrganik = q.category?.name?.toUpperCase() === "ORGANIK";
-          const colorTheme = isOrganik ? "#10b981" : "#3b82f6";
-          const labelBg = isOrganik ? "#ecfdf5" : "#eff6ff";
-
-          return `
-          <div class="qr-card" style="border-color: ${colorTheme};">
-            <div class="qr-header" style="background-color: ${colorTheme};">
-              BERSEKA PSC
-            </div>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-              q.qrCode
-            )}" />
-            <div class="qr-code" style="color: ${colorTheme};">${q.qrCode}</div>
-            <div class="qr-category" style="background-color: ${labelBg}; color: ${colorTheme};">
-              ${q.category?.name || "Semua Jenis"}
-            </div>
-            <div class="qr-details">
-              ${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "BERSEKA Batch QR"}
-            </div>
-          </div>
-          `;
-        }
-      )
-      .join("");
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>BERSEKA - Master QR Codes</title>
-          <style>
-            @page {
-              size: A4;
-              margin: 10mm;
-            }
-            body {
-              font-family: system-ui, -apple-system, sans-serif;
-              display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 15px;
-              padding: 0;
-              margin: 0;
-              box-sizing: border-box;
-            }
-            .qr-card {
-              border: 3px solid #ccc;
-              border-radius: 16px;
-              overflow: hidden;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-between;
-              text-align: center;
-              page-break-inside: avoid;
-              background: #fff;
-              padding-bottom: 12px;
-              height: 270px;
-              box-sizing: border-box;
-            }
-            .qr-header {
-              width: 100%;
-              color: #fff;
-              font-size: 11px;
-              font-weight: 800;
-              letter-spacing: 1.5px;
-              padding: 6px 0;
-              text-transform: uppercase;
-            }
-            .qr-card img {
-              width: 130px;
-              height: 130px;
-              margin-top: 10px;
-              margin-bottom: 6px;
-            }
-            .qr-code {
-              font-family: monospace;
-              font-weight: 800;
-              font-size: 13px;
-              letter-spacing: 1px;
-            }
-            .qr-category {
-              font-size: 10px;
-              font-weight: 800;
-              text-transform: uppercase;
-              padding: 3px 12px;
-              border-radius: 9999px;
-              margin: 4px 0;
-              letter-spacing: 0.5px;
-            }
-            .qr-details {
-              font-size: 9px;
-              font-weight: 600;
-              color: #4b5563;
-              padding: 0 8px;
-            }
-          </style>
-        </head>
-        <body>
-          ${qrHtml}
-          <script>
-            window.onload = function() {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    printQrStickers(
+      list.map((item) => ({
+        id: item.id,
+        qrCode: item.qrCode,
+        category: item.category,
+        rtRw: item.rtRw,
+        qrBatch: item.qrBatch,
+        status: item.status,
+      })),
+      `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}`
+    );
   };
 
   const handleExportCsv = () => {
@@ -290,18 +186,27 @@ export const MasterQrManager: React.FC = () => {
     }
     const headers = ["Kode QR", "Status", "Kategori", "Batch Asal", "Wilayah", "Pemegang Warga", "Email Pemegang", "Tanggal Dibuat"];
     const rows = qrs.map((q) => [
-      q.qrCode,
-      q.status,
-      q.category?.name || "-",
-      q.qrBatch?.batchCode || "-",
-      q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-",
-      q.user?.name || "-",
-      q.user?.email || "-",
-      new Date(q.createdAt).toLocaleString("id-ID"),
+      `"${q.qrCode}"`,
+      `"${q.status}"`,
+      `"${q.category?.name || "-"}"`,
+      `"${q.qrBatch?.batchCode || "-"}"`,
+      `"${q.rtRw ? `${q.rtRw.name} - Kel. ${q.rtRw.kelurahan.name}` : "-"}"`,
+      `"${q.user?.name || "-"}"`,
+      `"${q.user?.email || "-"}"`,
+      `"${new Date(q.createdAt).toLocaleString("id-ID")}"`,
     ]);
 
-    exportToXlsx(headers, rows, `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}`, "Master QR");
-    toast.success("File XLSX Master QR berhasil didownload!");
+    const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Master_QR_BERSEKA_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("File CSV Master QR berhasil didownload!");
   };
 
   const handleInactivateQr = async (qrCode: string) => {

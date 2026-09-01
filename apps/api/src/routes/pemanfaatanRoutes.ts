@@ -17,8 +17,18 @@ router.get("/feedback", authMiddleware, pemanfaatanController.getAllFeedback);
 router.get("/feedbacks", authMiddleware, pemanfaatanController.getAllFeedback);
 router.get("/kritik-saran", authMiddleware, pemanfaatanController.getAllFeedback);
 router.get("/ulasan", authMiddleware, pemanfaatanController.getAllFeedback);
-router.post("/feedback", authMiddleware, safeUploadPemanfaatanImage, pemanfaatanController.createFeedback);
-router.post("/kritik-saran", authMiddleware, safeUploadPemanfaatanImage, pemanfaatanController.createFeedback);
+router.post(
+  "/feedback",
+  authMiddleware,
+  safeUploadPemanfaatanImage,
+  pemanfaatanController.createFeedback
+);
+router.post(
+  "/kritik-saran",
+  authMiddleware,
+  safeUploadPemanfaatanImage,
+  pemanfaatanController.createFeedback
+);
 router.put("/feedback/:id/tanggapan", authMiddleware, pemanfaatanController.respondFeedback);
 router.delete("/feedback/:id", authMiddleware, readOnlyGuard, pemanfaatanController.deleteFeedback);
 

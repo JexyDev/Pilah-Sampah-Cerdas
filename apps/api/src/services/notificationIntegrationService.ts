@@ -9,7 +9,6 @@ import { prisma } from "../lib/prisma.js";
 import fs from "fs";
 import path from "path";
 
-
 // Initialize Firebase Admin SDK dynamically if available
 let firebaseMessaging: any = null;
 
@@ -30,7 +29,9 @@ async function initFirebase() {
       }
 
       if (!serviceAccount) {
-        const jsonPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.resolve(process.cwd(), "firebase-service-account.json");
+        const jsonPath =
+          process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+          path.resolve(process.cwd(), "firebase-service-account.json");
         if (fs.existsSync(jsonPath)) {
           const fileContent = fs.readFileSync(jsonPath, "utf-8");
           serviceAccount = JSON.parse(fileContent);
@@ -43,15 +44,21 @@ async function initFirebase() {
           credential: adminApp.cert(serviceAccount),
         });
         firebaseMessaging = adminMessaging.getMessaging(app);
-        console.log(`🔥 [Firebase] Firebase Admin SDK initialized successfully! (Project: ${serviceAccount.project_id})`);
+        console.log(
+          `🔥 [Firebase] Firebase Admin SDK initialized successfully! (Project: ${serviceAccount.project_id})`
+        );
       } else {
-        console.log("ℹ️ [Firebase] Service account credentials not found. Using FCM log & fallback mode.");
+        console.log(
+          "ℹ️ [Firebase] Service account credentials not found. Using FCM log & fallback mode."
+        );
       }
     } else {
       firebaseMessaging = adminMessaging.getMessaging();
     }
   } catch (error: any) {
-    console.log("ℹ️ [Firebase] Optional firebase-admin module not loaded in environment. Using fallback FCM log mode.");
+    console.log(
+      "ℹ️ [Firebase] Optional firebase-admin module not loaded in environment. Using fallback FCM log mode."
+    );
   }
 }
 
@@ -126,13 +133,20 @@ export const notificationIntegrationService = {
           },
         });
         messageId = response;
-        console.log(`🔥 [FCM Push Sent] Real push notification sent to token: ${token} | MessageID: ${response}`);
+        console.log(
+          `🔥 [FCM Push Sent] Real push notification sent to token: ${token} | MessageID: ${response}`
+        );
       } catch (err: any) {
-        console.error(`❌ [FCM Error] Gagal mengirim push notification ke token ${token}:`, err.message);
+        console.error(
+          `❌ [FCM Error] Gagal mengirim push notification ke token ${token}:`,
+          err.message
+        );
         statusKirim = "FAILED";
       }
     } else {
-      console.log(`📲 [FCM Log Mode] Push Notification to Token ${token} | Title: ${title} | Body: ${body}`);
+      console.log(
+        `📲 [FCM Log Mode] Push Notification to Token ${token} | Title: ${title} | Body: ${body}`
+      );
     }
 
     await prisma.notificationLog.create({
@@ -172,7 +186,10 @@ export const notificationIntegrationService = {
         messageId = response;
         console.log(`[FCM Silent Sent] Triggered token: ${token} | MessageID: ${response}`);
       } catch (err: any) {
-        console.error(`[FCM Silent Error] Gagal mengirim silent push ke token ${token}:`, err.message);
+        console.error(
+          `[FCM Silent Error] Gagal mengirim silent push ke token ${token}:`,
+          err.message
+        );
         statusKirim = "FAILED";
       }
     }

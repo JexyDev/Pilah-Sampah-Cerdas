@@ -32,9 +32,9 @@ import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
+import * as XLSX from "xlsx";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import PageHeader from "../../components/common/PageHeader";
-import { exportToXlsx } from "../../utils/exportXlsx";
 
 export default function RekapSetoran() {
   const [deposits, setDeposits] = useState<any[]>([]);
@@ -48,6 +48,8 @@ export default function RekapSetoran() {
   const [filterKategori, setFilterKategori] = useState("ALL");
   const [filterRw, setFilterRw] = useState("");
   const [filterPeriode, setFilterPeriode] = useState("ALL");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,8 +105,19 @@ export default function RekapSetoran() {
         }
       }
 
-      // 3. Filter Periode
-      if (filterPeriode !== "ALL") {
+      // 3. Filter Rentang Tanggal Spesifik (Custom Start/End Date)
+      if (startDate || endDate) {
+        const depositTime = new Date(d.waktu).getTime();
+        if (startDate) {
+          const startTs = new Date(`${startDate}T00:00:00`).getTime();
+          if (depositTime < startTs) return false;
+        }
+        if (endDate) {
+          const endTs = new Date(`${endDate}T23:59:59`).getTime();
+          if (depositTime > endTs) return false;
+        }
+      } else if (filterPeriode !== "ALL") {
+        // 4. Filter Periode Cepat
         const depositDate = new Date(d.waktu);
         const limitDate = new Date();
         if (filterPeriode === "7d") {
@@ -119,12 +132,12 @@ export default function RekapSetoran() {
 
       return true;
     });
-  }, [deposits, filterKategori, filterRw, filterPeriode]);
+  }, [deposits, filterKategori, filterRw, filterPeriode, startDate, endDate]);
 
   // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterKategori, filterRw, filterPeriode, itemsPerPage]);
+  }, [filterKategori, filterRw, filterPeriode, startDate, endDate, itemsPerPage]);
 
   // Pagination Calculation
   const totalItems = filteredDeposits.length;
@@ -153,35 +166,81 @@ export default function RekapSetoran() {
     return rawRw;
   };
 
-  const handleExportCSV = () => {
-    if (!filteredDeposits || filteredDeposits.length === 0) {
-      showToast.error("Tidak ada data setoran untuk diekspor pada periode/filter yang dipilih.");
+  const handleExportXLSX = () => {
+    if (!startDate || !endDate) {
+      showToast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
 
-    const headers = ["ID", "Warga", "No. Telepon", "Rukun Warga", "Kelurahan", "Jenis Sampah", "Berat (Kg)", "Poin", "Waktu Setor", "Akurasi AI (%)", "Status"];
-    const rows = filteredDeposits.map((d) => [
+    const startTs = new Date(`${startDate}T00:00:00`).getTime();
+    const endTs = new Date(`${endDate}T23:59:59`).getTime();
+    const exportData = filteredDeposits.filter((d) => {
+      const t = new Date(d.waktu).getTime();
+      return t >= startTs && t <= endTs;
+    });
+
+    if (exportData.length === 0) {
+      showToast.error("Tidak ada data setoran pada rentang tanggal yang dipilih.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "ID Setoran",
+      "Nama Warga",
+      "No. Telepon",
+      "Rukun Warga",
+      "Kelurahan",
+      "Jenis Sampah",
+      "Berat (Kg)",
+      "Poin",
+      "Waktu Setor",
+      "Akurasi AI (%)",
+      "Status",
+    ];
+
+    const rows = exportData.map((d, index) => [
+      index + 1,
       d.id,
       d.warga || "-",
       d.phone || "-",
       formatRukunWarga(d.rw || d.rtRw),
       d.kelurahan || "Coblong",
       d.jenis || "Organik",
-      d.berat || 0,
+      Number(d.berat || 0),
       Math.round(d.poin || 0),
       new Date(d.waktu).toLocaleString("id-ID"),
       `${d.confidence || 95}%`,
       d.status || "Selesai",
     ]);
 
-    exportToXlsx(headers, rows, `rekapitulasi-setoran-sampah-${new Date().toISOString().slice(0, 10)}`, "Rekapitulasi Setoran");
-    showToast.success(`Berhasil mengekspor ${filteredDeposits.length} data setoran!`);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 20 },
+      { wch: 25 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 18 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 22 },
+      { wch: 16 },
+      { wch: 14 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Setoran");
+    XLSX.writeFile(wb, `Rekapitulasi_Setoran_${startDate}_sd_${endDate}.xlsx`);
+    showToast.success(`Berhasil mengekspor ${exportData.length} data setoran ke XLSX!`);
   };
 
   const resetFilters = () => {
     setFilterRw("");
     setFilterKategori("ALL");
     setFilterPeriode("ALL");
+    setStartDate("");
+    setEndDate("");
   };
 
   const LeafIcon: React.FC<{ size?: number }> = ({ size = 12 }) => (
@@ -216,14 +275,6 @@ export default function RekapSetoran() {
         scope="Kecamatan Coblong"
         title="Pemantauan & Rekapitulasi"
         description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
-        actions={
-          <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-          >
-            <FileSpreadsheet size={15} /> <span>Ekspor Laporan CSV</span>
-          </button>
-        }
       />
 
       {/* KPI Metric Summary Cards */}
@@ -306,26 +357,33 @@ export default function RekapSetoran() {
             onChange={(e) => setFilterKategori(e.target.value)}
             className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-[#009966] transition cursor-pointer"
           >
-            <option value="ALL">Semua Kategori Sampah</option>
+            <option value="ALL">Semua Kategori</option>
             <option value="ORGANIC">Organik</option>
             <option value="NON_ORGANIC">Anorganik</option>
             <option value="RESIDU">Residu</option>
           </select>
 
-          {/* Periode Filter */}
-          <select
-            value={filterPeriode}
-            onChange={(e) => setFilterPeriode(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-[#009966] transition cursor-pointer"
-          >
-            <option value="ALL">Semua Periode</option>
-            <option value="7d">7 Hari Terakhir</option>
-            <option value="30d">30 Hari Terakhir</option>
-            <option value="90d">90 Hari Terakhir</option>
-          </select>
+          {/* Date Range Inputs */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs">
+            <Calendar size={13} className="text-[#009966] shrink-0" />
+            <span className="text-[10px] font-bold text-slate-400">Dari:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+            />
+            <span className="text-slate-400">s/d</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+            />
+          </div>
 
           {/* Reset Filters Button */}
-          {(filterRw || filterKategori !== "ALL" || filterPeriode !== "ALL") && (
+          {(filterRw || filterKategori !== "ALL" || startDate || endDate) && (
             <button
               onClick={resetFilters}
               className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
@@ -333,6 +391,18 @@ export default function RekapSetoran() {
               <RotateCcw size={13} /> Reset
             </button>
           )}
+
+          {/* Standar 1 Tombol Ekspor XLSX */}
+          <button
+            type="button"
+            onClick={handleExportXLSX}
+            disabled={!startDate || !endDate}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-2xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+            title={(!startDate || !endDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor rekapitulasi setoran ke XLSX"}
+          >
+            <FileSpreadsheet size={14} />
+            <span>Ekspor XLSX</span>
+          </button>
         </div>
       </div>
 

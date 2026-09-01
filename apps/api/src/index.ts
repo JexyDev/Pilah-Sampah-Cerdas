@@ -121,18 +121,52 @@ app.use("/api", (req, res, next) => {
 
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
-// Statically serve uploads and downloads folders with multi-directory fallback
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/api/uploads")));
-app.use("/uploads", express.static(path.resolve(__dirname, "../uploads")));
-app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads")));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads")));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "apps/web/public/uploads")));
 
-app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads")));
-app.use("/downloads", express.static(path.resolve(process.cwd(), "apps/api/uploads")));
-app.use("/downloads", express.static(path.resolve(__dirname, "../uploads")));
-app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads")));
+const staticCacheOptions = {
+  maxAge: process.env.NODE_ENV === "production" ? "7d" : "1h",
+  immutable: true,
+  etag: true,
+  lastModified: true,
+};
+
+// Statically serve uploads and downloads folders with multi-directory fallback
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
+app.use(
+  "/uploads",
+  express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions)
+);
+app.use("/uploads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
+app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads"), staticCacheOptions));
+app.use(
+  "/uploads",
+  express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions)
+);
+
+// Fallback for missing local uploads / downloads (e.g. database synced from VPS)
+app.use("/uploads", (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD") {
+    const vpsUploadUrl = `http://157.10.252.252:3000/uploads${req.path}`;
+    return res.redirect(307, vpsUploadUrl);
+  }
+  next();
+});
+
+app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
+app.use(
+  "/downloads",
+  express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions)
+);
+app.use("/downloads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
+app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
+
+app.use("/downloads", (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD") {
+    const vpsDownloadUrl = `http://157.10.252.252:3000/downloads${req.path}`;
+    return res.redirect(307, vpsDownloadUrl);
+  }
+  next();
+});
 
 // In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
@@ -217,19 +251,53 @@ app.post(
 app.get(
   ["/api/v1/mahasiswa/lokasi-aktif", "/api/mahasiswa/lokasi-aktif"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getActiveStudentsLocations
 );
 app.get(
   ["/api/v1/timesheet/summary", "/api/timesheet/summary"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN", "MAHASISWA_KKN", "DEVELOPER"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "MAHASISWA_KKN",
+    "DEVELOPER",
+  ]),
   kknAttendanceController.getTimesheetSummary
 );
 app.get(
   ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getAttendanceList
 );
 app.get(
@@ -258,9 +326,25 @@ app.post(
   kknAttendanceController.checkOutAttendance
 );
 app.get(
-  ["/api/v1/laporan-rekap", "/api/laporan-rekap", "/api/v1/laporan-presensi", "/api/laporan-presensi"],
+  [
+    "/api/v1/laporan-rekap",
+    "/api/laporan-rekap",
+    "/api/v1/laporan-presensi",
+    "/api/laporan-presensi",
+  ],
   authMiddleware,
-  roleMiddleware(["DEVELOPER", "DPL", "DOSEN_PEMBIMBING", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PANITIA_TASKFORCE", "PEMIMPIN"]),
+  roleMiddleware([
+    "DEVELOPER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "CAMAT",
+    "LURAH",
+    "RW",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknAttendanceController.getLaporanPresensi
 );
 
@@ -308,11 +392,15 @@ import { archiveAuditLogsCron } from "./cron/archive.cron.js";
 
 const isPrimaryWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === "0";
 if (isPrimaryWorker) {
-  console.log(`[CronService] Initializing cron scheduler on primary worker instance (${process.env.NODE_APP_INSTANCE || "single-process"})...`);
+  console.log(
+    `[CronService] Initializing cron scheduler on primary worker instance (${process.env.NODE_APP_INSTANCE || "single-process"})...`
+  );
   cronService.start();
   archiveAuditLogsCron.start();
 } else {
-  console.log(`[CronService] Skipping cron initialization on secondary worker instance (${process.env.NODE_APP_INSTANCE}) to avoid duplicated tasks.`);
+  console.log(
+    `[CronService] Skipping cron initialization on secondary worker instance (${process.env.NODE_APP_INSTANCE}) to avoid duplicated tasks.`
+  );
 }
 
 // Auto-migrate missing database columns on startup
@@ -605,10 +693,19 @@ if (isPrimaryWorker) {
         "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );`,
       'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
+      'CREATE INDEX IF NOT EXISTS "lokasi_mahasiswa_id_mahasiswa_direkam_pada_idx" ON "lokasi_mahasiswa"("id_mahasiswa", "direkam_pada" DESC);',
     ];
 
     await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));
     console.log("[AutoMigration] Database columns checked and synced successfully.");
+
+    // Auto-heal & synchronize Posko KKN photos with facilities records
+    try {
+      const { poskoKknService } = await import("./services/poskoKknService.js");
+      await poskoKknService.syncPoskoPhotosWithFacilities();
+    } catch (syncErr) {
+      console.warn("[AutoMigration] Posko photo sync error:", syncErr);
+    }
 
     const dummyUser = await prisma.user.findFirst({
       where: {

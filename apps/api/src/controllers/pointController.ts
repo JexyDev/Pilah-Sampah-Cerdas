@@ -107,7 +107,18 @@ export class PointController {
    */
   async getAdminUsersPoints(req: Request, res: Response): Promise<void> {
     try {
-      const { page, limit, search, role, rwId, kelurahanId, sortBy, sortOrder, minPoints, maxPoints } = req.query;
+      const {
+        page,
+        limit,
+        search,
+        role,
+        rwId,
+        kelurahanId,
+        sortBy,
+        sortOrder,
+        minPoints,
+        maxPoints,
+      } = req.query;
 
       const data = await pointService.getAdminUsers({
         page: page ? Number(page) : undefined,
@@ -128,7 +139,10 @@ export class PointController {
       });
     } catch (error) {
       console.error("Developer Get Users Points Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil direktori poin pengguna" });
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mengambil direktori poin pengguna",
+      });
     }
   }
 
@@ -144,7 +158,10 @@ export class PointController {
       });
     } catch (error) {
       console.error("Developer Get Points Stats Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil ringkasan statistik poin" });
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mengambil ringkasan statistik poin",
+      });
     }
   }
 
@@ -172,7 +189,10 @@ export class PointController {
       });
     } catch (error) {
       console.error("Developer Get Ledger Feed Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil riwayat buku besar poin" });
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mengambil riwayat buku besar poin",
+      });
     }
   }
 
@@ -196,7 +216,10 @@ export class PointController {
       });
     } catch (error) {
       console.error("Developer Get User Ledger Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengambil rincian mutasi poin pengguna" });
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal mengambil rincian mutasi poin pengguna",
+      });
     }
   }
 
@@ -209,16 +232,23 @@ export class PointController {
       const { userId, points, kategori, description, sendNotification } = req.body;
 
       if (!userId || points === undefined) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "UserId dan nominal poin wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "VALIDATION_ERROR", message: "UserId dan nominal poin wajib diisi" });
         return;
       }
 
       if (!description || !description.trim()) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "Keterangan/alasan penyesuaian wajib diisi" });
+        res.status(400).json({
+          error: "VALIDATION_ERROR",
+          message: "Keterangan/alasan penyesuaian wajib diisi",
+        });
         return;
       }
 
-      const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "") as string;
+      const ipAddress = (req.headers["x-forwarded-for"] ||
+        req.socket.remoteAddress ||
+        "") as string;
 
       const result = await pointService.adjustPointsDeveloper({
         developerUserId,
@@ -240,7 +270,10 @@ export class PointController {
       const status = error.message === "USER_NOT_FOUND" ? 404 : 500;
       res.status(status).json({
         error: error.message === "USER_NOT_FOUND" ? "USER_NOT_FOUND" : "INTERNAL_SERVER_ERROR",
-        message: error.message === "USER_NOT_FOUND" ? "Pengguna tidak ditemukan" : "Gagal menyesuaikan poin pengguna",
+        message:
+          error.message === "USER_NOT_FOUND"
+            ? "Pengguna tidak ditemukan"
+            : "Gagal menyesuaikan poin pengguna",
       });
     }
   }
@@ -254,11 +287,15 @@ export class PointController {
       const { userId, targetBalance, description, sendNotification } = req.body;
 
       if (!userId || targetBalance === undefined || isNaN(Number(targetBalance))) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "UserId dan target saldo poin wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "VALIDATION_ERROR", message: "UserId dan target saldo poin wajib diisi" });
         return;
       }
 
-      const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "") as string;
+      const ipAddress = (req.headers["x-forwarded-for"] ||
+        req.socket.remoteAddress ||
+        "") as string;
 
       const result = await pointService.setBalanceDeveloper({
         developerUserId,
@@ -279,7 +316,10 @@ export class PointController {
       const status = error.message === "USER_NOT_FOUND" ? 404 : 500;
       res.status(status).json({
         error: error.message === "USER_NOT_FOUND" ? "USER_NOT_FOUND" : "INTERNAL_SERVER_ERROR",
-        message: error.message === "USER_NOT_FOUND" ? "Pengguna tidak ditemukan" : "Gagal mengatur saldo poin pengguna",
+        message:
+          error.message === "USER_NOT_FOUND"
+            ? "Pengguna tidak ditemukan"
+            : "Gagal mengatur saldo poin pengguna",
       });
     }
   }
@@ -293,16 +333,24 @@ export class PointController {
       const { userIds, points, kategori, description, sendNotification } = req.body;
 
       if (!userIds || !Array.isArray(userIds) || userIds.length === 0 || points === undefined) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "Daftar ID pengguna dan nominal poin wajib diisi" });
+        res.status(400).json({
+          error: "VALIDATION_ERROR",
+          message: "Daftar ID pengguna dan nominal poin wajib diisi",
+        });
         return;
       }
 
       if (!description || !description.trim()) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "Keterangan/alasan perubahan massal wajib diisi" });
+        res.status(400).json({
+          error: "VALIDATION_ERROR",
+          message: "Keterangan/alasan perubahan massal wajib diisi",
+        });
         return;
       }
 
-      const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "") as string;
+      const ipAddress = (req.headers["x-forwarded-for"] ||
+        req.socket.remoteAddress ||
+        "") as string;
 
       const result = await pointService.bulkAdjustPointsDeveloper({
         developerUserId,
@@ -321,7 +369,10 @@ export class PointController {
       });
     } catch (error) {
       console.error("Developer Bulk Adjust Points Error:", error);
-      res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memproses penyesuaian poin massal" });
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: "Gagal memproses penyesuaian poin massal",
+      });
     }
   }
 
@@ -334,7 +385,9 @@ export class PointController {
       const { id } = req.params;
       const { description, kategori } = req.body;
 
-      const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "") as string;
+      const ipAddress = (req.headers["x-forwarded-for"] ||
+        req.socket.remoteAddress ||
+        "") as string;
 
       const result = await pointService.updateTransactionDeveloper({
         developerUserId,
@@ -353,8 +406,14 @@ export class PointController {
       console.error("Developer Update Transaction Error:", error);
       const status = error.message === "TRANSACTION_NOT_FOUND" ? 404 : 500;
       res.status(status).json({
-        error: error.message === "TRANSACTION_NOT_FOUND" ? "TRANSACTION_NOT_FOUND" : "INTERNAL_SERVER_ERROR",
-        message: error.message === "TRANSACTION_NOT_FOUND" ? "Transaksi tidak ditemukan" : "Gagal memperbarui transaksi",
+        error:
+          error.message === "TRANSACTION_NOT_FOUND"
+            ? "TRANSACTION_NOT_FOUND"
+            : "INTERNAL_SERVER_ERROR",
+        message:
+          error.message === "TRANSACTION_NOT_FOUND"
+            ? "Transaksi tidak ditemukan"
+            : "Gagal memperbarui transaksi",
       });
     }
   }
@@ -369,11 +428,16 @@ export class PointController {
       const { reason } = req.body;
 
       if (!reason || !reason.trim()) {
-        res.status(400).json({ error: "VALIDATION_ERROR", message: "Alasan pembatalan transaksi wajib disertakan" });
+        res.status(400).json({
+          error: "VALIDATION_ERROR",
+          message: "Alasan pembatalan transaksi wajib disertakan",
+        });
         return;
       }
 
-      const ipAddress = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "") as string;
+      const ipAddress = (req.headers["x-forwarded-for"] ||
+        req.socket.remoteAddress ||
+        "") as string;
 
       const result = await pointService.voidTransactionDeveloper({
         developerUserId,
@@ -391,12 +455,17 @@ export class PointController {
       console.error("Developer Void Transaction Error:", error);
       const status = error.message === "TRANSACTION_NOT_FOUND" ? 404 : 500;
       res.status(status).json({
-        error: error.message === "TRANSACTION_NOT_FOUND" ? "TRANSACTION_NOT_FOUND" : "INTERNAL_SERVER_ERROR",
-        message: error.message === "TRANSACTION_NOT_FOUND" ? "Transaksi tidak ditemukan" : "Gagal membatalkan transaksi",
+        error:
+          error.message === "TRANSACTION_NOT_FOUND"
+            ? "TRANSACTION_NOT_FOUND"
+            : "INTERNAL_SERVER_ERROR",
+        message:
+          error.message === "TRANSACTION_NOT_FOUND"
+            ? "Transaksi tidak ditemukan"
+            : "Gagal membatalkan transaksi",
       });
     }
   }
 }
 
 export const pointController = new PointController();
-

@@ -237,19 +237,23 @@ export const PenggunaOnline: React.FC = () => {
 
   const getRoleBadgeStyle = (role: string) => {
     const r = role.toLowerCase();
-    if (r.includes("developer"))
+    if (r.includes("developer") || r.includes("dev"))
       return "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/90 dark:border-rose-800 font-bold";
     if (r.includes("super"))
       return "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200/90 dark:border-purple-800 font-bold";
-    if (r.includes("lurah") || r.includes("camat") || r.includes("admin"))
-      return "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200/90 dark:border-sky-800 font-bold";
-    if (r.includes("dpl") || r.includes("mahasiswa"))
+    if (r.includes("dlh") || r.includes("camat") || r.includes("lurah") || r.includes("pemimpin") || r.includes("pimpinan"))
+      return "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border-cyan-200/90 dark:border-cyan-800 font-bold";
+    if (r.includes("dpl") || r.includes("dosen") || r.includes("pendamping") || r.includes("mpl"))
+      return "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/90 dark:border-emerald-800 font-bold";
+    if (r.includes("kkn") || r.includes("mahasiswa"))
       return "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200/90 dark:border-indigo-800 font-bold";
-    if (r.includes("petugas") || r.includes("residu"))
-      return "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/90 dark:border-amber-800 font-bold";
+    if (r.includes("petugas") || r.includes("residu") || r.includes("pengangkut"))
+      return "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/90 dark:border-rose-800 font-bold";
     if (r.includes("rw") || r.includes("rt"))
-      return "bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200/90 dark:border-teal-800 font-bold";
-    return "bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-emerald-200/90 dark:border-emerald-800 font-bold";
+      return "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/90 dark:border-amber-800 font-bold";
+    if (r.includes("admin") || r.includes("taskforce") || r.includes("panitia"))
+      return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 font-bold";
+    return "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 font-bold";
   };
 
   const fmtTime = (iso: string) => {

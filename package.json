@@ -21,10 +21,12 @@
     "kill:ports": "npx -y kill-port 3000 5173",
     "bulk-insert-kkn": "npm run bulk-insert-kkn --workspace=apps/api --",
     "db:sync-vps": "node scripts/tools/sync_db_from_vps.cjs",
-    "backup:full": "node scripts/tools/backup_all_from_vps.cjs"
+    "backup:full": "node scripts/tools/backup_all_from_vps.cjs",
+    "optimize:images": "node scripts/tools/optimize_all_images.cjs"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "concurrently": "^10.0.4",
+    "sharp": "^0.35.4"
   },
   "dependencies": {
     "ssh2": "^1.17.0"

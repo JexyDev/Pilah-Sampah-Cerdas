@@ -1,7 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 
-
 export const panduanController = {
   getAll: async (req: Request, res: Response): Promise<void> => {
     try {
@@ -36,7 +35,9 @@ export const panduanController = {
     try {
       const { judul, kategoriRole, deskripsi, fileUrl, linkUrl } = req.body;
       if (!judul || !kategoriRole) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Judul dan kategori peran wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "Judul dan kategori peran wajib diisi" });
         return;
       }
 

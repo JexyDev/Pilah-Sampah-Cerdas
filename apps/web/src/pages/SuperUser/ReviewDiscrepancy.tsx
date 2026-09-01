@@ -1,4 +1,4 @@
-import { ShieldCheck, Image as ImageIcon, X, Filter, Check, Search, Trash2 } from "lucide-react";
+import { ShieldCheck, Image as ImageIcon, X, Filter, Check, Search, Trash2, FileSpreadsheet, RotateCcw } from "lucide-react";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -9,10 +9,10 @@ import { ShieldCheck, Image as ImageIcon, X, Filter, Check, Search, Trash2 } fro
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
-import { exportToXlsx } from "../../utils/exportXlsx";
 
 interface DiscrepancyLog {
   id: string;
@@ -205,17 +205,24 @@ export const ReviewDiscrepancy: React.FC = () => {
     setDeleteLogId(null);
   };
 
-  const handleExportCsv = () => {
-    if (!filteredLogs || filteredLogs.length === 0) {
-      toast.error("Tidak ada data diskrepansi pada periode/filter yang dipilih untuk diekspor.");
+  const handleExportXlsx = () => {
+    if (!startDate || !endDate) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
-    const headers = ["ID", "Tanggal", "Warga", "Kelurahan", "Status", "AI Class", "AI Conf", "Petugas Class", "Berat (Kg)"];
-    const rows = filteredLogs.map((l) => [
+
+    if (!filteredLogs || filteredLogs.length === 0) {
+      toast.error("Tidak ada data diskrepansi pada periode yang dipilih untuk diekspor.");
+      return;
+    }
+
+    const headers = ["No", "ID", "Tanggal", "Warga", "Kelurahan", "Status", "AI Class", "AI Conf", "Petugas Class", "Berat (Kg)"];
+    const rows = filteredLogs.map((l, index) => [
+      index + 1,
       l.id,
-      new Date(l.createdAt).toLocaleDateString(),
-      l.household?.user?.name || "",
-      l.household?.rtRw?.kelurahan?.name || "",
+      new Date(l.createdAt).toLocaleDateString("id-ID"),
+      l.household?.user?.name || "-",
+      l.household?.rtRw?.kelurahan?.name || "-",
       l.discrepancyStatus,
       l.aiClassification,
       `${l.aiConfidence}%`,
@@ -223,8 +230,23 @@ export const ReviewDiscrepancy: React.FC = () => {
       l.weightKg,
     ]);
 
-    exportToXlsx(headers, rows, `laporan_diskrepansi_${new Date().toISOString().slice(0, 10)}`, "Diskrepansi");
-    toast.success("Laporan diskrepansi berhasil di-export ke XLSX!");
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 12 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Diskrepansi_AI");
+    XLSX.writeFile(wb, `laporan_diskrepansi_${startDate}_sd_${endDate}.xlsx`);
+    toast.success(`Laporan diskrepansi (${filteredLogs.length} data) berhasil diekspor ke XLSX!`);
   };
 
 
@@ -244,12 +266,6 @@ export const ReviewDiscrepancy: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={handleExportCsv}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer"
-            >
-              📥 Export XLSX
-            </button>
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black rounded-xl transition shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
@@ -318,6 +334,33 @@ export const ReviewDiscrepancy: React.FC = () => {
               className="text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700 dark:text-slate-200 cursor-pointer"
             />
           </div>
+
+          {(startDate || endDate || filterStatus !== "Semua" || searchQuery) && (
+            <button
+              type="button"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+                setFilterStatus("Semua");
+                setSearchQuery("");
+              }}
+              className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+              title="Reset Filter"
+            >
+              <RotateCcw size={11} /> Reset
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleExportXlsx}
+            disabled={!startDate || !endDate}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer"
+            title={(!startDate || !endDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data diskrepansi ke XLSX"}
+          >
+            <FileSpreadsheet size={13} />
+            <span>Ekspor XLSX</span>
+          </button>
         </div>
       </div>
 

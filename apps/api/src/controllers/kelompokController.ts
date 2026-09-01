@@ -25,7 +25,7 @@ export const kelompokController = {
         dplUserId,
         (req as any).user
       );
-      res.status(200).json({ success: true, ...result });
+      res.status(200).json({ success: true, ...result, data: result.groups });
     } catch (error) {
       console.error("[KelompokController] getAll error:", error);
       res.status(500).json({ success: false, message: "Internal server error" });
@@ -224,8 +224,10 @@ export const kelompokController = {
         STUDENT_KKN_NOT_FOUND: [404, "Data mahasiswa KKN tidak ditemukan"],
         TARGET_KELOMPOK_NOT_FOUND: [404, "Kelompok tujuan tidak ditemukan"],
       };
-      const [status, msg] =
-        errorMap[error.message] || [500, error.message || "Gagal memindahkan mahasiswa"];
+      const [status, msg] = errorMap[error.message] || [
+        500,
+        error.message || "Gagal memindahkan mahasiswa",
+      ];
       res.status(status).json({ success: false, message: msg });
     }
   },

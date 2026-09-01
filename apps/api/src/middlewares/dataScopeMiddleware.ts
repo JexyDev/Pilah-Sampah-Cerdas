@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { Request, Response, NextFunction } from "express";
 
-
 /**
  * Middleware untuk mencegah Horizontal Privilege Escalation.
  * Memastikan setiap user (RW, Lurah, Camat, Warga) hanya dapat mengakses atau memanipulasi
@@ -87,10 +86,7 @@ export const dataScopeMiddleware = async (
 
       // Validasi route parameter jika target adalah binId atau qrCode
       const binIdentifier = req.params.id || req.params.binId || req.params.qrCode;
-      if (
-        binIdentifier &&
-        (req.baseUrl.includes("/bins") || req.originalUrl.includes("/bins/"))
-      ) {
+      if (binIdentifier && (req.baseUrl.includes("/bins") || req.originalUrl.includes("/bins/"))) {
         const bin = await prisma.bin.findFirst({
           where: {
             OR: [{ id: binIdentifier }, { qrCode: binIdentifier }],
@@ -120,10 +116,7 @@ export const dataScopeMiddleware = async (
       }
 
       const binIdentifier = req.params.id || req.params.binId || req.params.qrCode;
-      if (
-        binIdentifier &&
-        (req.baseUrl.includes("/bins") || req.originalUrl.includes("/bins/"))
-      ) {
+      if (binIdentifier && (req.baseUrl.includes("/bins") || req.originalUrl.includes("/bins/"))) {
         const bin = await prisma.bin.findFirst({
           where: {
             OR: [{ id: binIdentifier }, { qrCode: binIdentifier }],
@@ -154,10 +147,7 @@ export const dataScopeMiddleware = async (
       }
 
       const binIdentifier = req.params.id || req.params.binId || req.params.qrCode;
-      if (
-        binIdentifier &&
-        (req.baseUrl.includes("/bins") || req.originalUrl.includes("/bins/"))
-      ) {
+      if (binIdentifier && (req.baseUrl.includes("/bins") || req.originalUrl.includes("/bins/"))) {
         const bin = await prisma.bin.findFirst({
           where: {
             OR: [{ id: binIdentifier }, { qrCode: binIdentifier }],
@@ -168,8 +158,7 @@ export const dataScopeMiddleware = async (
           },
         });
 
-        const targetKecamatan =
-          bin?.kelurahan?.kecamatanId || bin?.rw?.kelurahan?.kecamatanId;
+        const targetKecamatan = bin?.kelurahan?.kecamatanId || bin?.rw?.kelurahan?.kecamatanId;
         if (targetKecamatan && targetKecamatan !== userKecamatanId) {
           res.status(403).json({
             error: "HORIZONTAL_PRIVILEGE_ESCALATION_DENIED",
@@ -183,8 +172,9 @@ export const dataScopeMiddleware = async (
     next();
   } catch (error) {
     console.error("[dataScopeMiddleware] error:", error);
-    res
-      .status(500)
-      .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal memverifikasi batasan data wilayah" });
+    res.status(500).json({
+      error: "INTERNAL_SERVER_ERROR",
+      message: "Gagal memverifikasi batasan data wilayah",
+    });
   }
 };

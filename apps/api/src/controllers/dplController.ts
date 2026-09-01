@@ -39,7 +39,12 @@ export const dplController = {
       const userRole = (req.user as any)?.role;
       const groupId = req.query.groupId as string | undefined;
       const search = req.query.search as string | undefined;
-      const data = await dplService.getStudentCumulativeSummary(dplUserId, groupId, userRole, search);
+      const data = await dplService.getStudentCumulativeSummary(
+        dplUserId,
+        groupId,
+        userRole,
+        search
+      );
       res.json({ success: true, total: Array.isArray(data) ? data.length : 0, data });
     } catch (error: any) {
       console.error("[dplController.getStudentCumulativeSummary] error:", error);
@@ -56,12 +61,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.getAssistedCitizens] error:", error);
       if (error.message === "STUDENT_NOT_FOUND_OR_FORBIDDEN") {
-        res
-          .status(403)
-          .json({
-            error: "FORBIDDEN",
-            message: "Mahasiswa tidak ditemukan atau bukan dampingan Anda",
-          });
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "Mahasiswa tidak ditemukan atau bukan dampingan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -122,12 +125,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.assessStudent] error:", error);
       if (error.message === "STUDENT_NOT_FOUND_OR_FORBIDDEN") {
-        res
-          .status(403)
-          .json({
-            error: "FORBIDDEN",
-            message: "Mahasiswa tidak ditemukan atau bukan dampingan Anda",
-          });
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "Mahasiswa tidak ditemukan atau bukan dampingan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -141,9 +142,10 @@ export const dplController = {
       const { status, note } = req.body;
 
       if (!["APPROVED", "REJECTED", "ESCALATED"].includes(status)) {
-        res
-          .status(400)
-          .json({ error: "BAD_REQUEST", message: "Status harus APPROVED, REJECTED, atau ESCALATED" });
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: "Status harus APPROVED, REJECTED, atau ESCALATED",
+        });
         return;
       }
 
@@ -152,12 +154,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.decideLeaveRequest] error:", error);
       if (error.message === "FORBIDDEN_NOT_YOUR_STUDENT") {
-        res
-          .status(403)
-          .json({
-            error: "FORBIDDEN",
-            message: "Pengajuan izin ini bukan milik mahasiswa dampingan Anda",
-          });
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "Pengajuan izin ini bukan milik mahasiswa dampingan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -173,7 +173,8 @@ export const dplController = {
       if (!["APPROVE_HADIR", "REJECT_CANCEL"].includes(action)) {
         res.status(400).json({
           error: "BAD_REQUEST",
-          message: "Aksi harus 'APPROVE_HADIR' (setujui jadi hadir) atau 'REJECT_CANCEL' (tolak pembatalan)",
+          message:
+            "Aksi harus 'APPROVE_HADIR' (setujui jadi hadir) atau 'REJECT_CANCEL' (tolak pembatalan)",
         });
         return;
       }
@@ -222,9 +223,23 @@ export const dplController = {
     try {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
-      const { kelompokId, nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, statusUsulan, statusPelaksanaan } = req.body;
+      const {
+        kelompokId,
+        nomor,
+        deskripsi,
+        kategori,
+        sumber,
+        waktuPelaksanaan,
+        linkGoogleDrive,
+        kebutuhanBiaya,
+        status,
+        statusUsulan,
+        statusPelaksanaan,
+      } = req.body;
       if (!kelompokId || !deskripsi) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
         return;
       }
       const data = await dplService.createProgramKerja(dplUserId, userRole, {
@@ -244,7 +259,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.createProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
+        res.status(403).json({
+          error: "FORBIDDEN_SCOPE",
+          message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -256,7 +274,19 @@ export const dplController = {
       const id = req.params.id;
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
-      const { nomor, deskripsi, kategori, sumber, waktuPelaksanaan, linkGoogleDrive, kebutuhanBiaya, status, statusUsulan, statusPelaksanaan, catatanDpl } = req.body;
+      const {
+        nomor,
+        deskripsi,
+        kategori,
+        sumber,
+        waktuPelaksanaan,
+        linkGoogleDrive,
+        kebutuhanBiaya,
+        status,
+        statusUsulan,
+        statusPelaksanaan,
+        catatanDpl,
+      } = req.body;
       const data = await dplService.updateProgramKerja(id, dplUserId, userRole, {
         nomor: nomor !== undefined ? Number(nomor) : undefined,
         deskripsi,
@@ -274,7 +304,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.updateProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
+        res.status(403).json({
+          error: "FORBIDDEN_SCOPE",
+          message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -291,7 +324,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.deleteProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
+        res.status(403).json({
+          error: "FORBIDDEN_SCOPE",
+          message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -305,12 +341,22 @@ export const dplController = {
       const id = req.params.id;
       const { status, statusUsulan, statusPelaksanaan, catatanDpl } = req.body;
       const effectiveStatus = status || statusUsulan || "DISETUJUI";
-      const data = await dplService.decideProgramKerja(dplUserId, id, effectiveStatus as any, catatanDpl, userRole, statusPelaksanaan);
+      const data = await dplService.decideProgramKerja(
+        dplUserId,
+        id,
+        effectiveStatus as any,
+        catatanDpl,
+        userRole,
+        statusPelaksanaan
+      );
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.decideProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
+        res.status(403).json({
+          error: "FORBIDDEN_SCOPE",
+          message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -322,9 +368,18 @@ export const dplController = {
       const dplUserId = getUserId(req);
       const userRole = (req.user as any)?.role;
       const id = req.params.id;
-      const { skorPenilaian, evaluasiDpl, aspekPenilaian, predikat, statusPenilaian, statusPelaksanaan } = req.body;
+      const {
+        skorPenilaian,
+        evaluasiDpl,
+        aspekPenilaian,
+        predikat,
+        statusPenilaian,
+        statusPelaksanaan,
+      } = req.body;
       if (skorPenilaian === undefined || isNaN(Number(skorPenilaian))) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "skorPenilaian (angka 0-100) wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "skorPenilaian (angka 0-100) wajib diisi" });
         return;
       }
       const data = await dplService.assessProgramKerja(
@@ -342,19 +397,31 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.assessProgramKerja] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
+        res.status(403).json({
+          error: "FORBIDDEN_SCOPE",
+          message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
+        });
         return;
       }
       if (error.message === "PROKER_REJECTED") {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Program kerja yang ditolak tidak dapat dinilai" });
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: "Program kerja yang ditolak tidak dapat dinilai",
+        });
         return;
       }
       if (error.message === "PROKER_NOT_APPROVED") {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Hanya program kerja yang telah disetujui yang dapat dinilai" });
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: "Hanya program kerja yang telah disetujui yang dapat dinilai",
+        });
         return;
       }
       if (error.message === "PROKER_NOT_COMPLETED") {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Hanya program kerja yang telah selesai pelaksanaannya yang dapat dinilai" });
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: "Hanya program kerja yang telah selesai pelaksanaannya yang dapat dinilai",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -371,7 +438,10 @@ export const dplController = {
     } catch (error: any) {
       console.error("[dplController.getProgramKerjaBukti] error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ error: "FORBIDDEN_SCOPE", message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda" });
+        res.status(403).json({
+          error: "FORBIDDEN_SCOPE",
+          message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
+        });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
@@ -419,13 +489,22 @@ export const dplController = {
         catatanDpl,
       } = req.body;
       const data = await dplService.updateConfigTargets({
-        targetTotalKegiatan: targetTotalKegiatan !== undefined ? Number(targetTotalKegiatan) : undefined,
+        targetTotalKegiatan:
+          targetTotalKegiatan !== undefined ? Number(targetTotalKegiatan) : undefined,
         targetTotalJam: targetTotalJam !== undefined ? Number(targetTotalJam) : undefined,
         targetHarianJam: targetHarianJam !== undefined ? Number(targetHarianJam) : undefined,
-        targetHarianKegiatan: targetHarianKegiatan !== undefined ? Number(targetHarianKegiatan) : undefined,
-        attendanceMinDurationHours: attendanceMinDurationHours !== undefined ? Number(attendanceMinDurationHours) : undefined,
-        attendanceMinDurationMinutes: attendanceMinDurationMinutes !== undefined ? Number(attendanceMinDurationMinutes) : undefined,
-        attendanceMinDurationSeconds: attendanceMinDurationSeconds !== undefined ? Number(attendanceMinDurationSeconds) : undefined,
+        targetHarianKegiatan:
+          targetHarianKegiatan !== undefined ? Number(targetHarianKegiatan) : undefined,
+        attendanceMinDurationHours:
+          attendanceMinDurationHours !== undefined ? Number(attendanceMinDurationHours) : undefined,
+        attendanceMinDurationMinutes:
+          attendanceMinDurationMinutes !== undefined
+            ? Number(attendanceMinDurationMinutes)
+            : undefined,
+        attendanceMinDurationSeconds:
+          attendanceMinDurationSeconds !== undefined
+            ? Number(attendanceMinDurationSeconds)
+            : undefined,
         hariKerja: hariKerja !== undefined ? String(hariKerja) : undefined,
         jamKerja: jamKerja !== undefined ? String(jamKerja) : undefined,
         targetPekan: targetPekan !== undefined ? Number(targetPekan) : undefined,
@@ -484,7 +563,12 @@ export const dplController = {
           req.body.fotoDokumentasiUrl ||
           req.body.fileUrl ||
           req.body.buktiUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoBuktiUrl = bodyFoto.trim();
         }
       }
@@ -520,18 +604,26 @@ export const dplController = {
         hasilTindakLanjut,
         arahanEvaluasi,
         fotoBuktiUrl,
-        simpanLokasi: simpanLokasi === undefined ? true : String(simpanLokasi) === "true" || simpanLokasi === true,
+        simpanLokasi:
+          simpanLokasi === undefined
+            ? true
+            : String(simpanLokasi) === "true" || simpanLokasi === true,
         status,
       });
 
       res.status(201).json({
         success: true,
-        message: status === "DRAF" ? "Draf aktivitas DPL berhasil disimpan" : "Aktivitas DPL berhasil dikirim",
+        message:
+          status === "DRAF"
+            ? "Draf aktivitas DPL berhasil disimpan"
+            : "Aktivitas DPL berhasil dikirim",
         data,
       });
     } catch (error: any) {
       console.error("[dplController.createDplActivityLog] error:", error);
-      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Gagal menyimpan aktivitas DPL" });
+      res
+        .status(400)
+        .json({ error: "BAD_REQUEST", message: error.message || "Gagal menyimpan aktivitas DPL" });
     }
   },
 
@@ -555,7 +647,12 @@ export const dplController = {
           req.body.fotoDokumentasiUrl ||
           req.body.fileUrl ||
           req.body.buktiUrl;
-        if (bodyFoto && typeof bodyFoto === "string" && bodyFoto.trim() !== "" && bodyFoto !== "null") {
+        if (
+          bodyFoto &&
+          typeof bodyFoto === "string" &&
+          bodyFoto.trim() !== "" &&
+          bodyFoto !== "null"
+        ) {
           fotoBuktiUrl = bodyFoto.trim();
         }
       }
@@ -591,7 +688,10 @@ export const dplController = {
         hasilTindakLanjut,
         arahanEvaluasi,
         fotoBuktiUrl,
-        simpanLokasi: simpanLokasi === undefined ? undefined : String(simpanLokasi) === "true" || simpanLokasi === true,
+        simpanLokasi:
+          simpanLokasi === undefined
+            ? undefined
+            : String(simpanLokasi) === "true" || simpanLokasi === true,
         status,
       });
 
@@ -602,7 +702,10 @@ export const dplController = {
       });
     } catch (error: any) {
       console.error("[dplController.updateDplActivityLog] error:", error);
-      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Gagal memperbarui aktivitas DPL" });
+      res.status(400).json({
+        error: "BAD_REQUEST",
+        message: error.message || "Gagal memperbarui aktivitas DPL",
+      });
     }
   },
 
@@ -616,8 +719,9 @@ export const dplController = {
       res.json({ success: true, data });
     } catch (error: any) {
       console.error("[dplController.deleteDplActivityLog] error:", error);
-      res.status(400).json({ error: "BAD_REQUEST", message: error.message || "Gagal menghapus aktivitas DPL" });
+      res
+        .status(400)
+        .json({ error: "BAD_REQUEST", message: error.message || "Gagal menghapus aktivitas DPL" });
     }
   },
 };
-

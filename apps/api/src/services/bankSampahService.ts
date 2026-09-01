@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { v4 as uuidv4 } from "uuid";
 
-
 export const bankSampahService = {
   /**
    * Add a deposit or withdrawal transaction for a Warga

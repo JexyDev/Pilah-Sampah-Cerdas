@@ -8,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { householdRepository } from "../repositories/householdRepository.js";
 
-
 export class HouseholdService {
   /**
    * Register a new household.
@@ -55,14 +54,16 @@ export class HouseholdService {
         ...h,
         familySize: fSize,
         jumlahAnggotaKeluarga: fSize,
-        user: h.user ? {
-          ...h.user,
-          familySize: fSize,
-          jumlahAnggotaKeluarga: fSize,
-        } : {
-          familySize: fSize,
-          jumlahAnggotaKeluarga: fSize,
-        },
+        user: h.user
+          ? {
+              ...h.user,
+              familySize: fSize,
+              jumlahAnggotaKeluarga: fSize,
+            }
+          : {
+              familySize: fSize,
+              jumlahAnggotaKeluarga: fSize,
+            },
       };
     });
   }

@@ -21,11 +21,7 @@ const ALLOWED_XLSX_MIME_TYPES = [
  */
 const xlsxStorage = multer.memoryStorage();
 
-const xlsxFileFilter = (
-  _req: Request,
-  file: any,
-  cb: multer.FileFilterCallback
-) => {
+const xlsxFileFilter = (_req: Request, file: any, cb: multer.FileFilterCallback) => {
   if (ALLOWED_XLSX_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {

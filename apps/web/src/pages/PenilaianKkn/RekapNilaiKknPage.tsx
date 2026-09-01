@@ -25,11 +25,19 @@ import {
   Clock,
   CheckCircle2,
   RotateCcw,
+  FileSpreadsheet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { dplService, type RekapNilaiStudent, type RekapNilaiResponse } from "../../services/dplService";
 import { useAuthStore } from "../../store/useAuthStore";
+import {
+  formatPersonName,
+  formatKelompokName,
+  formatWilayahName,
+  formatProdiName,
+} from "../../utils/textFormatter";
+import { sortKelompokList, sortNatural } from "../../utils/sortUtils";
 
 // Fallback demo data jika offline
 const DEFAULT_STUDENTS: RekapNilaiStudent[] = [
@@ -276,13 +284,13 @@ export const RekapNilaiKknPage: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
-  // Unique list of groups for filter dropdown
+  // Unique list of groups for filter dropdown (Sorted naturally)
   const kelompokOptions = useMemo(() => {
     const setGroups = new Set<string>();
     students.forEach((s) => {
       if (s.kelompokName) setGroups.add(s.kelompokName);
     });
-    return Array.from(setGroups).sort();
+    return sortKelompokList(Array.from(setGroups), (k) => k);
   }, [students]);
 
   // Helper for sorting by score
@@ -535,19 +543,6 @@ export const RekapNilaiKknPage: React.FC = () => {
             Rekapitulasi nilai berdasarkan data otomatis serta penilaian DPL dan MPL
           </p>
         </div>
-
-        <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
-          {/* Button Ekspor Excel */}
-          <button
-            onClick={handleExportExcel}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-200 border border-[#009966] rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer w-full sm:w-auto hover:shadow-sm"
-          >
-            <div className="w-4 h-4 rounded border border-[#009966] flex items-center justify-center text-[10px] text-[#009966] font-black">
-              X
-            </div>
-            <span>Ekspor Excel ({filteredStudents.length})</span>
-          </button>
-        </div>
       </div>
 
       {/* KPI Stats Cards - Fully Fluid Responsive */}
@@ -589,7 +584,7 @@ export const RekapNilaiKknPage: React.FC = () => {
             <Award size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rata-rata Nilai</p>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rerata Nilai</p>
             <p className="text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400">{kpiStats.avgScore}</p>
           </div>
         </div>
@@ -701,6 +696,18 @@ export const RekapNilaiKknPage: React.FC = () => {
                 <span className="hidden sm:inline">Reset</span>
               </button>
             )}
+
+            {/* Standar 1 Tombol Ekspor XLSX */}
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={filteredStudents.length === 0}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-auto sm:ml-0"
+              title="Ekspor Rekap & Nilai Akhir ke XLSX"
+            >
+              <FileSpreadsheet size={14} />
+              <span>Ekspor XLSX</span>
+            </button>
           </div>
         </div>
       </div>
@@ -906,12 +913,12 @@ export const RekapNilaiKknPage: React.FC = () => {
 
                       {/* Nama Mahasiswa */}
                       <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-slate-100 text-left">
-                        {st.name}
+                        {formatPersonName(st.name)}
                       </td>
 
                       {/* Kelompok */}
                       <td className="py-3 px-4 border-r border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-left">
-                        {st.kelompokName}
+                        {formatKelompokName(st.kelompokName)}
                       </td>
 
                       {/* Otomatis: Kehadiran */}

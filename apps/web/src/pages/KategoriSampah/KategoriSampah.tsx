@@ -195,7 +195,7 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between transition-all hover:shadow-md">
           <div>
             <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-              RATA-RATA POIN INSENTIF
+              RERATA POIN INSENTIF
             </p>
             <h3 className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
               {categories.length > 0 ? Math.round(categories.reduce((s, c) => s + Number(c.pointsPerKg || 0), 0) / categories.length) : 0} <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Poin per Kg</span>

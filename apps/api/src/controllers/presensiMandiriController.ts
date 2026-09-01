@@ -7,7 +7,18 @@
 import { Request, Response } from "express";
 import { presensiMandiriService } from "../services/presensiMandiriService.js";
 
-const ADMIN_ROLES = ["SUPER_USER", "DEVELOPER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "DPL", "DOSEN_PEMBIMBING", "PANITIA_TASKFORCE", "PEMIMPIN"];
+const ADMIN_ROLES = [
+  "SUPER_USER",
+  "DEVELOPER",
+  "ADMIN_DLH",
+  "CAMAT",
+  "LURAH",
+  "RW",
+  "DPL",
+  "DOSEN_PEMBIMBING",
+  "PANITIA_TASKFORCE",
+  "PEMIMPIN",
+];
 
 export const presensiMandiriController = {
   /**
@@ -20,8 +31,17 @@ export const presensiMandiriController = {
       const { latitude, longitude, lat, lng, platformOs } = req.body;
       const file = (req as any).file;
 
-      const deskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
-      let fotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      const deskripsi =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
+      let fotoUrl =
+        req.body.fotoUrl ||
+        req.body.foto_url ||
+        req.body.foto ||
+        req.body.imageUrl ||
+        req.body.image_url;
 
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
@@ -29,14 +49,22 @@ export const presensiMandiriController = {
       }
 
       if (!fotoUrl) {
-        res.status(400).json({ success: false, error: "FOTO_REQUIRED", message: "Foto bukti kegiatan wajib diunggah." });
+        res.status(400).json({
+          success: false,
+          error: "FOTO_REQUIRED",
+          message: "Foto bukti kegiatan wajib diunggah.",
+        });
         return;
       }
 
       const finalLat = parseFloat(latitude !== undefined ? latitude : lat);
       const finalLng = parseFloat(longitude !== undefined ? longitude : lng);
       if (isNaN(finalLat) || isNaN(finalLng)) {
-        res.status(400).json({ success: false, error: "INVALID_COORDINATES", message: "Koordinat latitude dan longitude wajib disertakan." });
+        res.status(400).json({
+          success: false,
+          error: "INVALID_COORDINATES",
+          message: "Koordinat latitude dan longitude wajib disertakan.",
+        });
         return;
       }
 
@@ -49,12 +77,17 @@ export const presensiMandiriController = {
         platformOs: platformOs || "ANDROID",
       });
 
-      res.status(200).json({ success: true, message: "Presensi mandiri berhasil dicatat.", data: result });
+      res
+        .status(200)
+        .json({ success: true, message: "Presensi mandiri berhasil dicatat.", data: result });
     } catch (error: any) {
       const msg: string = error.message ?? "INTERNAL_ERROR";
       const statusMap: Record<string, number> = {
-        FOTO_REQUIRED: 400, INVALID_COORDINATES: 400, DESKRIPSI_REQUIRED: 400,
-        STUDENT_PROFILE_INCOMPLETE: 403, ALREADY_CHECKED_IN_TODAY: 409,
+        FOTO_REQUIRED: 400,
+        INVALID_COORDINATES: 400,
+        DESKRIPSI_REQUIRED: 400,
+        STUDENT_PROFILE_INCOMPLETE: 403,
+        ALREADY_CHECKED_IN_TODAY: 409,
       };
       const errKey = msg.split(":")[0];
       const status = statusMap[errKey] ?? 500;
@@ -69,13 +102,26 @@ export const presensiMandiriController = {
     try {
       const studentId = req.user!.userId;
       const presensiId = req.params.id;
-      const deskripsiKegiatan = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const deskripsiKegiatan =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
 
-      const result = await presensiMandiriService.checkOut({ presensiId, studentId, deskripsiKegiatan });
-      res.status(200).json({ success: true, message: "Check-out presensi mandiri berhasil.", data: result });
+      const result = await presensiMandiriService.checkOut({
+        presensiId,
+        studentId,
+        deskripsiKegiatan,
+      });
+      res
+        .status(200)
+        .json({ success: true, message: "Check-out presensi mandiri berhasil.", data: result });
     } catch (error: any) {
       const msg: string = error.message ?? "INTERNAL_ERROR";
-      const statusMap: Record<string, number> = { PRESENSI_NOT_FOUND: 404, ALREADY_CHECKED_OUT: 409 };
+      const statusMap: Record<string, number> = {
+        PRESENSI_NOT_FOUND: 404,
+        ALREADY_CHECKED_OUT: 409,
+      };
       res.status(statusMap[msg] ?? 500).json({ success: false, error: msg, message: msg });
     }
   },
@@ -89,12 +135,22 @@ export const presensiMandiriController = {
       const presensiId = req.params.id;
       const { deskripsiKegiatan } = req.body;
 
-      const result = await presensiMandiriService.updateDeskripsi({ presensiId, studentId, deskripsiKegiatan });
-      res.status(200).json({ success: true, message: "Deskripsi kegiatan berhasil diperbarui.", data: result });
+      const result = await presensiMandiriService.updateDeskripsi({
+        presensiId,
+        studentId,
+        deskripsiKegiatan,
+      });
+      res
+        .status(200)
+        .json({ success: true, message: "Deskripsi kegiatan berhasil diperbarui.", data: result });
     } catch (error: any) {
       const msg: string = error.message ?? "INTERNAL_ERROR";
       const errKey = msg.split(":")[0];
-      const statusMap: Record<string, number> = { PRESENSI_NOT_FOUND: 404, DESKRIPSI_REQUIRED: 400, DESKRIPSI_TOO_LONG: 400 };
+      const statusMap: Record<string, number> = {
+        PRESENSI_NOT_FOUND: 404,
+        DESKRIPSI_REQUIRED: 400,
+        DESKRIPSI_TOO_LONG: 400,
+      };
       res.status(statusMap[errKey] ?? 500).json({ success: false, error: errKey, message: msg });
     }
   },
@@ -110,7 +166,9 @@ export const presensiMandiriController = {
       const result = await presensiMandiriService.getRiwayatSaya(studentId, { page, limit });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
 
@@ -123,7 +181,9 @@ export const presensiMandiriController = {
       const result = await presensiMandiriService.getLiveMap({ kelompokId });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
 
@@ -143,7 +203,9 @@ export const presensiMandiriController = {
       });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },
 };

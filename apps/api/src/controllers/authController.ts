@@ -12,7 +12,6 @@ import { authService } from "../services/authService.js";
 import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
 import { strongPasswordSchema } from "../utils/passwordValidator.js";
 
-
 /**
  * Normalize phone: 08xxx → +628xxx, 628xxx → +628xxx
  */
@@ -291,7 +290,9 @@ export class AuthController {
     try {
       const userId = req.user?.userId || (req as any).user?.id;
       if (!userId) {
-        res.status(401).json({ success: false, message: "Token otentikasi tidak valid atau tidak ditemukan." });
+        res
+          .status(401)
+          .json({ success: false, message: "Token otentikasi tidak valid atau tidak ditemukan." });
         return;
       }
 
@@ -309,7 +310,8 @@ export class AuthController {
           if (isNaN(rawFamilySize) || rawFamilySize < 0) {
             res.status(400).json({
               success: false,
-              message: "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka positif.",
+              message:
+                "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka positif.",
             });
             return;
           }
@@ -320,7 +322,8 @@ export class AuthController {
           if (isNaN(parsed) || !/^\d+$/.test(trimmed)) {
             res.status(400).json({
               success: false,
-              message: "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka murni.",
+              message:
+                "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka murni.",
             });
             return;
           }
@@ -1087,8 +1090,10 @@ export class AuthController {
               id: true,
               name: true,
               phone: true,
+              nip: true,
               role: { select: { name: true } },
               studentProfile: { select: { nim: true } },
+              dplKelompok: { select: { id: true, name: true } },
             },
           },
         },
@@ -1104,24 +1109,39 @@ export class AuthController {
           return true;
         })
         .map((t) => {
-          const roleName: string = (t.user as any).role?.name ?? "UNKNOWN";
+          let roleName: string = (t.user as any)?.role?.name ?? "";
+          if (!roleName) {
+            if ((t.user as any)?.studentProfile) {
+              roleName = "MAHASISWA_KKN";
+            } else if ((t.user as any)?.dplKelompok?.length > 0 || (t.user as any)?.nip) {
+              roleName = "DPL";
+            } else {
+              roleName = "PENGGUNA";
+            }
+          }
+
           const isMobile = [
             "WARGA",
             "PETUGAS_RESIDU",
             "MAHASISWA_KKN",
-            "DPL",
             "RT",
             "RW",
             "PENGANGKUT",
-          ].includes(roleName);
+          ].includes(roleName.toUpperCase());
+
+          const identifier =
+            (t.user as any)?.studentProfile?.nim ??
+            (t.user as any)?.nip ??
+            (t.user as any)?.phone ??
+            t.userId.slice(0, 8);
+
           return {
             id: t.userId,
-            name: (t.user as any).name ?? "-",
-            phone: (t.user as any).phone ?? "-",
+            name: (t.user as any)?.name ?? "-",
+            phone: (t.user as any)?.phone ?? "-",
             role: roleName,
             device: isMobile ? "Mobile App (Android)" : "Website (Desktop)",
-            identifier:
-              (t.user as any).studentProfile?.nim ?? (t.user as any).phone ?? t.userId.slice(0, 8),
+            identifier,
             loginTime: t.createdAt.toISOString(),
             tokenExpiresAt: t.expiresAt.toISOString(),
           };

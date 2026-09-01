@@ -3,7 +3,6 @@ import { Router } from "express";
 import { rwService } from "../services/rwService.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 
-
 const router = Router();
 
 // Semua route di sini dilindungi authMiddleware dan khusus untuk role RW

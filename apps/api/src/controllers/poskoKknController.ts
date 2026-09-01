@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -12,10 +12,13 @@ export class PoskoKknController {
   /** GET /posko-kkn — semua posko */
   async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const user = (req as any).user; const data = await poskoKknService.getAllPosko(user?.userId, user?.role);
+      const user = (req as any).user;
+      const data = await poskoKknService.getAllPosko(user?.userId, user?.role);
       res.status(200).json({ success: true, data });
     } catch (err: any) {
-      res.status(500).json({ success: false, message: err.message || "Gagal mengambil data posko" });
+      res
+        .status(500)
+        .json({ success: false, message: err.message || "Gagal mengambil data posko" });
     }
   }
 
@@ -35,10 +38,22 @@ export class PoskoKknController {
     try {
       const userId = (req as any).user?.userId;
       const peran = (req as any).user?.role;
-      const { nama, alamat, latitude, longitude, fotoUrl, keterangan, kelompokId: bodyKelompokId } = req.body;
+      const {
+        nama,
+        alamat,
+        latitude,
+        longitude,
+        fotoUrl,
+        foto,
+        keterangan,
+        kelompokId: bodyKelompokId,
+        radius,
+      } = req.body;
 
       if (!nama || !alamat || latitude === undefined || longitude === undefined) {
-        res.status(400).json({ success: false, message: "nama, alamat, latitude, longitude wajib diisi" });
+        res
+          .status(400)
+          .json({ success: false, message: "nama, alamat, latitude, longitude wajib diisi" });
         return;
       }
 
@@ -51,11 +66,16 @@ export class PoskoKknController {
           select: { kelompokId: true, isKetua: true },
         });
         if (!student?.kelompokId) {
-          res.status(400).json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
+          res
+            .status(400)
+            .json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
           return;
         }
         if (!student.isKetua) {
-          res.status(403).json({ success: false, message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko KKN" });
+          res.status(403).json({
+            success: false,
+            message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko KKN",
+          });
           return;
         }
         targetKelompokId = student.kelompokId;
@@ -66,16 +86,33 @@ export class PoskoKknController {
         return;
       }
 
+      let resolvedFoto = fotoUrl || foto;
+      if (req.file) {
+        resolvedFoto = `/uploads/${req.file.filename}`;
+      }
+
+      const parsedRadius = radius != null && radius !== "" ? Number(radius) : undefined;
+
       const posko = await poskoKknService.upsertPosko(targetKelompokId, {
         nama,
         alamat,
         latitude: Number(latitude),
         longitude: Number(longitude),
-        fotoUrl: fotoUrl || undefined,
+        radius: parsedRadius,
+        fotoUrl: resolvedFoto || undefined,
         keterangan: keterangan || undefined,
       });
 
-      res.status(200).json({ success: true, message: "Posko KKN berhasil disimpan", data: posko });
+      const resData = {
+        ...posko,
+        foto: posko.fotoUrl || null,
+        fotoUrl: posko.fotoUrl || null,
+        radius: Number((posko as any).radius) || 500,
+      };
+
+      res
+        .status(200)
+        .json({ success: true, message: "Posko KKN berhasil disimpan", data: resData });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message || "Gagal menyimpan posko" });
     }

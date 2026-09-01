@@ -241,7 +241,7 @@ export class SystemController {
     try {
       const release = await systemService.getLatestRelease();
       const filename = `BERSEKA-v${release.version}.apk`;
-      
+
       const possiblePaths = [
         path.join(process.cwd(), "uploads", "berseka-release-arm64-v8a.apk"),
         path.join(process.cwd(), "uploads", "app-release.apk"),

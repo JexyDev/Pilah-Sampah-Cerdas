@@ -9,82 +9,137 @@ export class CronService {
     const tzOptions = { timezone: "Asia/Jakarta" };
 
     // Notifications for schedule start
-    cron.schedule("0 6 * * *", () => {
-      this.triggerScheduleNotifications("MORNING");
-    }, tzOptions);
-    cron.schedule("0 16 * * *", () => {
-      this.triggerScheduleNotifications("EVENING");
-    }, tzOptions);
+    cron.schedule(
+      "0 6 * * *",
+      () => {
+        this.triggerScheduleNotifications("MORNING");
+      },
+      tzOptions
+    );
+    cron.schedule(
+      "0 16 * * *",
+      () => {
+        this.triggerScheduleNotifications("EVENING");
+      },
+      tzOptions
+    );
     // Escalations at the end of the window
-    cron.schedule("1 8 * * *", () => {
-      this.checkEscalations("MORNING");
-    }, tzOptions);
-    cron.schedule("1 18 * * *", () => {
-      this.checkEscalations("EVENING");
-    }, tzOptions);
+    cron.schedule(
+      "1 8 * * *",
+      () => {
+        this.checkEscalations("MORNING");
+      },
+      tzOptions
+    );
+    cron.schedule(
+      "1 18 * * *",
+      () => {
+        this.checkEscalations("EVENING");
+      },
+      tzOptions
+    );
     // Daily citizens absence penalty
-    cron.schedule("0 0 * * *", () => {
-      this.evaluateDailyWargaPenalty();
-    }, tzOptions);
+    cron.schedule(
+      "0 0 * * *",
+      () => {
+        this.evaluateDailyWargaPenalty();
+      },
+      tzOptions
+    );
     // Window absence penalty (At the end of each window)
-    cron.schedule("5 8 * * *", () => {
-      this.checkWindowAbsence("MORNING");
-    }, tzOptions);
-    cron.schedule("5 18 * * *", () => {
-      this.checkWindowAbsence("EVENING");
-    }, tzOptions);
+    cron.schedule(
+      "5 8 * * *",
+      () => {
+        this.checkWindowAbsence("MORNING");
+      },
+      tzOptions
+    );
+    cron.schedule(
+      "5 18 * * *",
+      () => {
+        this.checkWindowAbsence("EVENING");
+      },
+      tzOptions
+    );
     // Inactive bins synchronization daily at 01:00 AM
-    cron.schedule("0 1 * * *", () => {
-      this.syncInactiveBins();
-    }, tzOptions);
+    cron.schedule(
+      "0 1 * * *",
+      () => {
+        this.syncInactiveBins();
+      },
+      tzOptions
+    );
     // Check Mahasiswa Geofence every 2 hours
-    cron.schedule("0 */2 * * *", () => {
-      this.checkMahasiswaGeofence();
-    }, tzOptions);
+    cron.schedule(
+      "0 */2 * * *",
+      () => {
+        this.checkMahasiswaGeofence();
+      },
+      tzOptions
+    );
     // Cleanup expired tokens, OTPs, and stale logs daily at 02:00 AM
-    cron.schedule("0 2 * * *", () => {
-      this.cleanupStaleData();
-    }, tzOptions);
+    cron.schedule(
+      "0 2 * * *",
+      () => {
+        this.cleanupStaleData();
+      },
+      tzOptions
+    );
 
     // Auto checkout ended KKN schedules & handle stale GPS / dead battery anomalies every minute
-    cron.schedule("* * * * *", () => {
-      kknAttendanceService.autoCheckOutEndedSchedules();
-      kknAttendanceService.handleStaleGpsSessions();
-    }, tzOptions);
+    cron.schedule(
+      "* * * * *",
+      () => {
+        kknAttendanceService.autoCheckOutEndedSchedules();
+        kknAttendanceService.handleStaleGpsSessions();
+      },
+      tzOptions
+    );
 
     // Daily KKN schedules batch auto-generation at midnight (00:01 AM WIB)
-    cron.schedule("1 0 * * *", () => {
-      scheduleService.syncDailySchedulesForToday();
-    }, tzOptions);
+    cron.schedule(
+      "1 0 * * *",
+      () => {
+        scheduleService.syncDailySchedulesForToday();
+      },
+      tzOptions
+    );
 
     // === SMART ZONE: Batch auto-polygon update setiap 5 menit saat ada mahasiswa aktif ===
-    cron.schedule("*/5 * * * *", async () => {
-      try {
-        const { smartZoneService } = await import("./smartZoneService.js");
-        const activeGroups = await smartZoneService.getGroupsWithActiveStudents();
-        if (activeGroups.length > 0) {
-          console.log(`[SmartZone Cron] Updating auto-polygon for ${activeGroups.length} active group(s)...`);
-          for (const kelompokId of activeGroups) {
-            await smartZoneService.updateGroupAutoPolygon(kelompokId).catch(() => {});
+    cron.schedule(
+      "*/5 * * * *",
+      async () => {
+        try {
+          const { smartZoneService } = await import("./smartZoneService.js");
+          const activeGroups = await smartZoneService.getGroupsWithActiveStudents();
+          if (activeGroups.length > 0) {
+            console.log(
+              `[SmartZone Cron] Updating auto-polygon for ${activeGroups.length} active group(s)...`
+            );
+            for (const kelompokId of activeGroups) {
+              await smartZoneService.updateGroupAutoPolygon(kelompokId).catch(() => {});
+            }
           }
+        } catch (err) {
+          console.warn("[SmartZone Cron] Batch polygon update error:", err);
         }
-      } catch (err) {
-        console.warn("[SmartZone Cron] Batch polygon update error:", err);
-      }
-    }, tzOptions);
+      },
+      tzOptions
+    );
 
-    console.log("[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone).");
+    console.log(
+      "[CronService] Escalation and optimization cron jobs started (Asia/Jakarta Timezone)."
+    );
   }
   public async cleanupStaleData() {
     try {
       const now = new Date();
       const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
       const deletedOtp = await prisma.otpCode.deleteMany({
         where: {
-          OR: [
-            { expiresAt: { lt: now } },
-            { used: true, createdAt: { lt: oneHourAgo } },
-          ],
+          OR: [{ expiresAt: { lt: now } }, { used: true, createdAt: { lt: oneHourAgo } }],
         },
       });
       const deletedTokens = await prisma.refreshToken.deleteMany({
@@ -92,7 +147,15 @@ export class CronService {
           expiresAt: { lt: now },
         },
       });
-      console.log(`[CronService] Cleanup completed: ${deletedOtp.count} OTPs, ${deletedTokens.count} tokens purged.`);
+      const deletedLocations = await prisma.studentLocation.deleteMany({
+        where: {
+          recordedAt: { lt: sevenDaysAgo },
+        },
+      });
+
+      console.log(
+        `[CronService] Cleanup completed: ${deletedOtp.count} OTPs, ${deletedTokens.count} tokens, ${deletedLocations.count} stale GPS logs purged.`
+      );
     } catch (e) {
       console.error("[CronService] cleanupStaleData error:", e);
     }
@@ -106,10 +169,18 @@ export class CronService {
       });
       const isReminderEnabled = reminderConfig ? reminderConfig.value !== "false" : true;
       // 2. Fetch window times from Rule Engine config
-      const morningStartConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_start" } });
-      const morningEndConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_morning_end" } });
-      const eveningStartConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_start" } });
-      const eveningEndConfig = await prisma.systemConfig.findUnique({ where: { key: "reporting_window_evening_end" } });
+      const morningStartConfig = await prisma.systemConfig.findUnique({
+        where: { key: "reporting_window_morning_start" },
+      });
+      const morningEndConfig = await prisma.systemConfig.findUnique({
+        where: { key: "reporting_window_morning_end" },
+      });
+      const eveningStartConfig = await prisma.systemConfig.findUnique({
+        where: { key: "reporting_window_evening_start" },
+      });
+      const eveningEndConfig = await prisma.systemConfig.findUnique({
+        where: { key: "reporting_window_evening_end" },
+      });
       const morningStart = morningStartConfig?.value || "06:00";
       const morningEnd = morningEndConfig?.value || "08:00";
       const eveningStart = eveningStartConfig?.value || "16:00";
@@ -119,7 +190,10 @@ export class CronService {
         const wargaList = await prisma.user.findMany({
           where: { role: { name: "WARGA" }, status: "Aktif" },
         });
-        const windowTimeLabel = window === "MORNING" ? `${morningStart} - ${morningEnd} WIB` : `${eveningStart} - ${eveningEnd} WIB`;
+        const windowTimeLabel =
+          window === "MORNING"
+            ? `${morningStart} - ${morningEnd} WIB`
+            : `${eveningStart} - ${eveningEnd} WIB`;
         const title = `⏰ Saatnya Pemilahan Sampah (${window === "MORNING" ? "Pagi" : "Sore"})`;
         const message = `Pengingat BERSEKA: Jendela pemilahan sampah sesi ${window === "MORNING" ? "Pagi" : "Sore"} (${windowTimeLabel}) telah dibuka. Mari pilah dan setor sampah Organik & Anorganik Anda!`;
         const notifications = wargaList.map((w) => ({
@@ -450,7 +524,7 @@ export class CronService {
       console.error("[CronService] syncInactiveBins error:", e);
     }
   }
-    private isActivityFinished(schedule: any): boolean {
+  private isActivityFinished(schedule: any): boolean {
     if (!schedule || !schedule.time || !schedule.date) return false;
     if (schedule.time.includes("-")) {
       const parts = schedule.time.split("-");
@@ -488,11 +562,13 @@ export class CronService {
         },
       });
       const { calculateDistance } = await import("./kknAttendanceService.js");
-            for (const att of activeAttendances) {
+      for (const att of activeAttendances) {
         if (!att.schedule) continue;
         // Skip geofence penalty if the activity has already ended
         if (this.isActivityFinished(att.schedule)) {
-          console.log(`[CronService] Attendance ${att.id} skipped for geofence check because activity has already ended.`);
+          console.log(
+            `[CronService] Attendance ${att.id} skipped for geofence check because activity has already ended.`
+          );
           continue;
         }
         const radius = att.schedule.radius ? Number(att.schedule.radius) : 100;
@@ -513,7 +589,7 @@ export class CronService {
             centerLat,
             centerLng
           );
-          if (dist <= (radius + bufferMeters)) {
+          if (dist <= radius + bufferMeters) {
             anyInside = true;
             break;
           }
@@ -530,13 +606,17 @@ export class CronService {
               },
             });
           } catch (_notifErr) {
-            console.error(`[CronService] Failed to send geofence warning notification for ${att.studentId}`);
+            console.error(
+              `[CronService] Failed to send geofence warning notification for ${att.studentId}`
+            );
           }
           await prisma.activityAttendance.update({
             where: { id: att.id },
             data: { status: "LEPAS_RADIUS" },
           });
-          console.log(`[CronService] Attendance ${att.id} invalidated due to geofence rule (${invalidationHours}h without GPS in zone).`);
+          console.log(
+            `[CronService] Attendance ${att.id} invalidated due to geofence rule (${invalidationHours}h without GPS in zone).`
+          );
         }
       }
     } catch (error) {

@@ -8,6 +8,7 @@ import { ShieldCheck, Image as ImageIcon, X, Filter, Check } from "lucide-react"
 
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../../utils/api";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import toast from "react-hot-toast";
 
 interface DiscrepancyLog {
@@ -355,7 +356,7 @@ export const ReviewDiscrepancy: React.FC = () => {
               <X size={24} />
             </button>
             <img 
-              src={selectedLog.evidencePhotoUrl.startsWith('http') ? selectedLog.evidencePhotoUrl : `http://localhost:3000${selectedLog.evidencePhotoUrl}`} 
+              src={resolveImageUrl(selectedLog.evidencePhotoUrl)} 
               alt="Bukti Fisik Resolusi Tinggi" 
               className="w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
             />

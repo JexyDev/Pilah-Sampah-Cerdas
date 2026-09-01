@@ -1,6 +1,5 @@
 import { prisma } from "../lib/prisma.js";
 
-
 /**
  * Service layer untuk fitur Evaluasi Dampak KKN.
  * Mengelola data Baseline (dari SurveiKelurahan), Endline (EndlineSurveiKelurahan),
@@ -70,13 +69,19 @@ export const evaluasiDampakService = {
   /**
    * Mengambil data endline (EndlineSurveiKelurahan) beserta relasi child.
    */
-  getEndlineData: async (userId: string, userRole: string, page: number = 1, limit: number = 10, search: string = "") => {
+  getEndlineData: async (
+    userId: string,
+    userRole: string,
+    page: number = 1,
+    limit: number = 10,
+    search: string = ""
+  ) => {
     const baseWhereClause = await buildKelurahanScope(userId, userRole);
-    
+
     // Add search condition
     const whereClause = {
       ...baseWhereClause,
-      ...(search ? { namaKelurahan: { contains: search, mode: 'insensitive' as const } } : {})
+      ...(search ? { namaKelurahan: { contains: search, mode: "insensitive" as const } } : {}),
     };
 
     const skip = (page - 1) * limit;
@@ -95,7 +100,7 @@ export const evaluasiDampakService = {
         skip,
         take: limit,
       }),
-      prisma.endlineSurveiKelurahan.count({ where: whereClause })
+      prisma.endlineSurveiKelurahan.count({ where: whereClause }),
     ]);
 
     return {
@@ -104,8 +109,8 @@ export const evaluasiDampakService = {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   },
 
@@ -129,7 +134,10 @@ export const evaluasiDampakService = {
       select: { kelurahan: true },
     });
     const kelurahanNames = kelompokDpl.map((k) => k.kelurahan?.toLowerCase()).filter(Boolean);
-    if (kelurahanNames.length > 0 && !kelurahanNames.includes(endline.namaKelurahan.toLowerCase())) {
+    if (
+      kelurahanNames.length > 0 &&
+      !kelurahanNames.includes(endline.namaKelurahan.toLowerCase())
+    ) {
       throw new Error("FORBIDDEN_SCOPE");
     }
 
@@ -224,13 +232,16 @@ export const evaluasiDampakService = {
       const endlineKegiatan = endline ? countKegiatan(endline.bankSampahPengolahan) : null;
 
       // Target standar DLH/KKN: Pemilahan minimal 50% atau kenaikan +20% dari baseline
-      const targetPemilahan = baselinePemilahan !== null ? Math.max(50, baselinePemilahan + 20) : 50;
+      const targetPemilahan =
+        baselinePemilahan !== null ? Math.max(50, baselinePemilahan + 20) : 50;
       const deltaPemilahan =
         baselinePemilahan !== null && endlinePemilahan !== null
           ? Number((endlinePemilahan - baselinePemilahan).toFixed(2))
           : null;
       const isTargetPemilahanTercapai =
-        endlinePemilahan !== null ? endlinePemilahan >= targetPemilahan || (deltaPemilahan !== null && deltaPemilahan > 0) : false;
+        endlinePemilahan !== null
+          ? endlinePemilahan >= targetPemilahan || (deltaPemilahan !== null && deltaPemilahan > 0)
+          : false;
 
       const deltaVolume =
         baselineVolume !== null && endlineVolume !== null
@@ -287,7 +298,11 @@ export const evaluasiDampakService = {
           delta: deltaKegiatan,
           tercapai: deltaKegiatan !== null ? deltaKegiatan >= 0 : false,
         },
-        statusCapaian: isTargetPemilahanTercapai ? "TERCAPAI" : (endline !== null ? "BELUM_TERCAPAI" : "PROSES_EVALUASI"),
+        statusCapaian: isTargetPemilahanTercapai
+          ? "TERCAPAI"
+          : endline !== null
+            ? "BELUM_TERCAPAI"
+            : "PROSES_EVALUASI",
       };
     });
 

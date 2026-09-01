@@ -35,9 +35,10 @@ import {
   FileCheck2,
   AlertTriangle,
   CheckSquare,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
-import { exportToXlsx } from "../../utils/exportXlsx";
 
 interface AuditTrail {
   id: string;
@@ -368,16 +369,23 @@ export const AuditTrailList: React.FC = () => {
     };
   }, [logs]);
 
-  // Export CSV
-  const handleExportCSV = () => {
-    if (filteredLogs.length === 0) {
-      toast.error("Tidak ada data log aktivitas untuk diekspor.");
+  // Export XLSX
+  const handleExportXLSX = () => {
+    if (!startDateFilter || !endDateFilter) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
+
+    if (filteredLogs.length === 0) {
+      toast.error("Tidak ada data log aktivitas pada rentang tanggal yang dipilih.");
+      return;
+    }
+
     try {
       setIsExporting(true);
-      const headers = ["Waktu Kejadian", "Kode Aksi", "Nama Pengguna", "Peran", "Referensi ID", "Kategori"];
-      const rows = filteredLogs.map((l) => [
+      const headers = ["No", "Waktu Kejadian", "Kode Aksi", "Nama Pengguna", "Peran", "Referensi ID", "Kategori"];
+      const rows = filteredLogs.map((l, index) => [
+        index + 1,
         new Date(l.timestamp).toLocaleString("id-ID"),
         l.action,
         l.user?.name || "Sistem Otomatis",
@@ -386,10 +394,22 @@ export const AuditTrailList: React.FC = () => {
         getActionMeta(l.action).label,
       ]);
 
-      exportToXlsx(headers, rows, `BERSEKA_Log_Aktivitas_${new Date().toISOString().slice(0, 10)}`, "Log Aktivitas");
-      toast.success("Laporan log aktivitas berhasil diekspor!");
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws["!cols"] = [
+        { wch: 6 },
+        { wch: 22 },
+        { wch: 30 },
+        { wch: 25 },
+        { wch: 18 },
+        { wch: 25 },
+        { wch: 25 },
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Log_Aktivitas");
+      XLSX.writeFile(wb, `BERSEKA_Log_Aktivitas_${startDateFilter}_sd_${endDateFilter}.xlsx`);
+      toast.success(`Laporan log aktivitas (${filteredLogs.length} data) berhasil diekspor ke XLSX!`);
     } catch {
-      toast.error("Gagal mengekspor laporan");
+      toast.error("Gagal mengekspor laporan ke XLSX");
     } finally {
       setIsExporting(false);
     }
@@ -416,17 +436,6 @@ export const AuditTrailList: React.FC = () => {
               Riwayat pencatatan seluruh perubahan data, transaksi, dan konfigurasi sistem secara <strong className="text-slate-600 dark:text-slate-300">permanen</strong> dan <strong className="text-slate-600 dark:text-slate-300">tidak dapat diubah</strong>.
             </p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            disabled={isExporting || logs.length === 0}
-            className="px-4 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008855] text-white transition-all cursor-pointer font-extrabold text-xs flex items-center gap-2 shadow-2xs"
-          >
-            <Download size={15} />
-            <span>Ekspor Laporan (CSV)</span>
-          </button>
         </div>
       </div>
 
@@ -526,7 +535,7 @@ export const AuditTrailList: React.FC = () => {
         {/* Filter Toolbar Form */}
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
           {/* Search Box */}
-          <div className="lg:col-span-4 relative">
+          <div className="lg:col-span-3 relative">
             <label className="block text-[10.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
               Pencarian Kata Kunci
             </label>
@@ -534,7 +543,7 @@ export const AuditTrailList: React.FC = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={15} />
               <input
                 type="text"
-                placeholder="Cari nama pengguna, NIM, email, atau aksi..."
+                placeholder="Cari pengguna, NIM, email..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-[#009966] bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800"
@@ -611,15 +620,25 @@ export const AuditTrailList: React.FC = () => {
             />
           </div>
 
-          {/* Submit / Reset */}
-          <div className="lg:col-span-1 flex items-end gap-1.5">
+          {/* Actions: Reset & Ekspor XLSX */}
+          <div className="lg:col-span-2 flex items-end gap-1.5">
             <button
               type="button"
               onClick={handleResetFilters}
-              className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold rounded-xl text-xs transition-all cursor-pointer border border-transparent dark:border-slate-700"
+              className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-extrabold rounded-xl text-xs transition-all cursor-pointer border border-transparent dark:border-slate-700"
               title="Reset Filter"
             >
               Reset
+            </button>
+            <button
+              type="button"
+              onClick={handleExportXLSX}
+              disabled={isExporting || !startDateFilter || !endDateFilter}
+              className="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/60 cursor-pointer"
+              title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor laporan log aktivitas ke XLSX"}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
             </button>
           </div>
         </form>
@@ -959,3 +978,5 @@ export const AuditTrailList: React.FC = () => {
     </div>
   );
 };
+
+export default AuditTrailList;

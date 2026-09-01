@@ -12,7 +12,6 @@ import { redisService } from "./redisService.js";
 import { configService } from "./configService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
 
-
 export class AiService {
   /**
    * AI Detection using WasteAiAdapterFactory with Redis Queue
@@ -79,7 +78,9 @@ export class AiService {
     } catch (error: any) {
       const isTimeout = error.message === "AI_TIMEOUT";
       const failureStatus = isTimeout ? "TIMEOUT" : "IMAGE_UNREADABLE";
-      await aiRepository.logRequest(userId, requestId, finalImageUrl, failureStatus).catch(() => {});
+      await aiRepository
+        .logRequest(userId, requestId, finalImageUrl, failureStatus)
+        .catch(() => {});
       await redisService.refundQuota(userId);
       throw error;
     }

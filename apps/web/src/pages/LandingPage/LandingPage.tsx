@@ -41,6 +41,27 @@ const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-12 s
   />
 );
 
+// Loading Spinner for stats (bukan blur / skeleton)
+const StatLoading: React.FC<{ size?: "sm" | "md" | "lg"; color?: string }> = ({
+  size = "md",
+  color = "border-emerald-600",
+}) => {
+  const sizeClass =
+    size === "sm"
+      ? "w-3.5 h-3.5 border-[2px]"
+      : size === "lg"
+      ? "w-6 h-6 border-[2.5px]"
+      : "w-5 h-5 border-2";
+
+  return (
+    <span className="inline-flex items-center justify-center my-auto" title="Memuat data...">
+      <span
+        className={`${sizeClass} ${color} border-t-transparent rounded-full animate-spin shrink-0`}
+      />
+    </span>
+  );
+};
+
 export const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
@@ -506,7 +527,7 @@ export const LandingPage: React.FC = () => {
              {/* Smooth Multi-stage Gradient Blend Overlay (Desktop Only) */}
              <div className="hidden lg:block absolute inset-y-0 left-0 w-28 sm:w-44 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
              <img
-               src="/image/landingpage.png"
+               src="/image/landingpage.webp"
                alt="Aksi Pemilahan Sampah Mahasiswa KKN Berdampak"
                className="w-full h-full object-cover object-center lg:object-right transition-all duration-500 lg:[mask-image:linear-gradient(to_right,transparent_0%,black_18%)]"
                // @ts-ignore
@@ -524,8 +545,8 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#035941] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="tabler:activity" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? `${statsData.kegiatanCount}+` : "28+"}
+              <p className="text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center min-h-[32px]">
+                {statsData ? `${statsData.kegiatanCount}+` : <StatLoading size="md" color="border-[#035941]" />}
               </p>
               <p className="text-xs font-bold text-slate-500">Kegiatan Terlaksana</p>
             </div>
@@ -534,8 +555,8 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#ebf3fb] text-[#0468BF] border border-[#0477BF]/40 flex items-center justify-center">
                 <Icon icon="octicon:people-16" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? `${statsData.wargaCount}+` : "722+"}
+              <p className="text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center min-h-[32px]">
+                {statsData ? `${statsData.wargaCount}+` : <StatLoading size="md" color="border-[#0468BF]" />}
               </p>
               <p className="text-xs font-bold text-slate-500">Pengguna Terlibat</p>
             </div>
@@ -544,11 +565,17 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#f3fbf5] text-[#58A621] border border-[#c8e6b2]/60 flex items-center justify-center">
                 <Icon icon="iconamoon:trash" className="text-xl" />
               </div>
-              <div className="flex items-center gap-1.5 justify-center">
-                <p className="text-2xl font-black text-slate-900 tracking-tight">
-                  {statsData ? formatWasteWeight(statsData.totalSampahKg) : "12.91 kg"}
-                </p>
-                {renderTrendBadge(statsData?.wasteTrendPercentage, statsData?.wasteTrendDirection, true)}
+              <div className="flex items-center gap-1.5 justify-center min-h-[32px]">
+                {statsData ? (
+                  <>
+                    <p className="text-2xl font-black text-slate-900 tracking-tight">
+                      {formatWasteWeight(statsData.totalSampahKg)}
+                    </p>
+                    {renderTrendBadge(statsData?.wasteTrendPercentage, statsData?.wasteTrendDirection, true)}
+                  </>
+                ) : (
+                  <StatLoading size="md" color="border-[#58A621]" />
+                )}
               </div>
               <p className="text-xs font-bold text-slate-500">Sampah Terkelola</p>
             </div>
@@ -557,8 +584,8 @@ export const LandingPage: React.FC = () => {
               <div className="w-10 h-10 rounded-2xl bg-[#ebf3fb] text-[#0477BF] border border-[#0477BF]/40 flex items-center justify-center">
                 <Icon icon="lucide:home" className="text-xl" />
               </div>
-              <p className="text-2xl font-black text-slate-900 tracking-tight">
-                {statsData ? statsData.kelurahanCount : 6}
+              <p className="text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center min-h-[32px]">
+                {statsData ? statsData.kelurahanCount : <StatLoading size="md" color="border-[#0477BF]" />}
               </p>
               <p className="text-xs font-bold text-slate-500">Kelurahan Terlibat</p>
             </div>
@@ -712,7 +739,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-05-24",
                           location: "Balai RW 03, Kel. Lebak Gede, Kec. Coblong",
                           category: "Edukasi Pemilahan",
-                          imageUrl: "/image/activity-1.png",
+                          imageUrl: "/image/activity-1.webp",
                           description:
                             "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
                           sdgTags: ["#3", "#11", "#12"],
@@ -723,7 +750,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-05-20",
                           location: "Rumah Kompos, Kel. Dago, Kec. Coblong",
                           category: "Pengolahan Kompos & Maggot",
-                          imageUrl: "/image/activity-2.png",
+                          imageUrl: "/image/activity-2.webp",
                           description:
                             "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
                           sdgTags: ["#12", "#13", "#15"],
@@ -734,7 +761,7 @@ export const LandingPage: React.FC = () => {
                           date: "2026-05-18",
                           location: "Bantaran Sungai, Kel. Sekeloa, Kec. Coblong",
                           category: "Aksi Bersih Lingkungan",
-                          imageUrl: "/image/activity-3.png",
+                          imageUrl: "/image/activity-3.webp",
                           description:
                             "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
                           sdgTags: ["#3", "#11", "#15"],
@@ -911,8 +938,8 @@ export const LandingPage: React.FC = () => {
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Pengguna Terdaftar
                     </span>
-                    <p className="text-xl sm:text-2xl font-black text-emerald-600">
-                      {statsData ? `${statsData.wargaCount} Akun` : "722+ Akun"}
+                    <p className="text-xl sm:text-2xl font-black text-emerald-600 flex items-center justify-center min-h-[28px]">
+                      {statsData ? `${statsData.wargaCount} Akun` : <StatLoading size="md" color="border-emerald-600" />}
                     </p>
                   </div>
 
@@ -920,8 +947,8 @@ export const LandingPage: React.FC = () => {
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Total Poin Terdistribusi
                     </span>
-                    <p className="text-xl sm:text-2xl font-black text-amber-500">
-                      {statsData && statsData.totalPoin !== undefined ? `${statsData.totalPoin.toLocaleString("id-ID")} Poin` : "6.987 Poin"}
+                    <p className="text-xl sm:text-2xl font-black text-amber-500 flex items-center justify-center min-h-[28px]">
+                      {statsData && statsData.totalPoin !== undefined ? `${statsData.totalPoin.toLocaleString("id-ID")} Poin` : <StatLoading size="md" color="border-amber-500" />}
                     </p>
                   </div>
 
@@ -929,7 +956,7 @@ export const LandingPage: React.FC = () => {
                     <span className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">
                       Hadiah Ide Daur Ulang
                     </span>
-                    <p className="text-xl sm:text-2xl font-black text-[#035941]">
+                    <p className="text-xl sm:text-2xl font-black text-[#035941] flex items-center justify-center min-h-[28px]">
                       +{statsData && statsData.poinRewardIde !== undefined ? statsData.poinRewardIde : 50} Poin
                     </p>
                   </div>
@@ -977,12 +1004,12 @@ export const LandingPage: React.FC = () => {
                         Total Tempat Sampah Terdaftar
                       </p>
                       <p className="text-xs text-slate-500 font-medium">
-                        Tersebar di {statsData ? `${statsData.kelurahanCount} Kelurahan` : "6 Kelurahan"}
+                        Tersebar di {statsData ? `${statsData.kelurahanCount} Kelurahan` : <StatLoading size="sm" color="border-slate-400" />}
                       </p>
                     </div>
 
-                    <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl">
-                      {statsData ? `${statsData.totalBinsCount || 120} Unit` : "120 Unit"}
+                    <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl flex items-center min-h-[26px]">
+                      {statsData ? `${statsData.totalBinsCount || 120} Unit` : <StatLoading size="sm" color="border-emerald-700" />}
                     </span>
                   </div>
 
@@ -996,8 +1023,8 @@ export const LandingPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl">
-                      {statsData ? `${statsData.totalPenjemputan || 468} Log` : "468 Log"}
+                    <span className="text-xs font-black px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-xl flex items-center min-h-[26px]">
+                      {statsData ? `${statsData.totalPenjemputan || 468} Log` : <StatLoading size="sm" color="border-emerald-700" />}
                     </span>
                   </div>
 
@@ -1049,8 +1076,8 @@ export const LandingPage: React.FC = () => {
                       Smart Bin IoT
                     </p>
 
-                    <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${statsData.smartIotBinsCount || 48} Perangkat` : "48 Perangkat"} aktif.
+                    <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1">
+                      {statsData ? `${statsData.smartIotBinsCount || 48} Perangkat` : <StatLoading size="sm" color="border-blue-600" />} aktif.
                     </p>
                   </div>
 
@@ -1065,8 +1092,8 @@ export const LandingPage: React.FC = () => {
                       Kelurahan Binaan
                     </p>
 
-                    <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${statsData.kelurahanCount} Kelurahan` : "6 Kelurahan"} terintegrasi.
+                    <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1">
+                      {statsData ? `${statsData.kelurahanCount} Kelurahan` : <StatLoading size="sm" color="border-emerald-600" />} terintegrasi.
                     </p>
                   </div>
 
@@ -1081,8 +1108,8 @@ export const LandingPage: React.FC = () => {
                       Volume Terkelola
                     </p>
 
-                    <p className="text-xs text-slate-500 font-medium mt-1">
-                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : "12.91 kg"} terkelola.
+                    <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1">
+                      {statsData ? `${formatWasteWeightExact(statsData.totalSampahKg)}` : <StatLoading size="sm" color="border-amber-600" />} terkelola.
                     </p>
                   </div>
 
@@ -1155,9 +1182,15 @@ export const LandingPage: React.FC = () => {
                 Volume Sampah Terkelola
               </span>
 
-              <span className="dampak-value flex items-center justify-center sm:justify-start gap-2">
-                {statsData ? formatWasteWeight(statsData.totalSampahKg) : "12.91 kg"}
-                {renderTrendBadge(statsData?.wasteTrendPercentage, statsData?.wasteTrendDirection, false)}
+              <span className="dampak-value flex items-center justify-center sm:justify-start gap-2 min-h-[36px]">
+                {statsData ? (
+                  <>
+                    {formatWasteWeight(statsData.totalSampahKg)}
+                    {renderTrendBadge(statsData?.wasteTrendPercentage, statsData?.wasteTrendDirection, false)}
+                  </>
+                ) : (
+                  <StatLoading size="md" color="border-emerald-600" />
+                )}
               </span>
 
               <span className="dampak-sub">
@@ -1171,8 +1204,8 @@ export const LandingPage: React.FC = () => {
                 Pengguna Terlibat
               </span>
 
-              <span className="dampak-value">
-                {statsData ? `${statsData.wargaCount}+` : "722+"}
+              <span className="dampak-value flex items-center justify-center sm:justify-start min-h-[36px]">
+                {statsData ? `${statsData.wargaCount}+` : <StatLoading size="md" color="border-emerald-600" />}
               </span>
 
               <span className="dampak-sub">
@@ -1186,8 +1219,8 @@ export const LandingPage: React.FC = () => {
                 Kegiatan Terlaksana
               </span>
 
-              <span className="dampak-value">
-                {statsData ? `${statsData.kegiatanCount}+` : "28+"}
+              <span className="dampak-value flex items-center justify-center sm:justify-start min-h-[36px]">
+                {statsData ? `${statsData.kegiatanCount}+` : <StatLoading size="md" color="border-emerald-600" />}
               </span>
 
               <span className="dampak-sub">
@@ -1201,8 +1234,8 @@ export const LandingPage: React.FC = () => {
                 Kelurahan Terbina
               </span>
 
-              <span className="dampak-value">
-                {statsData ? `${statsData.kelurahanCount}` : "6"}
+              <span className="dampak-value flex items-center justify-center sm:justify-start min-h-[36px]">
+                {statsData ? `${statsData.kelurahanCount}` : <StatLoading size="md" color="border-emerald-600" />}
               </span>
 
               <span className="dampak-sub">
@@ -1762,11 +1795,11 @@ export const LandingPage: React.FC = () => {
               {/* Photo & Header */}
               <div className="relative h-60 w-full bg-slate-900 overflow-hidden">
                 <img
-                  src={selectedActivity.imageUrl || "/image/activity-1.png"}
+                  src={selectedActivity.imageUrl || "/image/activity-1.webp"}
                   alt={selectedActivity.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                    (e.target as HTMLImageElement).src = "/image/activity-1.webp";
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
@@ -1881,7 +1914,7 @@ export const LandingPage: React.FC = () => {
                         date: "2026-05-24",
                         location: "Balai RW 03, Kel. Lebak Gede, Kec. Coblong",
                         category: "Edukasi Pemilahan",
-                        imageUrl: "/image/activity-1.png",
+                        imageUrl: "/image/activity-1.webp",
                         description:
                           "Sosialisasi tata kelola pemilahan sampah organik dan anorganik dari sumber rumah tangga serta tata cara pemindaian Kode QR tempat sampah fisik oleh mahasiswa KKN dan pengurus RW setempat.",
                       },
@@ -1891,7 +1924,7 @@ export const LandingPage: React.FC = () => {
                         date: "2026-05-20",
                         location: "Rumah Kompos, Kel. Dago, Kec. Coblong",
                         category: "Pengolahan Kompos & Maggot",
-                        imageUrl: "/image/activity-2.png",
+                        imageUrl: "/image/activity-2.webp",
                         description:
                           "Pelatihan teknis pengomposan sampah sisa makanan rumah tangga dengan instalasi pipa Loseda dan pemanfaatan biokonversi larva Maggot Black Soldier Fly (BSF) untuk menghasilkan pakan ternak tinggi protein.",
                       },
@@ -1901,7 +1934,7 @@ export const LandingPage: React.FC = () => {
                         date: "2026-05-18",
                         location: "Bantaran Sungai, Kel. Sekeloa, Kec. Coblong",
                         category: "Aksi Bersih Lingkungan",
-                        imageUrl: "/image/activity-3.png",
+                        imageUrl: "/image/activity-3.webp",
                         description:
                           "Gerakan pembersihan bantaran sungai terpadu serta audit klasifikasi residu anorganik berbasis kecerdasan buatan (AI) bersama komunitas peduli lingkungan dan mahasiswa KKN.",
                       },

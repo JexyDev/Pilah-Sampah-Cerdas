@@ -7,8 +7,11 @@ import { prisma } from "../lib/prisma.js";
  */
 
 import { BinStatus } from "@prisma/client";
-import { getCategoryCodeTag, formatCurrentDateDDMMYY, getGlobalHighestSequence } from "../utils/qrGenerator.js";
-
+import {
+  getCategoryCodeTag,
+  formatCurrentDateDDMMYY,
+  getGlobalHighestSequence,
+} from "../utils/qrGenerator.js";
 
 export class SuperUserService {
   /**

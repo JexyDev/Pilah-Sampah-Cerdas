@@ -22,25 +22,19 @@ const ALLOWED_MANAGERS = ["SUPER_USER", "DEVELOPER", "PANITIA_TASKFORCE"];
  */
 
 // Read endpoints
-router.get(["/active", "/aktif"], optionalAuthMiddleware, timelineKknController.getActiveTimelineMahasiswa);
+router.get(
+  ["/active", "/aktif"],
+  optionalAuthMiddleware,
+  timelineKknController.getActiveTimelineMahasiswa
+);
 router.get("/mahasiswa", optionalAuthMiddleware, timelineKknController.getTimelineMahasiswa);
 router.get("/", optionalAuthMiddleware, timelineKknController.getAll);
 router.get("/:id", optionalAuthMiddleware, timelineKknController.getById);
 
 // Write endpoints (Restricted to Developer, Super User, Panitia Taskforce)
-router.post(
-  "/",
-  authMiddleware,
-  roleMiddleware(ALLOWED_MANAGERS),
-  timelineKknController.create
-);
+router.post("/", authMiddleware, roleMiddleware(ALLOWED_MANAGERS), timelineKknController.create);
 
-router.put(
-  "/:id",
-  authMiddleware,
-  roleMiddleware(ALLOWED_MANAGERS),
-  timelineKknController.update
-);
+router.put("/:id", authMiddleware, roleMiddleware(ALLOWED_MANAGERS), timelineKknController.update);
 
 router.patch(
   "/:id/status",

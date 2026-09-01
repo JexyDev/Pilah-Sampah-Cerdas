@@ -116,8 +116,14 @@ export class ConfigService {
       attendanceMinDurationHours: parseInt(map["attendance_min_duration_hours"] || "2", 10),
       attendanceMinDurationMinutes: parseInt(map["attendance_min_duration_minutes"] || "0", 10),
       attendanceMinDurationSeconds: parseInt(map["attendance_min_duration_seconds"] || "0", 10),
-      attendanceOutOfZoneToleranceMinutes: parseInt(map["attendance_out_of_zone_tolerance_minutes"] || "5", 10),
-      attendanceOutOfZonePenaltyPoints: parseInt(map["attendance_out_of_zone_penalty_points"] || "10", 10),
+      attendanceOutOfZoneToleranceMinutes: parseInt(
+        map["attendance_out_of_zone_tolerance_minutes"] || "5",
+        10
+      ),
+      attendanceOutOfZonePenaltyPoints: parseInt(
+        map["attendance_out_of_zone_penalty_points"] || "10",
+        10
+      ),
       attendanceOutOfZonePenaltyActive: map["attendance_out_of_zone_penalty_active"] !== "false",
 
       // Rule 4: Kalender KKN & Hari Libur Absensi
@@ -131,8 +137,14 @@ export class ConfigService {
       alphaPenaltyScorePercent: parseFloat(map["alpha_penalty_score_percent"] || "5.0"),
 
       // Rule 6: Geofence Buffer & Auto-Attendance
-      attendanceGeofenceBufferMeters: parseInt(map["attendance_geofence_buffer_meters"] || "15", 10),
-      attendanceGeofenceInvalidationHours: parseInt(map["attendance_geofence_invalidation_hours"] || "2", 10),
+      attendanceGeofenceBufferMeters: parseInt(
+        map["attendance_geofence_buffer_meters"] || "15",
+        10
+      ),
+      attendanceGeofenceInvalidationHours: parseInt(
+        map["attendance_geofence_invalidation_hours"] || "2",
+        10
+      ),
       attendanceAutoHadirOutsideZone: map["attendance_auto_hadir_outside_zone"] !== "false",
 
       // Rule 7: Standar Logbook KKN & Prasyarat Nilai DPL
@@ -169,7 +181,10 @@ export class ConfigService {
     // 4. Check custom holidays list
     const foundHoliday = configs.kknHolidays.find((h) => h.date === targetDateStr);
     if (foundHoliday) {
-      return { isHoliday: true, reason: foundHoliday.description || "Hari Libur Khusus / Nasional" };
+      return {
+        isHoliday: true,
+        reason: foundHoliday.description || "Hari Libur Khusus / Nasional",
+      };
     }
 
     return { isHoliday: false };
@@ -180,19 +195,52 @@ export class ConfigService {
    */
   async updateRuleEngineConfigs(data: any) {
     const pairs: Array<{ key: string; value: string }> = [
-      { key: "reporting_window_morning_start", value: String(data.reportingWindowMorningStart ?? "06:00") },
-      { key: "reporting_window_morning_end", value: String(data.reportingWindowMorningEnd ?? "08:00") },
-      { key: "reporting_window_evening_start", value: String(data.reportingWindowEveningStart ?? "16:00") },
-      { key: "reporting_window_evening_end", value: String(data.reportingWindowEveningEnd ?? "18:00") },
-      { key: "warga_reminder_notification_enabled", value: String(data.wargaReminderNotificationEnabled ?? true) },
+      {
+        key: "reporting_window_morning_start",
+        value: String(data.reportingWindowMorningStart ?? "06:00"),
+      },
+      {
+        key: "reporting_window_morning_end",
+        value: String(data.reportingWindowMorningEnd ?? "08:00"),
+      },
+      {
+        key: "reporting_window_evening_start",
+        value: String(data.reportingWindowEveningStart ?? "16:00"),
+      },
+      {
+        key: "reporting_window_evening_end",
+        value: String(data.reportingWindowEveningEnd ?? "18:00"),
+      },
+      {
+        key: "warga_reminder_notification_enabled",
+        value: String(data.wargaReminderNotificationEnabled ?? true),
+      },
       { key: "late_submission_discount", value: String(data.lateSubmissionDiscount ?? 0.5) },
-      { key: "late_submission_penalty_active", value: String(data.lateSubmissionPenaltyActive ?? true) },
+      {
+        key: "late_submission_penalty_active",
+        value: String(data.lateSubmissionPenaltyActive ?? true),
+      },
       { key: "attendance_min_duration_hours", value: String(data.attendanceMinDurationHours ?? 2) },
-      { key: "attendance_min_duration_minutes", value: String(data.attendanceMinDurationMinutes ?? 0) },
-      { key: "attendance_min_duration_seconds", value: String(data.attendanceMinDurationSeconds ?? 0) },
-      { key: "attendance_out_of_zone_tolerance_minutes", value: String(data.attendanceOutOfZoneToleranceMinutes ?? 5) },
-      { key: "attendance_out_of_zone_penalty_points", value: String(data.attendanceOutOfZonePenaltyPoints ?? 10) },
-      { key: "attendance_out_of_zone_penalty_active", value: String(data.attendanceOutOfZonePenaltyActive ?? true) },
+      {
+        key: "attendance_min_duration_minutes",
+        value: String(data.attendanceMinDurationMinutes ?? 0),
+      },
+      {
+        key: "attendance_min_duration_seconds",
+        value: String(data.attendanceMinDurationSeconds ?? 0),
+      },
+      {
+        key: "attendance_out_of_zone_tolerance_minutes",
+        value: String(data.attendanceOutOfZoneToleranceMinutes ?? 5),
+      },
+      {
+        key: "attendance_out_of_zone_penalty_points",
+        value: String(data.attendanceOutOfZonePenaltyPoints ?? 10),
+      },
+      {
+        key: "attendance_out_of_zone_penalty_active",
+        value: String(data.attendanceOutOfZonePenaltyActive ?? true),
+      },
       { key: "kkn_start_date", value: String(data.kknStartDate ?? "2026-08-20") },
       { key: "kkn_end_date", value: String(data.kknEndDate ?? "2026-10-20") },
       { key: "kkn_auto_holiday_weekends", value: String(data.kknAutoHolidayWeekends ?? true) },
@@ -200,13 +248,28 @@ export class ConfigService {
       { key: "alpha_penalty_score_percent", value: String(data.alphaPenaltyScorePercent ?? 5.0) },
       {
         key: "kkn_holidays",
-        value: typeof data.kknHolidays === "string" ? data.kknHolidays : JSON.stringify(data.kknHolidays ?? []),
+        value:
+          typeof data.kknHolidays === "string"
+            ? data.kknHolidays
+            : JSON.stringify(data.kknHolidays ?? []),
       },
-      { key: "attendance_geofence_buffer_meters", value: String(data.attendanceGeofenceBufferMeters ?? 15) },
-      { key: "attendance_geofence_invalidation_hours", value: String(data.attendanceGeofenceInvalidationHours ?? 2) },
-      { key: "attendance_auto_hadir_outside_zone", value: String(data.attendanceAutoHadirOutsideZone ?? true) },
+      {
+        key: "attendance_geofence_buffer_meters",
+        value: String(data.attendanceGeofenceBufferMeters ?? 15),
+      },
+      {
+        key: "attendance_geofence_invalidation_hours",
+        value: String(data.attendanceGeofenceInvalidationHours ?? 2),
+      },
+      {
+        key: "attendance_auto_hadir_outside_zone",
+        value: String(data.attendanceAutoHadirOutsideZone ?? true),
+      },
       { key: "logbook_target_kegiatan", value: String(data.logbookTargetKegiatan ?? 24) },
-      { key: "logbook_backdate_tolerance_days", value: String(data.logbookBackdateToleranceDays ?? 1) },
+      {
+        key: "logbook_backdate_tolerance_days",
+        value: String(data.logbookBackdateToleranceDays ?? 1),
+      },
       { key: "logbook_bobot_persen", value: String(data.logbookBobotPersen ?? 20) },
     ];
 

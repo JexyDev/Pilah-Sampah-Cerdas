@@ -1,12 +1,16 @@
 import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 
-
 export const masterKegiatanController = {
   getAll: async (req: Request, res: Response): Promise<void> => {
     try {
       const kategori = req.query.kategori as string | undefined;
-      const statusAktif = req.query.statusAktif === "true" ? true : req.query.statusAktif === "false" ? false : undefined;
+      const statusAktif =
+        req.query.statusAktif === "true"
+          ? true
+          : req.query.statusAktif === "false"
+            ? false
+            : undefined;
 
       const data = await prisma.masterKegiatanSampah.findMany({
         where: {
@@ -41,13 +45,17 @@ export const masterKegiatanController = {
     try {
       const { nama, kategori, deskripsi, statusAktif } = req.body;
       if (!nama || !kategori) {
-        res.status(400).json({ error: "BAD_REQUEST", message: "Nama dan kategori kegiatan wajib diisi" });
+        res
+          .status(400)
+          .json({ error: "BAD_REQUEST", message: "Nama dan kategori kegiatan wajib diisi" });
         return;
       }
 
       const existing = await prisma.masterKegiatanSampah.findUnique({ where: { nama } });
       if (existing) {
-        res.status(409).json({ error: "CONFLICT", message: "Nama kegiatan ini sudah ada di master data" });
+        res
+          .status(409)
+          .json({ error: "CONFLICT", message: "Nama kegiatan ini sudah ada di master data" });
         return;
       }
 

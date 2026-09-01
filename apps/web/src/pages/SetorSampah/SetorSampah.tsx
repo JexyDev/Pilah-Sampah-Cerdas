@@ -423,7 +423,7 @@ export default function SetorSampah() {
           <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
             {akurasiAi !== null ? `${akurasiAi}%` : "—"}{" "}
             <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-              {akurasiAi !== null ? "(Rata-rata)" : "(Tidak ada data AI)"}
+              {akurasiAi !== null ? "(Rerata)" : "(Tidak ada data AI)"}
             </span>
           </div>
         </div>

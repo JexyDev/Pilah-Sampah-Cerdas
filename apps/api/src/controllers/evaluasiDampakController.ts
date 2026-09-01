@@ -66,7 +66,13 @@ export const evaluasiDampakController = {
       const limit = parseInt(req.query.limit as string, 10) || 10;
       const search = (req.query.search as string) || "";
 
-      const result = await evaluasiDampakService.getEndlineData(getUserId(req), getUserRole(req), page, limit, search);
+      const result = await evaluasiDampakService.getEndlineData(
+        getUserId(req),
+        getUserRole(req),
+        page,
+        limit,
+        search
+      );
       res.json({ success: true, ...result });
     } catch (error: any) {
       console.error("[evaluasiDampakController.getEndlineData] error:", error);

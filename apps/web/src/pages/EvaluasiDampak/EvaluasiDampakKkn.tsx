@@ -18,10 +18,11 @@ import {
   Download,
   Calendar,
   X,
+  FileSpreadsheet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
-import { exportToXlsx } from "../../utils/exportXlsx";
 import { evaluasiDampakApiService } from "../../services/evaluasiDampakService";
 import type { BaselineData, EndlineData, KomparasiData } from "../../services/evaluasiDampakService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from "recharts";
@@ -132,14 +133,26 @@ export const EvaluasiDampakKkn: React.FC = () => {
       return;
     }
 
+    let headers: string[] = [];
+    let rows: any[][] = [];
+
     if (activeTab === "BASELINE" || activeTab === "ENDLINE") {
-      const headers = [
-        "No", "Kelurahan", "Kecamatan", "Tanggal Survei", "Enumerator",
-        "Rumah Memilah", "Total Rumah", "Tingkat Pemilahan (%)",
-        "Volume Organik (kg/hari)", "Volume Anorganik (kg/hari)",
-        "Volume Residu (kg/hari)", "Total Volume (kg/hari)", "Status Validasi",
+      headers = [
+        "No",
+        "Kelurahan",
+        "Kecamatan",
+        "Tanggal Survei",
+        "Enumerator",
+        "Rumah Memilah",
+        "Total Rumah",
+        "Tingkat Pemilahan (%)",
+        "Volume Organik (kg/hari)",
+        "Volume Anorganik (kg/hari)",
+        "Volume Residu (kg/hari)",
+        "Total Volume (kg/hari)",
+        "Status Validasi",
       ];
-      const rows = filtered.map((item, idx) => [
+      rows = filtered.map((item, idx) => [
         idx + 1,
         item.namaKelurahan || "-",
         item.kecamatan || "-",
@@ -154,14 +167,19 @@ export const EvaluasiDampakKkn: React.FC = () => {
         item.volumeSampah?.totalVolumeKgPerHari ?? 0,
         item.statusValidasi || "-",
       ]);
-      exportToXlsx(headers, rows, `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}`, activeTab);
     } else {
-      const headers = [
-        "No", "Kelurahan", "Baseline Pemilahan (%)", "Endline Pemilahan (%)",
-        "Delta Pemilahan (%)", "Baseline Vol (kg/hari)", "Endline Vol (kg/hari)",
-        "Reduksi Residu (kg/hari)", "Status Dampak",
+      headers = [
+        "No",
+        "Kelurahan",
+        "Baseline Pemilahan (%)",
+        "Endline Pemilahan (%)",
+        "Delta Pemilahan (%)",
+        "Baseline Vol (kg/hari)",
+        "Endline Vol (kg/hari)",
+        "Reduksi Residu (kg/hari)",
+        "Status Dampak",
       ];
-      const rows = filtered.map((item, idx) => [
+      rows = filtered.map((item, idx) => [
         idx + 1,
         item.namaKelurahan || "-",
         item.baseline?.persentasePemilahan ?? 0,
@@ -172,11 +190,15 @@ export const EvaluasiDampakKkn: React.FC = () => {
         item.delta?.residuKgPerHari ?? 0,
         item.statusEvaluasi || "TERVERIFIKASI",
       ]);
-      exportToXlsx(headers, rows, `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}`, "Komparasi");
     }
 
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `Evaluasi_${activeTab}`);
+    XLSX.writeFile(wb, `Evaluasi_Dampak_KKN_${activeTab}_${new Date().toISOString().split("T")[0]}.xlsx`);
+
     setIsExportModalOpen(false);
-    toast.success(`Data ${activeTab.toLowerCase()} berhasil diekspor!`);
+    toast.success(`Data ${activeTab.toLowerCase()} berhasil diekspor ke XLSX!`);
   };
 
   const handleValidate = async (status: "VALID" | "REVISI") => {
@@ -241,8 +263,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
             onClick={() => setIsExportModalOpen(true)}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow-md transition-all active:scale-95"
           >
-            <Download size={15} />
-            Ekspor Data
+            <FileSpreadsheet size={15} />
+            Ekspor XLSX
           </button>
         </div>
       </div>
@@ -445,7 +467,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                         }`}
                       >
                         {avgDeltaPemilahan >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        Rata-rata
+                        Rerata
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
@@ -765,8 +787,8 @@ export const EvaluasiDampakKkn: React.FC = () => {
                   onClick={handleExportData}
                   className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2"
                 >
-                  <Download size={14} />
-                  Download XLSX
+                  <FileSpreadsheet size={14} />
+                  Ekspor XLSX
                 </button>
               </div>
             </div>

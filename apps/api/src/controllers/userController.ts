@@ -120,13 +120,21 @@ export const userController = {
           error: "FORBIDDEN",
           message: "Anda tidak memiliki izin untuk membuat akun dengan peran ini",
         });
-      } else if (error.message === "NIM_CONFLICT" || (error.code === "P2002" && String(error.meta?.target || "").includes("nim"))) {
+      } else if (
+        error.message === "NIM_CONFLICT" ||
+        (error.code === "P2002" && String(error.meta?.target || "").includes("nim"))
+      ) {
         res.status(409).json({
           success: false,
           error: "CONFLICT",
           message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA",
         });
-      } else if (error.message === "PHONE_CONFLICT" || (error.code === "P2002" && (String(error.meta?.target || "").includes("phone") || String(error.meta?.target || "").includes("no_telepon")))) {
+      } else if (
+        error.message === "PHONE_CONFLICT" ||
+        (error.code === "P2002" &&
+          (String(error.meta?.target || "").includes("phone") ||
+            String(error.meta?.target || "").includes("no_telepon")))
+      ) {
         res.status(409).json({
           success: false,
           error: "CONFLICT",
@@ -158,7 +166,9 @@ export const userController = {
         res.status(500).json({
           success: false,
           error: "INTERNAL_SERVER_ERROR",
-          message: error.message ? `Gagal membuat pengguna: ${error.message}` : "Gagal membuat pengguna",
+          message: error.message
+            ? `Gagal membuat pengguna: ${error.message}`
+            : "Gagal membuat pengguna",
         });
       }
     }
@@ -184,7 +194,8 @@ export const userController = {
         res.status(400).json({
           success: false,
           error: "BAD_REQUEST",
-          message: "Anda tidak dapat menonaktifkan akun Anda sendiri yang sedang terhubung ke sistem.",
+          message:
+            "Anda tidak dapat menonaktifkan akun Anda sendiri yang sedang terhubung ke sistem.",
         });
       } else if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
         res.status(403).json({
@@ -214,7 +225,12 @@ export const userController = {
           code: "VALIDATION_ERROR",
           message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA",
         });
-      } else if (error.message === "PHONE_CONFLICT" || (error.code === "P2002" && (String(error.meta?.target || "").includes("phone") || String(error.meta?.target || "").includes("no_telepon")))) {
+      } else if (
+        error.message === "PHONE_CONFLICT" ||
+        (error.code === "P2002" &&
+          (String(error.meta?.target || "").includes("phone") ||
+            String(error.meta?.target || "").includes("no_telepon")))
+      ) {
         res.status(409).json({
           success: false,
           error: "CONFLICT",

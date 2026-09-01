@@ -216,7 +216,8 @@ export class SurveiKknController {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Anda tidak memiliki hak akses untuk melihat data survei kelurahan di luar wilayah binaan Anda",
+          message:
+            "Anda tidak memiliki hak akses untuk melihat data survei kelurahan di luar wilayah binaan Anda",
         });
         return;
       }
@@ -299,7 +300,10 @@ export class SurveiKknController {
     } catch (error: any) {
       console.error("[surveiKknController] updateSurvey error:", error);
       if (error.message === "FORBIDDEN_SCOPE") {
-        res.status(403).json({ success: false, message: "Akses ditolak: Survei ini bukan milik kelompok KKN Anda." });
+        res.status(403).json({
+          success: false,
+          message: "Akses ditolak: Survei ini bukan milik kelompok KKN Anda.",
+        });
         return;
       }
       if (error.message === "NOT_FOUND") {

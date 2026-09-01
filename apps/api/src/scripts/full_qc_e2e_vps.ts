@@ -4,7 +4,6 @@ import { prisma } from "../lib/prisma.js";
  * Memeriksa seluruh 12 Role Pengguna, Relasi DPL & Mahasiswa, dan Master Data Wilayah & Tempat Sampah.
  */
 
-
 async function runE2E_QC() {
   console.log("=========================================================");
   console.log("   AUDIT KRITIS & QUALITY CONTROL (QC) END-TO-END VPS    ");
@@ -18,7 +17,9 @@ async function runE2E_QC() {
   for (const r of roles) {
     const count = await prisma.user.count({ where: { roleId: r.id } });
     roleCounts[r.name] = count;
-    console.log(`[ROLE] ${r.name.padEnd(22)} | ID: ${String(r.id).padStart(2)} | Total User: ${count}`);
+    console.log(
+      `[ROLE] ${r.name.padEnd(22)} | ID: ${String(r.id).padStart(2)} | Total User: ${count}`
+    );
   }
 
   // 2. AUDIT RELASI DPL & KELOMPOK KKN (32 KELOMPOK)
@@ -35,23 +36,30 @@ async function runE2E_QC() {
   kelompoks.forEach((k, idx) => {
     const dplName = k.dpl?.name || k.dplNamaMentah || "TANPA DPL";
     const dplNip = k.dpl?.nip || "NO NIP";
-    const rwCoverage = k.cakupanRw && Array.isArray(k.cakupanRw) ? (k.cakupanRw as number[]).join(", ") : "-";
+    const rwCoverage =
+      k.cakupanRw && Array.isArray(k.cakupanRw) ? (k.cakupanRw as number[]).join(", ") : "-";
     if (!k.dpl) kelWithoutDpl++;
     if (k._count.students === 0) kelWithoutStudents++;
 
     if (idx < 5 || idx >= kelompoks.length - 3) {
-      console.log(`  ${String(idx + 1).padStart(2)}. ${k.name.padEnd(28)} | DPL: ${dplName.padEnd(45)} | NIP: ${dplNip.padEnd(16)} | RW: [${rwCoverage}] | Mhs: ${k._count.students}`);
+      console.log(
+        `  ${String(idx + 1).padStart(2)}. ${k.name.padEnd(28)} | DPL: ${dplName.padEnd(45)} | NIP: ${dplNip.padEnd(16)} | RW: [${rwCoverage}] | Mhs: ${k._count.students}`
+      );
     } else if (idx === 5) {
       console.log("     ... [24 Kelompok KKN Lainnya Terverifikasi] ...");
     }
   });
 
-  console.log(`QC Kelompok KKN -> Tanpa DPL: ${kelWithoutDpl} | Tanpa Mahasiswa: ${kelWithoutStudents}`);
+  console.log(
+    `QC Kelompok KKN -> Tanpa DPL: ${kelWithoutDpl} | Tanpa Mahasiswa: ${kelWithoutStudents}`
+  );
 
   // 3. AUDIT MAHASISWA KKN (560 MAHASISWA)
   console.log("\n--- 3. QC RELASI MAHASISWA KKN (TARGET: 560 MAHASISWA) ---");
   const studentCount = await prisma.studentKkn.count();
-  const studentLinkedCount = await prisma.studentKkn.count({ where: { NOT: { kelompokId: null } } });
+  const studentLinkedCount = await prisma.studentKkn.count({
+    where: { NOT: { kelompokId: null } },
+  });
   const studentOrphanCount = await prisma.studentKkn.count({ where: { kelompokId: null } });
 
   console.log(`Total Record StudentKkn DB   : ${studentCount}`);
@@ -66,7 +74,9 @@ async function runE2E_QC() {
 
   console.log("\n  Sample Data Mahasiswa KKN:");
   sampleStudents.forEach((s) => {
-    console.log(`  - Nama: ${s.user.name.padEnd(25)} | NIM: ${(s.nim || "-").padEnd(10)} | Kelompok: ${s.kelompok?.name.padEnd(25)} | DPL: ${s.kelompok?.dpl?.name || s.kelompok?.dplNamaMentah}`);
+    console.log(
+      `  - Nama: ${s.user.name.padEnd(25)} | NIM: ${(s.nim || "-").padEnd(10)} | Kelompok: ${s.kelompok?.name.padEnd(25)} | DPL: ${s.kelompok?.dpl?.name || s.kelompok?.dplNamaMentah}`
+    );
   });
 
   // 4. AUDIT MASTER DATA WILAYAH (PROVINSI, KABUPATEN, KECAMATAN, KELURAHAN, RW)
@@ -81,10 +91,15 @@ async function runE2E_QC() {
   console.log(`Total Kelurahan    : ${totalKel}`);
   console.log(`Total Rukun Warga  : ${totalRw}`);
 
-  const sampleRw = await prisma.rw.findMany({ take: 3, include: { kelurahan: { include: { kecamatan: true } } } });
+  const sampleRw = await prisma.rw.findMany({
+    take: 3,
+    include: { kelurahan: { include: { kecamatan: true } } },
+  });
   console.log("\n  Sample Data RW & Kelurahan:");
   sampleRw.forEach((r) => {
-    console.log(`  - ${r.name} | Kelurahan: ${r.kelurahan?.name || "-"} | Kecamatan: ${r.kelurahan?.kecamatan?.name || "-"}`);
+    console.log(
+      `  - ${r.name} | Kelurahan: ${r.kelurahan?.name || "-"} | Kecamatan: ${r.kelurahan?.kecamatan?.name || "-"}`
+    );
   });
 
   // 5. AUDIT MASTER DATA TEMPAT SAMPAH (BINS & OWNERSHIP)
@@ -100,7 +115,9 @@ async function runE2E_QC() {
     sampleBins.forEach((b) => {
       const qr = b.qrCode || b.id;
       const type = b.binType || b.category?.name || "Standard Bin";
-      console.log(`  - QR Code: ${qr.padEnd(20)} | Type: ${type.padEnd(15)} | Status: ${b.status} | RW: ${b.rw?.name || "-"}`);
+      console.log(
+        `  - QR Code: ${qr.padEnd(20)} | Type: ${type.padEnd(15)} | Status: ${b.status} | RW: ${b.rw?.name || "-"}`
+      );
     });
   }
 

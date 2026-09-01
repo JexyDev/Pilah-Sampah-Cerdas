@@ -18,8 +18,6 @@ declare global {
   }
 }
 
-
-
 export const authMiddleware = async (
   req: Request,
   res: Response,
@@ -94,7 +92,9 @@ export const authMiddleware = async (
       const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
       if (writeMethods.includes(req.method)) {
         // Exception: LURAH is allowed to evaluate KKN as Kelurahan evaluator on penilaian-kkn endpoint
-        const isPenilaianKkn = (req.baseUrl || "").includes("penilaian-kkn") || (req.originalUrl || "").includes("penilaian-kkn");
+        const isPenilaianKkn =
+          (req.baseUrl || "").includes("penilaian-kkn") ||
+          (req.originalUrl || "").includes("penilaian-kkn");
         if (decoded.role === "LURAH" && isPenilaianKkn) {
           // Allow LURAH for penilaian-kkn write
         } else {
@@ -150,4 +150,3 @@ export const optionalAuthMiddleware = async (
     next();
   }
 };
-

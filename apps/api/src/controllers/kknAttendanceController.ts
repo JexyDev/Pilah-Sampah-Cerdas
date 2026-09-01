@@ -26,7 +26,10 @@ export const kknAttendanceController = {
       }
 
       // Baca durasi dari mobile — menerima 'accumulatedDurationSeconds', 'accumulatedDuration', atau 'inZoneSeconds'
-      const rawDuration = req.body.accumulatedDurationSeconds ?? req.body.accumulatedDuration ?? req.body.inZoneSeconds;
+      const rawDuration =
+        req.body.accumulatedDurationSeconds ??
+        req.body.accumulatedDuration ??
+        req.body.inZoneSeconds;
       const accumulatedDuration = rawDuration !== undefined ? Number(rawDuration) : undefined;
 
       const result = await kknAttendanceService.pingLocation(
@@ -97,31 +100,43 @@ export const kknAttendanceController = {
       res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknAttendanceController] updateLocation error:", error);
-      
+
       // FEATURE 3: Attempt fallback location save on error
       try {
         const { latitude, longitude, lat, lng } = req.body;
-        const finalLat = latitude !== undefined ? parseFloat(latitude) : (lat !== undefined ? parseFloat(lat) : null);
-        const finalLng = longitude !== undefined ? parseFloat(longitude) : (lng !== undefined ? parseFloat(lng) : null);
-        
+        const finalLat =
+          latitude !== undefined
+            ? parseFloat(latitude)
+            : lat !== undefined
+              ? parseFloat(lat)
+              : null;
+        const finalLng =
+          longitude !== undefined
+            ? parseFloat(longitude)
+            : lng !== undefined
+              ? parseFloat(lng)
+              : null;
+
         if (finalLat && finalLng && !isNaN(finalLat) && !isNaN(finalLng)) {
           // Import prisma for fallback save
           const { prisma } = await import("../lib/prisma.js");
-          await prisma.studentLocation.create({
-            data: {
-              studentId: req.user!.userId,
-              latitude: finalLat,
-              longitude: finalLng,
-              recordedAt: new Date(),
-            },
-          }).catch(() => {
-            // Silent catch - fallback already attempted
-          });
+          await prisma.studentLocation
+            .create({
+              data: {
+                studentId: req.user!.userId,
+                latitude: finalLat,
+                longitude: finalLng,
+                recordedAt: new Date(),
+              },
+            })
+            .catch(() => {
+              // Silent catch - fallback already attempted
+            });
         }
       } catch (_) {
         // Fallback save attempt failed, will respond with error
       }
-      
+
       // Return 200 with partial success to keep mobile tracking active
       res.status(200).json({
         success: true,
@@ -175,12 +190,31 @@ export const kknAttendanceController = {
     try {
       const targetStudentId = req.body.studentId || req.user!.userId;
       const { id: paramId } = req.params;
-      const { latitude, longitude, lat, lng, method, scheduleId: bodyScheduleId, nim, namaMahasiswa, kodeZona } = req.body;
+      const {
+        latitude,
+        longitude,
+        lat,
+        lng,
+        method,
+        scheduleId: bodyScheduleId,
+        nim,
+        namaMahasiswa,
+        kodeZona,
+      } = req.body;
       const id = paramId || bodyScheduleId || req.body.id || "kkn-main-posko";
 
-      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const rawDeskripsi =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
       const file = (req as any).file;
-      let rawFoto = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      let rawFoto =
+        req.body.fotoUrl ||
+        req.body.foto_url ||
+        req.body.foto ||
+        req.body.imageUrl ||
+        req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         rawFoto = `${baseUrl}/uploads/${file.filename}`;
@@ -261,18 +295,35 @@ export const kknAttendanceController = {
       const { latitude, longitude, lat, lng, scheduleId: bodyScheduleId } = req.body;
       const id = paramId || bodyScheduleId || req.body.id;
 
-      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const rawDeskripsi =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      let finalFotoUrl =
+        req.body.fotoUrl ||
+        req.body.foto_url ||
+        req.body.foto ||
+        req.body.imageUrl ||
+        req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
       }
 
       const finalLat =
-        latitude !== undefined ? parseFloat(latitude) : lat !== undefined ? parseFloat(lat) : undefined;
+        latitude !== undefined
+          ? parseFloat(latitude)
+          : lat !== undefined
+            ? parseFloat(lat)
+            : undefined;
       const finalLng =
-        longitude !== undefined ? parseFloat(longitude) : lng !== undefined ? parseFloat(lng) : undefined;
+        longitude !== undefined
+          ? parseFloat(longitude)
+          : lng !== undefined
+            ? parseFloat(lng)
+            : undefined;
 
       const result = await kknAttendanceService.checkOutAttendance({
         studentId,
@@ -298,9 +349,11 @@ export const kknAttendanceController = {
   getActiveStudentsLocations: async (req: Request, res: Response): Promise<void> => {
     try {
       const rawRole = (req as any).user?.role;
-      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const roleName = String(
+        typeof rawRole === "object" ? rawRole?.name : rawRole || ""
+      ).toUpperCase();
       const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
-      const dplUserId = isDpl ? ((req as any).user?.userId || (req as any).user?.id) : undefined;
+      const dplUserId = isDpl ? (req as any).user?.userId || (req as any).user?.id : undefined;
       const kelompokId = (req.query.kelompokId as string) || undefined;
 
       const result = await kknAttendanceService.getActiveStudentsLocations(dplUserId, kelompokId);
@@ -331,7 +384,9 @@ export const kknAttendanceController = {
       }
 
       const rawRole = (req as any).user?.role;
-      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const roleName = String(
+        typeof rawRole === "object" ? rawRole?.name : rawRole || ""
+      ).toUpperCase();
       let dplUserId: string | undefined = undefined;
       if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
         dplUserId = (req as any).user?.userId || (req as any).user?.id;
@@ -355,7 +410,9 @@ export const kknAttendanceController = {
   getTimesheetSummary: async (req: Request, res: Response): Promise<void> => {
     try {
       const rawRole = (req as any).user?.role;
-      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
+      const roleName = String(
+        typeof rawRole === "object" ? rawRole?.name : rawRole || ""
+      ).toUpperCase();
       const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
       const isStudent = roleName === "MAHASISWA_KKN";
 
@@ -391,8 +448,15 @@ export const kknAttendanceController = {
   getLaporanPresensi: async (req: Request, res: Response): Promise<void> => {
     try {
       const rawRole = (req as any).user?.role;
-      const roleName = String(typeof rawRole === "object" ? rawRole?.name : rawRole || "").toUpperCase();
-      const isDpl = ["DPL", "DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN"].includes(roleName);
+      const roleName = String(
+        typeof rawRole === "object" ? rawRole?.name : rawRole || ""
+      ).toUpperCase();
+      const isDpl = [
+        "DPL",
+        "DOSEN_PEMBIMBING",
+        "DOSEN_PENDAMPING",
+        "DOSEN_PENDAMPING_LAPANGAN",
+      ].includes(roleName);
       const isStudent = roleName === "MAHASISWA_KKN";
 
       const currentUserId = (req as any).user?.userId || (req as any).user?.id;
@@ -466,9 +530,18 @@ export const kknAttendanceController = {
       const { id } = req.params;
       const { latitude, longitude, deviceInfo } = req.body;
 
-      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const rawDeskripsi =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      let finalFotoUrl =
+        req.body.fotoUrl ||
+        req.body.foto_url ||
+        req.body.foto ||
+        req.body.imageUrl ||
+        req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
@@ -538,9 +611,18 @@ export const kknAttendanceController = {
       const { id } = req.params;
       const { sessionId, totalDurasiDalamZonaMenit, alasan, latitude, longitude } = req.body;
 
-      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const rawDeskripsi =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      let finalFotoUrl =
+        req.body.fotoUrl ||
+        req.body.foto_url ||
+        req.body.foto ||
+        req.body.imageUrl ||
+        req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
@@ -548,7 +630,9 @@ export const kknAttendanceController = {
 
       const result = await kknAttendanceService.selesaiKegiatan(studentUserId, id, {
         sessionId,
-        totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit ? Number(totalDurasiDalamZonaMenit) : undefined,
+        totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit
+          ? Number(totalDurasiDalamZonaMenit)
+          : undefined,
         alasan,
         deskripsiKegiatan: rawDeskripsi,
         fotoUrl: finalFotoUrl,
@@ -575,17 +659,36 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const id = req.params.id || req.body.scheduleId;
-      const { sessionId, totalDurasiDalamZonaMenit, durationMinutes, accumulatedDuration, accumulatedSeconds, alasan } = req.body;
+      const {
+        sessionId,
+        totalDurasiDalamZonaMenit,
+        durationMinutes,
+        accumulatedDuration,
+        accumulatedSeconds,
+        alasan,
+      } = req.body;
 
-      const rawDeskripsi = req.body.deskripsiKegiatan || req.body.deskripsi_kegiatan || req.body.deskripsi || req.body.catatan;
+      const rawDeskripsi =
+        req.body.deskripsiKegiatan ||
+        req.body.deskripsi_kegiatan ||
+        req.body.deskripsi ||
+        req.body.catatan;
       const file = (req as any).file;
-      let finalFotoUrl = req.body.fotoUrl || req.body.foto_url || req.body.foto || req.body.imageUrl || req.body.image_url;
+      let finalFotoUrl =
+        req.body.fotoUrl ||
+        req.body.foto_url ||
+        req.body.foto ||
+        req.body.imageUrl ||
+        req.body.image_url;
       if (file) {
         const baseUrl = process.env.BASE_URL ?? "";
         finalFotoUrl = `${baseUrl}/uploads/${file.filename}`;
       }
 
-      const mins = totalDurasiDalamZonaMenit ?? durationMinutes ?? Math.ceil(((accumulatedDuration || accumulatedSeconds || 0) / 60));
+      const mins =
+        totalDurasiDalamZonaMenit ??
+        durationMinutes ??
+        Math.ceil((accumulatedDuration || accumulatedSeconds || 0) / 60);
 
       const result = await kknAttendanceService.selesaiKegiatan(studentUserId, id, {
         sessionId: sessionId || `SES-${id}`,
@@ -623,8 +726,10 @@ export const kknAttendanceController = {
 
       const result = await kknAttendanceService.jedaKegiatan(studentUserId, id, {
         alasan,
-        totalDurasiDalamZonaMenit: totalDurasiDalamZonaMenit !== undefined ? Number(totalDurasiDalamZonaMenit) : undefined,
-        totalDurasiDalamZonaDetik: totalDurasiDalamZonaDetik !== undefined ? Number(totalDurasiDalamZonaDetik) : undefined,
+        totalDurasiDalamZonaMenit:
+          totalDurasiDalamZonaMenit !== undefined ? Number(totalDurasiDalamZonaMenit) : undefined,
+        totalDurasiDalamZonaDetik:
+          totalDurasiDalamZonaDetik !== undefined ? Number(totalDurasiDalamZonaDetik) : undefined,
       });
 
       res.status(200).json({
@@ -709,5 +814,169 @@ export const kknAttendanceController = {
       });
     }
   },
-};
 
+  skipKegiatan: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = (req as any).user?.userId || (req as any).user?.id;
+      const userRole = (req as any).user?.role;
+      const { id } = req.params;
+      const alasan = req.body.alasan || "Tidak ada kegiatan";
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: "UNAUTHORIZED",
+          message: "Autentikasi diperlukan",
+        });
+        return;
+      }
+
+      if (!id) {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "ID Kegiatan wajib disertakan",
+        });
+        return;
+      }
+
+      const result = await kknAttendanceService.skipKegiatan(userId, userRole, id, { alasan });
+
+      res.status(200).json({
+        success: true,
+        message: "Kegiatan berhasil ditandai sebagai Tidak Ada Kegiatan.",
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] skipKegiatan error:", error);
+      const isConflict =
+        error.message &&
+        (error.message.includes("CONFLICT") || error.message.includes("sudah dimulai"));
+      const isForbidden =
+        error.message &&
+        (error.message.includes("FORBIDDEN") || error.message.includes("tidak memiliki izin"));
+      const isNotFound =
+        error.message &&
+        (error.message.includes("NOT_FOUND") || error.message.includes("tidak ditemukan"));
+
+      let statusCode = 500;
+      let errCode = "INTERNAL_SERVER_ERROR";
+      let message = error.message || "Gagal melewati kegiatan KKN";
+
+      if (isConflict) {
+        statusCode = 409;
+        errCode = "CONFLICT";
+        message = error.message.replace(/^CONFLICT:\s*/, "");
+      } else if (isForbidden) {
+        statusCode = 403;
+        errCode = "FORBIDDEN";
+        message = error.message.replace(/^FORBIDDEN:\s*/, "");
+      } else if (isNotFound) {
+        statusCode = 404;
+        errCode = "NOT_FOUND";
+        message = error.message.replace(/^NOT_FOUND:\s*/, "");
+      }
+
+      res.status(statusCode).json({
+        success: false,
+        error: errCode,
+        message,
+      });
+    }
+  },
+
+  createAttendanceManual: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.createAttendanceManual(
+        authorUserId,
+        authorRole,
+        req.body
+      );
+      res.status(201).json({
+        success: true,
+        message: "Presensi mahasiswa berhasil dibuat manual.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] createAttendanceManual error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  getAttendanceById: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const data = await kknAttendanceService.getAttendanceById(id);
+      res.status(200).json({
+        success: true,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] getAttendanceById error:", error);
+      res.status(404).json({ success: false, message: error.message });
+    }
+  },
+
+  updateAttendanceAdmin: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.updateAttendanceAdmin(
+        id,
+        authorUserId,
+        authorRole,
+        req.body
+      );
+      res.status(200).json({
+        success: true,
+        message: "Data presensi & durasi jam pulang berhasil diperbarui.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] updateAttendanceAdmin error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  deleteAttendanceAdmin: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.deleteAttendanceAdmin(id, authorUserId, authorRole);
+      res.status(200).json({
+        success: true,
+        message: "Data presensi berhasil dihapus.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] deleteAttendanceAdmin error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+
+  forceCheckoutAttendance: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const authorUserId = req.user!.userId;
+      const authorRole = req.user!.role;
+      const data = await kknAttendanceService.forceCheckoutAttendance(
+        id,
+        authorUserId,
+        authorRole,
+        req.body
+      );
+      res.status(200).json({
+        success: true,
+        message: "Sesi presensi yang terjeda berhasil diselesaikan (Force Check-out).",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] forceCheckoutAttendance error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  },
+};

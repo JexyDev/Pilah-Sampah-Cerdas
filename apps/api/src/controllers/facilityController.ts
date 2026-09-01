@@ -15,7 +15,8 @@ export class FacilityController {
    */
   async createFacility(req: Request, res: Response): Promise<void> {
     try {
-      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } = req.body;
+      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } =
+        req.body;
       if (req.file) {
         foto = `/uploads/${req.file.filename}`;
       }
@@ -34,9 +35,7 @@ export class FacilityController {
       // Auto-resolve kelompokId & rwId jika MAHASISWA_KKN
       let kelompokId: string | undefined;
       let targetRwId: number | undefined =
-        rwId !== undefined && !isNaN(Number(rwId)) && Number(rwId) > 0
-          ? Number(rwId)
-          : undefined;
+        rwId !== undefined && !isNaN(Number(rwId)) && Number(rwId) > 0 ? Number(rwId) : undefined;
 
       if (peran === "MAHASISWA_KKN" && userId) {
         const student = await prisma.studentKkn.findUnique({
@@ -66,12 +65,16 @@ export class FacilityController {
 
       // Sanitasi input numerik agar tidak overflow pada database
       const safeKapasitas =
-        kapasitas !== undefined && kapasitas !== null && kapasitas !== "" && !isNaN(Number(kapasitas))
+        kapasitas !== undefined &&
+        kapasitas !== null &&
+        kapasitas !== "" &&
+        !isNaN(Number(kapasitas))
           ? Math.min(Math.max(Number(kapasitas), 0), 99999999)
           : undefined;
 
       const safeLat = latitude !== undefined && !isNaN(Number(latitude)) ? Number(latitude) : 0.0;
-      const safeLng = longitude !== undefined && !isNaN(Number(longitude)) ? Number(longitude) : 0.0;
+      const safeLng =
+        longitude !== undefined && !isNaN(Number(longitude)) ? Number(longitude) : 0.0;
 
       const facility = await facilityService.createFacility(
         jenis,
@@ -152,7 +155,9 @@ export class FacilityController {
       const { logId } = req.params;
       const verifiedByUserId = (req as any).user?.userId;
       const log = await facilityService.verifyProduction(logId, verifiedByUserId);
-      res.status(200).json({ success: true, message: "Log produksi berhasil diverifikasi", data: log });
+      res
+        .status(200)
+        .json({ success: true, message: "Log produksi berhasil diverifikasi", data: log });
     } catch (error: any) {
       res
         .status(400)

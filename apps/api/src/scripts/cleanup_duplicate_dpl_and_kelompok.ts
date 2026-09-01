@@ -5,7 +5,6 @@ import { prisma } from "../lib/prisma.js";
  */
 import { REAL_32_DPL_STANDARDIZED } from "./sync_real_dpl.js";
 
-
 async function cleanup() {
   console.log("=== START CLEANUP DUPLICATE DPL & KELOMPOK (STANDARDIZED) ===");
 
@@ -51,7 +50,12 @@ async function cleanup() {
         const offLower = item.kelompok.toLowerCase();
         if (
           lower.includes(offLower) ||
-          offLower.includes(lower.replace(/kelompok\s*/gi, "").replace(/kel\s*/gi, "").trim())
+          offLower.includes(
+            lower
+              .replace(/kelompok\s*/gi, "")
+              .replace(/kel\s*/gi, "")
+              .trim()
+          )
         ) {
           targetName = item.kelompok;
           break;
@@ -61,7 +65,9 @@ async function cleanup() {
       if (targetName) {
         const targetKel = await prisma.kelompokKkn.findFirst({ where: { name: targetName } });
         if (targetKel) {
-          console.log(`Re-linking ${kel.students.length} students from "${kel.name}" to standardized "${targetName}"...`);
+          console.log(
+            `Re-linking ${kel.students.length} students from "${kel.name}" to standardized "${targetName}"...`
+          );
           for (const st of kel.students) {
             await prisma.studentKkn.update({
               where: { id: st.id },
