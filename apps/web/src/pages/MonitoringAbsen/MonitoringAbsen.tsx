@@ -1580,7 +1580,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       "Status Absensi",
       "Waktu Masuk",
       "Waktu Pulang",
-      "Durasi (Menit)",
+      "Durasi Jeda (Menit)",
+      "Durasi Bersih (Menit)",
+      "Durasi Bersih (Format)",
     ];
     const rows = filtered.map((rec) => {
       const isAttended = Boolean(rec.attendedAt);
@@ -1592,6 +1594,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
       const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
+      const jedaMins = isLeaveOrAlpha ? 0 : (recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0);
+      const hours = Math.floor(durationMins / 60);
+      const mins = durationMins % 60;
+      const durasiFormatted = hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
 
       let statusStr = "Belum Absen";
       if (statusUpper.includes("SAKIT")) {
@@ -1616,7 +1622,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         statusStr,
         rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
         rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
+        jedaMins,
         durationMins,
+        durasiFormatted,
       ];
     });
 
@@ -1628,7 +1636,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       { wch: 25 }, // Status
       { wch: 22 }, // Waktu Masuk
       { wch: 22 }, // Waktu Pulang
-      { wch: 16 }, // Durasi
+      { wch: 18 }, // Durasi Jeda
+      { wch: 18 }, // Durasi Bersih
+      { wch: 22 }, // Durasi Format
     ];
     XLSX.utils.book_append_sheet(wb, ws, "Rekap Presensi");
     XLSX.writeFile(wb, `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -1659,7 +1669,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       "Status Presensi",
       "Waktu Masuk",
       "Waktu Pulang",
-      "Durasi (Menit)",
+      "Durasi Jeda (Menit)",
+      "Durasi Bersih (Menit)",
       "Target (Jam)",
       "Pemenuhan Target",
     ];
@@ -1674,6 +1685,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
       const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
+      const jedaMins = isLeaveOrAlpha ? 0 : (recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0);
 
       let statusStr = "Belum Absen";
       if (statusUpper.includes("SAKIT")) {
@@ -1705,6 +1717,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         statusStr,
         rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
         rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
+        jedaMins,
         durationMins,
         scheduleTargetHours,
         isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-",
@@ -1721,7 +1734,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       { wch: 25 },
       { wch: 22 },
       { wch: 22 },
-      { wch: 15 },
+      { wch: 18 },
+      { wch: 18 },
       { wch: 14 },
       { wch: 25 },
     ];
@@ -3677,9 +3691,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-3 text-center" title="Jam Pulang (JP) — waktu mahasiswa selesai kegiatan">
                             JAM PULANG (JP)
                           </th>
-                          <th className="py-3.5 px-4 text-center" title="Durasi Aktual (DA) = JP − JM, dalam menit">
+                          <th className="py-3.5 px-3 text-center bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300" title="Durasi Jeda (DJ) — akumulasi waktu istirahat / jeda di luar zona">
+                            DURASI JEDA (DJ)
+                            <span className="block text-[9px] font-normal opacity-70 normal-case">jeda/keluar zona</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title="Durasi Aktual (DA) = (JP − JM) − DJ, dalam menit">
                             DURASI AKTUAL (DA)
-                            <span className="block text-[9px] font-normal opacity-60 normal-case">DA = JP − JM (menit)</span>
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">DA = (JP−JM)−DJ</span>
                           </th>
                           <th className="py-3.5 px-3 text-center" title="Target Minimal per hari — durasi wajib kehadiran">
                             TARGET MIN (TM)
@@ -3705,10 +3723,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             JAM PULANG
                             <span className="block text-[9px] font-normal opacity-60 normal-case">(JP)</span>
                           </th>
-                          <th className="py-3.5 px-4 text-center" title={`Durasi Aktual (DA) = JP − JM. Target harian: ${formatHoursToUnits(scheduleTargetHours)}`}>
+                          <th className="py-3.5 px-3 text-center bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300" title="Durasi Jeda (DJ) — akumulasi waktu istirahat / jeda di luar zona">
+                            DURASI JEDA
+                            <span className="block text-[9px] font-normal opacity-70 normal-case">(DJ)</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title={`Durasi Aktual (DA) = (JP − JM) − DJ. Target harian: ${formatHoursToUnits(scheduleTargetHours)}`}>
                             DURASI AKTUAL (DA)
                             <span className="block text-[9px] font-normal opacity-60 normal-case">
-                              DA = JP−JM / TM: {formatHoursToUnits(scheduleTargetHours)}
+                              DA = Bersih / TM: {formatHoursToUnits(scheduleTargetHours)}
                             </span>
                           </th>
                           <th className="py-3.5 px-4 text-center min-w-[180px]" title={`Total akumulasi KKN. Target kumulatif: ${formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50)))}`}>
@@ -3793,6 +3815,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const durasiText = (!hasValidAttendanceSession || durationMins === 0)
                           ? "0 menit"
                           : formatDurasiIndo(durationMins);
+
+                        const durasiJedaMins = recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null
+                          ? Number(recAny.durasiJedaMenit)
+                          : isTerjeda
+                          ? Math.max(0, liveElapsedMins - durationMins)
+                          : 0;
+                        const durasiJedaText = isLeaveOrPending ? "-" : formatDurasiIndo(durasiJedaMins);
 
                         const rawStudentName = rec.student?.name
                           ? rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
@@ -3939,6 +3968,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               {/* 5. JAM PULANG */}
                               <td className="py-4 px-3 text-center font-mono font-bold text-slate-800 dark:text-slate-100 text-xs">
                                 {jamPulangStr}
+                              </td>
+
+                              {/* DURASI JEDA (DJ) */}
+                              <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs bg-amber-50/30 dark:bg-amber-950/10">
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className={`font-extrabold text-xs ${durasiJedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
+                                    {durasiJedaText}
+                                  </span>
+                                  {durasiJedaMins > 0 && (
+                                    <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 font-mono">
+                                      ({durasiJedaMins} mnt)
+                                    </span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* 6. DURASI AKTUAL */}
@@ -4167,7 +4210,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               {jamPulangStr}
                             </td>
 
-                            {/* 7. DURASI AKTUAL (DA) = JP − JM */}
+                            {/* DURASI JEDA (DJ) */}
+                            <td className="py-3.5 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs bg-amber-50/30 dark:bg-amber-950/10">
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className={`font-extrabold text-xs ${durasiJedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
+                                  {durasiJedaText}
+                                </span>
+                                {durasiJedaMins > 0 && (
+                                  <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 font-mono">
+                                    ({durasiJedaMins} mnt)
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 7. DURASI AKTUAL (DA) = (JP − JM) − DJ */}
                             <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                               <div className="flex flex-col items-center gap-0.5">
                                 <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
@@ -5563,9 +5620,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const lng = liveLoc ? Number(liveLoc.longitude) : Number(rec.longitude);
               const hasGps = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
 
+              const modalJedaMins = recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null
+                ? Number(recAny.durasiJedaMenit)
+                : isTerjeda
+                ? Math.max(0, liveElapsedMins - durationMins)
+                : 0;
+              const modalJedaText = isLeaveOrPending ? "-" : formatDurasiIndo(modalJedaMins);
+
               return (
                 <div className="space-y-3.5">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
                       <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk (JM)</span>
                       <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
@@ -5578,8 +5642,17 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         {!isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-"}
                       </span>
                     </div>
+                    <div className="p-3 bg-amber-50/50 dark:bg-amber-950/30 rounded-xl border border-amber-200/70 dark:border-amber-900/50 text-center">
+                      <span className="block text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">Durasi Jeda (DJ)</span>
+                      <span className={`text-xs font-black ${modalJedaMins > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"}`}>
+                        {modalJedaText}
+                      </span>
+                      {modalJedaMins > 0 && (
+                        <span className="block text-[9px] text-amber-600/80 dark:text-amber-400/80 font-mono">{modalJedaMins} mnt</span>
+                      )}
+                    </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = JP − JM</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = (JP−JM)−DJ</span>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
                         {!hasValidAttendanceSession || durationMins === 0 ? "0 menit" : formatDurasiIndo(durationMins)}
                       </span>

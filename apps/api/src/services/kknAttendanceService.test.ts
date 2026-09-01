@@ -10,6 +10,8 @@ import {
   calculateInZoneDurationMinutes,
   calculateLiveInZoneMinutes,
   calculateLiveInZoneSeconds,
+  calculateTotalJedaMinutes,
+  formatDurasiMenitIndo,
   getScheduleTargetDurationMinutes,
   parseScheduleTimeString,
   parseScheduleTimeRange,
@@ -1190,6 +1192,46 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       await service.autoCheckOutEndedSchedules();
 
       expect(checkOutSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("calculateTotalJedaMinutes & formatDurasiMenitIndo", () => {
+    it("should calculate total jeda minutes from jedaLogs array", () => {
+      const att = {
+        attendedAt: new Date("2026-09-01T08:00:00Z"),
+        checkOutAt: new Date("2026-09-01T16:00:00Z"),
+        actualInZoneMinutes: 420,
+        jedaLogs: [
+          {
+            waktuJeda: "2026-09-01T10:00:00Z",
+            waktuResume: "2026-09-01T10:30:00Z",
+          },
+          {
+            waktuJeda: "2026-09-01T12:00:00Z",
+            waktuResume: "2026-09-01T12:30:00Z",
+          },
+        ],
+      };
+
+      const jeda = calculateTotalJedaMinutes(att);
+      expect(jeda).toBe(60); // 30 mins + 30 mins
+      expect(formatDurasiMenitIndo(jeda)).toBe("1 Jam");
+    });
+
+    it("should format minutes cleanly in Indonesian", () => {
+      expect(formatDurasiMenitIndo(0)).toBe("0 Menit");
+      expect(formatDurasiMenitIndo(45)).toBe("45 Menit");
+      expect(formatDurasiMenitIndo(60)).toBe("1 Jam");
+      expect(formatDurasiMenitIndo(135)).toBe("2 Jam 15 Menit");
+    });
+
+    it("should return 0 jeda for permission or sick leaves", () => {
+      const att = {
+        attendedAt: new Date("2026-09-01T08:00:00Z"),
+        status: "IZIN",
+        jedaLogs: [{ waktuJeda: "2026-09-01T08:30:00Z", waktuResume: "2026-09-01T09:00:00Z" }],
+      };
+      expect(calculateTotalJedaMinutes(att)).toBe(0);
     });
   });
 });

@@ -4,7 +4,7 @@
  * Centralized Profile Photo & Default Avatar Utility
  */
 
-import { getApiBaseUrl } from "./api";
+import { resolveImageUrl } from "./imageUrl";
 
 export const DEFAULT_AVATAR_FALLBACKS: string[] = [];
 
@@ -32,40 +32,23 @@ export function getInitialsSvgDataUri(name: string = "User"): string {
  * Returns full image URL for profile photo path
  */
 export function getProfilePhotoUrl(path?: string, userName: string = "User"): string {
-  if (!path || path.trim() === "") {
+  if (!path || path.trim() === "" || path === "null" || path === "undefined") {
     return getInitialsSvgDataUri(userName);
   }
 
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-
-  if (path.startsWith("data:image/")) {
-    return path;
-  }
-
-  const baseUrl = getApiBaseUrl();
-  const host = baseUrl.replace(/\/api\/v1\/?$/, "");
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${host}${cleanPath}`;
+  const resolved = resolveImageUrl(path);
+  return resolved || getInitialsSvgDataUri(userName);
 }
 
 /**
  * Returns full image URL for media / evidence / activity / documentation photo
  */
 export function getMediaPhotoUrl(path?: string | null): string {
-  if (!path || path.trim() === "" || path === "null") {
+  if (!path || path.trim() === "" || path === "null" || path === "undefined") {
     return "";
   }
 
-  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:image/")) {
-    return path;
-  }
-
-  const baseUrl = getApiBaseUrl();
-  const host = baseUrl.replace(/\/api\/v1\/?$/, "");
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${host}${cleanPath}`;
+  return resolveImageUrl(path);
 }
 
 /**

@@ -310,6 +310,81 @@ export function calculateLiveInZoneSeconds(att: {
   return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
 }
 
+/**
+ * Helper: Menghitung total akumulasi menit jeda/istirahat/keluar zona.
+ * Memastikan kalkulasi matematis transparan:
+ * Gross Duration (JP - JM) = Durasi Bersih Aktif (DA) + Durasi Jeda (DJ).
+ */
+export function calculateTotalJedaMinutes(att: {
+  attendedAt?: Date | string | null;
+  checkOutAt?: Date | string | null;
+  jedaLogs?: any;
+  status?: string;
+  actualInZoneMinutes?: number | null;
+}): number {
+  if (!att || !att.attendedAt) return 0;
+  const statusUpper = String(att.status || "").toUpperCase();
+  if (
+    statusUpper.includes("SAKIT") ||
+    statusUpper.includes("IZIN") ||
+    statusUpper === "ALPA" ||
+    statusUpper === "ALPHA" ||
+    statusUpper === "TIDAK_ADA_KEGIATAN" ||
+    statusUpper === "SKIP_KEGIATAN"
+  ) {
+    return 0;
+  }
+
+  const jedaLogsArray = (att.jedaLogs as any[]) || [];
+  const nowMs = Date.now();
+  const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : nowMs;
+
+  let totalJedaMs = 0;
+  if (Array.isArray(jedaLogsArray) && jedaLogsArray.length > 0) {
+    for (const log of jedaLogsArray) {
+      if (!log || typeof log !== "object") continue;
+      if (log.waktuJeda) {
+        const startPause = new Date(log.waktuJeda).getTime();
+        const endPause = log.waktuResume ? new Date(log.waktuResume).getTime() : sessionEndMs;
+        if (!isNaN(startPause) && !isNaN(endPause) && endPause > startPause) {
+          totalJedaMs += endPause - startPause;
+        }
+      } else if (typeof log.durasiJedaMenit === "number") {
+        totalJedaMs += log.durasiJedaMenit * 60000;
+      }
+    }
+  }
+
+  const logsJedaMins = Math.max(0, Math.floor(totalJedaMs / 60000));
+
+  // Sanity check terhadap selisih waktu kotor (Gross) vs waktu bersih (actualInZoneMinutes)
+  const attendedMs = new Date(att.attendedAt).getTime();
+  const grossMinutes = Math.max(0, Math.floor((sessionEndMs - attendedMs) / 60000));
+  const cleanMins = att.actualInZoneMinutes ?? 0;
+
+  if (logsJedaMins > 0) {
+    return logsJedaMins;
+  }
+
+  if (att.checkOutAt && cleanMins > 0 && grossMinutes > cleanMins) {
+    return grossMinutes - cleanMins;
+  }
+
+  return 0;
+}
+
+/**
+ * Helper: Format menit ke representasi teks yang ramah (contoh: "45 Menit", "1 Jam 15 Menit")
+ */
+export function formatDurasiMenitIndo(minutes: number): string {
+  if (isNaN(minutes) || minutes <= 0) return "0 Menit";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins} Menit`;
+  if (mins === 0) return `${hours} Jam`;
+  return `${hours} Jam ${mins} Menit`;
+}
+
 export function calculateInZoneDurationMinutes(
   locations: { recordedAt: Date | string; latitude: any; longitude: any }[],
   geofence: { latitude: number; longitude: number; radius: number; polygon?: any },
@@ -2455,6 +2530,8 @@ export class KknAttendanceService {
         totalHours: 0,
         totalDays: 0,
       };
+      const jedaMins = isLeave ? 0 : calculateTotalJedaMinutes(att as any);
+      const jedaFormatted = formatDurasiMenitIndo(jedaMins);
       return {
         ...att,
         status,
@@ -2462,6 +2539,8 @@ export class KknAttendanceService {
         statusDisplay,
         isMemenuhiDurasi,
         actualInZoneMinutes: actualMins,
+        durasiJedaMenit: jedaMins,
+        durasiJedaFormatted: jedaFormatted,
         targetHours,
         targetDurationMinutes: durasiWajib,
         targetRatioPercent: percentRatio,
@@ -3260,6 +3339,9 @@ export class KknAttendanceService {
         ? jedaLogsObj.skippedAt || (att?.attendedAt ? att.attendedAt.toISOString() : null)
         : undefined;
 
+      const jedaMins = isSkip ? 0 : calculateTotalJedaMinutes(att as any);
+      const jedaFormatted = formatDurasiMenitIndo(jedaMins);
+
       return {
         id: sch.id,
         namaKegiatan: titleStr,
@@ -3284,6 +3366,8 @@ export class KknAttendanceService {
         skippedAt,
         actualInZoneSeconds,
         actualInZoneMinutes,
+        durasiJedaMenit: jedaMins,
+        durasiJedaFormatted: jedaFormatted,
         attendedAt: att?.attendedAt ? att.attendedAt.toISOString() : null,
         time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
@@ -4090,10 +4174,15 @@ export class KknAttendanceService {
           }
         }
 
-        // Jika jadwal hari ini dan waktu saat ini sudah lewat batas jam selesai, ATAU jadwal dari hari kemarin
-        if (isPastDate || currentMins >= endMins) {
+        // Kebijakan Fleksibilitas Jam Pulang (Tidak Terpatok 16:00):
+        // Jam pulang tidak diputus otomatis di jam 16:00. Mahasiswa dapat beraktivitas fleksibel.
+        // Auto-checkout hanya mengeksekusi sesi yang tersangkut dari hari sebelumnya (isPastDate)
+        // atau saat pergantian hari di penghujung malam (>= 23:50 WIB).
+        const isEndOfDayCutoff = currentMins >= (23 * 60 + 50);
+
+        if (isPastDate || isEndOfDayCutoff) {
           console.log(
-            `[AutoCheckout] Melakukan checkout otomatis untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
+            `[AutoCheckout] Melakukan checkout otomatis pergantian hari untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
           );
 
           await this.checkOutAttendance({
@@ -4196,6 +4285,9 @@ export class KknAttendanceService {
       }
     }
 
+    const jedaMins = calculateTotalJedaMinutes(attendance as any);
+    const jedaFormatted = formatDurasiMenitIndo(jedaMins);
+
     return {
       scheduleId: attendance.scheduleId,
       attendanceId: attendance.id,
@@ -4207,6 +4299,8 @@ export class KknAttendanceService {
       jamMasuk: jamMasuk?.toISOString() ?? null,
       jamPulang: jamPulang?.toISOString() ?? null,
       durasiAktualMenit,
+      durasiJedaMenit: jedaMins,
+      durasiJedaFormatted: jedaFormatted,
       durasiTargetMenit: targetDurationMinutes,
       durasiAktualDetik: durasiAktualMenit * 60,
       durasiTargetDetik: targetDurationMinutes * 60,
@@ -4602,6 +4696,9 @@ export class KknAttendanceService {
       const durasiFormatted =
         hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
 
+      const jedaMins = isLeaveOrAlpha ? 0 : calculateTotalJedaMinutes(att as any);
+      const jedaFormatted = formatDurasiMenitIndo(jedaMins);
+
       const kknGroup = att.student?.studentProfile?.kelompok || att.schedule?.kelompok;
 
       return {
@@ -4635,6 +4732,8 @@ export class KknAttendanceService {
         durasiFormatted,
         durasiAktualMenit: actualMins,
         durasiAktualFormatted: durasiFormatted,
+        durasiJedaMenit: jedaMins,
+        durasiJedaFormatted: jedaFormatted,
         targetMinMenit,
         rasioKehadiran: Number(((actualMins / targetMinMenit) * 100).toFixed(1)),
         status: computedStatus,
