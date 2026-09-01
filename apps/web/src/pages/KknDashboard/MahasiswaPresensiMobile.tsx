@@ -53,9 +53,11 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Posko Info
+  // Posko Info (Multi-Posko Support)
   const [posko, setPosko] = useState<{ name: string; lat: number; lng: number; radius: number } | null>(null);
+  const [allGroupPoskos, setAllGroupPoskos] = useState<Array<{ id: string; name: string; lat: number; lng: number; radius: number }>>([]);
   const [distanceToPosko, setDistanceToPosko] = useState<number | null>(null);
+  const [nearestPoskoInfo, setNearestPoskoInfo] = useState<{ name: string; dist: number; isInside: boolean } | null>(null);
 
   // Active Session State
   const [activeSession, setActiveSession] = useState<any | null>(null);
@@ -152,9 +154,27 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       setLocationError(null);
       setIsLocating(false);
 
-      if (posko) {
+      if (allGroupPoskos.length > 0) {
+        const withDist = allGroupPoskos.map((p) => ({
+          ...p,
+          dist: calculateDistanceMeters(latitude, longitude, p.lat, p.lng),
+        }));
+        withDist.sort((a, b) => a.dist - b.dist);
+        const nearest = withDist[0];
+        setDistanceToPosko(nearest.dist);
+        setNearestPoskoInfo({
+          name: nearest.name,
+          dist: nearest.dist,
+          isInside: nearest.dist <= nearest.radius,
+        });
+      } else if (posko) {
         const dist = calculateDistanceMeters(latitude, longitude, posko.lat, posko.lng);
         setDistanceToPosko(dist);
+        setNearestPoskoInfo({
+          name: posko.name,
+          dist,
+          isInside: dist <= posko.radius,
+        });
       }
 
       pingServerLocation(latitude, longitude, accuracy);
@@ -208,7 +228,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       document.removeEventListener("visibilitychange", handleWakeup);
       window.removeEventListener("focus", handleWakeup);
     };
-  }, [posko]);
+  }, [posko, allGroupPoskos]);
 
   // 4. Timer untuk Sesi Aktif (Monotonik & Akurat)
   useEffect(() => {
@@ -253,18 +273,37 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
   const fetchPoskoData = async () => {
     try {
+      const res = await api.get("/posko-kkn/me/all-zones");
+      const data = res.data?.data;
+      if (data && Array.isArray(data.poskos) && data.poskos.length > 0) {
+        const mapped = data.poskos.map((p: any) => ({
+          id: p.id,
+          name: p.nama || p.name || "Posko KKN",
+          lat: Number(p.latitude),
+          lng: Number(p.longitude),
+          radius: Number(p.radius) || 150,
+        }));
+        setAllGroupPoskos(mapped);
+        setPosko(mapped[0]);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+
+    try {
       const res = await api.get("/areas/posko");
       const list = res.data?.data || res.data || [];
       if (Array.isArray(list) && list.length > 0) {
-        const myPosko = list[0];
-        if (myPosko.latitude && myPosko.longitude) {
-          setPosko({
-            name: myPosko.nama || myPosko.name || "Posko KKN Utama",
-            lat: Number(myPosko.latitude),
-            lng: Number(myPosko.longitude),
-            radius: myPosko.radiusMeters || 150,
-          });
-        }
+        const mapped = list.map((p: any) => ({
+          id: p.id,
+          name: p.nama || p.name || "Posko KKN",
+          lat: Number(p.latitude),
+          lng: Number(p.longitude),
+          radius: p.radiusMeters || 150,
+        }));
+        setAllGroupPoskos(mapped);
+        setPosko(mapped[0]);
       }
     } catch {
       setPosko({
@@ -820,7 +859,11 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                       : "bg-emerald-500 animate-pulse"
                   }`}
                 />
-                {distanceToPosko !== null && posko
+                {nearestPoskoInfo
+                  ? nearestPoskoInfo.isInside
+                    ? `Di ${nearestPoskoInfo.name} (${nearestPoskoInfo.dist}m)`
+                    : `Di Luar Zona (${nearestPoskoInfo.name} ${nearestPoskoInfo.dist}m)`
+                  : distanceToPosko !== null && posko
                   ? distanceToPosko <= posko.radius
                     ? `Di Posko (${distanceToPosko}m)`
                     : `Di Luar Zona (${distanceToPosko}m)`
