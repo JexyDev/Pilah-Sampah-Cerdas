@@ -658,6 +658,30 @@ const JadwalKegiatan: React.FC = () => {
     }
   };
 
+  const getDateKey = (dateInput: Date | string | number | null | undefined): string => {
+    if (!dateInput) return "";
+    if (typeof dateInput === "string") {
+      const trimmed = dateInput.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
+      }
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+      return "";
+    }
+    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const handleEdit = (schedule: any, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditId(schedule.id);
@@ -665,10 +689,7 @@ const JadwalKegiatan: React.FC = () => {
     // Format tanggal ke YYYY-MM-DD untuk input date
     let formattedDate = "";
     if (schedule.date) {
-      const d = new Date(schedule.date);
-      if (!isNaN(d.getTime())) {
-        formattedDate = d.toISOString().split("T")[0];
-      }
+      formattedDate = getDateKey(schedule.date);
     }
 
     const isPoly = Boolean(schedule.polygon && Array.isArray(schedule.polygon) && schedule.polygon.length >= 3);
@@ -761,15 +782,25 @@ const JadwalKegiatan: React.FC = () => {
   }
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    const newMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    setCurrentDate(newMonth);
+    if (selectedDate.getMonth() !== newMonth.getMonth() || selectedDate.getFullYear() !== newMonth.getFullYear()) {
+      setSelectedDate(newMonth);
+    }
   };
 
   const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    const newMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    setCurrentDate(newMonth);
+    if (selectedDate.getMonth() !== newMonth.getMonth() || selectedDate.getFullYear() !== newMonth.getFullYear()) {
+      setSelectedDate(newMonth);
+    }
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    setSelectedDate(today);
   };
 
   const monthNames = [
@@ -787,14 +818,14 @@ const JadwalKegiatan: React.FC = () => {
     "Desember",
   ];
 
-  // Match schedules to a calendar day using the `date` field (ISO 8601 from backend)
-  const getSchedulesForDay = (date: Date) => {
-    const target = date.toISOString().split("T")[0];
+  // Match schedules to a calendar day using normalized local date keys
+  const getSchedulesForDay = (date: Date | string) => {
+    const target = getDateKey(date);
+    if (!target) return [];
     return schedules.filter((s) => {
       if (!s.date) return false;
-      const sDate = new Date(s.date);
-      if (isNaN(sDate.getTime())) return false;
-      return sDate.toISOString().split("T")[0] === target;
+      const sKey = getDateKey(s.date);
+      return sKey === target;
     });
   };
 
@@ -1483,8 +1514,8 @@ const JadwalKegiatan: React.FC = () => {
             <div className="flex-1 grid grid-cols-7 grid-rows-6 bg-outline-variant/30 gap-[1px]">
               {days.map((day, i) => {
                 const daySchedules = getSchedulesForDay(day.date);
-                const isToday = new Date().toDateString() === day.date.toDateString();
-                const isSelected = selectedDate.toDateString() === day.date.toDateString();
+                const isToday = getDateKey(new Date()) === getDateKey(day.date);
+                const isSelected = getDateKey(selectedDate) === getDateKey(day.date);
 
                 // Deduplicate schedules for cell pills display
                 const groupedCellSchedules = daySchedules.reduce((acc: any[], curr: any) => {
@@ -1508,7 +1539,12 @@ const JadwalKegiatan: React.FC = () => {
                 return (
                   <div
                     key={i}
-                    onClick={() => setSelectedDate(day.date)}
+                    onClick={() => {
+                      setSelectedDate(day.date);
+                      if (!day.isCurrentMonth) {
+                        setCurrentDate(new Date(day.date.getFullYear(), day.date.getMonth(), 1));
+                      }
+                    }}
                     className={`bg-white dark:bg-slate-900 p-2 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30 transition-all cursor-pointer group flex flex-col justify-between min-h-[90px] border border-transparent rounded-lg ${
                       !day.isCurrentMonth ? "opacity-40" : ""
                     } ${
@@ -1650,10 +1686,7 @@ const JadwalKegiatan: React.FC = () => {
                       {canManageSchedules && (
                         <button
                           onClick={() => {
-                            const year = selectedDate.getFullYear();
-                            const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-                            const day = String(selectedDate.getDate()).padStart(2, "0");
-                            setFormData((prev: any) => ({ ...prev, date: `${year}-${month}-${day}` }));
+                            setFormData((prev: any) => ({ ...prev, date: getDateKey(selectedDate) }));
                             setIsModalOpen(true);
                           }}
                           className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"

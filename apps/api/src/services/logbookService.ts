@@ -140,6 +140,8 @@ export class LogbookService {
       const studentProfile = await prisma.studentKkn.findUnique({
         where: { userId },
       });
+
+      // Jika punya kelompok, tampilkan SEMUA logbook milik kelompok tersebut
       if (studentProfile?.kelompokId) {
         where.kelompokId = studentProfile.kelompokId;
       } else {

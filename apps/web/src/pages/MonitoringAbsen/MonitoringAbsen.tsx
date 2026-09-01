@@ -1352,6 +1352,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       setStudentLocations((prev) => {
         const index = prev.findIndex((s) => s.studentId === locData.studentId);
+        const resolvedKelompokId =
+          locData.kelompokId ||
+          locData.student?.studentProfile?.kelompokId ||
+          locData.student?.studentProfile?.kelompok?.id ||
+          null;
+
         const studentInfo = locData.student || {
           id: locData.studentId,
           name: locData.namaMahasiswa || locData.name || "Mahasiswa KKN",
@@ -1360,7 +1366,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           studentProfile: {
             nim: locData.nim || "-",
             jurusan: locData.jurusan || "-",
-            kelompokId: locData.kelompokId || null,
+            kelompokId: resolvedKelompokId,
           },
         };
 
@@ -1452,6 +1458,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           };
           return next;
         } else if (attData.student) {
+          const studentKelId =
+            attData.kelompokId ||
+            attData.student?.studentProfile?.kelompokId ||
+            attData.student?.studentProfile?.kelompok?.id;
+          if (selectedKelompokId && studentKelId && studentKelId !== selectedKelompokId) {
+            return prev;
+          }
           const newRec: AttendanceRecord = {
             id: attData.id || `att-${Date.now()}`,
             scheduleId: attData.scheduleId || selectedScheduleId,
@@ -1851,7 +1864,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     const groups: Record<string, GroupedStudent> = {};
 
-    studentLocations.forEach((loc, idx) => {
+    // Filter students strictly by selectedKelompokId if a specific group is chosen
+    const scopedLocations = studentLocations.filter((loc) => {
+      if (!selectedKelompokId) return true;
+      const locKelId =
+        (loc as any).kelompokId ||
+        loc.student?.studentProfile?.kelompokId ||
+        loc.student?.studentProfile?.kelompok?.id;
+      if (locKelId && locKelId === selectedKelompokId) return true;
+      // Fallback: check if the student exists in the attendance list for this kelompok/schedule
+      const inAttendance = attendance.some(
+        (a) => a.studentId === loc.studentId || a.student?.id === loc.studentId
+      );
+      return inAttendance;
+    });
+
+    scopedLocations.forEach((loc, idx) => {
       const lat = Number(loc.latitude);
       const lng = Number(loc.longitude);
       if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
@@ -2043,7 +2071,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     });
 
     return items;
-  }, [studentLocations, attendance, activeSchedule, mapZoom]);
+  }, [studentLocations, attendance, activeSchedule, mapZoom, selectedKelompokId]);
 
   const STANDARD_CATEGORIES = [
     "Sosialisasi",
@@ -3082,22 +3110,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
 
               {/* Boundary 6 Kelurahan */}
-              {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                <Polygon
-                  key={`kel-${kg.id}`}
-                  positions={kg.bounds}
-                  pathOptions={{
-                    color: kg.color,
-                    fillColor: kg.color,
-                    fillOpacity: 0.12,
-                    weight: 1.5,
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs font-bold p-1">Kelurahan {kg.name}</div>
-                  </Popup>
-                </Polygon>
-              ))}
+              {Object.values(KELURAHAN_GEODATA).map((kg) => {
+                const selectedGroup = selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId) : null;
+                const isMatchingKelurahan = selectedGroup?.kelurahan
+                  ? selectedGroup.kelurahan.toLowerCase().includes(kg.name.toLowerCase()) ||
+                    kg.name.toLowerCase().includes(selectedGroup.kelurahan.toLowerCase())
+                  : false;
+                const isSelectedMode = Boolean(selectedKelompokId);
+
+                return (
+                  <Polygon
+                    key={`kel-${kg.id}`}
+                    positions={kg.bounds}
+                    pathOptions={{
+                      color: kg.color,
+                      fillColor: kg.color,
+                      fillOpacity: isSelectedMode ? (isMatchingKelurahan ? 0.2 : 0.03) : 0.12,
+                      weight: isSelectedMode ? (isMatchingKelurahan ? 2.5 : 1) : 1.5,
+                      dashArray: isSelectedMode && !isMatchingKelurahan ? "4, 6" : undefined,
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs font-bold p-1">Kelurahan {kg.name}</div>
+                    </Popup>
+                  </Polygon>
+                );
+              })}
 
               {/* Geofence Kegiatan - Mode Single Schedule ATAU Mode Global Seluruh Kelompok */}
               {activeSchedule ? (
@@ -3163,6 +3201,47 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     return null;
                   })()}
                 </>
+              ) : selectedKelompokId ? (
+                /* Mode Single Kelompok: Jika belum ada jadwal aktif hari ini, tampilkan Posko KKN Kelompok tersebut saja */
+                (() => {
+                  const grp = groups.find((g) => g.id === selectedKelompokId);
+                  if (!grp) return null;
+                  const locInfo = getKelompokLocationInfo(grp);
+                  const center = locInfo.centroid;
+                  const groupName = grp.name || "Posko KKN";
+                  return (
+                    <React.Fragment key={`posko-geofence-${grp.id}`}>
+                      <Marker position={center} icon={createPoskoZoneIcon(groupName)}>
+                        <Popup>
+                          <div className="p-2.5 font-sans space-y-1.5 text-xs min-w-[180px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="font-extrabold text-emerald-900 dark:text-emerald-300 text-xs">
+                                {groupName}
+                              </span>
+                            </div>
+                            <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              Posko KKN {grp.kelurahan || "Wilayah KKN"}
+                            </div>
+                            <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold">
+                              Geofence Posko: 200 meter
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                      <Circle
+                        center={center}
+                        radius={200}
+                        pathOptions={{
+                          color: "#059669",
+                          fillColor: "#10b981",
+                          fillOpacity: 0.22,
+                          weight: 2.5,
+                        }}
+                      />
+                    </React.Fragment>
+                  );
+                })()
               ) : (
                 /* Mode Global Overview: Tampilkan Seluruh Zona Geofence 32 Kelompok */
                 <>
@@ -3263,8 +3342,25 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </>
               )}
 
-              {/* Real Facilities GIS Markers */}
-              {facilities.map((fac) => {
+              {/* Real Facilities GIS Markers - Filtered by Kelompok when selected */}
+              {facilities
+                .filter((fac) => {
+                  if (!selectedKelompokId) return true;
+                  if (fac.kelompokId && fac.kelompokId === selectedKelompokId) return true;
+                  const selectedGroup = groups.find((g) => g.id === selectedKelompokId);
+                  if (selectedGroup?.cakupanRw && fac.rwId) {
+                    try {
+                      const cakupan = typeof selectedGroup.cakupanRw === "string"
+                        ? JSON.parse(selectedGroup.cakupanRw)
+                        : selectedGroup.cakupanRw;
+                      if (Array.isArray(cakupan)) {
+                        return cakupan.includes(fac.rwId) || cakupan.includes(Number(fac.rwId));
+                      }
+                    } catch {}
+                  }
+                  return false;
+                })
+                .map((fac) => {
                 const lat = Number(fac.latitude);
                 const lng = Number(fac.longitude);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;

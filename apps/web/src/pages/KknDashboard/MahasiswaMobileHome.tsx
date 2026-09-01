@@ -72,9 +72,19 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
 
       let attendedCount = 0;
       if (presensiRes.status === "fulfilled") {
-        const presensiList = presensiRes.value.data?.data || [];
+        const presensiData = presensiRes.value.data?.data;
+        const presensiList = Array.isArray(presensiData)
+          ? presensiData
+          : Array.isArray(presensiData?.items)
+          ? presensiData.items
+          : [];
         attendedCount = presensiList.length;
-        const active = presensiList.find((p: any) => p.statusPresensi === "AKTIF" || !p.jamPulang);
+        const active = presensiList.find(
+          (p: any) =>
+            p.status === "AKTIF" ||
+            p.statusPresensi === "AKTIF" ||
+            (!p.checkOutAt && !p.jamPulang)
+        );
         setActiveAttendance(active || null);
       }
 

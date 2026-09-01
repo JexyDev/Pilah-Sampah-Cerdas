@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { prisma } from "../lib/prisma.js";
 import { kknService } from "./kknService.js";
 
@@ -248,5 +248,85 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
       },
     });
     expect(allPointsAfter.length).toBe(0);
+  });
+
+  it("MOBILE HABIL: should support mobile payload { program, teknologi, volumeBahanBaku } and { hasil }", async () => {
+    const report = await kknService.createLogbookPemanfaatan(studentUser1.id, {
+      teknologi: "Maggot BSF",
+      bahanBaku: "Sampah Makanan",
+      beratInputKg: 30,
+    });
+    expect(report).toHaveProperty("id");
+    createdReportIds.push(report.id);
+
+    // 1. Mobile payload edit pemanfaatan: { program, teknologi, volumeBahanBaku }
+    const updated = await kknService.updateLogbookPemanfaatan(studentUser1.id, report.id, {
+      program: "Budidaya Maggot RW 01",
+      teknologi: "Maggot BSF Moderen",
+      volumeBahanBaku: 55,
+    });
+    expect(updated.program).toBe("Budidaya Maggot RW 01");
+    expect(updated.teknologi).toBe("Maggot BSF Moderen");
+    expect(Number(updated.volumeBahanBaku)).toBe(55);
+
+    // 2. Mobile payload edit panen: { hasil }
+    const updatedPanen = await kknService.updatePanenHasil(studentUser1.id, report.id, {
+      hasil: 18.5,
+    });
+    expect(Number(updatedPanen.hasil)).toBe(18.5);
+
+    // 3. Mobile delete panen (reset hasil to 0)
+    const resetPanen = await kknService.deletePanenHasil(studentUser1.id, report.id);
+    expect(resetPanen.success).toBe(true);
+    const checkAfterReset = await prisma.pemanfaatan.findUnique({ where: { id: report.id } });
+    expect(Number(checkAfterReset?.hasil)).toBe(0);
+
+    // 4. Mobile hard delete pemanfaatan
+    const deleted = await kknService.deleteLogbookPemanfaatan(studentUser1.id, report.id);
+    expect(deleted.success).toBe(true);
+    const checkDeleted = await prisma.pemanfaatan.findUnique({ where: { id: report.id } });
+    expect(checkDeleted).toBeNull();
+  });
+
+  it("LOGBOOK ISOLATION: Mahasiswa KKN should only see their own logbooks (penulisId isolation)", async () => {
+    const { logbookService } = await import("./logbookService.js");
+
+    const log1 = await prisma.logbookKkn.create({
+      data: {
+        kelompokId: testKelompok.id,
+        penulisId: studentUser1.id,
+        tanggalKegiatan: new Date(),
+        tempat: "Posko 1",
+        deskripsi: "Logbook User 1",
+        fotoBuktiUrl: "/uploads/user1.jpg",
+      },
+    });
+
+    const log2 = await prisma.logbookKkn.create({
+      data: {
+        kelompokId: testKelompok.id,
+        penulisId: studentUser2.id,
+        tanggalKegiatan: new Date(),
+        tempat: "Posko 2",
+        deskripsi: "Logbook User 2",
+        fotoBuktiUrl: "/uploads/user2.jpg",
+      },
+    });
+
+    try {
+      const user1Logbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "MAHASISWA_KKN", {});
+      const user1Ids = user1Logbooks.map((l: any) => l.id);
+      expect(user1Ids).toContain(log1.id);
+      expect(user1Ids).not.toContain(log2.id);
+
+      const user2Logbooks = await logbookService.getMahasiswaLogbooks(studentUser2.id, "MAHASISWA_KKN", {});
+      const user2Ids = user2Logbooks.map((l: any) => l.id);
+      expect(user2Ids).toContain(log2.id);
+      expect(user2Ids).not.toContain(log1.id);
+    } finally {
+      await prisma.logbookKkn.deleteMany({
+        where: { id: { in: [log1.id, log2.id] } },
+      });
+    }
   });
 });

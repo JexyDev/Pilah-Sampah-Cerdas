@@ -113,7 +113,7 @@ export class ConfigService {
       lateSubmissionPenaltyActive: map["late_submission_penalty_active"] !== "false",
 
       // Rule 3: Waktu Minimal di Lokasi Absen (Presensi Mahasiswa KKN)
-      attendanceMinDurationHours: parseInt(map["attendance_min_duration_hours"] || "2", 10),
+      attendanceMinDurationHours: parseInt(map["attendance_min_duration_hours"] || "4", 10),
       attendanceMinDurationMinutes: parseInt(map["attendance_min_duration_minutes"] || "0", 10),
       attendanceMinDurationSeconds: parseInt(map["attendance_min_duration_seconds"] || "0", 10),
       attendanceOutOfZoneToleranceMinutes: parseInt(
@@ -220,7 +220,7 @@ export class ConfigService {
         key: "late_submission_penalty_active",
         value: String(data.lateSubmissionPenaltyActive ?? true),
       },
-      { key: "attendance_min_duration_hours", value: String(data.attendanceMinDurationHours ?? 2) },
+      { key: "attendance_min_duration_hours", value: String(data.attendanceMinDurationHours ?? 4) },
       {
         key: "attendance_min_duration_minutes",
         value: String(data.attendanceMinDurationMinutes ?? 0),

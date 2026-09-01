@@ -82,7 +82,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Ambil Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
   useEffect(() => {
@@ -94,9 +95,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   // 2. Timer untuk Sesi Aktif
   useEffect(() => {
     let interval: any;
-    if (activeSession && activeSession.jamMasuk) {
+    const startWaktu = activeSession?.jamMasuk || activeSession?.checkInAt;
+    if (activeSession && startWaktu) {
       const updateTimer = () => {
-        const start = new Date(activeSession.jamMasuk).getTime();
+        const start = new Date(startWaktu).getTime();
         const now = Date.now();
         const diffSec = Math.max(0, Math.floor((now - start) / 1000));
         const hrs = String(Math.floor(diffSec / 3600)).padStart(2, "0");
@@ -152,17 +154,36 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     try {
       setIsLoadingHistory(true);
       const res = await api.get("/presensi/mandiri/saya");
-      const list = res.data?.data || [];
+      const rawData = res.data?.data;
+      const list: any[] = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.items)
+        ? rawData.items
+        : [];
       setHistoryList(list);
 
-      const active = list.find((item: any) => item.statusPresensi === "AKTIF" || !item.jamPulang);
+      const active = list.find(
+        (item: any) =>
+          item.status === "AKTIF" ||
+          item.statusPresensi === "AKTIF" ||
+          (!item.checkOutAt && !item.jamPulang)
+      );
       if (active) {
-        setActiveSession(active);
+        setActiveSession({
+          id: active.presensiId || active.id,
+          jamMasuk: active.checkInAt || active.jamMasuk,
+          jamPulang: active.checkOutAt || active.jamPulang,
+          deskripsiKegiatan: active.deskripsiKegiatan,
+          fotoBuktiUrl: active.fotoUrl || active.fotoBuktiUrl,
+          status: active.status || active.statusPresensi,
+          ...active,
+        });
       } else {
         setActiveSession(null);
       }
     } catch (err) {
       console.error("Gagal memuat riwayat presensi", err);
+      setHistoryList([]);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -230,11 +251,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
       const previewUrl = URL.createObjectURL(compressed);
       setFotoPreview(previewUrl);
-      showToast.success("Foto kegiatan berhasil diambil & dioptimasi!");
+      showToast.success("Foto kegiatan berhasil dimuat & dioptimasi!");
     } catch (err) {
       console.error("Gagal memproses foto", err);
       setFotoFile(file);
       setFotoPreview(URL.createObjectURL(file));
+    } finally {
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   };
 
@@ -288,10 +312,12 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   // 6. Submit Presensi Check-Out
   const handleCheckOut = async () => {
     if (!activeSession) return;
+    const targetId = activeSession.id || activeSession.presensiId;
+    if (!targetId) return;
 
     setIsSubmitting(true);
     try {
-      const res = await api.patch(`/presensi/mandiri/${activeSession.id}/checkout`, {
+      const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
         deskripsiKegiatan: activeSession.deskripsiKegiatan,
       });
 
@@ -430,7 +456,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="space-y-0.5">
               <p className="text-[10px] text-slate-400 font-medium">Durasi Wajib</p>
               <p className="font-bold text-slate-800 dark:text-slate-200">
-                {primaryKegiatan.durasiWajibMenit || 120} Menit
+                {primaryKegiatan.durasiWajibMenit || 240} Menit ({((primaryKegiatan.durasiWajibMenit || 240) / 60).toFixed(1).replace(/\.0$/, "")} Jam)
               </p>
             </div>
           </div>
@@ -550,7 +576,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {activeSession.jamMasuk ? new Date(activeSession.jamMasuk).toLocaleTimeString("id-ID") : "-"}
+                {(activeSession.jamMasuk || activeSession.checkInAt)
+                  ? new Date(activeSession.jamMasuk || activeSession.checkInAt).toLocaleTimeString("id-ID")
+                  : "-"}
               </span>
             </div>
             <div className="flex justify-between items-start text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
@@ -561,10 +589,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </div>
           </div>
 
-          {activeSession.fotoBuktiUrl && (
+          {(activeSession.fotoBuktiUrl || activeSession.fotoUrl) && (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-48">
               <img
-                src={activeSession.fotoBuktiUrl}
+                src={activeSession.fotoBuktiUrl || activeSession.fotoUrl}
                 alt="Bukti Kehadiran"
                 className="w-full h-full object-cover"
               />
@@ -597,14 +625,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <p className="text-[11px] text-slate-500">Ambil foto kegiatan lapangan dan berikan ringkasan tugas.</p>
           </div>
 
-          {/* Trigger Kamera Langsung (iOS Safari Native Camera) */}
+          {/* Foto Bukti Kegiatan (Kamera Langsung & Galeri) */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-              1. Foto Bukti Kegiatan (Kamera Langsung) *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                1. Foto Bukti Kegiatan *
+              </label>
+              <span className="text-[10px] text-slate-400">Kamera atau Galeri</span>
+            </div>
 
+            {/* Input khusus Kamera Langsung (iOS / Android Environment) */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
@@ -612,46 +644,90 @@ export const MahasiswaPresensiMobile: React.FC = () => {
               onChange={handlePhotoCapture}
             />
 
+            {/* Input khusus Unggah File / Galeri Foto */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoCapture}
+            />
+
             {fotoPreview ? (
               <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-sm max-h-52">
                 <img src={fotoPreview} alt="Preview Foto" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-black/30 pointer-events-none" />
                 <button
                   type="button"
                   onClick={() => {
                     setFotoFile(null);
                     setFotoPreview(null);
+                    if (cameraInputRef.current) cameraInputRef.current.value = "";
+                    if (galleryInputRef.current) galleryInputRef.current.value = "";
                   }}
-                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 text-white rounded-full hover:bg-slate-900 transition cursor-pointer"
+                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 text-white rounded-full hover:bg-rose-600 transition cursor-pointer shadow-md"
+                  title="Hapus Foto"
                 >
                   <X size={14} />
                 </button>
-                <div className="absolute bottom-2 left-2 right-2 py-1 px-2.5 bg-slate-900/75 backdrop-blur-sm rounded-xl text-[10px] text-white font-bold flex items-center justify-between">
-                  <span>Foto Terkompresi Siap Kirim</span>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="underline text-emerald-300"
-                  >
-                    Ulangi Foto
-                  </button>
+                <div className="absolute bottom-2 left-2 right-2 py-1.5 px-3 bg-slate-900/85 backdrop-blur-sm rounded-xl text-[10px] text-white font-bold flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                    <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                    <span className="truncate">{fotoFile?.name || "Foto Siap Kirim"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="underline text-emerald-300 hover:text-emerald-200 cursor-pointer"
+                    >
+                      Kamera
+                    </button>
+                    <span className="text-slate-500">|</span>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="underline text-teal-300 hover:text-teal-200 cursor-pointer"
+                    >
+                      Galeri
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-6 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 transition-all cursor-pointer group"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Camera size={24} />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                    Buka Kamera iPhone / Ambil Foto
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Mendukung format foto &amp; otomatis kompresi</p>
-                </div>
-              </button>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="py-5 px-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 transition-all cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Camera size={22} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Ambil Foto
+                    </p>
+                    <p className="text-[9.5px] text-slate-400 mt-0.5">Buka kamera gawai</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="py-5 px-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 transition-all cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <ImageIcon size={22} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Pilih Galeri
+                    </p>
+                    <p className="text-[9.5px] text-slate-400 mt-0.5">Unggah dari album</p>
+                  </div>
+                </button>
+              </div>
             )}
           </div>
 
@@ -702,7 +778,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <History size={16} className="text-emerald-600" />
             <span>Riwayat Kehadiran Terakhir</span>
           </div>
-          <span className="text-[10px] text-slate-400">{historyList.length} Sesi</span>
+          <span className="text-[10px] text-slate-400">{(Array.isArray(historyList) ? historyList : []).length} Sesi</span>
         </div>
 
         {isLoadingHistory ? (
@@ -710,33 +786,33 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <Loader2 size={20} className="animate-spin text-emerald-600" />
             <span>Memuat riwayat...</span>
           </div>
-        ) : historyList.length === 0 ? (
+        ) : (Array.isArray(historyList) ? historyList : []).length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-4">Belum ada catatan presensi.</p>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {historyList.slice(0, 5).map((item, idx) => (
-              <div key={item.id || idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+            {(Array.isArray(historyList) ? historyList : []).slice(0, 5).map((item, idx) => (
+              <div key={item.id || item.presensiId || idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
                 <div className="min-w-0">
                   <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
                     {item.deskripsiKegiatan || "Aktivitas Lapangan"}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {item.jamMasuk ? new Date(item.jamMasuk).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
-                    • Masuk: {item.jamMasuk ? new Date(item.jamMasuk).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
+                    {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
+                    • Masuk: {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
                   </p>
                 </div>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 ${
                     item.statusPresensi === "TIDAK_ADA_KEGIATAN" || item.status === "TIDAK_ADA_KEGIATAN"
                       ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      : item.jamPulang
+                      : (item.jamPulang || item.checkOutAt)
                       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                       : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                   }`}
                 >
                   {item.statusPresensi === "TIDAK_ADA_KEGIATAN" || item.status === "TIDAK_ADA_KEGIATAN"
                     ? "Tidak Ada Kegiatan"
-                    : item.jamPulang
+                    : (item.jamPulang || item.checkOutAt)
                     ? "Selesai"
                     : "Sedang Aktif"}
                 </span>

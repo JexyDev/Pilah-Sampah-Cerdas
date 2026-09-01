@@ -1302,7 +1302,7 @@ export class KknAttendanceService {
       ruleConfigs.attendanceMinDurationHours * 60 +
       ruleConfigs.attendanceMinDurationMinutes +
       ruleConfigs.attendanceMinDurationSeconds / 60;
-    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 240;
 
     let isAttended = false;
     let attendanceStatus: string | null = null;
@@ -1555,7 +1555,7 @@ export class KknAttendanceService {
 
         let recordStatus = isAutoAlpa ? "ALPA" : "HADIR_MEMENUHI";
         if (!isAutoAlpa && actLoc) {
-          const targetMins = actLoc.targetDurationMinutes || 120;
+          const targetMins = actLoc.targetDurationMinutes || 240;
           const actualMins = existing.actualInZoneMinutes ?? 0;
           if (targetMins > 0 && actualMins < targetMins) {
             recordStatus = "HADIR_TIDAK_MEMENUHI";
@@ -2022,6 +2022,9 @@ export class KknAttendanceService {
         select: { userId: true },
       });
       targetStudentIds = students.map((s) => s.userId);
+      if (targetStudentIds.length === 0) {
+        return [];
+      }
     } else if (dplUserId) {
       const kelompokBinaan = await prisma.kelompokKkn.findMany({
         where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
@@ -2033,6 +2036,9 @@ export class KknAttendanceService {
         select: { userId: true },
       });
       targetStudentIds = students.map((s) => s.userId);
+      if (targetStudentIds.length === 0) {
+        return [];
+      }
     }
 
     // Group by student to get the latest position of each active student
@@ -2056,6 +2062,14 @@ export class KknAttendanceService {
               select: {
                 nim: true,
                 jurusan: true,
+                kelompokId: true,
+                kelompok: {
+                  select: {
+                    id: true,
+                    name: true,
+                    kelurahan: true,
+                  },
+                },
               },
             },
           },
@@ -2836,7 +2850,7 @@ export class KknAttendanceService {
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
         ruleConfigs.attendanceMinDurationMinutes +
-        Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 120;
+        Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 240;
 
     let targetDate = new Date();
     if (targetTanggal) {
@@ -3587,7 +3601,7 @@ export class KknAttendanceService {
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
         ruleConfigs.attendanceMinDurationMinutes +
-        Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 120;
+        Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 240;
 
     return {
       sessionId: `SES-${schedule.id.slice(0, 8)}-${studentUserId.slice(-6)}`,
