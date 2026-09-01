@@ -406,12 +406,19 @@ export const scheduleService = {
               dayCleanedDuplicates++;
             }
 
-            // Perbarui titik koordinat, nama, dan radius jadwal utama jika berubah
+            // Perbarui titik koordinat, nama, dan radius jadwal utama jika berubah.
+            // Adaptasi aman: Jika jadwal yang sudah ada (primarySchedule) memiliki radius kustom di database (misal > 500m atau sudah disetel di database)
+            // dan posko resmi tidak secara spesifik memiliki nilai radius baru, pertahankan radius kustom tersebut agar tidak tertimpa kembali ke default 500m.
+            const existingScheduleRadius = Number(primarySchedule.radius) || 0;
+            const targetScheduleRadius = (officialPosko && Number(officialPosko.radius) > 0)
+              ? Math.max(150, Number(officialPosko.radius))
+              : (existingScheduleRadius > 0 ? existingScheduleRadius : poskoRadius);
+
             if (
               Number(primarySchedule.latitude) !== poskoLat ||
               Number(primarySchedule.longitude) !== poskoLng ||
               primarySchedule.location !== poskoName ||
-              Number(primarySchedule.radius) !== poskoRadius
+              Number(primarySchedule.radius) !== targetScheduleRadius
             ) {
               await prisma.schedule.update({
                 where: { id: primarySchedule.id },
@@ -420,7 +427,7 @@ export const scheduleService = {
                   longitude: poskoLng,
                   location: poskoName,
                   title: `Kegiatan Harian ${poskoName}`,
-                  radius: poskoRadius,
+                  radius: targetScheduleRadius,
                 },
               });
             }

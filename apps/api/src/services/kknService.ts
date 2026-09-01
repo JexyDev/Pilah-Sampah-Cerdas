@@ -4761,7 +4761,9 @@ export class KknService {
     } else {
       tipeArea = "RADIUS";
       polygonKoordinat = null;
-      radiusMeters = kelompok.schedules?.[0]?.radius || 500;
+      const customPoskoRadius = kelompok.poskoKkn?.radius ? Number(kelompok.poskoKkn.radius) : null;
+      const customScheduleRadius = kelompok.schedules?.[0]?.radius ? Number(kelompok.schedules[0].radius) : null;
+      radiusMeters = customPoskoRadius || customScheduleRadius || 500;
     }
 
     return {
