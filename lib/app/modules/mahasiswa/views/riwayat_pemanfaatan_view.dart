@@ -27,26 +27,47 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         elevation: 0,
       ),
 
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'btn1',
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
-            label: const Text('Catat Hasil', style: TextStyle(color: Colors.white)),
-            icon: const Icon(Icons.eco, color: Colors.white),
-            backgroundColor: AppColors.primaryGreen,
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10, offset: const Offset(0, -5)),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
+                  icon: const Icon(Icons.recycling, size: 18, color: Colors.white),
+                  label: const Text('Lapor Pemanfaatan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
+                  icon: const Icon(Icons.eco, size: 18, color: Colors.white),
+                  label: const Text('Catat Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'btn2',
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
-            label: const Text('Lapor Pemanfaatan', style: TextStyle(color: Colors.white)),
-            icon: const Icon(Icons.recycling, color: Colors.white),
-            backgroundColor: AppColors.primaryBlue,
-          ),
-        ],
+        ),
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -106,8 +127,11 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -149,11 +173,11 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (!isPanen) ...[
-                  OutlinedButton.icon(
+                  TextButton.icon(
                     onPressed: () => _showEditPemanfaatanDialog(context, ref, item),
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text('Edit Input'),
-                    style: OutlinedButton.styleFrom(
+                    style: TextButton.styleFrom(
                       foregroundColor: AppColors.primaryBlue,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: Size.zero,
@@ -162,11 +186,11 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                   const SizedBox(width: 8),
                 ],
                 if (isPanen) ...[
-                  OutlinedButton.icon(
+                  TextButton.icon(
                     onPressed: () => _showEditPanenDialog(context, ref, item),
                     icon: const Icon(Icons.edit, size: 16),
                     label: const Text('Edit Hasil'),
-                    style: OutlinedButton.styleFrom(
+                    style: TextButton.styleFrom(
                       foregroundColor: AppColors.primaryGreen,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: Size.zero,
@@ -174,13 +198,13 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                 ],
-                OutlinedButton.icon(
+                TextButton.icon(
                   onPressed: () => _confirmDelete(context, ref, id, isPanen),
                   icon: const Icon(Icons.delete, size: 16),
                   label: const Text('Hapus'),
-                  style: OutlinedButton.styleFrom(
+                  style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
+                    
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                       minimumSize: Size.zero,
                   ),
@@ -232,53 +256,65 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
   void _showEditPemanfaatanDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
     final id = item['id'].toString();
-    final tcNama = TextEditingController(text: item['namaProgram']?.toString());
     final tcTeknologi = TextEditingController(text: item['jenisProgram']?.toString());
     final tcBerat = TextEditingController(text: item['jumlahBahanMasukKg']?.toString());
     
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Laporan Awal'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Laporan Awal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
-                controller: tcNama,
-                decoration: const InputDecoration(labelText: 'Nama Program'),
-              ),
-              const SizedBox(height: 8),
+              const Text('Metode / Teknologi', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 4),
               TextField(
                 controller: tcTeknologi,
-                decoration: const InputDecoration(labelText: 'Metode / Teknologi'),
+                decoration: InputDecoration(
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
+              const Text('Berat Sampah (Kg)', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 4),
               TextField(
                 controller: tcBerat,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Berat Sampah (Kg)',
+                decoration: InputDecoration(
+                  isDense: true,
                   hintText: 'Maks. 50',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             ],
           ),
         ),
+        actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
             onPressed: () async {
               final val = double.tryParse(tcBerat.text) ?? 0;
               if (val <= 0 || val > 50) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Berat harus antara 0 - 50 Kg (Hard Limit)')));
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Berat harus antara 0 - 50 Kg')));
                 return;
               }
               Navigator.pop(ctx);
               try {
                 final repo = ref.read(kknRepositoryProvider);
                 await repo.updateLogbookPemanfaatan(id, {
-                  'program': tcNama.text,
                   'teknologi': tcTeknologi.text,
                   'volumeBahanBaku': val,
                 });
@@ -292,7 +328,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Simpan'),
+            child: const Text('Simpan', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -302,39 +338,47 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
   void _showEditPanenDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
     final id = item['id'].toString();
     final tcHasil = TextEditingController(text: item['jumlahHasilKg']?.toString());
-    final tcCatatan = TextEditingController(text: item['catatan']?.toString());
     
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Laporan Akhir'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Laporan Akhir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text('Jumlah Hasil (Kg/Liter)', style: TextStyle(fontSize: 12, color: Colors.black54)),
+              const SizedBox(height: 4),
               TextField(
                 controller: tcHasil,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Jumlah Hasil',
+                decoration: InputDecoration(
+                  isDense: true,
                   hintText: 'Maks. 100',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: tcCatatan,
-                decoration: const InputDecoration(labelText: 'Catatan'),
               ),
             ],
           ),
         ),
+        actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
             onPressed: () async {
               final val = double.tryParse(tcHasil.text) ?? 0;
               if (val <= 0 || val > 100) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Hasil harus antara 0 - 100 (Hard Limit)')));
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Hasil harus antara 0 - 100')));
                 return;
               }
               Navigator.pop(ctx);
@@ -342,7 +386,6 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 final repo = ref.read(kknRepositoryProvider);
                 await repo.updatePanenHasil(id, {
                   'hasil': val,
-                  
                 });
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
@@ -354,7 +397,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Simpan'),
+            child: const Text('Simpan', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
