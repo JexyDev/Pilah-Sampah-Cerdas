@@ -19,6 +19,25 @@ import {
 } from "./kknAttendanceService.js";
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
+import { smartZoneService } from "./smartZoneService.js";
+
+vi.mock("./smartZoneService.js", () => {
+  return {
+    smartZoneService: {
+      isStudentInGroupZone: vi.fn().mockResolvedValue({
+        isInside: false,
+        matchedPosko: null,
+        matchedPoskoId: null,
+        matchedMethod: "NONE",
+        distanceToNearest: 9999,
+        nearestPoskoName: null,
+        allPoskos: [],
+        autoPolygonActive: false,
+      }),
+      updateGroupAutoPolygon: vi.fn().mockResolvedValue(undefined),
+    },
+  };
+});
 
 vi.mock("../lib/prisma.js", () => {
   return {
@@ -48,6 +67,10 @@ vi.mock("../lib/prisma.js", () => {
         create: vi.fn(),
         update: vi.fn(),
         upsert: vi.fn(),
+      },
+      poskoKkn: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
       },
       pointHistory: {
         findFirst: vi.fn(),
@@ -1234,4 +1257,120 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(calculateTotalJedaMinutes(att)).toBe(0);
     });
   });
+
+  describe("mulaiKegiatan - Multi-Posko & Geofence Fallback", () => {
+    const studentUserId = "mhs-multiposko-1";
+    const scheduleId = "sch-multiposko-1";
+    const kelompokId = "kel-multiposko-1";
+
+    const baseSchedule = {
+      id: scheduleId,
+      title: "Kegiatan Harian KKN",
+      date: new Date(),
+      time: "00:00 - 23:59",
+      latitude: -6.8915,
+      longitude: 107.6107,
+      radius: 100,
+      isActive: true,
+      kelompokId,
+    };
+
+    const baseStudent = {
+      userId: studentUserId,
+      nim: "130121099",
+      jurusan: "Informatika",
+      kelompokId,
+      user: {
+        id: studentUserId,
+        name: "Mahasiswa Multi Posko",
+        phone: "08123456789",
+      },
+    };
+
+    beforeEach(() => {
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue(baseSchedule as any);
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue(baseStudent as any);
+      vi.mocked(prisma.poskoKkn.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({
+        id: "att-created-1",
+        studentId: studentUserId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date(),
+      } as any);
+      vi.mocked(prisma.studentLocation.create).mockResolvedValue({ id: "loc-1" } as any);
+    });
+
+    it("should succeed when student starts kegiatan inside primary posko geofence", async () => {
+      const result = await service.mulaiKegiatan(studentUserId, scheduleId, {
+        latitude: -6.8915,
+        longitude: 107.6107,
+        deviceInfo: "Android 14",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.attendanceStatus).toBe("BERLANGSUNG");
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalled();
+    });
+
+    it("should succeed with SmartZone fallback when student is at alternative multi-posko", async () => {
+      // Koordinat di posko alternatif (misal 1 km dari posko utama)
+      const altLat = -6.9000;
+      const altLng = 107.6200;
+
+      vi.mocked(smartZoneService.isStudentInGroupZone).mockResolvedValueOnce({
+        isInside: true,
+        matchedPosko: "Posko Cabang RW 05",
+        matchedPoskoId: "posko-cabang-5",
+        matchedMethod: "POSKO_MULTI",
+        distanceToNearest: 10,
+        nearestPoskoName: "Posko Cabang RW 05",
+        allPoskos: [],
+        autoPolygonActive: false,
+      });
+
+      const result = await service.mulaiKegiatan(studentUserId, scheduleId, {
+        latitude: altLat,
+        longitude: altLng,
+        poskoId: "posko-cabang-5",
+        deskripsiKegiatan: "Mulai piket posko alternatif",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.attendanceStatus).toBe("BERLANGSUNG");
+      expect(smartZoneService.isStudentInGroupZone).toHaveBeenCalledWith(
+        altLat,
+        altLng,
+        kelompokId,
+        expect.any(Number)
+      );
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalled();
+    });
+
+    it("should throw OUT_OF_GEOFENCE when student is outside primary posko and outside all multi-poskos", async () => {
+      const farLat = -6.9900;
+      const farLng = 107.7500;
+
+      vi.mocked(smartZoneService.isStudentInGroupZone).mockResolvedValueOnce({
+        isInside: false,
+        matchedPosko: null,
+        matchedPoskoId: null,
+        matchedMethod: "NONE",
+        distanceToNearest: 15000,
+        nearestPoskoName: "Posko Utama",
+        allPoskos: [],
+        autoPolygonActive: false,
+      });
+
+      await expect(
+        service.mulaiKegiatan(studentUserId, scheduleId, {
+          latitude: farLat,
+          longitude: farLng,
+        })
+      ).rejects.toThrow(/OUT_OF_GEOFENCE/);
+    });
+  });
 });
+

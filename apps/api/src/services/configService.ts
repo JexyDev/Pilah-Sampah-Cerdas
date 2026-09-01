@@ -304,7 +304,7 @@ export class ConfigService {
       (await this.getConfig("app_update_url")) ||
       (await this.getConfig("update_url")) ||
       process.env.APP_UPDATE_URL ||
-      "https://play.google.com/store/apps/details?id=com.berseka.app";
+      "https://berseka.id/downloads/berseka-release-arm64-v8a.apk";
 
     return {
       min_required_version: minRequired.trim(),

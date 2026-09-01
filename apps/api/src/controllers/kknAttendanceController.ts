@@ -571,6 +571,7 @@ export const kknAttendanceController = {
         deviceInfo,
         deskripsiKegiatan: rawDeskripsi,
         fotoUrl: finalFotoUrl,
+        poskoId: req.body.poskoId,
       });
 
       res.status(200).json({
