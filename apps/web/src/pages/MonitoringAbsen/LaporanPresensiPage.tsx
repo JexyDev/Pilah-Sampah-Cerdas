@@ -1389,9 +1389,9 @@ export const LaporanPresensiPage: React.FC = () => {
                         <td className="py-3.5 px-4 text-center">
                           <button
                             type="button"
-                            onClick={() => handleViewStudentDetails(student.namaMahasiswa)}
+                            onClick={() => handleOpenStudentLogModal(student)}
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition border border-slate-200 dark:border-slate-700 cursor-pointer shadow-2xs active:scale-95"
-                            title="Lihat riwayat log kehadiran harian mahasiswa ini"
+                            title="Lihat riwayat log kehadiran harian dan bukti jejak mahasiswa ini"
                           >
                             <span>Lihat Log</span>
                             <ArrowRight size={12} />
@@ -1618,7 +1618,7 @@ export const LaporanPresensiPage: React.FC = () => {
                           )}
                         </td>
 
-                        {/* Deskripsi Kegiatan */}
+                        {/* Deskripsi Kegiatan & Catatan Jeda */}
                         <td className="py-3.5 px-4">
                           {item.deskripsiKegiatan ? (
                             <div className="max-w-xs">
@@ -1642,6 +1642,16 @@ export const LaporanPresensiPage: React.FC = () => {
                             </div>
                           ) : (
                             <span className="text-slate-400 italic text-[11px]">Tidak ada catatan</span>
+                          )}
+
+                          {item.jedaLogs && item.jedaLogs.length > 0 && (
+                            <div className="mt-1.5 p-1.5 rounded-lg bg-amber-50 dark:bg-amber-955/60 border border-amber-200 dark:border-amber-800/80 text-[10px] text-amber-900 dark:text-amber-200 flex items-start gap-1 max-w-xs">
+                              <PauseCircle size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="font-bold">Jeda: </span>
+                                <span>{item.jedaLogs[item.jedaLogs.length - 1]?.alasan || "Sesi Dijeda"}</span>
+                              </div>
+                            </div>
                           )}
                         </td>
 
@@ -1670,6 +1680,36 @@ export const LaporanPresensiPage: React.FC = () => {
                         {/* Aksi */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const st = studentAggregates.find((s) => s.studentId === item.studentId || s.nim === item.nim) || {
+                                  studentId: item.studentId,
+                                  namaMahasiswa: item.namaMahasiswa,
+                                  nim: item.nim,
+                                  jurusan: item.jurusan,
+                                  fotoProfil: item.fotoProfil,
+                                  isKetua: item.isKetua,
+                                  kelompok: item.kelompok,
+                                  totalSessions: 1,
+                                  totalMinutes: item.durasiMenit,
+                                  totalHours: Math.round((item.durasiMenit / 60) * 10) / 10,
+                                  totalFormatted: item.durasiFormatted,
+                                  avgMinutesPerDay: item.durasiMenit,
+                                  avgFormatted: item.durasiFormatted,
+                                  hadirMemenuhi: item.isMemenuhiDurasi ? 1 : 0,
+                                  hadirKurang: !item.isMemenuhiDurasi ? 1 : 0,
+                                  berlangsung: item.status === "BERLANGSUNG" ? 1 : 0,
+                                  terjeda: item.status === "TERJEDA" ? 1 : 0,
+                                  izinSakit: item.status.includes("IZIN") || item.status.includes("SAKIT") ? 1 : 0,
+                                };
+                                handleOpenStudentLogModal(st);
+                              }}
+                              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 dark:text-emerald-300 rounded-lg transition border border-emerald-200 dark:border-emerald-800 cursor-pointer shadow-2xs"
+                              title="Lihat Log Lengkap & Bukti Jejak Mahasiswa"
+                            >
+                              <Eye size={13} />
+                            </button>
                             {isBerlangsung && (
                               <button
                                 type="button"

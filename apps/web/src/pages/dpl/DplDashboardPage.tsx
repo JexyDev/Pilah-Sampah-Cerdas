@@ -429,7 +429,7 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
-  // Export Excel (.xlsx) Riwayat Validasi Izin & Sakit (Absensi)
+  // Export Excel (.xlsx) Riwayat Validasi Izin / Sakit (Absensi)
   const handleExportAbsensiExcel = () => {
     if (!approvalStartDate || !approvalEndDate) {
       toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
@@ -437,7 +437,7 @@ export const DplDashboardPage: React.FC = () => {
     }
 
     if (!filteredApprovalHistory || filteredApprovalHistory.length === 0) {
-      toast.error("Tidak ada data riwayat izin & sakit pada rentang tanggal yang dipilih.");
+      toast.error("Tidak ada data riwayat izin / sakit pada rentang tanggal yang dipilih.");
       return;
     }
 
@@ -505,7 +505,7 @@ export const DplDashboardPage: React.FC = () => {
       { wch: 22 },
       { wch: 30 },
     ];
-    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Izin & Sakit");
+    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Izin / Sakit");
     XLSX.writeFile(wb, `Rekap_Riwayat_Absensi_Izin_Sakit_${approvalStartDate}_sd_${approvalEndDate}.xlsx`);
     toast.success(
       `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor ke XLSX`
@@ -981,7 +981,7 @@ export const DplDashboardPage: React.FC = () => {
               <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-              Verifikasi Ajuan Izin &amp; Sakit
+              Verifikasi Ajuan Izin / Sakit
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
               Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan.
@@ -1127,8 +1127,8 @@ export const DplDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin &amp; Sakit</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin dan sakit mahasiswa bimbingan.</p>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin / Sakit</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin / sakit mahasiswa bimbingan.</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
