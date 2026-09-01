@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
@@ -178,10 +177,6 @@ export const LogbookKknPage: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configInputDays, setConfigInputDays] = useState<number>(1);
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
-
-  // Delete Confirmation Modal State
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load Data
   const fetchData = async () => {
@@ -1799,18 +1794,6 @@ export const LogbookKknPage: React.FC = () => {
         </div>
       )}
 
-      {/* Confirmation Modal for Delete Logbook */}
-      <ConfirmModal
-        isOpen={!!deleteTargetId}
-        onClose={() => setDeleteTargetId(null)}
-        onConfirm={executeDeleteLogbook}
-        title="Hapus Logbook Aktivitas"
-        message="Apakah Anda yakin ingin menghapus catatan logbook aktivitas ini? Data yang dihapus tidak dapat dikembalikan."
-        confirmText="Hapus Logbook"
-        cancelText="Batal"
-        type="danger"
-        isLoading={isDeleting}
-      />
     </div>
   );
 };
