@@ -628,25 +628,37 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                               p['statusUsulan'] == 'APPROVED';
                         }).toList();
 
-                        return DropdownButtonFormField<String>(
-                          isExpanded: true,
-                          initialValue: _selectedProkerId,
-                          decoration: _inputDecoration(
-                            'Pilih Proker (Jika ada)...',
-                          ),
-                          items: approvedProker
-                              .map(
-                                (p) => DropdownMenuItem(
-                                  value: p['id'].toString(),
+                        return GestureDetector(
+                          onTap: () => _showProkerPicker(approvedProker),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundCanvas,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
                                   child: Text(
-                                    p['judul'],
-                                    style: const TextStyle(fontSize: 14),
+                                    _selectedProkerId != null
+                                        ? approvedProker.firstWhere(
+                                            (p) => p['id']?.toString() == _selectedProkerId,
+                                            orElse: () => {'judul': 'Pilih Proker (Jika ada)...'},
+                                          )['judul']?.toString() ?? 'Pilih Proker (Jika ada)...'
+                                        : 'Tidak terkait proker',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              )
-                              .toList(),
-                          onChanged: (val) =>
-                              setState(() => _selectedProkerId = val),
+                                const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textSecondary),
+                              ],
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -673,25 +685,37 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
                             style: const TextStyle(color: AppColors.dangerRed),
                           ),
                           data: (list) {
-                            return DropdownButtonFormField<String>(
-                              isExpanded: true,
-                              initialValue: _selectedFasilitasId,
-                              decoration: _inputDecoration(
-                                'Pilih Fasilitas (Jika ada)...',
-                              ),
-                              items: list
-                                  .map(
-                                    (f) => DropdownMenuItem(
-                                      value: f['id'].toString(),
+                            return GestureDetector(
+                              onTap: () => _showFasilitasPicker(list),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.backgroundCanvas,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.border),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
                                       child: Text(
-                                        f['nama'] ?? '-',
-                                        style: const TextStyle(fontSize: 14),
+                                        _selectedFasilitasId != null
+                                            ? list.firstWhere(
+                                                (f) => f['id']?.toString() == _selectedFasilitasId,
+                                                orElse: () => {'nama': 'Pilih Fasilitas (Jika ada)...'},
+                                              )['nama']?.toString() ?? 'Pilih Fasilitas (Jika ada)...'
+                                            : 'Tidak terkait fasilitas',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                  )
-                                  .toList(),
-                              onChanged: (val) =>
-                                  setState(() => _selectedFasilitasId = val),
+                                    const Icon(Icons.arrow_drop_down_rounded, color: AppColors.textSecondary),
+                                  ],
+                                ),
+                              ),
                             );
                           },
                         );
@@ -1268,6 +1292,240 @@ class _InputLogbookKknViewState extends ConsumerState<InputLogbookKknView> {
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: AppColors.dangerRed),
+      ),
+    );
+  }
+
+  void _showProkerPicker(List<dynamic> prokerList) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (_, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        const Text('Pilih Program Kerja', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.only(bottom: 32),
+                      children: [
+                        _buildOptionItem(
+                          ctx: ctx,
+                          id: null,
+                          currentSelectedId: _selectedProkerId,
+                          title: 'Tidak terkait proker',
+                          description: 'Logbook ini tidak berhubungan dengan program kerja manapun',
+                          icon: Icons.link_off_rounded,
+                          onSelect: (id) => setState(() => _selectedProkerId = id),
+                        ),
+                        ...prokerList.map((p) => _buildOptionItem(
+                          ctx: ctx,
+                          id: p['id']?.toString(),
+                          currentSelectedId: _selectedProkerId,
+                          title: p['judul']?.toString() ?? '-',
+                          description: 'Ketuk untuk mengaitkan logbook ini dengan program kerja tersebut',
+                          icon: Icons.work_outline_rounded,
+                          onSelect: (id) => setState(() => _selectedProkerId = id),
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showFasilitasPicker(List<dynamic> fasilitasList) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.4,
+          maxChildSize: 0.9,
+          builder: (_, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        const Text('Pilih Fasilitas Warga', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.only(bottom: 32),
+                      children: [
+                        _buildOptionItem(
+                          ctx: ctx,
+                          id: null,
+                          currentSelectedId: _selectedFasilitasId,
+                          title: 'Tidak terkait fasilitas',
+                          description: 'Logbook ini tidak berhubungan dengan fasilitas warga manapun',
+                          icon: Icons.link_off_rounded,
+                          onSelect: (id) => setState(() => _selectedFasilitasId = id),
+                        ),
+                        ...fasilitasList.map((f) => _buildOptionItem(
+                          ctx: ctx,
+                          id: f['id']?.toString(),
+                          currentSelectedId: _selectedFasilitasId,
+                          title: f['nama']?.toString() ?? '-',
+                          description: f['deskripsi']?.toString() ?? 'Ketuk untuk mengaitkan dengan fasilitas ini',
+                          icon: Icons.eco_rounded,
+                          onSelect: (id) => setState(() => _selectedFasilitasId = id),
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildOptionItem({
+    required BuildContext ctx,
+    required String? id,
+    required String? currentSelectedId,
+    required String title,
+    required String description,
+    required IconData icon,
+    required ValueChanged<String?> onSelect,
+  }) {
+    final isSelected = currentSelectedId == id;
+    return InkWell(
+      onTap: () {
+        onSelect(id);
+        Navigator.pop(ctx);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFFE8F5E9) : const Color(0xFFF5F7FA),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 20,
+                color: isSelected ? AppColors.primaryGreen : AppColors.textHint,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.primaryGreen : Colors.grey.shade300,
+                  width: isSelected ? 6 : 1,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

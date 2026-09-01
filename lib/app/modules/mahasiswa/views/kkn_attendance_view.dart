@@ -12,6 +12,7 @@ import '../../auth/controllers/auth_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../../../data/models/group_zone_models.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -152,6 +153,270 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Tampilkan Bottom Sheet untuk memilih Posko sebelum memulai kegiatan.
+  /// Mengembalikan [PoskoItem] yang dipilih, atau [null] jika dibatalkan.
+  Future<PoskoItem?> _showPilihPoskoSheet(List<PoskoItem> poskoList) async {
+    // Jika hanya ada 1 posko, langsung kembalikan tanpa perlu memilih
+    if (poskoList.length == 1) return poskoList.first;
+
+    PoskoItem? selected = poskoList.firstWhere(
+      (p) => p.isUtama,
+      orElse: () => poskoList.first,
+    );
+
+    return await showModalBottomSheet<PoskoItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.home_work_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pilih Lokasi Tugas',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Sesuaikan dengan posko penugasan Anda',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+                // Daftar posko
+                ...poskoList.map((posko) {
+                  final isSelected = selected?.id == posko.id;
+                  final isUtama = posko.isUtama || posko.type == 'POSKO_UTAMA';
+                  return GestureDetector(
+                    onTap: () => setSheetState(() => selected = posko),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryGreen.withValues(alpha: 0.08)
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryGreen
+                              : Colors.grey.shade200,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // Radio indicator
+                          Container(
+                            width: 22, height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                    : Colors.grey.shade400,
+                                width: 2,
+                              ),
+                            ),
+                            child: isSelected
+                                ? Center(
+                                    child: Container(
+                                      width: 12, height: 12,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 14),
+                          // Icon posko
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (isUtama
+                                  ? AppColors.primaryGreen
+                                  : Colors.blue)
+                                  .withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isUtama ? Icons.home_work_rounded : Icons.home_rounded,
+                              color: isUtama ? AppColors.primaryGreen : Colors.blue,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Detail
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        posko.nama,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected
+                                              ? AppColors.primaryGreen
+                                              : AppColors.textPrimary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (isUtama) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text(
+                                          'Utama',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: AppColors.primaryGreen,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on_outlined,
+                                      size: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Flexible(
+                                      child: Text(
+                                        posko.alamat.isNotEmpty ? posko.alamat : 'Lokasi posko',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'R: ${posko.radius}m',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isSelected
+                                            ? AppColors.primaryGreen
+                                            : Colors.grey,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8),
+                // Tombol Mulai
+                ElevatedButton.icon(
+                  onPressed: selected != null
+                      ? () => Navigator.of(ctx).pop(selected)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                  icon: const Icon(Icons.play_circle_rounded, size: 20),
+                  label: Text(
+                    selected != null
+                        ? 'Mulai di ${selected!.nama}'
+                        : 'Pilih Posko Terlebih Dahulu',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -1038,11 +1303,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         .toString()
                         .toUpperCase();
 
-                if (statusAktifSekarang == 'BERLANGSUNG' || statusAktifSekarang == 'TERJEDA') {
-                  // Kami HAPUS early return di sini agar selalu menembak API mulai/resume
-                  // untuk mensinkronkan ulang state backend dan memaksa timer berjalan.
-                }
-
                 // Cek kegiatan LAIN yang sedang BERLANGSUNG
                 final activeId =
                     state.activeActivity?['id']?.toString() ??
@@ -1074,11 +1334,43 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   return;
                 }
 
-                // Selalu hit backend terlebih dahulu
-                final result = await notifier.mulaiKegiatan(id);
+                // ── PILIH POSKO ──────────────────────────────────────────────
+                // Tampilkan bottom sheet pilih posko HANYA saat sesi baru (bukan resume).
+                // Saat BERLANGSUNG/TERJEDA, langsung resume tanpa pilih posko ulang.
+                Map<String, dynamic>? selectedPoskoMap;
+                final isResuming = statusAktifSekarang == 'BERLANGSUNG' ||
+                    statusAktifSekarang == 'TERJEDA';
+
+                if (!isResuming) {
+                  final mapState = ref.read(kknMapProvider);
+                  final poskoList = mapState.groupZone?.poskoList ?? [];
+
+                  if (poskoList.isNotEmpty) {
+                    if (!mounted) return;
+                    final chosen = await _showPilihPoskoSheet(poskoList);
+                    // Jika user menutup sheet tanpa memilih, batalkan
+                    if (chosen == null) return;
+                    selectedPoskoMap = {
+                      'id': chosen.id,
+                      'nama': chosen.nama,
+                      'alamat': chosen.alamat,
+                      'latitude': chosen.latitude,
+                      'longitude': chosen.longitude,
+                      'radius': chosen.radius,
+                      'type': chosen.type,
+                    };
+                  }
+                }
+                // ─────────────────────────────────────────────────────────────
+
+                final result = await notifier.mulaiKegiatan(
+                  id,
+                  selectedPosko: selectedPoskoMap,
+                );
                 if (result == null) {
                   if (mounted) {
                     ref.read(authProvider.notifier).fetchProfile();
+                    final poskoName = selectedPoskoMap?['nama']?.toString();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -1086,7 +1378,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             ? 'Sesi berhasil dilanjutkan.'
                             : statusAktifSekarang == 'BERLANGSUNG'
                                 ? 'Sinkronisasi sesi aktif berhasil.'
-                                : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
+                                : poskoName != null
+                                    ? '+10 Poin! Kegiatan dimulai di $poskoName.'
+                                    : '+10 Poin berhasil didapatkan dari Presensi Masuk!',
                         ),
                         backgroundColor: AppColors.primaryGreen,
                       ),
@@ -1410,6 +1704,72 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   value: pos != null ? '$lat, $lng' : '-',
                 ),
                 _buildDashedDivider(),
+                if (state.selectedPoskoName != null) ...[
+                  // Banner zona posko yang dipilih
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          state.selectedPoskoType == 'POSKO_UTAMA'
+                              ? Icons.home_work_rounded
+                              : Icons.home_rounded,
+                          color: AppColors.primaryGreen,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Zona Tracking Aktif',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              Text(
+                                state.selectedPoskoName!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (state.selectedPoskoType == 'POSKO_UTAMA')
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Utama',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _buildIconDetailRow(
                   icon: Icons.location_on_rounded,
                   title: 'Target Lokasi',

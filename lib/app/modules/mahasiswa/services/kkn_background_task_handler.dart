@@ -604,7 +604,7 @@ class KknBackgroundTaskHandler extends TaskHandler {
       final cleanBaseUrl = _apiBaseUrl!.endsWith('/')
           ? _apiBaseUrl!.substring(0, _apiBaseUrl!.length - 1)
           : _apiBaseUrl!;
-      final url = Uri.parse('$cleanBaseUrl/location-ping');
+      final url = Uri.parse('$cleanBaseUrl/kkn-attendance/location-ping');
       final request = await client.postUrl(url);
       
       request.headers.set('content-type', 'application/json');

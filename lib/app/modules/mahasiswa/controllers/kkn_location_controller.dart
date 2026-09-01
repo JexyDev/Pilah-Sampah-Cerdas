@@ -80,6 +80,9 @@ class KknLocationState {
     this.outOfZoneSeconds = 0,
     this.isAutoStarted = false,
     this.smartZoneStatus,
+    this.selectedPoskoId,
+    this.selectedPoskoName,
+    this.selectedPoskoType,
   });
 
   final String? attendanceId;
@@ -91,6 +94,11 @@ class KknLocationState {
   final int outOfZoneSeconds;
   final bool isAutoStarted;
   final Map<String, dynamic>? smartZoneStatus; // Smart Zone status payload
+
+  /// Posko yang dipilih mahasiswa sebelum mulai kegiatan
+  final String? selectedPoskoId;
+  final String? selectedPoskoName;
+  final String? selectedPoskoType; // 'POSKO_UTAMA' | 'POSKO_MULTI'
 
   KknLocationState copyWith({
     Position? currentPosition,
@@ -116,11 +124,15 @@ class KknLocationState {
     int? outOfZoneSeconds,
     bool? isAutoStarted,
     Map<String, dynamic>? smartZoneStatus,
+    String? selectedPoskoId,
+    String? selectedPoskoName,
+    String? selectedPoskoType,
     bool clearError = false,
     bool clearActivity = false,
     bool clearWarning = false,
     bool clearKegiatan = false,
     bool clearSession = false,
+    bool clearPosko = false,
   }) {
     return KknLocationState(
       currentPosition: currentPosition ?? this.currentPosition,
@@ -155,6 +167,9 @@ class KknLocationState {
       outOfZoneSeconds: outOfZoneSeconds ?? this.outOfZoneSeconds,
       isAutoStarted: isAutoStarted ?? this.isAutoStarted,
       smartZoneStatus: smartZoneStatus ?? this.smartZoneStatus,
+      selectedPoskoId: clearPosko ? null : (selectedPoskoId ?? this.selectedPoskoId),
+      selectedPoskoName: clearPosko ? null : (selectedPoskoName ?? this.selectedPoskoName),
+      selectedPoskoType: clearPosko ? null : (selectedPoskoType ?? this.selectedPoskoType),
     );
   }
 }
@@ -497,9 +512,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   }
 
   /// Mulai kegiatan KKN: panggil endpoint, lalu start GPS background
+  /// [selectedPosko] — jika diisi, koordinat posko ini yang dipakai sebagai zona geofence
+  /// menggantikan koordinat default dari response backend.
   Future<String?> mulaiKegiatan(
     String kegiatanId, {
     bool isAuto = false,
+    Map<String, dynamic>? selectedPosko,
   }) async {
     final hasPermission = await _checkPermissions();
     if (!hasPermission) {
@@ -557,9 +575,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       _zoneEntryTime = DateTime.now();
       await _savePersistentTimer(); // pakai userId-aware key
 
-      // Parse lokasi dari response
+      // Parse lokasi dari response backend
       final lokasi = response['lokasi'] as Map<String, dynamic>?;
-      final targetData = <String, dynamic>{
+      Map<String, dynamic> targetData = <String, dynamic>{
         ...response,
         if (lokasi != null) ...{
           'latitude': lokasi['latitude'],
@@ -571,7 +589,31 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         'geofenceBufferMeters': response['geofenceBufferMeters'] ?? 15.0,
         'invalidationHours': response['invalidationHours'] ?? 2.0,
         'namaKegiatan': response['namaKegiatan'] ?? 'Kegiatan KKN',
+        'attendanceStatus': response['attendanceStatus'] ?? 'BERLANGSUNG',
+        'statusKehadiran': response['statusKehadiran'] ?? 'BERLANGSUNG',
       };
+
+      // [PILIH POSKO] Jika mahasiswa memilih posko tertentu, koordinat posko itu
+      // menggantikan koordinat default dari backend sebagai zona geofence-nya.
+      if (selectedPosko != null) {
+        final poskoLat = (selectedPosko['latitude'] as num?)?.toDouble();
+        final poskoLng = (selectedPosko['longitude'] as num?)?.toDouble();
+        final poskoRadius = (selectedPosko['radius'] as num?)?.toDouble() ?? 150.0;
+        final poskoAddress = selectedPosko['alamat']?.toString() ??
+            selectedPosko['nama']?.toString() ??
+            'Posko KKN';
+        if (poskoLat != null && poskoLng != null) {
+          targetData = {
+            ...targetData,
+            'latitude': poskoLat,
+            'longitude': poskoLng,
+            'radius': poskoRadius,
+            'address': poskoAddress,
+            // Hapus polygon default dari backend — geofence sekarang lingkaran posko
+            'polygon': null,
+          };
+        }
+      }
 
       final durasiWajib =
           (int.tryParse(response['durasiWajibMenit']?.toString() ?? '') ?? 120)
@@ -602,6 +644,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isTracking: false, // Reset agar startTracking() tidak skip
         clearError: true,
         attendanceTime: response['attendedAt']?.toString(),
+        // Simpan posko yang dipilih ke state (null jika tidak dipilih)
+        selectedPoskoId: selectedPosko?['id']?.toString(),
+        selectedPoskoName: selectedPosko?['nama']?.toString(),
+        selectedPoskoType: selectedPosko?['type']?.toString(),
       );
 
       // [FIX A2] Start GPS tracking dengan flag forceBackgroundStart
@@ -692,6 +738,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             true, // Tambahkan ini agar mergedData tidak mewarisi aktivitas lama
         isAutoStarted: false,
         outOfZoneSeconds: 0,
+        clearPosko: true, // Reset pilihan posko agar sesi berikutnya bisa pilih ulang
       );
     }
 

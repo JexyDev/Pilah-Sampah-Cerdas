@@ -692,7 +692,7 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo}) async {
+  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo, String? poskoId}) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknMulaiKegiatan(id),
@@ -700,6 +700,7 @@ class ApiKknRepository implements KknRepository {
           'latitude': latitude,
           'longitude': longitude,
           if (deviceInfo != null) 'deviceInfo': deviceInfo,
+          if (poskoId != null) 'poskoId': poskoId,
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
