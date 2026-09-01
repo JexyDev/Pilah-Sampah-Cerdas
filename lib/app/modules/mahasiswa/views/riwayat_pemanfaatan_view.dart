@@ -19,10 +19,32 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat Pemanfaatan & Panen'),
+        title: const Text('Data Pemanfaatan & Hasil'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+      ),
+
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'btn1',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
+            label: const Text('Catat Hasil', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.eco, color: Colors.white),
+            backgroundColor: AppColors.primaryGreen,
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'btn2',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
+            label: const Text('Lapor Pemanfaatan', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.recycling, color: Colors.white),
+            backgroundColor: AppColors.primaryBlue,
+          ),
+        ],
       ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -41,7 +63,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         ),
         data: (data) {
           if (data.isEmpty) {
-            return const Center(child: Text('Belum ada riwayat pemanfaatan/panen'));
+            return const Center(child: Text('Belum ada riwayat pemanfaatan/hasil'));
           }
 
           return RefreshIndicator(
@@ -118,7 +140,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
             const SizedBox(height: 8),
             Text('Teknologi: $jenisProgram', style: const TextStyle(fontSize: 13, color: Colors.black87)),
             Text('Input Sampah: $bahanMasuk Kg', style: const TextStyle(fontSize: 13, color: Colors.black87)),
-            if (isPanen) Text('Hasil Panen: $hasil $unit', style: const TextStyle(fontSize: 13, color: Colors.black87)),
+            if (isPanen) Text('Total Hasil: $hasil $unit', style: const TextStyle(fontSize: 13, color: Colors.black87)),
             Text('Tanggal: $tglStr', style: const TextStyle(fontSize: 13, color: Colors.black54)),
             const Divider(height: 24),
             Row(
@@ -141,7 +163,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () => _showEditPanenDialog(context, ref, item),
                     icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('Edit Panen'),
+                    label: const Text('Edit Hasil'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primaryGreen,
                       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -283,7 +305,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Laporan Akhir (Panen)'),
+        title: const Text('Edit Laporan Akhir'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -292,7 +314,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 controller: tcHasil,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Jumlah Panen',
+                  labelText: 'Jumlah Hasil',
                   hintText: 'Maks. 100',
                 ),
               ),
@@ -310,7 +332,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
             onPressed: () async {
               final val = double.tryParse(tcHasil.text) ?? 0;
               if (val <= 0 || val > 100) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Hasil panen harus antara 0 - 100 (Hard Limit)')));
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Hasil harus antara 0 - 100 (Hard Limit)')));
                 return;
               }
               Navigator.pop(ctx);

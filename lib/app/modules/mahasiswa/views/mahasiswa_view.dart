@@ -873,84 +873,31 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                       ),
                     ),
                     builder: (context) => SafeArea(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ListTile(
-                            leading: const Icon(
-                              Icons.add,
-                              color: AppColors.primaryGreen,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.list_alt_rounded, color: AppColors.primaryBlue),
+                              title: const Text('Data Program Kerja'),
+                              subtitle: const Text('Lihat & ajukan usulan proker', style: TextStyle(fontSize: 11)),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.pushNamed(context, AppRoutes.dataProker);
+                              },
                             ),
-                            title: const Text('Ajukan Program Kerja'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.pengajuanProgramKerja,
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.list_alt_rounded,
-                              color: AppColors.primaryBlue,
+                            ListTile(
+                              leading: const Icon(Icons.recycling_rounded, color: AppColors.primaryGreen),
+                              title: const Text('Data Pemanfaatan & Hasil'),
+                              subtitle: const Text('Riwayat & catat pemanfaatan', style: TextStyle(fontSize: 11)),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.pushNamed(context, AppRoutes.riwayatPemanfaatan);
+                              },
                             ),
-                            title: const Text('Data Program Kerja'),
-                            subtitle: const Text('Lihat & edit usulan proker', style: TextStyle(fontSize: 11)),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.dataProker,
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.recycling_rounded,
-                              color: AppColors.primaryBlue,
-                            ),
-                            title: const Text('Lapor Pemanfaatan Sampah'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.logbookPemanfaatan,
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.eco_rounded,
-                              color: AppColors.primaryGreen,
-                            ),
-                            title: const Text('Catat Hasil'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.catatPanen,
-                              );
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(
-                              Icons.history_edu_rounded,
-                              color: AppColors.primaryBlue,
-                            ),
-                            title: const Text('Riwayat Pemanfaatan & Panen'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(
-                                context,
-                                AppRoutes.riwayatPemanfaatan,
-                              );
-                            },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
+                    );
                 },
               ),
             ),

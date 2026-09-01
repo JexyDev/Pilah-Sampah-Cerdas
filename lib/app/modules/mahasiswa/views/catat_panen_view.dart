@@ -124,7 +124,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
           builder: (context) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Batalkan Catat Panen?', style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text('Batalkan Catat Hasil?', style: TextStyle(fontWeight: FontWeight.bold)),
               content: const Text('Perubahan ini akan terhapus jika Anda keluar dari halaman ini.'),
               actions: [
                 TextButton(
@@ -200,7 +200,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
               const SizedBox(height: 16),
 
               _buildSectionCard(
-                title: 'Data Panen',
+                title: 'Data Hasil',
                 icon: Icons.eco_rounded,
                 children: [
                   const Text('Berat Hasil Jadi (Output)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -331,7 +331,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                         children: [
                           Icon(Icons.save_rounded, size: 20),
                           SizedBox(width: 10),
-                          Text('Simpan Panen', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          Text('Simpan Hasil', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                         ],
                       ),
               ),
@@ -569,7 +569,7 @@ class _CatatPanenViewState extends ConsumerState<CatatPanenView> {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Catat hasil panen dari kegiatan pemanfaatan sampah yang sudah disetujui.',
+                  'Catat hasil dari kegiatan pemanfaatan sampah yang sudah disetujui.',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
                 ),
               ],
