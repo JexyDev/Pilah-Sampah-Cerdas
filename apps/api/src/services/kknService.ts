@@ -2946,18 +2946,21 @@ export class KknService {
         attStatUpper === "DI_ZONA"
       ) {
         attendanceStatus = "berlangsung";
-      } else if (attStatUpper === "HADIR_MEMENUHI") {
-        attendanceStatus = "hadir_memenuhi";
-        isMemenuhiDurasi = true;
-      } else if (attStatUpper === "HADIR_TIDAK_MEMENUHI" || attStatUpper === "SELESAI_TELAT") {
-        attendanceStatus = "hadir_tidak_memenuhi";
-        isMemenuhiDurasi = false;
       } else if (
+        attStatUpper === "HADIR_MEMENUHI" ||
+        attStatUpper === "HADIR_TIDAK_MEMENUHI" ||
+        attStatUpper === "SELESAI_TELAT" ||
         attStatUpper === "HADIR" ||
         attStatUpper === "SELESAI" ||
         attendanceForActiveSchedule.checkOutAt !== null
       ) {
-        attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
+        if (attStatUpper === "SELESAI_TELAT") {
+          attendanceStatus = "hadir_tidak_memenuhi";
+          isMemenuhiDurasi = false;
+        } else {
+          attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
+          isMemenuhiDurasi = isDurMet;
+        }
       } else {
         attendanceStatus = attStatUpper.toLowerCase();
       }
