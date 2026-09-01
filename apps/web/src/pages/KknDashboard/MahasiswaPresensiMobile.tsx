@@ -456,7 +456,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="space-y-0.5">
               <p className="text-[10px] text-slate-400 font-medium">Durasi Wajib</p>
               <p className="font-bold text-slate-800 dark:text-slate-200">
-                {primaryKegiatan.durasiWajibMenit || 120} Menit
+                {primaryKegiatan.durasiWajibMenit || 240} Menit ({((primaryKegiatan.durasiWajibMenit || 240) / 60).toFixed(1).replace(/\.0$/, "")} Jam)
               </p>
             </div>
           </div>

@@ -1191,7 +1191,7 @@ export const dplService = {
               const diffMs = Math.max(0, Date.now() - new Date(a.attendedAt).getTime());
               totalMinutes += Math.min(480, Math.round(diffMs / (1000 * 60)));
             } else {
-              totalMinutes += Math.round((configTargets.targetHarianJam || 2) * 60);
+              totalMinutes += Math.round((configTargets.targetHarianJam || 4) * 60);
             }
           }
         }
@@ -1327,7 +1327,7 @@ export const dplService = {
               const diffMs = Math.max(0, Date.now() - new Date(a.attendedAt).getTime());
               totalMinutes += Math.min(480, Math.round(diffMs / (1000 * 60)));
             } else {
-              totalMinutes += Math.round((configTargets.targetHarianJam || 2) * 60);
+              totalMinutes += Math.round((configTargets.targetHarianJam || 4) * 60);
             }
           }
         }

@@ -2691,7 +2691,7 @@ export class KknService {
       ruleConfigs.attendanceMinDurationHours * 60 +
       ruleConfigs.attendanceMinDurationMinutes +
       ruleConfigs.attendanceMinDurationSeconds / 60;
-    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 240;
 
     // Hitung batas hari WIB (UTC+7) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â jadwal disimpan UTC, harus query dengan window WIB
     const nowForBoundary = new Date();
@@ -4213,9 +4213,16 @@ export class KknService {
       fotoDokumentasiUrl,
       foto,
       fotoBukti,
+      program,
+      namaProgram,
     } = payload;
 
     const updatePemanfaatanData: any = {};
+
+    const cleanProgram = program || namaProgram;
+    if (cleanProgram) {
+      updatePemanfaatanData.program = cleanProgram;
+    }
 
     const cleanTeknologi = jenisPemanfaatan || teknologi;
     if (cleanTeknologi) {
@@ -4327,6 +4334,7 @@ export class KknService {
 
     return {
       id: updatedPemanfaatan?.id || logbookTarget?.id,
+      program: updatedPemanfaatan?.program || cleanProgram || existing?.program,
       teknologi: updatedPemanfaatan?.teknologi || cleanTeknologi,
       bahanBaku: updatedPemanfaatan?.bahanBaku || cleanBahanBaku,
       volumeBahanBaku: updatedPemanfaatan
