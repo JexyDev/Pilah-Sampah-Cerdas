@@ -61,7 +61,7 @@ export const beritaService = {
     if (params?.kategori) query.set("kategori", params.kategori);
     if (params?.search) query.set("search", params.search);
 
-    const res = await api.get(`/api/v1/berita?${query.toString()}`);
+    const res = await api.get(`/berita?${query.toString()}`);
     return res.data;
   },
 
@@ -69,7 +69,7 @@ export const beritaService = {
    * [PUBLIC] Ambil detail berita by slug
    */
   getBySlug: async (slug: string): Promise<BeritaItem> => {
-    const res = await api.get(`/api/v1/berita/${slug}`);
+    const res = await api.get(`/berita/${slug}`);
     return res.data.data;
   },
 
@@ -90,7 +90,7 @@ export const beritaService = {
     if (params?.kategori) query.set("kategori", params.kategori);
     if (params?.search) query.set("search", params.search);
 
-    const res = await api.get(`/api/v1/berita/admin/list?${query.toString()}`);
+    const res = await api.get(`/berita/admin/list?${query.toString()}`);
     return res.data;
   },
 
@@ -98,7 +98,7 @@ export const beritaService = {
    * [ADMIN] Ambil detail berita by ID
    */
   getById: async (id: string): Promise<BeritaItem> => {
-    const res = await api.get(`/api/v1/berita/admin/${id}`);
+    const res = await api.get(`/berita/admin/${id}`);
     return res.data.data;
   },
 
@@ -106,7 +106,7 @@ export const beritaService = {
    * [ADMIN] Buat berita baru
    */
   create: async (payload: CreateBeritaPayload): Promise<BeritaItem> => {
-    const res = await api.post("/api/v1/berita", payload);
+    const res = await api.post("/berita", payload);
     return res.data.data;
   },
 
@@ -114,7 +114,7 @@ export const beritaService = {
    * [ADMIN] Update konten berita
    */
   update: async (id: string, payload: Partial<CreateBeritaPayload>): Promise<BeritaItem> => {
-    const res = await api.put(`/api/v1/berita/${id}`, payload);
+    const res = await api.put(`/berita/${id}`, payload);
     return res.data.data;
   },
 
@@ -122,7 +122,7 @@ export const beritaService = {
    * [ADMIN] Ubah status: DRAFT → PUBLISHED → ARCHIVED
    */
   changeStatus: async (id: string, status: BeritaStatus): Promise<BeritaItem> => {
-    const res = await api.patch(`/api/v1/berita/${id}/status`, { status });
+    const res = await api.patch(`/berita/${id}/status`, { status });
     return res.data.data;
   },
 
@@ -130,6 +130,6 @@ export const beritaService = {
    * [ADMIN] Hapus berita
    */
   delete: async (id: string): Promise<void> => {
-    await api.delete(`/api/v1/berita/${id}`);
+    await api.delete(`/berita/${id}`);
   },
 };

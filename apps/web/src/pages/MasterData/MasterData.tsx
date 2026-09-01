@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Loader2, Trash2, GraduationCap, MapPin, Phone, Eye, Search, Users, Delete } from "lucide-react";
+import { Loader2, Trash2, GraduationCap, MapPin, Phone, Eye, Search, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMasterDataStore } from "../../store/useMasterDataStore";

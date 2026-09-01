@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
@@ -109,10 +110,11 @@ const resolveHasilOutput = (item: LogbookMahasiswaItem): string => {
   if ((item as any).hasilOutput) return (item as any).hasilOutput;
   if ((item as any).ringkasanImpak) return (item as any).ringkasanImpak;
 
-  const desc = (item.deskripsi || "").toLowerCase();
+  const desc = (item?.deskripsi || "").toLowerCase();
   if (desc.includes("rumah") || desc.includes("kg")) {
-    const rumahMatch = item.deskripsi.match(/(\d+)\s*(rumah|kk|warga)/i);
-    const kgMatch = item.deskripsi.match(/(\d+)\s*(kg|kilogram)/i);
+    const rawDesc = item?.deskripsi || "";
+    const rumahMatch = rawDesc.match(/(\d+)\s*(rumah|kk|warga)/i);
+    const kgMatch = rawDesc.match(/(\d+)\s*(kg|kilogram)/i);
     if (rumahMatch && kgMatch) {
       return `${rumahMatch[1]} rumah binaan • ${kgMatch[1]} kg sampah terkelola`;
     }
@@ -176,6 +178,10 @@ export const LogbookKknPage: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configInputDays, setConfigInputDays] = useState<number>(1);
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
+
+  // Delete Confirmation Modal State
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load Data
   const fetchData = async () => {
@@ -1792,6 +1798,19 @@ export const LogbookKknPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal for Delete Logbook */}
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={executeDeleteLogbook}
+        title="Hapus Logbook Aktivitas"
+        message="Apakah Anda yakin ingin menghapus catatan logbook aktivitas ini? Data yang dihapus tidak dapat dikembalikan."
+        confirmText="Hapus Logbook"
+        cancelText="Batal"
+        type="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

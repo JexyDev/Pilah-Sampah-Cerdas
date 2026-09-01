@@ -146,6 +146,10 @@ export const penilaianKknService = {
         where: {
           studentId,
           status: { notIn: ["TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"] },
+          schedule: {
+            OR: [{ kelompokId: kelompok?.id }, { kelompokId: null }],
+            date: { lte: new Date() },
+          },
         },
         select: {
           status: true,
@@ -249,12 +253,14 @@ export const penilaianKknService = {
       ? `Ketua ${rw.name} (${kelurahan?.name || "Coblong"})`
       : "Mitra Pendamping Lapangan (MPL) RW";
 
-    // 5. Existing Penilaian Record - Default 0 jika belum dinilai di database
+    // 5. Existing Penilaian Record - Default to calculated rates if not yet explicitly saved
     const existing = studentUser.penilaianKkn;
 
     const assessment = existing
       ? {
           ...existing,
+          skorMitraKehadiran:
+            existing.skorMitraKehadiran > 0 ? existing.skorMitraKehadiran : attendanceRate,
           skorDplLogbook:
             existing.skorDplLogbook > 0 ? existing.skorDplLogbook : calculatedLogbookScore,
         }
@@ -265,7 +271,7 @@ export const penilaianKknService = {
           dplId: dpl?.id || null,
           mitraId: null,
           namaMitraPenilai: namaMitra,
-          skorMitraKehadiran: 0,
+          skorMitraKehadiran: attendanceRate,
           skorMitraWargaBinaan: 0,
           skorMitraProker: 0,
           skorMitraKomunikasi: 0,

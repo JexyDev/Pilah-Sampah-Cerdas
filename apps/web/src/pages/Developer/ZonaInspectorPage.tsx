@@ -69,6 +69,7 @@ import api from "../../services/api";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   KELURAHAN_GEODATA,
   CoblongGeo,
@@ -315,6 +316,7 @@ export const ZonaInspectorPage: React.FC = () => {
   });
   const [savingAction, setSavingAction] = useState(false);
   const [deletePoskoTarget, setDeletePoskoTarget] = useState<{ id: string; nama?: string } | null>(null);
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
 
   // Fetch all master data in parallel with strict ID-scoped queries
   const loadAllData = async (isManualRefresh = false) => {
@@ -665,7 +667,6 @@ export const ZonaInspectorPage: React.FC = () => {
 
   const handleConfirmDeletePosko = async () => {
     if (!deletePoskoTarget) return;
-
     setSavingAction(true);
     try {
       await api.delete(`/posko-kkn/${deletePoskoTarget.id}`);
@@ -1247,37 +1248,60 @@ export const ZonaInspectorPage: React.FC = () => {
                 ))}
             </MapContainer>
 
-            {/* Map Legend Overlay */}
-            <div className="absolute bottom-4 left-4 z-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl text-xs max-w-xs pointer-events-auto">
-              <span className="font-extrabold text-slate-800 dark:text-slate-200 block mb-2 text-[11px] uppercase tracking-wider">
-                Legenda Peta
-              </span>
-              <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-white shadow-xs"></span>
-                  <span>Zona Geofence Aman / Mandiri</span>
+            {/* Map Legend Overlay (Collapsible on Mobile) */}
+            <div className="absolute bottom-4 left-4 z-20 pointer-events-auto">
+              {isLegendOpen ? (
+                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl text-xs max-w-xs animate-fade-in">
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <span className="font-extrabold text-slate-800 dark:text-slate-200 text-[11px] uppercase tracking-wider">
+                      Legenda Peta
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsLegendOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition"
+                      title="Sembunyikan Legenda"
+                    >
+                      ✕ Tutup
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 border border-white shadow-xs shrink-0"></span>
+                      <span>Zona Geofence Aman / Mandiri</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full bg-rose-500 border border-white shadow-xs shrink-0"></span>
+                      <span>Zona Overlap / Bertabrakan</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded bg-indigo-600 border border-white shadow-xs shrink-0"></span>
+                      <span>Posko Resmi Terverifikasi (🟢)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded bg-amber-500 border border-dashed border-white shadow-xs shrink-0"></span>
+                      <span>Posko Belum Didaftarkan (🟡)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span>Mahasiswa Di Dalam Zona (GPS)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full bg-amber-500 shrink-0"></span>
+                      <span>Mahasiswa Di Luar Zona (GPS)</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 rounded-full bg-rose-500 border border-white shadow-xs"></span>
-                  <span>Zona Overlap / Bertabrakan</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 rounded bg-indigo-600 border border-white shadow-xs"></span>
-                  <span>Posko Resmi Terverifikasi (🟢)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 rounded bg-amber-500 border border-dashed border-white shadow-xs"></span>
-                  <span>Posko Belum Didaftarkan (🟡)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
-                  <span>Mahasiswa Di Dalam Zona (GPS)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 rounded-full bg-amber-500"></span>
-                  <span>Mahasiswa Di Luar Zona (GPS)</span>
-                </div>
-              </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsLegendOpen(true)}
+                  className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg text-[11px] font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition"
+                >
+                  <Layers size={13} className="text-emerald-600" />
+                  <span>Legenda Peta</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

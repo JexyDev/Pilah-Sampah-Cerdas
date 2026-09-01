@@ -647,7 +647,7 @@ export const PenilaianProkerPage: React.FC = () => {
             Penilaian Program Kerja
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Evaluasi dan penilaian capaian program kerja setiap kelompok KKN yang telah disetujui (dapat dinilai saat program kerja sedang berlangsung atau telah selesai dilaksanakan)
+            Evaluasi dan penilaian capaian program kerja setiap kelompok KKN yang telah disetujui (ACC)
           </p>
         </div>
       </div>

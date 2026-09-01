@@ -13,6 +13,7 @@ import * as XLSX from "xlsx";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 interface DiscrepancyLog {
   id: string;
@@ -371,7 +372,7 @@ export const ReviewDiscrepancy: React.FC = () => {
             <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Daftar Laporan Diskrepansi ({filteredLogs.length})</h3>
             {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>}
           </div>
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-auto flex-1">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800 text-sm text-left relative">
               <thead className="bg-gray-50 dark:bg-slate-800/80 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                 <tr>
@@ -483,9 +484,12 @@ export const ReviewDiscrepancy: React.FC = () => {
                   onClick={() => setIsPhotoModalOpen(true)}
                 >
                   <img 
-                    src={selectedLog.evidencePhotoUrl} 
+                    src={resolveImageUrl(selectedLog.evidencePhotoUrl)} 
                     alt="Bukti Fisik" 
                     className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
                     <span className="opacity-0 group-hover:opacity-100 bg-white/90 dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-slate-200/50 dark:border-slate-700">
@@ -581,7 +585,7 @@ export const ReviewDiscrepancy: React.FC = () => {
               <X size={24} />
             </button>
             <img 
-              src={selectedLog.evidencePhotoUrl} 
+              src={resolveImageUrl(selectedLog.evidencePhotoUrl)} 
               alt="Bukti Fisik Resolusi Tinggi" 
               className="w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
             />

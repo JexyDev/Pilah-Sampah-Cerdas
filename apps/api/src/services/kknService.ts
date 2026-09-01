@@ -2056,6 +2056,7 @@ export class KknService {
           ? payload.foto
           : existing.fotoUrl || undefined,
       keterangan: payload.statusApproval || existing.keterangan || undefined,
+      statusApproval: payload.statusApproval,
     });
 
     try {
