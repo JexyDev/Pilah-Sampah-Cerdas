@@ -78,6 +78,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     final tglStr = tgl != null ? DateFormat('dd MMM yyyy, HH:mm').format(tgl) : '-';
 
     final isPanen = status == 'PANEN';
+    final displayStatus = isPanen ? 'Laporan Pemanfaatan Akhir' : 'Laporan Pemanfaatan Awal';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -104,7 +105,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    status,
+                    displayStatus,
                     style: TextStyle(
                       color: isPanen ? AppColors.primaryGreen : AppColors.primaryBlue,
                       fontWeight: FontWeight.bold,
@@ -207,25 +208,44 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
   void _showEditPemanfaatanDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
     final id = item['id'].toString();
-    final tc = TextEditingController(text: item['jumlahBahanMasukKg']?.toString());
+    final tcNama = TextEditingController(text: item['namaProgram']?.toString());
+    final tcTeknologi = TextEditingController(text: item['jenisProgram']?.toString());
+    final tcBerat = TextEditingController(text: item['jumlahBahanMasukKg']?.toString());
     
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Berat Input (Kg)'),
-        content: TextField(
-          controller: tc,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Berat Sampah (Kg)',
-            hintText: 'Maks. 50',
+        title: const Text('Edit Laporan Awal'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tcNama,
+                decoration: const InputDecoration(labelText: 'Nama Program'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: tcTeknologi,
+                decoration: const InputDecoration(labelText: 'Metode / Teknologi'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: tcBerat,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Berat Sampah (Kg)',
+                  hintText: 'Maks. 50',
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () async {
-              final val = double.tryParse(tc.text) ?? 0;
+              final val = double.tryParse(tcBerat.text) ?? 0;
               if (val <= 0 || val > 50) {
                 ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Berat harus antara 0 - 50 Kg (Hard Limit)')));
                 return;
@@ -234,7 +254,9 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               try {
                 final repo = ref.read(kknRepositoryProvider);
                 await repo.updateLogbookPemanfaatan(id, {
-                  'beratInputKg': val,
+                  'program': tcNama.text,
+                  'teknologi': tcTeknologi.text,
+                  'volumeBahanBaku': val,
                 });
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
@@ -255,25 +277,38 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
 
   void _showEditPanenDialog(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
     final id = item['id'].toString();
-    final tc = TextEditingController(text: item['jumlahHasilKg']?.toString());
+    final tcHasil = TextEditingController(text: item['jumlahHasilKg']?.toString());
+    final tcCatatan = TextEditingController(text: item['catatan']?.toString());
     
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Hasil Panen'),
-        content: TextField(
-          controller: tc,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Jumlah Panen',
-            hintText: 'Maks. 100',
+        title: const Text('Edit Laporan Akhir (Panen)'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tcHasil,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Jumlah Panen',
+                  hintText: 'Maks. 100',
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: tcCatatan,
+                decoration: const InputDecoration(labelText: 'Catatan'),
+              ),
+            ],
           ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
           ElevatedButton(
             onPressed: () async {
-              final val = double.tryParse(tc.text) ?? 0;
+              final val = double.tryParse(tcHasil.text) ?? 0;
               if (val <= 0 || val > 100) {
                 ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Hasil panen harus antara 0 - 100 (Hard Limit)')));
                 return;
@@ -282,7 +317,8 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               try {
                 final repo = ref.read(kknRepositoryProvider);
                 await repo.updatePanenHasil(id, {
-                  'beratOutputKg': val,
+                  'hasil': val,
+                  
                 });
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data berhasil diupdate')));
