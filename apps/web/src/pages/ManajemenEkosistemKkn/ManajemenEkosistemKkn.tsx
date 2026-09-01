@@ -60,6 +60,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
   const [selectedLeaderKelompok, setSelectedLeaderKelompok] = useState<any>(null);
   const [selectedLeaderStudentId, setSelectedLeaderStudentId] = useState<string>("");
   const [submittingLeader, setSubmittingLeader] = useState(false);
+  const [openedLeaderFromDetail, setOpenedLeaderFromDetail] = useState(false);
 
   // Members Management State
   const [allStudentsList, setAllStudentsList] = useState<any[]>([]);
@@ -122,11 +123,23 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     }
   };
 
-  const handleOpenSetLeaderModal = (k: any) => {
+  const handleOpenSetLeaderModal = (k: any, fromDetail = false) => {
     setSelectedLeaderKelompok(k);
     const currentKetua = k.students?.find((s: any) => s.isKetua);
     setSelectedLeaderStudentId(currentKetua?.id || "");
+    setOpenedLeaderFromDetail(fromDetail);
+    if (fromDetail) {
+      setIsDetailModalOpen(false);
+    }
     setIsLeaderModalOpen(true);
+  };
+
+  const handleCloseLeaderModal = () => {
+    setIsLeaderModalOpen(false);
+    if (openedLeaderFromDetail) {
+      setIsDetailModalOpen(true);
+      setOpenedLeaderFromDetail(false);
+    }
   };
 
   const handleSaveLeader = async () => {
@@ -141,12 +154,16 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       );
       setIsLeaderModalOpen(false);
       fetchKelompok();
-      if (selectedDetailKelompok && selectedDetailKelompok.id === selectedLeaderKelompok.id) {
+      if (openedLeaderFromDetail || (selectedDetailKelompok && selectedDetailKelompok.id === selectedLeaderKelompok.id)) {
         const updatedKelompokRes = await api.get(`/kelompok/${selectedLeaderKelompok.id}`);
         if (updatedKelompokRes.data?.data) {
           setSelectedDetailKelompok(updatedKelompokRes.data.data);
+          if (openedLeaderFromDetail) {
+            setIsDetailModalOpen(true);
+          }
         }
       }
+      setOpenedLeaderFromDetail(false);
     } catch (err: any) {
       console.error("[setLeader] error:", err.response?.data || err.message, {
         kelompokId: selectedLeaderKelompok.id,
@@ -1150,7 +1167,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
       {/* DPL Modal: Tunjuk Ketua Kelompok */}
       {isLeaderModalOpen && selectedLeaderKelompok && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-[70] animate-fade-in">
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-up">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-amber-50/50">
               <div className="flex items-center gap-2">
@@ -1160,7 +1177,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 </h3>
               </div>
               <button
-                onClick={() => setIsLeaderModalOpen(false)}
+                onClick={handleCloseLeaderModal}
                 className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X size={20} />
@@ -1228,7 +1245,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               <div className="flex gap-3 justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setIsLeaderModalOpen(false)}
+                  onClick={handleCloseLeaderModal}
                   className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
                 >
                   Batal
@@ -1316,7 +1333,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   {(isDpl || !isReadOnly) && (
                     <button
                       type="button"
-                      onClick={() => handleOpenSetLeaderModal(selectedDetailKelompok)}
+                      onClick={() => handleOpenSetLeaderModal(selectedDetailKelompok, true)}
                       className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 dark:text-amber-400 mt-2 hover:underline cursor-pointer"
                     >
                       <Crown size={12} className="text-amber-600" />
