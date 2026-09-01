@@ -13,7 +13,7 @@ import {
   Clock,
   AlertTriangle,
   RefreshCw,
-  ShieldCheck,
+  PauseCircle,
   Send,
   Loader2,
   Image as ImageIcon,
@@ -85,7 +85,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Live Ping Engine State
-  const [, setLiveInZoneSecs] = useState<number>(0);
+  const [liveInZoneSecs, setLiveInZoneSecs] = useState<number>(0);
   const [isLiveActiveInZone, setIsLiveActiveInZone] = useState<boolean>(false);
   const [, setLastPingTime] = useState<Date | null>(null);
   const [, setIsPingingServer] = useState(false);
