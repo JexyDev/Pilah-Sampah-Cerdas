@@ -4179,22 +4179,21 @@ export class KknAttendanceService {
     let finalStatus = attendance.status;
     let statusDisplay = attendance.status;
 
-    if (attendance.status === "HADIR_MEMENUHI") {
-      finalStatus = "HADIR_MEMENUHI";
-      statusDisplay = "Hadir & Memenuhi";
-    } else if (
+    if (
+      attendance.status === "HADIR_MEMENUHI" ||
       attendance.status === "HADIR_TIDAK_MEMENUHI" ||
-      attendance.status === "SELESAI_TELAT"
-    ) {
-      finalStatus = "HADIR_TIDAK_MEMENUHI";
-      statusDisplay = "Hadir & Tidak Memenuhi";
-    } else if (
+      attendance.status === "SELESAI_TELAT" ||
       attendance.status === "HADIR" ||
       attendance.status === "SELESAI" ||
       Boolean(jamPulang)
     ) {
-      finalStatus = isMemenuhiDurasi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
-      statusDisplay = isMemenuhiDurasi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+      if (attendance.status === "SELESAI_TELAT") {
+        finalStatus = "HADIR_TIDAK_MEMENUHI";
+        statusDisplay = "Hadir & Tidak Memenuhi";
+      } else {
+        finalStatus = isMemenuhiDurasi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+        statusDisplay = isMemenuhiDurasi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
+      }
     }
 
     return {
@@ -4432,14 +4431,22 @@ export class KknAttendanceService {
 
       totalMenitKumulatif += mins;
 
-      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= targetMinMenit)) {
-        hadirMemenuhiCount++;
-      } else if (
-        st === "HADIR_TIDAK_MEMENUHI" ||
-        st === "SELESAI_TELAT" ||
-        (st === "HADIR" && mins < targetMinMenit)
-      ) {
-        hadirKurangCount++;
+      const isFinishedSummary =
+        Boolean(r.checkOutAt) ||
+        [
+          "HADIR_MEMENUHI",
+          "HADIR_TIDAK_MEMENUHI",
+          "HADIR",
+          "SELESAI",
+          "SELESAI_TELAT",
+        ].includes(st);
+
+      if (isFinishedSummary) {
+        if (st === "SELESAI_TELAT" || mins < targetMinMenit) {
+          hadirKurangCount++;
+        } else {
+          hadirMemenuhiCount++;
+        }
       } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") {
         berlangsungCount++;
       } else if (st === "TERJEDA") {
@@ -4480,15 +4487,13 @@ export class KknAttendanceService {
       const agg = studentAggMap.get(sId)!;
       agg.totalSessions++;
       agg.totalMinutes += mins;
-      if (st === "HADIR_MEMENUHI" || (st === "HADIR" && mins >= targetMinMenit))
-        agg.hadirMemenuhi++;
-      else if (
-        st === "HADIR_TIDAK_MEMENUHI" ||
-        st === "SELESAI_TELAT" ||
-        (st === "HADIR" && mins < targetMinMenit)
-      )
-        agg.hadirKurang++;
-      else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") agg.berlangsung++;
+      if (isFinishedSummary) {
+        if (st === "SELESAI_TELAT" || mins < targetMinMenit) {
+          agg.hadirKurang++;
+        } else {
+          agg.hadirMemenuhi++;
+        }
+      } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") agg.berlangsung++;
       else if (st === "TERJEDA") agg.terjeda++;
       else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
     }
