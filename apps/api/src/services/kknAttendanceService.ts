@@ -3169,15 +3169,21 @@ export class KknAttendanceService {
         } else if (att.status === "TIDAK_ADA_KEGIATAN" || att.status === "SKIP_KEGIATAN") {
           statusKehadiran = "TIDAK_ADA_KEGIATAN";
           isMemenuhiDurasi = false;
-        } else if (att.status === "HADIR_MEMENUHI") {
-          statusKehadiran = "HADIR_MEMENUHI";
-          isMemenuhiDurasi = true;
-        } else if (att.status === "HADIR_TIDAK_MEMENUHI" || att.status === "SELESAI_TELAT") {
-          statusKehadiran = "HADIR_TIDAK_MEMENUHI";
-          isMemenuhiDurasi = false;
-        } else if (att.checkOutAt || att.status === "HADIR" || att.status === "SELESAI") {
-          statusKehadiran = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
-          isMemenuhiDurasi = isMemenuhi;
+        } else if (
+          att.status === "HADIR_MEMENUHI" ||
+          att.status === "HADIR_TIDAK_MEMENUHI" ||
+          att.status === "SELESAI_TELAT" ||
+          att.checkOutAt ||
+          att.status === "HADIR" ||
+          att.status === "SELESAI"
+        ) {
+          if (att.status === "SELESAI_TELAT") {
+            statusKehadiran = "HADIR_TIDAK_MEMENUHI";
+            isMemenuhiDurasi = false;
+          } else {
+            statusKehadiran = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+            isMemenuhiDurasi = isMemenuhi;
+          }
         } else if (att.status === "BERLANGSUNG") {
           statusKehadiran = "BERLANGSUNG";
           isMemenuhiDurasi = isMemenuhi;
