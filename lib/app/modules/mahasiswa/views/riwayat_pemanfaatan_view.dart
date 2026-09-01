@@ -42,12 +42,13 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => Navigator.pushNamed(context, AppRoutes.logbookPemanfaatan),
                   icon: const Icon(Icons.recycling, size: 18, color: Colors.white),
-                  label: const Text('Lapor Pemanfaatan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  label: const Text('Lapor Data', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    shape: const StadiumBorder(),
                   ),
                 ),
               ),
@@ -56,12 +57,13 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => Navigator.pushNamed(context, AppRoutes.catatPanen),
                   icon: const Icon(Icons.eco, size: 18, color: Colors.white),
-                  label: const Text('Catat Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  label: const Text('Catat Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    minimumSize: Size.zero,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    shape: const StadiumBorder(),
                   ),
                 ),
               ),
@@ -297,6 +299,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 16)),
             child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
@@ -304,6 +307,8 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               backgroundColor: AppColors.primaryGreen,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               elevation: 0,
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             onPressed: () async {
               final val = double.tryParse(tcBerat.text) ?? 0;
@@ -367,6 +372,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(minimumSize: Size.zero, padding: const EdgeInsets.symmetric(horizontal: 16)),
             child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
@@ -374,6 +380,8 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
               backgroundColor: AppColors.primaryGreen,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               elevation: 0,
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
             onPressed: () async {
               final val = double.tryParse(tcHasil.text) ?? 0;
