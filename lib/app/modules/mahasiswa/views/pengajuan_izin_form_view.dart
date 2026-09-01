@@ -664,36 +664,6 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             ),
             const SizedBox(height: 28),
 
-            // Submit Button
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: (_isSubmitting || _isDateBlocked) ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  disabledBackgroundColor: Colors.grey.shade300,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        height: 22, width: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.send_rounded, size: 20, color: Colors.white),
-                          SizedBox(width: 10),
-                          Text(
-                            'Kirim Pengajuan ke DPL',
-                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
           ],
         ),
