@@ -82,7 +82,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Ambil Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
   useEffect(() => {
@@ -250,11 +251,14 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
       const previewUrl = URL.createObjectURL(compressed);
       setFotoPreview(previewUrl);
-      showToast.success("Foto kegiatan berhasil diambil & dioptimasi!");
+      showToast.success("Foto kegiatan berhasil dimuat & dioptimasi!");
     } catch (err) {
       console.error("Gagal memproses foto", err);
       setFotoFile(file);
       setFotoPreview(URL.createObjectURL(file));
+    } finally {
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   };
 
@@ -621,14 +625,18 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <p className="text-[11px] text-slate-500">Ambil foto kegiatan lapangan dan berikan ringkasan tugas.</p>
           </div>
 
-          {/* Trigger Kamera Langsung (iOS Safari Native Camera) */}
+          {/* Foto Bukti Kegiatan (Kamera Langsung & Galeri) */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-              1. Foto Bukti Kegiatan (Kamera Langsung) *
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                1. Foto Bukti Kegiatan *
+              </label>
+              <span className="text-[10px] text-slate-400">Kamera atau Galeri</span>
+            </div>
 
+            {/* Input khusus Kamera Langsung (iOS / Android Environment) */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
@@ -636,46 +644,90 @@ export const MahasiswaPresensiMobile: React.FC = () => {
               onChange={handlePhotoCapture}
             />
 
+            {/* Input khusus Unggah File / Galeri Foto */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoCapture}
+            />
+
             {fotoPreview ? (
               <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-sm max-h-52">
                 <img src={fotoPreview} alt="Preview Foto" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-black/30 pointer-events-none" />
                 <button
                   type="button"
                   onClick={() => {
                     setFotoFile(null);
                     setFotoPreview(null);
+                    if (cameraInputRef.current) cameraInputRef.current.value = "";
+                    if (galleryInputRef.current) galleryInputRef.current.value = "";
                   }}
-                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 text-white rounded-full hover:bg-slate-900 transition cursor-pointer"
+                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 text-white rounded-full hover:bg-rose-600 transition cursor-pointer shadow-md"
+                  title="Hapus Foto"
                 >
                   <X size={14} />
                 </button>
-                <div className="absolute bottom-2 left-2 right-2 py-1 px-2.5 bg-slate-900/75 backdrop-blur-sm rounded-xl text-[10px] text-white font-bold flex items-center justify-between">
-                  <span>Foto Terkompresi Siap Kirim</span>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="underline text-emerald-300"
-                  >
-                    Ulangi Foto
-                  </button>
+                <div className="absolute bottom-2 left-2 right-2 py-1.5 px-3 bg-slate-900/85 backdrop-blur-sm rounded-xl text-[10px] text-white font-bold flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                    <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                    <span className="truncate">{fotoFile?.name || "Foto Siap Kirim"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="underline text-emerald-300 hover:text-emerald-200 cursor-pointer"
+                    >
+                      Kamera
+                    </button>
+                    <span className="text-slate-500">|</span>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="underline text-teal-300 hover:text-teal-200 cursor-pointer"
+                    >
+                      Galeri
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-6 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 transition-all cursor-pointer group"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Camera size={24} />
-                </div>
-                <div className="text-center">
-                  <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                    Buka Kamera iPhone / Ambil Foto
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Mendukung format foto &amp; otomatis kompresi</p>
-                </div>
-              </button>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="py-5 px-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 transition-all cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Camera size={22} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Ambil Foto
+                    </p>
+                    <p className="text-[9.5px] text-slate-400 mt-0.5">Buka kamera gawai</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="py-5 px-3 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 rounded-2xl flex flex-col items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 transition-all cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <ImageIcon size={22} />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Pilih Galeri
+                    </p>
+                    <p className="text-[9.5px] text-slate-400 mt-0.5">Unggah dari album</p>
+                  </div>
+                </button>
+              </div>
             )}
           </div>
 

@@ -21,6 +21,7 @@ import {
   Building2,
   X,
   Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../utils/api";
@@ -44,7 +45,8 @@ export const MahasiswaProfilMobile: React.FC = () => {
   const [riwayatIzin, setRiwayatIzin] = useState<any[]>([]);
   const [isLoadingIzin, setIsLoadingIzin] = useState(true);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchRiwayatIzin();
@@ -74,6 +76,9 @@ export const MahasiswaProfilMobile: React.FC = () => {
     } catch {
       setFotoFile(file);
       setFotoPreview(URL.createObjectURL(file));
+    } finally {
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   };
 
@@ -293,39 +298,73 @@ export const MahasiswaProfilMobile: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Foto Surat Keterangan / Bukti</label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Foto Surat Keterangan / Bukti</label>
+                  <span className="text-[9px] text-slate-400">Kamera atau Galeri</span>
+                </div>
+
+                {/* Input khusus Kamera Langsung */}
                 <input
-                  ref={fileInputRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
                   className="hidden"
                   onChange={handlePhotoChange}
                 />
+
+                {/* Input khusus Galeri / File */}
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+
                 {fotoPreview ? (
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-300 max-h-36">
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 max-h-36 shadow-sm">
                     <img src={fotoPreview} alt="Bukti" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => {
                         setFotoFile(null);
                         setFotoPreview(null);
+                        if (cameraInputRef.current) cameraInputRef.current.value = "";
+                        if (galleryInputRef.current) galleryInputRef.current.value = "";
                       }}
-                      className="absolute top-2 right-2 p-1 bg-slate-900/80 text-white rounded-full"
+                      className="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition shadow-sm cursor-pointer"
                     >
                       <X size={14} />
                     </button>
+                    <div className="absolute bottom-2 left-2 right-2 py-1 px-2 bg-slate-900/80 backdrop-blur-sm rounded-lg text-[9px] text-white flex items-center justify-between">
+                      <span className="truncate max-w-[120px]">{fotoFile?.name || "Bukti Terlampir"}</span>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => cameraInputRef.current?.click()} className="underline text-emerald-300">Kamera</button>
+                        <button type="button" onClick={() => galleryInputRef.current?.click()} className="underline text-teal-300">Galeri</button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center gap-2 text-slate-500"
-                  >
-                    <Camera size={18} />
-                    <span>Ambil Foto Surat Keterangan</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="py-3 px-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:border-emerald-500 transition cursor-pointer"
+                    >
+                      <Camera size={16} className="text-emerald-600" />
+                      <span className="text-[11px] font-bold">Kamera</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="py-3 px-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:border-emerald-500 transition cursor-pointer"
+                    >
+                      <ImageIcon size={16} className="text-teal-600" />
+                      <span className="text-[11px] font-bold">Pilih Galeri</span>
+                    </button>
+                  </div>
                 )}
               </div>
 
