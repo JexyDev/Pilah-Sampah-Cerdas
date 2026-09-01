@@ -8,6 +8,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   calculateInZoneDurationMinutes,
+  calculateLiveInZoneMinutes,
+  calculateLiveInZoneSeconds,
   getScheduleTargetDurationMinutes,
   parseScheduleTimeString,
   parseScheduleTimeRange,
@@ -40,6 +42,7 @@ vi.mock("../lib/prisma.js", () => {
       activityAttendance: {
         findUnique: vi.fn(),
         findFirst: vi.fn(),
+        findMany: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
         upsert: vi.fn(),
@@ -1090,6 +1093,103 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           alasan: "Skip mendadak",
         })
       ).rejects.toThrow("CONFLICT: Tidak dapat skip kegiatan yang sudah dimulai.");
+    });
+  });
+
+  describe("calculateLiveInZoneMinutes & calculateLiveInZoneSeconds", () => {
+    it("should return 0 minutes for leave/sakit/izin/alpa status", () => {
+      const result = calculateLiveInZoneMinutes({
+        attendedAt: new Date(),
+        status: "SAKIT",
+      });
+      expect(result).toBe(0);
+    });
+
+    it("should calculate correct live minutes without compounding inflation on resume", () => {
+      // Attended 30 minutes ago, paused for 5 mins, resumed 10 minutes ago
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+      const result = calculateLiveInZoneMinutes({
+        attendedAt: thirtyMinutesAgo,
+        status: "BERLANGSUNG",
+        actualInZoneMinutes: 480, // Even if DB had corrupted 480
+        jedaLogs: [
+          {
+            waktuJeda: fifteenMinutesAgo.toISOString(),
+            durasiSebelumJedaMenit: 15,
+          },
+          {
+            waktuResume: tenMinutesAgo.toISOString(),
+            durasiSebelumResumeMenit: 15,
+          },
+        ],
+      });
+
+      // 15 mins before jeda + 10 mins elapsed since resume = 25 mins
+      expect(result).toBe(25);
+    });
+  });
+
+  describe("autoCheckOutEndedSchedules", () => {
+    it("should skip auto-checkout if attendance session started less than 15 minutes ago", async () => {
+      const checkOutSpy = vi.spyOn(service, "checkOutAttendance").mockResolvedValue({} as any);
+
+      // Student attended 5 minutes ago
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+      (prisma.activityAttendance.findMany as any) = vi.fn().mockResolvedValue([
+        {
+          id: "att-recent-1",
+          studentId: "student-1",
+          scheduleId: "sched-1",
+          status: "BERLANGSUNG",
+          attendedAt: fiveMinutesAgo,
+          schedule: {
+            id: "sched-1",
+            title: "Kegiatan Pagi",
+            time: "07:00 - 08:00",
+            date: new Date(),
+          },
+          student: {
+            name: "Muhammad Rizqi",
+          },
+        },
+      ]);
+
+      await service.autoCheckOutEndedSchedules();
+
+      expect(checkOutSpy).not.toHaveBeenCalled();
+    });
+
+    it("should skip auto-checkout if schedule time range is invalid or overnight", async () => {
+      const checkOutSpy = vi.spyOn(service, "checkOutAttendance").mockResolvedValue({} as any);
+
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+      (prisma.activityAttendance.findMany as any) = vi.fn().mockResolvedValue([
+        {
+          id: "att-invalid-range",
+          studentId: "student-1",
+          scheduleId: "sched-2",
+          status: "BERLANGSUNG",
+          attendedAt: oneHourAgo,
+          schedule: {
+            id: "sched-2",
+            title: "Kegiatan Format Salah",
+            time: "08:00 - 08:00", // start === end -> invalid / overnight
+            date: new Date(),
+          },
+          student: {
+            name: "Muhammad Rizqi",
+          },
+        },
+      ]);
+
+      await service.autoCheckOutEndedSchedules();
+
+      expect(checkOutSpy).not.toHaveBeenCalled();
     });
   });
 });

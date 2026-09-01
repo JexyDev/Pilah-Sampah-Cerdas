@@ -102,8 +102,19 @@ export function calculateLiveInZoneMinutes(att: {
   jedaLogs?: any;
   status?: string;
 }): number {
-  const storedMins = Math.max(0, att.actualInZoneMinutes ?? 0);
-  if (!att.attendedAt) return storedMins;
+  if (!att.attendedAt) return Math.max(0, att.actualInZoneMinutes ?? 0);
+
+  const statusUpper = String(att.status || "").toUpperCase();
+  if (
+    statusUpper.includes("SAKIT") ||
+    statusUpper.includes("IZIN") ||
+    statusUpper === "ALPA" ||
+    statusUpper === "ALPHA" ||
+    statusUpper === "TIDAK_ADA_KEGIATAN" ||
+    statusUpper === "SKIP_KEGIATAN"
+  ) {
+    return 0;
+  }
 
   // Max daily limit cap (8 hours = 480 minutes) to prevent non-sensical multi-day accumulations
   const MAX_DAILY_MINUTES_CAP = 480;
@@ -118,34 +129,56 @@ export function calculateLiveInZoneMinutes(att: {
   const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const isPastDay = attendedWibDay < nowWibDay;
 
-  // If session is from a past day or status is TERJEDA, use stored in-zone minutes (or capped value)
-  if (isPastDay || att.status === "TERJEDA") {
-    return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
+  // Absolute physical ceiling: elapsed time since check-in
+  const maxElapsedMinutes = Math.max(
+    0,
+    Math.floor((now.getTime() - attendedDate.getTime()) / 60000)
+  );
+
+  // If session is from a past day, use stored in-zone minutes (or capped value)
+  if (isPastDay) {
+    return Math.min(Math.max(0, att.actualInZoneMinutes ?? 0), MAX_DAILY_MINUTES_CAP);
   }
 
   const jedaLogsArray = (att.jedaLogs as any[]) || [];
   if (jedaLogsArray.length === 0) {
-    const elapsed = Math.floor((now.getTime() - attendedDate.getTime()) / 60000);
-    const computed = Math.max(storedMins, elapsed);
-    return Math.min(computed, MAX_DAILY_MINUTES_CAP);
+    if (statusUpper === "TERJEDA") {
+      return Math.min(
+        Math.max(0, att.actualInZoneMinutes ?? 0),
+        maxElapsedMinutes,
+        MAX_DAILY_MINUTES_CAP
+      );
+    }
+    return Math.min(maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
   }
 
   const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
-  if (!lastLog) return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
+  if (!lastLog) {
+    return Math.min(maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
+  }
+
+  if (lastLog.waktuJeda && !lastLog.waktuResume) {
+    const baseMins = Number(lastLog.durasiSebelumJedaMenit) || 0;
+    return Math.min(Math.max(0, baseMins), maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
+  }
 
   if (lastLog.waktuResume) {
     const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
-    const baseMins = Math.max(Number(lastLog.durasiSebelumResumeMenit) || 0, storedMins);
+    const baseMins = Number(lastLog.durasiSebelumResumeMenit) || 0;
     const elapsedSinceResume = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 60000));
-    return Math.min(baseMins + elapsedSinceResume, MAX_DAILY_MINUTES_CAP);
+    const computed = baseMins + elapsedSinceResume;
+    return Math.min(Math.max(0, computed), maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
   }
 
-  if (lastLog.waktuJeda) {
-    const baseMins = Math.max(Number(lastLog.durasiSebelumJedaMenit) || 0, storedMins);
-    return Math.min(baseMins, MAX_DAILY_MINUTES_CAP);
+  if (statusUpper === "TERJEDA") {
+    return Math.min(
+      Math.max(0, att.actualInZoneMinutes ?? 0),
+      maxElapsedMinutes,
+      MAX_DAILY_MINUTES_CAP
+    );
   }
 
-  return Math.min(storedMins, MAX_DAILY_MINUTES_CAP);
+  return Math.min(maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
 }
 
 /**
@@ -164,9 +197,19 @@ export function calculateLiveInZoneSeconds(att: {
   jedaLogs?: any;
   status?: string;
 }): number {
-  const storedMins = Math.max(0, att.actualInZoneMinutes ?? 0);
-  const storedSecs = storedMins * 60;
-  if (!att.attendedAt) return storedSecs;
+  if (!att.attendedAt) return Math.max(0, (att.actualInZoneMinutes ?? 0) * 60);
+
+  const statusUpper = String(att.status || "").toUpperCase();
+  if (
+    statusUpper.includes("SAKIT") ||
+    statusUpper.includes("IZIN") ||
+    statusUpper === "ALPA" ||
+    statusUpper === "ALPHA" ||
+    statusUpper === "TIDAK_ADA_KEGIATAN" ||
+    statusUpper === "SKIP_KEGIATAN"
+  ) {
+    return 0;
+  }
 
   const MAX_DAILY_SECONDS_CAP = 480 * 60; // 8 jam = 28800 detik
 
@@ -180,36 +223,57 @@ export function calculateLiveInZoneSeconds(att: {
   const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const isPastDay = attendedWibDay < nowWibDay;
 
-  // Sesi dari hari sebelumnya atau TERJEDA → gunakan nilai tersimpan
-  if (isPastDay || att.status === "TERJEDA") {
-    return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+  // Absolute physical ceiling in seconds
+  const maxElapsedSecs = Math.max(
+    0,
+    Math.floor((now.getTime() - attendedDate.getTime()) / 1000)
+  );
+
+  // Sesi dari hari sebelumnya → gunakan nilai tersimpan
+  if (isPastDay) {
+    return Math.min(Math.max(0, (att.actualInZoneMinutes ?? 0) * 60), MAX_DAILY_SECONDS_CAP);
   }
 
   const jedaLogsArray = (att.jedaLogs as any[]) || [];
   if (jedaLogsArray.length === 0) {
-    // Presisi detik — bagi 1000, bukan 60000
-    const elapsedSecs = Math.floor((now.getTime() - attendedDate.getTime()) / 1000);
-    const computed = Math.max(storedSecs, elapsedSecs);
-    return Math.min(computed, MAX_DAILY_SECONDS_CAP);
+    if (statusUpper === "TERJEDA") {
+      return Math.min(
+        Math.max(0, (att.actualInZoneMinutes ?? 0) * 60),
+        maxElapsedSecs,
+        MAX_DAILY_SECONDS_CAP
+      );
+    }
+    return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
   }
 
   const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
-  if (!lastLog) return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+  if (!lastLog) {
+    return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
+  }
+
+  if (lastLog.waktuJeda && !lastLog.waktuResume) {
+    // Sesi terjeda — gunakan durasi sebelum jeda (dalam detik)
+    const baseSecs = (Number(lastLog.durasiSebelumJedaMenit) || 0) * 60;
+    return Math.min(Math.max(0, baseSecs), maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
+  }
 
   if (lastLog.waktuResume) {
     const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
-    const baseSecs = Math.max((Number(lastLog.durasiSebelumResumeMenit) || 0) * 60, storedSecs);
+    const baseSecs = (Number(lastLog.durasiSebelumResumeMenit) || 0) * 60;
     const elapsedSinceResumeSecs = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 1000));
-    return Math.min(baseSecs + elapsedSinceResumeSecs, MAX_DAILY_SECONDS_CAP);
+    const computedSecs = baseSecs + elapsedSinceResumeSecs;
+    return Math.min(Math.max(0, computedSecs), maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
   }
 
-  if (lastLog.waktuJeda) {
-    // Sesi terjeda — gunakan durasi sebelum jeda (dalam detik)
-    const baseSecs = Math.max((Number(lastLog.durasiSebelumJedaMenit) || 0) * 60, storedSecs);
-    return Math.min(baseSecs, MAX_DAILY_SECONDS_CAP);
+  if (statusUpper === "TERJEDA") {
+    return Math.min(
+      Math.max(0, (att.actualInZoneMinutes ?? 0) * 60),
+      maxElapsedSecs,
+      MAX_DAILY_SECONDS_CAP
+    );
   }
 
-  return Math.min(storedSecs, MAX_DAILY_SECONDS_CAP);
+  return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
 }
 
 export function calculateInZoneDurationMinutes(
@@ -3817,13 +3881,13 @@ export class KknAttendanceService {
           const lastPingDate = new Date(lastPingTime);
 
           // Hitung durasi aktual yang valid sampai waktu ping terakhir
-          let validMins = att.actualInZoneMinutes ?? 0;
+          let validMins = calculateLiveInZoneMinutes(att);
           if (att.attendedAt) {
             const diffFromAttended = Math.max(
               0,
               Math.floor((lastPingTime - new Date(att.attendedAt).getTime()) / 60000)
             );
-            validMins = Math.min(480, Math.max(validMins, diffFromAttended));
+            validMins = Math.min(validMins, diffFromAttended);
           }
 
           currentLogs.push({
@@ -3879,15 +3943,45 @@ export class KknAttendanceService {
       // WIB Time (+7)
       const nowWib = new Date(nowUtc.getTime() + 7 * 60 * 60 * 1000);
       const currentMins = nowWib.getUTCHours() * 60 + nowWib.getUTCMinutes();
+      const todayWibStr = nowWib.toISOString().slice(0, 10);
 
       for (const att of activeAttendances) {
         if (!att.schedule || !att.schedule.time) continue;
 
+        // Guard 1: Jangan auto-checkout sesi yang baru saja dimulai (< 15 menit)
+        if (att.attendedAt) {
+          const sessionStartMs = new Date(att.attendedAt).getTime();
+          const elapsedMins = (nowUtc.getTime() - sessionStartMs) / (60 * 1000);
+          if (elapsedMins < 15) {
+            continue;
+          }
+        }
+
         const timeRange = parseScheduleTimeRange(att.schedule.time);
         const endMins = timeRange.endMinutesTotal;
 
-        // Jika waktu saat ini sudah lewat / sama dengan batas selesai jadwal
-        if (currentMins >= endMins) {
+        // Guard 2: Jika format jam overnight atau rentang tidak valid (end <= start), jangan auto checkout di siang hari
+        if (timeRange.isOvernight || endMins <= timeRange.startMinutesTotal) {
+          continue;
+        }
+
+        // Guard 3: Periksa tanggal jadwal terhadap hari ini
+        let isPastDate = false;
+        if (att.schedule.date) {
+          const schedWibStr = new Date(new Date(att.schedule.date).getTime() + 7 * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 10);
+          if (schedWibStr > todayWibStr) {
+            // Jadwal untuk hari depan, abaikan
+            continue;
+          }
+          if (schedWibStr < todayWibStr) {
+            isPastDate = true;
+          }
+        }
+
+        // Jika jadwal hari ini dan waktu saat ini sudah lewat batas jam selesai, ATAU jadwal dari hari kemarin
+        if (isPastDate || currentMins >= endMins) {
           console.log(
             `[AutoCheckout] Melakukan checkout otomatis untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
           );
