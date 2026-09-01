@@ -10,7 +10,7 @@ import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
-import { calculateDistance } from "./kknAttendanceService.js";
+import { calculateDistance, calculateLiveInZoneSeconds, calculateLiveInZoneMinutes } from "./kknAttendanceService.js";
 import { pointService } from "./pointService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
 
@@ -3054,70 +3054,12 @@ export class KknService {
       }
     }
 
-    // Calculate precise total seconds in zone from studentLocation logs for this schedule window
+    // Calculate precise total seconds & minutes in zone from active attendance (SSOT)
     let actualInZoneSeconds = 0;
-    if (activeSchedule) {
-      if (attendanceForActiveSchedule) {
-        try {
-          const queryStartLogs = new Date(attendanceForActiveSchedule.attendedAt);
-
-          const logs = await prisma.studentLocation.findMany({
-            where: {
-              studentId: { in: studentUserIds },
-              recordedAt: { gte: queryStartLogs },
-            },
-            orderBy: { recordedAt: "asc" },
-          });
-          if (logs.length >= 2) {
-            const bufferMeters = (ruleConfigs as any).geofenceBufferMeters || 15.0;
-            const geofence = {
-              latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : -6.8915,
-              longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : 107.6107,
-              radius: activeSchedule.radius ? Number(activeSchedule.radius) : 150,
-              polygon: activeSchedule.polygon,
-            };
-            const inZonePoints = logs.filter((l) => {
-              const lat = Number(l.latitude);
-              const lng = Number(l.longitude);
-              if (
-                geofence.polygon &&
-                Array.isArray(geofence.polygon) &&
-                geofence.polygon.length >= 3
-              ) {
-                const polyPoints = (geofence.polygon as any[]).map((p) => ({
-                  lat: Number(p[0]),
-                  lng: Number(p[1]),
-                }));
-                return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
-              } else {
-                const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
-                return dist <= geofence.radius + bufferMeters;
-              }
-            });
-            const tFirst = new Date(inZonePoints[0].recordedAt).getTime();
-            const tLast = new Date(inZonePoints[inZonePoints.length - 1].recordedAt).getTime();
-            let totalMs = 0;
-            for (let i = 0; i < inZonePoints.length - 1; i++) {
-              const t1 = new Date(inZonePoints[i].recordedAt).getTime();
-              const t2 = new Date(inZonePoints[i + 1].recordedAt).getTime();
-              const diff = t2 - t1;
-              if (diff > 0 && diff <= 5 * 60 * 1000) {
-                totalMs += diff;
-              }
-            }
-            const overallSpan = Math.max(0, tLast - tFirst);
-            totalMs = Math.max(totalMs, overallSpan);
-            actualInZoneSeconds = Math.floor(totalMs / 1000);
-          }
-        } catch (_) {
-          // Fallback jika query bermasalah
-        }
-      } else {
-        actualInZoneSeconds = 0;
-      }
-    }
-    if (actualInZoneSeconds === 0 && attendanceForActiveSchedule?.actualInZoneMinutes) {
-      actualInZoneSeconds = attendanceForActiveSchedule.actualInZoneMinutes * 60;
+    let actualInZoneMinutes = 0;
+    if (attendanceForActiveSchedule) {
+      actualInZoneSeconds = calculateLiveInZoneSeconds(attendanceForActiveSchedule);
+      actualInZoneMinutes = calculateLiveInZoneMinutes(attendanceForActiveSchedule);
     }
 
     // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
@@ -3158,8 +3100,7 @@ export class KknService {
         radiusMeter: activeSchedule.radius || 100,
         radius: activeSchedule.radius || 100,
         targetDurationMinutes: finalTargetDurationMinutes,
-        actualInZoneMinutes:
-          attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+        actualInZoneMinutes,
         actualInZoneSeconds,
         attendanceStatus,
         status: attendanceStatus,
@@ -3206,8 +3147,7 @@ export class KknService {
       radiusMeter: 100,
       radius: 100,
       targetDurationMinutes,
-      actualInZoneMinutes:
-        attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+      actualInZoneMinutes,
       actualInZoneSeconds,
       attendanceStatus,
       status: attendanceStatus,
@@ -4483,7 +4423,19 @@ export class KknService {
   }
 
   async updatePanenHasil(userId: string, id: string, payload: any) {
-    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
+    const targetId = id || payload.pemanfaatanId || payload.id;
+    let existing = await prisma.pemanfaatan.findUnique({ where: { id: targetId } });
+    if (!existing) {
+      const matchedLogbook = await prisma.logbookKkn.findUnique({
+        where: { id: targetId },
+      });
+      if (matchedLogbook?.programKerjaId) {
+        existing = await prisma.pemanfaatan.findFirst({
+          where: { programKerjaId: matchedLogbook.programKerjaId },
+        });
+      }
+    }
+
     if (!existing) {
       throw new Error("Laporan panen hasil tidak ditemukan.");
     }
@@ -4510,7 +4462,7 @@ export class KknService {
       }
     }
 
-    const rawNilai = nilaiEkonomiRp !== undefined ? nilaiEkonomiRp : luasLahanM2;
+    const rawNilai = luasLahanM2 !== undefined ? luasLahanM2 : nilaiEkonomiRp;
     if (rawNilai !== undefined && rawNilai !== null && rawNilai !== "") {
       const numNilai =
         typeof rawNilai === "string"
@@ -4537,7 +4489,7 @@ export class KknService {
 
     // Rule 2: PUT/UPDATE murni hanya mengubah data teks, angka beban, dan foto. DILARANG mengubah PointHistory.
     const report = await prisma.pemanfaatan.update({
-      where: { id },
+      where: { id: existing.id },
       data: updateData,
     });
 

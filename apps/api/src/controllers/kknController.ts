@@ -942,8 +942,9 @@ export class KknController {
         }
       }
 
+      const targetId = req.params.id || req.body?.id || req.body?.pemanfaatanId;
       const payload = { ...req.body, fotoDokumentasiUrl };
-      const data = await kknService.updatePanenHasil(req.user!.userId, req.params.id, payload);
+      const data = await kknService.updatePanenHasil(req.user!.userId, targetId, payload);
       res.status(200).json({ success: true, message: "Hasil panen berhasil diperbarui.", data });
     } catch (error: any) {
       console.error("[KknController] updatePanenHasil error:", error);
@@ -953,7 +954,8 @@ export class KknController {
 
   async deletePanenHasil(req: Request, res: Response) {
     try {
-      const result = await kknService.deletePanenHasil(req.user!.userId, req.params.id);
+      const targetId = req.params.id || req.body?.id || req.body?.pemanfaatanId;
+      const result = await kknService.deletePanenHasil(req.user!.userId, targetId);
       res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknController] deletePanenHasil error:", error);
