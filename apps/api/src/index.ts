@@ -67,9 +67,10 @@ import beritaRouter from "./routes/beritaRoutes.js";
 import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
+import { kknController } from "./controllers/kknController.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
 import { roleMiddleware } from "./middlewares/roleMiddleware.js";
-import { safeUploadSingleImage } from "./middlewares/uploadMiddleware.js";
+import { safeUploadSingleImage, safeUploadPemanfaatanImage } from "./middlewares/uploadMiddleware.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
@@ -346,6 +347,71 @@ app.get(
     "PEMIMPIN",
   ]),
   kknAttendanceController.getLaporanPresensi
+);
+
+// Direct Panen Hasil Endpoints for Mobile Client
+app.post(
+  ["/api/v1/panen-hasil", "/api/panen-hasil", "/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+app.put(
+  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+app.patch(
+  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+app.delete(
+  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.deletePanenHasil
 );
 
 // Global Error Handler Middleware
