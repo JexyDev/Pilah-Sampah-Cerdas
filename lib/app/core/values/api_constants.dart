@@ -1,4 +1,5 @@
 class ApiEndpoints {
+  static const String appVersion = '/config/app-version';
   static const String kknActiveTimeline = '/kkn/timeline/active';
   ApiEndpoints._();
 
