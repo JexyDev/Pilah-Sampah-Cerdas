@@ -261,6 +261,23 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
     }
   }
 
+  /// Reset semua state saat user logout agar tidak bocor ke sesi akun berikutnya.
+  /// Hentikan timer, bersihkan offline queue, dan hapus SharedPreferences.
+  Future<void> resetForNewUser() async {
+    _timer?.cancel();
+    _timer = null;
+    _offlineQueue.clear();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_offlineStorageKey);
+    } catch (_) {}
+
+    if (mounted) {
+      state = const LocationPingState();
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();

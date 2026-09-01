@@ -181,24 +181,48 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   static const _prefKeyDate = 'kkn_accumulated_date';
   static const _prefKeyEntryTime = 'kkn_zone_entry_time';
 
+  // Helper: ambil userId akun yang sedang login (untuk isolasi key per akun)
+  String get _currentUserId {
+    try {
+      return ref.read(authProvider).user?.id ?? 'unknown';
+    } catch (_) {
+      return 'unknown';
+    }
+  }
+
+  // Key SharedPreferences yang unik per akun — mencegah data durasi bocor antar akun
+  String get _userPrefKeyAccumulated => '${_prefKeyAccumulated}_$_currentUserId';
+  String get _userPrefKeyDate => '${_prefKeyDate}_$_currentUserId';
+  String get _userPrefKeyEntryTime => '${_prefKeyEntryTime}_$_currentUserId';
+
+  /// Load durasi tersimpan dari disk (crash-recovery sesi yang sama hari ini).
+  ///
+  /// Data hanya di-load jika:
+  /// 1. Key cocok dengan userId akun yang sedang login (isolasi antar akun)
+  /// 2. Tanggal yang tersimpan adalah hari ini (tidak carry-over ke hari berikutnya)
+  ///
+  /// PENTING: Nilai dari sini hanya dipakai sebagai fallback sementara sampai
+  /// server mengembalikan actualInZoneSeconds. Saat server return (termasuk 0),
+  /// nilai server SELALU menggantikan nilai lokal ini — lihat semua pemanggil.
   Future<void> _loadPersistentTimer() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-      final savedDate = prefs.getString(_prefKeyDate);
+      final savedDate = prefs.getString(_userPrefKeyDate);
       if (savedDate == todayStr) {
-        final savedSeconds = prefs.getInt(_prefKeyAccumulated) ?? 0;
+        final savedSeconds = prefs.getInt(_userPrefKeyAccumulated) ?? 0;
         if (savedSeconds > 0) {
           _accumulatedSeconds = savedSeconds;
         }
-        final savedEntry = prefs.getString(_prefKeyEntryTime);
+        final savedEntry = prefs.getString(_userPrefKeyEntryTime);
         if (savedEntry != null && savedEntry.isNotEmpty) {
           _zoneEntryTime = DateTime.tryParse(savedEntry);
         }
       } else {
-        await prefs.remove(_prefKeyAccumulated);
-        await prefs.remove(_prefKeyDate);
-        await prefs.remove(_prefKeyEntryTime);
+        // Tanggal berbeda atau key tidak ada → data lama / hari baru → mulai dari 0
+        await prefs.remove(_userPrefKeyAccumulated);
+        await prefs.remove(_userPrefKeyDate);
+        await prefs.remove(_userPrefKeyEntryTime);
         _accumulatedSeconds = 0;
         _zoneEntryTime = null;
       }
@@ -209,15 +233,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-      await prefs.setString(_prefKeyDate, todayStr);
-      await prefs.setInt(_prefKeyAccumulated, _accumulatedSeconds);
+      await prefs.setString(_userPrefKeyDate, todayStr);
+      await prefs.setInt(_userPrefKeyAccumulated, _accumulatedSeconds);
       if (_zoneEntryTime != null) {
         await prefs.setString(
-          _prefKeyEntryTime,
+          _userPrefKeyEntryTime,
           _zoneEntryTime!.toIso8601String(),
         );
       } else {
-        await prefs.remove(_prefKeyEntryTime);
+        await prefs.remove(_userPrefKeyEntryTime);
       }
     } catch (_) {}
   }
@@ -251,30 +275,30 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         await _loadPersistentTimer();
         //penambahan untuk commitqq
 
-        // [FIX] Gunakan max(server, lokal) agar durasi tidak mundur saat user back → buka
-        // halaman presensi lagi. Server adalah sumber kebenaran JIKA nilainya lebih besar
-        // dari yang sudah akumulasi di device (misal: server belum sinkron dari ping terakhir).
-        // Ini mencegah timer ke-reset ke nilai server yang lebih kecil dari akumulasi lokal.
+        // Server adalah sumber kebenaran saat buka halaman presensi.
+        // Kalau server return nilai (termasuk 0 untuk sesi baru), selalu pakai server.
+        // Lokal (_accumulatedSeconds dari _loadPersistentTimer) hanya dipakai sebagai
+        // fallback jika server tidak return actualInZoneSeconds sama sekali (null).
         if (activeZone['actualInZoneSeconds'] != null) {
           final serverSecs =
               int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          // Ambil nilai terbesar: jika lokal lebih besar (belum ter-sync ke server), pertahankan
-          if (serverSecs > _accumulatedSeconds) {
-            _accumulatedSeconds = serverSecs;
+          _accumulatedSeconds = serverSecs; // server selalu menang
+          if (_zoneEntryTime == null) {
+            _zoneEntryTime = DateTime.now();
           }
-          _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins =
               num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
-          // Ambil nilai terbesar
-          if (serverSecs > _accumulatedSeconds) {
-            _accumulatedSeconds = serverSecs;
+          _accumulatedSeconds = serverSecs; // server selalu menang
+          if (_zoneEntryTime == null) {
+            _zoneEntryTime = DateTime.now();
           }
-          _zoneEntryTime = DateTime.now();
           await _savePersistentTimer();
         }
+        // Jika server tidak return durasi sama sekali (null), biarkan nilai
+        // lokal dari _loadPersistentTimer() — ini adalah crash-recovery sesi hari ini.
 
         final double? targetLat = (activeZone['latitude'] as num?)?.toDouble();
         final double? targetLng = (activeZone['longitude'] as num?)?.toDouble();
@@ -388,12 +412,11 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                     60)
                 .toInt();
 
-        // [FIX] Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur.
-        // Server bisa saja belum menerima ping terakhir dari device, sehingga nilai lokal
-        // bisa lebih besar dari server — dalam kasus itu pertahankan nilai lokal.
-        if (serverSecs > _accumulatedSeconds) {
-          _accumulatedSeconds = serverSecs;
-        }
+        // Server selalu menang — kalau server return nilai (termasuk 0 untuk sesi baru),
+        // pakai nilai server. Nilai lokal dari _loadPersistentTimer hanya dipakai
+        // sebagai fallback crash-recovery jika server tidak return field durasi sama sekali.
+        // Tidak pakai max() agar akun kedua tidak mewarisi durasi akun pertama.
+        _accumulatedSeconds = serverSecs;
 
         final durasiWajib =
             int.tryParse(activeItem['durasiWajibMenit']?.toString() ?? '120') ??
@@ -484,44 +507,22 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       // Sync durasi dari server — jika backend sudah punya sesi aktif (misal dari HP lain),
       // gunakan nilai server sebagai titik awal agar durasi tidak mulai dari 0.
-      // Jika server tidak mengembalikan durasi, pertahankan nilai lokal yang sudah berjalan
-      // agar durasi tidak ke-reset saat user back → mulai kegiatan lagi.
+      // Server selalu menang saat mulai kegiatan baru.
+      // Kalau server return nilai (termasuk 0 untuk sesi pertama), pakai nilai server.
+      // Kalau server tidak return field durasi sama sekali (null), pertahankan
+      // nilai lokal sebagai crash-recovery (misal app restart di tengah sesi).
       if (response['actualInZoneSeconds'] != null) {
-        final serverSecs =
+        _accumulatedSeconds =
             int.tryParse(response['actualInZoneSeconds'].toString()) ?? 0;
-        // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
-        if (serverSecs > _accumulatedSeconds) {
-          _accumulatedSeconds = serverSecs;
-        }
       } else if (response['actualInZoneMinutes'] != null) {
-        final serverSecs =
+        _accumulatedSeconds =
             ((num.tryParse(response['actualInZoneMinutes'].toString()) ?? 0) *
                     60)
                 .toInt();
-        // Ambil nilai terbesar antara server dan lokal agar durasi tidak mundur
-        if (serverSecs > _accumulatedSeconds) {
-          _accumulatedSeconds = serverSecs;
-        }
       }
-      // Jika server tidak return durasi sama sekali, _accumulatedSeconds tetap dari nilai lokal sebelumnya
+      // Jika server tidak return durasi sama sekali, _accumulatedSeconds tetap dari crash-recovery
       _zoneEntryTime = DateTime.now();
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        if (_accumulatedSeconds > 0) {
-          final todayStr = DateTime.now().toIso8601String().substring(0, 10);
-          await prefs.setString('kkn_accumulated_date', todayStr);
-          await prefs.setInt('kkn_accumulated_seconds', _accumulatedSeconds);
-          if (_zoneEntryTime != null) {
-            await prefs.setString(
-              'kkn_zone_entry_time',
-              _zoneEntryTime!.toIso8601String(),
-            );
-          }
-        } else {
-          await prefs.remove('kkn_accumulated_seconds');
-          await prefs.remove('kkn_zone_entry_time');
-        }
-      } catch (_) {}
+      await _savePersistentTimer(); // pakai userId-aware key
 
       // Parse lokasi dari response
       final lokasi = response['lokasi'] as Map<String, dynamic>?;
@@ -643,9 +644,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       _zoneEntryTime = null;
       try {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('kkn_accumulated_seconds');
-        await prefs.remove('kkn_zone_entry_time');
-        // Bersihkan data target background service agar tidak auto-restart
+        await prefs.remove(_userPrefKeyAccumulated);
+        await prefs.remove(_userPrefKeyEntryTime);
+        await prefs.remove(_userPrefKeyDate);
         await prefs.remove('kkn_bg_target_lat');
         await prefs.remove('kkn_bg_target_lng');
         await prefs.remove('kkn_bg_schedule_id');
@@ -691,9 +692,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       await stopTracking();
       ref.read(locationPingControllerProvider.notifier).stopTracking();
 
-      // Update local storage untuk checkpoint durasi
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('kkn_accumulated_seconds', _accumulatedSeconds);
+      // Update local storage untuk checkpoint durasi (pakai userId-aware key)
+      await _savePersistentTimer();
       // Jangan hapus session ID karena jika belum selesai, mereka cuma lanjut sesi
     }
     return isSuccess;
@@ -717,30 +717,27 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         int.tryParse(data['actualInZoneSeconds'].toString()) ?? _accumulatedSeconds,
       );
 
-      // Backend saat ini menghitung dalam satuan menit bulat (Math.floor) lalu × 60,
-      // sehingga nilai loncat per 60 detik (misal: 2460 → 2520 → 2580).
-      // Strategi: hanya koreksi jika server LEBIH BESAR dari lokal (mobile tertinggal),
-      // atau jika selisih terlalu jauh (>90 detik) yang menandakan mobile lari sendiri.
-      // Jika lokal sudah lebih maju dalam rentang wajar (<= 90 detik),
-      // biarkan timer lokal jalan smooth tanpa loncat/reset.
+      // Backend menghitung dalam satuan menit bulat (Math.floor) × 60,
+      // sehingga nilai loncat per 60 detik (mis: 2460 → 2520 → 2580).
+      // Selama sesi AKTIF (bukan saat awal mulai), beri toleransi ±90 detik
+      // agar timer UI tetap smooth tanpa lompatan saat backend belum sync ping terakhir.
+      // Koreksi ke BAWAH tetap terjadi jika selisih > 90 detik (server jauh lebih kecil).
       final diff = serverSecs - _accumulatedSeconds;
       final shouldSync = diff > 0 || diff < -90;
 
       if (shouldSync) {
-        // Ambil nilai terbesar antara server dan lokal untuk hindari mundur
-        final corrected = math.max(serverSecs, _accumulatedSeconds);
-        _accumulatedSeconds = corrected;
-        // Reset zoneEntryTime hanya jika koreksi signifikan agar timer detik
-        // tidak loncat saat server return nilai menit bulat berikutnya.
-        _zoneEntryTime = DateTime.now();
-        state = state.copyWith(inZoneDurationSeconds: corrected);
+        // [FIX] Saat koreksi ke atas: pakai server (server lebih maju → mobile tertinggal).
+        // Saat koreksi ke bawah (diff < -90): pakai server juga — server adalah sumber
+        // kebenaran, nilai lokal yang terlalu jauh maju perlu dikoreksi.
+        // Tidak pakai max() lagi agar nilai server selalu bisa mengoreksi ke bawah.
+        _accumulatedSeconds = serverSecs;
+        state = state.copyWith(inZoneDurationSeconds: serverSecs);
 
-        // Sync juga ke background service agar isolate background tidak hitung
-        // dari entry time lama dan kirim nilai yang jauh lebih besar ke backend.
+        // Sync ke background service agar isolate background tidak drift jauh.
         if (_backgroundServiceStarted) {
           FlutterForegroundTask.sendDataToTask({
             'type': 'SYNC_DURATION',
-            'seconds': corrected,
+            'seconds': serverSecs,
           });
         }
       }
@@ -759,7 +756,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       state = state.copyWith(activeActivity: updatedActivity);
 
       if (attendanceStatus == 'TERJEDA') {
-        _zoneEntryTime = null; // Prevent double addition from local difference
+        // Commit sisa sesi aktif ke accumulated sebelum stop agar tidak hilang.
+        // Dengan fix _stopZoneTimer (timerWasActive), commit terjadi dengan benar.
         _stopZoneTimer(isExitingZone: true);
       } else if (attendanceStatus == 'BERLANGSUNG' &&
           state.isInsideRadius &&
@@ -957,8 +955,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
             if (hasServerDuration) {
               _accumulatedSeconds = serverSeconds;
-              // Reset zona entry time agar akumulasi baru mulai dihitung dari durasi server ini
-              _zoneEntryTime = DateTime.now();
+              // [FIX JUMPING] Set entry time hanya jika belum ada — jangan timpa
+              // sesi yang sedang berjalan saat startTracking dipanggil ulang (mis.
+              // app resume / buka halaman presensi kembali).
+              if (_zoneEntryTime == null) {
+                _zoneEntryTime = DateTime.now();
+              }
               await _savePersistentTimer();
 
               if (_backgroundServiceStarted) {
@@ -1119,7 +1121,13 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // Guard lama menolak lompatan >60dtk dan membuat durasi UI beku permanen sampai
         // tracking di-restart. Sekarang: terima setiap kenaikan (tidak pernah mundur).
         _accumulatedSeconds = totalSeconds;
-        _zoneEntryTime = DateTime.now();
+        // [FIX JUMPING] Jangan reset _zoneEntryTime saat background kirim update durasi.
+        // Sebelumnya setiap pesan DURATION_UPDATE (tiap 30 dtk) reset entry time → timer
+        // UI hitung ~0 selama beberapa tick → totalElapsed stagnan → durasi jumping/stuck.
+        // Entry time hanya perlu di-set jika belum ada (fresh start).
+        if (_zoneEntryTime == null) {
+          _zoneEntryTime = DateTime.now();
+        }
 
         state = state.copyWith(
           inZoneDurationSeconds: _accumulatedSeconds,
@@ -1348,14 +1356,20 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final serverSecs =
             int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
         _accumulatedSeconds = serverSecs;
-        _zoneEntryTime = DateTime.now();
+        // [FIX JUMPING] Set entry time hanya jika belum ada.
+        if (_zoneEntryTime == null) {
+          _zoneEntryTime = DateTime.now();
+        }
         await _savePersistentTimer();
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins =
             num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
         _accumulatedSeconds = serverSecs;
-        _zoneEntryTime = DateTime.now();
+        // [FIX JUMPING] Set entry time hanya jika belum ada.
+        if (_zoneEntryTime == null) {
+          _zoneEntryTime = DateTime.now();
+        }
         await _savePersistentTimer();
       }
 
@@ -1388,9 +1402,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
   /// Start 1-second ticker for in-zone duration
   void _startZoneTimer() {
+    // Guard: jika timer sudah jalan, tidak perlu restart
+    if (_zoneDurationTimer?.isActive ?? false) return;
+
+    // Set entry time hanya jika belum ada — jangan timpa sesi yang sudah berjalan
     _zoneEntryTime ??= DateTime.now();
 
-    if (_zoneDurationTimer?.isActive ?? false) return;
     _zoneDurationTimer?.cancel();
     _lastTimerDate = DateTime.now();
 
@@ -1503,18 +1520,24 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final currentSessionSeconds = now.difference(_zoneEntryTime!).inSeconds;
         final totalElapsed = _accumulatedSeconds + currentSessionSeconds;
 
-        // Simpan setiap 5 detik agar persisten jika aplikasi tertutup tiba-tiba
+        // Simpan setiap 5 detik agar persisten jika aplikasi tertutup tiba-tiba.
+        // [FIX] Hanya simpan ke SharedPreferences — JANGAN tulis ulang _accumulatedSeconds
+        // atau reset _zoneEntryTime di sini. _accumulatedSeconds hanya boleh di-commit saat
+        // _stopZoneTimer() dipanggil. Jika di-reset di sini, _stopZoneTimer() akan menghitung
+        // delta dari entry time yang baru (= ~0 detik) dan menambahkannya ke accumulated yang
+        // sudah berisi sesi penuh → double-count → durasi jumping.
         if (totalElapsed > 0 &&
             totalElapsed % 5 == 0 &&
             _lastSavedSeconds != totalElapsed) {
           _lastSavedSeconds = totalElapsed;
-
-          // [BUGFIX] Sinkronisasi _accumulatedSeconds agar tidak ke-reset
-          // saat ada update background atau update polling
-          _accumulatedSeconds = totalElapsed;
-          _zoneEntryTime = now;
-
-          await _savePersistentTimer();
+          // Simpan snapshot sementara ke disk tanpa mengubah _accumulatedSeconds/_zoneEntryTime
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+            await prefs.setString(_userPrefKeyDate, todayStr);
+            await prefs.setInt(_userPrefKeyAccumulated, totalElapsed);
+            // Jangan tulis _userPrefKeyEntryTime — biarkan entry time asli terjaga
+          } catch (_) {}
         }
 
         // Syarat Absen MUTLAK: Harus berada di zona sesuai target durasi
@@ -1539,15 +1562,25 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
     bool isExitingZone = false,
     bool resetCompletely = false,
   }) {
+    // [FIX] Hanya commit delta ke _accumulatedSeconds jika timer memang sedang aktif.
+    // Sebelumnya, delta selalu dihitung dari _zoneEntryTime meskipun timer sudah di-cancel
+    // dari luar (mis. syncWithPingData null-kan _zoneEntryTime lalu panggil _stopZoneTimer).
+    // Ini menyebabkan selisih detik antara null-isasi dan cancel terhitung sebagai durasi.
+    final timerWasActive = _zoneDurationTimer?.isActive ?? false;
+
     _zoneDurationTimer?.cancel();
     _zoneDurationTimer = null;
 
-    if (_zoneEntryTime != null) {
-      _accumulatedSeconds += DateTime.now()
-          .difference(_zoneEntryTime!)
-          .inSeconds;
-      _zoneEntryTime = null;
+    // Commit sisa sesi ke accumulated HANYA jika timer benar-benar berjalan saat ini.
+    // Jika _zoneEntryTime sudah di-null-kan dari luar sebelum _stopZoneTimer dipanggil,
+    // tidak ada yang perlu di-commit — tidak ada durasi yang "belum tercatat".
+    if (timerWasActive && _zoneEntryTime != null) {
+      final delta = DateTime.now().difference(_zoneEntryTime!).inSeconds;
+      if (delta > 0) {
+        _accumulatedSeconds += delta;
+      }
     }
+    _zoneEntryTime = null;
 
     if (resetCompletely) {
       _accumulatedSeconds = 0;
@@ -2018,8 +2051,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         _zoneEntryTime = null;
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('kkn_accumulated_seconds');
-          await prefs.remove('kkn_zone_entry_time');
+          await prefs.remove(_userPrefKeyAccumulated);
+          await prefs.remove(_userPrefKeyEntryTime);
+          await prefs.remove(_userPrefKeyDate);
           await prefs.remove('kkn_bg_target_lat');
           await prefs.remove('kkn_bg_target_lng');
           await prefs.remove('kkn_bg_schedule_id');
@@ -2040,6 +2074,67 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       );
     }
     return false;
+  }
+
+  /// Reset TOTAL semua in-memory state dan SharedPreferences KKN.
+  ///
+  /// WAJIB dipanggil saat logout agar durasi akun pertama tidak "bocor"
+  /// ke akun kedua yang login setelahnya.
+  ///
+  /// Skenario bug tanpa method ini:
+  /// - Akun A buka presensi → _accumulatedSeconds = 1800 (30 menit)
+  /// - Akun A logout → SharedPreferences kkn_* di-hapus
+  /// - Akun B login → fetchKegiatanAktif() dipanggil
+  /// - _loadPersistentTimer() → savedSeconds = 0 (sudah bersih dari logout)
+  ///   TAPI karena guard `if (savedSeconds > 0)`, nilai 0 tidak pernah
+  ///   menimpa _accumulatedSeconds = 1800 yang masih ada di memori
+  /// - Akun B lihat presensi → durasi langsung mulai dari 30 menit ← BUG
+  Future<void> resetForNewUser() async {
+    // 1. Matikan semua timer
+    _trackingTimer?.cancel();
+    _trackingTimer = null;
+    _zoneDurationTimer?.cancel();
+    _zoneDurationTimer = null;
+
+    // 2. Stop background foreground service jika masih jalan
+    if (_backgroundServiceStarted) {
+      try {
+        FlutterForegroundTask.sendDataToTask({'type': 'STOP'});
+        await stopKknForegroundService();
+        FlutterForegroundTask.removeTaskDataCallback(_onBackgroundData);
+      } catch (_) {}
+      _backgroundServiceStarted = false;
+    }
+
+    // 3. Reset SEMUA in-memory state
+    _accumulatedSeconds = 0;
+    _zoneEntryTime = null;
+    _currentTargetScheduleId = null;
+    _lastSavedSeconds = -1;
+    _lastTimerDate = null;
+
+    // 4. Bersihkan SharedPreferences — hapus semua key kkn_ dan kkn_bg_
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final kknKeys = prefs.getKeys()
+          .where((k) => k.startsWith('kkn_') || k.startsWith('kkn_bg_'))
+          .toList();
+      for (final key in kknKeys) {
+        await prefs.remove(key);
+      }
+    } catch (_) {}
+
+    // 5. Reset LocationPingNotifier — stop timer ping & bersihkan offline queue
+    try {
+      await ref.read(locationPingControllerProvider.notifier).resetForNewUser();
+    } catch (_) {}
+
+    // 6. Reset Riverpod state ke kondisi awal (kosong)
+    if (mounted) {
+      state = KknLocationState();
+    }
+
+    debugPrint('[KknLocation] resetForNewUser() selesai — semua state bersih');
   }
 
   @override

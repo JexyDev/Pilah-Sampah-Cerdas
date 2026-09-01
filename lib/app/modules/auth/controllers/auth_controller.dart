@@ -282,16 +282,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Non-critical — abaikan jika Firebase tidak aktif
     }
 
-    // 1. Hapus seluruh KKN timer cache & preference di SharedPreferences (termasuk authToken) DULU
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final kknKeys = prefs.getKeys().where((k) => k.startsWith('kkn_')).toList();
-      for (final key in kknKeys) {
-        await prefs.remove(key);
-      }
-    } catch (_) {}
-
-    // 2. Jeda kegiatan KKN aktif ke backend sebelum stop service
+    // 1. Jeda kegiatan KKN aktif ke backend sebelum stop service
     // agar backend tidak auto-mark HADIR dari durasi yang sudah terakumulasi
     try {
       final kknNotifier = _ref.read(kknLocationProvider.notifier);
@@ -301,15 +292,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     } catch (_) {}
 
-    // 3. Hentikan total background foreground GPS service KKN & cancel notifikasi
+    // 2. Reset TOTAL semua in-memory state KKN + stop GPS service + clear SharedPreferences kkn_*.
+    //    WAJIB dipanggil sebelum akun lain bisa login agar durasi akun ini tidak bocor
+    //    ke sesi berikutnya (bug: akun kedua mulai presensi dari durasi akun pertama).
     try {
-      await stopKknForegroundService();
+      await _ref.read(kknLocationProvider.notifier).resetForNewUser();
     } catch (_) {}
 
+    // 3. Hentikan notifikasi & bersihkan cache notifikasi
     await NotificationEngine().cancelAll();
     clearNotificationCache();
     
-    // Clear user-specific SharedPreferences caches
+    // 4. Clear user-specific SharedPreferences caches (notif read state, dll)
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
