@@ -493,7 +493,7 @@ export const systemService = {
       ? `${(data.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB`
       : "24.80 MB";
 
-    const targetVersion = data.latestVersion || data.version || "1.0.0";
+    const targetVersion = data.latestVersion || data.version || "1.1.0";
     const targetUrl =
       data.downloadUrl || data.apkUrl || "http://157.10.252.252:3000/api/v1/system/download-apk";
 
@@ -542,7 +542,7 @@ export const systemService = {
       });
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
-        const version = parsed.latestVersion || parsed.version || "1.0.0";
+        const version = parsed.latestVersion || parsed.version || "1.1.0";
         const downloadUrl =
           parsed.downloadUrl ||
           parsed.apkUrl ||

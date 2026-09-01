@@ -2743,6 +2743,14 @@ const Dashboard: React.FC = () => {
                   </div>
                   <span className="font-extrabold text-indigo-700 dark:text-indigo-300 text-xs bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.kkn ?? 0}</span>
                 </div>
+
+                <div className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
+                    <Users size={16} className="text-teal-600 dark:text-teal-400" />
+                    <span>Warga / Masyarakat</span>
+                  </div>
+                  <span className="font-extrabold text-teal-700 dark:text-teal-300 text-xs bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-700/40 px-2.5 py-0.5 rounded-lg">{stats.activeSessions.warga ?? 0}</span>
+                </div>
               </div>
             ) : (
               <div className="mt-4 py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic">

@@ -406,6 +406,7 @@ export const dashboardService = {
     let activeDpl = 0;
     let activeResidu = 0;
     let activeKkn = 0;
+    let activeWarga = 0;
 
     if (activeUserIds.length > 0) {
       const activeUsers = await prisma.user.findMany({
@@ -497,6 +498,15 @@ export const dashboardService = {
             roleName.includes("ADMIN") ||
             roleName.includes("DEV"));
 
+        // 7. Warga / Nasabah / Masyarakat Umum
+        const isWarga =
+          !isKkn &&
+          !isDpl &&
+          !isOperator &&
+          !isResidu &&
+          !isRw &&
+          !isAdmin;
+
         if (isKkn) {
           activeKkn += 1;
         } else if (isDpl) {
@@ -509,15 +519,16 @@ export const dashboardService = {
           activeRw += 1;
         } else if (isAdmin) {
           activeAdmin += 1;
+        } else if (isWarga) {
+          activeWarga += 1;
         } else {
-          // Fallback role lain (misal role admin tidak terdefinisi)
-          activeAdmin += 1;
+          activeWarga += 1;
         }
       });
     }
 
     const totalActiveSessions =
-      activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn;
+      activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn + activeWarga;
 
     // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Tempat Sampah vs Deteksi AI)
     const setoranWithBin = await prisma.setoranOtomatis.findMany({
@@ -619,6 +630,7 @@ export const dashboardService = {
         dpl: activeDpl,
         residu: activeResidu,
         kkn: activeKkn,
+        warga: activeWarga,
       },
       kepatuhanPemilahan: {
         rate: sortingComplianceRate,

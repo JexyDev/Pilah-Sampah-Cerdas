@@ -754,6 +754,7 @@ export const LaporanPresensiPage: React.FC = () => {
         "DPL",
         "Jam Masuk (JM)",
         "Jam Pulang (JP)",
+        "Durasi Jeda (Menit)",
         "Durasi Aktual Bersih (JP - JM / Menit)",
         "Durasi Formatted",
         "Target Minimal Harian (Menit)",
@@ -767,6 +768,7 @@ export const LaporanPresensiPage: React.FC = () => {
       const rows = items.map((it, idx) => {
         const actualMins = it.durasiAktualMenit ?? it.durasiMenit ?? 0;
         const targetMin = it.targetMinMenit ?? 240;
+        const jedaMins = it.durasiJedaMenit ?? 0;
         const rasio = it.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1));
         const keterpenuhan = it.isMemenuhiDurasi ? "MEMENUHI (>= 4 Jam)" : "KURANG DARI TARGET (< 4 Jam)";
 
@@ -781,6 +783,7 @@ export const LaporanPresensiPage: React.FC = () => {
           it.kelompok?.dplName ?? "-",
           it.jamMasuk,
           it.jamPulang === "-" ? "Sedang Lapangan" : it.jamPulang,
+          jedaMins,
           actualMins,
           it.durasiFormatted,
           targetMin,
@@ -1470,7 +1473,12 @@ export const LaporanPresensiPage: React.FC = () => {
                   <th className="py-3.5 px-4">Tanggal</th>
                   <th className="py-3.5 px-4 text-center">Jam Masuk (JM)</th>
                   <th className="py-3.5 px-4 text-center">Jam Pulang (JP)</th>
-                  <th className="py-3.5 px-4 text-center min-w-[130px]">Durasi Bersih (JP - JM)</th>
+                  <th className="py-3.5 px-3 text-center min-w-[110px] bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300" title="Durasi Jeda (DJ) — waktu istirahat atau jeda di luar zona">
+                    Durasi Jeda (DJ)
+                  </th>
+                  <th className="py-3.5 px-4 text-center min-w-[130px]" title="Durasi Bersih = (JP − JM) − DJ">
+                    Durasi Bersih (DA)
+                  </th>
                   <th className="py-3.5 px-4 text-center">Rasio Kehadiran (%)</th>
                   <th className="py-3.5 px-4 text-center min-w-[150px]">Status Keterpenuhan</th>
                   <th className="py-3.5 px-4 min-w-[180px]">Deskripsi Kegiatan</th>
@@ -1481,14 +1489,14 @@ export const LaporanPresensiPage: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
                 {loading ? (
                   <tr>
-                    <td colSpan={12} className="py-12 text-center text-slate-400">
+                    <td colSpan={13} className="py-12 text-center text-slate-400">
                       <RefreshCw size={24} className="animate-spin text-emerald-600 mx-auto mb-2" />
                       <span>Memuat data log presensi detail...</span>
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="py-12">
+                    <td colSpan={13} className="py-12">
                       <EmptyTableState
                         title="Tidak Ada Log Sesi Presensi"
                         description="Tidak ditemukan riwayat kehadiran dengan filter yang dipilih."
@@ -1504,6 +1512,7 @@ export const LaporanPresensiPage: React.FC = () => {
                     const actualMins = item.durasiAktualMenit ?? item.durasiMenit ?? 0;
                     const targetMin = item.targetMinMenit ?? 240;
                     const rasio = item.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1));
+                    const jedaMins = item.durasiJedaMenit ?? 0;
 
                     return (
                       <tr
@@ -1579,6 +1588,18 @@ export const LaporanPresensiPage: React.FC = () => {
                           ) : (
                             <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-bold text-xs border border-slate-200 dark:border-slate-700">
                               {item.jamPulang} WIB
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Durasi Jeda (DJ) */}
+                        <td className="py-3.5 px-3 text-center bg-amber-50/30 dark:bg-amber-950/10">
+                          <div className={`font-mono font-bold text-xs ${jedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
+                            {item.durasiJedaFormatted || `${jedaMins} Menit`}
+                          </div>
+                          {jedaMins > 0 && (
+                            <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 font-mono">
+                              ({jedaMins} mnt)
                             </span>
                           )}
                         </td>
@@ -2174,7 +2195,7 @@ export const LaporanPresensiPage: React.FC = () => {
                         </div>
 
                         {/* Times & Duration Strip */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Jam Masuk (JM)</span>
                             <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
@@ -2188,7 +2209,13 @@ export const LaporanPresensiPage: React.FC = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-[10px] font-bold text-slate-400 block">Durasi Bersih Aktual</span>
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 block">Durasi Jeda (DJ)</span>
+                            <span className={`font-mono font-bold ${item.durasiJedaMenit && item.durasiJedaMenit > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"}`}>
+                              {item.durasiJedaFormatted || `${item.durasiJedaMenit || 0} Menit`}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">Durasi Bersih (DA)</span>
                             <span className="font-mono font-black text-slate-900 dark:text-white">
                               {item.durasiFormatted} ({item.durasiMenit}m)
                             </span>

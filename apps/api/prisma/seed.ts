@@ -595,7 +595,11 @@ async function main() {
     { key: "attendance_min_duration_minutes", value: "0", tipe: "number", deskripsi: "Durasi minimal presensi KKN (Menit)" },
     { key: "attendance_min_duration_seconds", value: "0", tipe: "number", deskripsi: "Durasi minimal presensi KKN (Detik)" },
     { key: "attendance_out_of_zone_tolerance_minutes", value: "15", tipe: "number", deskripsi: "Toleransi waktu di luar zona (Menit)" },
-    { key: "APP_VERSION", value: "1.0.0", tipe: "string", deskripsi: "Versi aplikasi BERSEKA" },
+    { key: "APP_VERSION", value: "1.1.0", tipe: "string", deskripsi: "Versi aplikasi BERSEKA" },
+    { key: "min_required_version", value: "1.1.0", tipe: "string", deskripsi: "Versi minimal aplikasi yang wajib digunakan" },
+    { key: "app_min_required_version", value: "1.1.0", tipe: "string", deskripsi: "Versi minimal aplikasi mobile" },
+    { key: "latest_version", value: "1.1.0", tipe: "string", deskripsi: "Versi rilis terbaru aplikasi mobile" },
+    { key: "app_latest_version", value: "1.1.0", tipe: "string", deskripsi: "Versi rilis terbaru aplikasi mobile" },
   ];
 
   for (const config of configs) {

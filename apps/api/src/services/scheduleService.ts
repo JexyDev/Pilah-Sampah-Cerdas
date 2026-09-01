@@ -100,10 +100,10 @@ export const scheduleService = {
       try {
         const ruleConfigs = await configService.getRuleEngineConfigs();
         data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
-          ? 200 + (ruleConfigs as any).attendanceGeofenceBufferMeters
-          : 200;
+          ? 500 + (ruleConfigs as any).attendanceGeofenceBufferMeters
+          : 500;
       } catch (_err) {
-        data.radius = 200;
+        data.radius = 500;
       }
     }
     const schedule = await prisma.schedule.create({
@@ -249,6 +249,10 @@ export const scheduleService = {
     }
   },
 
+  /**
+   * Generator & Sinkronisasi Jadwal Kegiatan Posko KKN Per Hari (Harian)
+   * Memastikan setiap kelompok KKN memiliki jadwal posko aktif harian untuk tanggal yang ditentukan (default: hari ini).
+   */
   syncDailySchedulesForToday: async (targetDateStr?: string) => {
     try {
       const now = new Date();
@@ -257,7 +261,7 @@ export const scheduleService = {
       const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
       const endOfDay = new Date(`${dateStr}T23:59:59.999+07:00`);
 
-      // Fetch all KKN groups
+      // Fetch all KKN groups with Posko info
       const groups = await prisma.kelompokKkn.findMany({
         include: {
           facilities: {
@@ -268,18 +272,17 @@ export const scheduleService = {
         },
       });
 
-      // Also check posko_kkn and posko_kkn_multi tables
       const [poskos, multiPoskos] = await Promise.all([
         prisma.poskoKkn.findMany(),
         (prisma as any).poskoKknMulti.findMany({
           orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
         }),
       ]);
+
       const poskoMap = new Map<string, any>();
       poskos.forEach((p) => {
         if (p.kelompokId) poskoMap.set(p.kelompokId, p);
       });
-      // Fallback ke multi posko jika belum ada di poskoMap
       multiPoskos.forEach((mp: any) => {
         if (mp.kelompokId && !poskoMap.has(mp.kelompokId)) {
           poskoMap.set(mp.kelompokId, mp);
@@ -312,18 +315,18 @@ export const scheduleService = {
         let poskoLat = -6.8915; // default Coblong
         let poskoLng = 107.6107;
         let poskoName = `Posko KKN ${group.name}`;
-        let poskoRadius = 200;
+        let poskoRadius = 500;
 
         if (officialPosko && officialPosko.latitude && officialPosko.longitude) {
           poskoLat = Number(officialPosko.latitude);
           poskoLng = Number(officialPosko.longitude);
           poskoName = officialPosko.nama || poskoName;
-          poskoRadius = Math.max(150, Number(officialPosko.radius) || 200);
+          poskoRadius = Math.max(150, Number(officialPosko.radius) || 500);
         } else if (facilityPosko && facilityPosko.latitude && facilityPosko.longitude) {
           poskoLat = Number(facilityPosko.latitude);
           poskoLng = Number(facilityPosko.longitude);
           poskoName = facilityPosko.nama || poskoName;
-          poskoRadius = Math.max(150, 200);
+          poskoRadius = Math.max(150, Number((facilityPosko as any)?.radius) || 500);
         } else {
           // Fallback kelurahan resmi
           const kel = (group.kelurahan || group.name || "").toLowerCase();
@@ -389,12 +392,19 @@ export const scheduleService = {
             cleanedDuplicatesCount++;
           }
 
-          // Perbarui titik koordinat, nama, dan radius jadwal utama jika berubah
+          // Perbarui titik koordinat, nama, dan radius jadwal utama jika berubah.
+          // Adaptasi aman: Jika jadwal yang sudah ada (primarySchedule) memiliki radius kustom di database
+          // dan posko resmi tidak secara spesifik memiliki nilai radius baru, pertahankan radius kustom tersebut.
+          const existingScheduleRadius = Number(primarySchedule.radius) || 0;
+          const targetScheduleRadius = (officialPosko && Number(officialPosko.radius) > 0)
+            ? Math.max(150, Number(officialPosko.radius))
+            : (existingScheduleRadius > 0 ? existingScheduleRadius : poskoRadius);
+
           if (
             Number(primarySchedule.latitude) !== poskoLat ||
             Number(primarySchedule.longitude) !== poskoLng ||
             primarySchedule.location !== poskoName ||
-            Number(primarySchedule.radius) !== poskoRadius
+            Number(primarySchedule.radius) !== targetScheduleRadius
           ) {
             await prisma.schedule.update({
               where: { id: primarySchedule.id },
@@ -403,7 +413,7 @@ export const scheduleService = {
                 longitude: poskoLng,
                 location: poskoName,
                 title: `Kegiatan Harian ${poskoName}`,
-                radius: poskoRadius,
+                radius: targetScheduleRadius,
               },
             });
           }
@@ -430,6 +440,10 @@ export const scheduleService = {
           // Concurrent creation safe
         }
       }
+
+      console.log(
+        `[scheduleService.syncDailySchedulesForToday] Date: ${dateStr}, Groups: ${groups.length}. Created: ${createdCount}, Existing: ${existingCount}, Duplicates Cleaned: ${cleanedDuplicatesCount}`
+      );
 
       return {
         success: true,

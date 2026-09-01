@@ -111,6 +111,46 @@ export const safeUploadPemanfaatanImage = (req: Request, res: Response, next: Ne
   });
 };
 
+import { execSync } from "child_process";
+
+/**
+ * Konversi otomatis file HEIC/HEIF (dari kamera iPhone/iOS) menjadi file JPEG/JPG standar
+ * agar gambar dapat dirender di semua web browser.
+ */
+export function ensureWebCompatibleImageFile(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  if (ext !== ".heic" && ext !== ".heif") {
+    return filename;
+  }
+
+  const uploadDir = path.join(process.cwd(), "uploads");
+  const srcPath = path.join(uploadDir, filename);
+  const baseNoExt = filename.substring(0, filename.length - ext.length);
+  const jpgFilename = `${baseNoExt}.jpg`;
+  const dstPath = path.join(uploadDir, jpgFilename);
+
+  if (fs.existsSync(srcPath)) {
+    try {
+      execSync(`heif-convert "${srcPath}" "${dstPath}"`);
+      if (fs.existsSync(dstPath)) {
+        try { fs.chmodSync(dstPath, 0o644); } catch {}
+        return jpgFilename;
+      }
+    } catch {
+      try {
+        execSync(`magick "${srcPath}" "${dstPath}"`);
+        if (fs.existsSync(dstPath)) {
+          try { fs.chmodSync(dstPath, 0o644); } catch {}
+          return jpgFilename;
+        }
+      } catch {
+        // Fallback jika tools konversi belum tersedia
+      }
+    }
+  }
+  return filename;
+}
+
 /**
  * Ekstraksi aman untuk seluruh URL file yang diunggah dari req.file atau req.files
  * Mendukung format Multer: .single(), .array(), .fields(), dan .any()
@@ -119,13 +159,15 @@ export const safeUploadPemanfaatanImage = (req: Request, res: Response, next: Ne
 export function extractUploadedFileUrls(req: Request): string[] {
   const urls = new Set<string>();
   if (req.file && req.file.filename) {
-    urls.add(`/uploads/${req.file.filename}`);
+    const finalFilename = ensureWebCompatibleImageFile(req.file.filename);
+    urls.add(`/uploads/${finalFilename}`);
   }
   if (req.files) {
     if (Array.isArray(req.files)) {
       for (const f of req.files) {
         if (f && f.filename) {
-          urls.add(`/uploads/${f.filename}`);
+          const finalFilename = ensureWebCompatibleImageFile(f.filename);
+          urls.add(`/uploads/${finalFilename}`);
         }
       }
     } else if (typeof req.files === "object") {
@@ -135,7 +177,8 @@ export function extractUploadedFileUrls(req: Request): string[] {
         if (Array.isArray(arr)) {
           for (const f of arr) {
             if (f && f.filename) {
-              urls.add(`/uploads/${f.filename}`);
+              const finalFilename = ensureWebCompatibleImageFile(f.filename);
+              urls.add(`/uploads/${finalFilename}`);
             }
           }
         }

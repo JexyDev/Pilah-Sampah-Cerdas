@@ -13,7 +13,7 @@ import {
   Clock,
   AlertTriangle,
   RefreshCw,
-  ShieldCheck,
+  PauseCircle,
   Send,
   Loader2,
   Image as ImageIcon,
@@ -53,9 +53,11 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Posko Info
+  // Posko Info (Multi-Posko Support)
   const [posko, setPosko] = useState<{ name: string; lat: number; lng: number; radius: number } | null>(null);
+  const [allGroupPoskos, setAllGroupPoskos] = useState<Array<{ id: string; name: string; lat: number; lng: number; radius: number }>>([]);
   const [distanceToPosko, setDistanceToPosko] = useState<number | null>(null);
+  const [nearestPoskoInfo, setNearestPoskoInfo] = useState<{ name: string; dist: number; isInside: boolean } | null>(null);
 
   // Active Session State
   const [activeSession, setActiveSession] = useState<any | null>(null);
@@ -85,7 +87,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Live Ping Engine State
-  const [, setLiveInZoneSecs] = useState<number>(0);
+  const [liveInZoneSecs, setLiveInZoneSecs] = useState<number>(0);
   const [isLiveActiveInZone, setIsLiveActiveInZone] = useState<boolean>(false);
   const [, setLastPingTime] = useState<Date | null>(null);
   const [, setIsPingingServer] = useState(false);
@@ -113,7 +115,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         if (d.attendanceStatus === "BERLANGSUNG") {
           setIsLiveActiveInZone(true);
           if (typeof d.actualInZoneSeconds === "number" && d.actualInZoneSeconds > 0) {
-            setLiveInZoneSecs(d.actualInZoneSeconds);
+            setLiveInZoneSecs((prev) => Math.max(prev, d.actualInZoneSeconds));
           }
           // Refresh kegiatan jika status baru saja bertransisi
           if (primaryKegiatan && primaryKegiatan.statusKehadiran !== "BERLANGSUNG") {
@@ -121,6 +123,12 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           }
         } else if (d.attendanceStatus === "TERJEDA") {
           setIsLiveActiveInZone(false);
+          if (typeof d.actualInZoneSeconds === "number" && d.actualInZoneSeconds > 0) {
+            setLiveInZoneSecs((prev) => Math.max(prev, d.actualInZoneSeconds));
+          }
+          if (primaryKegiatan && primaryKegiatan.statusKehadiran !== "TERJEDA") {
+            fetchKegiatanAktif();
+          }
         }
       }
     } catch (e) {
@@ -146,9 +154,27 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       setLocationError(null);
       setIsLocating(false);
 
-      if (posko) {
+      if (allGroupPoskos.length > 0) {
+        const withDist = allGroupPoskos.map((p) => ({
+          ...p,
+          dist: calculateDistanceMeters(latitude, longitude, p.lat, p.lng),
+        }));
+        withDist.sort((a, b) => a.dist - b.dist);
+        const nearest = withDist[0];
+        setDistanceToPosko(nearest.dist);
+        setNearestPoskoInfo({
+          name: nearest.name,
+          dist: nearest.dist,
+          isInside: nearest.dist <= nearest.radius,
+        });
+      } else if (posko) {
         const dist = calculateDistanceMeters(latitude, longitude, posko.lat, posko.lng);
         setDistanceToPosko(dist);
+        setNearestPoskoInfo({
+          name: posko.name,
+          dist,
+          isInside: dist <= posko.radius,
+        });
       }
 
       pingServerLocation(latitude, longitude, accuracy);
@@ -202,15 +228,16 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       document.removeEventListener("visibilitychange", handleWakeup);
       window.removeEventListener("focus", handleWakeup);
     };
-  }, [posko]);
+  }, [posko, allGroupPoskos]);
 
-  // 4. Timer untuk Sesi Aktif
+  // 4. Timer untuk Sesi Aktif (Monotonik & Akurat)
   useEffect(() => {
     let interval: any;
     const startWaktu = activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt;
     const isOngoing = primaryKegiatan?.statusKehadiran === "BERLANGSUNG" || isLiveActiveInZone;
+    const isTerjeda = primaryKegiatan?.statusKehadiran === "TERJEDA";
 
-    if (activeSession && startWaktu) {
+    if (activeSession && startWaktu && !isOngoing && !isTerjeda) {
       const updateTimer = () => {
         const start = new Date(startWaktu).getTime();
         const now = Date.now();
@@ -234,31 +261,56 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         });
       };
       interval = setInterval(updateOngoingTimer, 1000);
+    } else if (isTerjeda) {
+      // Saat TERJEDA, durasi aktif terkunci di angka terakhir (tidak bertambah & tidak mundur)
+      const hrs = String(Math.floor(liveInZoneSecs / 3600)).padStart(2, "0");
+      const mins = String(Math.floor((liveInZoneSecs % 3600) / 60)).padStart(2, "0");
+      const secs = String(liveInZoneSecs % 60).padStart(2, "0");
+      setElapsedTime(`${hrs}:${mins}:${secs}`);
     }
     return () => clearInterval(interval);
-  }, [activeSession, primaryKegiatan?.statusKehadiran, isLiveActiveInZone]);
+  }, [activeSession, primaryKegiatan?.statusKehadiran, isLiveActiveInZone, liveInZoneSecs]);
 
   const fetchPoskoData = async () => {
+    try {
+      const res = await api.get("/posko-kkn/me/all-zones");
+      const data = res.data?.data;
+      if (data && Array.isArray(data.poskos) && data.poskos.length > 0) {
+        const mapped = data.poskos.map((p: any) => ({
+          id: p.id,
+          name: p.nama || p.name || "Posko KKN",
+          lat: Number(p.latitude),
+          lng: Number(p.longitude),
+          radius: Number(p.radius) || 500,
+        }));
+        setAllGroupPoskos(mapped);
+        setPosko(mapped[0]);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+
     try {
       const res = await api.get("/areas/posko");
       const list = res.data?.data || res.data || [];
       if (Array.isArray(list) && list.length > 0) {
-        const myPosko = list[0];
-        if (myPosko.latitude && myPosko.longitude) {
-          setPosko({
-            name: myPosko.nama || myPosko.name || "Posko KKN Utama",
-            lat: Number(myPosko.latitude),
-            lng: Number(myPosko.longitude),
-            radius: myPosko.radiusMeters || 150,
-          });
-        }
+        const mapped = list.map((p: any) => ({
+          id: p.id,
+          name: p.nama || p.name || "Posko KKN",
+          lat: Number(p.latitude),
+          lng: Number(p.longitude),
+          radius: p.radiusMeters || 500,
+        }));
+        setAllGroupPoskos(mapped);
+        setPosko(mapped[0]);
       }
     } catch {
       setPosko({
         name: "Posko KKN Kelurahan",
         lat: -6.8856,
         lng: 107.6135,
-        radius: 200,
+        radius: 500,
       });
     }
   };
@@ -274,10 +326,17 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         const primary = safeList[0];
         if (primary.statusKehadiran === "BERLANGSUNG") {
           setIsLiveActiveInZone(true);
-          if (typeof primary.actualInZoneSeconds === "number") {
-            setLiveInZoneSecs(primary.actualInZoneSeconds);
-          } else if (typeof primary.actualInZoneMinutes === "number") {
-            setLiveInZoneSecs(primary.actualInZoneMinutes * 60);
+          if (typeof primary.actualInZoneSeconds === "number" && primary.actualInZoneSeconds > 0) {
+            setLiveInZoneSecs((prev) => Math.max(prev, primary.actualInZoneSeconds));
+          } else if (typeof primary.actualInZoneMinutes === "number" && primary.actualInZoneMinutes > 0) {
+            setLiveInZoneSecs((prev) => Math.max(prev, primary.actualInZoneMinutes * 60));
+          }
+        } else if (primary.statusKehadiran === "TERJEDA") {
+          setIsLiveActiveInZone(false);
+          if (typeof primary.actualInZoneSeconds === "number" && primary.actualInZoneSeconds > 0) {
+            setLiveInZoneSecs((prev) => Math.max(prev, primary.actualInZoneSeconds));
+          } else if (typeof primary.actualInZoneMinutes === "number" && primary.actualInZoneMinutes > 0) {
+            setLiveInZoneSecs((prev) => Math.max(prev, primary.actualInZoneMinutes * 60));
           }
         }
       }
@@ -446,21 +505,47 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
   // 6. Submit Presensi Check-Out
   const handleCheckOut = async () => {
-    if (!activeSession) return;
-    const targetId = activeSession.id || activeSession.presensiId;
-    if (!targetId) return;
+    if (!activeSession && !primaryKegiatan) return;
 
     setIsSubmitting(true);
     try {
-      const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
-        deskripsiKegiatan: activeSession.deskripsiKegiatan,
-      });
+      // Jika memiliki sesi jadwal kegiatan aktif resmi KKN
+      if (
+        primaryKegiatan &&
+        (primaryKegiatan.statusKehadiran === "BERLANGSUNG" ||
+          primaryKegiatan.statusKehadiran === "TERJEDA" ||
+          primaryKegiatan.statusKehadiran === "DI_ZONA")
+      ) {
+        const res = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/selesai`, {
+          latitude: coords?.latitude,
+          longitude: coords?.longitude,
+          deskripsiKegiatan: deskripsi.trim() || undefined,
+        });
 
-      if (res.data?.success || res.status === 200) {
-        showToast.success("Check-out berhasil! Sesi presensi hari ini telah selesai.");
-        setActiveSession(null);
-        fetchRiwayatPresensi();
-        fetchKegiatanAktif();
+        if (res.data?.success || res.status === 200) {
+          showToast.success("Kegiatan KKN hari ini berhasil diselesaikan (Check-Out)!");
+          setActiveSession(null);
+          fetchRiwayatPresensi();
+          fetchKegiatanAktif();
+          return;
+        }
+      }
+
+      // Fallback presensi mandiri jika bukan dari kegiatan resmi
+      if (activeSession) {
+        const targetId = activeSession.id || activeSession.presensiId;
+        if (targetId) {
+          const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
+            deskripsiKegiatan: activeSession.deskripsiKegiatan || deskripsi.trim(),
+          });
+
+          if (res.data?.success || res.status === 200) {
+            showToast.success("Check-out berhasil! Sesi presensi hari ini telah selesai.");
+            setActiveSession(null);
+            fetchRiwayatPresensi();
+            fetchKegiatanAktif();
+          }
+        }
       }
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal melakukan check-out presensi.");
@@ -692,19 +777,54 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </button>
           </div>
         </div>
-      ) : activeSession || isLiveActiveInZone || primaryKegiatan?.statusKehadiran === "BERLANGSUNG" ? (
-        /* KARTU SESI SEDANG BERLANGSUNG */
-        <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/80 rounded-3xl p-5 shadow-sm space-y-4 animate-fade-in">
+      ) : activeSession ||
+        isLiveActiveInZone ||
+        primaryKegiatan?.statusKehadiran === "BERLANGSUNG" ||
+        primaryKegiatan?.statusKehadiran === "TERJEDA" ||
+        primaryKegiatan?.statusKehadiran === "DI_ZONA" ? (
+        /* KARTU SESI SEDANG BERLANGSUNG / TERJEDA */
+        <div
+          className={`bg-white dark:bg-slate-900 border-2 rounded-3xl p-5 shadow-sm space-y-4 animate-fade-in ${
+            primaryKegiatan?.statusKehadiran === "TERJEDA"
+              ? "border-amber-500/80 dark:border-amber-500/60"
+              : "border-emerald-500/80 dark:border-emerald-500/60"
+          }`}
+        >
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-black uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              Sesi Presensi Aktif
-            </span>
+            {primaryKegiatan?.statusKehadiran === "TERJEDA" ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs font-black uppercase tracking-wider">
+                <PauseCircle size={14} className="text-amber-600" />
+                Sesi Terjeda (Di Luar Posko / GPS Terputus)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-black uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                Sesi Presensi Aktif
+              </span>
+            )}
             <div className="flex items-center gap-1 text-xs font-mono font-black text-slate-700 dark:text-slate-200">
-              <Clock size={14} className="text-emerald-600" />
+              <Clock
+                size={14}
+                className={
+                  primaryKegiatan?.statusKehadiran === "TERJEDA" ? "text-amber-600" : "text-emerald-600"
+                }
+              />
               <span>{elapsedTime}</span>
             </div>
           </div>
+
+          {/* Banner Informasi Khusus Saat Sesi Terjeda */}
+          {primaryKegiatan?.statusKehadiran === "TERJEDA" && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-900/60 text-xs text-amber-800 dark:text-amber-300 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <Info size={14} className="text-amber-600 shrink-0" />
+                <span>Waktu Terjeda Sementara: {primaryKegiatan.durasiJedaFormatted || "0 Menit"}</span>
+              </div>
+              <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-relaxed">
+                Penghitungan durasi dihentikan sementara karena Anda berada di luar radius posko atau aplikasi diminimalkan. Masuk kembali ke lokasi posko dan pastikan GPS aktif untuk melanjutkan sesi secara otomatis.
+              </p>
+            </div>
+          )}
 
           <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2">
             <div className="flex justify-between items-center text-xs">
@@ -717,15 +837,33 @@ export const MahasiswaPresensiMobile: React.FC = () => {
               <span className="text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
                 {(activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt)
-                  ? new Date(activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt).toLocaleTimeString("id-ID")
+                  ? new Date(
+                      activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt
+                    ).toLocaleTimeString("id-ID")
                   : "-"}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
               <span className="text-slate-400">Status GPS:</span>
-              <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {distanceToPosko !== null && posko
+              <span
+                className={`font-bold flex items-center gap-1 ${
+                  primaryKegiatan?.statusKehadiran === "TERJEDA"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    primaryKegiatan?.statusKehadiran === "TERJEDA"
+                      ? "bg-amber-500"
+                      : "bg-emerald-500 animate-pulse"
+                  }`}
+                />
+                {nearestPoskoInfo
+                  ? nearestPoskoInfo.isInside
+                    ? `Di ${nearestPoskoInfo.name} (${nearestPoskoInfo.dist}m)`
+                    : `Di Luar Zona (${nearestPoskoInfo.name} ${nearestPoskoInfo.dist}m)`
+                  : distanceToPosko !== null && posko
                   ? distanceToPosko <= posko.radius
                     ? `Di Posko (${distanceToPosko}m)`
                     : `Di Luar Zona (${distanceToPosko}m)`
@@ -744,35 +882,24 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </div>
           )}
 
-          {activeSession ? (
-            <button
-              onClick={handleCheckOut}
-              disabled={isSubmitting}
-              className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  <span>Memproses Checkout...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 size={16} />
-                  <span>Akhiri Sesi &amp; Check-Out</span>
-                </>
-              )}
-            </button>
-          ) : (
-            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-emerald-600" />
-                <span className="font-bold">Kehadiran Terpantau Realtime</span>
-              </div>
-              <span className="text-[10px] font-mono font-bold bg-emerald-200/60 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg">
-                GPS Aktif
-              </span>
-            </div>
-          )}
+          {/* Tombol Check-Out Sesi (Dapat digunakan baik saat Aktif maupun Terjeda) */}
+          <button
+            onClick={handleCheckOut}
+            disabled={isSubmitting}
+            className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Memproses Checkout...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={16} />
+                <span>Akhiri Sesi &amp; Check-Out</span>
+              </>
+            )}
+          </button>
         </div>
       ) : (
         /* FORM CHECK-IN PRESENSI MANDIRI BARU */
@@ -956,6 +1083,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                   <p className="text-[10px] text-slate-400 mt-0.5">
                     {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
                     • Masuk: {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
+                    {item.jamPulang ? ` • Pulang: ${new Date(item.jamPulang).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {item.durasiJedaMenit && item.durasiJedaMenit > 0 ? ` • Jeda: ${item.durasiJedaFormatted || `${item.durasiJedaMenit}m`}` : ""}
                   </p>
                 </div>
                 <span

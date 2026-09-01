@@ -578,4 +578,20 @@ router.post(
   kknAttendanceController.forceCheckoutAttendance
 );
 
+router.post(
+  ["/process-auto-alpha", "/admin/process-auto-alpha"],
+  authMiddleware,
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknAttendanceController.processAutoAlpha
+);
+
 export default router;

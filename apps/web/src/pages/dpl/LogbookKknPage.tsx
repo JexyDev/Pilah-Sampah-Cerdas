@@ -1061,21 +1061,48 @@ export const LogbookKknPage: React.FC = () => {
                             {memberCount > 0 ? `${memberCount}/${memberCount}` : "Tim"}
                           </td>
 
-                          {/* 9. Bukti */}
+                          {/* 9. Bukti (Thumbnail Visual & Quick Zoom) */}
                           <td className="p-3.5 align-top whitespace-nowrap text-center">
                             {item.fotoBuktiUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
-                                  setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
-                                }}
-                                className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline cursor-pointer"
-                              >
-                                Foto Bukti
-                              </button>
+                              <div className="inline-flex flex-col items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
+                                    setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
+                                  }}
+                                  className="relative group w-14 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-2xs hover:shadow-md hover:scale-105 transition-all duration-150 cursor-pointer flex items-center justify-center"
+                                  title="Klik untuk memperbesar foto bukti"
+                                >
+                                  <img
+                                    src={resolveImageUrl(item.fotoBuktiUrl)}
+                                    alt="Bukti Logbook"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.currentTarget;
+                                      target.style.display = "none";
+                                      const parent = target.parentElement;
+                                      if (parent && !parent.querySelector(".fallback-label")) {
+                                        parent.classList.add("bg-emerald-50", "dark:bg-emerald-950/30");
+                                        const label = document.createElement("span");
+                                        label.className = "fallback-label text-[10px] font-bold text-emerald-700 dark:text-emerald-400";
+                                        label.innerText = "Foto";
+                                        parent.appendChild(label);
+                                      }
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                    <Eye className="w-4 h-4" />
+                                  </div>
+                                </button>
+                                <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                                  {Array.isArray((item as any).attachmentUrls) && (item as any).attachmentUrls.length > 1
+                                    ? `${(item as any).attachmentUrls.length} Foto`
+                                    : "Foto Bukti"}
+                                </span>
+                              </div>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-slate-400 dark:text-slate-500 text-xs font-medium">-</span>
                             )}
                           </td>
 

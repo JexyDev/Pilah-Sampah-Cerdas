@@ -382,25 +382,32 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   };
 
   return (
-    <header className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30 transition-all shadow-2xs">
+    <header className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between sticky top-0 z-30 transition-all shadow-2xs">
       {/* Left Section: Sidebar Toggle & Dynamic Breadcrumb Pills */}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
         {/* Toggle Sidebar Button (Green Squircle Icon Button) */}
         <button
           onClick={onToggleSidebar}
           title={isCollapsed ? "Perluas Sidebar" : "Ciutkan Sidebar"}
-          className="w-10 h-10 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-[#d0f2df] dark:hover:bg-emerald-900/60 active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 dark:border-emerald-700/20 cursor-pointer shadow-2xs shrink-0"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-[#d0f2df] dark:hover:bg-emerald-900/60 active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 dark:border-emerald-700/20 cursor-pointer shadow-2xs shrink-0"
         >
-          <LayoutGrid size={19} />
+          <LayoutGrid size={18} className="sm:w-[19px] sm:h-[19px]" />
         </button>
 
         {breadcrumbItems.map((item, idx) => {
           const isLast = idx === breadcrumbItems.length - 1;
           return (
             <React.Fragment key={idx}>
-              <ChevronRight size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
+              <ChevronRight
+                size={14}
+                className={`text-slate-300 dark:text-slate-600 shrink-0 ${
+                  !isLast ? "hidden sm:inline-block" : ""
+                }`}
+              />
               <span
-                className={`flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full border transition-all truncate max-w-[150px] sm:max-w-[220px] ${
+                className={`items-center gap-1.5 text-xs px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border transition-all truncate max-w-[120px] sm:max-w-[220px] ${
+                  !isLast ? "hidden sm:flex" : "flex"
+                } ${
                   isLast
                     ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700 font-black shadow-2xs"
                     : "bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
@@ -414,17 +421,17 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
       </div>
 
       {/* Right Section: System Actions & User Profile */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Notifications Popover Trigger & Container */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center relative transition-all border border-slate-200/80 dark:border-slate-700/80 cursor-pointer shadow-2xs active:scale-95"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center relative transition-all border border-slate-200/80 dark:border-slate-700/80 cursor-pointer shadow-2xs active:scale-95"
             title="Notifikasi Sistem"
           >
-            <Bell size={18} />
+            <Bell size={17} className="sm:w-[18px] sm:h-[18px]" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white font-black text-[10px] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs animate-bounce">
+              <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-rose-500 text-white font-black text-[9px] sm:text-[10px] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs animate-bounce">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -432,9 +439,9 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
 
           {/* Notifications Dropdown Popover */}
           {showNotifications && (
-            <div className="absolute top-12 right-0 w-[340px] sm:w-96 max-w-[calc(100vw-2rem)] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:top-12 sm:right-0 sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-none bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               {/* Popover Header */}
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-850">
+              <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-850">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 text-[#009966] dark:text-emerald-400 flex items-center justify-center">
                     <Bell size={15} />
@@ -445,12 +452,12 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                   {unreadCount > 0 && (
                     <button
                       onClick={handleMarkAllAsRead}
-                      className="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer transition-all"
+                      className="text-[10px] sm:text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer transition-all"
                     >
                       Tandai Semua Dibaca
                     </button>
                   )}
-                  <span className="text-[11px] bg-[#e5f7ed] dark:bg-emerald-950 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-black border border-[#009966]/20 dark:border-emerald-700/30 shrink-0">
+                  <span className="text-[10.5px] sm:text-[11px] bg-[#e5f7ed] dark:bg-emerald-950 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-black border border-[#009966]/20 dark:border-emerald-700/30 shrink-0">
                     {unreadCount > 0 ? `${unreadCount} Baru` : `${notifications.length} Peristiwa`}
                   </span>
                 </div>
@@ -485,7 +492,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                       <div
                         key={n.id}
                         onClick={() => handleMarkNotificationRead(n.id)}
-                        className={`p-4 flex gap-3 transition-all hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 cursor-pointer ${
+                        className={`p-3.5 sm:p-4 flex gap-3 transition-all hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 cursor-pointer ${
                           !n.isRead ? "bg-emerald-50/30 dark:bg-emerald-950/20" : ""
                         }`}
                       >
@@ -547,15 +554,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         </div>
 
         {/* Vertical Separator */}
-        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
+        <div className="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
 
-        {/* User Profile Pill Card (Direct Navigation to Pengaturan) */}
+        {/* User Profile Pill Card (Direct Navigation to Pengaturan / Profil) */}
         <div
           onClick={() => navigate("/profil")}
           title="Profil Pengguna"
-          className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full pl-4 pr-1.5 py-1.5 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
+          className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-1.5 sm:py-1.5 flex items-center gap-2 sm:gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
         >
-          <div className="flex flex-col items-center justify-center text-center gap-0.5">
+          <div className="hidden sm:flex flex-col items-center justify-center text-center gap-0.5">
             <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">
               {user?.name || "Super User"}
             </span>
@@ -569,7 +576,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
               ) : "ADMIN"}
             </span>
           </div>
-          <div className="w-9 h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
             {user?.fotoProfil ? (
               <img
                 src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}

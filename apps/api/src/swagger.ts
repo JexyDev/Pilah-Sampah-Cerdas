@@ -14,7 +14,7 @@ const options: swaggerJSDoc.Options = {
     openapi: "3.0.0",
     info: {
       title: "BERSEKA API Documentation",
-      version: "1.0.0",
+      version: "1.1.0",
       description: "Dokumentasi API untuk sistem manajemen pilah sampah cerdas (pilahsampah.id)",
     },
     servers: [

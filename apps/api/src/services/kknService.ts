@@ -1563,7 +1563,7 @@ export class KknService {
       alamat: payload.alamat || "-",
       latitude: lat,
       longitude: lng,
-      radius: payload.radius != null ? Number(payload.radius) : 150,
+      radius: payload.radius != null ? Number(payload.radius) : 500,
       fotoUrl: payload.foto,
     });
 
@@ -1576,7 +1576,7 @@ export class KknService {
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
-          radius: Number((posko as any).radius) || 150,
+          radius: Number((posko as any).radius) || 500,
           status: "APPROVED",
         },
       },
@@ -1647,7 +1647,7 @@ export class KknService {
     const parsedRadius =
       payload.radius !== undefined
         ? Number(payload.radius)
-        : Number((existingPosko as any)?.radius) || 150;
+        : Number((existingPosko as any)?.radius) || 500;
     const posko = await poskoKknService.upsertPosko(student.kelompokId, {
       nama: poskoName,
       alamat: payload.alamat !== undefined ? payload.alamat : existingPosko?.alamat || "-",
@@ -1670,14 +1670,14 @@ export class KknService {
           longitude: existingPosko?.longitude ? Number(existingPosko.longitude) : null,
           nama: existingPosko?.nama,
           alamat: existingPosko?.alamat,
-          radius: Number((existingPosko as any)?.radius) || 150,
+          radius: Number((existingPosko as any)?.radius) || 500,
         },
         newValue: {
           poskoId: posko.id,
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
-          radius: Number((posko as any).radius) || 150,
+          radius: Number((posko as any).radius) || 500,
           nama: posko.nama,
           alamat: posko.alamat,
           status: "APPROVED",
@@ -1891,7 +1891,7 @@ export class KknService {
         totalAnggota: p.kelompok?.students.length || 0,
         statusApproval: pAny.statusApproval || "APPROVED",
         isUtama: true,
-        radius: pAny.radius || 150,
+        radius: pAny.radius || 500,
         createdAt: p.createdAt,
       };
     });
@@ -1924,7 +1924,7 @@ export class KknService {
             totalAnggota: off.totalAnggota || 0,
             statusApproval: off.statusApproval || "APPROVED",
             isUtama: off.isUtama,
-            radius: off.radius || 150,
+            radius: off.radius || 500,
             createdAt: off.createdAt,
           });
         }
@@ -1972,7 +1972,7 @@ export class KknService {
       alamat: payload.alamat?.trim() || "-",
       latitude: lat,
       longitude: lng,
-      radius: payload.radius != null ? Number(payload.radius) : 150,
+      radius: payload.radius != null ? Number(payload.radius) : 500,
       fotoUrl: payload.foto || undefined,
       keterangan: payload.statusApproval || undefined,
     });
@@ -1988,7 +1988,7 @@ export class KknService {
             kelompokId: posko.kelompokId,
             latitude: lat,
             longitude: lng,
-            radius: Number((posko as any).radius) || 150,
+            radius: Number((posko as any).radius) || 500,
             status: "APPROVED",
           },
         },
@@ -2044,7 +2044,7 @@ export class KknService {
     const parsedRadius =
       payload.radius !== undefined
         ? Number(payload.radius)
-        : Number((existing as any)?.radius) || 150;
+        : Number((existing as any)?.radius) || 500;
     const posko = await poskoKknService.upsertPosko(targetKelompokId, {
       nama: payload.nama !== undefined ? payload.nama.trim() : existing.nama,
       alamat: payload.alamat !== undefined ? payload.alamat.trim() : existing.alamat,
@@ -2069,14 +2069,14 @@ export class KknService {
             alamat: existing.alamat,
             latitude: Number(existing.latitude),
             longitude: Number(existing.longitude),
-            radius: Number((existing as any)?.radius) || 150,
+            radius: Number((existing as any)?.radius) || 500,
           },
           newValue: {
             nama: posko.nama,
             alamat: posko.alamat,
             latitude: Number(posko.latitude),
             longitude: Number(posko.longitude),
-            radius: Number((posko as any).radius) || 150,
+            radius: Number((posko as any).radius) || 500,
           },
         },
       });
@@ -2231,7 +2231,7 @@ export class KknService {
       longitude: poskoLng,
       poskoLatitude: poskoLat,
       poskoLongitude: poskoLng,
-      radiusMeter: 200,
+      radiusMeter: 500,
       totalGroupPoints,
       members,
     };
@@ -4761,7 +4761,9 @@ export class KknService {
     } else {
       tipeArea = "RADIUS";
       polygonKoordinat = null;
-      radiusMeters = kelompok.schedules?.[0]?.radius || 200;
+      const customPoskoRadius = kelompok.poskoKkn?.radius ? Number(kelompok.poskoKkn.radius) : null;
+      const customScheduleRadius = kelompok.schedules?.[0]?.radius ? Number(kelompok.schedules[0].radius) : null;
+      radiusMeters = customPoskoRadius || customScheduleRadius || 500;
     }
 
     return {

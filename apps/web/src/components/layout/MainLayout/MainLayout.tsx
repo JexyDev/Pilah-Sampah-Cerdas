@@ -63,7 +63,7 @@ const MainLayout: React.FC = () => {
         <div className="w-full min-w-0 max-w-full">
           <Header onToggleSidebar={handleToggleSidebar} isCollapsed={isCollapsed} />
           <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
-            <div className="p-container-margin w-full min-w-0 max-w-full">
+            <div className="p-3 sm:p-5 md:p-6 w-full min-w-0 max-w-full">
               <Outlet />
             </div>
           </ErrorBoundary>

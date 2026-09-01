@@ -89,7 +89,7 @@ export class ConfigController {
         latest_version: process.env.APP_LATEST_VERSION || "1.0.0",
         update_url:
           process.env.APP_UPDATE_URL ||
-          "https://play.google.com/store/apps/details?id=com.berseka.app",
+          "https://berseka.id/downloads/berseka-release-arm64-v8a.apk",
       });
     }
   }

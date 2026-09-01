@@ -971,9 +971,9 @@ export const DplDashboardPage: React.FC = () => {
   // ==========================================
   if (isAjuanAbsensiPage) {
     return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-200">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 w-full min-w-0">
         {/* Header Ajuan Absensi */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
               <GraduationCap size={16} />
@@ -1342,9 +1342,9 @@ export const DplDashboardPage: React.FC = () => {
   // VIEW B: DASBOR DPL TUNGGAL (RINGKASAN EKSEKUTIF)
   // ==========================================
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-200">
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 w-full min-w-0">
       {/* Clean Academic Portal Header */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <GraduationCap size={16} />
@@ -1378,31 +1378,31 @@ export const DplDashboardPage: React.FC = () => {
       </div>
 
       {/* Card Terpadu: Hierarki Wilayah 3-Tingkat */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0">
-              <MapPin size={20} className="text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0">
+              <MapPin size={18} className="text-emerald-600 dark:text-emerald-400 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
                 Hierarki Wilayah &amp; Ekosistem Dampingan KKN
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
                 Struktur 3 tingkatan wilayah binaan KKN terintegrasi.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap text-xs">
-            <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-lg font-extrabold flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
+            <span className="px-2.5 sm:px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-lg font-extrabold flex items-center gap-1.5 text-[11px] sm:text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
               Tingkat 1: {kecamatanBadgeLabel}
             </span>
-            <span className="px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 rounded-lg font-extrabold">
+            <span className="px-2.5 sm:px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 rounded-lg font-extrabold text-[11px] sm:text-xs">
               Tingkat 2: {kelurahanBadgeLabel}
             </span>
-            <span className="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/40 rounded-lg font-extrabold">
+            <span className="px-2.5 sm:px-3 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/40 rounded-lg font-extrabold text-[11px] sm:text-xs">
               Tingkat 3: {rwBadgeLabel}
             </span>
           </div>

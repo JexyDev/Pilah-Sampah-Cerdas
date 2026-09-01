@@ -593,7 +593,7 @@ export class PoskoKknService {
             longitude: data.longitude,
             location: data.nama,
             title: `Kegiatan Harian ${data.nama}`,
-            radius: Math.max(150, data.radius ?? 200),
+            radius: Math.max(150, data.radius ?? 500),
           },
         });
       }
