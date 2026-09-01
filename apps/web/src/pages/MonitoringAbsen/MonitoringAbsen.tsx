@@ -227,14 +227,19 @@ const formatTargetDuration = (config: ConfigTargets): string => {
     if (h > 0) parts.push(`${h} Jam`);
     if (m > 0) parts.push(`${m} Menit`);
     if (s > 0 && h === 0 && m === 0) parts.push(`${s} Detik`);
-    if (parts.length > 0) return parts.join(" ");
+    if (parts.length > 0) {
+      const durStr = parts.join(" ");
+      return `${durStr} (${Math.round(totalMins)} mnt)`;
+    }
   }
   if (config.targetHarianJam && config.targetHarianJam > 0) {
-    return formatHoursToUnits(config.targetHarianJam);
+    const totalMins = Math.round(config.targetHarianJam * 60);
+    return `${formatHoursToUnits(config.targetHarianJam)} (${totalMins} mnt)`;
   }
   if (config.targetTotalJam && config.targetTotalHari && config.targetTotalHari > 0) {
     const autoDailyHours = config.targetTotalJam / config.targetTotalHari;
-    return formatHoursToUnits(autoDailyHours);
+    const totalMins = Math.round(autoDailyHours * 60);
+    return `${formatHoursToUnits(autoDailyHours)} (${totalMins} mnt)`;
   }
   return "0 Menit";
 };
@@ -1033,6 +1038,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       if (isIzinSakit) return false;
       if (st === "HADIR_MEMENUHI") return true;
       if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT") return false;
+      const isAttendedOrActive = Boolean(a.attendedAt) || st === "BERLANGSUNG" || st === "HADIR" || st === "SELESAI";
+      if (!isAttendedOrActive) return false;
       const aAny = a as any;
       const targetMins = (aAny.targetDurationMinutes && Number(aAny.targetDurationMinutes) > 0)
         ? Number(aAny.targetDurationMinutes)
@@ -1401,7 +1408,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       setAttendance((prev) => {
         return prev.map((a) => {
           if (a.studentId === locData.studentId || a.student?.id === locData.studentId) {
-            const actualMins = locData.actualInZoneMinutes ?? locData.inZoneMinutes;
+            const hasAtt = Boolean(a.attendedAt);
+            const actualMins = hasAtt ? (locData.actualInZoneMinutes ?? locData.inZoneMinutes) : 0;
             return {
               ...a,
               latitude: String(lat),
@@ -1580,9 +1588,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const statusUpper = String(rec.status || "").toUpperCase();
       const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
       const recAny = rec as any;
-      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const isLeaveOrAlpha = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN") || statusUpper.includes("ALPA") || statusUpper.includes("ALPHA") || !isAttended;
+      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+      const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
 
       let statusStr = "Belum Absen";
       if (statusUpper.includes("SAKIT")) {
@@ -1661,9 +1670,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const statusUpper = String(rec.status || "").toUpperCase();
       const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
       const recAny = rec as any;
-      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const isLeaveOrAlpha = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN") || statusUpper.includes("ALPA") || statusUpper.includes("ALPHA") || !isAttended;
+      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+      const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
 
       let statusStr = "Belum Absen";
       if (statusUpper.includes("SAKIT")) {
@@ -2960,8 +2970,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
                 <div className="px-2 flex flex-col items-center justify-center">
                   <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}</span>
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Zona</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+                      {formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}
+                    </span>
+                    <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">
+                      ({Math.round((scheduleTargetHours > 0 ? scheduleTargetHours : 4) * 60)} mnt)
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">Target Zona</span>
                   <span className="text-[10px] text-slate-400 font-medium">Minimal Durasi Lapangan</span>
                 </div>
 
@@ -3735,17 +3752,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isGpsRecent = !isNaN(recTime) && recTime > 0 && Date.now() - recTime < 5 * 60 * 1000;
                         const isGpsStale = isBerlangsung && minsSincePing !== null && minsSincePing >= 3;
 
+                        const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
+                        const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
+                        const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished || isOverrideDpl) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-                        const durationMins = isLeaveOrPending 
+                        const durationMins = !hasValidAttendanceSession
                           ? 0 
                           : isTerjeda
                           ? storedMins
                           : storedMins > 0
                           ? storedMins
                           : liveElapsedMins;
-                        const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || checkOutTimestamp !== null && checkOutTimestamp !== undefined;
-                        const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
                         const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                           ? Number(recAny.targetHours) 
@@ -3753,11 +3772,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                           ? Number(recAny.targetDurationMinutes) 
                           : Math.round(targetZonaHours * 60);
-                        const percentZona = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
+                        const percentZona = !hasValidAttendanceSession || durationMins === 0
+                          ? 0
+                          : (recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending)
                           ? Number(recAny.targetRatioPercent)
                           : (targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0);
 
-                        const isMemenuhiDurasi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+                        const isMemenuhiDurasi = !hasValidAttendanceSession
                           ? false
                           : rec.isMemenuhiDurasi !== undefined
                           ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetZonaMins && durationMins > 0) || percentZona >= 100)
@@ -3769,11 +3790,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
-                        const durasiText = isLeaveOrPending
+                        const durasiText = (!hasValidAttendanceSession || durationMins === 0)
                           ? "0 menit"
-                          : (isAttended || isBerlangsung || isTerjeda || durationMins > 0)
-                          ? formatDurasiIndo(durationMins)
-                          : "0 menit";
+                          : formatDurasiIndo(durationMins);
 
                         const rawStudentName = rec.student?.name
                           ? rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
@@ -3938,7 +3957,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
                                 <div className="flex flex-col items-center gap-0.5">
                                   <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] border border-slate-200/80 dark:border-slate-700">
-                                    {targetZonaHours} Jam
+                                    {formatHoursToUnits(targetZonaHours)}
                                   </span>
                                   <span className="text-[10px] text-slate-400 font-mono">
                                     ({targetZonaMins} mnt)
@@ -4254,6 +4273,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     statusUpper === "SELESAI" ||
                     statusUpper === "HADIR_MEMENUHI" ||
                     statusUpper === "HADIR_TIDAK_MEMENUHI";
+                  const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+                  const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
+                  const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
 
                   const liveElapsedMins = rec.attendedAt
                     ? calculateDurationMinutes(rec.attendedAt, rec.completedAt)
@@ -4264,7 +4286,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     recAny.actualInZoneMinutes !== undefined
                       ? Number(recAny.actualInZoneMinutes)
                       : 0;
-                  const durationMins = isLeaveOrPending
+                  const durationMins = !hasValidSession
                     ? 0
                     : storedMins > 0
                     ? storedMins
@@ -4276,9 +4298,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                     ? Number(recAny.targetDurationMinutes) 
                     : Math.round(targetZonaHours * 60);
-                  const isDurationSufficient = durationMins >= targetZonaMins;
-                  const percentZona = Math.min(100, Math.round((durationMins / targetZonaMins) * 100));
-                  const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
+                  const isDurationSufficient = hasValidSession && durationMins >= targetZonaMins;
+                  const percentZona = hasValidSession && targetZonaMins > 0 ? Math.min(100, Math.round((durationMins / targetZonaMins) * 100)) : 0;
 
                   return (
                     <div
@@ -5513,17 +5534,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
+              const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
+              const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended;
+              const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const durationMins = !hasValidAttendanceSession ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
                 : scheduleTargetHours;
               const targetMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                 ? Number(recAny.targetDurationMinutes) 
                 : Math.round(targetHours * 60);
-              const ratioPercent = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
+              const ratioPercent = !hasValidAttendanceSession || durationMins === 0
+                ? 0
+                : (recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending)
                 ? Number(recAny.targetRatioPercent)
                 : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
-              const isMemenuhi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+              const isMemenuhi = !hasValidAttendanceSession
                 ? false
                 : rec.isMemenuhiDurasi !== undefined
                 ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetMins && durationMins > 0) || ratioPercent >= 100)
@@ -5559,10 +5585,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
                       <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = JP − JM</span>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
-                        {isLeaveOrPending ? "0 menit" : formatDurasiIndo(durationMins)}
+                        {!hasValidAttendanceSession || durationMins === 0 ? "0 menit" : formatDurasiIndo(durationMins)}
                       </span>
                       {/* Sub-label: menit aktual */}
-                      {!isLeaveOrPending && durationMins > 0 && (
+                      {hasValidAttendanceSession && durationMins > 0 && (
                         <span className="block text-[9px] text-slate-400 font-medium">{durationMins} mnt</span>
                       )}
                     </div>

@@ -24,17 +24,48 @@ import { smartZoneService, type ZoneCheckResult } from "./smartZoneService.js";
 async function buildGeofence(
   schedule: any
 ): Promise<{ latitude: number; longitude: number; radius: number; polygon?: any }> {
-  // 1. Prioritas Utama: Titik Posko KKN resmi milik kelompok
+  // 1. Prioritas Utama: Titik Posko KKN resmi milik kelompok (Primary Posko / Multi-Posko)
   if (schedule.kelompokId) {
     try {
+      // a. Cek poskoKkn utama
       const posko = await prisma.poskoKkn.findUnique({
         where: { kelompokId: schedule.kelompokId },
       });
       if (posko && posko.latitude && posko.longitude) {
+        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 200;
         return {
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
-          radius: schedule.radius ? Number(schedule.radius) : 500,
+          radius: Math.max(150, pRadius),
+          polygon: schedule.polygon,
+        };
+      }
+
+      // b. Cek poskoKknMulti jika posko utama belum dibuat
+      const multiPosko = await (prisma as any).poskoKknMulti.findFirst({
+        where: { kelompokId: schedule.kelompokId },
+        orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+      });
+      if (multiPosko && multiPosko.latitude && multiPosko.longitude) {
+        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 200;
+        return {
+          latitude: Number(multiPosko.latitude),
+          longitude: Number(multiPosko.longitude),
+          radius: Math.max(150, mRadius),
+          polygon: schedule.polygon,
+        };
+      }
+
+      // c. Cek facility posko_kkn
+      const facPosko = await prisma.facility.findFirst({
+        where: { kelompokId: schedule.kelompokId, jenis: "posko_kkn" },
+        orderBy: { createdAt: "desc" },
+      });
+      if (facPosko && facPosko.latitude && facPosko.longitude) {
+        return {
+          latitude: Number(facPosko.latitude),
+          longitude: Number(facPosko.longitude),
+          radius: Math.max(150, Number(schedule.radius) || 200),
           polygon: schedule.polygon,
         };
       }
@@ -48,7 +79,7 @@ async function buildGeofence(
     return {
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
-      radius: schedule.radius ? Number(schedule.radius) : 500,
+      radius: Math.max(150, Number(schedule.radius) || 200),
       polygon: schedule.polygon,
     };
   }
@@ -65,7 +96,7 @@ async function buildGeofence(
   return {
     latitude: defaultLat,
     longitude: defaultLng,
-    radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+    radius: Math.max(150, Number(schedule.radius) || defaultRadius),
     polygon: schedule.polygon,
   };
 }
@@ -102,7 +133,7 @@ export function calculateLiveInZoneMinutes(att: {
   jedaLogs?: any;
   status?: string;
 }): number {
-  if (!att.attendedAt) return Math.max(0, att.actualInZoneMinutes ?? 0);
+  if (!att.attendedAt) return 0;
 
   const statusUpper = String(att.status || "").toUpperCase();
   if (
@@ -197,7 +228,7 @@ export function calculateLiveInZoneSeconds(att: {
   jedaLogs?: any;
   status?: string;
 }): number {
-  if (!att.attendedAt) return Math.max(0, (att.actualInZoneMinutes ?? 0) * 60);
+  if (!att.attendedAt) return 0;
 
   const statusUpper = String(att.status || "").toUpperCase();
   if (
@@ -644,6 +675,24 @@ export class KknAttendanceService {
         } else {
           isCurrInside = dist <= geofence.radius + bufferMeters;
         }
+
+        // SMART ZONE MULTI-POSKO CHECK (Mencegah false auto-pause mahasiswa di multi-posko)
+        const targetKelompokId = sch.kelompokId || student?.kelompokId;
+        if (!isCurrInside && targetKelompokId) {
+          try {
+            const szResult = await smartZoneService.isStudentInGroupZone(
+              latitude,
+              longitude,
+              targetKelompokId,
+              bufferMeters
+            );
+            if (szResult.isInside) {
+              isCurrInside = true;
+            }
+          } catch {
+            // Fallback non-critical
+          }
+        }
         isInsideZone = isCurrInside;
 
         const isAttFinished =
@@ -693,11 +742,11 @@ export class KknAttendanceService {
             });
           }
 
-          // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko
+          // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko (HANYA jika sebelumnya di-jeda otomatis)
           if (isCurrInside && currentAttStatus === "TERJEDA") {
             if (currentLogs.length > 0) {
               const lastJeda = currentLogs[currentLogs.length - 1];
-              if (!lastJeda.waktuResume) {
+              if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
                 const prevSecs =
                   lastJeda.durasiSebelumJedaDetik !== undefined && lastJeda.durasiSebelumJedaDetik !== null
                     ? Number(lastJeda.durasiSebelumJedaDetik)
@@ -708,30 +757,31 @@ export class KknAttendanceService {
                   lastJeda.durasiSebelumJedaMenit || 0
                 );
                 lastJeda.durasiSebelumResumeDetik = prevSecs;
+
+                currentAttStatus = "BERLANGSUNG";
+
+                await prisma.activityAttendance.update({
+                  where: { id: existingAtt.id },
+                  data: {
+                    status: "BERLANGSUNG",
+                    jedaLogs: currentLogs,
+                  },
+                });
+
+                existingAtt.status = "BERLANGSUNG";
+                existingAtt.jedaLogs = currentLogs as any;
+
+                websocketService.broadcastStudentAttendance({
+                  id: existingAtt.id,
+                  studentId: existingAtt.studentId,
+                  scheduleId: existingAtt.scheduleId,
+                  status: "BERLANGSUNG",
+                  currentStatus: "DI_ZONA",
+                  attendedAt: existingAtt.attendedAt.toISOString(),
+                  actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+                });
               }
             }
-            currentAttStatus = "BERLANGSUNG";
-
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
-                status: "BERLANGSUNG",
-                jedaLogs: currentLogs,
-              },
-            });
-
-            existingAtt.status = "BERLANGSUNG";
-            existingAtt.jedaLogs = currentLogs as any;
-
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "BERLANGSUNG",
-              currentStatus: "DI_ZONA",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
-            });
           }
 
           // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
@@ -2656,6 +2706,7 @@ export class KknAttendanceService {
           targetHours,
           targetDurationMinutes: durasiWajib,
           targetRatioPercent: 0,
+          actualInZoneMinutes: 0,
           totalMinutes: cum.totalMinutes,
           totalHours: cum.totalHours,
           totalDays: cum.totalDays,
@@ -2897,7 +2948,7 @@ export class KknAttendanceService {
     });
 
     // 2. Cari jadwal KKN yang berlaku untuk kelompok mahasiswa (atau jadwal global)
-    let schedules = await prisma.schedule.findMany({
+    let schedules: any[] = await prisma.schedule.findMany({
       where: {
         date: { gte: yesterdayStart, lte: endOfDay },
         isActive: true,
@@ -2907,7 +2958,10 @@ export class KknAttendanceService {
       },
       include: {
         kelompok: {
-          include: { poskoKkn: true },
+          include: {
+            poskoKkn: true,
+            poskoMulti: { orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }] },
+          },
         },
         attendances: {
           where: { studentId: userId },
@@ -2917,11 +2971,12 @@ export class KknAttendanceService {
     });
 
     if (schedules.length === 0 && student?.kelompokId) {
-      // Look up group & registered Posko
+      // Look up group & registered Posko (Primary, Multi, or Facility)
       const group = await prisma.kelompokKkn.findUnique({
         where: { id: student.kelompokId },
         include: {
           poskoKkn: true,
+          poskoMulti: { orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }] },
           facilities: {
             where: { jenis: "posko_kkn" },
             orderBy: { createdAt: "desc" },
@@ -2930,11 +2985,12 @@ export class KknAttendanceService {
         },
       });
 
-      const registeredPosko = group?.poskoKkn || group?.facilities?.[0];
+      const registeredPosko =
+        group?.poskoKkn || (group as any)?.poskoMulti?.[0] || group?.facilities?.[0];
       let poskoLat = -6.8915; // default Coblong
       let poskoLng = 107.6107;
       let poskoName = `Posko KKN ${group?.name || "Mahasiswa"}`;
-      const poskoRadius = 200;
+      const poskoRadius = Math.max(150, Number((registeredPosko as any)?.radius) || 200);
 
       if (registeredPosko) {
         poskoLat = Number(registeredPosko.latitude);
@@ -2987,7 +3043,10 @@ export class KknAttendanceService {
           },
           include: {
             kelompok: {
-              include: { poskoKkn: true },
+              include: {
+                poskoKkn: true,
+                poskoMulti: { orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }] },
+              },
             },
             attendances: {
               where: { studentId: userId },
@@ -3005,7 +3064,10 @@ export class KknAttendanceService {
           },
           include: {
             kelompok: {
-              include: { poskoKkn: true },
+              include: {
+                poskoKkn: true,
+                poskoMulti: { orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }] },
+              },
             },
             attendances: {
               where: { studentId: userId },
@@ -3148,7 +3210,9 @@ export class KknAttendanceService {
               ? "Tidak Ada Kegiatan"
               : statusKehadiran;
 
-      const officialPosko = (sch.kelompok as any)?.poskoKkn;
+      const officialPosko =
+        (sch.kelompok as any)?.poskoKkn ||
+        (sch.kelompok as any)?.poskoMulti?.[0];
       const latNum = officialPosko?.latitude
         ? Number(officialPosko.latitude)
         : sch.latitude
@@ -3159,8 +3223,34 @@ export class KknAttendanceService {
         : sch.longitude
           ? Number(sch.longitude)
           : 107.615;
+      const poskoRadiusNum = officialPosko?.radius
+        ? Math.max(150, Number(officialPosko.radius))
+        : sch.radius
+          ? Math.max(150, Number(sch.radius))
+          : 200;
       const titleStr = officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : sch.title;
       const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
+
+      // Auto-sinkronkan koordinat jadwal jika posko baru/diupdate berbeda dengan jadwal
+      if (
+        officialPosko &&
+        (Number(sch.latitude) !== latNum ||
+          Number(sch.longitude) !== lngNum ||
+          sch.location !== locationStr)
+      ) {
+        prisma.schedule
+          .update({
+            where: { id: sch.id },
+            data: {
+              latitude: latNum,
+              longitude: lngNum,
+              location: locationStr,
+              title: titleStr,
+              radius: poskoRadiusNum,
+            },
+          })
+          .catch(() => {});
+      }
 
       const jedaLogsObj = (att?.jedaLogs as any) || {};
       const isSkip = att?.status === "TIDAK_ADA_KEGIATAN" || att?.status === "SKIP_KEGIATAN";
@@ -3183,7 +3273,7 @@ export class KknAttendanceService {
           alamat: locationStr,
           latitude: latNum,
           longitude: lngNum,
-          radiusMeter: sch.radius || 200,
+          radiusMeter: poskoRadiusNum,
           polygon: sch.polygon || null,
         },
         status: scheduleStatus,
@@ -4444,21 +4534,30 @@ export class KknAttendanceService {
           jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda &&
           !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
 
-      let actualMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
-      if (st === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
-        const liveMins = calculateLiveInZoneMinutes(att);
-        actualMins = actualMins > 0 ? actualMins : liveMins;
-      } else if (isPaused || jedaLogsArr.length > 0) {
-        const liveCapped = calculateLiveInZoneMinutes(att);
-        actualMins = Math.min(actualMins, liveCapped);
-      } else if (
-        actualMins === 0 &&
-        att.attendedAt &&
-        att.checkOutAt &&
-        att.actualInZoneMinutes === null
-      ) {
-        const diff = Math.floor((att.checkOutAt.getTime() - att.attendedAt.getTime()) / 60000);
-        actualMins = Math.min(480, Math.max(0, diff));
+      const isLeaveOrAlpha =
+        st.includes("IZIN") ||
+        st.includes("SAKIT") ||
+        st.includes("ALPA") ||
+        st.includes("ALPHA") ||
+        !att.attendedAt;
+
+      let actualMins = isLeaveOrAlpha ? 0 : Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      if (!isLeaveOrAlpha) {
+        if (st === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
+          const liveMins = calculateLiveInZoneMinutes(att);
+          actualMins = actualMins > 0 ? actualMins : liveMins;
+        } else if (isPaused || jedaLogsArr.length > 0) {
+          const liveCapped = calculateLiveInZoneMinutes(att);
+          actualMins = Math.min(actualMins, liveCapped);
+        } else if (
+          actualMins === 0 &&
+          att.attendedAt &&
+          att.checkOutAt &&
+          att.actualInZoneMinutes === null
+        ) {
+          const diff = Math.floor((att.checkOutAt.getTime() - att.attendedAt.getTime()) / 60000);
+          actualMins = Math.min(480, Math.max(0, diff));
+        }
       }
 
       const isMemenuhi =

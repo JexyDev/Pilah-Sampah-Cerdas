@@ -581,6 +581,32 @@ export class PoskoKknService {
       await smartZoneService.updateGroupAutoPolygon(kelompokId);
     } catch (_) {}
 
+    // Cascade update jadwal aktif jika posko utama belum ada atau isUtama true
+    try {
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const dateStr = wibNow.toISOString().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+
+      const hasPrimary = await prisma.poskoKkn.findUnique({ where: { kelompokId } });
+      if (!hasPrimary || data.isUtama) {
+        await prisma.schedule.updateMany({
+          where: {
+            kelompokId,
+            isActive: true,
+            date: { gte: startOfDay },
+          },
+          data: {
+            latitude: data.latitude,
+            longitude: data.longitude,
+            location: data.nama,
+            title: `Kegiatan Harian ${data.nama}`,
+            radius: Math.max(150, data.radius ?? 200),
+          },
+        });
+      }
+    } catch (_) {}
+
     // Kirim Silent Push ke seluruh mahasiswa kelompok agar mobile reload zona
     try {
       const { notificationIntegrationService } =
@@ -638,6 +664,31 @@ export class PoskoKknService {
       const { smartZoneService } = await import("./smartZoneService.js");
       await smartZoneService.updateGroupAutoPolygon(posko.kelompokId);
     } catch (_) {}
+
+    // Cascade update jadwal jika isUtama
+    try {
+      if (data.isUtama || data.latitude !== undefined || data.longitude !== undefined) {
+        const now = new Date();
+        const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        const dateStr = wibNow.toISOString().slice(0, 10);
+        const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+
+        await prisma.schedule.updateMany({
+          where: {
+            kelompokId: posko.kelompokId,
+            isActive: true,
+            date: { gte: startOfDay },
+          },
+          data: {
+            ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
+            ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
+            ...(data.nama !== undefined ? { location: data.nama, title: `Kegiatan Harian ${data.nama}` } : {}),
+            ...(data.radius !== undefined ? { radius: Math.max(150, data.radius) } : {}),
+          },
+        });
+      }
+    } catch (_) {}
+
     return posko;
   }
 

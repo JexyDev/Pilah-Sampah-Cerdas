@@ -67,6 +67,7 @@ import toast from "react-hot-toast";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
 import {
   KELURAHAN_GEODATA,
@@ -302,6 +303,7 @@ export const ZonaInspectorPage: React.FC = () => {
 
   // ─── CRUD MODAL STATES ───
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [deletePoskoTargetId, setDeletePoskoTargetId] = useState<string | null>(null);
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [editMode, setEditMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [editPoints, setEditPoints] = useState<[number, number][]>([[-6.8906, 107.615]]);
@@ -312,6 +314,7 @@ export const ZonaInspectorPage: React.FC = () => {
     keterangan: "",
   });
   const [savingAction, setSavingAction] = useState(false);
+  const [deletePoskoTarget, setDeletePoskoTarget] = useState<{ id: string; nama?: string } | null>(null);
 
   // Fetch all master data in parallel with strict ID-scoped queries
   const loadAllData = async (isManualRefresh = false) => {
@@ -656,17 +659,20 @@ export const ZonaInspectorPage: React.FC = () => {
   };
 
   // ─── DELETE POSKO KKN (RESET KE DEFAULT) ───
-  const handleDeletePosko = async (kelompokId: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus data posko ini dan mereset zona ke default kelurahan?")) {
-      return;
-    }
+  const handlePromptDeletePosko = (kelompokId: string, nama?: string) => {
+    setDeletePoskoTarget({ id: kelompokId, nama });
+  };
+
+  const handleConfirmDeletePosko = async () => {
+    if (!deletePoskoTarget) return;
 
     setSavingAction(true);
     try {
-      await api.delete(`/posko-kkn/${kelompokId}`);
+      await api.delete(`/posko-kkn/${deletePoskoTarget.id}`);
       toast.success("Posko berhasil dihapus. Zona kembali ke estimasi default.");
       setIsEditModalOpen(false);
-      if (detailModalGroup?.id === kelompokId) setDetailModalGroup(null);
+      if (detailModalGroup?.id === deletePoskoTarget.id) setDetailModalGroup(null);
+      setDeletePoskoTarget(null);
       await loadAllData(false);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Gagal menghapus posko");
@@ -1705,9 +1711,9 @@ export const ZonaInspectorPage: React.FC = () => {
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between gap-2">
               {detailModalGroup.posko && (
                 <button
-                  onClick={() => handleDeletePosko(detailModalGroup.id)}
+                  onClick={() => handlePromptDeletePosko(detailModalGroup.id, detailModalGroup.name)}
                   disabled={savingAction}
-                  className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 dark:border-rose-800 font-bold text-xs flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 dark:border-rose-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                 >
                   <Trash2 size={14} />
                   <span>Hapus Posko</span>
@@ -1979,6 +1985,21 @@ export const ZonaInspectorPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modern BERSEKA Confirmation Modal for Deleting Posko KKN */}
+      <ConfirmModal
+        isOpen={Boolean(deletePoskoTarget)}
+        onClose={() => setDeletePoskoTarget(null)}
+        onConfirm={handleConfirmDeletePosko}
+        isLoading={savingAction}
+        title="Hapus Posko KKN & Reset Zona"
+        message={`Apakah Anda yakin ingin menghapus data posko${
+          deletePoskoTarget?.nama ? ` untuk ${deletePoskoTarget.nama}` : ""
+        } dan mereset zona presensi ke estimasi default kelurahan?`}
+        confirmText="Ya, Hapus & Reset"
+        cancelText="Batal"
+        type="danger"
+      />
     </div>
   );
 };

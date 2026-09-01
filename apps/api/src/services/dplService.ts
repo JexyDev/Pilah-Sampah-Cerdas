@@ -78,6 +78,82 @@ async function getEligiblePastSchedulesCount(groupId?: string): Promise<number> 
   }
 }
 
+/**
+ * Helper: Hitung persentase/skor kehadiran akurat (0 - 100) per mahasiswa
+ * Berdasarkan integrasi data riil ActivityAttendance (durasi menit aktual, status pemenuhan, dan jadwal)
+ */
+async function calculateStudentAttendanceRate(
+  studentUserId: string,
+  totalSchedules: number,
+  ruleConfigs: any,
+  configTargets: any
+): Promise<number> {
+  try {
+    const attendances = await prisma.activityAttendance.findMany({
+      where: {
+        studentId: studentUserId,
+        status: { notIn: ["TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"] },
+      },
+      select: {
+        id: true,
+        status: true,
+        actualInZoneMinutes: true,
+        attendedAt: true,
+        checkOutAt: true,
+        jedaLogs: true,
+      },
+    });
+
+    if (!attendances || attendances.length === 0) {
+      return 0;
+    }
+
+    const targetDailyMinutes =
+      (ruleConfigs?.attendanceMinDurationHours || configTargets?.targetHarianJam || 4) * 60;
+
+    let sumSessionScores = 0;
+
+    for (const att of attendances) {
+      const stUpper = String(att.status || "").toUpperCase();
+      let mins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      if (stUpper === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
+        const elapsed = Math.max(
+          0,
+          Math.floor((Date.now() - new Date(att.attendedAt).getTime()) / 60000)
+        );
+        mins = Math.min(480, Math.max(mins, elapsed));
+      } else if (mins === 0 && att.attendedAt && att.checkOutAt) {
+        const diff = Math.floor(
+          (new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime()) / 60000
+        );
+        mins = Math.min(480, Math.max(0, diff));
+      }
+
+      let sessionScore = 0;
+      if (stUpper === "HADIR_MEMENUHI" || (stUpper === "HADIR" && mins >= targetDailyMinutes)) {
+        sessionScore = 100;
+      } else if (mins > 0) {
+        sessionScore = Math.min(100, Math.round((mins / targetDailyMinutes) * 100));
+      } else if (stUpper.includes("IZIN") || stUpper.includes("SAKIT")) {
+        sessionScore = 100;
+      } else {
+        sessionScore = 0;
+      }
+      sumSessionScores += sessionScore;
+    }
+
+    const expectedSchedules =
+      totalSchedules > 0
+        ? Math.max(totalSchedules, attendances.length)
+        : Math.max(1, attendances.length);
+
+    return Math.min(100, Math.max(0, Math.round(sumSessionScores / expectedSchedules)));
+  } catch (err) {
+    console.warn("[dplService] Error calculating student attendance rate:", err);
+    return 0;
+  }
+}
+
 export function getRoleString(role: any): string {
   if (!role) return "";
   if (typeof role === "object") return String(role.name || "").toUpperCase();
@@ -942,12 +1018,17 @@ export const dplService = {
         }
         actualHours = Math.round(actualHours * 100) / 100;
 
+        const ruleConfigs = await configService.getRuleEngineConfigs();
         const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
-        const expectedAttendances = studentCount * totalSchedules;
+        const studentRates = await Promise.all(
+          studentUserIds.map((uId) =>
+            calculateStudentAttendanceRate(uId, totalSchedules, ruleConfigs, configTargets)
+          )
+        );
         const avgAttendanceRate =
-          totalSchedules === 0 || expectedAttendances === 0 || totalAttendances === 0
-            ? 0
-            : Math.min(100, Math.round((totalAttendances / expectedAttendances) * 100));
+          studentRates.length > 0
+            ? Math.round(studentRates.reduce((a, b) => a + b, 0) / studentRates.length)
+            : 0;
 
         const pointSum = await prisma.pointHistory.aggregate({
           where:
@@ -1224,10 +1305,12 @@ export const dplService = {
           baseAssessmentScore: baseScore,
           isAssessed: Boolean(st.isAssessed),
           individualPoints: netPoints,
-          attendanceRate:
-            totalSchedules === 0 || attendedCount === 0
-              ? 0
-              : Math.min(100, Math.round((attendedCount / totalSchedules) * 100)),
+          attendanceRate: await calculateStudentAttendanceRate(
+            st.userId,
+            totalSchedules,
+            ruleConfigs,
+            configTargets
+          ),
           attendedCount,
           sickCount,
           izinCount,
@@ -2704,6 +2787,19 @@ export const dplService = {
       throw new Error("PROKER_NOT_APPROVED");
     }
 
+    // Validasi status pelaksanaan: Proker belum mulai tidak dapat dinilai
+    const statusPelaksanaanStr = String(
+      (prokerExisting as any).statusPelaksanaan ||
+        (prokerExisting.status === "SELESAI"
+          ? "SELESAI"
+          : prokerExisting.status === "SEDANG_BERJALAN"
+          ? "SEDANG_BERJALAN"
+          : "BELUM_MULAI")
+    ).toUpperCase();
+    if (statusPelaksanaanStr === "BELUM_MULAI" || statusPelaksanaanStr === "BELUM") {
+      throw new Error("PROKER_NOT_STARTED");
+    }
+
     // Evaluasi 26-08-2026: Proker bisa dinilai sejak awal kegiatan, namun WAJIB memiliki lampiran file
     // Belum ada file = Belum bisa dinilai (penilaian disabled/locked)
     const hasFile = Boolean(
@@ -2973,6 +3069,9 @@ export const dplService = {
     let totalScoreSum = 0;
     let totalAttRateSum = 0;
 
+    const configTargets = await dplService.getConfigTargets();
+    const ruleConfigs = await configService.getRuleEngineConfigs();
+
     for (const grp of groups) {
       const totalSchedules = await getEligiblePastSchedulesCount(grp.id);
       const prokerCount = grp.programKerja.length;
@@ -2982,10 +3081,6 @@ export const dplService = {
           : 0;
 
       for (const st of grp.students) {
-        const attendancesCount = await prisma.activityAttendance.count({
-          where: { studentId: st.userId },
-        });
-
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },
           _sum: { points: true },
@@ -2996,10 +3091,12 @@ export const dplService = {
         const poinDampinganScore =
           rawPoints > 0 ? Math.min(100, Math.max(70, Math.round((rawPoints / 100) * 10) + 75)) : 80;
 
-        const attRate =
-          totalSchedules === 0 || attendancesCount === 0
-            ? 0
-            : Math.min(100, Math.round((attendancesCount / totalSchedules) * 100));
+        const attRate = await calculateStudentAttendanceRate(
+          st.userId,
+          totalSchedules,
+          ruleConfigs,
+          configTargets
+        );
 
         const pRecord = st.user?.penilaianKkn;
 
