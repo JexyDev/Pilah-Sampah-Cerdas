@@ -265,12 +265,14 @@ export const LaporanPresensiPage: React.FC = () => {
 
   const handleOpenEdit = (item: LaporanItem) => {
     setEditItem(item);
+    const itemMins = item.durasiMenit !== undefined ? item.durasiMenit : 240;
+    const defaultStat = item.status || (itemMins >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI");
     setEditForm({
       tanggal: item.tanggal !== "-" ? item.tanggal : new Date().toISOString().slice(0, 10),
       jamMasuk: item.jamMasuk !== "-" ? item.jamMasuk : "08:00",
       jamPulang: item.jamPulang !== "-" ? item.jamPulang : "12:00",
-      durasiMenit: item.durasiMenit || 240,
-      status: item.status || "HADIR_MEMENUHI",
+      durasiMenit: itemMins,
+      status: defaultStat,
       deskripsiKegiatan: item.deskripsiKegiatan || "",
     });
   };
@@ -281,12 +283,17 @@ export const LaporanPresensiPage: React.FC = () => {
       setIsSavingEdit(true);
       const startDateTime = `${editForm.tanggal}T${editForm.jamMasuk}:00+07:00`;
       const endDateTime = editForm.jamPulang && editForm.jamPulang !== "-" ? `${editForm.tanggal}T${editForm.jamPulang}:00+07:00` : undefined;
+      const targetMins = editItem.targetMinMenit || 240;
+      const finalStatus =
+        editForm.status === "HADIR_MEMENUHI" && Number(editForm.durasiMenit) < targetMins
+          ? "HADIR_TIDAK_MEMENUHI"
+          : editForm.status;
 
       await api.put(`/kkn-attendance/${editItem.id}`, {
         attendedAt: new Date(startDateTime).toISOString(),
         checkOutAt: endDateTime ? new Date(endDateTime).toISOString() : null,
         actualInZoneMinutes: Number(editForm.durasiMenit),
-        status: editForm.status,
+        status: finalStatus,
         deskripsiKegiatan: editForm.deskripsiKegiatan,
         clearJedaLogs: true,
       });
