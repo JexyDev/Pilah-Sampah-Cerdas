@@ -2022,6 +2022,9 @@ export class KknAttendanceService {
         select: { userId: true },
       });
       targetStudentIds = students.map((s) => s.userId);
+      if (targetStudentIds.length === 0) {
+        return [];
+      }
     } else if (dplUserId) {
       const kelompokBinaan = await prisma.kelompokKkn.findMany({
         where: { OR: [{ dplId: dplUserId }, { dpl: { id: dplUserId } }] },
@@ -2033,6 +2036,9 @@ export class KknAttendanceService {
         select: { userId: true },
       });
       targetStudentIds = students.map((s) => s.userId);
+      if (targetStudentIds.length === 0) {
+        return [];
+      }
     }
 
     // Group by student to get the latest position of each active student
@@ -2056,6 +2062,14 @@ export class KknAttendanceService {
               select: {
                 nim: true,
                 jurusan: true,
+                kelompokId: true,
+                kelompok: {
+                  select: {
+                    id: true,
+                    name: true,
+                    kelurahan: true,
+                  },
+                },
               },
             },
           },
