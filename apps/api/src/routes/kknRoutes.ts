@@ -999,7 +999,7 @@ router.post(
  *         description: Pengajuan izin berhasil dikirim ke DPL
  */
 router.post(
-  "/pengajuan-izin",
+  ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("fotoBukti"),
@@ -1007,7 +1007,7 @@ router.post(
 );
 
 router.get(
-  "/pengajuan-izin",
+  ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getLeaveRequests

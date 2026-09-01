@@ -53,10 +53,11 @@ export const MahasiswaProfilMobile: React.FC = () => {
   const fetchRiwayatIzin = async () => {
     try {
       setIsLoadingIzin(true);
-      const res = await api.get("/students/leave-request");
-      setRiwayatIzin(res.data?.data || []);
+      const res = await api.get("/kkn/pengajuan-izin");
+      const list = Array.isArray(res.data?.data) ? res.data.data : [];
+      setRiwayatIzin(list);
     } catch {
-      // Fallback
+      setRiwayatIzin([]);
     } finally {
       setIsLoadingIzin(false);
     }
@@ -87,15 +88,19 @@ export const MahasiswaProfilMobile: React.FC = () => {
     setIsSubmitting(true);
     try {
       const formData = new FormData();
+      formData.append("kategori", tipeIzin);
       formData.append("type", tipeIzin);
+      formData.append("deskripsi", alasan.trim());
       formData.append("reason", alasan.trim());
+      formData.append("tanggalKegiatanTerkait", tanggalMulai);
       formData.append("startDate", tanggalMulai);
       formData.append("endDate", tanggalSelesai);
       if (fotoFile) {
+        formData.append("fotoBukti", fotoFile);
         formData.append("evidence", fotoFile);
       }
 
-      await api.post("/students/leave-request", formData, {
+      await api.post("/kkn/pengajuan-izin", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

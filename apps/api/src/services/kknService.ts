@@ -2246,8 +2246,9 @@ export class KknService {
       scheduleId?: string;
     }
   ) {
-    let targetDate = payload.tanggalKegiatanTerkait
-      ? new Date(payload.tanggalKegiatanTerkait)
+    const targetDateRaw = payload.tanggalKegiatanTerkait || (payload as any).startDate;
+    let targetDate = targetDateRaw
+      ? new Date(targetDateRaw)
       : new Date();
 
     if (isNaN(targetDate.getTime())) {
@@ -2314,7 +2315,7 @@ export class KknService {
       }
     }
 
-    const leaveType = (payload.kategori || "IZIN").toUpperCase().includes("SAKIT")
+    const leaveType = (payload.kategori || (payload as any).type || "IZIN").toUpperCase().includes("SAKIT")
       ? "SAKIT"
       : "IZIN";
 
@@ -2322,7 +2323,7 @@ export class KknService {
       data: {
         studentId,
         type: leaveType,
-        reason: payload.deskripsi || "Berhalangan hadir kegiatan KKN",
+        reason: payload.deskripsi || (payload as any).reason || "Berhalangan hadir kegiatan KKN",
         evidenceUrl: payload.fotoBuktiUrl || null,
         startDate,
         endDate,

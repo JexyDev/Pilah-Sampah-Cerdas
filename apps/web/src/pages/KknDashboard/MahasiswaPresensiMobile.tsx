@@ -94,9 +94,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   // 2. Timer untuk Sesi Aktif
   useEffect(() => {
     let interval: any;
-    if (activeSession && activeSession.jamMasuk) {
+    const startWaktu = activeSession?.jamMasuk || activeSession?.checkInAt;
+    if (activeSession && startWaktu) {
       const updateTimer = () => {
-        const start = new Date(activeSession.jamMasuk).getTime();
+        const start = new Date(startWaktu).getTime();
         const now = Date.now();
         const diffSec = Math.max(0, Math.floor((now - start) / 1000));
         const hrs = String(Math.floor(diffSec / 3600)).padStart(2, "0");
@@ -152,17 +153,36 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     try {
       setIsLoadingHistory(true);
       const res = await api.get("/presensi/mandiri/saya");
-      const list = res.data?.data || [];
+      const rawData = res.data?.data;
+      const list: any[] = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.items)
+        ? rawData.items
+        : [];
       setHistoryList(list);
 
-      const active = list.find((item: any) => item.statusPresensi === "AKTIF" || !item.jamPulang);
+      const active = list.find(
+        (item: any) =>
+          item.status === "AKTIF" ||
+          item.statusPresensi === "AKTIF" ||
+          (!item.checkOutAt && !item.jamPulang)
+      );
       if (active) {
-        setActiveSession(active);
+        setActiveSession({
+          id: active.presensiId || active.id,
+          jamMasuk: active.checkInAt || active.jamMasuk,
+          jamPulang: active.checkOutAt || active.jamPulang,
+          deskripsiKegiatan: active.deskripsiKegiatan,
+          fotoBuktiUrl: active.fotoUrl || active.fotoBuktiUrl,
+          status: active.status || active.statusPresensi,
+          ...active,
+        });
       } else {
         setActiveSession(null);
       }
     } catch (err) {
       console.error("Gagal memuat riwayat presensi", err);
+      setHistoryList([]);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -288,10 +308,12 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   // 6. Submit Presensi Check-Out
   const handleCheckOut = async () => {
     if (!activeSession) return;
+    const targetId = activeSession.id || activeSession.presensiId;
+    if (!targetId) return;
 
     setIsSubmitting(true);
     try {
-      const res = await api.patch(`/presensi/mandiri/${activeSession.id}/checkout`, {
+      const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
         deskripsiKegiatan: activeSession.deskripsiKegiatan,
       });
 
@@ -550,7 +572,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {activeSession.jamMasuk ? new Date(activeSession.jamMasuk).toLocaleTimeString("id-ID") : "-"}
+                {(activeSession.jamMasuk || activeSession.checkInAt)
+                  ? new Date(activeSession.jamMasuk || activeSession.checkInAt).toLocaleTimeString("id-ID")
+                  : "-"}
               </span>
             </div>
             <div className="flex justify-between items-start text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
@@ -561,10 +585,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </div>
           </div>
 
-          {activeSession.fotoBuktiUrl && (
+          {(activeSession.fotoBuktiUrl || activeSession.fotoUrl) && (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-48">
               <img
-                src={activeSession.fotoBuktiUrl}
+                src={activeSession.fotoBuktiUrl || activeSession.fotoUrl}
                 alt="Bukti Kehadiran"
                 className="w-full h-full object-cover"
               />
@@ -702,7 +726,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <History size={16} className="text-emerald-600" />
             <span>Riwayat Kehadiran Terakhir</span>
           </div>
-          <span className="text-[10px] text-slate-400">{historyList.length} Sesi</span>
+          <span className="text-[10px] text-slate-400">{(Array.isArray(historyList) ? historyList : []).length} Sesi</span>
         </div>
 
         {isLoadingHistory ? (
@@ -710,33 +734,33 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <Loader2 size={20} className="animate-spin text-emerald-600" />
             <span>Memuat riwayat...</span>
           </div>
-        ) : historyList.length === 0 ? (
+        ) : (Array.isArray(historyList) ? historyList : []).length === 0 ? (
           <p className="text-xs text-slate-400 text-center py-4">Belum ada catatan presensi.</p>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {historyList.slice(0, 5).map((item, idx) => (
-              <div key={item.id || idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+            {(Array.isArray(historyList) ? historyList : []).slice(0, 5).map((item, idx) => (
+              <div key={item.id || item.presensiId || idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
                 <div className="min-w-0">
                   <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
                     {item.deskripsiKegiatan || "Aktivitas Lapangan"}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {item.jamMasuk ? new Date(item.jamMasuk).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
-                    • Masuk: {item.jamMasuk ? new Date(item.jamMasuk).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
+                    {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
+                    • Masuk: {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
                   </p>
                 </div>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase shrink-0 ${
                     item.statusPresensi === "TIDAK_ADA_KEGIATAN" || item.status === "TIDAK_ADA_KEGIATAN"
                       ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      : item.jamPulang
+                      : (item.jamPulang || item.checkOutAt)
                       ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                       : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                   }`}
                 >
                   {item.statusPresensi === "TIDAK_ADA_KEGIATAN" || item.status === "TIDAK_ADA_KEGIATAN"
                     ? "Tidak Ada Kegiatan"
-                    : item.jamPulang
+                    : (item.jamPulang || item.checkOutAt)
                     ? "Selesai"
                     : "Sedang Aktif"}
                 </span>
