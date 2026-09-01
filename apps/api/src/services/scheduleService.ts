@@ -102,7 +102,7 @@ export const scheduleService = {
         data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
           ? 500 + (ruleConfigs as any).attendanceGeofenceBufferMeters
           : 500;
-      } catch (_err) {
+      } catch {
         data.radius = 500;
       }
     }
@@ -203,7 +203,7 @@ export const scheduleService = {
 
       let removedDuplicatesCount = 0;
 
-      for (const [_key, list] of groupDateMap.entries()) {
+      for (const [, list] of groupDateMap.entries()) {
         if (list.length <= 1) continue;
 
         // Pilih primary schedule: yang punya presensi terbanyak atau paling baru
@@ -396,9 +396,12 @@ export const scheduleService = {
           // Adaptasi aman: Jika jadwal yang sudah ada (primarySchedule) memiliki radius kustom di database
           // dan posko resmi tidak secara spesifik memiliki nilai radius baru, pertahankan radius kustom tersebut.
           const existingScheduleRadius = Number(primarySchedule.radius) || 0;
-          const targetScheduleRadius = (officialPosko && Number(officialPosko.radius) > 0)
-            ? Math.max(150, Number(officialPosko.radius))
-            : (existingScheduleRadius > 0 ? existingScheduleRadius : poskoRadius);
+          const targetScheduleRadius =
+            officialPosko && Number(officialPosko.radius) > 0
+              ? Math.max(150, Number(officialPosko.radius))
+              : existingScheduleRadius > 0
+                ? existingScheduleRadius
+                : poskoRadius;
 
           if (
             Number(primarySchedule.latitude) !== poskoLat ||
@@ -436,7 +439,7 @@ export const scheduleService = {
             },
           });
           createdCount++;
-        } catch (_createErr) {
+        } catch {
           // Concurrent creation safe
         }
       }

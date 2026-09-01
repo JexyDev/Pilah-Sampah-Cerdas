@@ -10,8 +10,11 @@ import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
-import { calculateDistance, calculateLiveInZoneSeconds, calculateLiveInZoneMinutes } from "./kknAttendanceService.js";
-import { pointService } from "./pointService.js";
+import {
+  calculateDistance,
+  calculateLiveInZoneSeconds,
+  calculateLiveInZoneMinutes,
+} from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
@@ -1152,7 +1155,7 @@ export class KknService {
             ? JSON.parse(student.kelompok.cakupanRw)
             : student.kelompok.cakupanRw;
         if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
-      } catch (_) {}
+      } catch {}
     }
     if (!targetRwId) {
       const firstRw = await prisma.rw.findFirst();
@@ -1380,12 +1383,6 @@ export class KknService {
           qrLower.includes("ang") ||
           qrLower.includes("non") ||
           qrLower.includes("2");
-        const isOrg =
-          !isAnorg &&
-          (qrLower.includes("organik") ||
-            qrLower.includes("org") ||
-            qrLower.includes("ogn") ||
-            qrLower.includes("1"));
         const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
 
         if (!bin) {
@@ -1484,7 +1481,7 @@ export class KknService {
         } else if (typeof parsed === "number" || typeof parsed === "string") {
           rwNum = String(parsed).padStart(2, "0");
         }
-      } catch (_) {}
+      } catch {}
     }
 
     const matchingRw = await prisma.rw.findFirst({
@@ -1929,7 +1926,7 @@ export class KknService {
           });
         }
       }
-    } catch (_poskoServiceErr) {
+    } catch {
       // silent fallback
     }
 
@@ -1993,7 +1990,7 @@ export class KknService {
           },
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return posko;
   }
@@ -2080,7 +2077,7 @@ export class KknService {
           },
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return posko;
   }
@@ -2121,7 +2118,7 @@ export class KknService {
           },
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return { success: true, message: "Posko KKN berhasil dihapus." };
   }
@@ -2248,9 +2245,7 @@ export class KknService {
     }
   ) {
     const targetDateRaw = payload.tanggalKegiatanTerkait || (payload as any).startDate;
-    let targetDate = targetDateRaw
-      ? new Date(targetDateRaw)
-      : new Date();
+    let targetDate = targetDateRaw ? new Date(targetDateRaw) : new Date();
 
     if (isNaN(targetDate.getTime())) {
       targetDate = new Date();
@@ -2316,7 +2311,9 @@ export class KknService {
       }
     }
 
-    const leaveType = (payload.kategori || (payload as any).type || "IZIN").toUpperCase().includes("SAKIT")
+    const leaveType = (payload.kategori || (payload as any).type || "IZIN")
+      .toUpperCase()
+      .includes("SAKIT")
       ? "SAKIT"
       : "IZIN";
 
@@ -2987,7 +2984,6 @@ export class KknService {
       };
     }
 
-    let scheduleDurationMinutes = 0;
     let isOvernight = false;
     if (activeSchedule?.time && activeSchedule.time.includes("-")) {
       const parts = activeSchedule.time.split("-");
@@ -2996,10 +2992,7 @@ export class KknService {
       if (startParts.length >= 2 && endParts.length >= 2) {
         const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-        if (endMins > startMins) {
-          scheduleDurationMinutes = endMins - startMins;
-        } else {
-          scheduleDurationMinutes = 24 * 60 - startMins + endMins;
+        if (endMins <= startMins) {
           isOvernight = true;
         }
       }
@@ -4107,12 +4100,7 @@ export class KknService {
     };
   }
 
-  async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
-    const student = await prisma.studentKkn.findUnique({
-      where: { userId },
-      include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
-    });
-
+  async updateLogbookPemanfaatan(_userId: string, id: string, payload: any) {
     // Check existing pemanfaatan
     let existing = await prisma.pemanfaatan.findUnique({
       where: { id },
@@ -4145,7 +4133,6 @@ export class KknService {
       teknologi,
       kategoriSampah,
       bahanBaku,
-      wilayahDampingan,
       rwId,
       waktuPelaksanaan,
       tanggalPencatatan,
@@ -4617,7 +4604,9 @@ export class KknService {
       return {
         warga,
         claimedBinsCount: unassignedBins.length,
-        claimedBins: unassignedBins.map(({ registeredByStudentId, ...rest }) => rest),
+        claimedBins: unassignedBins.map(
+          ({ registeredByStudentId: _registeredByStudentId, ...rest }) => rest
+        ),
         gamification: {
           pointsEarned: points,
           category: "PARTISIPASI_STREAK",
@@ -4761,8 +4750,12 @@ export class KknService {
     } else {
       tipeArea = "RADIUS";
       polygonKoordinat = null;
-      const customPoskoRadius = kelompok.poskoKkn?.radius ? Number(kelompok.poskoKkn.radius) : null;
-      const customScheduleRadius = kelompok.schedules?.[0]?.radius ? Number(kelompok.schedules[0].radius) : null;
+      const customPoskoRadius = kelompok.poskoKkn?.radius
+        ? Number(kelompok.poskoKkn.radius)
+        : null;
+      const customScheduleRadius = kelompok.schedules?.[0]?.radius
+        ? Number(kelompok.schedules[0].radius)
+        : null;
       radiusMeters = customPoskoRadius || customScheduleRadius || 500;
     }
 

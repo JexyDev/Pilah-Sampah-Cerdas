@@ -624,7 +624,7 @@ export class CronService {
                 isRead: false,
               },
             });
-          } catch (_notifErr) {
+          } catch {
             console.error(
               `[CronService] Failed to send geofence warning notification for ${att.studentId}`
             );
