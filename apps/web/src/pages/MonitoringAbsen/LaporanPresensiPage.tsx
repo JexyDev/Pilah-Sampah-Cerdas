@@ -1,10 +1,3 @@
-/**
- * Project: BERSEKA
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
- */
-
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -38,6 +31,11 @@ import {
   Trash2,
   Save,
   SlidersHorizontal,
+  MapPin,
+  Info,
+  ShieldCheck,
+  Eye,
+  User as UserIcon,
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -87,6 +85,7 @@ export interface LaporanItem {
   latitude: number | null;
   longitude: number | null;
   method: string;
+  jedaLogs?: any[];
 }
 
 export interface StudentAggregate {
