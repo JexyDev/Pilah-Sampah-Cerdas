@@ -426,7 +426,6 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
 
     ref.listen<FasilitasKknState>(fasilitasKknProvider, (previous, next) {
       if (next.error != null && (previous?.error != next.error)) {
-        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.error!),

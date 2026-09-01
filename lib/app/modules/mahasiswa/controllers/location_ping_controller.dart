@@ -198,6 +198,9 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       );
       lat = position.latitude;
       lng = position.longitude;
+      if (mounted) {
+        state = state.copyWith(lastLatitude: lat, lastLongitude: lng);
+      }
 
       final repo = _ref.read(kknRepositoryProvider);
       final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;

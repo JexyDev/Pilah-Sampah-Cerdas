@@ -120,7 +120,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               ),
               tooltip: 'Perbarui Lokasi GPS',
               onPressed: () async {
-                ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Memperbarui koordinat GPS & wilayah...'),

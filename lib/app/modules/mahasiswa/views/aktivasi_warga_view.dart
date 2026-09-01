@@ -90,7 +90,7 @@ class _AktivasiWargaViewState extends ConsumerState<AktivasiWargaView> {
     if (wargaId.trim().isEmpty) {
       _isProcessing = false;
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('ID Warga tidak ditemukan. Silakan pilih ulang warga dari daftar.'),
             backgroundColor: AppColors.dangerRed,

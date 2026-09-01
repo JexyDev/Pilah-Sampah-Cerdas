@@ -217,7 +217,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
-      expandedHeight: 175,
+      expandedHeight: 200,
       pinned: true,
       backgroundColor: Colors.white,
       foregroundColor: AppColors.textPrimary,
@@ -412,9 +412,9 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      ref.watch(kknLocationProvider).currentPosition != null 
-                                          ? 'Lokasi Anda saat ini: ${ref.watch(kknLocationProvider).currentPosition!.latitude.toStringAsFixed(5)}, ${ref.watch(kknLocationProvider).currentPosition!.longitude.toStringAsFixed(5)}'
-                                          : 'Lokasi Anda saat ini: Menunggu GPS...',
+                                      (ref.watch(kknLocationProvider).currentPosition != null || ref.watch(locationPingControllerProvider).lastLatitude != null)
+                                          ? 'Lokasi Anda saat ini: ${(ref.watch(kknLocationProvider).currentPosition?.latitude ?? ref.watch(locationPingControllerProvider).lastLatitude!).toStringAsFixed(5)}, ${(ref.watch(kknLocationProvider).currentPosition?.longitude ?? ref.watch(locationPingControllerProvider).lastLongitude!).toStringAsFixed(5)}'
+                                          : 'Lokasi Anda saat ini: Menunggu GPS...' ,
                                       style: const TextStyle(
                                         fontSize: 10,
                                         color: AppColors.textSecondary,

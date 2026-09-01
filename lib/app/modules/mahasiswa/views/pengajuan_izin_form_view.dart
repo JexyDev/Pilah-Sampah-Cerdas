@@ -127,7 +127,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_photoPath == null) {
-      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto surat/bukti izin wajib diunggah!'),
           backgroundColor: AppColors.dangerRed,
@@ -174,7 +174,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
           errMsg.contains('timeout')) {
         setState(() => _isSuccess = true);
       } else {
-        ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal mengirim: $e'),
             backgroundColor: AppColors.dangerRed,
@@ -245,6 +245,40 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
         
       ),
       body: _isSuccess ? _buildSuccessView() : _buildForm(),
+        bottomNavigationBar: (_isSuccess || _isDateBlocked) ? null : Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                disabledBackgroundColor: Colors.grey.shade300,
+                shape: const StadiumBorder(),
+                elevation: 0,
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      height: 22, width: 22,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                    )
+                  : const Text(
+                      'Kirim Pengajuan',
+                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+            ),
+          ),
+        ),
     ),
     );
   }
@@ -372,18 +406,19 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.warningYellow,
+                color: AppColors.primaryBlue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.warningYellow),
+                border: Border(left: const BorderSide(color: AppColors.primaryBlue, width: 4)),
               ),
-              child: Row(
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.asset('assets/icons/paper.png', width: 42, height: 42),
-                  const SizedBox(width: 10),
-                  const Expanded(
+                  Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
                     child: Text(
-                      'Pengajuan izin sebaiknya dikirimkan H-1 sebelum kegiatan KKN berlangsung. Foto bukti wajib dilampirkan.',
-                      style: TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w500),
+                      'Pengajuan izin wajib dilampirkan dengan foto bukti yang valid (H-1).',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
                     ),
                   ),
                 ],
