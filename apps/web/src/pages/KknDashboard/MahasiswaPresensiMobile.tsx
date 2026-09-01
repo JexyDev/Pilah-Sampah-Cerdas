@@ -446,21 +446,47 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
   // 6. Submit Presensi Check-Out
   const handleCheckOut = async () => {
-    if (!activeSession) return;
-    const targetId = activeSession.id || activeSession.presensiId;
-    if (!targetId) return;
+    if (!activeSession && !primaryKegiatan) return;
 
     setIsSubmitting(true);
     try {
-      const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
-        deskripsiKegiatan: activeSession.deskripsiKegiatan,
-      });
+      // Jika memiliki sesi jadwal kegiatan aktif resmi KKN
+      if (
+        primaryKegiatan &&
+        (primaryKegiatan.statusKehadiran === "BERLANGSUNG" ||
+          primaryKegiatan.statusKehadiran === "TERJEDA" ||
+          primaryKegiatan.statusKehadiran === "DI_ZONA")
+      ) {
+        const res = await api.post(`/kkn/kegiatan/${primaryKegiatan.id}/selesai`, {
+          latitude: coords?.latitude,
+          longitude: coords?.longitude,
+          deskripsiKegiatan: deskripsi.trim() || undefined,
+        });
 
-      if (res.data?.success || res.status === 200) {
-        showToast.success("Check-out berhasil! Sesi presensi hari ini telah selesai.");
-        setActiveSession(null);
-        fetchRiwayatPresensi();
-        fetchKegiatanAktif();
+        if (res.data?.success || res.status === 200) {
+          showToast.success("Kegiatan KKN hari ini berhasil diselesaikan (Check-Out)!");
+          setActiveSession(null);
+          fetchRiwayatPresensi();
+          fetchKegiatanAktif();
+          return;
+        }
+      }
+
+      // Fallback presensi mandiri jika bukan dari kegiatan resmi
+      if (activeSession) {
+        const targetId = activeSession.id || activeSession.presensiId;
+        if (targetId) {
+          const res = await api.patch(`/presensi/mandiri/${targetId}/checkout`, {
+            deskripsiKegiatan: activeSession.deskripsiKegiatan || deskripsi.trim(),
+          });
+
+          if (res.data?.success || res.status === 200) {
+            showToast.success("Check-out berhasil! Sesi presensi hari ini telah selesai.");
+            setActiveSession(null);
+            fetchRiwayatPresensi();
+            fetchKegiatanAktif();
+          }
+        }
       }
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal melakukan check-out presensi.");
@@ -956,6 +982,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                   <p className="text-[10px] text-slate-400 mt-0.5">
                     {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
                     • Masuk: {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
+                    {item.jamPulang ? ` • Pulang: ${new Date(item.jamPulang).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {item.durasiJedaMenit && item.durasiJedaMenit > 0 ? ` • Jeda: ${item.durasiJedaFormatted || `${item.durasiJedaMenit}m`}` : ""}
                   </p>
                 </div>
                 <span
