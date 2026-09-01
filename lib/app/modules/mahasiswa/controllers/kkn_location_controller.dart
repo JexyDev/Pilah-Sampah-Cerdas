@@ -300,15 +300,31 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         if (activeZone['actualInZoneSeconds'] != null) {
           final serverSecs =
               int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
-          _accumulatedSeconds = serverSecs; // server selalu menang
-          _zoneEntryTime ??= DateTime.now();
+          if (state.isTracking && (_zoneDurationTimer?.isActive ?? false)) {
+            final diff = serverSecs - _accumulatedSeconds;
+            if (diff > 0 || diff < -90) {
+              _accumulatedSeconds = serverSecs;
+              _zoneEntryTime = DateTime.now();
+            }
+          } else {
+            _accumulatedSeconds = serverSecs;
+            _zoneEntryTime ??= DateTime.now();
+          }
           await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins =
               num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
-          _accumulatedSeconds = serverSecs; // server selalu menang
-          _zoneEntryTime ??= DateTime.now();
+          if (state.isTracking && (_zoneDurationTimer?.isActive ?? false)) {
+            final diff = serverSecs - _accumulatedSeconds;
+            if (diff > 0 || diff < -90) {
+              _accumulatedSeconds = serverSecs;
+              _zoneEntryTime = DateTime.now();
+            }
+          } else {
+            _accumulatedSeconds = serverSecs;
+            _zoneEntryTime ??= DateTime.now();
+          }
           await _savePersistentTimer();
         }
         // Jika server tidak return durasi sama sekali (null), biarkan nilai
@@ -426,11 +442,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                     60)
                 .toInt();
 
-        // Server selalu menang — kalau server return nilai (termasuk 0 untuk sesi baru),
-        // pakai nilai server. Nilai lokal dari _loadPersistentTimer hanya dipakai
-        // sebagai fallback crash-recovery jika server tidak return field durasi sama sekali.
-        // Tidak pakai max() agar akun kedua tidak mewarisi durasi akun pertama.
-        _accumulatedSeconds = serverSecs;
+        if (state.isTracking && (_zoneDurationTimer?.isActive ?? false)) {
+          final diff = serverSecs - _accumulatedSeconds;
+          if (diff > 0 || diff < -90) {
+            _accumulatedSeconds = serverSecs;
+            _zoneEntryTime = DateTime.now();
+          }
+        } else {
+          _accumulatedSeconds = serverSecs;
+          _zoneEntryTime ??= DateTime.now();
+        }
+        await _savePersistentTimer();
 
         final durasiWajib =
             int.tryParse(activeItem['durasiWajibMenit']?.toString() ?? '120') ??
@@ -979,17 +1001,22 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             }
 
             if (hasServerDuration) {
-              _accumulatedSeconds = serverSeconds;
-              // [FIX JUMPING] Set entry time hanya jika belum ada — jangan timpa
-              // sesi yang sedang berjalan saat startTracking dipanggil ulang (mis.
-              // app resume / buka halaman presensi kembali).
-              _zoneEntryTime ??= DateTime.now();
+              if (state.isTracking && (_zoneDurationTimer?.isActive ?? false)) {
+                final diff = serverSeconds - _accumulatedSeconds;
+                if (diff > 0 || diff < -90) {
+                  _accumulatedSeconds = serverSeconds;
+                  _zoneEntryTime = DateTime.now();
+                }
+              } else {
+                _accumulatedSeconds = serverSeconds;
+                _zoneEntryTime ??= DateTime.now();
+              }
               await _savePersistentTimer();
 
               if (_backgroundServiceStarted) {
                 FlutterForegroundTask.sendDataToTask({
                   'type': 'SYNC_DURATION',
-                  'seconds': serverSeconds,
+                  'seconds': _accumulatedSeconds,
                 });
               }
             }
@@ -1093,6 +1120,9 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         targetData: syncedTarget,
         apiBaseUrl: apiBaseUrl,
         authToken: authToken,
+        userId: _currentUserId,
+        initialAccumulatedSeconds: _accumulatedSeconds,
+        zoneEntryTime: _zoneEntryTime,
       );
 
       if (result is ServiceRequestSuccess) {
@@ -1261,31 +1291,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       return;
     }
 
-    if (state.isTracking) {
-      // Bug #10 fix: simpan scheduleId aktif agar tidak hilang setelah restart
-      final savedScheduleId = _currentTargetScheduleId;
-
-      // Hard refresh: Hentikan semua service layaknya hot refresh
-      await stopTracking();
-
-      // Bersihkan state agar `startTracking` memanggil `getActiveZone` ulang dari API
-      state = state.copyWith(
-        activeActivity: null,
-        clearActivity: true,
-        zoneResetWarning: null,
-        clearWarning: true,
-      );
-      // Restore schedule ID agar tracking bisa dilanjutkan ke jadwal yang sama
-      _currentTargetScheduleId = savedScheduleId;
-
-      // Beri sedikit jeda agar background service benar-benar berhenti
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
-
-    // Mulai ulang dari awal
-    if (context != null && context.mounted) {
-      await startTracking(context);
-    }
+    // Pembaruan lokasi secara non-destruktif: tidak mematikan service atau mereset timer
+    await _performLocationUpdate();
   }
 
   /// Set the active schedule target to calculate geofencing
@@ -1376,17 +1383,31 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       if (mergedData['actualInZoneSeconds'] != null) {
         final serverSecs =
             int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
-        _accumulatedSeconds = serverSecs;
-        // [FIX JUMPING] Set entry time hanya jika belum ada.
-        _zoneEntryTime ??= DateTime.now();
+        if (state.isTracking && (_zoneDurationTimer?.isActive ?? false)) {
+          final diff = serverSecs - _accumulatedSeconds;
+          if (diff > 0 || diff < -90) {
+            _accumulatedSeconds = serverSecs;
+            _zoneEntryTime = DateTime.now();
+          }
+        } else {
+          _accumulatedSeconds = serverSecs;
+          _zoneEntryTime ??= DateTime.now();
+        }
         await _savePersistentTimer();
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins =
             num.tryParse(mergedData['actualInZoneMinutes'].toString()) ?? 0;
         final serverSecs = (actualMins * 60).toInt();
-        _accumulatedSeconds = serverSecs;
-        // [FIX JUMPING] Set entry time hanya jika belum ada.
-        _zoneEntryTime ??= DateTime.now();
+        if (state.isTracking && (_zoneDurationTimer?.isActive ?? false)) {
+          final diff = serverSecs - _accumulatedSeconds;
+          if (diff > 0 || diff < -90) {
+            _accumulatedSeconds = serverSecs;
+            _zoneEntryTime = DateTime.now();
+          }
+        } else {
+          _accumulatedSeconds = serverSecs;
+          _zoneEntryTime ??= DateTime.now();
+        }
         await _savePersistentTimer();
       }
 

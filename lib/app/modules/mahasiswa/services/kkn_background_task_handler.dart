@@ -47,6 +47,7 @@ class KknBgPrefKeys {
   // API config
   static const apiBaseUrl = 'kkn_bg_api_base_url';
   static const authToken = 'kkn_bg_auth_token';
+  static const userId = 'kkn_bg_user_id';
 }
 
 /// Message types untuk komunikasi Background → UI
@@ -118,12 +119,17 @@ class KknBackgroundTaskHandler extends TaskHandler {
     // Load semua data dari SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     
-    // Load accumulated seconds (persisten harian)
-    final savedDate = prefs.getString(KknBgPrefKeys.accumulatedDate);
+    // Load accumulated seconds (persisten harian dengan isolasi per akun)
+    final userId = prefs.getString(KknBgPrefKeys.userId);
+    final userKeyAccum = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedSeconds}_$userId' : KknBgPrefKeys.accumulatedSeconds;
+    final userKeyDate = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedDate}_$userId' : KknBgPrefKeys.accumulatedDate;
+    final userKeyEntry = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.zoneEntryTime}_$userId' : KknBgPrefKeys.zoneEntryTime;
+
+    final savedDate = prefs.getString(userKeyDate) ?? prefs.getString(KknBgPrefKeys.accumulatedDate);
     final today = DateTime.now().toLocal().toString().substring(0, 10);
     if (savedDate == today) {
-      _accumulatedSeconds = prefs.getInt(KknBgPrefKeys.accumulatedSeconds) ?? 0;
-      final savedEntry = prefs.getString(KknBgPrefKeys.zoneEntryTime);
+      _accumulatedSeconds = prefs.getInt(userKeyAccum) ?? prefs.getInt(KknBgPrefKeys.accumulatedSeconds) ?? 0;
+      final savedEntry = prefs.getString(userKeyEntry) ?? prefs.getString(KknBgPrefKeys.zoneEntryTime);
       if (savedEntry != null && savedEntry.isNotEmpty) {
         _zoneEntryTime = DateTime.tryParse(savedEntry);
       }
@@ -498,6 +504,11 @@ class KknBackgroundTaskHandler extends TaskHandler {
     final targetKey = (_scheduleId != null && _scheduleId!.isNotEmpty && _scheduleId != 'SCH-TODAY')
         ? '_$_scheduleId'
         : '';
+    final userId = prefs.getString(KknBgPrefKeys.userId);
+    final userKeyAccum = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedSeconds}_$userId' : null;
+    final userKeyDate = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.accumulatedDate}_$userId' : null;
+    final userKeyEntry = (userId != null && userId.isNotEmpty) ? '${KknBgPrefKeys.zoneEntryTime}_$userId' : null;
+
     await prefs.setString(KknBgPrefKeys.accumulatedDate, today);
     await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, accumSeconds);
     if (entryTime != null) {
@@ -505,6 +516,17 @@ class KknBackgroundTaskHandler extends TaskHandler {
     } else {
       await prefs.remove(KknBgPrefKeys.zoneEntryTime);
     }
+
+    if (userKeyDate != null && userKeyAccum != null) {
+      await prefs.setString(userKeyDate, today);
+      await prefs.setInt(userKeyAccum, accumSeconds);
+      if (entryTime != null && userKeyEntry != null) {
+        await prefs.setString(userKeyEntry, entryTime.toIso8601String());
+      } else if (userKeyEntry != null) {
+        await prefs.remove(userKeyEntry);
+      }
+    }
+
     await prefs.setString('${KknBgPrefKeys.accumulatedDate}$targetKey', today);
     await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}$targetKey', accumSeconds);
     if (entryTime != null) {
@@ -725,9 +747,33 @@ Future<ServiceRequestResult> startKknForegroundService({
   required Map<String, dynamic> targetData,
   required String? apiBaseUrl,
   required String? authToken,
+  String? userId,
+  int? initialAccumulatedSeconds,
+  DateTime? zoneEntryTime,
 }) async {
   // Simpan data target ke SharedPreferences agar bisa diakses di background isolate
   final prefs = await SharedPreferences.getInstance();
+  final today = DateTime.now().toLocal().toString().substring(0, 10);
+  
+  if (userId != null && userId.isNotEmpty) {
+    await prefs.setString(KknBgPrefKeys.userId, userId);
+  }
+
+  if (initialAccumulatedSeconds != null) {
+    await prefs.setString(KknBgPrefKeys.accumulatedDate, today);
+    await prefs.setInt(KknBgPrefKeys.accumulatedSeconds, initialAccumulatedSeconds);
+    if (userId != null && userId.isNotEmpty) {
+      await prefs.setString('${KknBgPrefKeys.accumulatedDate}_$userId', today);
+      await prefs.setInt('${KknBgPrefKeys.accumulatedSeconds}_$userId', initialAccumulatedSeconds);
+    }
+  }
+
+  if (zoneEntryTime != null) {
+    await prefs.setString(KknBgPrefKeys.zoneEntryTime, zoneEntryTime.toIso8601String());
+    if (userId != null && userId.isNotEmpty) {
+      await prefs.setString('${KknBgPrefKeys.zoneEntryTime}_$userId', zoneEntryTime.toIso8601String());
+    }
+  }
   
   await prefs.setDouble(KknBgPrefKeys.targetLat, 
     double.tryParse(targetData['latitude']?.toString() ?? targetData['lat']?.toString() ?? '0') ?? 0.0);
