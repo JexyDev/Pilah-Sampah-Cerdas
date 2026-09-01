@@ -186,14 +186,9 @@ export const penilaianKknService = {
       }
     }
 
-    const expectedSchedules =
-      pastSchedulesCount > 0
-        ? Math.max(pastSchedulesCount, attendances.length)
-        : Math.max(1, attendances.length);
-
     const attendanceRate =
       attendances.length > 0
-        ? Math.min(100, Math.max(0, Math.round(sumAttendanceScores / expectedSchedules)))
+        ? Math.min(100, Math.max(0, Math.round(sumAttendanceScores / attendances.length)))
         : 0;
 
     // 2. Hitung Warga Binaan Real dari Database (Berdasarkan Tempat Sampah/Bin pendaftaran mahasiswa, fallback ke RW)

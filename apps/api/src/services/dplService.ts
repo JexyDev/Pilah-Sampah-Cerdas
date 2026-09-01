@@ -142,12 +142,8 @@ async function calculateStudentAttendanceRate(
       sumSessionScores += sessionScore;
     }
 
-    const expectedSchedules =
-      totalSchedules > 0
-        ? Math.max(totalSchedules, attendances.length)
-        : Math.max(1, attendances.length);
-
-    return Math.min(100, Math.max(0, Math.round(sumSessionScores / expectedSchedules)));
+    // Hitung rata-rata pemenuhan kehadiran dari sesi-sesi yang dihadiri mahasiswa
+    return Math.min(100, Math.max(0, Math.round(sumSessionScores / attendances.length)));
   } catch (err) {
     console.warn("[dplService] Error calculating student attendance rate:", err);
     return 0;
@@ -1241,21 +1237,13 @@ export const dplService = {
 
         const totalSchedules = await getEligiblePastSchedulesCount(st.kelompokId || undefined);
         const attendedCount = attendances.length;
-        // Alpha adalah sisa jadwal tanpa keterangan ditambah pengajuan ketidakhadiran yang ditolak
-        const rawAlpha =
-          totalSchedules > 0
-            ? Math.max(0, totalSchedules - attendedCount - sickCount - izinCount)
-            : 0;
-        const alphaCount = Math.max(rawAlpha, rejectedAbsenceCount);
+        // Fleksibilitas KKN: Tidak ada sistem alpha otomatis pada jadwal kosong/hari fleksibel
+        const alphaCount = 0;
 
         const configTargets = await dplService.getConfigTargets();
         const ruleConfigs = await configService.getRuleEngineConfigs();
         const baseScore = Number(st.assessmentScore || 0);
-        const penaltyPerAlpha = ruleConfigs.alphaPenaltyScorePercent || 5.0;
-        const finalCalculatedScore = Math.max(
-          0,
-          Math.round(baseScore - alphaCount * penaltyPerAlpha)
-        );
+        const finalCalculatedScore = baseScore;
 
         let totalMinutes = 0;
         for (const a of attendances) {
@@ -1285,10 +1273,7 @@ export const dplService = {
           where: { userId: st.userId },
           _sum: { points: true },
         });
-        const netPoints = Math.max(
-          0,
-          (points._sum.points || 0) - alphaCount * (ruleConfigs.alphaPenaltyPoints || 10)
-        );
+        const netPoints = Math.max(0, points._sum.points || 0);
 
         return {
           id: st.id,
@@ -1320,8 +1305,7 @@ export const dplService = {
           remainingMinutes,
           targetHours,
           progressPercentage,
-          statusKehadiranLabel:
-            alphaCount > 0 ? `${alphaCount}x Tanpa Keterangan (Alpha)` : "Tertib Presensi",
+          statusKehadiranLabel: "Tertib Presensi",
           attendances: attendances.map((a) => ({
             id: a.id,
             scheduleTitle: a.schedule?.title || "Kegiatan KKN",

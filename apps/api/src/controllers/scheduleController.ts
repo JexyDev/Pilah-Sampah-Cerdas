@@ -294,7 +294,7 @@ export const scheduleController = {
       const result = await scheduleService.syncDailySchedulesForToday(date);
       res.status(200).json({
         success: true,
-        message: `Berhasil sinkronisasi jadwal kegiatan harian untuk tanggal ${result.date}${cleanResult.removedDuplicatesCount > 0 ? ` (${cleanResult.removedDuplicatesCount} duplikat dibersihkan)` : ""}`,
+        message: `Berhasil sinkronisasi jadwal kegiatan harian 7 hari (${result.startDate} s.d. ${result.endDate})${cleanResult.removedDuplicatesCount > 0 ? ` (${cleanResult.removedDuplicatesCount} duplikat dibersihkan)` : ""}`,
         data: { ...result, totalDuplicatesCleaned: cleanResult.removedDuplicatesCount },
       });
     } catch (error: any) {

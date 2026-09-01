@@ -3274,7 +3274,8 @@ export class KknAttendanceService {
           isMemenuhiDurasi = isMemenuhi;
         }
       } else if (scheduleStatus === "SELESAI") {
-        statusKehadiran = "ALPA";
+        // Fleksibilitas KKN: Mahasiswa yang tidak absen pada jadwal yang telah selesai TIDAK dicap ALPA
+        statusKehadiran = "BELUM_ABSEN";
         isMemenuhiDurasi = false;
       }
 
