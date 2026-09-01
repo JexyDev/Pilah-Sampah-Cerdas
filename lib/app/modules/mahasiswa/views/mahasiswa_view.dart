@@ -405,6 +405,26 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, size: 12, color: AppColors.dangerRed),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      ref.watch(kknLocationProvider).currentPosition != null 
+                                          ? 'Lokasi Anda saat ini: ${ref.watch(kknLocationProvider).currentPosition!.latitude.toStringAsFixed(5)}, ${ref.watch(kknLocationProvider).currentPosition!.longitude.toStringAsFixed(5)}'
+                                          : 'Lokasi Anda saat ini: Menunggu GPS...',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
