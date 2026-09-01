@@ -694,7 +694,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </button>
           </div>
         </div>
-      ) : activeSession ? (
+      ) : activeSession || isLiveActiveInZone || primaryKegiatan?.statusKehadiran === "BERLANGSUNG" ? (
         /* KARTU SESI SEDANG BERLANGSUNG */
         <div className="bg-white dark:bg-slate-900 border-2 border-emerald-500/80 rounded-3xl p-5 shadow-sm space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
@@ -710,22 +710,33 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
           <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-2">
             <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400">Kegiatan:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200 text-right truncate max-w-[200px]">
+                {activeSession?.deskripsiKegiatan || primaryKegiatan?.namaKegiatan || "Kegiatan Posko KKN"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
               <span className="text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(activeSession.jamMasuk || activeSession.checkInAt)
-                  ? new Date(activeSession.jamMasuk || activeSession.checkInAt).toLocaleTimeString("id-ID")
+                {(activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt)
+                  ? new Date(activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt).toLocaleTimeString("id-ID")
                   : "-"}
               </span>
             </div>
-            <div className="flex justify-between items-start text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
-              <span className="text-slate-400">Deskripsi:</span>
-              <span className="font-medium text-slate-800 dark:text-slate-200 text-right max-w-[200px]">
-                {activeSession.deskripsiKegiatan || "-"}
+            <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+              <span className="text-slate-400">Status GPS:</span>
+              <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {distanceToPosko !== null && posko
+                  ? distanceToPosko <= posko.radius
+                    ? `Di Posko (${distanceToPosko}m)`
+                    : `Di Luar Zona (${distanceToPosko}m)`
+                  : "Terhubung Live"}
               </span>
             </div>
           </div>
 
-          {(activeSession.fotoBuktiUrl || activeSession.fotoUrl) && (
+          {(activeSession?.fotoBuktiUrl || activeSession?.fotoUrl) && (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-48">
               <img
                 src={activeSession.fotoBuktiUrl || activeSession.fotoUrl}
@@ -735,23 +746,35 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             </div>
           )}
 
-          <button
-            onClick={handleCheckOut}
-            disabled={isSubmitting}
-            className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                <span>Memproses Checkout...</span>
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={16} />
-                <span>Akhiri Sesi &amp; Check-Out</span>
-              </>
-            )}
-          </button>
+          {activeSession ? (
+            <button
+              onClick={handleCheckOut}
+              disabled={isSubmitting}
+              className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Memproses Checkout...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={16} />
+                  <span>Akhiri Sesi &amp; Check-Out</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-emerald-600" />
+                <span className="font-bold">Kehadiran Terpantau Realtime</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold bg-emerald-200/60 dark:bg-emerald-900/60 px-2 py-0.5 rounded-lg">
+                GPS Aktif
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         /* FORM CHECK-IN PRESENSI MANDIRI BARU */
