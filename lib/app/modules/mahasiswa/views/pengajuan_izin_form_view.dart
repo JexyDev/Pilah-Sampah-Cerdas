@@ -28,7 +28,7 @@ class PengajuanIzinFormView extends ConsumerStatefulWidget {
 class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
   final _formKey = GlobalKey<FormState>();
   KategoriIzin _selectedKategori = KategoriIzin.sakit;
-  DateTime _tanggalKegiatan = DateTime.now().add(const Duration(days: 1));
+  DateTime _tanggalKegiatan = DateTime.now();
   final TextEditingController _deskripsiController = TextEditingController();
   String? _photoPath;
   bool _isSubmitting = false;
@@ -410,15 +410,15 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 borderRadius: BorderRadius.circular(10),
                 border: const Border(left: BorderSide(color: AppColors.primaryBlue, width: 4)),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
-                  SizedBox(width: 10),
+                  const Icon(Icons.info_outline_rounded, color: AppColors.primaryBlue, size: 20),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Pengajuan izin wajib dilampirkan dengan foto bukti yang valid (H-1).',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                      _selectedKategori == KategoriIzin.sakit ? 'Pemberitahuan sakit dapat diajukan hari ini dengan melampirkan bukti valid.' : 'Pengajuan izin wajib dilampirkan dengan foto bukti yang valid (H-1).',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
                     ),
                   ),
                 ],
@@ -434,7 +434,15 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 final isSelected = _selectedKategori == k;
                 return Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedKategori = k),
+                    onTap: () => setState(() {
+                        _selectedKategori = k;
+                        final now = DateTime.now();
+                        final isSakit = k == KategoriIzin.sakit;
+                        final baseDate = isSakit ? DateTime(now.year, now.month, now.day) : DateTime(now.year, now.month, now.day + 1);
+                        if (_tanggalKegiatan.isBefore(baseDate)) {
+                          _tanggalKegiatan = baseDate;
+                        }
+                      }),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: EdgeInsets.only(right: k == KategoriIzin.sakit ? 8 : 0),
@@ -481,12 +489,12 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
             const SizedBox(height: 20),
 
             // Tanggal Kegiatan
-            const Text('Tanggal Kegiatan Terkait (Minimal H-1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(_selectedKategori == KategoriIzin.sakit ? 'Tanggal Kegiatan Terkait' : 'Tanggal Kegiatan Terkait (Minimal H-1)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
                 final now = DateTime.now();
-                final tomorrow = DateTime(now.year, now.month, now.day + 1);
+                final baseDate = _selectedKategori == KategoriIzin.sakit ? DateTime(now.year, now.month, now.day) : DateTime(now.year, now.month, now.day + 1);
                 
                 final blockedDates = <DateTime>[];
                 for (final item in _izinHistory) {
@@ -501,7 +509,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                   }
                 }
 
-                DateTime initial = _tanggalKegiatan.isBefore(tomorrow) ? tomorrow : _tanggalKegiatan;
+                DateTime initial = _tanggalKegiatan.isBefore(baseDate) ? baseDate : _tanggalKegiatan;
                 while (blockedDates.any((b) => b.year == initial.year && b.month == initial.month && b.day == initial.day)) {
                   initial = initial.add(const Duration(days: 1));
                 }
@@ -509,10 +517,10 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
                 final picked = await showDatePicker(
                   context: context,
                   initialDate: initial,
-                  firstDate: tomorrow,
-                  lastDate: DateTime(tomorrow.year + 1),
+                  firstDate: baseDate,
+                  lastDate: DateTime(baseDate.year + 1),
                   selectableDayPredicate: (DateTime day) {
-                    if (day.isBefore(tomorrow)) return false;
+                    if (day.isBefore(baseDate)) return false;
                     for (final blocked in blockedDates) {
                       if (day.year == blocked.year && day.month == blocked.month && day.day == blocked.day) {
                         return false;
@@ -573,7 +581,7 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
               controller: _deskripsiController,
               maxLines: 4,
               decoration: InputDecoration(
-                hintText: 'Jelaskan alasan izin / kondisi sakit secara detail...',
+                hintText: _selectedKategori == KategoriIzin.sakit ? 'Jelaskan kondisi sakit secara detail (misal: demam, kontrol dokter)...' : 'Jelaskan alasan izin secara detail...',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 filled: true,
                 fillColor: Colors.white,

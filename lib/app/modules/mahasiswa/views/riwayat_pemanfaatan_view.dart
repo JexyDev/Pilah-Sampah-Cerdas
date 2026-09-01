@@ -125,7 +125,7 @@ class RiwayatPemanfaatanView extends ConsumerWidget {
     final tglStr = tgl != null ? DateFormat('dd MMM yyyy, HH:mm').format(tgl) : '-';
 
     final isPanen = status == 'PANEN';
-    final displayStatus = isPanen ? 'Laporan Pemanfaatan Akhir' : 'Laporan Pemanfaatan Awal';
+    final displayStatus = isPanen ? 'Catatan Hasil Akhir' : 'Laporan Pemanfaatan Awal';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
