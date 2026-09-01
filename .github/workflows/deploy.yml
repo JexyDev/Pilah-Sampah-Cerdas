@@ -113,9 +113,20 @@ jobs:
             echo "storeFile=berseka-release.keystore" >> android/key.properties
           fi
 
+      - name: Generate Dynamic Semantic Version
+        run: |
+          # Base version X.Y
+          BASE_VERSION="1.1"
+          # Calculate patch number based on github run number offset
+          OFFSET=1264
+          PATCH_NUM=$((${{ github.run_number }} - OFFSET))
+          if [ $PATCH_NUM -lt 0 ]; then PATCH_NUM=0; fi
+          VERSION_NAME="$BASE_VERSION.$PATCH_NUM"
+          echo "APP_VERSION=$VERSION_NAME" >> $GITHUB_ENV
+
       - name: Build Android Release APK (Universal Build)
         run: |
-          flutter build apk --release --build-name=1.0.${{ github.run_number }} --build-number=${{ github.run_number }} --android-skip-build-dependency-validation
+          flutter build apk --release --build-name=${{ env.APP_VERSION }} --build-number=${{ github.run_number }} --android-skip-build-dependency-validation
           ls -lah build/app/outputs/flutter-apk/
 
       - name: Install sshpass
@@ -158,10 +169,10 @@ jobs:
               -H "Content-Type: application/json" \
               -H "x-ci-secret: $CI_SECRET" \
               -d "{
-                \"latestVersion\": \"1.0.${{ github.run_number }}\",
-                \"version\": \"1.0.${{ github.run_number }}\",
+                \"latestVersion\": \"${{ env.APP_VERSION }}\",
+                \"version\": \"${{ env.APP_VERSION }}\",
                 \"buildNumber\": ${{ github.run_number }},
-                \"releaseNotes\": \"Auto-build CI/CD universal APK v1.0.${{ github.run_number }} (Build ${{ github.run_number }}), pembaruan performa, dan sinkronisasi real-time.\",
+                \"releaseNotes\": \"Auto-build CI/CD universal APK v${{ env.APP_VERSION }} (Build ${{ github.run_number }}), pembaruan performa, dan sinkronisasi real-time.\",
                 \"downloadUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
                 \"apkUrl\": \"/downloads/berseka-release-arm64-v8a.apk\",
                 \"fileSizeBytes\": $FILE_SIZE,

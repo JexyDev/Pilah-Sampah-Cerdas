@@ -362,7 +362,6 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             status == 'hadir' ||
             status == 'hadir_memenuhi' ||
             status == 'hadir_tidak_memenuhi';
-        final bool isAlpa = status == 'alpa' || status == 'tanpa_keterangan';
 
         state = state.copyWith(
           activeActivity: activeZone,
