@@ -2195,7 +2195,7 @@ export const LaporanPresensiPage: React.FC = () => {
                         </div>
 
                         {/* Times & Duration Strip */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Jam Masuk (JM)</span>
                             <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
@@ -2209,7 +2209,13 @@ export const LaporanPresensiPage: React.FC = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-[10px] font-bold text-slate-400 block">Durasi Bersih Aktual</span>
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 block">Durasi Jeda (DJ)</span>
+                            <span className={`font-mono font-bold ${item.durasiJedaMenit && item.durasiJedaMenit > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"}`}>
+                              {item.durasiJedaFormatted || `${item.durasiJedaMenit || 0} Menit`}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">Durasi Bersih (DA)</span>
                             <span className="font-mono font-black text-slate-900 dark:text-white">
                               {item.durasiFormatted} ({item.durasiMenit}m)
                             </span>
