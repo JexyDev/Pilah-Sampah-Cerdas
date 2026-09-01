@@ -139,4 +139,39 @@ describe("SystemService & SystemController - App Version & Updater", () => {
     expect(jsonResponse.success).toBe(true);
     expect(jsonResponse.data).toBeDefined();
   });
+
+  it("should return exact force update JSON structure on GET /api/v1/config/app-version", async () => {
+    const { configService } = await import("./configService.js");
+    const { configController } = await import("../controllers/configController.js");
+
+    const appVerConfig = await configService.getAppVersionConfig();
+    expect(appVerConfig).toHaveProperty("min_required_version");
+    expect(appVerConfig).toHaveProperty("latest_version");
+    expect(appVerConfig).toHaveProperty("update_url");
+
+    let jsonResponse: any = null;
+    let statusCode: number = 0;
+    const req = {} as any;
+    const res = {
+      status: (code: number) => {
+        statusCode = code;
+        return {
+          json: (data: any) => {
+            jsonResponse = data;
+          },
+        };
+      },
+    } as any;
+
+    await configController.getAppVersion(req, res);
+
+    expect(statusCode).toBe(200);
+    expect(jsonResponse).toEqual(
+      expect.objectContaining({
+        min_required_version: expect.any(String),
+        latest_version: expect.any(String),
+        update_url: expect.any(String),
+      })
+    );
+  });
 });

@@ -1540,7 +1540,7 @@ export const KelolaLogbookPage: React.FC = () => {
               <label className="block font-bold text-slate-700 dark:text-slate-300">
                 Pilih Preset Hari:
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {[30, 60, 90, 120].map((days) => (
                   <button
                     key={days}

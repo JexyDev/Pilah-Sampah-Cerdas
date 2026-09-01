@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 export const RwApproval = () => {
-    const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
+  const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
   const [inactiveBins, setInactiveBins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [brokenBinTarget, setBrokenBinTarget] = useState<string | null>(null);
+  const [isMarkingBroken, setIsMarkingBroken] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -30,18 +32,23 @@ export const RwApproval = () => {
     fetchData();
   }, []);
 
-  
-  
-  const markBinBroken = async (id: string) => {
-    if (confirm("Tandai bin ini rusak permanen?")) {
-      try {
-        await api.put(`/rw/bins/${id}/broken`);
-        toast.success("Status tempat sampah diubah menjadi RUSAK (BROKEN)");
-        fetchData();
-      } catch (error) {
-        console.error("Failed to mark bin broken", error);
-        toast.error("Gagal memperbarui status");
-      }
+  const markBinBroken = (id: string) => {
+    setBrokenBinTarget(id);
+  };
+
+  const handleConfirmMarkBinBroken = async () => {
+    if (!brokenBinTarget) return;
+    try {
+      setIsMarkingBroken(true);
+      await api.put(`/rw/bins/${brokenBinTarget}/broken`);
+      toast.success("Status tempat sampah diubah menjadi RUSAK (BROKEN)");
+      setBrokenBinTarget(null);
+      fetchData();
+    } catch (error) {
+      console.error("Failed to mark bin broken", error);
+      toast.error("Gagal memperbarui status");
+    } finally {
+      setIsMarkingBroken(false);
     }
   };
 
@@ -165,6 +172,18 @@ export const RwApproval = () => {
         </div>
       </div>
 
+      {/* Modern BERSEKA Confirmation Modal for Marking Bin Broken */}
+      <ConfirmModal
+        isOpen={Boolean(brokenBinTarget)}
+        onClose={() => setBrokenBinTarget(null)}
+        onConfirm={handleConfirmMarkBinBroken}
+        isLoading={isMarkingBroken}
+        title="Tandai Tempat Sampah Rusak"
+        message="Apakah Anda yakin ingin menandai tempat sampah ini sebagai rusak permanen (BROKEN)? Status tempat sampah akan dinonaktifkan dari sistem."
+        confirmText="Ya, Tandai Rusak"
+        cancelText="Batal"
+        type="warning"
+      />
     </div>
   );
 };

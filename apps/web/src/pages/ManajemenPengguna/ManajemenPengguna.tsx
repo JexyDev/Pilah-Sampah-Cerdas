@@ -619,10 +619,15 @@ const ManajemenPengguna: React.FC = () => {
 
     setModalType("edit");
     setSelectedUser(u);
-    let matchedAreaId = u.rtRwId ? String(u.rtRwId) : "";
-    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
+    let matchedAreaId = u.rtRwId ? String(u.rtRwId) : u.rwId ? String(u.rwId) : u.studentProfile?.assignedRwId ? String(u.studentProfile?.assignedRwId) : "";
+    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
     if (!matchedAreaId && u.rw && areasList.length > 0) {
-      const found = areasList.find((a: any) => a.name.toLowerCase() === u.rw.toLowerCase() || a.name.replace(/\D/g, "") === u.rw.replace(/\D/g, ""));
+      const cleanTargetKel = getCleanKelName(foundKelurahan).toLowerCase();
+      const found = areasList.find((a: any) => {
+        const kelMatches = a.kelurahan?.name && a.kelurahan.name.toLowerCase().includes(cleanTargetKel);
+        const nameMatches = a.name.toLowerCase() === u.rw.toLowerCase() || a.name.replace(/\D/g, "") === u.rw.replace(/\D/g, "");
+        return kelMatches && nameMatches;
+      }) || areasList.find((a: any) => a.name.toLowerCase() === u.rw.toLowerCase());
       if (found) {
         matchedAreaId = String(found.id);
         if (found.kelurahan?.name) {

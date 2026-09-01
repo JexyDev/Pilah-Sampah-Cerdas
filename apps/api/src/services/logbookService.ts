@@ -137,8 +137,13 @@ export class LogbookService {
         where.kelompokId = { in: dplGroupIds };
       }
     } else if (isMhs) {
-      // Cukup sebaris ini: pastikan mahasiswa hanya melihat miliknya sendiri
-      where.penulisId = userId;
+      // Kembalikan agar mahasiswa bisa melihat semua logbook milik kelompoknya
+      const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
+      if (studentProfile?.kelompokId) {
+        where.kelompokId = studentProfile.kelompokId;
+      } else {
+        where.penulisId = userId; // Fallback kalau kelompok nggak ketemu
+      }
     } else if (filters.groupId && filters.groupId !== "ALL") {
       where.kelompokId = filters.groupId;
     }

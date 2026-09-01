@@ -48,6 +48,7 @@ export class PoskoKknController {
         keterangan,
         kelompokId: bodyKelompokId,
         radius,
+        statusApproval,
       } = req.body;
 
       if (!nama || !alamat || latitude === undefined || longitude === undefined) {
@@ -101,6 +102,7 @@ export class PoskoKknController {
         radius: parsedRadius,
         fotoUrl: resolvedFoto || undefined,
         keterangan: keterangan || undefined,
+        statusApproval: statusApproval || undefined,
       });
 
       const resData = {
@@ -108,6 +110,7 @@ export class PoskoKknController {
         foto: posko.fotoUrl || null,
         fotoUrl: posko.fotoUrl || null,
         radius: Number((posko as any).radius) || 500,
+        statusApproval: statusApproval || posko.keterangan || "APPROVED",
       };
 
       res

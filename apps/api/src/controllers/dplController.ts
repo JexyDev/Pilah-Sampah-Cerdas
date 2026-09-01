@@ -417,6 +417,21 @@ export const dplController = {
         });
         return;
       }
+      if (error.message === "PROKER_NOT_STARTED") {
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message:
+            "Program kerja belum dimulai oleh mahasiswa. Penilaian hanya dapat dilakukan untuk program kerja yang sedang berjalan atau telah selesai.",
+        });
+        return;
+      }
+      if (error.message?.startsWith("PROKER_ATTACHMENT_REQUIRED")) {
+        res.status(400).json({
+          error: "BAD_REQUEST",
+          message: error.message,
+        });
+        return;
+      }
       if (error.message === "PROKER_NOT_COMPLETED") {
         res.status(400).json({
           error: "BAD_REQUEST",

@@ -115,6 +115,33 @@ const MasterWilayah: React.FC = () => {
     toast.success(`Berhasil mengekspor data ${activeTab} ke XLSX!`);
   };
 
+  const handleExportCsv = () => {
+    if (!filteredData || filteredData.length === 0) {
+      toast.error("Tidak ada data wilayah dalam tabel untuk diekspor.");
+      return;
+    }
+
+    const headers = ["No", "ID", "Nama Wilayah", "Kelurahan", "RW", "Kategori"];
+    const rows = filteredData.map((item, idx) => [
+      idx + 1,
+      `"${item.id || "-"}"`,
+      `"${(item.name || "").replace(/"/g, '""')}"`,
+      `"${(item.kelurahan?.name || item.kelurahanNama || "-").replace(/"/g, '""')}"`,
+      `"${(item.rw?.name || item.rwNama || "-").replace(/"/g, '""')}"`,
+      `"${activeTab.toUpperCase()}"`,
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `master_wilayah_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`Berhasil mengekspor data ${activeTab} ke CSV!`);
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
@@ -133,7 +160,7 @@ const MasterWilayah: React.FC = () => {
           <div className="self-start sm:self-center flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              Hierarki Wilayah Aktif
+              Terkoneksi API
             </span>
           </div>
         </div>
@@ -147,11 +174,11 @@ const MasterWilayah: React.FC = () => {
           {!isReadOnly && (
             <div className="flex items-center gap-2 ml-auto sm:ml-0">
               <button
-                onClick={() => toast.error("Penambahan wilayah administratif dikelola terpusat oleh Administrator Kota.")}
+                onClick={() => navigate(`/master-data/${activeTab}`)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
               >
                 <MapPin size={14} />
-                <span>Tambah Wilayah</span>
+                <span>Kelola {TAB_LABEL_MAP[activeTab] || "Wilayah"}</span>
               </button>
             </div>
           )}
@@ -239,6 +266,17 @@ const MasterWilayah: React.FC = () => {
             >
               <FileSpreadsheet size={13} />
               <span>Ekspor XLSX</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filteredData.length === 0}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/60 cursor-pointer"
+              title={`Ekspor ${filteredData.length} data wilayah (${activeTab}) ke CSV`}
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor CSV</span>
             </button>
           </div>
         </div>

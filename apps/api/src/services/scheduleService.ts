@@ -268,11 +268,22 @@ export const scheduleService = {
         },
       });
 
-      // Also check posko_kkn table
-      const poskos = await prisma.poskoKkn.findMany();
+      // Also check posko_kkn and posko_kkn_multi tables
+      const [poskos, multiPoskos] = await Promise.all([
+        prisma.poskoKkn.findMany(),
+        (prisma as any).poskoKknMulti.findMany({
+          orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+        }),
+      ]);
       const poskoMap = new Map<string, any>();
       poskos.forEach((p) => {
         if (p.kelompokId) poskoMap.set(p.kelompokId, p);
+      });
+      // Fallback ke multi posko jika belum ada di poskoMap
+      multiPoskos.forEach((mp: any) => {
+        if (mp.kelompokId && !poskoMap.has(mp.kelompokId)) {
+          poskoMap.set(mp.kelompokId, mp);
+        }
       });
 
       let createdCount = 0;
@@ -280,11 +291,12 @@ export const scheduleService = {
       let cleanedDuplicatesCount = 0;
 
       for (const group of groups) {
-        // Fetch all existing schedules for this group on this date
+        // Fetch all existing daily posko schedules for this group on this date
         const existingList = await prisma.schedule.findMany({
           where: {
             kelompokId: group.id,
             date: { gte: startOfDay, lte: endOfDay },
+            category: "POSKO_KKN",
             isActive: true,
           },
           include: {
@@ -300,16 +312,18 @@ export const scheduleService = {
         let poskoLat = -6.8915; // default Coblong
         let poskoLng = 107.6107;
         let poskoName = `Posko KKN ${group.name}`;
-        const poskoRadius = 200;
+        let poskoRadius = 200;
 
         if (officialPosko && officialPosko.latitude && officialPosko.longitude) {
           poskoLat = Number(officialPosko.latitude);
           poskoLng = Number(officialPosko.longitude);
           poskoName = officialPosko.nama || poskoName;
+          poskoRadius = Math.max(150, Number(officialPosko.radius) || 200);
         } else if (facilityPosko && facilityPosko.latitude && facilityPosko.longitude) {
           poskoLat = Number(facilityPosko.latitude);
           poskoLng = Number(facilityPosko.longitude);
           poskoName = facilityPosko.nama || poskoName;
+          poskoRadius = Math.max(150, 200);
         } else {
           // Fallback kelurahan resmi
           const kel = (group.kelurahan || group.name || "").toLowerCase();
@@ -375,11 +389,12 @@ export const scheduleService = {
             cleanedDuplicatesCount++;
           }
 
-          // Perbarui titik koordinat dan nama jadwal utama jika berubah
+          // Perbarui titik koordinat, nama, dan radius jadwal utama jika berubah
           if (
             Number(primarySchedule.latitude) !== poskoLat ||
             Number(primarySchedule.longitude) !== poskoLng ||
-            primarySchedule.location !== poskoName
+            primarySchedule.location !== poskoName ||
+            Number(primarySchedule.radius) !== poskoRadius
           ) {
             await prisma.schedule.update({
               where: { id: primarySchedule.id },
@@ -388,6 +403,7 @@ export const scheduleService = {
                 longitude: poskoLng,
                 location: poskoName,
                 title: `Kegiatan Harian ${poskoName}`,
+                radius: poskoRadius,
               },
             });
           }

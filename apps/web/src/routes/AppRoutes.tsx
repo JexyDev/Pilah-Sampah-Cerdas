@@ -970,10 +970,26 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/developer/inspeksi-zona"
           element={
-            <ProtectedRoute allowedRoles={["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"]}>
+            <ProtectedRoute
+              allowedRoles={[
+                "DEVELOPER",
+                "SUPER_USER",
+                "PANITIA_TASKFORCE",
+                "DPL",
+                "DOSEN_PEMBIMBING",
+                "ADMIN_DLH",
+                "PEMIMPIN",
+                "CAMAT",
+                "LURAH",
+              ]}
+            >
               <ZonaInspectorPage />
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/dpl/zona-inspector"
+          element={<Navigate to="/developer/inspeksi-zona" replace />}
         />
         <Route
           path="/inspeksi-zona"

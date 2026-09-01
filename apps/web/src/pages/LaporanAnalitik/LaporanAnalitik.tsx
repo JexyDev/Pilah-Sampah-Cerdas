@@ -488,7 +488,7 @@ const LaporanAnalitik: React.FC = () => {
               <label className="text-[11px] font-black uppercase text-slate-400 block tracking-wider">
                 1. Pilih Preset Rentang Waktu
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { id: "TODAY", label: "Hari Ini" },
                   { id: "7d", label: "7 Hari" },

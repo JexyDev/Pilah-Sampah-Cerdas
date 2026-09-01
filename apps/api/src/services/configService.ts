@@ -279,6 +279,63 @@ export class ConfigService {
 
     return this.getRuleEngineConfigs();
   }
+
+  /**
+   * Get dynamic App Version configuration for Mobile Force Update
+   */
+  async getAppVersionConfig(): Promise<{
+    min_required_version: string;
+    latest_version: string;
+    update_url: string;
+  }> {
+    const minRequired =
+      (await this.getConfig("app_min_required_version")) ||
+      (await this.getConfig("min_required_version")) ||
+      process.env.APP_MIN_REQUIRED_VERSION ||
+      "1.0.0";
+
+    const latest =
+      (await this.getConfig("app_latest_version")) ||
+      (await this.getConfig("latest_version")) ||
+      process.env.APP_LATEST_VERSION ||
+      "1.0.0";
+
+    const updateUrl =
+      (await this.getConfig("app_update_url")) ||
+      (await this.getConfig("update_url")) ||
+      process.env.APP_UPDATE_URL ||
+      "https://play.google.com/store/apps/details?id=com.berseka.app";
+
+    return {
+      min_required_version: minRequired.trim(),
+      latest_version: latest.trim(),
+      update_url: updateUrl.trim(),
+    };
+  }
+
+  /**
+   * Update dynamic App Version configuration
+   */
+  async updateAppVersionConfig(payload: {
+    min_required_version?: string;
+    latest_version?: string;
+    update_url?: string;
+  }) {
+    if (payload.min_required_version) {
+      await this.updateConfig("min_required_version", payload.min_required_version.trim());
+      await this.updateConfig("app_min_required_version", payload.min_required_version.trim());
+    }
+    if (payload.latest_version) {
+      await this.updateConfig("latest_version", payload.latest_version.trim());
+      await this.updateConfig("app_latest_version", payload.latest_version.trim());
+    }
+    if (payload.update_url) {
+      await this.updateConfig("update_url", payload.update_url.trim());
+      await this.updateConfig("app_update_url", payload.update_url.trim());
+    }
+
+    return this.getAppVersionConfig();
+  }
 }
 
 export const configService = new ConfigService();

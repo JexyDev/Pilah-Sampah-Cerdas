@@ -7,8 +7,8 @@
  * standard OpenStreetMap/CartoDB Voyager (light) and CartoDB Dark Matter (dark)
  */
 
-import React from "react";
-import { TileLayer, type TileLayerProps } from "react-leaflet";
+import React, { useEffect } from "react";
+import { TileLayer, useMap, type TileLayerProps } from "react-leaflet";
 import { useThemeStore } from "../../store/useThemeStore";
 
 interface ThemeTileLayerProps extends Omit<TileLayerProps, "url"> {
@@ -27,8 +27,36 @@ export const ThemeTileLayer: React.FC<ThemeTileLayerProps> = ({
   attribution,
   ...props
 }) => {
+  const map = useMap();
   const theme = useThemeStore((s) => s.theme);
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch {
+        // Safe guard for unmount
+      }
+    }, 250);
+
+    const handleResize = () => {
+      try {
+        map.invalidateSize();
+      } catch {
+        // Safe guard
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, [map]);
 
   const activeUrl = isDark ? darkUrl : (url || lightUrl);
   const activeAttribution = attribution || (

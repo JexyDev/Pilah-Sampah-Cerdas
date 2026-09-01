@@ -136,6 +136,30 @@ router.get("/", authMiddleware, async (req, res) => {
 
     let formattedNotifications: any[] = [];
 
+    // Fetch user sync state (persistent read/delete timestamps & read IDs)
+    const syncState = userId
+      ? await prisma.userNotificationSync.findUnique({ where: { userId } }).catch(() => null)
+      : null;
+    const markAllTimestamp = syncState ? Number(syncState.markAllTimestamp) : 0;
+    const deleteAllTimestamp = syncState ? Number(syncState.deleteAllTimestamp) : 0;
+    let readIds: string[] = [];
+    try {
+      readIds = syncState?.readIds ? JSON.parse(syncState.readIds) : [];
+      if (!Array.isArray(readIds)) readIds = [];
+    } catch {
+      readIds = [];
+    }
+
+    const isItemRead = (item: any) => {
+      if (item.isRead) return true;
+      if (readIds.includes(item.id)) return true;
+      if (markAllTimestamp > 0 && item.createdAt) {
+        const itemTs = new Date(item.createdAt).getTime();
+        if (!isNaN(itemTs) && itemTs <= markAllTimestamp) return true;
+      }
+      return false;
+    };
+
     const isDplRole = role === "DPL" || role === "DOSEN_PEMBIMBING";
 
     if (isDplRole && userId) {
@@ -189,12 +213,21 @@ router.get("/", authMiddleware, async (req, res) => {
       });
 
       const userNotifs = dbNotifs.map(mapNotification);
-      const allDplNotifs = [...leaveNotifs, ...userNotifs];
+      const allDplNotifs = [...leaveNotifs, ...userNotifs]
+        .filter((n) => {
+          if (!deleteAllTimestamp || !n.createdAt) return true;
+          const itemTs = new Date(n.createdAt).getTime();
+          return isNaN(itemTs) || itemTs > deleteAllTimestamp;
+        })
+        .map((n) => ({
+          ...n,
+          isRead: isItemRead(n),
+        }));
 
       res.status(200).json({
         success: true,
         data: allDplNotifs,
-        unreadCount: leaveNotifs.length + userNotifs.filter((n) => !n.isRead).length,
+        unreadCount: allDplNotifs.filter((n) => !n.isRead).length,
       });
       return;
     }
@@ -436,13 +469,27 @@ router.get("/", authMiddleware, async (req, res) => {
       }
     }
 
+    const finalNotifications = formattedNotifications
+      .filter((n) => {
+        if (!deleteAllTimestamp || !n.createdAt) return true;
+        const itemTs = new Date(n.createdAt).getTime();
+        return isNaN(itemTs) || itemTs > deleteAllTimestamp;
+      })
+      .map((n) => ({
+        ...n,
+        isRead: isItemRead(n),
+      }));
+
     res.status(200).json({
+      success: true,
       status: "success",
-      data: formattedNotifications,
+      data: finalNotifications,
+      unreadCount: finalNotifications.filter((n) => !n.isRead).length,
     });
   } catch (error) {
     console.error("Fetch Notifications Error:", error);
     res.status(500).json({
+      success: false,
       status: "error",
       message: "Gagal memuat notifikasi dari server",
     });
@@ -461,17 +508,30 @@ router.get("/", authMiddleware, async (req, res) => {
  *       200:
  *         description: Semua notifikasi berhasil ditandai dibaca
  */
-router.put("/read-all", authMiddleware, async (req, res) => {
+router.all(["/read-all", "/mark-all-read"], authMiddleware, async (req, res) => {
   try {
     const userId = req.user!.userId;
-    await prisma.notification.updateMany({
-      where: { userId },
-      data: { isRead: true },
-    });
-    res.status(200).json({ status: "success", message: "Semua notifikasi ditandai dibaca" });
-  } catch (error) {
+    const nowTs = Date.now();
+    await Promise.all([
+      prisma.notification.updateMany({
+        where: { userId },
+        data: { isRead: true },
+      }).catch(() => {}),
+      prisma.userNotificationSync.upsert({
+        where: { userId },
+        update: { markAllTimestamp: BigInt(nowTs) },
+        create: {
+          userId,
+          markAllTimestamp: BigInt(nowTs),
+          readIds: "[]",
+          deleteAllTimestamp: 0n,
+        },
+      }),
+    ]);
+    res.status(200).json({ success: true, status: "success", message: "Semua notifikasi berhasil ditandai dibaca" });
+  } catch (error: any) {
     console.error("Update Notifications Error:", error);
-    res.status(500).json({ status: "error", message: "Gagal mengupdate notifikasi" });
+    res.status(500).json({ success: false, status: "error", message: "Gagal mengupdate notifikasi" });
   }
 });
 
@@ -494,18 +554,41 @@ router.put("/read-all", authMiddleware, async (req, res) => {
  *       200:
  *         description: Notifikasi berhasil ditandai dibaca
  */
-router.put("/:id/read", authMiddleware, async (req, res) => {
+router.all(["/:id/read", "/:id/mark-read"], authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user!.userId;
     await prisma.notification.updateMany({
       where: { id, userId },
       data: { isRead: true },
-    });
-    res.status(200).json({ status: "success", message: "Notifikasi berhasil ditandai dibaca" });
-  } catch (error) {
+    }).catch(() => {});
+
+    const syncState = await prisma.userNotificationSync.findUnique({ where: { userId } }).catch(() => null);
+    let readIds: string[] = [];
+    try {
+      readIds = syncState?.readIds ? JSON.parse(syncState.readIds) : [];
+      if (!Array.isArray(readIds)) readIds = [];
+    } catch {
+      readIds = [];
+    }
+    if (!readIds.includes(id)) {
+      readIds.push(id);
+      await prisma.userNotificationSync.upsert({
+        where: { userId },
+        update: { readIds: JSON.stringify(readIds) },
+        create: {
+          userId,
+          readIds: JSON.stringify(readIds),
+          markAllTimestamp: 0n,
+          deleteAllTimestamp: 0n,
+        },
+      });
+    }
+
+    res.status(200).json({ success: true, status: "success", message: "Notifikasi berhasil ditandai dibaca" });
+  } catch (error: any) {
     console.error("Mark Single Notification Read Error:", error);
-    res.status(500).json({ status: "error", message: "Gagal menandai notifikasi" });
+    res.status(500).json({ success: false, status: "error", message: "Gagal menandai notifikasi" });
   }
 });
 
@@ -583,13 +666,29 @@ router.post(["/unregister-token", "/fcm-token/unregister"], authMiddleware, asyn
 router.delete("/all", authMiddleware, async (req, res) => {
   try {
     const userId = req.user!.userId;
-    await prisma.notification.deleteMany({
-      where: { userId },
-    });
-    res.status(200).json({ status: "success", message: "Semua notifikasi dihapus" });
-  } catch (error) {
+    const nowTs = Date.now();
+    await Promise.all([
+      prisma.notification.deleteMany({
+        where: { userId },
+      }).catch(() => {}),
+      prisma.userNotificationSync.upsert({
+        where: { userId },
+        update: {
+          deleteAllTimestamp: BigInt(nowTs),
+          markAllTimestamp: BigInt(nowTs),
+        },
+        create: {
+          userId,
+          deleteAllTimestamp: BigInt(nowTs),
+          markAllTimestamp: BigInt(nowTs),
+          readIds: "[]",
+        },
+      }),
+    ]);
+    res.status(200).json({ success: true, status: "success", message: "Semua notifikasi berhasil dihapus" });
+  } catch (error: any) {
     console.error("Delete Notifications Error:", error);
-    res.status(500).json({ status: "error", message: "Gagal menghapus notifikasi" });
+    res.status(500).json({ success: false, status: "error", message: "Gagal menghapus notifikasi" });
   }
 });
 

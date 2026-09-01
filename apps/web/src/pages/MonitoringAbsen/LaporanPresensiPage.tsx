@@ -43,6 +43,7 @@ import * as XLSX from "xlsx";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { wsClient } from "../../utils/websocket";
 import {
   formatPersonName,
@@ -259,15 +260,19 @@ export const LaporanPresensiPage: React.FC = () => {
   const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
   const [deleteItem, setDeleteItem] = useState<LaporanItem | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [forceCheckoutTarget, setForceCheckoutTarget] = useState<LaporanItem | null>(null);
+  const [isForcingCheckout, setIsForcingCheckout] = useState<boolean>(false);
 
   const handleOpenEdit = (item: LaporanItem) => {
     setEditItem(item);
+    const itemMins = item.durasiMenit !== undefined ? item.durasiMenit : 240;
+    const defaultStat = item.status || (itemMins >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI");
     setEditForm({
       tanggal: item.tanggal !== "-" ? item.tanggal : new Date().toISOString().slice(0, 10),
       jamMasuk: item.jamMasuk !== "-" ? item.jamMasuk : "08:00",
       jamPulang: item.jamPulang !== "-" ? item.jamPulang : "12:00",
-      durasiMenit: item.durasiMenit || 240,
-      status: item.status || "HADIR_MEMENUHI",
+      durasiMenit: itemMins,
+      status: defaultStat,
       deskripsiKegiatan: item.deskripsiKegiatan || "",
     });
   };
@@ -278,12 +283,17 @@ export const LaporanPresensiPage: React.FC = () => {
       setIsSavingEdit(true);
       const startDateTime = `${editForm.tanggal}T${editForm.jamMasuk}:00+07:00`;
       const endDateTime = editForm.jamPulang && editForm.jamPulang !== "-" ? `${editForm.tanggal}T${editForm.jamPulang}:00+07:00` : undefined;
+      const targetMins = editItem.targetMinMenit || 240;
+      const finalStatus =
+        editForm.status === "HADIR_MEMENUHI" && Number(editForm.durasiMenit) < targetMins
+          ? "HADIR_TIDAK_MEMENUHI"
+          : editForm.status;
 
       await api.put(`/kkn-attendance/${editItem.id}`, {
         attendedAt: new Date(startDateTime).toISOString(),
         checkOutAt: endDateTime ? new Date(endDateTime).toISOString() : null,
         actualInZoneMinutes: Number(editForm.durasiMenit),
-        status: editForm.status,
+        status: finalStatus,
         deskripsiKegiatan: editForm.deskripsiKegiatan,
         clearJedaLogs: true,
       });
@@ -298,18 +308,26 @@ export const LaporanPresensiPage: React.FC = () => {
     }
   };
 
-  const handleForceCheckout = async (item: LaporanItem) => {
-    if (!confirm(`Selesaikan sesi presensi untuk mahasiswa ${item.namaMahasiswa}? Jam pulang dan durasi akan otomatis diselesaikan.`)) return;
+  const handlePromptForceCheckout = (item: LaporanItem) => {
+    setForceCheckoutTarget(item);
+  };
+
+  const handleConfirmForceCheckout = async () => {
+    if (!forceCheckoutTarget) return;
     try {
-      await api.post(`/kkn-attendance/${item.id}/force-checkout`, {
+      setIsForcingCheckout(true);
+      await api.post(`/kkn-attendance/${forceCheckoutTarget.id}/force-checkout`, {
         status: "HADIR_MEMENUHI",
-        actualInZoneMinutes: Math.max(240, item.durasiMenit || 240),
+        actualInZoneMinutes: Math.max(240, forceCheckoutTarget.durasiMenit || 240),
         alasan: "Force check-out sesi lapangan oleh Admin/DPL",
       });
-      toast.success(`Sesi presensi ${item.namaMahasiswa} berhasil diselesaikan!`);
+      toast.success(`Sesi presensi ${forceCheckoutTarget.namaMahasiswa} berhasil diselesaikan!`);
+      setForceCheckoutTarget(null);
       fetchLaporan();
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal force check-out");
+    } finally {
+      setIsForcingCheckout(false);
     }
   };
 
@@ -1713,7 +1731,7 @@ export const LaporanPresensiPage: React.FC = () => {
                             {isBerlangsung && (
                               <button
                                 type="button"
-                                onClick={() => handleForceCheckout(item)}
+                                onClick={() => handlePromptForceCheckout(item)}
                                 className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900 dark:text-emerald-300 rounded-lg transition border border-emerald-200 dark:border-emerald-800 cursor-pointer"
                                 title="Selesaikan Sesi Lapangan (Force Check-Out)"
                               >
@@ -2311,7 +2329,7 @@ export const LaporanPresensiPage: React.FC = () => {
                             {isBerlangsung && (
                               <button
                                 type="button"
-                                onClick={() => handleForceCheckout(item)}
+                                onClick={() => handlePromptForceCheckout(item)}
                                 className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-lg text-xs font-bold transition border border-emerald-200 dark:border-emerald-800 cursor-pointer flex items-center gap-1"
                               >
                                 <CheckCircle2 size={12} />
@@ -2412,6 +2430,21 @@ export const LaporanPresensiPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modern BERSEKA Confirmation Modal for Force Check-Out */}
+      <ConfirmModal
+        isOpen={Boolean(forceCheckoutTarget)}
+        onClose={() => setForceCheckoutTarget(null)}
+        onConfirm={handleConfirmForceCheckout}
+        isLoading={isForcingCheckout}
+        title="Selesaikan Sesi Presensi Lapangan"
+        message={`Selesaikan sesi presensi lapangan untuk mahasiswa ${
+          forceCheckoutTarget?.namaMahasiswa || ""
+        }? Jam pulang dan durasi akan otomatis diselesaikan dan disetujui.`}
+        confirmText="Ya, Selesaikan Sesi"
+        cancelText="Batal"
+        type="info"
+      />
     </div>
   );
 };

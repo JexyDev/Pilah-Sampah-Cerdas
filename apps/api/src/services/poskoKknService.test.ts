@@ -25,6 +25,9 @@ vi.mock("../lib/prisma.js", () => {
         findUnique: vi.fn(),
         findMany: vi.fn(),
       },
+      schedule: {
+        updateMany: vi.fn(),
+      },
       kknSchedule: {
         updateMany: vi.fn(),
       },

@@ -81,16 +81,17 @@ export class PoskoKknService {
       radius?: number;
       fotoUrl?: string;
       keterangan?: string;
+      statusApproval?: string;
     }
   ) {
     const existingPosko = await prisma.poskoKkn.findUnique({
       where: { kelompokId },
-      select: { fotoUrl: true },
+      select: { fotoUrl: true, keterangan: true },
     });
 
     const existingFacility = await prisma.facility.findFirst({
       where: { kelompokId, jenis: "posko_kkn" },
-      select: { id: true, foto: true },
+      select: { id: true, foto: true, statusApproval: true },
     });
 
     const isDataFotoProvided =
@@ -98,6 +99,12 @@ export class PoskoKknService {
     const effectiveFotoUrl = isDataFotoProvided
       ? data.fotoUrl.trim()
       : existingPosko?.fotoUrl || existingFacility?.foto || undefined;
+
+    const effectiveStatus =
+      data.statusApproval ||
+      (data.keterangan === "PENDING" || data.keterangan === "REJECTED" ? data.keterangan : undefined) ||
+      existingFacility?.statusApproval ||
+      (existingPosko?.keterangan === "PENDING" || existingPosko?.keterangan === "REJECTED" ? existingPosko.keterangan : "APPROVED");
 
     const posko = await prisma.poskoKkn.upsert({
       where: { kelompokId },
@@ -108,7 +115,7 @@ export class PoskoKknService {
         longitude: data.longitude,
         ...(data.radius !== undefined ? { radius: data.radius } : {}),
         ...(effectiveFotoUrl !== undefined ? { fotoUrl: effectiveFotoUrl } : {}),
-        keterangan: data.keterangan ?? undefined,
+        keterangan: effectiveStatus,
       },
       create: {
         kelompokId,
@@ -118,7 +125,7 @@ export class PoskoKknService {
         longitude: data.longitude,
         radius: data.radius ?? 500,
         fotoUrl: effectiveFotoUrl ?? null,
-        keterangan: data.keterangan ?? null,
+        keterangan: effectiveStatus,
       },
       include: {
         kelompok: {
@@ -135,83 +142,60 @@ export class PoskoKknService {
     // Otomatis sinkronkan jadwal hari ini dan jadwal aktif kelompok dengan koordinat Posko baru
     try {
       const now = new Date();
-      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-      const dateStr = wibNow.toISOString().slice(0, 10);
-      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-      // Update jadwal aktif untuk kelompok ini
       await prisma.schedule.updateMany({
         where: {
           kelompokId,
-          isActive: true,
-          date: { gte: startOfDay },
+          date: { gte: startOfDay, lte: endOfDay },
         },
         data: {
           latitude: data.latitude,
           longitude: data.longitude,
-          location: data.nama,
-          title: `Kegiatan Harian ${data.nama}`,
+          location: data.alamat,
         },
       });
 
-      // Kirim Silent Push ke seluruh mahasiswa kelompok agar aplikasi mobile langsung reload zona
-      const { notificationIntegrationService } =
-        await import("./notificationIntegrationService.js");
-      const students = await prisma.studentKkn.findMany({
-        where: { kelompokId },
-        include: { user: true },
+      // Update juga jadwal akan datang yang lokasinya masih default
+      await prisma.schedule.updateMany({
+        where: {
+          kelompokId,
+          date: { gt: endOfDay },
+          OR: [{ latitude: null }, { latitude: 0 }, { location: null }, { location: "-" }],
+        },
+        data: {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          location: data.alamat,
+        },
       });
-
-      for (const s of students) {
-        if (s.user?.fcmToken) {
-          notificationIntegrationService
-            .sendSilentDataPush(s.user.fcmToken, { event: "REFRESH_KEGIATAN_MAHASISWA" })
-            .catch(() => {});
-        }
-      }
     } catch (syncErr) {
       console.warn("[PoskoKknService.upsertPosko] Failed to cascade update schedules:", syncErr);
     }
 
     // ─── SINKRONISASI KE TABEL FACILITY (POSKO_KKN) UNTUK MENU POSKO WEB ───
     try {
-      const kelompokData = await prisma.kelompokKkn.findUnique({
+      const kelompokWithMeta = await prisma.kelompokKkn.findUnique({
         where: { id: kelompokId },
         include: {
-          students: { include: { user: true } },
-          dpl: true,
+          students: {
+            include: { user: { select: { name: true, phone: true } } },
+          },
         },
       });
 
-      const ketua = kelompokData?.students.find((s) => s.isKetua) || kelompokData?.students[0];
-      const pic = ketua?.user?.name || "Ketua Kelompok KKN";
-      const kontak = ketua?.user?.phone || ketua?.noWa || "-";
+      const ketua =
+        kelompokWithMeta?.students?.find((s) => s.isKetua) || kelompokWithMeta?.students?.[0];
+      const pic = ketua?.user?.name || "Ketua Kelompok";
+      const kontak = ketua?.user?.phone || (ketua as any)?.noWa || "-";
 
-      let targetRwId: number | undefined;
-      if (kelompokData?.cakupanRw) {
-        try {
-          const parsed =
-            typeof kelompokData.cakupanRw === "string"
-              ? JSON.parse(kelompokData.cakupanRw)
-              : kelompokData.cakupanRw;
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const rwNum = Number(parsed[0]);
-            if (!isNaN(rwNum) && kelompokData.kelurahan) {
-              const rwStr = String(rwNum).padStart(2, "0");
-              const matchedRw = await prisma.rw.findFirst({
-                where: {
-                  name: { contains: rwStr },
-                  kelurahan: { name: { equals: kelompokData.kelurahan, mode: "insensitive" } },
-                },
-              });
-              if (matchedRw) targetRwId = matchedRw.id;
-            }
-          }
-        } catch (_) {}
-      }
-
-      if (!targetRwId) {
-        const firstRw = await prisma.rw.findFirst();
+      let targetRwId: number | null = null;
+      if (kelompokWithMeta?.kelurahan) {
+        const firstRw = await prisma.rw.findFirst({
+          where: { kelurahan: { name: { contains: kelompokWithMeta.kelurahan } } },
+          select: { id: true },
+        });
         if (firstRw) targetRwId = firstRw.id;
       }
 
@@ -226,7 +210,7 @@ export class PoskoKknService {
             latitude: data.latitude,
             longitude: data.longitude,
             foto: syncFoto,
-            statusApproval: "APPROVED",
+            statusApproval: effectiveStatus,
           },
         });
       } else {
@@ -235,14 +219,14 @@ export class PoskoKknService {
             nama: data.nama,
             jenis: "posko_kkn",
             alamat: data.alamat || "-",
-            rwId: targetRwId,
+            rwId: targetRwId ?? undefined,
             kelompokId,
             latitude: data.latitude,
             longitude: data.longitude,
             foto: syncFoto,
             pic,
             kontak,
-            statusApproval: "APPROVED",
+            statusApproval: effectiveStatus,
           },
         });
       }
@@ -333,7 +317,7 @@ export class PoskoKknService {
             dplNamaMentah: true,
             facilities: {
               where: { jenis: "posko_kkn" },
-              select: { id: true, foto: true, pic: true, kontak: true, alamat: true },
+              select: { id: true, foto: true, pic: true, kontak: true, alamat: true, statusApproval: true },
             },
             students: {
               select: {
@@ -372,7 +356,7 @@ export class PoskoKknService {
               dplNamaMentah: true,
               facilities: {
                 where: { jenis: "posko_kkn" },
-                select: { id: true, foto: true, pic: true, kontak: true, alamat: true },
+                select: { id: true, foto: true, pic: true, kontak: true, alamat: true, statusApproval: true },
               },
               students: {
                 select: {
@@ -409,6 +393,10 @@ export class PoskoKknService {
           return "RW 01";
         })();
 
+        const rawStatus = (facilityPosko as any)?.statusApproval || p.keterangan;
+        const statusApproval =
+          rawStatus === "PENDING" || rawStatus === "REJECTED" ? rawStatus : "APPROVED";
+
         return {
           id: p.id,
           nama: p.nama,
@@ -428,7 +416,7 @@ export class PoskoKknService {
           pic: ketua?.user?.name || "Ketua Kelompok",
           kontak: ketua?.user?.phone || (ketua as any)?.noWa || "-",
           totalAnggota: p.kelompok?.students?.length || 0,
-          statusApproval: "APPROVED",
+          statusApproval,
           createdAt: p.createdAt,
           kelompok: p.kelompok,
         };
@@ -453,6 +441,10 @@ export class PoskoKknService {
           return "RW 01";
         })();
 
+        const rawStatus = (facilityPosko as any)?.statusApproval || p.keterangan;
+        const statusApproval =
+          rawStatus === "PENDING" || rawStatus === "REJECTED" ? rawStatus : "APPROVED";
+
         return {
           id: p.id,
           nama: p.nama,
@@ -472,7 +464,7 @@ export class PoskoKknService {
           pic: ketua?.user?.name || "Ketua Kelompok",
           kontak: ketua?.user?.phone || (ketua as any)?.noWa || "-",
           totalAnggota: p.kelompok?.students?.length || 0,
-          statusApproval: "APPROVED",
+          statusApproval,
           createdAt: p.createdAt,
           kelompok: p.kelompok,
         };
@@ -581,6 +573,32 @@ export class PoskoKknService {
       await smartZoneService.updateGroupAutoPolygon(kelompokId);
     } catch (_) {}
 
+    // Cascade update jadwal aktif jika posko utama belum ada atau isUtama true
+    try {
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const dateStr = wibNow.toISOString().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+
+      const hasPrimary = await prisma.poskoKkn.findUnique({ where: { kelompokId } });
+      if (!hasPrimary || data.isUtama) {
+        await prisma.schedule.updateMany({
+          where: {
+            kelompokId,
+            isActive: true,
+            date: { gte: startOfDay },
+          },
+          data: {
+            latitude: data.latitude,
+            longitude: data.longitude,
+            location: data.nama,
+            title: `Kegiatan Harian ${data.nama}`,
+            radius: Math.max(150, data.radius ?? 200),
+          },
+        });
+      }
+    } catch (_) {}
+
     // Kirim Silent Push ke seluruh mahasiswa kelompok agar mobile reload zona
     try {
       const { notificationIntegrationService } =
@@ -638,6 +656,31 @@ export class PoskoKknService {
       const { smartZoneService } = await import("./smartZoneService.js");
       await smartZoneService.updateGroupAutoPolygon(posko.kelompokId);
     } catch (_) {}
+
+    // Cascade update jadwal jika isUtama
+    try {
+      if (data.isUtama || data.latitude !== undefined || data.longitude !== undefined) {
+        const now = new Date();
+        const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+        const dateStr = wibNow.toISOString().slice(0, 10);
+        const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+
+        await prisma.schedule.updateMany({
+          where: {
+            kelompokId: posko.kelompokId,
+            isActive: true,
+            date: { gte: startOfDay },
+          },
+          data: {
+            ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
+            ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
+            ...(data.nama !== undefined ? { location: data.nama, title: `Kegiatan Harian ${data.nama}` } : {}),
+            ...(data.radius !== undefined ? { radius: Math.max(150, data.radius) } : {}),
+          },
+        });
+      }
+    } catch (_) {}
+
     return posko;
   }
 

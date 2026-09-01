@@ -126,7 +126,12 @@ export const penilaianKknService = {
       }
     }
 
-    // 1. Hitung Kehadiran Real dari Database (Strict schedule scope)
+    // 1. Hitung Kehadiran Real dari Database (Berdasarkan durasi menit aktual & status pemenuhan jam)
+    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
+    const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
+    const bobotLogbook = ruleConfigs?.logbookBobotPersen || 20;
+    const targetDailyMinutes = (ruleConfigs?.attendanceMinDurationHours || 4) * 60;
+
     const pastSchedulesCount = await prisma.schedule
       .count({
         where: {
@@ -136,22 +141,59 @@ export const penilaianKknService = {
       })
       .catch(() => 0);
 
-    const attendancesCount = await prisma.activityAttendance
-      .count({
+    const attendances = await prisma.activityAttendance
+      .findMany({
         where: {
           studentId,
-          status: "DALAM_RADIUS",
+          status: { notIn: ["TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"] },
           schedule: {
             OR: [{ kelompokId: kelompok?.id }, { kelompokId: null }],
             date: { lte: new Date() },
           },
         },
+        select: {
+          status: true,
+          actualInZoneMinutes: true,
+          attendedAt: true,
+          checkOutAt: true,
+        },
       })
-      .catch(() => 0);
+      .catch(() => []);
+
+    let sumAttendanceScores = 0;
+    for (const att of attendances) {
+      const stUpper = String(att.status || "").toUpperCase();
+      let mins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      if (stUpper === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
+        const elapsed = Math.max(
+          0,
+          Math.floor((Date.now() - new Date(att.attendedAt).getTime()) / 60000)
+        );
+        mins = Math.min(480, Math.max(mins, elapsed));
+      } else if (mins === 0 && att.attendedAt && att.checkOutAt) {
+        const diff = Math.floor(
+          (new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime()) / 60000
+        );
+        mins = Math.min(480, Math.max(0, diff));
+      }
+
+      if (stUpper === "HADIR_MEMENUHI" || (stUpper === "HADIR" && mins >= targetDailyMinutes)) {
+        sumAttendanceScores += 100;
+      } else if (mins > 0) {
+        sumAttendanceScores += Math.min(100, Math.round((mins / targetDailyMinutes) * 100));
+      } else if (stUpper.includes("IZIN") || stUpper.includes("SAKIT")) {
+        sumAttendanceScores += 100;
+      }
+    }
+
+    const expectedSchedules =
+      pastSchedulesCount > 0
+        ? Math.max(pastSchedulesCount, attendances.length)
+        : Math.max(1, attendances.length);
 
     const attendanceRate =
-      pastSchedulesCount > 0
-        ? Math.min(100, Math.round((attendancesCount / pastSchedulesCount) * 100))
+      attendances.length > 0
+        ? Math.min(100, Math.max(0, Math.round(sumAttendanceScores / expectedSchedules)))
         : 0;
 
     // 2. Hitung Warga Binaan Real dari Database (Berdasarkan Tempat Sampah/Bin pendaftaran mahasiswa, fallback ke RW)
@@ -184,10 +226,6 @@ export const penilaianKknService = {
       : 0;
 
     // 3b. Hitung Kepatuhan Logbook KKN (Target standar & bobot dinamis dari Rule Engine)
-    const ruleConfigs = await configService.getRuleEngineConfigs().catch(() => null);
-    const targetLogbook = ruleConfigs?.logbookTargetKegiatan || 24;
-    const bobotLogbook = ruleConfigs?.logbookBobotPersen || 20;
-
     const approvedLogbookCount = await prisma.logbookKkn
       .count({
         where: {
@@ -215,12 +253,14 @@ export const penilaianKknService = {
       ? `Ketua ${rw.name} (${kelurahan?.name || "Coblong"})`
       : "Mitra Pendamping Lapangan (MPL) RW";
 
-    // 5. Existing Penilaian Record - Default 0 jika belum dinilai di database
+    // 5. Existing Penilaian Record - Default to calculated rates if not yet explicitly saved
     const existing = studentUser.penilaianKkn;
 
     const assessment = existing
       ? {
           ...existing,
+          skorMitraKehadiran:
+            existing.skorMitraKehadiran > 0 ? existing.skorMitraKehadiran : attendanceRate,
           skorDplLogbook:
             existing.skorDplLogbook > 0 ? existing.skorDplLogbook : calculatedLogbookScore,
         }
@@ -231,7 +271,7 @@ export const penilaianKknService = {
           dplId: dpl?.id || null,
           mitraId: null,
           namaMitraPenilai: namaMitra,
-          skorMitraKehadiran: 0,
+          skorMitraKehadiran: attendanceRate,
           skorMitraWargaBinaan: 0,
           skorMitraProker: 0,
           skorMitraKomunikasi: 0,

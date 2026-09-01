@@ -164,7 +164,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           </span>
         )}
 
-        {/* Page Buttons */}
+        {/* Page Navigation */}
         <div className="flex items-center gap-1">
           {/* Previous Button */}
           <button
@@ -177,36 +177,43 @@ export const Pagination: React.FC<PaginationProps> = ({
             <ChevronLeft size={16} />
           </button>
 
-          {/* Numbered Buttons */}
-          {getPageNumbers().map((p, idx) => {
-            if (typeof p === "string") {
+          {/* Mobile Current Page Indicator (xs screens) */}
+          <div className="flex sm:hidden items-center px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[11px] font-bold font-mono text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+            Hal {safeCurrentPage} / {safeTotalPages}
+          </div>
+
+          {/* Tablet & Desktop Numbered Buttons */}
+          <div className="hidden sm:flex items-center gap-1">
+            {getPageNumbers().map((p, idx) => {
+              if (typeof p === "string") {
+                return (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-8 h-8 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold select-none"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              const isCurrent = p === safeCurrentPage;
+
               return (
-                <span
-                  key={`ellipsis-${idx}`}
-                  className="w-8 h-8 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold select-none"
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => onPageChange(p)}
+                  className={`w-8 h-8 rounded-lg font-extrabold transition shadow-2xs cursor-pointer ${
+                    isCurrent
+                      ? "bg-emerald-600 text-white border border-emerald-600 shadow-emerald-600/20"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:text-emerald-700 dark:hover:text-emerald-400"
+                  }`}
                 >
-                  ...
-                </span>
+                  {p}
+                </button>
               );
-            }
-
-            const isCurrent = p === safeCurrentPage;
-
-            return (
-              <button
-                key={p}
-                type="button"
-                onClick={() => onPageChange(p)}
-                className={`w-8 h-8 rounded-lg font-extrabold transition shadow-2xs cursor-pointer ${
-                  isCurrent
-                    ? "bg-emerald-600 text-white border border-emerald-600 shadow-emerald-600/20"
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:border-emerald-300 dark:hover:border-emerald-700/50 hover:text-emerald-700 dark:hover:text-emerald-400"
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
+            })}
+          </div>
 
           {/* Next Button */}
           <button

@@ -74,6 +74,43 @@ export class ConfigController {
         .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   }
+
+  /**
+   * Get dynamic App Version config for Mobile Force Update (Public - No Auth Required)
+   */
+  async getAppVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const data = await configService.getAppVersionConfig();
+      res.status(200).json(data);
+    } catch (error: any) {
+      console.error("[ConfigController] getAppVersion error:", error);
+      res.status(200).json({
+        min_required_version: process.env.APP_MIN_REQUIRED_VERSION || "1.0.0",
+        latest_version: process.env.APP_LATEST_VERSION || "1.0.0",
+        update_url:
+          process.env.APP_UPDATE_URL ||
+          "https://play.google.com/store/apps/details?id=com.berseka.app",
+      });
+    }
+  }
+
+  /**
+   * Update App Version config (Admin / Developer)
+   */
+  async updateAppVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const updated = await configService.updateAppVersionConfig(req.body);
+      res.status(200).json({
+        success: true,
+        message: "Berhasil memperbarui konfigurasi versi aplikasi",
+        data: updated,
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
 }
 
 export const configController = new ConfigController();

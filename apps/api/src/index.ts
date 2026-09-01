@@ -68,6 +68,7 @@ import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
 import { kknController } from "./controllers/kknController.js";
+import { configController } from "./controllers/configController.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
 import { roleMiddleware } from "./middlewares/roleMiddleware.js";
 import { safeUploadSingleImage, safeUploadPemanfaatanImage } from "./middlewares/uploadMiddleware.js";
@@ -187,7 +188,10 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/system", systemRouter);
+app.use("/api/v1/config", configRouter);
 app.use("/api/v1/configs", configRouter);
+app.use("/api/config", configRouter);
+app.use("/api/configs", configRouter);
 app.use("/api/v1/gamification", gamificationRouter);
 app.use("/api/v1/facilities", facilityRouter);
 app.use("/api/v1/bank-sampah", bankSampahRouter);
@@ -412,6 +416,19 @@ app.delete(
     "PEMIMPIN",
   ]),
   kknController.deletePanenHasil
+);
+
+// Public Mobile Force Update App Version Endpoint
+app.get(
+  [
+    "/api/v1/config/app-version",
+    "/api/v1/configs/app-version",
+    "/api/config/app-version",
+    "/api/configs/app-version",
+    "/api/app-version",
+    "/api/v1/app-version",
+  ],
+  configController.getAppVersion
 );
 
 // Global Error Handler Middleware
