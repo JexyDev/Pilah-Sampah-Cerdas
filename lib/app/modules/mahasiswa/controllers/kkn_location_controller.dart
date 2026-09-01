@@ -371,10 +371,8 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           distanceToTarget: distance,
           inZoneDurationSeconds: _accumulatedSeconds,
           isSuccessAttendance: isAttended,
-          zoneResetWarning: isAlpa
-              ? 'Waktu jadwal KKN telah berakhir. Status Anda: TANPA KETERANGAN (ALPA).'
-              : null,
-          clearWarning: !isAlpa,
+          zoneResetWarning: null,
+          clearWarning: true,
           error: null,
           clearError: true,
         );
