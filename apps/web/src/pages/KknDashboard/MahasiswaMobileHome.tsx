@@ -10,20 +10,9 @@ import React, { useEffect, useState } from "react";
 import {
   MapPin,
   Calendar,
-  Clock,
-  CheckCircle2,
-  FileText,
   Target,
   PlusCircle,
-  TrendingUp,
-  Sparkles,
-  UserCheck,
   ChevronRight,
-  ShieldCheck,
-  Building2,
-  ExternalLink,
-  Award,
-  AlertTriangle,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../utils/api";
@@ -48,7 +37,7 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
     totalProker: 0,
     totalAttendedDays: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();

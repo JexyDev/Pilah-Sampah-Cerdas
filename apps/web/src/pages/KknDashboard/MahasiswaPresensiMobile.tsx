@@ -8,18 +8,15 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import {
-  MapPin,
   Camera,
   CheckCircle2,
   Clock,
   AlertTriangle,
   RefreshCw,
-  Navigation,
   ShieldCheck,
   Send,
   Loader2,
   Image as ImageIcon,
-  Check,
   History,
   X,
   Compass,
@@ -69,6 +66,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const [kegiatanList, setKegiatanList] = useState<any[]>([]);
   const [isLoadingKegiatan, setIsLoadingKegiatan] = useState(true);
 
+  const primaryKegiatan = kegiatanList.length > 0 ? kegiatanList[0] : null;
+
   // Skip Modal State
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [selectedKegiatanToSkip, setSelectedKegiatanToSkip] = useState<any | null>(null);
@@ -86,10 +85,10 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Live Ping Engine State
-  const [liveInZoneSecs, setLiveInZoneSecs] = useState<number>(0);
+  const [, setLiveInZoneSecs] = useState<number>(0);
   const [isLiveActiveInZone, setIsLiveActiveInZone] = useState<boolean>(false);
-  const [lastPingTime, setLastPingTime] = useState<Date | null>(null);
-  const [isPingingServer, setIsPingingServer] = useState(false);
+  const [, setLastPingTime] = useState<Date | null>(null);
+  const [, setIsPingingServer] = useState(false);
 
   // 1. Ambil Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
   useEffect(() => {
@@ -99,7 +98,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   }, []);
 
   // 2. Live Ping Engine Function (Kirim GPS Periodik ke Backend VPS)
-  const pingServerLocation = async (lat: number, lng: number, acc?: number) => {
+  const pingServerLocation = async (lat: number, lng: number, _acc?: number) => {
     try {
       setIsPingingServer(true);
       const res = await api.post("/kkn/location-ping", {
@@ -500,7 +499,6 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     }
   };
 
-  const primaryKegiatan = kegiatanList.length > 0 ? kegiatanList[0] : null;
   const isSkippedToday =
     primaryKegiatan?.statusKehadiran === "TIDAK_ADA_KEGIATAN" ||
     primaryKegiatan?.attendanceStatus === "TIDAK_ADA_KEGIATAN";

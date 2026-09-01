@@ -26,41 +26,21 @@ import {
 import L from "leaflet";
 import {
   Layers,
-  MapPin,
   AlertTriangle,
   CheckCircle2,
-  XCircle,
   Users,
   Search,
-  Filter,
-  Navigation,
-  Eye,
   RefreshCw,
-  Sliders,
-  ShieldAlert,
-  Info,
   Building,
-  Target,
-  ExternalLink,
   ChevronRight,
   Sparkles,
-  Maximize2,
-  Minimize2,
   Compass,
   Radio,
-  Clock,
-  Phone,
   GraduationCap,
-  Calendar,
   AlertCircle,
-  HelpCircle,
-  Check,
   Pencil,
   Trash2,
   Save,
-  RotateCcw,
-  Plus,
-  X,
   SlidersHorizontal,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -69,12 +49,10 @@ import api from "../../services/api";
 import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { sortKelompokList } from "../../utils/sortUtils";
-import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   KELURAHAN_GEODATA,
   CoblongGeo,
   createKknMhsIcon,
-  formatKelompokDisplayName,
 } from "../../constants/coblongGeoData";
 
 // Fix Leaflet Default Icon in Vite
@@ -304,7 +282,6 @@ export const ZonaInspectorPage: React.FC = () => {
 
   // ─── CRUD MODAL STATES ───
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [deletePoskoTargetId, setDeletePoskoTargetId] = useState<string | null>(null);
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [editMode, setEditMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [editPoints, setEditPoints] = useState<[number, number][]>([[-6.8906, 107.615]]);
