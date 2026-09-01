@@ -34,7 +34,7 @@ export const BantuWargaForm = ({ onSuccess }: { onSuccess: () => void }) => {
       try {
         const aiRes = await api.post("/ai/classify", {});
         maxCapacityLiter = aiRes.data?.data?.estimatedVolumeLiter || 50;
-      } catch (e) {
+      } catch (_e) {
         maxCapacityLiter = 50;
       }
     }

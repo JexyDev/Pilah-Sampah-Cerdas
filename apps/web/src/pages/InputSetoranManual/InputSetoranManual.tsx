@@ -19,10 +19,6 @@ const InputSetoranManual: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
@@ -58,6 +54,11 @@ const InputSetoranManual: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchInitialData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

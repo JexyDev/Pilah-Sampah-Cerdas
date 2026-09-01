@@ -224,10 +224,7 @@ export function calculateLiveInZoneSeconds(att: {
   const isPastDay = attendedWibDay < nowWibDay;
 
   // Absolute physical ceiling in seconds
-  const maxElapsedSecs = Math.max(
-    0,
-    Math.floor((now.getTime() - attendedDate.getTime()) / 1000)
-  );
+  const maxElapsedSecs = Math.max(0, Math.floor((now.getTime() - attendedDate.getTime()) / 1000));
 
   // Sesi dari hari sebelumnya → gunakan nilai tersimpan
   if (isPastDay) {
@@ -1839,7 +1836,7 @@ export class KknAttendanceService {
 
     // [SSOT Backend]: Durasi mutlak berasal dari kalkulasi internal backend (mengabaikan input durasi dari mobile payload)
     let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, logsCalculatedMins));
-    
+
     // Only fallback to rawDurationMinutes if session was active (NOT paused), had NO jeda logs, and actualInZoneMins is still 0 (e.g. legacy/no-gps ping)
     if (actualInZoneMins === 0 && rawDurationMinutes > 0 && !isPaused && !hasJeda) {
       actualInZoneMins = Math.min(480, rawDurationMinutes);
@@ -4303,7 +4300,11 @@ export class KknAttendanceService {
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
       const jedaLogsArr = (r.jedaLogs as any[]) || [];
-      const isPaused = st === "TERJEDA" || (jedaLogsArr.length > 0 && jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda && !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
+      const isPaused =
+        st === "TERJEDA" ||
+        (jedaLogsArr.length > 0 &&
+          jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda &&
+          !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
 
       let mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
       if (st === "BERLANGSUNG" && !r.checkOutAt && r.attendedAt) {
@@ -4412,7 +4413,11 @@ export class KknAttendanceService {
     const items = records.map((att) => {
       const st = String(att.status || "").toUpperCase();
       const jedaLogsArr = (att.jedaLogs as any[]) || [];
-      const isPaused = st === "TERJEDA" || (jedaLogsArr.length > 0 && jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda && !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
+      const isPaused =
+        st === "TERJEDA" ||
+        (jedaLogsArr.length > 0 &&
+          jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda &&
+          !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
 
       let actualMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
       if (st === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
@@ -4421,7 +4426,12 @@ export class KknAttendanceService {
       } else if (isPaused || jedaLogsArr.length > 0) {
         const liveCapped = calculateLiveInZoneMinutes(att);
         actualMins = Math.min(actualMins, liveCapped);
-      } else if (actualMins === 0 && att.attendedAt && att.checkOutAt && att.actualInZoneMinutes === null) {
+      } else if (
+        actualMins === 0 &&
+        att.attendedAt &&
+        att.checkOutAt &&
+        att.actualInZoneMinutes === null
+      ) {
         const diff = Math.floor((att.checkOutAt.getTime() - att.attendedAt.getTime()) / 60000);
         actualMins = Math.min(480, Math.max(0, diff));
       }
