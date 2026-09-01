@@ -158,7 +158,7 @@ const ManajemenMahasiswa: React.FC = () => {
       nim: mhs.studentProfile?.nim || "",
       universitas: mhs.studentProfile?.fakultas || "UNIKOM",
       no_telepon: mhs.phone || "",
-      area_tugas: mhs.rtRwId ? String(mhs.rtRwId) : "",
+      area_tugas: mhs.rwId ? String(mhs.rwId) : mhs.studentProfile?.assignedRwId ? String(mhs.studentProfile.assignedRwId) : (mhs.rtRwId ? String(mhs.rtRwId) : ""),
       status_aktif: mhs.status || "Aktif",
     });
     setIsModalOpen(true);
