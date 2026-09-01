@@ -1604,9 +1604,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
         statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
-        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
-          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+        const isMemenuhi = statusUpper === "SELESAI_TELAT"
+          ? false
+          : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0);
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
@@ -1686,9 +1686,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
         statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
-        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
-          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+        const isMemenuhi = statusUpper === "SELESAI_TELAT"
+          ? false
+          : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0);
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
