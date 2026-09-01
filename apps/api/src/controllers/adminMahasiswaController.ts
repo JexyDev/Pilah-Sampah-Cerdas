@@ -23,20 +23,13 @@ export const adminMahasiswaController = {
 
   create: async (req: Request, res: Response) => {
     try {
-      const { nama_lengkap, nim, universitas, no_telepon, area_tugas, status_aktif } = req.body;
+      const { nama_lengkap, nim, no_telepon } = req.body;
       if (!nama_lengkap || !nim || !no_telepon) {
         res.status(400).json({ success: false, message: "Nama, NIM, dan No Telepon wajib diisi" });
         return;
       }
 
-      const result = await adminMahasiswaService.createMahasiswa({
-        nama_lengkap,
-        nim,
-        universitas,
-        no_telepon,
-        area_tugas,
-        status_aktif,
-      });
+      const result = await adminMahasiswaService.createMahasiswa(req.body);
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[AdminMahasiswa] create error:", error);
