@@ -623,6 +623,19 @@ export const MasterQrManager: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* Modern BERSEKA Confirmation Modal for Inactivating QR Code */}
+      <ConfirmModal
+        isOpen={Boolean(inactivateTargetQr)}
+        onClose={() => setInactivateTargetQr(null)}
+        onConfirm={handleConfirmInactivateQr}
+        isLoading={isInactivating}
+        title="Nonaktifkan QR Code"
+        message={`Apakah Anda yakin ingin menonaktifkan QR Code ${inactivateTargetQr || ""}? Status tempat sampah akan diubah menjadi RUSAK (BROKEN).`}
+        confirmText="Ya, Nonaktifkan QR"
+        cancelText="Batal"
+        type="danger"
+      />
     </div>
   );
 };
