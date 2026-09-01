@@ -192,6 +192,53 @@ export const LaporanPresensiPage: React.FC = () => {
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; title: string; desc?: string | null } | null>(null);
   const [previewDesc, setPreviewDesc] = useState<{ student: string; desc: string; time: string } | null>(null);
 
+  // Student Detailed Log Modal State
+  const [selectedStudentForLog, setSelectedStudentForLog] = useState<StudentAggregate | null>(null);
+  const [studentLogItems, setStudentLogItems] = useState<LaporanItem[]>([]);
+  const [isLoadingStudentLogs, setIsLoadingStudentLogs] = useState<boolean>(false);
+
+  const handleOpenStudentLogModal = async (student: StudentAggregate) => {
+    setSelectedStudentForLog(student);
+    setIsLoadingStudentLogs(true);
+    try {
+      // Fetch all presence records for this student across all time
+      const params: any = {
+        search: student.namaMahasiswa,
+        limit: 100,
+        page: 1,
+      };
+      if (selectedKelompok && selectedKelompok !== "ALL") {
+        params.kelompokId = selectedKelompok;
+      }
+      const res = await api.get("/laporan-rekap", { params });
+      if (res.data?.success && res.data?.data) {
+        const list = (res.data.data.items || []).filter(
+          (it: LaporanItem) =>
+            it.studentId === student.studentId ||
+            it.nim === student.nim ||
+            it.namaMahasiswa.toLowerCase().includes(student.namaMahasiswa.toLowerCase())
+        );
+        setStudentLogItems(list);
+      }
+    } catch (err: any) {
+      console.error("Gagal memuat log presensi mahasiswa:", err);
+      toast.error("Gagal memuat log presensi detail mahasiswa.");
+    } finally {
+      setIsLoadingStudentLogs(false);
+    }
+  };
+
+  const handleJumpToLogDetailTab = (studentName: string) => {
+    setSelectedStudentForLog(null);
+    setSearchQuery(studentName);
+    setDatePreset("ALL");
+    setStartDate("");
+    setEndDate("");
+    setActiveTab("LOG_DETAIL");
+    setPage(1);
+    toast.success(`Menampilkan log presensi harian untuk: ${studentName}`);
+  };
+
   // Presensi CRUD & Manipulation Modals
   const [editItem, setEditItem] = useState<LaporanItem | null>(null);
   const [editForm, setEditForm] = useState<{
