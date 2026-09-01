@@ -85,6 +85,12 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  // Live Ping Engine State
+  const [liveInZoneSecs, setLiveInZoneSecs] = useState<number>(0);
+  const [isLiveActiveInZone, setIsLiveActiveInZone] = useState<boolean>(false);
+  const [lastPingTime, setLastPingTime] = useState<Date | null>(null);
+  const [isPingingServer, setIsPingingServer] = useState(false);
+
   // 1. Ambil Data Posko, Jadwal Kegiatan Aktif, & Riwayat Presensi
   useEffect(() => {
     fetchPoskoData();
@@ -92,10 +98,119 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     fetchRiwayatPresensi();
   }, []);
 
-  // 2. Timer untuk Sesi Aktif
+  // 2. Live Ping Engine Function (Kirim GPS Periodik ke Backend VPS)
+  const pingServerLocation = async (lat: number, lng: number, acc?: number) => {
+    try {
+      setIsPingingServer(true);
+      const res = await api.post("/kkn/location-ping", {
+        latitude: lat,
+        longitude: lng,
+      });
+
+      if (res.data?.success && res.data?.data) {
+        const d = res.data.data;
+        setLastPingTime(new Date());
+
+        if (d.attendanceStatus === "BERLANGSUNG") {
+          setIsLiveActiveInZone(true);
+          if (typeof d.actualInZoneSeconds === "number" && d.actualInZoneSeconds > 0) {
+            setLiveInZoneSecs(d.actualInZoneSeconds);
+          }
+          // Refresh kegiatan jika status baru saja bertransisi
+          if (primaryKegiatan && primaryKegiatan.statusKehadiran !== "BERLANGSUNG") {
+            fetchKegiatanAktif();
+          }
+        } else if (d.attendanceStatus === "TERJEDA") {
+          setIsLiveActiveInZone(false);
+        }
+      }
+    } catch (e) {
+      console.warn("[GPS Ping] Gagal mengirim koordinat ke server:", e);
+    } finally {
+      setIsPingingServer(false);
+    }
+  };
+
+  // 3. High-Accuracy GPS Watcher & Background Pulse (Optimized for iOS Safari)
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Perangkat Anda tidak mendukung fitur lokasi GPS.");
+      return;
+    }
+
+    let watchId: number | null = null;
+    let intervalId: any = null;
+
+    const handlePosition = (pos: GeolocationPosition) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      setCoords({ latitude, longitude, accuracy });
+      setLocationError(null);
+      setIsLocating(false);
+
+      if (posko) {
+        const dist = calculateDistanceMeters(latitude, longitude, posko.lat, posko.lng);
+        setDistanceToPosko(dist);
+      }
+
+      pingServerLocation(latitude, longitude, accuracy);
+    };
+
+    const handlePosError = (err: GeolocationPositionError) => {
+      setIsLocating(false);
+      if (err.code === 1) {
+        setLocationError("Izin lokasi belum aktif. Buka Pengaturan iPhone > Privasi & Keamanan > Layanan Lokasi > Safari > Izinkan.");
+      } else if (err.code === 2) {
+        setLocationError("Sinyal GPS satelit belum terkunci. Silakan berpindah ke tempat terbuka.");
+      }
+    };
+
+    // A. Start real-time hardware GPS watcher
+    setIsLocating(true);
+    watchId = navigator.geolocation.watchPosition(handlePosition, handlePosError, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 15000,
+    });
+
+    // B. Periodic pulse heartbeat ping every 20 seconds (ensures continuous in-zone minute tracking)
+    intervalId = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(handlePosition, () => {}, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000,
+      });
+    }, 20000);
+
+    // C. iOS Safari Wakeup Handler: Saat tab dibuka kembali dari background / layar nyala
+    const handleWakeup = () => {
+      if (document.visibilityState === "visible") {
+        navigator.geolocation.getCurrentPosition(handlePosition, handlePosError, {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000,
+        });
+        fetchKegiatanAktif();
+        fetchRiwayatPresensi();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleWakeup);
+    window.addEventListener("focus", handleWakeup);
+
+    return () => {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleWakeup);
+      window.removeEventListener("focus", handleWakeup);
+    };
+  }, [posko]);
+
+  // 4. Timer untuk Sesi Aktif
   useEffect(() => {
     let interval: any;
-    const startWaktu = activeSession?.jamMasuk || activeSession?.checkInAt;
+    const startWaktu = activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt;
+    const isOngoing = primaryKegiatan?.statusKehadiran === "BERLANGSUNG" || isLiveActiveInZone;
+
     if (activeSession && startWaktu) {
       const updateTimer = () => {
         const start = new Date(startWaktu).getTime();
@@ -108,9 +223,21 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       };
       updateTimer();
       interval = setInterval(updateTimer, 1000);
+    } else if (isOngoing) {
+      const updateOngoingTimer = () => {
+        setLiveInZoneSecs((prev) => {
+          const next = prev + 1;
+          const hrs = String(Math.floor(next / 3600)).padStart(2, "0");
+          const mins = String(Math.floor((next % 3600) / 60)).padStart(2, "0");
+          const secs = String(next % 60).padStart(2, "0");
+          setElapsedTime(`${hrs}:${mins}:${secs}`);
+          return next;
+        });
+      };
+      interval = setInterval(updateOngoingTimer, 1000);
     }
     return () => clearInterval(interval);
-  }, [activeSession]);
+  }, [activeSession, primaryKegiatan?.statusKehadiran, isLiveActiveInZone]);
 
   const fetchPoskoData = async () => {
     try {
@@ -142,7 +269,19 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       setIsLoadingKegiatan(true);
       const res = await api.get("/kkn/kegiatan-aktif");
       const list = res.data?.data || [];
-      setKegiatanList(Array.isArray(list) ? list : []);
+      const safeList = Array.isArray(list) ? list : [];
+      setKegiatanList(safeList);
+      if (safeList.length > 0) {
+        const primary = safeList[0];
+        if (primary.statusKehadiran === "BERLANGSUNG") {
+          setIsLiveActiveInZone(true);
+          if (typeof primary.actualInZoneSeconds === "number") {
+            setLiveInZoneSecs(primary.actualInZoneSeconds);
+          } else if (typeof primary.actualInZoneMinutes === "number") {
+            setLiveInZoneSecs(primary.actualInZoneMinutes * 60);
+          }
+        }
+      }
     } catch (err) {
       console.error("Gagal memuat kegiatan aktif", err);
     } finally {
@@ -189,7 +328,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     }
   };
 
-  // 3. Ambil Lokasi GPS Presisi Tinggi (iOS Safari Compatible)
+  // 5. Manual Trigger Lokasi GPS Presisi Tinggi (iOS Safari Compatible)
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       setLocationError("Perangkat Anda tidak mendukung fitur lokasi GPS.");
@@ -210,10 +349,12 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           setDistanceToPosko(dist);
         }
 
+        pingServerLocation(latitude, longitude, accuracy);
+
         if (accuracy > 100) {
           showToast.warning("Akurasi GPS rendah (>100m). Pastikan fitur 'Lokasi Tepat' aktif di iPhone Anda.");
         } else {
-          showToast.success("Koordinat GPS berhasil dikunci secara akurat!");
+          showToast.success("Sinyal GPS terhubung ke server & akurat!");
         }
       },
       (err) => {
@@ -233,11 +374,6 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       }
     );
   };
-
-  // Trigger GPS saat pertama kali membuka halaman presensi
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
 
   // 4. Penanganan Kamera & Kompresi Foto
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
