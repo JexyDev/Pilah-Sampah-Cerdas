@@ -283,18 +283,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           final serverSecs =
               int.tryParse(activeZone['actualInZoneSeconds'].toString()) ?? 0;
           _accumulatedSeconds = serverSecs; // server selalu menang
-          if (_zoneEntryTime == null) {
-            _zoneEntryTime = DateTime.now();
-          }
+          _zoneEntryTime ??= DateTime.now();
           await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
           final actualMins =
               num.tryParse(activeZone['actualInZoneMinutes'].toString()) ?? 0;
           final serverSecs = (actualMins * 60).toInt();
           _accumulatedSeconds = serverSecs; // server selalu menang
-          if (_zoneEntryTime == null) {
-            _zoneEntryTime = DateTime.now();
-          }
+          _zoneEntryTime ??= DateTime.now();
           await _savePersistentTimer();
         }
         // Jika server tidak return durasi sama sekali (null), biarkan nilai
@@ -958,9 +954,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
               // [FIX JUMPING] Set entry time hanya jika belum ada — jangan timpa
               // sesi yang sedang berjalan saat startTracking dipanggil ulang (mis.
               // app resume / buka halaman presensi kembali).
-              if (_zoneEntryTime == null) {
-                _zoneEntryTime = DateTime.now();
-              }
+              _zoneEntryTime ??= DateTime.now();
               await _savePersistentTimer();
 
               if (_backgroundServiceStarted) {
@@ -1125,9 +1119,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         // Sebelumnya setiap pesan DURATION_UPDATE (tiap 30 dtk) reset entry time → timer
         // UI hitung ~0 selama beberapa tick → totalElapsed stagnan → durasi jumping/stuck.
         // Entry time hanya perlu di-set jika belum ada (fresh start).
-        if (_zoneEntryTime == null) {
-          _zoneEntryTime = DateTime.now();
-        }
+        _zoneEntryTime ??= DateTime.now();
 
         state = state.copyWith(
           inZoneDurationSeconds: _accumulatedSeconds,
@@ -1357,9 +1349,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             int.tryParse(mergedData['actualInZoneSeconds'].toString()) ?? 0;
         _accumulatedSeconds = serverSecs;
         // [FIX JUMPING] Set entry time hanya jika belum ada.
-        if (_zoneEntryTime == null) {
-          _zoneEntryTime = DateTime.now();
-        }
+        _zoneEntryTime ??= DateTime.now();
         await _savePersistentTimer();
       } else if (mergedData['actualInZoneMinutes'] != null) {
         final actualMins =
@@ -1367,9 +1357,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final serverSecs = (actualMins * 60).toInt();
         _accumulatedSeconds = serverSecs;
         // [FIX JUMPING] Set entry time hanya jika belum ada.
-        if (_zoneEntryTime == null) {
-          _zoneEntryTime = DateTime.now();
-        }
+        _zoneEntryTime ??= DateTime.now();
         await _savePersistentTimer();
       }
 

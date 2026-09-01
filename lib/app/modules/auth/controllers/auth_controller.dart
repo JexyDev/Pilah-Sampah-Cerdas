@@ -8,7 +8,6 @@ import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/notification_engine.dart';
 import '../../notifikasi/controllers/notifikasi_controller.dart';
 import '../../mahasiswa/controllers/kkn_location_controller.dart';
-import '../../mahasiswa/services/kkn_background_task_handler.dart';
 
 /// State autentikasi.
 class AuthState {
