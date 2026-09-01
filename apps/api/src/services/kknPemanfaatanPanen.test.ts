@@ -288,7 +288,7 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     expect(checkDeleted).toBeNull();
   });
 
-  it("LOGBOOK ISOLATION: Mahasiswa KKN should only see their own logbooks (penulisId individual isolation)", async () => {
+  it("LOGBOOK ISOLATION: Mahasiswa KKN should only see their own logbooks (penulisId individual isolation), while DPL sees group logbooks", async () => {
     const { logbookService } = await import("./logbookService.js");
 
     const log1 = await prisma.logbookKkn.create({
@@ -314,15 +314,23 @@ describe("KKN Service - Pemanfaatan & Panen Group Point Distribution and CRUD", 
     });
 
     try {
+      // 1. Mahasiswa 1 strictly sees log1 (not log2)
       const user1Logbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "MAHASISWA_KKN", {});
       const user1Ids = user1Logbooks.map((l: any) => l.id);
       expect(user1Ids).toContain(log1.id);
       expect(user1Ids).not.toContain(log2.id);
 
+      // 2. Mahasiswa 2 strictly sees log2 (not log1)
       const user2Logbooks = await logbookService.getMahasiswaLogbooks(studentUser2.id, "MAHASISWA_KKN", {});
       const user2Ids = user2Logbooks.map((l: any) => l.id);
       expect(user2Ids).toContain(log2.id);
       expect(user2Ids).not.toContain(log1.id);
+
+      // 3. Super User / Admin sees all logbooks in the group
+      const allLogbooks = await logbookService.getMahasiswaLogbooks(studentUser1.id, "SUPER_USER", { groupId: testKelompok.id });
+      const allIds = allLogbooks.map((l: any) => l.id);
+      expect(allIds).toContain(log1.id);
+      expect(allIds).toContain(log2.id);
     } finally {
       await prisma.logbookKkn.deleteMany({
         where: { id: { in: [log1.id, log2.id] } },
