@@ -343,6 +343,83 @@ class NotificationEngine {
     }
   }
 
+  /// Update notifikasi persisten saat presensi aktif dengan durasi real-time.
+  /// [accumulatedSeconds] durasi total di zona, [targetMinutes] target durasi wajib.
+  /// [isInsideZone] menentukan ikon dan teks status.
+  Future<void> updateKKNOngoingNotification({
+    required int accumulatedSeconds,
+    required int targetMinutes,
+    required bool isInsideZone,
+  }) async {
+    try {
+      final mins = accumulatedSeconds ~/ 60;
+      final secs = accumulatedSeconds % 60;
+      final timeStr = '$mins:${secs.toString().padLeft(2, '0')}';
+      final title = isInsideZone
+          ? '⏱ Presensi KKN Aktif'
+          : '⏸ Waktu Dihentikan — Di Luar Zona';
+      final body = isInsideZone
+          ? 'Di dalam zona • $timeStr / $targetMinutes menit'
+          : 'Kembali ke zona untuk melanjutkan • $timeStr / $targetMinutes menit';
+
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'kkn_location_channel',
+        'Pantauan Lokasi KKN',
+        channelDescription: 'Notifikasi persisten saat pemantauan lokasi aktif',
+        importance: Importance.low,
+        priority: Priority.low,
+        icon: '@mipmap/ic_launcher',
+        ongoing: true,
+        autoCancel: false,
+        color: Color(0xFF2196F3),
+      );
+      await _flutterLocalNotificationsPlugin.show(
+        id: 999,
+        title: title,
+        body: body,
+        notificationDetails: const NotificationDetails(android: androidDetails),
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to update ongoing notification: $e');
+    }
+  }
+
+  /// Tampilkan notifikasi persisten saat kegiatan KKN di-JEDA.
+  /// Notifikasi ini tetap muncul meski background service sudah berhenti.
+  /// [accumulatedSeconds] durasi yang sudah tercapai saat jeda.
+  /// [targetMinutes] target durasi wajib kegiatan.
+  Future<void> showKKNPausedNotification({
+    required int accumulatedSeconds,
+    required int targetMinutes,
+  }) async {
+    try {
+      final mins = accumulatedSeconds ~/ 60;
+      final secs = accumulatedSeconds % 60;
+      final timeStr = '$mins:${secs.toString().padLeft(2, '0')}';
+
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+        'kkn_location_channel',
+        'Pantauan Lokasi KKN',
+        channelDescription: 'Notifikasi persisten saat pemantauan lokasi aktif',
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+        icon: '@mipmap/ic_launcher',
+        ongoing: true,  // Tetap muncul, tidak bisa di-swipe
+        autoCancel: false,
+        color: Color(0xFFFFA000), // Amber — menandakan status jeda
+      );
+
+      await _flutterLocalNotificationsPlugin.show(
+        id: 999,
+        title: '⏸ Presensi KKN Dijeda',
+        body: 'Durasi tercatat: $timeStr / $targetMinutes menit. Buka aplikasi untuk melanjutkan.',
+        notificationDetails: const NotificationDetails(android: androidDetails),
+      );
+    } catch (e) {
+      debugPrint('[NotificationEngine] Failed to show paused notification: $e');
+    }
+  }
+
   /// Bersihkan seluruh notifikasi di System Tray HP saat logout
   Future<void> cancelAll() async {
     try {

@@ -330,9 +330,10 @@ class KknBackgroundTaskHandler extends TaskHandler {
       final mins = totalSeconds ~/ 60;
       final secs = totalSeconds % 60;
       final targetMins = _targetDurationMinutes;
+      final timeStr = '$mins:${secs.toString().padLeft(2, '0')}';
       FlutterForegroundTask.updateService(
-        notificationTitle: 'Pemantauan GPS Aktif 📍',
-        notificationText: 'Di dalam zona | $mins:${secs.toString().padLeft(2, '0')} / $targetMins menit',
+        notificationTitle: '⏱ Presensi KKN Aktif',
+        notificationText: 'Di dalam zona • $timeStr / $targetMins menit',
       );
       
       if (!_isInsideRadius) {
@@ -394,8 +395,8 @@ class KknBackgroundTaskHandler extends TaskHandler {
       });
       
       FlutterForegroundTask.updateService(
-        notificationTitle: 'Pemantauan GPS Aktif 📍',
-        notificationText: 'Di luar zona | Jarak: ${distance.round()}m',
+        notificationTitle: '⏸ Waktu Dihentikan — Di Luar Zona',
+        notificationText: 'Kembali ke zona untuk melanjutkan • ${_accumulatedSeconds ~/ 60}:${(_accumulatedSeconds % 60).toString().padLeft(2, '0')} / $_targetDurationMinutes menit',
       );
     }
     
@@ -439,13 +440,29 @@ class KknBackgroundTaskHandler extends TaskHandler {
           break;
         case 'SYNC_DURATION':
           final seconds = (data['seconds'] as num?)?.toInt() ?? 0;
-          // [FIX] Selalu terima nilai dari server (UI isolate), tanpa guard
-          // satu arah. Guard lama (seconds > _accumulatedSeconds) mencegah
-          // koreksi turun — padahal sumber nilai adalah backend (server truth),
-          // bukan estimasi lokal, sehingga koreksi ke bawah pun valid.
-          _accumulatedSeconds = math.max(0, seconds);
-          _zoneEntryTime = DateTime.now();
+          // [FIX 3] Commit delta sesi yang sedang berjalan SEBELUM overwrite.
+          // Sebelumnya: langsung _accumulatedSeconds = serverValue + reset _zoneEntryTime.
+          // Masalahnya: jika background sudah tracking 8 menit tanpa ping berhasil,
+          // lalu SYNC_DURATION datang → 8 menit hilang karena _zoneEntryTime di-reset
+          // sebelum delta sempat di-commit ke _accumulatedSeconds.
+          //
+          // Sekarang: commit dulu sisa durasi yang sudah berjalan sejak _zoneEntryTime,
+          // lalu pakai nilai terbesar antara akumulasi lokal (termasuk delta tadi)
+          // dan nilai dari server. Ini memastikan tidak ada durasi yang hilang.
+          if (_isInsideRadius && _zoneEntryTime != null) {
+            final delta = DateTime.now().difference(_zoneEntryTime!).inSeconds;
+            if (delta > 0) {
+              _accumulatedSeconds += delta;
+              debugPrint('[KKN-BG] SYNC_DURATION: commit delta $delta dtk dulu → lokal=$_accumulatedSeconds');
+            }
+            // Reset entry time ke sekarang agar akumulasi berikutnya tidak double-count
+            _zoneEntryTime = DateTime.now();
+          }
+          // Pakai yang terbesar antara lokal (sudah termasuk delta) dan server
+          // agar tidak mundur jika lokal sudah lebih maju (belum ter-sync ke server)
+          _accumulatedSeconds = math.max(_accumulatedSeconds, math.max(0, seconds));
           _saveDuration(_accumulatedSeconds, entryTime: _zoneEntryTime);
+          debugPrint('[KKN-BG] SYNC_DURATION selesai: _accumulated=$_accumulatedSeconds serverValue=$seconds');
           break;
       }
     }
@@ -577,11 +594,10 @@ class KknBackgroundTaskHandler extends TaskHandler {
         'longitude': lng,
         'scheduleId': _scheduleId,
         'timestamp': DateTime.now().toIso8601String(),
-        if (accumulatedSeconds != null) ...{
-          'accumulatedDuration': accumulatedSeconds,
-          'accumulatedDurationSeconds': accumulatedSeconds,
-          'inZoneSeconds': accumulatedSeconds,
-        },
+        // [FIX 2] Satu field saja agar konsisten dengan foreground ping.
+        // Sebelumnya mengirim 3 field (accumulatedDuration, accumulatedDurationSeconds,
+        // inZoneSeconds) untuk nilai yang sama — membingungkan dan memboroskan payload.
+        if (accumulatedSeconds != null) 'inZoneSeconds': accumulatedSeconds,
       });
       
       request.write(payload);
@@ -595,10 +611,31 @@ class KknBackgroundTaskHandler extends TaskHandler {
           
           final activeScheduleId = data?['activeScheduleId'];
           
-          // Jika backend tidak mengembalikan activeScheduleId, berarti sesi sudah selesai/di-checkout
+          // [FIX 1] Sebelumnya: auto-stop setiap kali activeScheduleId null,
+          // termasuk saat backend tidak menyertakan field itu di response
+          // (misal format beda, sesi di-jeda dari web, atau error parsing).
+          // Sekarang: cek juga attendanceStatus dari response. Hanya stop jika
+          // status memang final dan bukan karena field tidak ada di response.
           if (activeScheduleId == null && _scheduleId != null) {
-            debugPrint('[KKN-BG] Jadwal selesai di backend (auto-checkout). Menghentikan GPS.');
-            _autoStop('Waktu kegiatan telah habis atau sudah di-checkout oleh sistem.');
+            final status = (data?['attendanceStatus']?.toString() ??
+                            data?['statusKehadiran']?.toString() ??
+                            '').toLowerCase();
+            // Stop hanya jika backend secara eksplisit bilang status final
+            // (hadir, alpa, selesai, dll). Jika status kosong (field tidak ada),
+            // jangan stop — biarkan ping berikutnya mencoba lagi.
+            const finalStatuses = {
+              'hadir', 'hadir_memenuhi', 'hadir_tidak_memenuhi',
+              'alpa', 'tanpa_keterangan', 'selesai', 'selesai_telat',
+              'lepas_radius', 'izin', 'sakit',
+            };
+            if (status.isNotEmpty && finalStatuses.contains(status)) {
+              debugPrint('[KKN-BG] Jadwal selesai di backend (status: $status). Menghentikan GPS.');
+              _autoStop('Waktu kegiatan telah habis (status: $status).');
+            } else if (status.isEmpty) {
+              debugPrint('[KKN-BG] activeScheduleId null tapi status kosong — skip auto-stop, tunggu ping berikutnya.');
+            }
+            // Jika status BERLANGSUNG/TERJEDA tapi activeScheduleId null → inkonsistensi data backend
+            // → jangan stop, biarkan tracking lanjut
           }
 
           // Smart Zone Handling

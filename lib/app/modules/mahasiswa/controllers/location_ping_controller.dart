@@ -116,12 +116,22 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
       try {
         final lat = (item['lat'] as num).toDouble();
         final lng = (item['lng'] as num).toDouble();
-        final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;
-        await repo.sendLocationPing(lat, lng, inZoneSeconds: accumulated);
+        // [FIX] Pakai durasi yang tersimpan di item — bukan durasi state sekarang.
+        // Sebelumnya selalu pakai inZoneDurationSeconds dari state terkini,
+        // padahal item bisa tersimpan menit yang lalu saat durasi berbeda.
+        // Jika item tidak punya inZoneSeconds (item lama), fallback ke state sekarang.
+        final inZoneSeconds = item.containsKey('inZoneSeconds')
+            ? (item['inZoneSeconds'] as num).toInt()
+            : _ref.read(kknLocationProvider).inZoneDurationSeconds;
+        await repo.sendLocationPing(lat, lng, inZoneSeconds: inZoneSeconds);
+        debugPrint('[LocationPing] Flush berhasil: ($lat, $lng) durasi=${inZoneSeconds}s');
       } catch (e) {
         // Jika jaringan gagal lagi saat flushing, kembalikan item yang tersisa ke antrean
         _offlineQueue.add(item);
         await _saveOfflineQueue();
+        debugPrint('[LocationPing] Flush gagal, ${_offlineQueue.length} item dikembalikan ke queue');
+        // Hentikan flush — tunggu ping berikutnya mencoba lagi
+        break;
       }
     }
   }
@@ -251,11 +261,25 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
         );
       }
     } catch (e) {
-      // Jangan hentikan tracking, cukup log error.
-      // Ping berikutnya akan dicoba lagi otomatis.
+      // Ping gagal — kemungkinan tidak ada koneksi internet.
+      // Simpan data ke offline queue agar bisa dikirim saat sinyal kembali.
+      // Durasi juga ikut disimpan agar backend mendapat nilai yang akurat
+      // sesuai kondisi saat ping seharusnya terkirim, bukan saat flush.
+      if (lat != 0 && lng != 0) {
+        final accumulated = _ref.read(kknLocationProvider).inZoneDurationSeconds;
+        _offlineQueue.add({
+          'lat': lat,
+          'lng': lng,
+          'inZoneSeconds': accumulated,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+        await _saveOfflineQueue();
+        debugPrint('[LocationPing] Ping gagal, disimpan ke offline queue (${_offlineQueue.length} item, durasi: ${accumulated}s)');
+      }
+
       if (mounted) {
         state = state.copyWith(
-          errorMessage: 'Gagal mengirim lokasi. Akan dicoba kembali.',
+          errorMessage: 'Gagal mengirim lokasi. Akan dicoba saat sinyal kembali (${_offlineQueue.length} tertunda).',
         );
       }
     }

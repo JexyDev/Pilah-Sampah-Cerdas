@@ -226,6 +226,24 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         _accumulatedSeconds = 0;
         _zoneEntryTime = null;
       }
+
+      // [FIX 4] Baca key background sebagai fallback.
+      // Background service menyimpan ke key global (KknBgPrefKeys.accumulatedSeconds)
+      // tanpa userId suffix — berbeda dari key foreground (_userPrefKeyAccumulated).
+      // Saat app restart setelah background jalan lama (misal layar dimatikan 30 menit),
+      // foreground tidak pernah membaca durasi dari background → durasi hilang.
+      // Sekarang: setelah load dari key foreground, bandingkan dengan key background.
+      // Jika background punya nilai lebih besar DAN tanggalnya hari ini → pakai background.
+      try {
+        final bgDate = prefs.getString(KknBgPrefKeys.accumulatedDate);
+        if (bgDate == todayStr) {
+          final bgSeconds = prefs.getInt(KknBgPrefKeys.accumulatedSeconds) ?? 0;
+          if (bgSeconds > _accumulatedSeconds) {
+            _accumulatedSeconds = bgSeconds;
+            debugPrint('[KknLocation] _loadPersistentTimer: ambil dari BG key ($bgSeconds dtk > lokal)');
+          }
+        }
+      } catch (_) {}
     } catch (_) {}
   }
 
@@ -690,6 +708,17 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       // Update local storage untuk checkpoint durasi (pakai userId-aware key)
       await _savePersistentTimer();
+
+      // Tampilkan notifikasi persisten status TERJEDA agar user tahu
+      // durasi sudah tercatat meski app ditutup / layar dimatikan.
+      try {
+        final targetMins = state.targetDurationMinutes;
+        await NotificationEngine().showKKNPausedNotification(
+          accumulatedSeconds: _accumulatedSeconds,
+          targetMinutes: targetMins,
+        );
+      } catch (_) {}
+
       // Jangan hapus session ID karena jika belum selesai, mereka cuma lanjut sesi
     }
     return isSuccess;
@@ -1526,6 +1555,14 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             await prefs.setInt(_userPrefKeyAccumulated, totalElapsed);
             // Jangan tulis _userPrefKeyEntryTime — biarkan entry time asli terjaga
           } catch (_) {}
+
+          // Update notifikasi lokal bersamaan dengan checkpoint disk (setiap 5 detik)
+          // agar user bisa melihat waktu berjalan dari notification bar.
+          NotificationEngine().updateKKNOngoingNotification(
+            accumulatedSeconds: totalElapsed,
+            targetMinutes: state.targetDurationMinutes,
+            isInsideZone: true,
+          );
         }
 
         // Syarat Absen MUTLAK: Harus berada di zona sesuai target durasi
@@ -1576,7 +1613,19 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
     _savePersistentTimer();
 
-    NotificationEngine().cancelOngoingKKNNotification();
+    // Saat keluar zona, update notifikasi menjadi status freeze (bukan cancel).
+    // Ini agar user tetap tahu waktu yang sudah tercatat meski sedang di luar zona.
+    // Notifikasi hanya di-cancel saat resetCompletely (sesi benar-benar selesai).
+    if (resetCompletely) {
+      NotificationEngine().cancelOngoingKKNNotification();
+    } else if (isExitingZone) {
+      // Update ke tampilan "terjeda karena di luar zona"
+      NotificationEngine().updateKKNOngoingNotification(
+        accumulatedSeconds: _accumulatedSeconds,
+        targetMinutes: state.targetDurationMinutes,
+        isInsideZone: false,
+      );
+    }
     final bool durationMet =
         _accumulatedSeconds >= (state.targetDurationMinutes * 60);
 
