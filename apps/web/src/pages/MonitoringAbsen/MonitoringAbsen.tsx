@@ -3778,15 +3778,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ? Number(recAny.targetRatioPercent)
                           : (targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0);
 
-                        const isMemenuhiDurasi = !hasValidAttendanceSession
+                        const isMemenuhiDurasi = !hasValidAttendanceSession || isLeaveOrPending
                           ? false
-                          : rec.isMemenuhiDurasi !== undefined
-                          ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetZonaMins && durationMins > 0) || percentZona >= 100)
-                          : (statusUpper === "HADIR_MEMENUHI"
-                            ? true
-                            : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
-                            ? false
-                            : (durationMins >= targetZonaMins && durationMins > 0));
+                          : statusUpper === "SELESAI_TELAT"
+                          ? false
+                          : (durationMins >= targetZonaMins && durationMins > 0);
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
