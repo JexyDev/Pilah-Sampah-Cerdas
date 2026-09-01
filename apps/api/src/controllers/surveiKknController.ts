@@ -116,11 +116,45 @@ export class SurveiKknController {
       }
 
       if (!templatePath) {
-        res.status(404).json({
-          success: false,
-          error: "NOT_FOUND",
-          message: "File template tidak ditemukan di server",
-        });
+        const XLSX = await import("xlsx");
+        const headers = [
+          "No",
+          "Nama Responden",
+          "Nomor Telepon",
+          "Kelurahan",
+          "RW",
+          "RT",
+          "Kategori Sampah",
+          "Volume Harian (Kg)",
+          "Metode Pemilahan",
+          "Catatan",
+        ];
+        const sampleRow = [
+          1,
+          "Budi Santoso",
+          "081234567890",
+          "Coblong",
+          "01",
+          "02",
+          "Organik",
+          2.5,
+          "Komposting",
+          "Sampah sisa sayur dan dapur",
+        ];
+        const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Template_Survei");
+        const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+        res.setHeader(
+          "Content-Type",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        res.setHeader(
+          "Content-Disposition",
+          'attachment; filename="template_survei_kkn.xlsx"'
+        );
+        res.status(200).send(buf);
         return;
       }
 

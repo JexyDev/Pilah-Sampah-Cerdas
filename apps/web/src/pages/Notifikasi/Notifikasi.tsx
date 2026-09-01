@@ -431,6 +431,9 @@ const Notifikasi: React.FC = () => {
 
   const handleViewDetail = (notif: any) => {
     setNotifications((prev) => prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n)));
+    if (!notif.isRead) {
+      api.put(`/notifications/${notif.id}/read`).catch(() => {});
+    }
     setSelectedNotif(notif);
   };
 

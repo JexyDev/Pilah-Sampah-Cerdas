@@ -1664,14 +1664,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
         const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
-          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+          ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
+          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60 && durationMins > 0));
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
       const kelompokName = groups.find((g) => g.id === (recAny.groupId || rec.student?.groupId || selectedKelompokId))?.name || (selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId)?.name : "-");
       const kegiatanTitle = activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-");
-      const isTargetMet = durationMins >= (scheduleTargetHours * 60) || Boolean(rec.isMemenuhiDurasi);
+      const isTargetMet = isFinished ? (statusUpper === "HADIR_MEMENUHI" || Boolean(rec.isMemenuhiDurasi)) : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0);
 
       return [
         index + 1,
@@ -3664,12 +3664,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isMemenuhiDurasi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
                           ? false
                           : rec.isMemenuhiDurasi !== undefined
-                          ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetZonaMins && durationMins > 0) || percentZona >= 100)
+                          ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
                           : (statusUpper === "HADIR_MEMENUHI"
                             ? true
                             : (statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT")
                             ? false
-                            : (durationMins >= targetZonaMins && durationMins > 0));
+                            : (durationMins >= targetZonaMins && durationMins > 0 && targetZonaMins > 0));
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
@@ -5430,8 +5430,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const isMemenuhi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
                 ? false
                 : rec.isMemenuhiDurasi !== undefined
-                ? (Boolean(rec.isMemenuhiDurasi) || (durationMins >= targetMins && durationMins > 0) || ratioPercent >= 100)
-                : (durationMins >= targetMins && durationMins > 0 || ratioPercent >= 100);
+                ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
+                : (durationMins >= targetMins && durationMins > 0 && targetMins > 0);
 
               const modalTargetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
               const modalTargetKumulatifMins = Math.round(modalTargetKumulatif * 60);

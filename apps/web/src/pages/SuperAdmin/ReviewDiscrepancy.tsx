@@ -170,7 +170,7 @@ export const ReviewDiscrepancy: React.FC = () => {
             <h3 className="font-bold text-gray-800 text-sm">Daftar Laporan Diskrepansi</h3>
             {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
           </div>
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-auto flex-1">
             <table className="min-w-full divide-y divide-gray-200 text-sm text-left relative">
               <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                 <tr>

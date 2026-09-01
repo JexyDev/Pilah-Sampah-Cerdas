@@ -24,6 +24,7 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 export interface CuratedActivityItem {
   id: string;
@@ -66,6 +67,14 @@ export const KurasiLandingPage: React.FC = () => {
   const [prokerCandidates, setProkerCandidates] = useState<any[]>([]);
   const [logbookCandidates, setLogbookCandidates] = useState<any[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    type: "danger" | "warning";
+    onConfirm: () => Promise<void>;
+  } | null>(null);
 
   const presetImages = [
     { label: "Edukasi & Sosialisasi", url: "/image/activity-1.webp" },
@@ -141,13 +150,20 @@ export const KurasiLandingPage: React.FC = () => {
     await saveActivitiesToServer(updated, false);
   };
 
-  const handleDelete = async (index: number) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus kegiatan ini dari daftar kurasi?")) {
-      return;
-    }
-    const updated = activities.filter((_, idx) => idx !== index);
-    setActivities(updated);
-    await saveActivitiesToServer(updated, true);
+  const handleDelete = (index: number) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Hapus Kegiatan Kurasi",
+      message: "Apakah Anda yakin ingin menghapus kegiatan ini dari daftar kurasi landing page?",
+      confirmText: "Hapus Kegiatan",
+      type: "danger",
+      onConfirm: async () => {
+        const updated = activities.filter((_, idx) => idx !== index);
+        setActivities(updated);
+        await saveActivitiesToServer(updated, true);
+        setConfirmConfig(null);
+      },
+    });
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -294,10 +310,7 @@ export const KurasiLandingPage: React.FC = () => {
     setShowModal(true);
   };
 
-  const handleResetToRealProkerDefaults = async () => {
-    if (!window.confirm("Muat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil?")) {
-      return;
-    }
+  const executeResetToRealProkerDefaults = async () => {
     const realDefaults: CuratedActivityItem[] = [
       {
         id: "curated-1",
@@ -351,6 +364,20 @@ export const KurasiLandingPage: React.FC = () => {
 
     setActivities(realDefaults);
     await saveActivitiesToServer(realDefaults, true);
+  };
+
+  const handleResetToRealProkerDefaults = () => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Muat Ulang Kurasi Standar",
+      message: "Muat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil?",
+      confirmText: "Muat Ulang",
+      type: "warning",
+      onConfirm: async () => {
+        await executeResetToRealProkerDefaults();
+        setConfirmConfig(null);
+      },
+    });
   };
 
   const toggleSdgTag = (tag: string) => {
@@ -943,6 +970,20 @@ export const KurasiLandingPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmConfig && (
+        <ConfirmModal
+          isOpen={confirmConfig.isOpen}
+          onClose={() => setConfirmConfig(null)}
+          onConfirm={confirmConfig.onConfirm}
+          title={confirmConfig.title}
+          message={confirmConfig.message}
+          confirmText={confirmConfig.confirmText}
+          cancelText="Batal"
+          type={confirmConfig.type}
+        />
       )}
     </div>
   );

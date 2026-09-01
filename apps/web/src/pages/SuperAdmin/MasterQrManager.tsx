@@ -11,6 +11,7 @@ import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
 import { printQrStickers } from "../../utils/printQrStickers";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 interface BinQr {
   id: string;
@@ -53,6 +54,8 @@ export const MasterQrManager: React.FC = () => {
   const [rtRwId, setRtRwId] = useState<string>("");
   const [categories, setCategories] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
+  const [qrToInactivate, setQrToInactivate] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   const fetchQrData = async () => {
     try {
@@ -209,17 +212,25 @@ export const MasterQrManager: React.FC = () => {
     toast.success("File CSV Master QR berhasil didownload!");
   };
 
-  const handleInactivateQr = async (qrCode: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin menonaktifkan QR Code ${qrCode}?`)) return;
+  const handleInactivateQr = (qrCode: string) => {
+    setQrToInactivate(qrCode);
+  };
+
+  const executeInactivateQr = async () => {
+    if (!qrToInactivate) return;
+    setIsActionLoading(true);
     try {
-      const res = await api.put(`/bins/${qrCode}/broken`);
+      const res = await api.put(`/bins/${qrToInactivate}/broken`);
       if (res.data.success) {
-        toast.success(`QR Code ${qrCode} berhasil dinonaktifkan (BROKEN)`);
+        toast.success(`QR Code ${qrToInactivate} berhasil dinonaktifkan (BROKEN)`);
+        setQrToInactivate(null);
         fetchQrData();
       }
     } catch (e: any) {
       console.error("Gagal menonaktifkan QR:", e);
       toast.error(e.response?.data?.message || "Gagal menonaktifkan QR Code");
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -612,6 +623,19 @@ export const MasterQrManager: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* Confirmation Modal for Inactivating QR */}
+      <ConfirmModal
+        isOpen={!!qrToInactivate}
+        onClose={() => setQrToInactivate(null)}
+        onConfirm={executeInactivateQr}
+        title="Nonaktifkan QR Code"
+        message={`Apakah Anda yakin ingin menonaktifkan QR Code ${qrToInactivate}? Status tempat sampah akan diubah menjadi BROKEN.`}
+        confirmText="Nonaktifkan"
+        cancelText="Batal"
+        type="danger"
+        isLoading={isActionLoading}
+      />
     </div>
   );
 };

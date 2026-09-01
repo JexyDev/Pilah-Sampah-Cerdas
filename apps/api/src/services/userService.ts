@@ -118,12 +118,27 @@ export class UserService {
     const scoping = await getScopingFilters(currentUser);
     const whereClause: any = { ...scoping.userFilter };
 
-    if (search) {
-      whereClause.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-        { address: { contains: search, mode: "insensitive" } },
-      ];
+    const andConditions: any[] = [];
+    if (whereClause.AND) {
+      if (Array.isArray(whereClause.AND)) andConditions.push(...whereClause.AND);
+      else andConditions.push(whereClause.AND);
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      andConditions.push({
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { phone: { contains: q, mode: "insensitive" } },
+          { address: { contains: q, mode: "insensitive" } },
+          { nim: { contains: q, mode: "insensitive" } },
+          { nip: { contains: q, mode: "insensitive" } },
+          { email: { contains: q, mode: "insensitive" } },
+          { role: { name: { contains: q, mode: "insensitive" } } },
+          { rw: { name: { contains: q, mode: "insensitive" } } },
+          { rw: { kelurahan: { name: { contains: q, mode: "insensitive" } } } },
+        ],
+      });
     }
 
     if (roleName) {
@@ -151,10 +166,17 @@ export class UserService {
       if (rt) {
         conditions.push({ name: { contains: `RT ${rt}`, mode: "insensitive" } });
       }
-      whereClause.OR = [
-        { rw: { AND: conditions } },
-        { households: { some: { rw: { AND: conditions } } } },
-      ];
+      andConditions.push({
+        OR: [
+          { rw: { AND: conditions } },
+          { households: { some: { rw: { AND: conditions } } } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      whereClause.AND = andConditions;
+      delete whereClause.OR;
     }
 
     const users = await userRepository.findMany(whereClause);

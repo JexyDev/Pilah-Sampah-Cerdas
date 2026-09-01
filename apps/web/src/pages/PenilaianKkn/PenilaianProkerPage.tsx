@@ -298,6 +298,12 @@ export const PenilaianProkerPage: React.FC = () => {
       return;
     }
 
+    const pel = String(proker.statusPelaksanaan || proker.status || "").toUpperCase();
+    if (pel === "BELUM_MULAI" || pel === "BELUM_DIJALANKAN") {
+      toast.error("Program kerja belum mulai berjalan. Penilaian hanya dapat dilakukan pada program kerja yang sedang berjalan atau telah selesai.");
+      return;
+    }
+
     setSelectedProkerId(proker.id);
     setIsAssessModalOpen(true);
   };
@@ -782,34 +788,60 @@ export const PenilaianProkerPage: React.FC = () => {
                         {/* Aksi Buttons */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {statusPenilaian === "SEDANG_DINILAI" ? (
-                              <button
-                                onClick={() => handleOpenAssessModal(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                title="Lanjutkan Pengisian Nilai"
-                              >
-                                <Edit3 size={12} />
-                                <span>Lanjutkan</span>
-                              </button>
-                            ) : statusPenilaian === "SUDAH_DINILAI" ? (
-                              <button
-                                onClick={() => handleOpenAssessModal(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
-                                title="Lihat / Edit Nilai"
-                              >
-                                <Eye size={12} />
-                                <span>Lihat / Edit Nilai</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleOpenAssessModal(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                title="Beri Penilaian Baru"
-                              >
-                                <PlusCircle size={12} />
-                                <span>Beri Nilai</span>
-                              </button>
-                            )}
+                            {(() => {
+                              const pel = String(p.statusPelaksanaan || p.status || "").toUpperCase();
+                              const isBelumMulai = pel === "BELUM_MULAI" || pel === "BELUM_DIJALANKAN";
+
+                              if (isBelumMulai) {
+                                return (
+                                  <button
+                                    disabled
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200/80 dark:border-slate-700/60 rounded-lg font-semibold text-xs cursor-not-allowed opacity-80"
+                                    title="Proker belum dimulai (Penilaian baru dapat dilakukan saat proker sedang berjalan atau selesai)"
+                                  >
+                                    <PlusCircle size={12} />
+                                    <span>Belum Mulai</span>
+                                  </button>
+                                );
+                              }
+
+                              if (statusPenilaian === "SEDANG_DINILAI") {
+                                return (
+                                  <button
+                                    onClick={() => handleOpenAssessModal(p)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                    title="Lanjutkan Pengisian Nilai"
+                                  >
+                                    <Edit3 size={12} />
+                                    <span>Lanjutkan</span>
+                                  </button>
+                                );
+                              }
+
+                              if (statusPenilaian === "SUDAH_DINILAI") {
+                                return (
+                                  <button
+                                    onClick={() => handleOpenAssessModal(p)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                    title="Lihat / Edit Nilai"
+                                  >
+                                    <Eye size={12} />
+                                    <span>Lihat / Edit Nilai</span>
+                                  </button>
+                                );
+                              }
+
+                              return (
+                                <button
+                                  onClick={() => handleOpenAssessModal(p)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                  title="Beri Penilaian Baru"
+                                >
+                                  <PlusCircle size={12} />
+                                  <span>Beri Nilai</span>
+                                </button>
+                              );
+                            })()}
 
                             <button
                               onClick={() => handleOpenBukti(p)}

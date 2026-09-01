@@ -82,6 +82,14 @@ export const LandingPage: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
   const [showAllActivitiesModal, setShowAllActivitiesModal] = useState<boolean>(false);
+  const [selectedServiceModal, setSelectedServiceModal] = useState<{
+    title: string;
+    icon: string;
+    description: string;
+    features: string[];
+    targetRoles: string;
+    linkTo: string;
+  } | null>(null);
 
   // Live database stats fetched from Express Backend API
   const [statsData, setStatsData] = useState<{
@@ -103,6 +111,8 @@ export const LandingPage: React.FC = () => {
     wasteTrendDirection?: "UP" | "DOWN" | "STABLE";
     recentSchedules: any[];
   } | null>(null);
+  const [liveNews, setLiveNews] = useState<any[]>([]);
+  const [isLoadingNews, setIsLoadingNews] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchLandingStats = async () => {
@@ -115,10 +125,39 @@ export const LandingPage: React.FC = () => {
         console.warn("[LandingPage] Live stats fetch fallback.", err);
       }
     };
+
+    const fetchPublishedNews = async () => {
+      try {
+        setIsLoadingNews(true);
+        const res = await api.get("/berita?status=PUBLISHED&limit=6");
+        if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          const mapped = res.data.data.map((item: any) => ({
+            id: item.id,
+            title: item.judul,
+            date: item.publishedAt ? new Date(item.publishedAt).toISOString().split("T")[0] : new Date(item.createdAt).toISOString().split("T")[0],
+            location: item.kelompok?.name || "Wilayah Binaan KKN",
+            category: item.kategori || "Aksi Lingkungan",
+            imageUrl: item.gambarUrl || "/image/activity-1.webp",
+            description: item.ringkasan || item.konten || "",
+            sdgTags: item.tags && item.tags.length > 0 ? item.tags : ["#12", "#11", "#3"],
+          }));
+          setLiveNews(mapped);
+        }
+      } catch (err) {
+        console.warn("[LandingPage] Live news fetch fallback.", err);
+      } finally {
+        setIsLoadingNews(false);
+      }
+    };
+
     fetchLandingStats();
+    fetchPublishedNews();
 
     // 10-second auto-polling for 100% real-time database sync
-    const pollInterval = setInterval(fetchLandingStats, 10000);
+    const pollInterval = setInterval(() => {
+      fetchLandingStats();
+      fetchPublishedNews();
+    }, 15000);
     return () => clearInterval(pollInterval);
   }, []);
 
@@ -680,36 +719,120 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 <div className="program-grid">
-                  <article className="program-card">
-                    <span className="program-icon" aria-hidden="true">
+                  <article
+                    className="program-card cursor-pointer transition hover:shadow-lg hover:-translate-y-1 group"
+                    onClick={() =>
+                      setSelectedServiceModal({
+                        title: "Portal Dinas Lingkungan Hidup",
+                        icon: "account_balance",
+                        description:
+                          "Portal terpadu untuk monitoring statistik makro timbulan sampah, evaluasi kepatuhan pemilahan per kelurahan/kecamatan, dan manajemen kebijakan lingkungan hidup tingkat kedinasan.",
+                        features: [
+                          "Agregasi data tonase timbulan sampah harian",
+                          "Evaluasi rasio kepatuhan pemilahan masyarakat",
+                          "Manajemen audit verifikasi klasifikasi sampah AI",
+                          "Dashboard analitik per kelurahan dan kecamatan",
+                        ],
+                        targetRoles: "ADMIN_DLH, PEMIMPIN, CAMAT, LURAH",
+                        linkTo: "/login?role=admin_dlh",
+                      })
+                    }
+                  >
+                    <span className="program-icon group-hover:scale-110 transition-transform" aria-hidden="true">
                       <span className="material-symbols-outlined text-emerald-600 text-2xl">account_balance</span>
                     </span>
                     <h3>Portal Dinas Lingkungan Hidup</h3>
                     <p>Integrasi agregasi data, pemantauan kebijakan, dan pelaporan tingkat kedinasan.</p>
+                    <span className="text-[11px] font-bold text-emerald-700 mt-2 inline-flex items-center gap-1 group-hover:underline">
+                      Pelajari Layanan →
+                    </span>
                   </article>
 
-                  <article className="program-card">
-                    <span className="program-icon" aria-hidden="true">
+                  <article
+                    className="program-card cursor-pointer transition hover:shadow-lg hover:-translate-y-1 group"
+                    onClick={() =>
+                      setSelectedServiceModal({
+                        title: "Portal Rukun Warga (RW)",
+                        icon: "roofing",
+                        description:
+                          "Platform operasional tingkat RW dan RT untuk mencatat setoran warga, memvalidasi kapasitas tempat sampah cerdas, mengelola ide daur ulang, serta mendistribusikan poin insentif pemilahan.",
+                        features: [
+                          "Pencatatan setoran sampah organik & anorganik",
+                          "Kurasi & persetujuan ide daur ulang warga",
+                          "Monitoring status tong sampah penuh secara real-time",
+                          "Distribusi reward poin dan sembako warga",
+                        ],
+                        targetRoles: "RW, RT, PETUGAS_RESIDU",
+                        linkTo: "/login?role=rw",
+                      })
+                    }
+                  >
+                    <span className="program-icon group-hover:scale-110 transition-transform" aria-hidden="true">
                       <span className="material-symbols-outlined text-emerald-600 text-2xl">roofing</span>
                     </span>
                     <h3>Portal Rukun Warga</h3>
                     <p>Manajemen setoran sampah warga, verifikasi ide daur ulang, dan distribusi poin insentif.</p>
+                    <span className="text-[11px] font-bold text-emerald-700 mt-2 inline-flex items-center gap-1 group-hover:underline">
+                      Pelajari Layanan →
+                    </span>
                   </article>
 
-                  <article className="program-card">
-                    <span className="program-icon" aria-hidden="true">
+                  <article
+                    className="program-card cursor-pointer transition hover:shadow-lg hover:-translate-y-1 group"
+                    onClick={() =>
+                      setSelectedServiceModal({
+                        title: "Pemantauan Data Sampah Terbuka",
+                        icon: "analytics",
+                        description:
+                          "Transparansi data pengelolaan sampah berbasis IoT, QR Code scan, dan timbangan digital untuk mengukur reduksi sampah ke TPA secara presisi.",
+                        features: [
+                          "Pelacakan bobot kg sampah organik & anorganik",
+                          "Kalkulasi emisi karbon & dampak lingkungan terhindar",
+                          "Leaderboard peringkat partisipasi warga teraktif",
+                          "Riwayat pembuangan sampah terverifikasi AI",
+                        ],
+                        targetRoles: "Masyarakat Umum & Seluruh Warga PSC",
+                        linkTo: "/login",
+                      })
+                    }
+                  >
+                    <span className="program-icon group-hover:scale-110 transition-transform" aria-hidden="true">
                       <span className="material-symbols-outlined text-[#035941] text-2xl">analytics</span>
                     </span>
                     <h3>Pemantauan Data Sampah</h3>
                     <p>Pemantauan volume sampah organik, anorganik, dan residu secara terukur serta real-time.</p>
+                    <span className="text-[11px] font-bold text-emerald-700 mt-2 inline-flex items-center gap-1 group-hover:underline">
+                      Pelajari Layanan →
+                    </span>
                   </article>
 
-                  <article className="program-card">
-                    <span className="program-icon" aria-hidden="true">
+                  <article
+                    className="program-card cursor-pointer transition hover:shadow-lg hover:-translate-y-1 group"
+                    onClick={() =>
+                      setSelectedServiceModal({
+                        title: "Pendampingan Kuliah Kerja Nyata (KKN)",
+                        icon: "school",
+                        description:
+                          "Ekosistem kolaborasi universitas, DPL, dan mahasiswa KKN tematik lingkungan untuk sosialisasi edukasi pemilahan, smart geofencing presensi, survei rumah tangga, dan pelaporan logbook.",
+                        features: [
+                          "Penyusunan & penilaian program kerja (Proker) KKN",
+                          "Presensi digital mahasiswa berbasis radius geofence posko",
+                          "Logbook aktivitas terintegrasi foto dan deskripsi",
+                          "Evaluasi dampak program kerja dan rekap nilai akhir",
+                        ],
+                        targetRoles: "DPL, MAHASISWA_KKN, PANITIA_TASKFORCE",
+                        linkTo: "/login?role=dpl",
+                      })
+                    }
+                  >
+                    <span className="program-icon group-hover:scale-110 transition-transform" aria-hidden="true">
                       <span className="material-symbols-outlined text-emerald-600 text-2xl">school</span>
                     </span>
                     <h3>Pendampingan Kuliah Kerja Nyata</h3>
                     <p>Pendampingan mahasiswa KKN dalam sosialisasi pemilahan dan aksi bersih lingkungan.</p>
+                    <span className="text-[11px] font-bold text-emerald-700 mt-2 inline-flex items-center gap-1 group-hover:underline">
+                      Pelajari Layanan →
+                    </span>
                   </article>
                 </div>
               </div>
@@ -730,7 +853,9 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="kegiatan">
-                  {(statsData?.recentSchedules && statsData.recentSchedules.length > 0
+                  {(liveNews.length > 0
+                    ? liveNews
+                    : statsData?.recentSchedules && statsData.recentSchedules.length > 0
                     ? statsData.recentSchedules
                     : [
                         {
@@ -1786,6 +1911,81 @@ export const LandingPage: React.FC = () => {
           </div>
         )
       }
+
+      {/* ----------------- SERVICE PREVIEW MODAL ----------------- */}
+      {selectedServiceModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-[#035941] flex items-center justify-center shadow-2xs">
+                  <span className="material-symbols-outlined text-2xl">{selectedServiceModal.icon}</span>
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base sm:text-lg leading-tight">
+                    {selectedServiceModal.title}
+                  </h3>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Layanan Terintegrasi BERSEKA
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedServiceModal(null)}
+                className="text-slate-400 hover:text-slate-600 transition p-1 cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs text-slate-600">
+              <p className="leading-relaxed font-medium">
+                {selectedServiceModal.description}
+              </p>
+
+              <div className="bg-slate-50 rounded-2xl p-4 space-y-2.5 border border-slate-100">
+                <h4 className="font-black text-slate-800 text-[11px] uppercase tracking-wider">
+                  Fitur &amp; Kemampuan Utama:
+                </h4>
+                <ul className="space-y-2">
+                  {selectedServiceModal.features.map((feat, i) => (
+                    <li key={i} className="flex items-start gap-2 text-slate-700">
+                      <span className="material-symbols-outlined text-emerald-600 text-base shrink-0">check_circle</span>
+                      <span className="font-medium">{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 text-[11px]">
+                <span className="text-emerald-900 font-bold">Hak Akses:</span>
+                <span className="text-emerald-700 font-extrabold">{selectedServiceModal.targetRoles}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedServiceModal(null);
+                  navigate(selectedServiceModal.linkTo);
+                }}
+                className="flex-1 py-3 bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs rounded-xl shadow-md shadow-[#035941]/20 transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Masuk ke Portal</span>
+                <span>→</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedServiceModal(null)}
+                className="py-3 px-5 border border-slate-200 bg-slate-50 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ----------------- INTERACTIVE PUBLIC ACTIVITY DETAIL MODAL ----------------- */}
       {selectedActivity && (

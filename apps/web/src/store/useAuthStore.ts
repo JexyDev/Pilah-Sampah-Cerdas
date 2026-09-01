@@ -104,28 +104,28 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
   }
 };
 
-const getWilayahByRole = (role: string): string => {
+const getWilayahByRole = (role: string, kelurahan?: string, kecamatan?: string, rw?: string): string => {
+  if (rw && kelurahan) return `RW ${rw} ${kelurahan}`;
+  if (kelurahan) return `Kelurahan ${kelurahan}`;
+  if (kecamatan) return `Kecamatan ${kecamatan}`;
+
   switch (role) {
     case "DEVELOPER":
-      return "Kecamatan Coblong";
     case "SUPER_USER":
-      return "Kecamatan Coblong";
     case "ADMIN_DLH":
-      return "Kecamatan Coblong";
+      return "Sistem Terpusat";
     case "CAMAT":
-      return "Kecamatan Coblong";
+      return "Tingkat Kecamatan";
     case "LURAH":
-      return "Kelurahan Dago";
+      return "Tingkat Kelurahan";
     case "RW":
-      return "RW 06 Dago";
     case "PETUGAS_RESIDU":
-      return "RW 06 Dago";
     case "WARGA":
-      return "RW 06 Dago";
+      return "Tingkat Rukun Warga";
     case "MAHASISWA_KKN":
-      return "Area KKN Dago";
+      return "Area KKN Tematik";
     default:
-      return "Kecamatan Coblong";
+      return "Wilayah Operasional";
   }
 };
 
@@ -246,9 +246,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: backendUser.email,
         peran: normalizedRole,
         role: backendUser.role,
-        wilayah: backendUser.wilayah || getWilayahByRole(normalizedRole),
+        wilayah:
+          backendUser.wilayah ||
+          getWilayahByRole(
+            normalizedRole,
+            backendUser.kelurahan,
+            backendUser.kecamatan,
+            backendUser.rw
+          ),
         kelurahan: backendUser.kelurahan,
-        kecamatan: backendUser.kecamatan || "Coblong",
+        kecamatan: backendUser.kecamatan || "",
         rw: backendUser.rw,
         dplKelompok: backendUser.dplKelompok,
         avatar: computeAvatarInitials(backendUser.name),
@@ -316,9 +323,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: backendUser.email,
         peran: normalizedRole,
         role: backendUser.role,
-        wilayah: backendUser.wilayah || getWilayahByRole(normalizedRole),
+        wilayah:
+          backendUser.wilayah ||
+          getWilayahByRole(
+            normalizedRole,
+            backendUser.kelurahan,
+            backendUser.kecamatan,
+            backendUser.rw
+          ),
         kelurahan: backendUser.kelurahan,
-        kecamatan: backendUser.kecamatan || "Coblong",
+        kecamatan: backendUser.kecamatan || "",
         rw: backendUser.rw,
         dplKelompok: backendUser.dplKelompok,
         avatar: computeAvatarInitials(backendUser.name),

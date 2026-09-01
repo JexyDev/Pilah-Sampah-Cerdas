@@ -389,10 +389,11 @@ export const DplDashboardPage: React.FC = () => {
     const q = groupStudentSearchQuery.toLowerCase();
     return modalGroupStudents.filter(
       (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.nim.toLowerCase().includes(q) ||
-        s.jurusan.toLowerCase().includes(q) ||
-        (s.fakultas && s.fakultas.toLowerCase().includes(q))
+        (s?.name ?? "").toLowerCase().includes(q) ||
+        (s?.nim ?? "").toLowerCase().includes(q) ||
+        (s?.jurusan ?? "").toLowerCase().includes(q) ||
+        (s?.fakultas ?? "").toLowerCase().includes(q) ||
+        (s?.kelompokName ?? "").toLowerCase().includes(q)
     );
   }, [modalGroupStudents, groupStudentSearchQuery]);
 

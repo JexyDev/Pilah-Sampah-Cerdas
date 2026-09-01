@@ -49,6 +49,7 @@ import {
 } from "../../services/dplActivityLogService";
 import { dplService, type GroupSummary, type ProgramKerjaItem } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 // Helper Inisial Profil
 const getInitials = (name: string): string => {
@@ -116,6 +117,10 @@ export const LogAktivitasDpl: React.FC = () => {
   // Modal Detail State
   const [selectedDetailLog, setSelectedDetailLog] = useState<DplActivityLogItem | null>(null);
   const [previewGalleryImage, setPreviewGalleryImage] = useState<string | null>(null);
+
+  // Delete Confirmation Modal State
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Helper Format Tanggal Indonesia Lengkap (e.g. 14 Agustus 2026)
   const formatIndonesianDateLong = (dateStr?: string | null): string => {
@@ -441,17 +446,25 @@ export const LogAktivitasDpl: React.FC = () => {
   };
 
   // Delete Click Handler
-  const handleDeleteLog = async (id: string) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus log aktivitas DPL ini?")) return;
+  const handleDeleteLog = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const executeDeleteLog = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
     try {
-      await dplActivityLogService.deleteActivityLog(id);
+      await dplActivityLogService.deleteActivityLog(deleteTargetId);
       toast.success("Kegiatan DPL berhasil dihapus");
-      if (selectedDetailLog?.id === id) {
+      if (selectedDetailLog?.id === deleteTargetId) {
         setSelectedDetailLog(null);
       }
+      setDeleteTargetId(null);
       fetchActivityLogs();
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal menghapus kegiatan");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -1588,6 +1601,19 @@ export const LogAktivitasDpl: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal for Delete Log Activity */}
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={executeDeleteLog}
+        title="Hapus Log Aktivitas DPL"
+        message="Apakah Anda yakin ingin menghapus catatan log aktivitas DPL ini? Data yang dihapus tidak dapat dikembalikan."
+        confirmText="Hapus Kegiatan"
+        cancelText="Batal"
+        type="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

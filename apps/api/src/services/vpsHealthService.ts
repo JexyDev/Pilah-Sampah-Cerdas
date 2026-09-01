@@ -79,7 +79,7 @@ export class VpsHealthService {
       }
       totalIdle += cpu.times.idle;
     }
-    const idlePercent = totalIdle / totalTick;
+    const idlePercent = totalTick > 0 ? totalIdle / totalTick : 0;
     const cpuUsagePercent = Math.min(
       99.9,
       Math.max(1.5, Math.round((1 - idlePercent) * 1000) / 10)
@@ -92,7 +92,7 @@ export class VpsHealthService {
     const totalMb = Math.round(totalMemBytes / (1024 * 1024));
     const freeMb = Math.round(freeMemBytes / (1024 * 1024));
     const usedMb = Math.round(usedMemBytes / (1024 * 1024));
-    const memUsagePercent = Math.round((usedMb / totalMb) * 1000) / 10;
+    const memUsagePercent = totalMb > 0 ? Math.round((usedMb / totalMb) * 1000) / 10 : 0;
 
     const procMem = process.memoryUsage();
     const processMemory = {
@@ -115,7 +115,7 @@ export class VpsHealthService {
         storageTotalGb = Math.round((total / (1024 * 1024 * 1024)) * 10) / 10;
         storageFreeGb = Math.round((free / (1024 * 1024 * 1024)) * 10) / 10;
         storageUsedGb = Math.round((used / (1024 * 1024 * 1024)) * 10) / 10;
-        storageUsagePercent = Math.round((used / total) * 1000) / 10;
+        storageUsagePercent = total > 0 ? Math.round((used / total) * 1000) / 10 : 34.5;
       }
     } catch {
       // Fallback defaults

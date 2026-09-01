@@ -374,5 +374,17 @@ input:-webkit-autofill:active {
   animation: gentle-pulse 3s ease-in-out infinite;
 }
 
-
-
+/* ─────────────────────────────────────────────────────────────
+   BERSEKA Standardized Stacking Context Scale (z-index)
+   ───────────────────────────────────────────────────────────── */
+.z-base { z-index: 1; }
+.z-elevated { z-index: 10; }
+.z-dropdown { z-index: 100; }
+.z-sticky { z-index: 200; }
+.z-fixed-header { z-index: 300; }
+.z-drawer { z-index: 400; }
+.z-modal-backdrop { z-index: 500; }
+.z-modal { z-index: 600; }
+.z-popover { z-index: 700; }
+.z-toast { z-index: 1000; }
+.z-max { z-index: 99999; }
