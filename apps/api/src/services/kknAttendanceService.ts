@@ -1392,19 +1392,19 @@ export class KknAttendanceService {
         isAttended = isFinished;
         const actualMins = attendance.actualInZoneMinutes ?? 0;
         const isMemenuhi = actualMins >= targetDurationMinutes;
-        attendanceStatus = isFinished
-          ? attendance.status === "HADIR_MEMENUHI" || attendance.status === "HADIR_TIDAK_MEMENUHI"
-            ? attendance.status
-            : attendance.status === "SELESAI_TELAT"
-              ? "HADIR_TIDAK_MEMENUHI"
-              : isMemenuhi
-                ? "HADIR_MEMENUHI"
-                : "HADIR_TIDAK_MEMENUHI"
-          : attendance.status === "ALPA"
-            ? "ALPA"
-            : attendance.status === "BERLANGSUNG"
-              ? "BERLANGSUNG"
-              : "BELUM_ABSEN";
+        if (isFinished) {
+          if (attendance.status === "SELESAI_TELAT") {
+            attendanceStatus = "HADIR_TIDAK_MEMENUHI";
+          } else {
+            attendanceStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+          }
+        } else if (attendance.status === "ALPA") {
+          attendanceStatus = "ALPA";
+        } else if (attendance.status === "BERLANGSUNG") {
+          attendanceStatus = "BERLANGSUNG";
+        } else {
+          attendanceStatus = "BELUM_ABSEN";
+        }
         checkInTime = attendance.attendedAt;
         checkOutTime = attendance.checkOutAt;
         method = attendance.method;
@@ -1907,14 +1907,11 @@ export class KknAttendanceService {
     }
 
     // Determine final status: HADIR_MEMENUHI or HADIR_TIDAK_MEMENUHI
-    let isMemenuhi = true;
-    let durasiWajibMenit = 0;
+    let durasiWajibMenit = 240;
     if (schedule) {
       durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
-      if (durasiWajibMenit > 0 && actualInZoneMins < durasiWajibMenit) {
-        isMemenuhi = false;
-      }
     }
+    const isMemenuhi = durasiWajibMenit > 0 ? actualInZoneMins >= durasiWajibMenit : actualInZoneMins >= 240;
     const checkoutFinalStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
     const statusDisplay = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
 
@@ -2424,16 +2421,11 @@ export class KknAttendanceService {
         att.status === "HADIR_TIDAK_MEMENUHI"
       ) {
         currentStatus = "TERCATAT_ABSEN";
-        if (att.status === "HADIR_MEMENUHI") {
-          status = "HADIR_MEMENUHI";
-          statusDisplay = "Hadir & Memenuhi";
-          isMemenuhiDurasi = true;
-        } else if (att.status === "HADIR_TIDAK_MEMENUHI" || att.status === "SELESAI_TELAT") {
+        if (att.status === "SELESAI_TELAT") {
           status = "HADIR_TIDAK_MEMENUHI";
           statusDisplay = "Hadir & Tidak Memenuhi";
           isMemenuhiDurasi = false;
         } else {
-          // Legacy HADIR or SELESAI
           status = isDurMet ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
           statusDisplay = isDurMet ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
           isMemenuhiDurasi = isDurMet;
