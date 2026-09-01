@@ -1994,6 +1994,377 @@ export const LaporanPresensiPage: React.FC = () => {
         </div>
       )}
 
+      {/* Modal Detail Log & Jejak Kehadiran Mahasiswa */}
+      {selectedStudentForLog && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/60">
+              <div className="flex items-center gap-3">
+                {selectedStudentForLog.fotoProfil ? (
+                  <img
+                    src={selectedStudentForLog.fotoProfil}
+                    alt={selectedStudentForLog.namaMahasiswa}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500 shrink-0 shadow-2xs"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black flex items-center justify-center text-sm shrink-0 border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                    {selectedStudentForLog.namaMahasiswa.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-base text-slate-900 dark:text-white">
+                      {formatPersonName(selectedStudentForLog.namaMahasiswa)}
+                    </h3>
+                    {selectedStudentForLog.isKetua && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-955 dark:text-amber-300 border border-amber-300 shadow-2xs">
+                        Ketua Kelompok
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    NIM: {selectedStudentForLog.nim} • {formatProdiName(selectedStudentForLog.jurusan)}
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    {selectedStudentForLog.kelompok?.name ? formatKelompokName(selectedStudentForLog.kelompok.name) : "Tanpa Kelompok"} • DPL: {formatPersonName(selectedStudentForLog.kelompok?.dplName)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForLog(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+                title="Tutup"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+              {/* Summary Stats Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hari Hadir</span>
+                  <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+                    {selectedStudentForLog.totalSessions} <span className="text-xs font-semibold text-slate-400">Sesi</span>
+                  </p>
+                </div>
+                <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/80 dark:border-emerald-800/80 text-center">
+                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">Akumulasi Aktual</span>
+                  <p className="text-lg font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
+                    {selectedStudentForLog.totalFormatted}
+                  </p>
+                </div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rata-rata / Hari</span>
+                  <p className="text-lg font-black text-slate-800 dark:text-slate-200 mt-0.5">
+                    {selectedStudentForLog.avgFormatted}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-50/80 dark:bg-purple-950/40 rounded-xl border border-purple-200/80 dark:border-purple-800/80 text-center">
+                  <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider block">Target &amp; Status</span>
+                  <p className="text-sm font-black text-purple-700 dark:text-purple-300 mt-1">
+                    {selectedStudentForLog.totalHours >= periodTargetHours ? "🌟 Tercapai" : `Kurang ${(periodTargetHours - selectedStudentForLog.totalHours).toFixed(1)} Jam`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Header Sesi List */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-1.5">
+                  <FileText size={15} className="text-emerald-600" />
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">
+                    Riwayat Sesi Kehadiran &amp; Bukti Lapangan
+                  </h4>
+                </div>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                  {studentLogItems.length} Sesi Terdata
+                </span>
+              </div>
+
+              {/* Sessions List */}
+              {isLoadingStudentLogs ? (
+                <div className="py-12 text-center text-slate-400">
+                  <RefreshCw size={24} className="animate-spin text-emerald-600 mx-auto mb-2" />
+                  <span className="text-xs font-semibold">Memuat riwayat log dan bukti kehadiran...</span>
+                </div>
+              ) : studentLogItems.length === 0 ? (
+                <div className="py-10 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <Info size={28} className="text-slate-400 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum Ada Riwayat Sesi Presensi</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Mahasiswa ini belum memiliki catatan kehadiran pada sistem.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {studentLogItems.map((item, idx) => {
+                    const isMemenuhi = item.isMemenuhiDurasi;
+                    const isTerjeda = item.status === "TERJEDA";
+                    const isBerlangsung = item.status === "BERLANGSUNG";
+                    const isIzinSakit = item.status.includes("IZIN") || item.status.includes("SAKIT");
+
+                    return (
+                      <div
+                        key={item.id || idx}
+                        className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-750 shadow-2xs space-y-3"
+                      >
+                        {/* Top Row: Date, Schedule, Status */}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg text-emerald-700 dark:text-emerald-400">
+                              <Calendar size={14} />
+                            </div>
+                            <div>
+                              <span className="font-black text-xs text-slate-900 dark:text-white">
+                                {item.tanggal}
+                              </span>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                {item.namaKegiatan}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div>
+                            {isMemenuhi ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs">
+                                <CheckCircle2 size={12} className="text-emerald-600" />
+                                <span>Hadir &amp; Memenuhi (&ge; 4 Jam)</span>
+                              </span>
+                            ) : isBerlangsung ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                <span>Sedang di Lapangan</span>
+                              </span>
+                            ) : isTerjeda ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                                <PauseCircle size={12} className="text-slate-500" />
+                                <span>Terjeda</span>
+                              </span>
+                            ) : isIzinSakit ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-700">
+                                <FileText size={12} className="text-blue-600" />
+                                <span>{item.statusDisplay}</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700">
+                                <AlertTriangle size={12} className="text-amber-600" />
+                                <span>Kurang Jam (&lt; 4 Jam)</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Times & Duration Strip */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">Jam Masuk (JM)</span>
+                            <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                              {item.jamMasuk !== "-" ? `${item.jamMasuk} WIB` : "-"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">Jam Pulang (JP)</span>
+                            <span className="font-mono font-bold text-slate-700 dark:text-slate-300">
+                              {item.jamPulang !== "-" ? `${item.jamPulang} WIB` : isBerlangsung ? "Sedang Aktif" : "-"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">Durasi Bersih Aktual</span>
+                            <span className="font-mono font-black text-slate-900 dark:text-white">
+                              {item.durasiFormatted} ({item.durasiMenit}m)
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 block">Rasio Sesi</span>
+                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                              {item.rasioKehadiran ?? 0}% ({item.durasiMenit}/{item.targetMinMenit || 240}m)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Evidence & Activity Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {/* Deskripsi Kegiatan */}
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Deskripsi Kegiatan Lapangan:
+                            </span>
+                            {item.deskripsiKegiatan ? (
+                              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap max-h-28 overflow-y-auto">
+                                {item.deskripsiKegiatan}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-slate-400 border border-dashed border-slate-200 dark:border-slate-700 text-xs italic">
+                                <Info size={13} />
+                                <span>Belum ada catatan deskripsi kegiatan</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Foto Bukti */}
+                          <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Foto Dokumentasi Lapangan:
+                            </span>
+                            {item.fotoUrl ? (
+                              <div className="flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <img
+                                  src={item.fotoUrl}
+                                  alt="Dokumentasi"
+                                  className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 cursor-pointer hover:opacity-90 transition"
+                                  onClick={() =>
+                                    setPreviewPhoto({
+                                      url: item.fotoUrl!,
+                                      title: `Foto Presensi: ${item.namaMahasiswa} - ${item.tanggal}`,
+                                      desc: item.deskripsiKegiatan,
+                                    })
+                                  }
+                                />
+                                <div>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                                    Foto Bukti Terlampir
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setPreviewPhoto({
+                                        url: item.fotoUrl!,
+                                        title: `Foto Presensi: ${item.namaMahasiswa} - ${item.tanggal}`,
+                                        desc: item.deskripsiKegiatan,
+                                      })
+                                    }
+                                    className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline mt-0.5 inline-flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Eye size={11} />
+                                    <span>Perbesar Foto</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 p-2.5 rounded-xl bg-rose-50/80 dark:bg-rose-955/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold">
+                                <AlertTriangle size={13} className="shrink-0 text-rose-600" />
+                                <span>⚠️ Tanpa Foto Bukti Dokumentasi Lapangan</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Catatan Jeda / Anomali (Jeda Logs) */}
+                        {item.jedaLogs && item.jedaLogs.length > 0 && (
+                          <div className="p-3 rounded-xl bg-amber-50/90 dark:bg-amber-955/60 border border-amber-300 dark:border-amber-700 text-xs text-amber-950 dark:text-amber-200 space-y-1.5">
+                            <div className="flex items-center gap-1.5 font-black text-amber-800 dark:text-amber-300">
+                              <PauseCircle size={14} className="text-amber-600" />
+                              <span>Catatan &amp; Riwayat Jeda Mahasiswa ({item.jedaLogs.length} Kali Dijeda):</span>
+                            </div>
+                            <div className="space-y-1 pl-4 border-l-2 border-amber-300 dark:border-amber-600">
+                              {item.jedaLogs.map((j: any, jIdx: number) => (
+                                <div key={jIdx} className="text-[11px]">
+                                  <span className="font-bold text-amber-900 dark:text-amber-100">
+                                    • Alasan: &ldquo;{j.alasan || "Tanpa alasan"}&rdquo;
+                                  </span>
+                                  {j.durasiSebelumJedaMenit !== undefined && (
+                                    <span className="text-amber-700 dark:text-amber-300 ml-1">
+                                      (Durasi sebelum jeda: {j.durasiSebelumJedaMenit} Menit)
+                                    </span>
+                                  )}
+                                  {j.waktuJeda && (
+                                    <span className="text-slate-500 dark:text-slate-400 ml-1 text-[10px]">
+                                      [{new Date(j.waktuJeda).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB]
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* GPS Location Row */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin size={13} className="text-emerald-600" />
+                            <span>
+                              GPS Check-in:{" "}
+                              {item.latitude && item.longitude ? (
+                                <strong className="font-mono text-slate-800 dark:text-slate-200">
+                                  {item.latitude.toFixed(6)}, {item.longitude.toFixed(6)}
+                                </strong>
+                              ) : (
+                                <span className="italic text-slate-400">Tidak ada data GPS</span>
+                              )}
+                            </span>
+                            {item.latitude && item.longitude && (
+                              <a
+                                href={`https://www.google.com/maps?q=${item.latitude},${item.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline ml-1 inline-flex items-center gap-0.5"
+                              >
+                                <ExternalLink size={10} />
+                                <span>Peta</span>
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Quick Edit Presensi */}
+                          <div className="flex items-center gap-1">
+                            {isBerlangsung && (
+                              <button
+                                type="button"
+                                onClick={() => handleForceCheckout(item)}
+                                className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 rounded-lg text-xs font-bold transition border border-emerald-200 dark:border-emerald-800 cursor-pointer flex items-center gap-1"
+                              >
+                                <CheckCircle2 size={12} />
+                                <span>Force Checkout</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(item)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold transition border border-slate-200 dark:border-slate-700 cursor-pointer flex items-center gap-1"
+                            >
+                              <Pencil size={12} />
+                              <span>Koreksi</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteItem(item)}
+                              className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 rounded-lg text-xs font-bold transition border border-rose-200 dark:border-rose-800 cursor-pointer flex items-center gap-1"
+                            >
+                              <Trash2 size={12} />
+                              <span>Hapus</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/80">
+              <button
+                type="button"
+                onClick={() => handleJumpToLogDetailTab(selectedStudentForLog.namaMahasiswa)}
+                className="px-3.5 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              >
+                <ListFilter size={13} />
+                <span>Buka di Tab Log Presensi Detail</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedStudentForLog(null)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Konfirmasi Hapus Presensi */}
       {deleteItem && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
