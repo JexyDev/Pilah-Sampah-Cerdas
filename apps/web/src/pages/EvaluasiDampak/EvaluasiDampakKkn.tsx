@@ -467,7 +467,7 @@ export const EvaluasiDampakKkn: React.FC = () => {
                         }`}
                       >
                         {avgDeltaPemilahan >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                        Rata-rata
+                        Rerata
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">

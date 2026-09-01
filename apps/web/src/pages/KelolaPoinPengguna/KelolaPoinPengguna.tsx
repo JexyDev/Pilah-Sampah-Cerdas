@@ -656,11 +656,11 @@ export const KelolaPoinPengguna: React.FC = () => {
           </p>
         </div>
 
-        {/* Card 3: Rata-rata per User */}
+        {/* Card 3: Rerata per User */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Rata-rata Poin Akun
+              Rerata Poin Akun
             </span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Sliders size={16} />

@@ -5,7 +5,8 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
  */
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { Link } from "react-router-dom";
 import {
   FileText,
   Search,
@@ -170,10 +171,19 @@ export const LaporanPresensiPage: React.FC = () => {
   const [endDate, setEndDate] = useState<string>("");
   const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("TODAY");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(20);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalCount, setTotalCount] = useState<number>(0);
+
+  // Debounce search input to avoid lag and spamming API on every keystroke
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Real-time WebSocket Telemetry states
   const [wsStatus, setWsStatus] = useState<"CONNECTED" | "CONNECTING" | "DISCONNECTED">("DISCONNECTED");
@@ -311,7 +321,7 @@ export const LaporanPresensiPage: React.FC = () => {
       const start = new Date(startDate);
       const end = new Date(endDate);
       const diffDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
-      // Asumsi rata-rata 5 hari kerja per 7 hari kalender
+      // Asumsi rerata 5 hari kerja per 7 hari kalender
       const estimatedWorkDays = Math.max(1, Math.round((diffDays / 7) * 5));
       return estimatedWorkDays * minHarian;
     }
@@ -326,6 +336,31 @@ export const LaporanPresensiPage: React.FC = () => {
     if (startDate && endDate) return `${startDate} s.d. ${endDate}`;
     return "Periode Terpilih";
   }, [datePreset, startDate, endDate]);
+
+  // Rerata jam per mahasiswa per hari dalam periode aktif
+  const rerataJamPerMhsPerHari = useMemo(() => {
+    const totalStudents = studentAggregates.length || summary.totalMahasiswa || 0;
+    if (!totalStudents || !summary.totalJamKumulatif) return "0";
+
+    let days = 1;
+    if (datePreset === "TODAY") {
+      days = 1;
+    } else if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
+    } else if (datePreset === "7DAYS") {
+      days = 7;
+    } else if (datePreset === "30DAYS") {
+      days = 30;
+    } else {
+      // Untuk filter ALL (seluruh periode KKN), estimasikan hari aktif dari total sesi presensi
+      days = summary.totalPresensi > 0 ? Math.max(1, Math.ceil(summary.totalPresensi / totalStudents)) : 1;
+    }
+
+    const val = summary.totalJamKumulatif / (totalStudents * days);
+    return val > 0 ? val.toFixed(1) : "0";
+  }, [datePreset, startDate, endDate, studentAggregates.length, summary.totalMahasiswa, summary.totalJamKumulatif, summary.totalPresensi]);
 
   // Quick select kelompok with localStorage persistence for developer
   const handleSelectKelompok = (id: string) => {
@@ -415,8 +450,8 @@ export const LaporanPresensiPage: React.FC = () => {
       if (endDate) {
         params.endDate = endDate;
       }
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
+      if (debouncedSearchQuery.trim()) {
+        params.search = debouncedSearchQuery.trim();
       }
 
       const res = await api.get("/laporan-rekap", { params });
@@ -440,7 +475,12 @@ export const LaporanPresensiPage: React.FC = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [page, limit, selectedKelompok, selectedStatus, startDate, endDate, searchQuery]);
+  }, [page, limit, selectedKelompok, selectedStatus, startDate, endDate, debouncedSearchQuery]);
+
+  const fetchLaporanRef = useRef(fetchLaporan);
+  useEffect(() => {
+    fetchLaporanRef.current = fetchLaporan;
+  }, [fetchLaporan]);
 
   useEffect(() => {
     fetchGroups();
@@ -472,7 +512,7 @@ export const LaporanPresensiPage: React.FC = () => {
         setLastLiveUpdate(new Date());
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-          fetchLaporan(true);
+          fetchLaporanRef.current(true);
         }, 1000);
       }
     });
@@ -482,18 +522,18 @@ export const LaporanPresensiPage: React.FC = () => {
       unsubMsg();
       if (debounceTimer) clearTimeout(debounceTimer);
     };
-  }, [isDeveloper, fetchLaporan]);
+  }, [isDeveloper, isDpl]);
 
   // Periodic background refresh every 30s when there are active sessions
   useEffect(() => {
     if (!isDeveloper) return;
     const interval = setInterval(() => {
       if (summary.berlangsung > 0 || summary.terjeda > 0) {
-        fetchLaporan(true);
+        fetchLaporanRef.current(true);
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [isDeveloper, summary.berlangsung, summary.terjeda, fetchLaporan]);
+  }, [isDeveloper, summary.berlangsung, summary.terjeda]);
 
   const handleResetFilter = () => {
     setSelectedKelompok("ALL");
@@ -572,8 +612,8 @@ export const LaporanPresensiPage: React.FC = () => {
         "Total Jam Aktual",
         `Target Jam Periode (${periodLabel})`,
         "Rasio Capaian (%)",
-        "Rata-rata Menit / Hari",
-        "Rata-rata Jam / Hari",
+        "Rerata Menit / Hari",
+        "Rerata Jam / Hari",
         "Sesi Memenuhi Target (>= 4 Jam)",
         "Sesi Kurang Jam (< 4 Jam)",
         "Izin / Sakit",
@@ -750,6 +790,15 @@ export const LaporanPresensiPage: React.FC = () => {
 
         {/* Action Buttons & Live Indicator */}
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <Link
+            to="/monitoring-kegiatan/presensi"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition shadow-2xs cursor-pointer active:scale-95"
+            title="Kembali ke menu Monitoring & Peta Presensi Mahasiswa"
+          >
+            <ChevronLeft size={15} className="text-slate-500" />
+            <span>Kembali ke Menu Presensi</span>
+          </Link>
+
           {isDeveloper && (
             <div
               className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-xs font-black text-emerald-800 dark:text-emerald-300 shadow-2xs"
@@ -815,7 +864,7 @@ export const LaporanPresensiPage: React.FC = () => {
           <span className="text-[10px] text-slate-400 font-medium">Sesi Kehadiran Terdata</span>
         </div>
 
-        {/* Total Jam Kolektif & Rata-rata per Mahasiswa */}
+        {/* Total Jam Kolektif & Rerata per Mahasiswa / Hari */}
         <div className="bg-white dark:bg-slate-800/90 p-3.5 rounded-2xl border border-purple-200/80 dark:border-purple-900/50 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
             <span>Total Jam Kolektif</span>
@@ -824,8 +873,11 @@ export const LaporanPresensiPage: React.FC = () => {
           <p className="text-xl font-black text-purple-600 dark:text-purple-400 mt-1.5">
             {summary.totalJamKumulatif} <span className="text-xs font-bold text-slate-500">Jam</span>
           </p>
-          <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">
-            Rata-rata: {studentAggregates.length > 0 ? (summary.totalJamKumulatif / studentAggregates.length).toFixed(1) : 0} Jam/mhs
+          <span
+            className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold truncate block"
+            title={`Rerata: ${rerataJamPerMhsPerHari} Jam/mahasiswa/hari`}
+          >
+            Rerata: {rerataJamPerMhsPerHari} Jam/mahasiswa/hari
           </span>
         </div>
 
@@ -958,8 +1010,8 @@ export const LaporanPresensiPage: React.FC = () => {
 
         {/* Filter Inputs Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
-          {/* Search */}
-          <div className="lg:col-span-4">
+          {/* 1. Search (3 cols) */}
+          <div className="col-span-1 sm:col-span-2 lg:col-span-3">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               Pencarian Mahasiswa / NIM
             </label>
@@ -967,19 +1019,22 @@ export const LaporanPresensiPage: React.FC = () => {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari Nama Mahasiswa, NIM, Jurusan..."
+                placeholder="Cari Nama, NIM, Jurusan..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setPage(1);
                 }}
-                className="w-full h-10 pl-9 pr-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium"
+                className="w-full h-10 pl-9 pr-8 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs"
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setPage(1);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer p-1"
                 >
                   <X size={13} />
                 </button>
@@ -987,15 +1042,15 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Kelompok */}
-          <div className="lg:col-span-3">
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-              Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan Anda)</span>}
+          {/* 2. Kelompok KKN (3 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-3">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 truncate">
+              Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan)</span>}
             </label>
             <select
               value={selectedKelompok}
               onChange={(e) => handleSelectKelompok(e.target.value)}
-              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium"
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate"
             >
               <option value="ALL">🌟 Semua Kelompok ({groups.length} Posko)</option>
               {groups.map((g) => (
@@ -1006,8 +1061,8 @@ export const LaporanPresensiPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Start Date */}
-          <div className="lg:col-span-2">
+          {/* 3. Dari Tanggal (2 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               Dari Tanggal
             </label>
@@ -1019,44 +1074,46 @@ export const LaporanPresensiPage: React.FC = () => {
                 setDatePreset("ALL");
                 setPage(1);
               }}
-              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium"
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer"
             />
           </div>
 
-          {/* End Date & Reset & Ekspor */}
-          <div className="lg:col-span-4 flex items-end gap-2">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-                Sampai Tanggal
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => {
-                  setEndDate(e.target.value);
-                  setDatePreset("ALL");
-                  setPage(1);
-                }}
-                className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium"
-              />
-            </div>
+          {/* 4. Sampai Tanggal (2 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+              Sampai Tanggal
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setDatePreset("ALL");
+                setPage(1);
+              }}
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer"
+            />
+          </div>
+
+          {/* 5. Actions: Reset & Ekspor (2 cols) */}
+          <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex items-end gap-2">
             <button
               type="button"
               onClick={handleResetFilter}
-              title="Reset Filter"
-              className="h-10 px-3 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition shrink-0 cursor-pointer flex items-center gap-1"
+              title="Reset Filter ke Default"
+              className="h-10 px-3 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition shrink-0 cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
             >
-              <RotateCcw size={12} />
+              <RotateCcw size={13} />
               <span>Reset</span>
             </button>
             <button
               type="button"
               onClick={handleExportExcel}
               disabled={!startDate || !endDate}
-              className="h-10 px-3.5 text-xs font-bold rounded-xl border transition shadow-2xs shrink-0 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer"
-              title={(!startDate || !endDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor rekapitulasi presensi ke XLSX"}
+              className="h-10 px-3.5 flex-1 text-xs font-bold rounded-xl border transition shadow-2xs flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer active:scale-95 whitespace-nowrap"
+              title={(!startDate || !endDate) ? "Pilih rentang tanggal terlebih dahulu untuk mengekspor" : "Ekspor data ke format Excel XLSX"}
             >
-              <FileSpreadsheet size={13} />
+              <FileSpreadsheet size={14} />
               <span>Ekspor XLSX</span>
             </button>
           </div>
@@ -1133,7 +1190,7 @@ export const LaporanPresensiPage: React.FC = () => {
                   <th className="py-3.5 px-4 text-center min-w-[170px]">
                     Target &amp; Capaian ({periodLabel})
                   </th>
-                  <th className="py-3.5 px-4 text-center">Rata-rata / Hari</th>
+                  <th className="py-3.5 px-4 text-center">Rerata / Hari</th>
                   <th className="py-3.5 px-4 text-center">Status Akumulasi</th>
                   <th className="py-3.5 px-4 text-center">Aksi</th>
                 </tr>
@@ -1254,7 +1311,7 @@ export const LaporanPresensiPage: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Rata-rata / Hari */}
+                        {/* Rerata / Hari */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="font-mono font-bold text-slate-800 dark:text-slate-200">
                             {student.avgFormatted}
@@ -1306,6 +1363,39 @@ export const LaporanPresensiPage: React.FC = () => {
         {/* TAB 2: LOG PRESENSI DETAIL SESI */}
         {activeTab === "LOG_DETAIL" && (
           <div>
+            {searchQuery && (
+              <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 py-3 bg-emerald-50/90 dark:bg-emerald-950/50 border-b border-emerald-100 dark:border-emerald-900/60 text-xs text-emerald-900 dark:text-emerald-200">
+                <div className="flex items-center gap-2">
+                  <ListFilter size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>
+                    Menampilkan riwayat log sesi presensi untuk: <strong className="text-emerald-950 dark:text-white underline decoration-emerald-400 font-extrabold">{searchQuery}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setPage(1);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/80 dark:hover:bg-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs font-bold transition cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    ✕ Tampilkan Semua Mahasiswa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setActiveTab("REKAP_MAHASISWA");
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1"
+                  >
+                    <ChevronLeft size={13} />
+                    <span>Kembali ke Rekapitulasi Mahasiswa</span>
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>

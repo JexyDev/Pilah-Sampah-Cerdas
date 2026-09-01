@@ -1764,15 +1764,24 @@ export class KknAttendanceService {
     }
 
     const storedMins = attendance.actualInZoneMinutes ?? 0;
-    const liveMins =
-      attendance.status === "BERLANGSUNG" && attendance.attendedAt
-        ? calculateLiveInZoneMinutes(attendance)
-        : storedMins;
+    const isPaused = attendance.status === "TERJEDA";
+    const jedaLogsArray = (attendance.jedaLogs as any[]) || [];
+    const hasJeda = jedaLogsArray.length > 0;
+
+    let liveMins = storedMins;
+    if (attendance.attendedAt) {
+      liveMins = calculateLiveInZoneMinutes(attendance);
+    }
 
     // [SSOT Backend]: Durasi mutlak berasal dari kalkulasi internal backend (mengabaikan input durasi dari mobile payload)
     let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, logsCalculatedMins));
-    if (actualInZoneMins === 0 && rawDurationMinutes > 0) {
+    
+    // Only fallback to rawDurationMinutes if session was active (NOT paused), had NO jeda logs, and actualInZoneMins is still 0 (e.g. legacy/no-gps ping)
+    if (actualInZoneMins === 0 && rawDurationMinutes > 0 && !isPaused && !hasJeda) {
       actualInZoneMins = Math.min(480, rawDurationMinutes);
+    } else if (isPaused || hasJeda) {
+      // If paused or has jeda, liveMins strictly caps duration to before-pause
+      actualInZoneMins = Math.min(480, liveMins);
     }
 
     // Determine final status: HADIR_MEMENUHI or HADIR_TIDAK_MEMENUHI
@@ -4199,12 +4208,16 @@ export class KknAttendanceService {
 
     for (const r of allSummaryRecords) {
       const st = String(r.status || "").toUpperCase();
-      const storedMinsAgg = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
+      const jedaLogsArr = (r.jedaLogs as any[]) || [];
+      const isPaused = st === "TERJEDA" || (jedaLogsArr.length > 0 && jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda && !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
 
-      let mins = storedMinsAgg;
+      let mins = Math.min(480, Math.max(0, r.actualInZoneMinutes ?? 0));
       if (st === "BERLANGSUNG" && !r.checkOutAt && r.attendedAt) {
         mins = calculateLiveInZoneMinutes(r);
-      } else if (mins === 0 && r.attendedAt && r.checkOutAt) {
+      } else if (isPaused || jedaLogsArr.length > 0) {
+        const liveCapped = calculateLiveInZoneMinutes(r);
+        mins = Math.min(mins, liveCapped);
+      } else if (mins === 0 && r.attendedAt && r.checkOutAt && r.actualInZoneMinutes === null) {
         const diff = Math.floor((r.checkOutAt.getTime() - r.attendedAt.getTime()) / 60000);
         mins = Math.min(480, Math.max(0, diff));
       }
@@ -4304,15 +4317,17 @@ export class KknAttendanceService {
 
     const items = records.map((att) => {
       const st = String(att.status || "").toUpperCase();
-      const storedMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      const jedaLogsArr = (att.jedaLogs as any[]) || [];
+      const isPaused = st === "TERJEDA" || (jedaLogsArr.length > 0 && jedaLogsArr[jedaLogsArr.length - 1]?.waktuJeda && !jedaLogsArr[jedaLogsArr.length - 1]?.waktuResume);
 
-      let actualMins = storedMins;
-      if (st === "BERLANGSUNG" && !att.checkOutAt) {
-        // Prioritaskan nilai DB (storedMins) yang sudah mencerminkan jeda/keluar zona.
-        // Fallback ke live kalkulasi hanya jika DB masih 0 (baru mulai, belum ada ping).
+      let actualMins = Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      if (st === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
         const liveMins = calculateLiveInZoneMinutes(att);
-        actualMins = storedMins > 0 ? storedMins : liveMins;
-      } else if (actualMins === 0 && att.attendedAt && att.checkOutAt) {
+        actualMins = actualMins > 0 ? actualMins : liveMins;
+      } else if (isPaused || jedaLogsArr.length > 0) {
+        const liveCapped = calculateLiveInZoneMinutes(att);
+        actualMins = Math.min(actualMins, liveCapped);
+      } else if (actualMins === 0 && att.attendedAt && att.checkOutAt && att.actualInZoneMinutes === null) {
         const diff = Math.floor((att.checkOutAt.getTime() - att.attendedAt.getTime()) / 60000);
         actualMins = Math.min(480, Math.max(0, diff));
       }
@@ -4379,6 +4394,7 @@ export class KknAttendanceService {
         latitude: att.latitude ? Number(att.latitude) : null,
         longitude: att.longitude ? Number(att.longitude) : null,
         method: att.method,
+        jedaLogs: jedaLogsArr,
       };
     });
 

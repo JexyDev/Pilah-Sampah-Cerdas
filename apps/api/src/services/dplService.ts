@@ -1693,6 +1693,7 @@ export const dplService = {
       endDate: h.endDate,
       reviewedAt: h.reviewedAt || h.updatedAt,
       rejectionReason: h.rejectionReason,
+      evidenceUrl: h.evidenceUrl,
     }));
   },
 

@@ -158,6 +158,7 @@ export interface ApprovalHistoryLog {
   endDate?: string;
   reviewedAt: string;
   rejectionReason?: string;
+  evidenceUrl?: string;
 }
 
 export interface AspekPenilaianItem {

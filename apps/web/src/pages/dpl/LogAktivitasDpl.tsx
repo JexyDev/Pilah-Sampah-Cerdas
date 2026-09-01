@@ -35,8 +35,6 @@ import {
   Briefcase,
   User,
   CheckCircle2,
-  ArrowRightCircle,
-  Users,
   Camera,
   Image as ImageIcon,
   ExternalLink,
@@ -163,15 +161,6 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  // Helper Format Bullet Points
-  const parseBulletPoints = (text?: string | null, fallbackItems: string[] = []): string[] => {
-    if (!text || text.trim() === "" || text === "-") return fallbackItems;
-    const lines = text
-      .split(/\r?\n|•|;/)
-      .map((s) => s.replace(/^[-*•\d.)\s]+/, "").trim())
-      .filter((s) => s.length > 0);
-    return lines.length > 0 ? lines : fallbackItems;
-  };
 
   // Kalkulasi Durasi Dinamis Real-Time dengan Satuan "Jam"
   const calculatedDuration = useMemo(() => {
@@ -1417,60 +1406,24 @@ export const LogAktivitasDpl: React.FC = () => {
               </div>
             </div>
 
-            {/* 3. Card: 2-Column Split (Hasil Kegiatan & Tindak Lanjut) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Hasil Kegiatan */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs sm:text-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Hasil Kegiatan</span>
-                </div>
-                <ul className="space-y-1.5 text-xs text-slate-700 pl-4 list-disc marker:text-emerald-500 leading-relaxed">
-                  {parseBulletPoints(selectedDetailLog.hasilTindakLanjut, [
-                    "Prioritas program kerja telah disepakati.",
-                    "Pembagian tugas mahasiswa telah ditetapkan.",
-                  ]).map((point, idx) => (
-                    <li key={idx}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Tindak Lanjut */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
-                <div className="flex items-center gap-2 text-blue-800 font-bold text-xs sm:text-sm">
-                  <ArrowRightCircle className="w-4 h-4 text-blue-600" />
-                  <span>Tindak Lanjut</span>
-                </div>
-                <ul className="space-y-1.5 text-xs text-slate-700 pl-4 list-disc marker:text-blue-500 leading-relaxed">
-                  {parseBulletPoints(selectedDetailLog.arahanEvaluasi, [
-                    "Kelompok menyusun data dasar wilayah.",
-                    "DPL melakukan pemantauan pada pekan berikutnya.",
-                  ]).map((point, idx) => (
-                    <li key={idx}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            {/* 4. Card: Pihak yang Terlibat */}
+            {/* 3. Card: Hasil Kegiatan & Tindak Lanjut */}
             <div className="bg-white rounded-2xl border border-slate-200/80 p-4 space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm">
-                <Users className="w-4 h-4 text-slate-600" />
-                <span>Pihak yang Terlibat</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Hasil Kegiatan & Tindak Lanjut</span>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {["DPL", "Mahasiswa KKN", "Kelurahan", "PKBS"].map((party, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3.5 py-1 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 shadow-2xs"
-                  >
-                    {party}
-                  </span>
-                ))}
-              </div>
+              {selectedDetailLog.hasilTindakLanjut || selectedDetailLog.arahanEvaluasi ? (
+                <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3.5 text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                  {selectedDetailLog.hasilTindakLanjut || selectedDetailLog.arahanEvaluasi}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">
+                  Tidak ada catatan hasil atau tindak lanjut kegiatan.
+                </p>
+              )}
             </div>
 
-            {/* 5. Card: Bukti Dokumentasi */}
+            {/* 4. Card: Bukti Dokumentasi */}
             {selectedDetailLog.fotoBuktiUrl && (() => {
               const buktiList = Array.from(
                 new Set(selectedDetailLog.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean))

@@ -781,7 +781,7 @@ const MasterRuleEngine: React.FC = () => {
                   className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-black text-slate-800 dark:text-slate-100 focus:outline-none focus:border-teal-500 text-center"
                 />
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Jumlah minimal aktivitas logbook terverifikasi DPL (rata-rata {Math.ceil((config.logbookTargetKegiatan || 24) / 4)} aktivitas/pekan selama 4 pekan).
+                  Jumlah minimal aktivitas logbook terverifikasi DPL (rerata {Math.ceil((config.logbookTargetKegiatan || 24) / 4)} aktivitas/pekan selama 4 pekan).
                 </p>
               </div>
 

@@ -454,7 +454,7 @@ export const AnalyticsOverviewBoard: React.FC = () => {
             </div>
 
             <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/40 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1">
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Rata-rata</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Rerata</span>
               <span className="text-emerald-700 dark:text-emerald-300">{avgCompliance}%</span>
             </div>
           </div>
@@ -625,27 +625,27 @@ export const AnalyticsOverviewBoard: React.FC = () => {
         {/* 6. Tabel Peringkat Kelompok KKN */}
         <TableSection
           title="Peringkat Kelompok KKN"
-          subtitle="Tabel rata-rata skor akhir kelompok kerja KKN"
+          subtitle="Tabel rerata skor akhir kelompok kerja KKN"
           icon={Award}
           iconBgColor="bg-indigo-50 dark:bg-indigo-950/60 border-indigo-200 dark:border-indigo-700/40"
           iconTextColor="text-indigo-600 dark:text-indigo-400"
           data={topKelompok}
           nameHeader="Kelompok KKN"
           subHeader="Keterangan"
-          scoreHeader="Rata-rata Skor"
+          scoreHeader="Rerata Skor"
         />
 
         {/* 7. Tabel Peringkat Dosen Pendamping Lapangan (DPL) */}
         <TableSection
           title="Peringkat Dosen Pendamping Lapangan (DPL)"
-          subtitle="Tabel pencapaian &amp; skor rata-rata binaan DPL"
+          subtitle="Tabel pencapaian &amp; skor rerata binaan DPL"
           icon={FileText}
           iconBgColor="bg-[#009966]/10 dark:bg-emerald-950/60 border-[#009966]/20 dark:border-emerald-700/40"
           iconTextColor="text-[#009966] dark:text-emerald-400"
           data={topDpl}
           nameHeader="Nama DPL"
           subHeader="Kelompok Binaan"
-          scoreHeader="Rata-rata Skor Binaan"
+          scoreHeader="Rerata Skor Binaan"
         />
 
       </div>

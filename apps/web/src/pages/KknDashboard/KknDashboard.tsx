@@ -1060,7 +1060,7 @@ const KknDashboardContent: React.FC = () => {
                           Kelurahan {kel.name}
                         </h4>
                         <p className="text-xs text-slate-600 dark:text-slate-400">
-                          Skor Kepatuhan Rata-rata:{" "}
+                          Skor Kepatuhan Rerata:{" "}
                           <strong className="text-emerald-600 font-bold">{score}%</strong>
                         </p>
                         <p className="text-[11px] text-slate-400">

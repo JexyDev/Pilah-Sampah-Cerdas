@@ -2543,6 +2543,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <span>{showMap ? "Sembunyikan Peta" : "Buka Peta GPS"}</span>
           </button>
 
+          {/* Tombol Akses Laporan & Log Presensi */}
+          <Link
+            to="/monitoring-kegiatan/laporan-presensi"
+            className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-300 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shadow-2xs active:scale-95"
+            title="Buka Laporan Rekapitulasi & Log Detail Presensi Mahasiswa"
+          >
+            <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>Laporan &amp; Log Presensi</span>
+          </Link>
+
           {isSuperUserOrDev && (
             <button
               type="button"
@@ -3562,8 +3572,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             TARGET MIN (TM)
                             <span className="block text-[9px] font-normal opacity-60 normal-case">menit/hari</span>
                           </th>
-                          <th className="py-3.5 px-4 text-center min-w-[170px]" title="Rasio Kehadiran = DA / TM × 100%">
-                            RASIO (DA/TM×100%)
+                          <th className="py-3.5 px-4 text-center min-w-[170px]" title="Rasio Kehadiran = (DA / TM) × 100%">
+                            RASIO (DA / TM) × 100%
                           </th>
                           <th className="py-3.5 px-4 text-center">STATUS PEMENUHAN</th>
                           <th className="py-3.5 px-4 text-center">DETAIL</th>
@@ -5470,11 +5480,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     </div>
                   </div>
 
-                  {/* Rasio Kehadiran (Per Hari) — DA/TM×100% */}
+                  {/* Rasio Kehadiran (Per Hari) — (DA / TM) × 100% */}
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/70 dark:border-slate-800 space-y-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-slate-600 dark:text-slate-400">
-                        Rasio (DA/TM×100%) — {durationMins} mnt / {targetMins} mnt ({formatHoursToUnits(targetHours)}):
+                        Rasio (DA / TM) × 100% — {durationMins} mnt / {targetMins} mnt ({formatHoursToUnits(targetHours)}):
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{ratioPercent}%</span>

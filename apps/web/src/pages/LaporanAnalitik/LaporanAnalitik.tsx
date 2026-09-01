@@ -203,7 +203,7 @@ const LaporanAnalitik: React.FC = () => {
             <div>
               <h3 className="text-[18px] font-bold text-on-surface">Akurasi Model AI</h3>
               <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
-                Rata-rata Bergerak 30 Hari
+                Rerata Bergerak 30 Hari
               </p>
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-[11px] font-bold uppercase tracking-wider">
@@ -243,7 +243,7 @@ const LaporanAnalitik: React.FC = () => {
             <div>
               <h3 className="text-[18px] font-bold text-on-surface">Latensi Respons</h3>
               <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">
-                Rata-rata per Jam Hari Ini (ms)
+                Rerata per Jam Hari Ini (ms)
               </p>
             </div>
             <button className="text-on-surface-variant hover:text-blue-600 transition-colors">
@@ -413,7 +413,7 @@ const LaporanAnalitik: React.FC = () => {
             </div>
             <div className="text-center border-l border-outline-variant/30">
               <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Durasi Rata-rata
+                Durasi Rerata
               </p>
               <p className="text-[18px] font-bold text-on-surface">{data.avgSessionDuration ?? "—"}</p>
             </div>

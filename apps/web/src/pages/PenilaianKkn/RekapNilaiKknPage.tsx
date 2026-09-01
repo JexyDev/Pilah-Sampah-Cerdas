@@ -584,7 +584,7 @@ export const RekapNilaiKknPage: React.FC = () => {
             <Award size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rata-rata Nilai</p>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">Rerata Nilai</p>
             <p className="text-lg sm:text-xl font-black text-indigo-600 dark:text-indigo-400">{kpiStats.avgScore}</p>
           </div>
         </div>

@@ -41,6 +41,7 @@ import {
   type ApprovalHistoryLog,
   type ProgramKerjaItem,
 } from "../../services/dplService";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 // ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
 type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
@@ -447,6 +448,7 @@ export const DplDashboardPage: React.FC = () => {
       "Tanggal Mulai",
       "Tanggal Selesai",
       "Alasan / Keterangan",
+      "Lampiran / Link Bukti",
       "Status Keputusan",
       "Waktu Verifikasi",
       "Catatan Penolakan",
@@ -471,6 +473,10 @@ export const DplDashboardPage: React.FC = () => {
         ? new Date(log.reviewedAt).toLocaleString("id-ID")
         : "-";
 
+      const attachmentUrl = log.evidenceUrl
+        ? resolveImageUrl(log.evidenceUrl) || log.evidenceUrl
+        : "-";
+
       return [
         index + 1,
         log.studentName || "-",
@@ -478,6 +484,7 @@ export const DplDashboardPage: React.FC = () => {
         startDateFormatted,
         endDateFormatted,
         log.reason || "-",
+        attachmentUrl,
         statusLabel,
         reviewedAtFormatted,
         log.rejectionReason || "-",
@@ -493,6 +500,7 @@ export const DplDashboardPage: React.FC = () => {
       { wch: 15 },
       { wch: 15 },
       { wch: 30 },
+      { wch: 35 },
       { wch: 20 },
       { wch: 22 },
       { wch: 30 },
@@ -504,78 +512,6 @@ export const DplDashboardPage: React.FC = () => {
     );
   };
 
-  // Export Excel (.xlsx) Program Kerja DPL
-  const handleExportProkerExcel = () => {
-    if (!effectiveProkers || effectiveProkers.length === 0) {
-      toast.error("Tidak ada program kerja untuk diekspor.");
-      return;
-    }
-
-    const headers = [
-      "No",
-      "Nomor Proker",
-      "Judul / Deskripsi Proker",
-      "Kategori",
-      "Sumber Usulan",
-      "Kelompok KKN",
-      "Kelurahan",
-      "Waktu Pelaksanaan",
-      "Kebutuhan Biaya (Rp)",
-      "Status Usulan",
-      "Status Pelaksanaan",
-      "Status Penilaian",
-      "Skor Penilaian",
-      "Predikat",
-      "Link Google Drive / Lampiran",
-      "Catatan DPL",
-    ];
-
-    const rows = effectiveProkers.map((p: any, idx: number) => {
-      const kelompok = groups.find((g: any) => g.id === p.kelompokId);
-      return [
-        idx + 1,
-        p.nomor ?? idx + 1,
-        p.deskripsi || p.judul || "-",
-        p.kategori || "LAINNYA",
-        p.sumber || "MAHASISWA",
-        kelompok?.name || p.kelompokName || "-",
-        kelompok?.kelurahan || p.kelurahan || "-",
-        p.waktuPelaksanaan || "-",
-        Number(p.kebutuhanBiaya || 0),
-        p.statusUsulan || p.status || "BELUM_DISETUJUI",
-        p.statusPelaksanaan || "BELUM_MULAI",
-        p.statusPenilaian || "BELUM_DINILAI",
-        p.skorPenilaian ? Number(p.skorPenilaian) : "-",
-        p.predikat || "-",
-        p.linkGoogleDrive || p.attachmentFile || "-",
-        p.catatanDpl || "-",
-      ];
-    });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws["!cols"] = [
-      { wch: 5 },
-      { wch: 14 },
-      { wch: 35 },
-      { wch: 18 },
-      { wch: 16 },
-      { wch: 22 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 20 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 14 },
-      { wch: 12 },
-      { wch: 35 },
-      { wch: 30 },
-    ];
-    XLSX.utils.book_append_sheet(wb, ws, "Program Kerja KKN");
-    XLSX.writeFile(wb, `Rekap_Program_Kerja_KKN_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast.success(`Berhasil mengunduh rekap ${effectiveProkers.length} program kerja ke Excel (.xlsx).`);
-  };
 
   // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)
   const dplKecamatanList = useMemo(() => {
@@ -1126,8 +1062,8 @@ export const DplDashboardPage: React.FC = () => {
                         {req.evidenceUrl && (
                           <button
                             type="button"
-                            onClick={() => setPreviewEvidence({ url: req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition"
+                            onClick={() => setPreviewEvidence({ url: resolveImageUrl(req.evidenceUrl) || req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80"
                           >
                             <Eye size={12} /> Lihat Surat / Foto Bukti
                           </button>
@@ -1267,7 +1203,8 @@ export const DplDashboardPage: React.FC = () => {
                   <th className="px-4 py-3.5">Nama Mahasiswa</th>
                   <th className="px-4 py-3.5">Jenis Izin</th>
                   <th className="px-4 py-3.5">Tanggal / Periode</th>
-                  <th className="px-4 py-3.5 min-w-[240px]">Alasan / Catatan</th>
+                  <th className="px-4 py-3.5 min-w-[220px]">Alasan / Catatan</th>
+                  <th className="px-4 py-3.5 text-center">Lampiran / Bukti</th>
                   <th className="px-4 py-3.5 text-center">Status Keputusan</th>
                 </tr>
               </thead>
@@ -1328,6 +1265,26 @@ export const DplDashboardPage: React.FC = () => {
                         {log.reason}
                       </td>
                       <td className="px-4 py-3.5 text-center">
+                        {log.evidenceUrl ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewEvidence({
+                                url: resolveImageUrl(log.evidenceUrl) || log.evidenceUrl!,
+                                title: `Surat Bukti ${log.type}: ${log.studentName}`,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-1 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80 dark:hover:bg-emerald-900/60"
+                            title="Klik untuk melihat dokumen / foto surat bukti"
+                          >
+                            <Eye size={12} />
+                            <span>Lihat Bukti</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}>
                           {isAppr || isOverr ? <CheckCircle size={12} /> : isRej ? <XCircle size={12} /> : null}
                           {badgeLabel}
@@ -1339,7 +1296,7 @@ export const DplDashboardPage: React.FC = () => {
 
                 {paginatedApprovalHistory.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-4 text-center text-slate-400 italic">
+                    <td colSpan={6} className="p-4 text-center text-slate-400 italic">
                       Belum ada data riwayat persetujuan.
                     </td>
                   </tr>
@@ -1614,17 +1571,6 @@ export const DplDashboardPage: React.FC = () => {
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              {effectiveProkers.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleExportProkerExcel}
-                  className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
-                  title={`Ekspor ${effectiveProkers.length} program kerja ke XLSX`}
-                >
-                  <FileSpreadsheet size={13} />
-                  <span>Ekspor XLSX</span>
-                </button>
-              )}
               <Link
                 to="/program-kerja-kkn"
                 className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"

@@ -135,7 +135,7 @@ const ComplianceModal: React.FC<ComplianceModalProps> = ({ locations, onClose })
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rata-rata Kepatuhan</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rerata Kepatuhan</span>
             <span className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 block">{avgPatuh}%</span>
           </div>
           <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-emerald-500/30">
