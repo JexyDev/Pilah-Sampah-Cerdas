@@ -4,6 +4,8 @@ import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../riwayat/controllers/riwayat_controller.dart' show pointHistoryProvider;
 import 'package:intl/intl.dart';
+import '../../../routes/app_routes.dart';
+
 
 final riwayatPemanfaatanProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final repo = ref.read(kknRepositoryProvider);
