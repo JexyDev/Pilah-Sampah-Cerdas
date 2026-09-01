@@ -4563,19 +4563,39 @@ export class KknAttendanceService {
         }
       }
 
-      const isMemenuhi =
-        st === "HADIR_MEMENUHI" ||
-        (["HADIR", "SELESAI"].includes(st) && actualMins >= targetMinMenit);
+      const isFinishedItem =
+        Boolean(att.checkOutAt) ||
+        [
+          "HADIR_MEMENUHI",
+          "HADIR_TIDAK_MEMENUHI",
+          "HADIR",
+          "SELESAI",
+          "SELESAI_TELAT",
+        ].includes(st);
+
+      const isMemenuhi = isFinishedItem && st !== "SELESAI_TELAT" && actualMins >= targetMinMenit;
 
       let statusDisplay = att.status;
-      if (st === "HADIR_MEMENUHI") statusDisplay = "Hadir & Memenuhi";
-      else if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT")
-        statusDisplay = "Hadir & Tidak Memenuhi";
-      else if (st === "BERLANGSUNG") statusDisplay = "Sedang di Lapangan";
-      else if (st === "TERJEDA") statusDisplay = "Terjeda";
-      else if (st.includes("SAKIT")) statusDisplay = "Sakit (Disetujui)";
-      else if (st.includes("IZIN")) statusDisplay = "Izin (Disetujui)";
-      else if (st.includes("ALPA") || st.includes("ALPHA")) statusDisplay = "Tanpa Keterangan";
+      let computedStatus = att.status;
+      if (isFinishedItem) {
+        if (st === "SELESAI_TELAT" || !isMemenuhi) {
+          computedStatus = "HADIR_TIDAK_MEMENUHI";
+          statusDisplay = "Hadir & Tidak Memenuhi";
+        } else {
+          computedStatus = "HADIR_MEMENUHI";
+          statusDisplay = "Hadir & Memenuhi";
+        }
+      } else if (st === "BERLANGSUNG") {
+        statusDisplay = "Sedang di Lapangan";
+      } else if (st === "TERJEDA") {
+        statusDisplay = "Terjeda";
+      } else if (st.includes("SAKIT")) {
+        statusDisplay = "Sakit (Disetujui)";
+      } else if (st.includes("IZIN")) {
+        statusDisplay = "Izin (Disetujui)";
+      } else if (st.includes("ALPA") || st.includes("ALPHA")) {
+        statusDisplay = "Tanpa Keterangan";
+      }
 
       const hours = Math.floor(actualMins / 60);
       const mins = actualMins % 60;
@@ -4617,7 +4637,7 @@ export class KknAttendanceService {
         durasiAktualFormatted: durasiFormatted,
         targetMinMenit,
         rasioKehadiran: Number(((actualMins / targetMinMenit) * 100).toFixed(1)),
-        status: att.status,
+        status: computedStatus,
         statusDisplay,
         isMemenuhiDurasi: isMemenuhi,
         deskripsiKegiatan: (att as any).deskripsiKegiatan ?? null,
