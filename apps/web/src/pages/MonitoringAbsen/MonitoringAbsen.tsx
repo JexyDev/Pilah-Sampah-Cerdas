@@ -4347,13 +4347,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ) : (isCompleted || String(rec.status).toUpperCase() === "HADIR_MEMENUHI" || String(rec.status).toUpperCase() === "HADIR_TIDAK_MEMENUHI" || String(rec.status).toUpperCase() === "SELESAI") ? (
                             (() => {
                               const stUpper = String(rec.status || "").toUpperCase();
-                              const isMem = rec.isMemenuhiDurasi !== undefined
-                                ? rec.isMemenuhiDurasi
-                                : (stUpper === "HADIR_MEMENUHI"
-                                  ? true
-                                  : (stUpper === "HADIR_TIDAK_MEMENUHI" || stUpper === "SELESAI_TELAT")
-                                  ? false
-                                  : isDurationSufficient);
+                              const isMem = stUpper === "SELESAI_TELAT"
+                                ? false
+                                : (durationMins >= targetZonaMins && durationMins > 0);
                               return isMem ? (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shrink-0">
                                   Hadir & Memenuhi
