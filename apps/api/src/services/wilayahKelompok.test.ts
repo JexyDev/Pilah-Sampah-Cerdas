@@ -188,7 +188,7 @@ describe("kknService.getWilayahKelompok", () => {
       longitude: 107.62,
     });
     expect(result.tipeArea).toBe("RADIUS");
-    expect(result.radiusMeters).toBe(200);
+    expect(result.radiusMeters).toBe(500);
   });
 
   it("should throw KELOMPOK_NOT_FOUND when student has no kelompok", async () => {
