@@ -5287,6 +5287,307 @@ export class KknAttendanceService {
 
     return updated;
   }
+
+  /**
+   * Evaluasi & Penandaan Otomatis ALPHA (Tanpa Keterangan) untuk Hari Kerja (Senin - Jumat)
+   * Berlaku jika pada hari kerja terdapat jadwal posko aktif dan mahasiswa:
+   * 1. Tidak ada presensi kegiatan (ActivityAttendance / PresensiMandiri)
+   * 2. Tidak ada pengajuan izin/sakit yang disetujui (StudentLeaveRequest)
+   * 3. Tidak ada pembuatan logbook (LogbookKkn)
+   * 
+   * Hari Sabtu dan Minggu (Weekend) DIBYPASS / DIKECUALIKAN secara mutlak dari auto-alpha.
+   */
+  async processWeekdayAutoAlpha(targetDateStr?: string): Promise<{
+    success: boolean;
+    date: string;
+    isWeekday: boolean;
+    totalEvaluatedGroups: number;
+    totalStudentsEvaluated: number;
+    totalMarkedAlpha: number;
+    totalBypassed: number;
+    reason?: string;
+  }> {
+    try {
+      const now = new Date();
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const dateStr = targetDateStr || wibNow.toISOString().slice(0, 10);
+      const targetDate = new Date(`${dateStr}T12:00:00+07:00`);
+
+      // 1. Cek Hari: Hanya Senin (1) s.d. Jumat (5)
+      // getUTCDay() dari WIB Date (atau targetDate)
+      const dayOfWeek = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
+      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+
+      if (!isWeekday) {
+        console.log(
+          `[kknAttendanceService.processWeekdayAutoAlpha] Tanggal ${dateStr} adalah akhir pekan (Sabtu/Minggu, Day ${dayOfWeek}). Auto-alpha dibypass.`
+        );
+        return {
+          success: true,
+          date: dateStr,
+          isWeekday: false,
+          totalEvaluatedGroups: 0,
+          totalStudentsEvaluated: 0,
+          totalMarkedAlpha: 0,
+          totalBypassed: 0,
+          reason: "Akhir pekan (Sabtu/Minggu) - Fleksibilitas KKN aktif tanpa auto-alpha",
+        };
+      }
+
+      // 2. Cek apakah tanggal ini adalah hari libur KKN / di luar periode KKN
+      const holidayCheck =
+        typeof configService?.isDateKknHoliday === "function"
+          ? await configService
+              .isDateKknHoliday(targetDate)
+              .catch(() => ({ isHoliday: false, reason: undefined }))
+          : { isHoliday: false, reason: undefined };
+      if (holidayCheck?.isHoliday) {
+        console.log(
+          `[kknAttendanceService.processWeekdayAutoAlpha] Tanggal ${dateStr} adalah hari libur KKN (${holidayCheck.reason}). Auto-alpha dibypass.`
+        );
+        return {
+          success: true,
+          date: dateStr,
+          isWeekday: true,
+          totalEvaluatedGroups: 0,
+          totalStudentsEvaluated: 0,
+          totalMarkedAlpha: 0,
+          totalBypassed: 0,
+          reason: holidayCheck.reason || "Hari Libur KKN / Di luar Periode",
+        };
+      }
+
+      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+      const endOfDay = new Date(`${dateStr}T23:59:59.999+07:00`);
+
+      // 3. Ambil seluruh jadwal aktif pada tanggal tersebut
+      const schedules = await prisma.schedule.findMany({
+        where: {
+          date: { gte: startOfDay, lte: endOfDay },
+          isActive: true,
+        },
+        include: {
+          kelompok: {
+            include: {
+              students: {
+                include: { user: true },
+              },
+            },
+          },
+          attendances: true,
+        },
+      });
+
+      if (!schedules || schedules.length === 0) {
+        return {
+          success: true,
+          date: dateStr,
+          isWeekday: true,
+          totalEvaluatedGroups: 0,
+          totalStudentsEvaluated: 0,
+          totalMarkedAlpha: 0,
+          totalBypassed: 0,
+          reason: "Tidak ada jadwal kegiatan aktif pada tanggal ini",
+        };
+      }
+
+      let totalEvaluatedGroups = 0;
+      let totalStudentsEvaluated = 0;
+      let totalMarkedAlpha = 0;
+      let totalBypassed = 0;
+
+      for (const sched of schedules) {
+        // Cek apakah jadwal ini ditandai skip / tidak ada kegiatan oleh kelompok/DPL
+        const isScheduleSkipped = sched.attendances.some(
+          (a) => a.status === "TIDAK_ADA_KEGIATAN" || a.status === "SKIP_KEGIATAN"
+        );
+        if (isScheduleSkipped) {
+          continue;
+        }
+
+        const students = sched.kelompok?.students || [];
+        if (students.length === 0) continue;
+
+        totalEvaluatedGroups++;
+
+        for (const st of students) {
+          totalStudentsEvaluated++;
+          const uId = st.userId;
+
+          // 1. Cek ActivityAttendance untuk jadwal ini
+          const existingAtt = sched.attendances.find((a) => a.studentId === uId);
+          if (existingAtt) {
+            const stUpper = String(existingAtt.status || "").toUpperCase();
+            if (
+              [
+                "HADIR",
+                "HADIR_MEMENUHI",
+                "HADIR_TIDAK_MEMENUHI",
+                "BERLANGSUNG",
+                "SELESAI",
+                "SELESAI_TELAT",
+                "TERJEDA",
+                "IZIN",
+                "SAKIT",
+                "TIDAK_ADA_KEGIATAN",
+                "SKIP_KEGIATAN",
+                "ALPA",
+                "ALPHA",
+              ].includes(stUpper)
+            ) {
+              totalBypassed++;
+              continue;
+            }
+          }
+
+          // 2. Cek apakah ada kehadiran di jadwal lain pada tanggal yang sama
+          const anyOtherAtt = await prisma.activityAttendance
+            ?.findFirst({
+              where: {
+                studentId: uId,
+                attendedAt: { gte: startOfDay, lte: endOfDay },
+                status: {
+                  in: [
+                    "HADIR",
+                    "HADIR_MEMENUHI",
+                    "HADIR_TIDAK_MEMENUHI",
+                    "BERLANGSUNG",
+                    "SELESAI",
+                    "TERJEDA",
+                    "IZIN",
+                    "SAKIT",
+                  ],
+                },
+              },
+            })
+            .catch(() => null);
+          if (anyOtherAtt) {
+            totalBypassed++;
+            continue;
+          }
+
+          // 3. Cek Presensi Mandiri pada tanggal yang sama
+          const mandiriAtt = await prisma.presensiMandiri
+            ?.findFirst({
+              where: {
+                studentId: uId,
+                checkInAt: { gte: startOfDay, lte: endOfDay },
+                status: { not: "DIBATALKAN" },
+              },
+            })
+            .catch(() => null);
+          if (mandiriAtt) {
+            totalBypassed++;
+            continue;
+          }
+
+          // 4. Cek Pengajuan Izin/Sakit yang Disetujui
+          const approvedLeave = await prisma.studentLeaveRequest
+            ?.findFirst({
+              where: {
+                studentId: uId,
+                status: "APPROVED",
+                startDate: { lte: endOfDay },
+                endDate: { gte: startOfDay },
+              },
+            })
+            .catch(() => null);
+          if (approvedLeave) {
+            const leaveStatus = approvedLeave.type === "SAKIT" ? "SAKIT" : "IZIN";
+            await prisma.activityAttendance.upsert({
+              where: {
+                studentId_scheduleId: {
+                  studentId: uId,
+                  scheduleId: sched.id,
+                },
+              },
+              create: {
+                studentId: uId,
+                scheduleId: sched.id,
+                attendedAt: startOfDay,
+                method: "LEAVE_AUTO",
+                latitude: sched.latitude || -6.89,
+                longitude: sched.longitude || 107.61,
+                status: leaveStatus,
+                actualInZoneMinutes: 240,
+                deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${approvedLeave.reason || "-"}`,
+              },
+              update: {
+                status: leaveStatus,
+                method: "LEAVE_AUTO",
+                actualInZoneMinutes: 240,
+                deskripsiKegiatan: `Izin/Sakit Disetujui DPL: ${approvedLeave.reason || "-"}`,
+              },
+            });
+            totalBypassed++;
+            continue;
+          }
+
+          // 5. Cek Pembuatan Logbook KKN pada tanggal yang sama
+          const studentLogbook = await prisma.logbookKkn
+            ?.findFirst({
+              where: {
+                penulisId: uId,
+                tanggalKegiatan: { gte: startOfDay, lte: endOfDay },
+              },
+            })
+            .catch(() => null);
+          if (studentLogbook) {
+            totalBypassed++;
+            continue;
+          }
+
+          // Jika sama sekali tidak ada presensi, izin/sakit, dan logbook pada hari kerja ini:
+          // Tandai secara otomatis sebagai ALPA (Tanpa Keterangan)
+          await prisma.activityAttendance.upsert({
+            where: {
+              studentId_scheduleId: {
+                studentId: uId,
+                scheduleId: sched.id,
+              },
+            },
+            create: {
+              studentId: uId,
+              scheduleId: sched.id,
+              attendedAt: startOfDay,
+              method: "ALPA_AUTO",
+              latitude: sched.latitude || -6.89,
+              longitude: sched.longitude || 107.61,
+              status: "ALPA",
+              actualInZoneMinutes: 0,
+              deskripsiKegiatan:
+                "Tanpa Keterangan (Otomatis Sistem: Tidak ada presensi, izin, atau logbook pada hari kerja)",
+            },
+            update: {
+              status: "ALPA",
+              method: "ALPA_AUTO",
+              actualInZoneMinutes: 0,
+              deskripsiKegiatan:
+                "Tanpa Keterangan (Otomatis Sistem: Tidak ada presensi, izin, atau logbook pada hari kerja)",
+            },
+          });
+          totalMarkedAlpha++;
+        }
+      }
+
+      console.log(
+        `[kknAttendanceService.processWeekdayAutoAlpha] Selesai evaluasi ${dateStr}. Dievaluasi: ${totalStudentsEvaluated} mahasiswa, Ditandai Alpa: ${totalMarkedAlpha}, Bypassed/Ada Kegiatan: ${totalBypassed}`
+      );
+
+      return {
+        success: true,
+        date: dateStr,
+        isWeekday: true,
+        totalEvaluatedGroups,
+        totalStudentsEvaluated,
+        totalMarkedAlpha,
+        totalBypassed,
+      };
+    } catch (err: any) {
+      console.error("[kknAttendanceService.processWeekdayAutoAlpha] Error:", err);
+      throw err;
+    }
+  }
 }
 
 export const kknAttendanceService = new KknAttendanceService();

@@ -1236,9 +1236,14 @@ export const dplService = {
         const rejectedAbsenceCount = leaveRequests.filter((r) => r.status === "REJECTED").length;
 
         const totalSchedules = await getEligiblePastSchedulesCount(st.kelompokId || undefined);
-        const attendedCount = attendances.length;
-        // Fleksibilitas KKN: Tidak ada sistem alpha otomatis pada jadwal kosong/hari fleksibel
-        const alphaCount = 0;
+        const attendedCount = attendances.filter((a) => {
+          const stUpper = String(a.status || "").toUpperCase();
+          return !["ALPA", "ALPHA", "TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"].includes(stUpper);
+        }).length;
+        const alphaCount = attendances.filter((a) => {
+          const stUpper = String(a.status || "").toUpperCase();
+          return stUpper === "ALPA" || stUpper === "ALPHA";
+        }).length;
 
         const configTargets = await dplService.getConfigTargets();
         const ruleConfigs = await configService.getRuleEngineConfigs();
@@ -1305,7 +1310,8 @@ export const dplService = {
           remainingMinutes,
           targetHours,
           progressPercentage,
-          statusKehadiranLabel: "Tertib Presensi",
+          statusKehadiranLabel:
+            alphaCount > 0 ? "Perlu Perhatian (Ada Alpa)" : "Tertib Presensi",
           attendances: attendances.map((a) => ({
             id: a.id,
             scheduleTitle: a.schedule?.title || "Kegiatan KKN",

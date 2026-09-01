@@ -980,4 +980,21 @@ export const kknAttendanceController = {
       res.status(400).json({ success: false, message: error.message });
     }
   },
+
+  processAutoAlpha: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { date } = req.body || {};
+      const result = await kknAttendanceService.processWeekdayAutoAlpha(date);
+      res.status(200).json({
+        success: true,
+        message: result.isWeekday
+          ? `Evaluasi auto-alpha hari kerja (${result.date}) selesai. Ditandai Alpa: ${result.totalMarkedAlpha}, Mahasiswa dengan aktivitas: ${result.totalBypassed}.`
+          : `Tanggal ${result.date} adalah akhir pekan (Sabtu/Minggu). Auto-alpha dibypass.`,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[KknAttendanceController] processAutoAlpha error:", error);
+      res.status(500).json({ success: false, message: error.message || "Internal server error" });
+    }
+  },
 };

@@ -83,6 +83,14 @@ vi.mock("../lib/prisma.js", () => {
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
       },
+      presensiMandiri: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      logbookKkn: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
       $transaction: vi.fn(async (cb) => cb(prisma)),
     },
   };
@@ -97,6 +105,7 @@ vi.mock("./configService.js", () => {
         attendanceMinDurationSeconds: 0,
       }),
       getConfig: vi.fn(),
+      isDateKknHoliday: vi.fn().mockResolvedValue({ isHoliday: false }),
     },
   };
 });
@@ -1370,6 +1379,102 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
           longitude: farLng,
         })
       ).rejects.toThrow(/OUT_OF_GEOFENCE/);
+    });
+  });
+
+  describe("processWeekdayAutoAlpha", () => {
+    it("should bypass auto-alpha when date is Saturday or Sunday (Weekend)", async () => {
+      // 2026-09-06 is Sunday
+      const result = await service.processWeekdayAutoAlpha("2026-09-06");
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(false);
+      expect(result.totalMarkedAlpha).toBe(0);
+      expect(result.reason).toContain("Akhir pekan");
+    });
+
+    it("should mark student as ALPA on a weekday when there is no activity, leave, or logbook", async () => {
+      // 2026-09-01 is Tuesday (Weekday)
+      const targetDate = "2026-09-01";
+      const schedId = "sch-weekday-1";
+      const studentId = "student-alpha-1";
+
+      vi.mocked(prisma.schedule.findMany).mockResolvedValueOnce([
+        {
+          id: schedId,
+          title: "Kegiatan Posko KKN Kelompok 1",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          isActive: true,
+          attendances: [],
+          kelompok: {
+            id: "kel-1",
+            name: "Kelompok 1",
+            students: [{ userId: studentId, user: { id: studentId, name: "Mahasiswa Alpha" } }],
+          },
+        } as any,
+      ]);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.presensiMandiri.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLeaveRequest.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.logbookKkn.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({ id: "att-alpa-1" } as any);
+
+      const result = await service.processWeekdayAutoAlpha(targetDate);
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(true);
+      expect(result.totalMarkedAlpha).toBe(1);
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            studentId_scheduleId: {
+              studentId,
+              scheduleId: schedId,
+            },
+          },
+          create: expect.objectContaining({
+            status: "ALPA",
+            method: "ALPA_AUTO",
+          }),
+        })
+      );
+    });
+
+    it("should bypass student when student submitted a logbook on that weekday", async () => {
+      const targetDate = "2026-09-01";
+      const schedId = "sch-weekday-2";
+      const studentId = "student-logbook-1";
+
+      vi.mocked(prisma.schedule.findMany).mockResolvedValueOnce([
+        {
+          id: schedId,
+          title: "Kegiatan Posko KKN Kelompok 2",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          isActive: true,
+          attendances: [],
+          kelompok: {
+            id: "kel-2",
+            name: "Kelompok 2",
+            students: [{ userId: studentId, user: { id: studentId, name: "Mahasiswa Logbook" } }],
+          },
+        } as any,
+      ]);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.presensiMandiri.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLeaveRequest.findFirst).mockResolvedValue(null);
+      // Student has logbook:
+      vi.mocked(prisma.logbookKkn.findFirst).mockResolvedValueOnce({
+        id: "logbook-1",
+        penulisId: studentId,
+      } as any);
+
+      const result = await service.processWeekdayAutoAlpha(targetDate);
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(true);
+      expect(result.totalMarkedAlpha).toBe(0);
+      expect(result.totalBypassed).toBe(1);
     });
   });
 });
