@@ -24,6 +24,7 @@ import {
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 export interface CuratedActivityItem {
   id: string;
@@ -44,6 +45,9 @@ export const KurasiLandingPage: React.FC = () => {
   const [activities, setActivities] = useState<CuratedActivityItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState<boolean>(false);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   // Form modal state
   const [showModal, setShowModal] = useState<boolean>(false);
