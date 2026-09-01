@@ -281,7 +281,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           name: p.nama || p.name || "Posko KKN",
           lat: Number(p.latitude),
           lng: Number(p.longitude),
-          radius: Number(p.radius) || 150,
+          radius: Number(p.radius) || 500,
         }));
         setAllGroupPoskos(mapped);
         setPosko(mapped[0]);
@@ -300,7 +300,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           name: p.nama || p.name || "Posko KKN",
           lat: Number(p.latitude),
           lng: Number(p.longitude),
-          radius: p.radiusMeters || 150,
+          radius: p.radiusMeters || 500,
         }));
         setAllGroupPoskos(mapped);
         setPosko(mapped[0]);
@@ -310,7 +310,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
         name: "Posko KKN Kelurahan",
         lat: -6.8856,
         lng: 107.6135,
-        radius: 200,
+        radius: 500,
       });
     }
   };

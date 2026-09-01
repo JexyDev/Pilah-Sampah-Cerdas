@@ -32,7 +32,7 @@ async function buildGeofence(
         where: { kelompokId: schedule.kelompokId },
       });
       if (posko && posko.latitude && posko.longitude) {
-        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 200;
+        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 500;
         return {
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
@@ -47,7 +47,7 @@ async function buildGeofence(
         orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
       });
       if (multiPosko && multiPosko.latitude && multiPosko.longitude) {
-        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 200;
+        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 500;
         return {
           latitude: Number(multiPosko.latitude),
           longitude: Number(multiPosko.longitude),
@@ -65,7 +65,7 @@ async function buildGeofence(
         return {
           latitude: Number(facPosko.latitude),
           longitude: Number(facPosko.longitude),
-          radius: Math.max(150, Number(schedule.radius) || 200),
+          radius: Math.max(150, Number(schedule.radius) || 500),
           polygon: schedule.polygon,
         };
       }
@@ -79,7 +79,7 @@ async function buildGeofence(
     return {
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
-      radius: Math.max(150, Number(schedule.radius) || 200),
+      radius: Math.max(150, Number(schedule.radius) || 500),
       polygon: schedule.polygon,
     };
   }
@@ -3061,7 +3061,7 @@ export class KknAttendanceService {
       let poskoLat = -6.8915; // default Coblong
       let poskoLng = 107.6107;
       let poskoName = `Posko KKN ${group?.name || "Mahasiswa"}`;
-      const poskoRadius = Math.max(150, Number((registeredPosko as any)?.radius) || 200);
+      const poskoRadius = Math.max(150, Number((registeredPosko as any)?.radius) || 500);
 
       if (registeredPosko) {
         poskoLat = Number(registeredPosko.latitude);
@@ -3305,7 +3305,7 @@ export class KknAttendanceService {
         ? Math.max(150, Number(officialPosko.radius))
         : sch.radius
           ? Math.max(150, Number(sch.radius))
-          : 200;
+          : 500;
       const titleStr = officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : sch.title;
       const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
 

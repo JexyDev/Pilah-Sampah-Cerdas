@@ -100,10 +100,10 @@ export const scheduleService = {
       try {
         const ruleConfigs = await configService.getRuleEngineConfigs();
         data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
-          ? 200 + (ruleConfigs as any).attendanceGeofenceBufferMeters
-          : 200;
+          ? 500 + (ruleConfigs as any).attendanceGeofenceBufferMeters
+          : 500;
       } catch (_err) {
-        data.radius = 200;
+        data.radius = 500;
       }
     }
     const schedule = await prisma.schedule.create({
@@ -329,18 +329,18 @@ export const scheduleService = {
           let poskoLat = -6.8915; // default Coblong
           let poskoLng = 107.6107;
           let poskoName = `Posko KKN ${group.name}`;
-          let poskoRadius = 200;
+          let poskoRadius = 500;
 
           if (officialPosko && officialPosko.latitude && officialPosko.longitude) {
             poskoLat = Number(officialPosko.latitude);
             poskoLng = Number(officialPosko.longitude);
             poskoName = officialPosko.nama || poskoName;
-            poskoRadius = Math.max(150, Number(officialPosko.radius) || 200);
+            poskoRadius = Math.max(150, Number(officialPosko.radius) || 500);
           } else if (facilityPosko && facilityPosko.latitude && facilityPosko.longitude) {
             poskoLat = Number(facilityPosko.latitude);
             poskoLng = Number(facilityPosko.longitude);
             poskoName = facilityPosko.nama || poskoName;
-            poskoRadius = Math.max(150, 200);
+            poskoRadius = Math.max(150, 500);
           } else {
             // Fallback kelurahan resmi
             const kel = (group.kelurahan || group.name || "").toLowerCase();
