@@ -487,18 +487,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         );
 
         if (!state.isTracking) {
-          final statusUpper =
-              (activeItem['statusKehadiran'] ??
-                      activeItem['attendanceStatus'] ??
-                      '')
-                  .toString()
-                  .toUpperCase();
-          if (statusUpper == 'TERJEDA' && scheduleId != null) {
-            // Jangan lakukan auto-resume dan jangan nyalakan GPS otomatis
-            // Biarkan user menekan tombol 'Lanjutkan Sesi'
-          } else {
-            await startTracking(null, true);
-          }
+          await startTracking(null, true);
         }
       } else {
         state = state.copyWith(kegiatanList: list, isLoadingKegiatan: false);
