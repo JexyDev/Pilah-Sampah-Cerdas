@@ -1636,7 +1636,7 @@ export const PoskoKknPage: React.FC = () => {
 
                 const resolvedFoto = resolveImageUrl(item.foto || item.fotoUrl);
                 const isApproved = item.statusApproval === "APPROVED";
-                const itemRadius = Number(item.radius) || 150;
+                const itemRadius = Number(item.radius) || 500;
 
                 return (
                   <React.Fragment key={item.id}>
@@ -2010,7 +2010,7 @@ export const PoskoKknPage: React.FC = () => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-1.5 py-0.5 rounded-md">
                                 <Radio size={10} className="text-indigo-500" />
-                                {Number(item.radius) || 150}m
+                                {Number(item.radius) || 500}m
                               </span>
                               {hasValidCoords ? (
                                 <button
@@ -2345,7 +2345,7 @@ export const PoskoKknPage: React.FC = () => {
                   </span>
                   <p className="font-extrabold text-sm text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
                     <Radio size={14} className="text-indigo-500" />
-                    <span>{Number(detailModalPosko.radius) || 150} Meter</span>
+                    <span>{Number(detailModalPosko.radius) || 500} Meter</span>
                   </p>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 sm:text-right">
@@ -2609,7 +2609,7 @@ export const PoskoKknPage: React.FC = () => {
                     Radius Geofence Presensi (Meter)
                   </label>
                   <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-lg">
-                    {formData.radius || 150} meter
+                    {formData.radius || 500} meter
                   </span>
                 </div>
 
@@ -2621,7 +2621,7 @@ export const PoskoKknPage: React.FC = () => {
                       min={10}
                       max={5000}
                       step={10}
-                      placeholder="150"
+                      placeholder="500"
                       value={formData.radius}
                       onChange={(e) => setFormData((prev) => ({ ...prev, radius: e.target.value }))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-900 dark:text-slate-100 pr-16"
@@ -2636,7 +2636,7 @@ export const PoskoKknPage: React.FC = () => {
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Pilihan Cepat:</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {[100, 150, 200, 300, 500].map((r) => (
+                    {[150, 300, 500, 750, 1000].map((r) => (
                       <button
                         key={r}
                         type="button"
@@ -2647,7 +2647,7 @@ export const PoskoKknPage: React.FC = () => {
                             : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
                         }`}
                       >
-                        {r} m {r === 150 ? "(Standar Presensi)" : ""}
+                        {r} m {r === 500 ? "(Default Rekomendasi)" : ""}
                       </button>
                     ))}
                   </div>
