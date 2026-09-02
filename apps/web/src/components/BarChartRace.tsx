@@ -72,19 +72,19 @@ export const BarChartRace: React.FC = () => {
   const maxScore = Math.max(...sortedData.map((d) => getScore(d)), 1);
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 sm:space-y-6">
       {/* Header & Metric Tabs */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-slate-100 dark:border-slate-800 pb-3 sm:pb-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-700/40 shadow-2xs">
               <Award size={18} className="animate-pulse" />
             </div>
             <div>
-              <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 tracking-tight">
+              <h3 className="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100 tracking-tight">
                 Peringkat Kelurahan Teraktif
               </h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
                 Peringkat real-time hasil akumulasi data dari seluruh Rukun Warga
               </p>
             </div>
@@ -92,40 +92,40 @@ export const BarChartRace: React.FC = () => {
         </div>
 
         {/* Metric Selector Pills */}
-        <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 self-stretch sm:self-auto justify-center">
+        <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 w-full sm:w-auto justify-center overflow-x-auto scrollbar-none">
           <button
             onClick={() => setMetricTab("TONASE")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
               metricTab === "TONASE"
                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            <Scale size={13} className="text-emerald-600 dark:text-emerald-400" />
+            <Scale size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             Tonase (Kg)
           </button>
 
           <button
             onClick={() => setMetricTab("KEPATUHAN")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
               metricTab === "KEPATUHAN"
                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            <CheckCircle2 size={13} className="text-blue-600 dark:text-blue-400" />
+            <CheckCircle2 size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
             Kepatuhan (%)
           </button>
 
           <button
             onClick={() => setMetricTab("POIN")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
               metricTab === "POIN"
                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
             }`}
           >
-            <Trophy size={13} className="text-amber-500 dark:text-amber-400" />
+            <Trophy size={13} className="text-amber-500 dark:text-amber-400 shrink-0" />
             Total Poin
           </button>
         </div>

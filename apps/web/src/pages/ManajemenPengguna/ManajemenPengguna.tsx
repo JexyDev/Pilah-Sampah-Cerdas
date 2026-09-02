@@ -59,6 +59,11 @@ const detectKelurahanName = (u: any): string => {
     if (cleaned !== "-") return cleaned;
   }
 
+  const rwKelName = u?.rw?.kelurahan?.name || u?.studentProfile?.assignedRw?.kelurahan?.name || u?.studentProfile?.kelompok?.kelurahan;
+  if (rwKelName && rwKelName !== "-") {
+    return cleanKelurahanName(rwKelName);
+  }
+
   const combinedText = `${u?.name || ""} ${u?.address || ""} ${u?.wilayah || ""} ${u?.rw || ""}`.toLowerCase();
 
   const knownKelurahans = [
@@ -77,17 +82,17 @@ const detectKelurahanName = (u: any): string => {
     }
   }
 
-  return "Kel. Sadang Serang";
+  return "-";
 };
 
 const getCleanKelName = (raw: string | undefined | null) => {
-  if (!raw || raw === "-" || raw === "Kel. -") return "Cipaganti";
+  if (!raw || raw === "-" || raw === "Kel. -") return "";
   let clean = String(raw)
     .replace(/^Kel\.\s*/i, "")
     .replace(/^urahan\s*/i, "")
     .replace(/^Kelurahan\s*/i, "")
     .trim();
-  return clean && clean !== "-" ? clean : "Cipaganti";
+  return clean && clean !== "-" ? clean : "";
 };
 
 const formatKecamatanName = (raw: string | undefined | null, u?: any): string => {
@@ -96,21 +101,17 @@ const formatKecamatanName = (raw: string | undefined | null, u?: any): string =>
     clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
     if (clean && clean !== "-") return `Kecamatan ${clean}`;
   }
-  return "Kecamatan Coblong";
+  const relKec = u?.rw?.kelurahan?.kecamatan?.name || u?.studentProfile?.kelompok?.kecamatan;
+  if (relKec && relKec !== "-") {
+    let cleanRel = String(relKec).replace(/^Kecamatan\s*/i, "").trim();
+    return `Kecamatan ${cleanRel}`;
+  }
+  return "-";
 };
 
 const getCleanKabupatenName = (raw: string | undefined | null): string => {
   if (!raw || raw === "-" || raw.trim() === "") return "-";
   return String(raw).trim();
-};
-
-const KELURAHAN_RW_MAP: Record<string, string[]> = {
-  Cipaganti: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07"],
-  Dago: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13"],
-  "Lebak Gede": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13"],
-  "Lebak Siliwangi": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06"],
-  "Sadang Serang": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13", "RW 14", "RW 15", "RW 16", "RW 17", "RW 18", "RW 19", "RW 20", "RW 21"],
-  Sekeloa: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13", "RW 14", "RW 15", "RW 16"],
 };
 
 
@@ -357,19 +358,11 @@ const ManajemenPengguna: React.FC = () => {
       }
     }
 
-    if (uniqueList.length > 0) {
-      return uniqueList.sort((a: any, b: any) => {
-        const numA = parseInt(a.cleanName.replace(/\D/g, "") || "0", 10);
-        const numB = parseInt(b.cleanName.replace(/\D/g, "") || "0", 10);
-        return numA - numB;
-      });
-    }
-
-    return Array.from({ length: 15 }, (_, i) => ({
-      id: (i + 1).toString(),
-      name: `RW ${(i + 1).toString().padStart(2, "0")}`,
-      cleanName: `RW ${(i + 1).toString().padStart(2, "0")}`
-    }));
+    return uniqueList.sort((a: any, b: any) => {
+      const numA = parseInt(a.cleanName.replace(/\D/g, "") || "0", 10);
+      const numB = parseInt(b.cleanName.replace(/\D/g, "") || "0", 10);
+      return numA - numB;
+    });
   }, [areasList, modalKelurahan]);
 
   // Helper to normalize kecamatan name (e.g. "Kecamatan Coblong" <-> "Coblong")
@@ -380,11 +373,11 @@ const ManajemenPengguna: React.FC = () => {
 
   // Dynamically filter Kota / Kabupaten by selected Provinsi
   const filteredKabupatenList = useMemo(() => {
-    if (!formData.provinsi || provinsiList.length === 0) return [];
+    if (!formData.provinsi || provinsiList.length === 0) return kabupatenList;
     const selectedProv = provinsiList.find(
       (p: any) => (p.name || p.nama || "").toLowerCase() === formData.provinsi.toLowerCase()
     );
-    if (!selectedProv) return [];
+    if (!selectedProv) return kabupatenList;
     return kabupatenList.filter((kb: any) => {
       const pId = kb.provinsiId || kb.provinsi?.id;
       const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
@@ -394,33 +387,19 @@ const ManajemenPengguna: React.FC = () => {
 
   // Dynamically filter Kecamatan by selected Kota / Kabupaten
   const filteredKecamatanList = useMemo(() => {
-    const defaultList = kecamatanList && kecamatanList.length > 0
-      ? kecamatanList
-      : [{ id: 6, name: "Kecamatan Coblong" }];
-    if (!formData.kabupaten) return defaultList;
+    if (!formData.kabupaten) return kecamatanList;
     const kabClean = formData.kabupaten.toLowerCase();
-    const filtered = defaultList.filter((kc: any) => {
+    const filtered = kecamatanList.filter((kc: any) => {
       const kId = kc.kabupatenId || kc.kabupaten?.id;
       const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
-      return kName === kabClean || kName.includes(kabClean) || kabClean.includes(kName) || (kId && Number(kId) === 1);
+      return kName === kabClean || kName.includes(kabClean) || kabClean.includes(kName);
     });
-    return filtered.length > 0 ? filtered : defaultList;
+    return filtered.length > 0 ? filtered : kecamatanList;
   }, [kabupatenList, kecamatanList, formData.kabupaten]);
 
-  // Dynamically filter Kelurahan by selected Kecamatan (STRICT FK ID SCOPE WITH ROBUST FALLBACKS)
+  // Dynamically filter Kelurahan by selected Kecamatan
   const filteredKelurahanList = useMemo(() => {
-    const baseKelList = kelurahanList && kelurahanList.length > 0
-      ? kelurahanList
-      : [
-          { id: 1, name: "Cipaganti", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 2, name: "Dago", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 3, name: "Lebak Gede", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 4, name: "Lebak Siliwangi", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 5, name: "Sadang Serang", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 6, name: "Sekeloa", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } }
-        ];
-
-    if (!formData.kecamatan) return baseKelList;
+    if (!formData.kecamatan) return kelurahanList;
     const curKecRaw = formData.kecamatan;
     const curKecNorm = normalizeKecamatan(curKecRaw);
 
@@ -429,7 +408,7 @@ const ManajemenPengguna: React.FC = () => {
       return kNameNorm === curKecNorm || (kc.name || kc.nama || "").toLowerCase() === curKecRaw.toLowerCase();
     });
 
-    const filtered = baseKelList.filter((kl: any) => {
+    const filtered = kelurahanList.filter((kl: any) => {
       if (selectedKec) {
         const kecId = kl.kecamatanId || kl.kecamatan?.id;
         if (kecId && Number(kecId) === Number(selectedKec.id)) return true;
@@ -439,8 +418,22 @@ const ManajemenPengguna: React.FC = () => {
       return false;
     });
 
-    return filtered.length > 0 ? filtered : baseKelList;
+    return filtered.length > 0 ? filtered : kelurahanList;
   }, [kecamatanList, kelurahanList, formData.kecamatan]);
+
+  // Dynamic Kelurahan filter options for the table filter bar
+  const kelurahanFilterOptions = useMemo(() => {
+    const opts = [{ value: "Semua", label: "Semua Kelurahan" }];
+    if (Array.isArray(kelurahanList) && kelurahanList.length > 0) {
+      kelurahanList.forEach((k: any) => {
+        const name = (k.name || k.nama || "").trim();
+        if (name && !opts.some((o) => o.value.toLowerCase() === name.toLowerCase())) {
+          opts.push({ value: name, label: `Kel. ${name}` });
+        }
+      });
+    }
+    return opts;
+  }, [kelurahanList]);
 
   const handleProvinsiSelect = (newProv: string) => {
     const selectedProvObj = provinsiList.find(
@@ -548,7 +541,7 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   const getRwListForKelurahan = (rawKel?: string) => {
-    if (!rawKel || rawKel === "-") return KELURAHAN_RW_MAP["Dago"];
+    if (!rawKel || rawKel === "-") return areasList.map((a: any) => a.name);
     const clean = String(rawKel)
       .replace(/^Kel\.?\s*/i, "")
       .replace(/^Kelurahan\s*/i, "")
@@ -567,14 +560,7 @@ const ManajemenPengguna: React.FC = () => {
         return numA - numB;
       });
 
-    if (matchedRws.length > 0) return matchedRws;
-
-    for (const [key, rws] of Object.entries(KELURAHAN_RW_MAP)) {
-      if (clean.includes(key.toLowerCase()) || key.toLowerCase().includes(clean)) {
-        return rws;
-      }
-    }
-    return KELURAHAN_RW_MAP["Dago"];
+    return matchedRws.length > 0 ? matchedRws : areasList.map((a: any) => a.name);
   };
 
   const handleOpenAddModal = () => {
@@ -589,7 +575,8 @@ const ManajemenPengguna: React.FC = () => {
 
     setModalType("add");
     const defaultRole = selectedRole !== "Semua" ? selectedRole : "WARGA";
-    setModalKelurahan("Cipaganti");
+    const initialKel = kelurahanList[0]?.name || kelurahanList[0]?.nama || "";
+    setModalKelurahan(initialKel);
     setFormData({
       name: "",
       address: "",
@@ -600,20 +587,20 @@ const ManajemenPengguna: React.FC = () => {
       status: "Aktif",
       rtRwId: "",
       nim: "",
-      nip: ["DPL", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(defaultRole) ? "" : "",
-      prodi: defaultRole === "DPL" ? "Manajemen" : "Teknik Informatika",
-      jabatan: defaultRole === "PEMIMPIN" ? "Rektor" : defaultRole === "PANITIA_TASKFORCE" ? "Anggota Task Force" : "",
+      nip: "",
+      prodi: "",
+      jabatan: "",
       selectedRws: [],
       dplKelompokIds: [],
-      institusi: ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(defaultRole) ? "Universitas Komputer Indonesia" : "",
+      institusi: "",
       jenjangPendidikan: "S1",
       jumlahAnggotaKeluarga: "",
       programStudi: "",
       fotoProfil: "",
-      provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat",
-      kabupaten: kabupatenList[0]?.name || "Kota Bandung",
-      wilayah: defaultRole === "ADMIN_DLH" ? "Kota Bandung" : "",
-      kecamatan: kecamatanList[0]?.name || "Kecamatan Terdaftar",
+      provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "",
+      kabupaten: kabupatenList[0]?.name || kabupatenList[0]?.nama || "",
+      wilayah: "",
+      kecamatan: kecamatanList[0]?.name || kecamatanList[0]?.nama || "",
       petugasResiduId: "",
       dplId: "",
     });
@@ -635,7 +622,7 @@ const ManajemenPengguna: React.FC = () => {
     setModalType("edit");
     setSelectedUser(u);
     let matchedAreaId = u.rtRwId ? String(u.rtRwId) : u.rwId ? String(u.rwId) : u.studentProfile?.assignedRwId ? String(u.studentProfile?.assignedRwId) : "";
-    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
+    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "";
     if (!matchedAreaId && u.rw && areasList.length > 0) {
       const cleanTargetKel = getCleanKelName(foundKelurahan).toLowerCase();
       const found = areasList.find((a: any) => {
@@ -1292,15 +1279,7 @@ const ManajemenPengguna: React.FC = () => {
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setIsKelurahanDropdownOpen(false)} />
                   <div className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                    {[
-                      { value: "Semua", label: "Semua Kelurahan" },
-                      { value: "Cipaganti", label: "Kel. Cipaganti" },
-                      { value: "Dago", label: "Kel. Dago" },
-                      { value: "Lebak Gede", label: "Kel. Lebak Gede" },
-                      { value: "Lebak Siliwangi", label: "Kel. Lebak Siliwangi" },
-                      { value: "Sadang Serang", label: "Kel. Sadang Serang" },
-                      { value: "Sekeloa", label: "Kel. Sekeloa" },
-                    ].map((opt) => (
+                    {kelurahanFilterOptions.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"

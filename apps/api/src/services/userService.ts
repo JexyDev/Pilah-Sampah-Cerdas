@@ -242,6 +242,33 @@ export class UserService {
 
     const users = await userRepository.findMany(whereClause);
 
+    let dbKelurahanRwMap: Record<string, string[]> = { ...KELURAHAN_RW_MAP };
+    try {
+      if (prisma?.rw) {
+        const allDbRws = await prisma.rw.findMany({
+          select: { name: true, kelurahan: { select: { name: true } } },
+        });
+        if (allDbRws && allDbRws.length > 0) {
+          const dynamicMap: Record<string, string[]> = {};
+          allDbRws.forEach((rwItem) => {
+            const kelName = rwItem.kelurahan?.name ? getCleanKelName(rwItem.kelurahan.name) : "";
+            if (kelName) {
+              if (!dynamicMap[kelName]) dynamicMap[kelName] = [];
+              const cleanRwName = rwItem.name.split("(")[0].trim();
+              if (!dynamicMap[kelName].includes(cleanRwName)) {
+                dynamicMap[kelName].push(cleanRwName);
+              }
+            }
+          });
+          if (Object.keys(dynamicMap).length > 0) {
+            dbKelurahanRwMap = dynamicMap;
+          }
+        }
+      }
+    } catch {
+      // Graceful fallback
+    }
+
     let petugasResiduRaw = users.filter((u: any) => u.role?.name === "PETUGAS_RESIDU");
     if (petugasResiduRaw.length === 0) {
       petugasResiduRaw = await userRepository.findMany({ role: { name: "PETUGAS_RESIDU" } });
@@ -355,9 +382,9 @@ export class UserService {
         for (const k of knownKels) {
           if (u.address.toLowerCase().includes(k.toLowerCase())) {
             kelurahanName = k;
-            kecamatanName = "Kecamatan Coblong";
-            kabupatenName = "Kota Bandung";
-            provinsiName = "Jawa Barat";
+            if (kecamatanName === "-") kecamatanName = "Kecamatan Coblong";
+            if (kabupatenName === "-") kabupatenName = "Kota Bandung";
+            if (provinsiName === "-") provinsiName = "Jawa Barat";
             break;
           }
         }
@@ -367,11 +394,8 @@ export class UserService {
           );
           if (kelMatch && kelMatch[1]) {
             const rawExtracted = kelMatch[1].trim();
-            // Only accept if not containing multiple words with commas
             if (!rawExtracted.includes(",") && rawExtracted.split(/\s+/).length <= 2) {
               kelurahanName = rawExtracted;
-            } else {
-              kelurahanName = "Sadang Serang";
             }
           }
         }
@@ -383,10 +407,9 @@ export class UserService {
           kelurahanName.toLowerCase().includes(k)
         )
       ) {
-        kecamatanName = "Kecamatan Coblong";
-        kabupatenName = "Kota Bandung";
-        provinsiName = "Jawa Barat";
-        if (kelurahanName === "-") kelurahanName = "Sadang Serang";
+        if (kecamatanName === "-") kecamatanName = "Kecamatan Coblong";
+        if (kabupatenName === "-") kabupatenName = "Kota Bandung";
+        if (provinsiName === "-") provinsiName = "Jawa Barat";
       }
       if (rwName === "-" && u.address) {
         const rwMatch = u.address.match(/RW\s*(\d+)/i);
@@ -596,7 +619,7 @@ export class UserService {
         let lurahRws = "";
         if (u.role === "LURAH") {
           const kelClean = getCleanKelName(u.kelurahan || u.address);
-          const knownRws = KELURAHAN_RW_MAP[kelClean] || [];
+          const knownRws = dbKelurahanRwMap[kelClean] || KELURAHAN_RW_MAP[kelClean] || [];
           lurahRws = knownRws.join(" ");
         }
 

@@ -623,7 +623,7 @@ export const PoskoKknPage: React.FC = () => {
         description={
           isDpl
             ? "Pangkalan posko, kontak tim mahasiswa, titik koordinat GPS, dan lokasi kelompok KKN binaan Anda."
-            : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di wilayah Kecamatan Coblong."
+            : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."
         }
         icon={GraduationCap}
       />
@@ -725,7 +725,7 @@ export const PoskoKknPage: React.FC = () => {
                             </h4>
                             <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                               <MapPin size={12} className="text-rose-500" />
-                              <span>Kelurahan {kelurahanGeo.name}, Kec. Coblong</span>
+                              <span>Kelurahan {kelurahanGeo.name} &bull; Wilayah Binaan</span>
                             </p>
                           </div>
                         </div>
@@ -971,7 +971,7 @@ export const PoskoKknPage: React.FC = () => {
                           </h2>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
                             <MapPin size={14} className="text-rose-500 shrink-0" />
-                            <span>Kelurahan {posko.kelurahan} &bull; {formatCleanRw(posko.rwName)} &bull; Kec. Coblong</span>
+                            <span>Kelurahan {posko.kelurahan} &bull; {formatCleanRw(posko.rwName)}</span>
                           </p>
                         </div>
                       </div>
@@ -1449,7 +1449,7 @@ export const PoskoKknPage: React.FC = () => {
                   Peta Sebaran Posko KKN &amp; Fasilitas Kebersihan
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Kecamatan Coblong, Kota Bandung ({filteredItems.length} posko aktif, {facilities.length} fasilitas)
+                  Cakupan Wilayah Binaan ({filteredItems.length} posko aktif, {facilities.length} fasilitas)
                 </p>
               </div>
             </div>
@@ -1782,7 +1782,7 @@ export const PoskoKknPage: React.FC = () => {
                   Daftar Direktori Posko KKN Mahasiswa
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Menampilkan {filteredItems.length} posko terdata di Kecamatan Coblong
+                  Menampilkan {filteredItems.length} posko terdata di wilayah operasional
                 </p>
               </div>
             </div>

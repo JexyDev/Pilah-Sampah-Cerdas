@@ -1480,7 +1480,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </label>
                 {isDpl && kelompokList.length <= 1 ? (
                   <div className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold flex items-center justify-between">
-                    <span>{kelompokList[0]?.name || "Kelompok Binaan"} ({kelompokList[0]?.kelurahan ? `Kel. ${kelompokList[0]?.kelurahan}` : "Coblong"})</span>
+                    <span>{kelompokList[0]?.name || "Kelompok Binaan"} ({kelompokList[0]?.kelurahan ? `Kel. ${kelompokList[0]?.kelurahan}` : "Wilayah Binaan"})</span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/50">
                       Otomatis
                     </span>

@@ -187,7 +187,7 @@ const Monitoring: React.FC = () => {
     if (isDpl) {
       return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || undefined;
     }
-    if (isCamat) return user?.wilayah || "Kecamatan Coblong";
+    if (isCamat) return user?.wilayah || (user as any)?.kecamatan || undefined;
     return undefined;
   }, [user, isLurah, isDpl, isRw, isCamat, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
