@@ -78,7 +78,7 @@ const formatKecName = (raw: string | undefined | null): string => {
 
 const MasterRw: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = user?.peran === "PETUGAS_RESIDU" || user?.peran === "MAHASISWA_KKN";
+  const isReadOnly = !["DEVELOPER", "SUPER_USER"].includes(user?.peran || "");
 
   const [rawRwList, setRawRwList] = useState<RwItem[]>([]);
   const [kelurahanList, setKelurahanList] = useState<KelurahanData[]>([]);

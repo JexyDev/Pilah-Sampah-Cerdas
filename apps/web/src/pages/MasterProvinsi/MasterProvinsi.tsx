@@ -33,7 +33,7 @@ export interface ProvinsiData {
 
 const MasterProvinsi: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = user?.peran === "PETUGAS_RESIDU" || user?.peran === "MAHASISWA_KKN";
+  const isReadOnly = !["DEVELOPER", "SUPER_USER"].includes(user?.peran || "");
 
   const [provinsiList, setProvinsiList] = useState<ProvinsiData[]>([]);
   const [loading, setLoading] = useState(true);

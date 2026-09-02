@@ -52,7 +52,7 @@ export interface ProvinsiData {
 
 const MasterKecamatan: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = user?.peran === "PETUGAS_RESIDU" || user?.peran === "MAHASISWA_KKN";
+  const isReadOnly = !["DEVELOPER", "SUPER_USER"].includes(user?.peran || "");
 
   const [kecamatanList, setKecamatanList] = useState<KecamatanItem[]>([]);
   const [kabupatenList, setKabupatenList] = useState<KabupatenData[]>([]);
