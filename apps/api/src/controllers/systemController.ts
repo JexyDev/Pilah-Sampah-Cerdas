@@ -94,6 +94,67 @@ export class SystemController {
   }
 
   /**
+   * Get all dynamic Landing Page CMS content (Public)
+   */
+  async getLandingContent(req: Request, res: Response): Promise<void> {
+    try {
+      const content = await systemService.getLandingContent();
+      res.status(200).json({ success: true, data: content });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Save dynamic Landing Page CMS content (Admin / Super User / Developer)
+   */
+  async saveLandingContent(req: Request, res: Response): Promise<void> {
+    try {
+      const content = req.body;
+      if (!content || typeof content !== "object") {
+        res.status(400).json({
+          success: false,
+          code: "BAD_REQUEST",
+          message: "Data content harus berupa objek konfigurasi Landing Page",
+        });
+        return;
+      }
+      const updatedBy = (req.user as any)?.name || "Super User";
+      const saved = await systemService.saveLandingContent(content, updatedBy);
+      res.status(200).json({
+        success: true,
+        message: "Konten Landing Page berhasil disimpan.",
+        data: saved,
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
+   * Reset Landing Page CMS content to defaults (Admin / Super User / Developer)
+   */
+  async resetLandingContent(req: Request, res: Response): Promise<void> {
+    try {
+      const updatedBy = (req.user as any)?.name || "Super User";
+      const defaults = await systemService.resetLandingContent(updatedBy);
+      res.status(200).json({
+        success: true,
+        message: "Konten Landing Page berhasil direset ke pengaturan standar.",
+        data: defaults,
+      });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
    * Save curated activities list for Landing Page (Admin / Super User / Developer)
    */
   async saveCuratedActivities(req: Request, res: Response): Promise<void> {

@@ -806,9 +806,9 @@ export class KknAttendanceService {
               }
             }
 
-            // Trigger auto-pause jika jarak jauh (> radius + buffer + 80m) ATAU sudah >= 2 ping berturut-turut di luar zona
+            // Trigger auto-pause jika jarak jauh (> radius + buffer + 80m) ATAU sudah >= 3 ping berturut-turut di luar zona dengan margin nyata
             const isFarOutside = dist > effectiveRad + 80;
-            const isConfirmedOutOfZone = outOfZoneCount >= 2 || isFarOutside;
+            const isConfirmedOutOfZone = (outOfZoneCount >= 3 && dist > effectiveRad + 20) || isFarOutside;
 
             if (isConfirmedOutOfZone) {
               const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
@@ -4782,7 +4782,7 @@ export class KknAttendanceService {
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
         targetMinMenit,
-        rasioKehadiran: Number(((actualMins / targetMinMenit) * 100).toFixed(1)),
+        rasioKehadiran: Math.min(100, Math.max(0, Number(((actualMins / targetMinMenit) * 100).toFixed(1)))),
         status: computedStatus,
         statusDisplay,
         isMemenuhiDurasi: isMemenuhi,

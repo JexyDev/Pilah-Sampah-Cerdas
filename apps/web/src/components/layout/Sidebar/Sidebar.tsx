@@ -1271,8 +1271,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
         {
           to: "/kurasi-landing",
           icon: Globe,
-          label: "Manajemen Berita",
-          allowed: ["DEVELOPER"] as UserRole[],
+          label: "Kelola Landing Page",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
           to: "/kelola-poin",
