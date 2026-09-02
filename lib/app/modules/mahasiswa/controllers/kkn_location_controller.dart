@@ -175,6 +175,8 @@ class KknLocationState {
 }
 
 class KknLocationNotifier extends StateNotifier<KknLocationState> {
+  static const String kStatusTidakAdaKegiatan = 'TIDAK_ADA_KEGIATAN';
+
   KknLocationNotifier(this.ref) : super(KknLocationState()) {
     ref.listen(authProvider, (previous, next) {
       final user = next.user;
@@ -665,6 +667,65 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       }
       state = state.copyWith(error: friendlyMsg);
       return friendlyMsg;
+    }
+  }
+
+  /// Lewati kegiatan KKN (Tandai: Tidak Ada Kegiatan oleh DPL / Ketua Kelompok)
+  Future<String?> skipKegiatan(String scheduleId, {String? alasan}) async {
+    state = state.copyWith(isLoadingKegiatan: true, clearError: true);
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      final response = await repo.skipKegiatan(scheduleId, alasan: alasan);
+
+      // Perbarui list kegiatan di state lokal
+      final updatedKegiatanList = state.kegiatanList.map((k) {
+        if (k['id']?.toString() == scheduleId ||
+            k['scheduleId']?.toString() == scheduleId) {
+          return {
+            ...k,
+            'statusKehadiran': kStatusTidakAdaKegiatan,
+            'attendanceStatus': kStatusTidakAdaKegiatan,
+            'statusDisplay': 'Tidak Ada Kegiatan',
+            'keteranganSkip': alasan ?? 'Tidak ada kegiatan',
+            'skippedBy': response['ditandaiOleh'],
+            'skippedAt': response['ditandaiPada'],
+          };
+        }
+        return k;
+      }).toList();
+
+      Map<String, dynamic>? updatedActiveActivity = state.activeActivity;
+      if (updatedActiveActivity != null &&
+          (updatedActiveActivity['id']?.toString() == scheduleId ||
+              updatedActiveActivity['scheduleId']?.toString() == scheduleId)) {
+        updatedActiveActivity = {
+          ...updatedActiveActivity,
+          'statusKehadiran': kStatusTidakAdaKegiatan,
+          'attendanceStatus': kStatusTidakAdaKegiatan,
+          'statusDisplay': 'Tidak Ada Kegiatan',
+          'keteranganSkip': alasan ?? 'Tidak ada kegiatan',
+          'skippedBy': response['ditandaiOleh'],
+          'skippedAt': response['ditandaiPada'],
+        };
+      }
+
+      state = state.copyWith(
+        isLoadingKegiatan: false,
+        kegiatanList: updatedKegiatanList,
+        activeActivity: updatedActiveActivity,
+        clearError: true,
+      );
+
+      // Muat ulang data terbaru dari backend
+      await fetchKegiatanAktif();
+      return null;
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      state = state.copyWith(
+        isLoadingKegiatan: false,
+        error: errorMsg,
+      );
+      return errorMsg;
     }
   }
 

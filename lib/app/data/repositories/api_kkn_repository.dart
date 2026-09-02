@@ -718,6 +718,33 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<Map<String, dynamic>> skipKegiatan(String id, {String? alasan}) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiEndpoints.kknSkipKegiatan(id),
+        data: {
+          'alasan': alasan ?? 'Tidak ada kegiatan pada hari ini',
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data['data'] as Map<String, dynamic>? ?? (response.data is Map<String, dynamic> ? response.data as Map<String, dynamic> : {});
+      }
+      throw Exception('Gagal menandai tidak ada kegiatan');
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final msg = _extractError(e.response?.data, '');
+      if (statusCode == 403) {
+        throw Exception('FORBIDDEN:${msg ?? 'Hanya DPL atau Ketua Kelompok yang dapat melewati kegiatan.'}');
+      } else if (statusCode == 409) {
+        throw Exception('CONFLICT:${msg ?? 'Tidak dapat melewati kegiatan yang sudah dimulai atau selesai.'}');
+      }
+      throw Exception(msg ?? 'Gagal menandai tidak ada kegiatan ($statusCode)');
+    } catch (e) {
+      throw Exception('Gagal melewati kegiatan: $e');
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude}) async {
     try {
       if (fotoPath != null && fotoPath.isNotEmpty) {

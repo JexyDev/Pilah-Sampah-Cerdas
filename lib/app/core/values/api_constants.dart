@@ -93,6 +93,7 @@ class ApiEndpoints {
   static String kknMulaiKegiatan(String id) => '/kkn/kegiatan/$id/mulai';
   static String kknSelesaiKegiatan(String id) => '/kkn/kegiatan/$id/selesai';
   static String kknJedaKegiatan(String id) => '/kkn/kegiatan/$id/jeda';
+  static String kknSkipKegiatan(String id) => '/kkn/kegiatan/$id/skip';
   /// Legacy alias — tidak dipakai di flow aktif.
   /// Flow selesai kegiatan menggunakan [kknSelesaiKegiatan]. URL backend sudah benar.
   static String kknCheckOut(String id) => '/kkn-attendance/kegiatan/$id/check-out';

@@ -135,6 +135,10 @@ abstract class KknRepository {
   /// POST /api/v1/kkn/kegiatan/{id}/mulai
   Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo, String? poskoId});
 
+  /// Lewati kegiatan KKN (Tandai: Tidak Ada Kegiatan oleh DPL / Ketua Kelompok)
+  /// POST /api/v1/kkn/kegiatan/{id}/skip
+  Future<Map<String, dynamic>> skipKegiatan(String id, {String? alasan});
+
   /// Akhiri kegiatan KKN
   /// POST /api/v1/kkn/kegiatan/{id}/selesai (multipart/form-data)
   Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan});
