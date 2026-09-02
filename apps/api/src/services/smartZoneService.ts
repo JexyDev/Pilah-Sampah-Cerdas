@@ -31,7 +31,7 @@ import {
 import { calculateDistance } from "./kknAttendanceService.js";
 
 const DEFAULT_AUTO_POLYGON_BUFFER_M = 75;
-const DEFAULT_POSKO_RADIUS_M = 150;
+const DEFAULT_POSKO_RADIUS_M = 500;
 const ACTIVE_STUDENT_WINDOW_MIN = 30;
 const MIN_STUDENTS_FOR_HULL = 3;
 

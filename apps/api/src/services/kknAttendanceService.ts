@@ -32,11 +32,11 @@ async function buildGeofence(
         where: { kelompokId: schedule.kelompokId },
       });
       if (posko && posko.latitude && posko.longitude) {
-        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 150;
+        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 500;
         return {
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
-          radius: Math.max(150, pRadius),
+          radius: Math.max(50, pRadius),
           polygon: schedule.polygon,
         };
       }
@@ -47,11 +47,11 @@ async function buildGeofence(
         orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
       });
       if (multiPosko && multiPosko.latitude && multiPosko.longitude) {
-        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 150;
+        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 500;
         return {
           latitude: Number(multiPosko.latitude),
           longitude: Number(multiPosko.longitude),
-          radius: Math.max(150, mRadius),
+          radius: Math.max(50, mRadius),
           polygon: schedule.polygon,
         };
       }
@@ -65,7 +65,7 @@ async function buildGeofence(
         return {
           latitude: Number(facPosko.latitude),
           longitude: Number(facPosko.longitude),
-          radius: Math.max(150, Number(schedule.radius) || 150),
+          radius: Math.max(50, Number(schedule.radius) || 500),
           polygon: schedule.polygon,
         };
       }
@@ -79,7 +79,7 @@ async function buildGeofence(
     return {
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
-      radius: Math.max(150, Number(schedule.radius) || 150),
+      radius: Math.max(50, Number(schedule.radius) || 500),
       polygon: schedule.polygon,
     };
   }
@@ -91,12 +91,12 @@ async function buildGeofence(
 
   const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
   const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 150;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
 
   return {
     latitude: defaultLat,
     longitude: defaultLng,
-    radius: Math.max(150, Number(schedule.radius) || defaultRadius),
+    radius: Math.max(50, Number(schedule.radius) || defaultRadius),
     polygon: schedule.polygon,
   };
 }
@@ -147,7 +147,7 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
       alamat: primary.alamat || "-",
       latitude: Number(primary.latitude),
       longitude: Number(primary.longitude),
-      radius: Math.max(150, Number((primary as any).radius) || 150),
+      radius: Math.max(50, Number((primary as any).radius) || 500),
       isUtama: true,
       type: "POSKO_UTAMA",
       fotoUrl: primary.fotoUrl || null,
@@ -163,7 +163,7 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
           alamat: m.alamat || "-",
           latitude: Number(m.latitude),
           longitude: Number(m.longitude),
-          radius: Math.max(150, Number(m.radius) || 150),
+          radius: Math.max(50, Number(m.radius) || 500),
           isUtama: m.isUtama || false,
           type: "POSKO_MULTI",
           fotoUrl: m.fotoUrl || null,
@@ -3530,7 +3530,7 @@ export class KknAttendanceService {
             alamat: pk.alamat || "-",
             latitude: Number(pk.latitude),
             longitude: Number(pk.longitude),
-            radius: Math.max(150, Number(pk.radius) || 500),
+            radius: Math.max(50, Number(pk.radius) || 500),
             isUtama: true,
             type: "POSKO_UTAMA",
             fotoUrl: pk.fotoUrl || null,
@@ -3547,7 +3547,7 @@ export class KknAttendanceService {
               alamat: pm.alamat || "-",
               latitude: Number(pm.latitude),
               longitude: Number(pm.longitude),
-              radius: Math.max(150, Number(pm.radius) || 500),
+              radius: Math.max(50, Number(pm.radius) || 500),
               isUtama: pm.isUtama || false,
               type: "POSKO_MULTI",
               fotoUrl: pm.fotoUrl || null,
@@ -3570,9 +3570,9 @@ export class KknAttendanceService {
           ? Number(sch.longitude)
           : 107.615;
       const poskoRadiusNum = officialPosko?.radius
-        ? Math.max(150, Number(officialPosko.radius))
+        ? Math.max(50, Number(officialPosko.radius))
         : sch.radius
-          ? Math.max(150, Number(sch.radius))
+          ? Math.max(50, Number(sch.radius))
           : 500;
       const titleStr = officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : sch.title;
       const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
