@@ -25,6 +25,7 @@ import {
   PlusCircle,
   XCircle,
   Clock,
+  Lock,
   Image as ImageIcon,
   ZoomIn,
   Camera,
@@ -49,6 +50,37 @@ const ASPEK_RUBRIK_PROKER: Array<{ no: number; aspek: string; bobot: number }> =
   { no: 6, aspek: "Output, Outcome, & Dampak", bobot: 20 },
   { no: 7, aspek: "Keberlanjutan Program", bobot: 5 },
 ];
+
+// Helper Resolver Status Pelaksanaan
+export const resolveStatusPelaksanaan = (
+  statusPelaksanaan?: string,
+  legacyStatus?: string
+): "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" => {
+  let p = statusPelaksanaan;
+  const leg = String(legacyStatus || "").toUpperCase();
+  if (!p) {
+    if (leg === "SELESAI") p = "SELESAI";
+    else if (
+      leg === "SEDANG_BERJALAN" ||
+      leg === "SEDANG_DILAKSANAKAN" ||
+      leg === "BERJALAN" ||
+      leg === "BERLANGSUNG"
+    )
+      p = "SEDANG_BERJALAN";
+    else p = "BELUM_MULAI";
+  }
+
+  const upper = String(p).toUpperCase();
+  if (upper === "SELESAI") return "SELESAI";
+  if (
+    upper === "SEDANG_BERJALAN" ||
+    upper === "SEDANG_DILAKSANAKAN" ||
+    upper === "BERJALAN" ||
+    upper === "BERLANGSUNG"
+  )
+    return "SEDANG_BERJALAN";
+  return "BELUM_MULAI";
+};
 
 export const PenilaianProkerPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -143,12 +175,7 @@ export const PenilaianProkerPage: React.FC = () => {
       if (u !== "DISETUJUI" && u !== "DITERIMA") return false;
 
       // 2. Validasi Status Pelaksanaan
-      let pl = p.statusPelaksanaan;
-      if (!pl) {
-        if (legacySt === "SELESAI") pl = "SELESAI";
-        else if (legacySt === "SEDANG_BERJALAN" || legacySt === "SEDANG_DILAKSANAKAN" || legacySt === "BERJALAN") pl = "SEDANG_BERJALAN";
-        else pl = "BELUM_MULAI";
-      }
+      const pl = resolveStatusPelaksanaan(p.statusPelaksanaan, p.status);
       if (statusPelaksanaanFilter !== "ALL") {
         if (pl !== statusPelaksanaanFilter) return false;
       }
@@ -196,6 +223,29 @@ export const PenilaianProkerPage: React.FC = () => {
   const selectedProker = useMemo(() => {
     return prokerList.find((p) => p.id === selectedProkerId) || null;
   }, [prokerList, selectedProkerId]);
+
+  // Cek apakah proker yang dipilih berstatus Belum Mulai
+  const isSelectedBelumMulai = useMemo(() => {
+    if (!selectedProker) return false;
+    return (
+      resolveStatusPelaksanaan(selectedProker.statusPelaksanaan, selectedProker.status) ===
+      "BELUM_MULAI"
+    );
+  }, [selectedProker]);
+
+  // Cek kelengkapan lampiran berkas
+  const hasSelectedAttachment = useMemo(() => {
+    if (!selectedProker) return false;
+    return Boolean(
+      selectedProker.linkGoogleDrive ||
+        (selectedProker as any)?.attachmentFile ||
+        (selectedProker as any)?.hasAttachment ||
+        ((selectedProker as any)?.attachmentUrls &&
+          (selectedProker as any).attachmentUrls.length > 0)
+    );
+  }, [selectedProker]);
+
+  const isFormLocked = isPimpinan || isSelectedBelumMulai || !hasSelectedAttachment;
 
   useEffect(() => {
     if (selectedProker) {
@@ -298,9 +348,11 @@ export const PenilaianProkerPage: React.FC = () => {
       return;
     }
 
-    const pel = String(proker.statusPelaksanaan || proker.status || "").toUpperCase();
-    if (pel === "BELUM_MULAI" || pel === "BELUM_DIJALANKAN") {
-      toast.error("Program kerja belum mulai berjalan. Penilaian hanya dapat dilakukan pada program kerja yang sedang berjalan atau telah selesai.");
+    const pel = resolveStatusPelaksanaan(proker.statusPelaksanaan, proker.status);
+    if (pel === "BELUM_MULAI") {
+      toast.error(
+        "Program kerja berstatus 'Belum Mulai' belum dapat dinilai. Penilaian dibuka saat pelaksanaan program kerja telah dimulai atau selesai."
+      );
       return;
     }
 
@@ -316,6 +368,12 @@ export const PenilaianProkerPage: React.FC = () => {
   // Handler Simpan Penilaian Program Kerja
   const handleSimpanNilai = async () => {
     if (!selectedProker) return;
+
+    const pel = resolveStatusPelaksanaan(selectedProker.statusPelaksanaan, selectedProker.status);
+    if (pel === "BELUM_MULAI") {
+      toast.error("Program kerja belum dimulai oleh mahasiswa, penilaian belum dapat disimpan");
+      return;
+    }
 
     if (calculatedRubrik.totalFilled === 0) {
       toast.error("Silakan isi setidaknya satu nilai aspek sebelum menyimpan");
@@ -333,6 +391,11 @@ export const PenilaianProkerPage: React.FC = () => {
       }));
 
       const statusPenilaian = calculatedRubrik.isComplete ? "SUDAH_DINILAI" : "SEDANG_DINILAI";
+      const targetPelaksanaan =
+        resolveStatusPelaksanaan(selectedProker.statusPelaksanaan, selectedProker.status) ===
+        "SELESAI"
+          ? "SELESAI"
+          : "SEDANG_BERJALAN";
 
       await dplService.assessProgramKerja(
         selectedProker.id,
@@ -341,7 +404,7 @@ export const PenilaianProkerPage: React.FC = () => {
         payloadAspek,
         calculatedRubrik.predikat,
         statusPenilaian,
-        "SELESAI"
+        targetPelaksanaan
       );
 
       toast.success(
@@ -359,7 +422,7 @@ export const PenilaianProkerPage: React.FC = () => {
                 aspekPenilaian: payloadAspek,
                 predikat: calculatedRubrik.predikat,
                 statusPenilaian: statusPenilaian,
-                statusPelaksanaan: "SELESAI",
+                statusPelaksanaan: targetPelaksanaan,
               }
             : p
         )
@@ -451,13 +514,7 @@ export const PenilaianProkerPage: React.FC = () => {
 
   // Helper Badge Status Pelaksanaan (Execution: Belum Mulai / Sedang Berjalan / Selesai)
   const renderStatusPelaksanaanBadge = (statusPelaksanaan?: string, legacyStatus?: string) => {
-    let p = statusPelaksanaan;
-    const leg = String(legacyStatus || "").toUpperCase();
-    if (!p) {
-      if (leg === "SELESAI") p = "SELESAI";
-      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") p = "SEDANG_BERJALAN";
-      else p = "BELUM_MULAI";
-    }
+    const p = resolveStatusPelaksanaan(statusPelaksanaan, legacyStatus);
 
     switch (p) {
       case "SELESAI":
@@ -467,8 +524,6 @@ export const PenilaianProkerPage: React.FC = () => {
           </span>
         );
       case "SEDANG_BERJALAN":
-      case "SEDANG_DILAKSANAKAN":
-      case "BERJALAN":
         return (
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/40">
             Sedang Berlangsung
@@ -592,7 +647,7 @@ export const PenilaianProkerPage: React.FC = () => {
             Penilaian Program Kerja
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Evaluasi dan penilaian capaian program kerja setiap kelompok KKN yang telah disetujui dan selesai dilaksanakan
+            Evaluasi dan penilaian capaian program kerja setiap kelompok KKN yang telah disetujui (ACC)
           </p>
         </div>
       </div>
@@ -730,6 +785,8 @@ export const PenilaianProkerPage: React.FC = () => {
                     const rowNumber = startIndex + idx;
                     const statusPenilaian =
                       p.statusPenilaian || (p.skorPenilaian ? "SUDAH_DINILAI" : "BELUM_DINILAI");
+                    const pPelaksanaan = resolveStatusPelaksanaan(p.statusPelaksanaan, p.status);
+                    const isBelumMulai = pPelaksanaan === "BELUM_MULAI";
 
                     return (
                       <tr
@@ -788,60 +845,43 @@ export const PenilaianProkerPage: React.FC = () => {
                         {/* Aksi Buttons */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {(() => {
-                              const pel = String(p.statusPelaksanaan || p.status || "").toUpperCase();
-                              const isBelumMulai = pel === "BELUM_MULAI" || pel === "BELUM_DIJALANKAN";
-
-                              if (isBelumMulai) {
-                                return (
-                                  <button
-                                    disabled
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-slate-200/80 dark:border-slate-700/60 rounded-lg font-semibold text-xs cursor-not-allowed opacity-80"
-                                    title="Proker belum dimulai (Penilaian baru dapat dilakukan saat proker sedang berjalan atau selesai)"
-                                  >
-                                    <PlusCircle size={12} />
-                                    <span>Belum Mulai</span>
-                                  </button>
-                                );
-                              }
-
-                              if (statusPenilaian === "SEDANG_DINILAI") {
-                                return (
-                                  <button
-                                    onClick={() => handleOpenAssessModal(p)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                    title="Lanjutkan Pengisian Nilai"
-                                  >
-                                    <Edit3 size={12} />
-                                    <span>Lanjutkan</span>
-                                  </button>
-                                );
-                              }
-
-                              if (statusPenilaian === "SUDAH_DINILAI") {
-                                return (
-                                  <button
-                                    onClick={() => handleOpenAssessModal(p)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
-                                    title="Lihat / Edit Nilai"
-                                  >
-                                    <Eye size={12} />
-                                    <span>Lihat / Edit Nilai</span>
-                                  </button>
-                                );
-                              }
-
-                              return (
-                                <button
-                                  onClick={() => handleOpenAssessModal(p)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
-                                  title="Beri Penilaian Baru"
-                                >
-                                  <PlusCircle size={12} />
-                                  <span>Beri Nilai</span>
-                                </button>
-                              );
-                            })()}
+                            {isBelumMulai ? (
+                              <button
+                                disabled
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 rounded-lg font-semibold text-xs border border-slate-200 dark:border-slate-700/60 cursor-not-allowed opacity-80"
+                                title="Penilaian terkunci: Program kerja belum dimulai oleh mahasiswa"
+                              >
+                                <Lock size={12} />
+                                <span>Beri Nilai</span>
+                              </button>
+                            ) : statusPenilaian === "SEDANG_DINILAI" ? (
+                              <button
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                title="Lanjutkan Pengisian Nilai"
+                              >
+                                <Edit3 size={12} />
+                                <span>Lanjutkan</span>
+                              </button>
+                            ) : statusPenilaian === "SUDAH_DINILAI" ? (
+                              <button
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+                                title="Lihat / Edit Nilai"
+                              >
+                                <Eye size={12} />
+                                <span>Lihat / Edit Nilai</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenAssessModal(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                                title="Beri Penilaian Baru"
+                              >
+                                <PlusCircle size={12} />
+                                <span>Beri Nilai</span>
+                              </button>
+                            )}
 
                             <button
                               onClick={() => handleOpenBukti(p)}
@@ -955,11 +995,6 @@ export const PenilaianProkerPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                  <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/50 px-2.5 py-1 rounded-lg text-emerald-700 dark:text-emerald-400">
-                    <CheckCircle2 size={13} />
-                    <span className="text-xs font-bold">Pelaksanaan: Selesai</span>
-                  </div>
-
                   <button
                     type="button"
                     onClick={() => handleOpenBukti(selectedProker)}
@@ -991,13 +1026,28 @@ export const PenilaianProkerPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Guard Notulensi Item 15: Belum ada file = Belum bisa dinilai (file == false => locked) */}
-              {!Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0)) && (
+              {/* Guard 1: Program Kerja Belum Dimulai */}
+              {isSelectedBelumMulai && (
+                <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl flex items-start gap-2.5 text-xs text-rose-800 dark:text-rose-300">
+                  <Lock size={16} className="shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                  <div>
+                    <strong className="block font-bold">Program Kerja Belum Dimulai</strong>
+                    <span>
+                      Program kerja ini masih berstatus <em>Belum Mulai</em>. Penilaian terkunci dan baru dapat diberikan setelah mahasiswa memulai atau menyelesaikan pelaksanaan kegiatan di lapangan.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Guard 2: Lampiran Berkas Belum Diunggah */}
+              {!isSelectedBelumMulai && !hasSelectedAttachment && (
                 <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
                   <AlertCircle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                   <div>
                     <strong className="block font-bold">Lampiran Berkas Belum Diunggah</strong>
-                    <span>Berdasarkan panduan evaluasi KKN 2026, penilaian program kerja terkunci/disabled hingga Ketua Kelompok mengunggah berkas lampiran bukti kegiatan.</span>
+                    <span>
+                      Berdasarkan panduan evaluasi KKN 2026, penilaian program kerja terkunci/disabled hingga Ketua Kelompok mengunggah berkas lampiran bukti kegiatan.
+                    </span>
                   </div>
                 </div>
               )}
@@ -1046,7 +1096,7 @@ export const PenilaianProkerPage: React.FC = () => {
                               type="number"
                               min="0"
                               max="100"
-                              disabled={isPimpinan || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                              disabled={isFormLocked}
                               placeholder="0"
                               value={inputNilai[r.no] ?? ""}
                               onChange={(e) => handleScoreChange(r.no, e.target.value)}
@@ -1084,7 +1134,7 @@ export const PenilaianProkerPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={3}
-                  disabled={isPimpinan || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                  disabled={isFormLocked}
                   placeholder="Tuliskan evaluasi, feedback, atau rekomendasi perbaikan program kerja ini..."
                   value={catatanDpl}
                   onChange={(e) => setCatatanDpl(e.target.value)}
@@ -1098,7 +1148,7 @@ export const PenilaianProkerPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleResetForm}
-                disabled={isSaving || isPimpinan || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                disabled={isSaving || isFormLocked}
                 className="px-3.5 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40"
               >
                 Reset Nilai
@@ -1118,9 +1168,15 @@ export const PenilaianProkerPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleSimpanNilai}
-                    disabled={isSaving || !Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0))}
+                    disabled={isSaving || isFormLocked}
                     className="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                    title={!Boolean(selectedProker?.linkGoogleDrive || (selectedProker as any)?.attachmentFile || (selectedProker as any)?.hasAttachment || ((selectedProker as any)?.attachmentUrls && (selectedProker as any).attachmentUrls.length > 0)) ? "Penilaian terkunci: Berkas lampiran belum diunggah" : "Simpan Penilaian"}
+                    title={
+                      isSelectedBelumMulai
+                        ? "Penilaian terkunci: Program kerja belum dimulai oleh mahasiswa"
+                        : !hasSelectedAttachment
+                        ? "Penilaian terkunci: Berkas lampiran belum diunggah"
+                        : "Simpan Penilaian"
+                    }
                   >
                     {isSaving ? (
                       <>

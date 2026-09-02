@@ -6,6 +6,7 @@
 
 import { Router } from "express";
 import { pemanfaatanController } from "../controllers/pemanfaatanController.js";
+import { kknController } from "../controllers/kknController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { readOnlyGuard } from "../middlewares/readOnlyGuard.js";
 import { safeUploadPemanfaatanImage } from "../middlewares/uploadMiddleware.js";
@@ -31,6 +32,27 @@ router.post(
 );
 router.put("/feedback/:id/tanggapan", authMiddleware, pemanfaatanController.respondFeedback);
 router.delete("/feedback/:id", authMiddleware, readOnlyGuard, pemanfaatanController.deleteFeedback);
+
+// Panen Hasil alias routes under /api/v1/pemanfaatan
+router.post(
+  ["/panen-hasil", "/panen-hasil/:id"],
+  authMiddleware,
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+router.put(
+  "/panen-hasil/:id",
+  authMiddleware,
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+router.patch(
+  "/panen-hasil/:id",
+  authMiddleware,
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+router.delete("/panen-hasil/:id", authMiddleware, kknController.deletePanenHasil);
 
 // Pemanfaatan Program CRUD routes
 router.post("/", authMiddleware, readOnlyGuard, pemanfaatanController.create);

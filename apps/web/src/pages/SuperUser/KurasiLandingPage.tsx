@@ -45,6 +45,9 @@ export const KurasiLandingPage: React.FC = () => {
   const [activities, setActivities] = useState<CuratedActivityItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState<boolean>(false);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   // Form modal state
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -151,19 +154,20 @@ export const KurasiLandingPage: React.FC = () => {
   };
 
   const handleDelete = (index: number) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: "Hapus Kegiatan Kurasi",
-      message: "Apakah Anda yakin ingin menghapus kegiatan ini dari daftar kurasi landing page?",
-      confirmText: "Hapus Kegiatan",
-      type: "danger",
-      onConfirm: async () => {
-        const updated = activities.filter((_, idx) => idx !== index);
-        setActivities(updated);
-        await saveActivitiesToServer(updated, true);
-        setConfirmConfig(null);
-      },
-    });
+    setDeleteTargetIndex(index);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteTargetIndex === null) return;
+    setIsActionLoading(true);
+    try {
+      const updated = activities.filter((_, idx) => idx !== deleteTargetIndex);
+      setActivities(updated);
+      setDeleteTargetIndex(null);
+      await saveActivitiesToServer(updated, true);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -311,59 +315,63 @@ export const KurasiLandingPage: React.FC = () => {
   };
 
   const executeResetToRealProkerDefaults = async () => {
-    const realDefaults: CuratedActivityItem[] = [
-      {
-        id: "curated-1",
-        title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
-        date: "2026-08-27",
-        location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
-        category: "Edukasi & Sosialisasi",
-        imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
-        description:
-          "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
-        sdgTags: ["#11", "#12", "#13"],
-        isPublished: true,
-      },
-      {
-        id: "curated-2",
-        title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
-        date: "2026-08-27",
-        location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
-        category: "Edukasi Pemilahan",
-        imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
-        description:
-          "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
-        sdgTags: ["#4", "#12", "#15"],
-        isPublished: true,
-      },
-      {
-        id: "curated-3",
-        title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
-        date: "2026-08-27",
-        location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
-        category: "Pengolahan & Pemanfaatan",
-        imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
-        description:
-          "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
-        sdgTags: ["#12", "#13", "#15"],
-        isPublished: true,
-      },
-      {
-        id: "curated-4",
-        title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
-        date: "2026-08-27",
-        location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
-        category: "Aksi Bersih Lingkungan",
-        imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
-        description:
-          "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
-        sdgTags: ["#3", "#11", "#12"],
-        isPublished: true,
-      },
-    ];
+    try {
+      const realDefaults: CuratedActivityItem[] = [
+        {
+          id: "curated-1",
+          title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
+          date: "2026-08-27",
+          location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
+          category: "Edukasi & Sosialisasi",
+          imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
+          description:
+            "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
+          sdgTags: ["#11", "#12", "#13"],
+          isPublished: true,
+        },
+        {
+          id: "curated-2",
+          title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
+          date: "2026-08-27",
+          location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
+          category: "Edukasi Pemilahan",
+          imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+          description:
+            "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
+          sdgTags: ["#4", "#12", "#15"],
+          isPublished: true,
+        },
+        {
+          id: "curated-3",
+          title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
+          date: "2026-08-27",
+          location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
+          category: "Pengolahan & Pemanfaatan",
+          imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
+          description:
+            "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
+          sdgTags: ["#12", "#13", "#15"],
+          isPublished: true,
+        },
+        {
+          id: "curated-4",
+          title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
+          date: "2026-08-27",
+          location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
+          category: "Aksi Bersih Lingkungan",
+          imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
+          description:
+            "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
+          sdgTags: ["#3", "#11", "#12"],
+          isPublished: true,
+        },
+      ];
 
-    setActivities(realDefaults);
-    await saveActivitiesToServer(realDefaults, true);
+      setActivities(realDefaults);
+      await saveActivitiesToServer(realDefaults, true);
+    } catch {
+      showToast.error("Gagal memuat ulang template default");
+    }
   };
 
   const handleResetToRealProkerDefaults = () => {
@@ -972,19 +980,33 @@ export const KurasiLandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Confirmation Modal */}
-      {confirmConfig && (
-        <ConfirmModal
-          isOpen={confirmConfig.isOpen}
-          onClose={() => setConfirmConfig(null)}
-          onConfirm={confirmConfig.onConfirm}
-          title={confirmConfig.title}
-          message={confirmConfig.message}
-          confirmText={confirmConfig.confirmText}
-          cancelText="Batal"
-          type={confirmConfig.type}
-        />
-      )}
+      {/* Modern BERSEKA Confirmation Modal for Deleting Curated Activity */}
+      <ConfirmModal
+        isOpen={deleteTargetIndex !== null}
+        onClose={() => setDeleteTargetIndex(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isActionLoading}
+        title="Hapus Kegiatan Kurasi"
+        message={`Apakah Anda yakin ingin menghapus kegiatan "${
+          deleteTargetIndex !== null && activities[deleteTargetIndex] ? activities[deleteTargetIndex].title : ""
+        }" dari daftar kurasi landing page?`}
+        confirmText="Ya, Hapus Kegiatan"
+        cancelText="Batal"
+        type="danger"
+      />
+
+      {/* Modern BERSEKA Confirmation Modal for Resetting to Real Defaults */}
+      <ConfirmModal
+        isOpen={showResetConfirmModal}
+        onClose={() => setShowResetConfirmModal(false)}
+        onConfirm={handleConfirmResetToRealProkerDefaults}
+        isLoading={isActionLoading}
+        title="Muat Ulang Kurasi Proker Riil"
+        message="Apakah Anda yakin ingin memuat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil? Data kurasi saat ini akan digantikan dengan template default kegiatan riil."
+        confirmText="Ya, Muat Ulang"
+        cancelText="Batal"
+        type="warning"
+      />
     </div>
   );
 };

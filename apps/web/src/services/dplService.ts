@@ -513,10 +513,10 @@ export const dplService = {
     } catch {}
     return {
       targetTotalKegiatan: 2000,
-      targetTotalJam: 100,
-      targetHarianJam: 2,
+      targetTotalJam: 200,
+      targetHarianJam: 4,
       targetHarianKegiatan: 5,
-      attendanceMinDurationHours: 2,
+      attendanceMinDurationHours: 4,
       attendanceMinDurationMinutes: 0,
       attendanceMinDurationSeconds: 0,
     };

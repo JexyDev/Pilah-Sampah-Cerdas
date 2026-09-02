@@ -17,7 +17,10 @@ export function resolveImageUrl(path?: string | null): string {
     return "";
   }
 
-  const trimmed = path.trim();
+  let trimmed = path.trim();
+
+  // Otomatis ubah ekstensi .heic / .heif menjadi .jpg agar selalu kompatibel di browser web
+  trimmed = trimmed.replace(/\.(heic|heif)$/i, ".jpg");
 
   // Konversi link Google Drive menjadi direct image thumbnail
   if (trimmed.includes("drive.google.com")) {
@@ -26,6 +29,12 @@ export function resolveImageUrl(path?: string | null): string {
       return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1000`;
     }
     return trimmed;
+  }
+
+  // Jika URL mengarah ke port 3000 pada localhost / IP VPS tetapi browser sedang membuka lewat domain / reverse proxy:
+  // Normalisasi ke path relatif /uploads/... agar tidak terkena Mixed Content (HTTP vs HTTPS)
+  if (trimmed.includes(":3000/uploads/")) {
+    trimmed = trimmed.substring(trimmed.indexOf("/uploads/"));
   }
 
   // Jika sudah URL absolut (http, https, blob, data), kembalikan langsung

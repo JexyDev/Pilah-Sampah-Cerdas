@@ -67,9 +67,11 @@ import beritaRouter from "./routes/beritaRoutes.js";
 import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
 import { systemController } from "./controllers/systemController.js";
 import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
+import { kknController } from "./controllers/kknController.js";
+import { configController } from "./controllers/configController.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
 import { roleMiddleware } from "./middlewares/roleMiddleware.js";
-import { safeUploadSingleImage } from "./middlewares/uploadMiddleware.js";
+import { safeUploadSingleImage, safeUploadPemanfaatanImage } from "./middlewares/uploadMiddleware.js";
 
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
@@ -143,11 +145,25 @@ app.use(
   express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions)
 );
 
-// Fallback for missing local uploads / downloads (e.g. database synced from VPS)
+// Fallback for missing local uploads / downloads (e.g. database synced from VPS or HEIC requests)
 app.use("/uploads", (req, res, next) => {
   if (req.method === "GET" || req.method === "HEAD") {
-    const vpsUploadUrl = `http://157.10.252.252:3000/uploads${req.path}`;
-    return res.redirect(307, vpsUploadUrl);
+    // Jika meminta .heic/.heif tapi versi .jpg ada di disk, kirim file .jpg
+    const requestedPath = req.path || "";
+    if (/\.(heic|heif)$/i.test(requestedPath)) {
+      const jpgRelativePath = requestedPath.replace(/\.(heic|heif)$/i, ".jpg");
+      const localJpg = path.resolve(process.cwd(), "uploads", jpgRelativePath.replace(/^\//, ""));
+      if (fs.existsSync(localJpg)) {
+        return res.sendFile(localJpg);
+      }
+    }
+
+    // Pada environment lokal: fallback ke CDN produksi berseka.id melalui HTTPS
+    const isLocalDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
+    if (isLocalDev && req.hostname === "localhost") {
+      const vpsUploadUrl = `https://berseka.id/uploads${req.path}`;
+      return res.redirect(307, vpsUploadUrl);
+    }
   }
   next();
 });
@@ -162,8 +178,11 @@ app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads"), s
 
 app.use("/downloads", (req, res, next) => {
   if (req.method === "GET" || req.method === "HEAD") {
-    const vpsDownloadUrl = `http://157.10.252.252:3000/downloads${req.path}`;
-    return res.redirect(307, vpsDownloadUrl);
+    const isLocalDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
+    if (isLocalDev && req.hostname === "localhost") {
+      const vpsDownloadUrl = `https://berseka.id/downloads${req.path}`;
+      return res.redirect(307, vpsDownloadUrl);
+    }
   }
   next();
 });
@@ -186,7 +205,10 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/system", systemRouter);
+app.use("/api/v1/config", configRouter);
 app.use("/api/v1/configs", configRouter);
+app.use("/api/config", configRouter);
+app.use("/api/configs", configRouter);
 app.use("/api/v1/gamification", gamificationRouter);
 app.use("/api/v1/facilities", facilityRouter);
 app.use("/api/v1/bank-sampah", bankSampahRouter);
@@ -346,6 +368,84 @@ app.get(
     "PEMIMPIN",
   ]),
   kknAttendanceController.getLaporanPresensi
+);
+
+// Direct Panen Hasil Endpoints for Mobile Client
+app.post(
+  ["/api/v1/panen-hasil", "/api/panen-hasil", "/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+app.put(
+  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+app.patch(
+  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  safeUploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+app.delete(
+  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.deletePanenHasil
+);
+
+// Public Mobile Force Update App Version Endpoint
+app.get(
+  [
+    "/api/v1/config/app-version",
+    "/api/v1/configs/app-version",
+    "/api/config/app-version",
+    "/api/configs/app-version",
+    "/api/app-version",
+    "/api/v1/app-version",
+  ],
+  configController.getAppVersion
 );
 
 // Global Error Handler Middleware

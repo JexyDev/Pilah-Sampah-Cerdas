@@ -41,6 +41,10 @@ export class AuditTrailService {
         newValue = null,
       } = params;
 
+      if (!prisma?.auditTrail) {
+        return null;
+      }
+
       // Ambil audit log terakhir untuk rantai hash (previousHash)
       const lastLog = await prisma.auditTrail.findFirst({
         orderBy: { timestamp: "desc" },

@@ -166,9 +166,9 @@ export const TaskforceDashboardPage: React.FC = () => {
   const endRecord = itemsPerPage === 0 ? filteredGroups.length : Math.min(startIndex + itemsPerPage, filteredGroups.length);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300 pb-20">
+    <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-300 pb-20 w-full min-w-0">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-teal-700 to-emerald-800 p-8 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-teal-700 to-emerald-800 p-5 sm:p-8 text-white shadow-xl">
         <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>

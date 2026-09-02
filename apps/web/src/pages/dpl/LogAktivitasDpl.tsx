@@ -118,9 +118,9 @@ export const LogAktivitasDpl: React.FC = () => {
   const [selectedDetailLog, setSelectedDetailLog] = useState<DplActivityLogItem | null>(null);
   const [previewGalleryImage, setPreviewGalleryImage] = useState<string | null>(null);
 
-  // Delete Confirmation Modal State
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  // Modal Confirm Delete State
+  const [deleteTargetLog, setDeleteTargetLog] = useState<{ id: string; nama?: string } | null>(null);
+  const [isDeletingLog, setIsDeletingLog] = useState(false);
 
   // Helper Format Tanggal Indonesia Lengkap (e.g. 14 Agustus 2026)
   const formatIndonesianDateLong = (dateStr?: string | null): string => {
@@ -445,26 +445,26 @@ export const LogAktivitasDpl: React.FC = () => {
     }
   };
 
-  // Delete Click Handler
-  const handleDeleteLog = (id: string) => {
-    setDeleteTargetId(id);
+  // Delete Handlers
+  const handlePromptDeleteLog = (id: string, uraian?: string) => {
+    setDeleteTargetLog({ id, nama: uraian });
   };
 
-  const executeDeleteLog = async () => {
-    if (!deleteTargetId) return;
-    setIsDeleting(true);
+  const handleConfirmDeleteLog = async () => {
+    if (!deleteTargetLog) return;
+    setIsDeletingLog(true);
     try {
-      await dplActivityLogService.deleteActivityLog(deleteTargetId);
+      await dplActivityLogService.deleteActivityLog(deleteTargetLog.id);
       toast.success("Kegiatan DPL berhasil dihapus");
-      if (selectedDetailLog?.id === deleteTargetId) {
+      if (selectedDetailLog?.id === deleteTargetLog.id) {
         setSelectedDetailLog(null);
       }
-      setDeleteTargetId(null);
+      setDeleteTargetLog(null);
       fetchActivityLogs();
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal menghapus kegiatan");
     } finally {
-      setIsDeleting(false);
+      setIsDeletingLog(false);
     }
   };
 
@@ -772,7 +772,7 @@ export const LogAktivitasDpl: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteLog(item.id)}
+                          onClick={() => handlePromptDeleteLog(item.id, item.uraianKegiatan)}
                           className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
                           title="Hapus kegiatan"
                         >
@@ -1524,7 +1524,7 @@ export const LogAktivitasDpl: React.FC = () => {
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => handleDeleteLog(selectedDetailLog.id)}
+                onClick={() => handlePromptDeleteLog(selectedDetailLog.id, selectedDetailLog.uraianKegiatan)}
                 className="px-4 py-2.5 border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-600 font-semibold rounded-xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <Trash2 className="w-4 h-4" />
@@ -1602,17 +1602,19 @@ export const LogAktivitasDpl: React.FC = () => {
         </div>
       )}
 
-      {/* Confirmation Modal for Delete Log Activity */}
+      {/* Modern BERSEKA Confirmation Modal for Deleting DPL Logbook Activity */}
       <ConfirmModal
-        isOpen={!!deleteTargetId}
-        onClose={() => setDeleteTargetId(null)}
-        onConfirm={executeDeleteLog}
+        isOpen={Boolean(deleteTargetLog)}
+        onClose={() => setDeleteTargetLog(null)}
+        onConfirm={handleConfirmDeleteLog}
+        isLoading={isDeletingLog}
         title="Hapus Log Aktivitas DPL"
-        message="Apakah Anda yakin ingin menghapus catatan log aktivitas DPL ini? Data yang dihapus tidak dapat dikembalikan."
-        confirmText="Hapus Kegiatan"
+        message={`Apakah Anda yakin ingin menghapus data log aktivitas DPL${
+          deleteTargetLog?.nama ? ` "${deleteTargetLog.nama}"` : ""
+        }? Data yang dihapus tidak dapat dipulihkan.`}
+        confirmText="Ya, Hapus Kegiatan"
         cancelText="Batal"
         type="danger"
-        isLoading={isDeleting}
       />
     </div>
   );

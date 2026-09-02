@@ -901,9 +901,35 @@ router.delete(
  *         description: Hasil panen berhasil dicatat (+25 Poin untuk seluruh anggota kelompok)
  */
 router.post(
+  ["/panen-hasil", "/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  uploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+
+router.post(
   "/panen-hasil",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   uploadPemanfaatanImage,
   kknController.createPanenHasil
 );
@@ -929,7 +955,16 @@ router.post(
 router.put(
   "/panen-hasil/:id",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   uploadPemanfaatanImage,
   kknController.updatePanenHasil
 );
@@ -937,7 +972,16 @@ router.put(
 router.patch(
   "/panen-hasil/:id",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   uploadPemanfaatanImage,
   kknController.updatePanenHasil
 );
@@ -963,7 +1007,16 @@ router.patch(
 router.delete(
   "/panen-hasil/:id",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
   kknController.deletePanenHasil
 );
 
@@ -999,7 +1052,7 @@ router.post(
  *         description: Pengajuan izin berhasil dikirim ke DPL
  */
 router.post(
-  "/pengajuan-izin",
+  ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   safeUploadSingleImage("fotoBukti"),
@@ -1007,7 +1060,7 @@ router.post(
 );
 
 router.get(
-  "/pengajuan-izin",
+  ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknController.getLeaveRequests

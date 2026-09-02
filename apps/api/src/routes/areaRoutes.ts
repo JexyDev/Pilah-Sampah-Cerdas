@@ -779,7 +779,7 @@ router.get("/rw", async (req, res) => {
 
 router.post("/rw", async (req, res) => {
   try {
-    const { name, nama, kelurahanId, id_kelurahan } = req.body;
+    const { name, nama, kelurahanId, id_kelurahan, latitude, longitude } = req.body;
     const rwName = (name || nama || "").trim();
     const kId = String(kelurahanId || id_kelurahan || "");
     if (!rwName) {
@@ -788,6 +788,9 @@ router.post("/rw", async (req, res) => {
     if (!kId) {
       return res.status(400).json({ success: false, message: "Kelurahan ID tidak boleh kosong" });
     }
+
+    const latVal = latitude !== undefined && latitude !== null && latitude !== "" ? Number(latitude) : null;
+    const lngVal = longitude !== undefined && longitude !== null && longitude !== "" ? Number(longitude) : null;
 
     const names = rwName
       .split(",")
@@ -798,8 +801,17 @@ router.post("/rw", async (req, res) => {
       const formattedName = item.toUpperCase().startsWith("RW") ? item : `RW ${item}`;
       const rw = await prisma.rw.upsert({
         where: { kelurahanId_name: { kelurahanId: kId, name: formattedName } },
-        create: { name: formattedName, kelurahanId: kId },
-        update: { name: formattedName },
+        create: {
+          name: formattedName,
+          kelurahanId: kId,
+          ...(latVal !== null ? { latitude: latVal } : {}),
+          ...(lngVal !== null ? { longitude: lngVal } : {}),
+        },
+        update: {
+          name: formattedName,
+          ...(latVal !== null ? { latitude: latVal } : {}),
+          ...(lngVal !== null ? { longitude: lngVal } : {}),
+        },
         include: {
           kelurahan: {
             include: {
@@ -828,7 +840,7 @@ router.post("/rw", async (req, res) => {
 router.put("/rw/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, nama, kelurahanId, id_kelurahan } = req.body;
+    const { name, nama, kelurahanId, id_kelurahan, latitude, longitude } = req.body;
     const rwName = (name || nama || "").trim();
 
     const data: any = {};
@@ -837,6 +849,12 @@ router.put("/rw/:id", async (req, res) => {
     }
     if (kelurahanId || id_kelurahan) {
       data.kelurahanId = String(kelurahanId || id_kelurahan);
+    }
+    if (latitude !== undefined) {
+      data.latitude = latitude !== null && latitude !== "" ? Number(latitude) : null;
+    }
+    if (longitude !== undefined) {
+      data.longitude = longitude !== null && longitude !== "" ? Number(longitude) : null;
     }
 
     const updated = await prisma.rw.update({

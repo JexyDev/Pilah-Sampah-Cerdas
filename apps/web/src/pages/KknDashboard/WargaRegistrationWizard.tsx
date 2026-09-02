@@ -361,7 +361,6 @@ export const WargaRegistrationWizard: React.FC<Props> = ({ onSuccess, onCancel }
                     type="file"
                     ref={fileInputRef}
                     accept="image/*"
-                    capture="environment"
                     className="hidden"
                     onChange={handlePhotoFileChange}
                   />

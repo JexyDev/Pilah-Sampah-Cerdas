@@ -10,20 +10,9 @@ import React, { useEffect, useState } from "react";
 import {
   MapPin,
   Calendar,
-  Clock,
-  CheckCircle2,
-  FileText,
   Target,
   PlusCircle,
-  TrendingUp,
-  Sparkles,
-  UserCheck,
   ChevronRight,
-  ShieldCheck,
-  Building2,
-  ExternalLink,
-  Award,
-  AlertTriangle,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../utils/api";
@@ -48,7 +37,7 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
     totalProker: 0,
     totalAttendedDays: 0,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
@@ -72,9 +61,19 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
 
       let attendedCount = 0;
       if (presensiRes.status === "fulfilled") {
-        const presensiList = presensiRes.value.data?.data || [];
+        const presensiData = presensiRes.value.data?.data;
+        const presensiList = Array.isArray(presensiData)
+          ? presensiData
+          : Array.isArray(presensiData?.items)
+          ? presensiData.items
+          : [];
         attendedCount = presensiList.length;
-        const active = presensiList.find((p: any) => p.statusPresensi === "AKTIF" || !p.jamPulang);
+        const active = presensiList.find(
+          (p: any) =>
+            p.status === "AKTIF" ||
+            p.statusPresensi === "AKTIF" ||
+            (!p.checkOutAt && !p.jamPulang)
+        );
         setActiveAttendance(active || null);
       }
 

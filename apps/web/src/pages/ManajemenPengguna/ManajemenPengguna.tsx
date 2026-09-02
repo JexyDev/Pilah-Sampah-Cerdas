@@ -619,10 +619,15 @@ const ManajemenPengguna: React.FC = () => {
 
     setModalType("edit");
     setSelectedUser(u);
-    let matchedAreaId = u.rtRwId ? String(u.rtRwId) : "";
-    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
+    let matchedAreaId = u.rtRwId ? String(u.rtRwId) : u.rwId ? String(u.rwId) : u.studentProfile?.assignedRwId ? String(u.studentProfile?.assignedRwId) : "";
+    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
     if (!matchedAreaId && u.rw && areasList.length > 0) {
-      const found = areasList.find((a: any) => a.name.toLowerCase() === u.rw.toLowerCase() || a.name.replace(/\D/g, "") === u.rw.replace(/\D/g, ""));
+      const cleanTargetKel = getCleanKelName(foundKelurahan).toLowerCase();
+      const found = areasList.find((a: any) => {
+        const kelMatches = a.kelurahan?.name && a.kelurahan.name.toLowerCase().includes(cleanTargetKel);
+        const nameMatches = a.name.toLowerCase() === u.rw.toLowerCase() || a.name.replace(/\D/g, "") === u.rw.replace(/\D/g, "");
+        return kelMatches && nameMatches;
+      }) || areasList.find((a: any) => a.name.toLowerCase() === u.rw.toLowerCase());
       if (found) {
         matchedAreaId = String(found.id);
         if (found.kelurahan?.name) {
@@ -1629,7 +1634,6 @@ const ManajemenPengguna: React.FC = () => {
                               (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
 
                             if (!canEdit) return null;
-                            if (selectedRole.toUpperCase() === "RW" || u.roleName === "RW" || u.role === "RW" || u.role?.name === "RW") return null;
 
                             return (
                               <button
@@ -1828,7 +1832,7 @@ const ManajemenPengguna: React.FC = () => {
                 {/* Mobile Action Buttons */}
                 {!isReadOnly && (canEdit || canDelete) && (
                   <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                    {canEdit && selectedRole.toUpperCase() !== "RW" && (
+                    {canEdit && (
                       <button
                         onClick={() => handleOpenEditModal(u)}
                         className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 border border-amber-200/80 dark:border-amber-900/40 text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"

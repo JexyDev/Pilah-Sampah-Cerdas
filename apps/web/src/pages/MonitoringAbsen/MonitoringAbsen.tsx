@@ -227,14 +227,19 @@ const formatTargetDuration = (config: ConfigTargets): string => {
     if (h > 0) parts.push(`${h} Jam`);
     if (m > 0) parts.push(`${m} Menit`);
     if (s > 0 && h === 0 && m === 0) parts.push(`${s} Detik`);
-    if (parts.length > 0) return parts.join(" ");
+    if (parts.length > 0) {
+      const durStr = parts.join(" ");
+      return `${durStr} (${Math.round(totalMins)} mnt)`;
+    }
   }
   if (config.targetHarianJam && config.targetHarianJam > 0) {
-    return formatHoursToUnits(config.targetHarianJam);
+    const totalMins = Math.round(config.targetHarianJam * 60);
+    return `${formatHoursToUnits(config.targetHarianJam)} (${totalMins} mnt)`;
   }
   if (config.targetTotalJam && config.targetTotalHari && config.targetTotalHari > 0) {
     const autoDailyHours = config.targetTotalJam / config.targetTotalHari;
-    return formatHoursToUnits(autoDailyHours);
+    const totalMins = Math.round(autoDailyHours * 60);
+    return `${formatHoursToUnits(autoDailyHours)} (${totalMins} mnt)`;
   }
   return "0 Menit";
 };
@@ -1033,6 +1038,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       if (isIzinSakit) return false;
       if (st === "HADIR_MEMENUHI") return true;
       if (st === "HADIR_TIDAK_MEMENUHI" || st === "SELESAI_TELAT") return false;
+      const isAttendedOrActive = Boolean(a.attendedAt) || st === "BERLANGSUNG" || st === "HADIR" || st === "SELESAI";
+      if (!isAttendedOrActive) return false;
       const aAny = a as any;
       const targetMins = (aAny.targetDurationMinutes && Number(aAny.targetDurationMinutes) > 0)
         ? Number(aAny.targetDurationMinutes)
@@ -1352,6 +1359,12 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
       setStudentLocations((prev) => {
         const index = prev.findIndex((s) => s.studentId === locData.studentId);
+        const resolvedKelompokId =
+          locData.kelompokId ||
+          locData.student?.studentProfile?.kelompokId ||
+          locData.student?.studentProfile?.kelompok?.id ||
+          null;
+
         const studentInfo = locData.student || {
           id: locData.studentId,
           name: locData.namaMahasiswa || locData.name || "Mahasiswa KKN",
@@ -1360,7 +1373,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           studentProfile: {
             nim: locData.nim || "-",
             jurusan: locData.jurusan || "-",
-            kelompokId: locData.kelompokId || null,
+            kelompokId: resolvedKelompokId,
           },
         };
 
@@ -1395,7 +1408,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       setAttendance((prev) => {
         return prev.map((a) => {
           if (a.studentId === locData.studentId || a.student?.id === locData.studentId) {
-            const actualMins = locData.actualInZoneMinutes ?? locData.inZoneMinutes;
+            const hasAtt = Boolean(a.attendedAt);
+            const actualMins = hasAtt ? (locData.actualInZoneMinutes ?? locData.inZoneMinutes) : 0;
             return {
               ...a,
               latitude: String(lat),
@@ -1452,6 +1466,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           };
           return next;
         } else if (attData.student) {
+          const studentKelId =
+            attData.kelompokId ||
+            attData.student?.studentProfile?.kelompokId ||
+            attData.student?.studentProfile?.kelompok?.id;
+          if (selectedKelompokId && studentKelId && studentKelId !== selectedKelompokId) {
+            return prev;
+          }
           const newRec: AttendanceRecord = {
             id: attData.id || `att-${Date.now()}`,
             scheduleId: attData.scheduleId || selectedScheduleId,
@@ -1559,7 +1580,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       "Status Absensi",
       "Waktu Masuk",
       "Waktu Pulang",
-      "Durasi (Menit)",
+      "Durasi Jeda (Menit)",
+      "Durasi Bersih (Menit)",
+      "Durasi Bersih (Format)",
     ];
     const rows = filtered.map((rec) => {
       const isAttended = Boolean(rec.attendedAt);
@@ -1567,9 +1590,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const statusUpper = String(rec.status || "").toUpperCase();
       const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
       const recAny = rec as any;
-      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const isLeaveOrAlpha = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN") || statusUpper.includes("ALPA") || statusUpper.includes("ALPHA") || !isAttended;
+      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+      const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
+      const jedaMins = isLeaveOrAlpha ? 0 : (recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0);
+      const hours = Math.floor(durationMins / 60);
+      const mins = durationMins % 60;
+      const durasiFormatted = hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
 
       let statusStr = "Belum Absen";
       if (statusUpper.includes("SAKIT")) {
@@ -1582,9 +1610,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
         statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
       } else if (isFinished) {
-        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60))
-          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60));
+        const isMemenuhi = statusUpper === "SELESAI_TELAT"
+          ? false
+          : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0);
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
@@ -1594,7 +1622,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         statusStr,
         rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
         rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
+        jedaMins,
         durationMins,
+        durasiFormatted,
       ];
     });
 
@@ -1606,7 +1636,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       { wch: 25 }, // Status
       { wch: 22 }, // Waktu Masuk
       { wch: 22 }, // Waktu Pulang
-      { wch: 16 }, // Durasi
+      { wch: 18 }, // Durasi Jeda
+      { wch: 18 }, // Durasi Bersih
+      { wch: 22 }, // Durasi Format
     ];
     XLSX.utils.book_append_sheet(wb, ws, "Rekap Presensi");
     XLSX.writeFile(wb, `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.xlsx`);
@@ -1637,7 +1669,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       "Status Presensi",
       "Waktu Masuk",
       "Waktu Pulang",
-      "Durasi (Menit)",
+      "Durasi Jeda (Menit)",
+      "Durasi Bersih (Menit)",
       "Target (Jam)",
       "Pemenuhan Target",
     ];
@@ -1648,9 +1681,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const statusUpper = String(rec.status || "").toUpperCase();
       const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
       const recAny = rec as any;
-      const liveElapsedMins = calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const isLeaveOrAlpha = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN") || statusUpper.includes("ALPA") || statusUpper.includes("ALPHA") || !isAttended;
+      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
       const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-      const durationMins = storedMins > 0 ? storedMins : liveElapsedMins;
+      const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
+      const jedaMins = isLeaveOrAlpha ? 0 : (recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0);
 
       let statusStr = "Belum Absen";
       if (statusUpper.includes("SAKIT")) {
@@ -1665,7 +1700,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       } else if (isFinished) {
         const isMemenuhi = rec.isMemenuhiDurasi !== undefined
           ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
-          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= scheduleTargetHours * 60 && durationMins > 0));
+          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0));
         statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
       }
 
@@ -1682,6 +1717,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         statusStr,
         rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
         rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
+        jedaMins,
         durationMins,
         scheduleTargetHours,
         isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-",
@@ -1698,7 +1734,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       { wch: 25 },
       { wch: 22 },
       { wch: 22 },
-      { wch: 15 },
+      { wch: 18 },
+      { wch: 18 },
       { wch: 14 },
       { wch: 25 },
     ];
@@ -1851,7 +1888,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
     const groups: Record<string, GroupedStudent> = {};
 
-    studentLocations.forEach((loc, idx) => {
+    // Filter students strictly by selectedKelompokId if a specific group is chosen
+    const scopedLocations = studentLocations.filter((loc) => {
+      if (!selectedKelompokId) return true;
+      const locKelId =
+        (loc as any).kelompokId ||
+        loc.student?.studentProfile?.kelompokId ||
+        loc.student?.studentProfile?.kelompok?.id;
+      if (locKelId && locKelId === selectedKelompokId) return true;
+      // Fallback: check if the student exists in the attendance list for this kelompok/schedule
+      const inAttendance = attendance.some(
+        (a) => a.studentId === loc.studentId || a.student?.id === loc.studentId
+      );
+      return inAttendance;
+    });
+
+    scopedLocations.forEach((loc, idx) => {
       const lat = Number(loc.latitude);
       const lng = Number(loc.longitude);
       if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
@@ -2043,7 +2095,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     });
 
     return items;
-  }, [studentLocations, attendance, activeSchedule, mapZoom]);
+  }, [studentLocations, attendance, activeSchedule, mapZoom, selectedKelompokId]);
 
   const STANDARD_CATEGORIES = [
     "Sosialisasi",
@@ -2932,8 +2984,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/60 pt-1 text-center">
                 <div className="px-2 flex flex-col items-center justify-center">
                   <Clock size={18} className="text-emerald-600 dark:text-emerald-400 mb-1" />
-                  <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}</span>
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Zona</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+                      {formatHoursToUnits(scheduleTargetHours > 0 ? scheduleTargetHours : 4)}
+                    </span>
+                    <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">
+                      ({Math.round((scheduleTargetHours > 0 ? scheduleTargetHours : 4) * 60)} mnt)
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">Target Zona</span>
                   <span className="text-[10px] text-slate-400 font-medium">Minimal Durasi Lapangan</span>
                 </div>
 
@@ -3082,22 +3141,32 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
 
               {/* Boundary 6 Kelurahan */}
-              {Object.values(KELURAHAN_GEODATA).map((kg) => (
-                <Polygon
-                  key={`kel-${kg.id}`}
-                  positions={kg.bounds}
-                  pathOptions={{
-                    color: kg.color,
-                    fillColor: kg.color,
-                    fillOpacity: 0.12,
-                    weight: 1.5,
-                  }}
-                >
-                  <Popup>
-                    <div className="text-xs font-bold p-1">Kelurahan {kg.name}</div>
-                  </Popup>
-                </Polygon>
-              ))}
+              {Object.values(KELURAHAN_GEODATA).map((kg) => {
+                const selectedGroup = selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId) : null;
+                const isMatchingKelurahan = selectedGroup?.kelurahan
+                  ? selectedGroup.kelurahan.toLowerCase().includes(kg.name.toLowerCase()) ||
+                    kg.name.toLowerCase().includes(selectedGroup.kelurahan.toLowerCase())
+                  : false;
+                const isSelectedMode = Boolean(selectedKelompokId);
+
+                return (
+                  <Polygon
+                    key={`kel-${kg.id}`}
+                    positions={kg.bounds}
+                    pathOptions={{
+                      color: kg.color,
+                      fillColor: kg.color,
+                      fillOpacity: isSelectedMode ? (isMatchingKelurahan ? 0.2 : 0.03) : 0.12,
+                      weight: isSelectedMode ? (isMatchingKelurahan ? 2.5 : 1) : 1.5,
+                      dashArray: isSelectedMode && !isMatchingKelurahan ? "4, 6" : undefined,
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-xs font-bold p-1">Kelurahan {kg.name}</div>
+                    </Popup>
+                  </Polygon>
+                );
+              })}
 
               {/* Geofence Kegiatan - Mode Single Schedule ATAU Mode Global Seluruh Kelompok */}
               {activeSchedule ? (
@@ -3163,6 +3232,47 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     return null;
                   })()}
                 </>
+              ) : selectedKelompokId ? (
+                /* Mode Single Kelompok: Jika belum ada jadwal aktif hari ini, tampilkan Posko KKN Kelompok tersebut saja */
+                (() => {
+                  const grp = groups.find((g) => g.id === selectedKelompokId);
+                  if (!grp) return null;
+                  const locInfo = getKelompokLocationInfo(grp);
+                  const center = locInfo.centroid;
+                  const groupName = grp.name || "Posko KKN";
+                  return (
+                    <React.Fragment key={`posko-geofence-${grp.id}`}>
+                      <Marker position={center} icon={createPoskoZoneIcon(groupName)}>
+                        <Popup>
+                          <div className="p-2.5 font-sans space-y-1.5 text-xs min-w-[180px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="font-extrabold text-emerald-900 dark:text-emerald-300 text-xs">
+                                {groupName}
+                              </span>
+                            </div>
+                            <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                              Posko KKN {grp.kelurahan || "Wilayah KKN"}
+                            </div>
+                            <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold">
+                              Geofence Posko: 200 meter
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                      <Circle
+                        center={center}
+                        radius={200}
+                        pathOptions={{
+                          color: "#059669",
+                          fillColor: "#10b981",
+                          fillOpacity: 0.22,
+                          weight: 2.5,
+                        }}
+                      />
+                    </React.Fragment>
+                  );
+                })()
               ) : (
                 /* Mode Global Overview: Tampilkan Seluruh Zona Geofence 32 Kelompok */
                 <>
@@ -3263,8 +3373,25 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 </>
               )}
 
-              {/* Real Facilities GIS Markers */}
-              {facilities.map((fac) => {
+              {/* Real Facilities GIS Markers - Filtered by Kelompok when selected */}
+              {facilities
+                .filter((fac) => {
+                  if (!selectedKelompokId) return true;
+                  if (fac.kelompokId && fac.kelompokId === selectedKelompokId) return true;
+                  const selectedGroup = groups.find((g) => g.id === selectedKelompokId);
+                  if (selectedGroup?.cakupanRw && fac.rwId) {
+                    try {
+                      const cakupan = typeof selectedGroup.cakupanRw === "string"
+                        ? JSON.parse(selectedGroup.cakupanRw)
+                        : selectedGroup.cakupanRw;
+                      if (Array.isArray(cakupan)) {
+                        return cakupan.includes(fac.rwId) || cakupan.includes(Number(fac.rwId));
+                      }
+                    } catch {}
+                  }
+                  return false;
+                })
+                .map((fac) => {
                 const lat = Number(fac.latitude);
                 const lng = Number(fac.longitude);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
@@ -3564,9 +3691,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           <th className="py-3.5 px-3 text-center" title="Jam Pulang (JP) — waktu mahasiswa selesai kegiatan">
                             JAM PULANG (JP)
                           </th>
-                          <th className="py-3.5 px-4 text-center" title="Durasi Aktual (DA) = JP − JM, dalam menit">
+                          <th className="py-3.5 px-3 text-center bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300" title="Durasi Jeda (DJ) — akumulasi waktu istirahat / jeda di luar zona">
+                            DURASI JEDA (DJ)
+                            <span className="block text-[9px] font-normal opacity-70 normal-case">jeda/keluar zona</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title="Durasi Aktual (DA) = (JP − JM) − DJ, dalam menit">
                             DURASI AKTUAL (DA)
-                            <span className="block text-[9px] font-normal opacity-60 normal-case">DA = JP − JM (menit)</span>
+                            <span className="block text-[9px] font-normal opacity-60 normal-case">DA = (JP−JM)−DJ</span>
                           </th>
                           <th className="py-3.5 px-3 text-center" title="Target Minimal per hari — durasi wajib kehadiran">
                             TARGET MIN (TM)
@@ -3592,10 +3723,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             JAM PULANG
                             <span className="block text-[9px] font-normal opacity-60 normal-case">(JP)</span>
                           </th>
-                          <th className="py-3.5 px-4 text-center" title={`Durasi Aktual (DA) = JP − JM. Target harian: ${formatHoursToUnits(scheduleTargetHours)}`}>
+                          <th className="py-3.5 px-3 text-center bg-amber-50/60 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300" title="Durasi Jeda (DJ) — akumulasi waktu istirahat / jeda di luar zona">
+                            DURASI JEDA
+                            <span className="block text-[9px] font-normal opacity-70 normal-case">(DJ)</span>
+                          </th>
+                          <th className="py-3.5 px-4 text-center" title={`Durasi Aktual (DA) = (JP − JM) − DJ. Target harian: ${formatHoursToUnits(scheduleTargetHours)}`}>
                             DURASI AKTUAL (DA)
                             <span className="block text-[9px] font-normal opacity-60 normal-case">
-                              DA = JP−JM / TM: {formatHoursToUnits(scheduleTargetHours)}
+                              DA = Bersih / TM: {formatHoursToUnits(scheduleTargetHours)}
                             </span>
                           </th>
                           <th className="py-3.5 px-4 text-center min-w-[180px]" title={`Total akumulasi KKN. Target kumulatif: ${formatHoursToUnits(configTargets.targetTotalJam || (scheduleTargetHours * (configTargets.targetTotalHari || 50)))}`}>
@@ -3639,17 +3774,19 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isGpsRecent = !isNaN(recTime) && recTime > 0 && Date.now() - recTime < 5 * 60 * 1000;
                         const isGpsStale = isBerlangsung && minsSincePing !== null && minsSincePing >= 3;
 
+                        const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
+                        const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
+                        const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished || isOverrideDpl) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-                        const durationMins = isLeaveOrPending 
+                        const durationMins = !hasValidAttendanceSession
                           ? 0 
                           : isTerjeda
                           ? storedMins
                           : storedMins > 0
                           ? storedMins
                           : liveElapsedMins;
-                        const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || checkOutTimestamp !== null && checkOutTimestamp !== undefined;
-                        const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
 
                         const targetZonaHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                           ? Number(recAny.targetHours) 
@@ -3657,11 +3794,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                           ? Number(recAny.targetDurationMinutes) 
                           : Math.round(targetZonaHours * 60);
-                        const percentZona = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
+                        const percentZona = !hasValidAttendanceSession || durationMins === 0
+                          ? 0
+                          : (recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending)
                           ? Number(recAny.targetRatioPercent)
                           : (targetZonaMins > 0 ? Math.round((durationMins / targetZonaMins) * 100) : 0);
 
-                        const isMemenuhiDurasi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+                        const isMemenuhiDurasi = !hasValidAttendanceSession || isLeaveOrPending
                           ? false
                           : rec.isMemenuhiDurasi !== undefined
                           ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
@@ -3673,11 +3812,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const jamMasukStr = !isLeaveOrPending && rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-";
                         const jamPulangStr = !isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-";
-                        const durasiText = isLeaveOrPending
+                        const durasiText = (!hasValidAttendanceSession || durationMins === 0)
                           ? "0 menit"
-                          : (isAttended || isBerlangsung || isTerjeda || durationMins > 0)
-                          ? formatDurasiIndo(durationMins)
-                          : "0 menit";
+                          : formatDurasiIndo(durationMins);
+
+                        const durasiJedaMins = recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null
+                          ? Number(recAny.durasiJedaMenit)
+                          : isTerjeda
+                          ? Math.max(0, liveElapsedMins - durationMins)
+                          : 0;
+                        const durasiJedaText = isLeaveOrPending ? "-" : formatDurasiIndo(durasiJedaMins);
 
                         const rawStudentName = rec.student?.name
                           ? rec.student.name.replace(/👑|\(Ketua Kelompok\)/g, "").trim()
@@ -3826,6 +3970,20 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 {jamPulangStr}
                               </td>
 
+                              {/* DURASI JEDA (DJ) */}
+                              <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs bg-amber-50/30 dark:bg-amber-950/10">
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className={`font-extrabold text-xs ${durasiJedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
+                                    {durasiJedaText}
+                                  </span>
+                                  {durasiJedaMins > 0 && (
+                                    <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 font-mono">
+                                      ({durasiJedaMins} mnt)
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
                               {/* 6. DURASI AKTUAL */}
                               <td className="py-4 px-4 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
                                 <div className="flex flex-col items-center gap-0.5">
@@ -3842,7 +4000,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               <td className="py-4 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs">
                                 <div className="flex flex-col items-center gap-0.5">
                                   <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-[11px] border border-slate-200/80 dark:border-slate-700">
-                                    {targetZonaHours} Jam
+                                    {formatHoursToUnits(targetZonaHours)}
                                   </span>
                                   <span className="text-[10px] text-slate-400 font-mono">
                                     ({targetZonaMins} mnt)
@@ -4052,7 +4210,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                               {jamPulangStr}
                             </td>
 
-                            {/* 7. DURASI AKTUAL (DA) = JP − JM */}
+                            {/* DURASI JEDA (DJ) */}
+                            <td className="py-3.5 px-3 text-center font-medium text-slate-800 dark:text-slate-200 text-xs bg-amber-50/30 dark:bg-amber-950/10">
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className={`font-extrabold text-xs ${durasiJedaMins > 0 ? "text-amber-700 dark:text-amber-400" : "text-slate-400"}`}>
+                                  {durasiJedaText}
+                                </span>
+                                {durasiJedaMins > 0 && (
+                                  <span className="text-[9px] text-amber-600/80 dark:text-amber-400/80 font-mono">
+                                    ({durasiJedaMins} mnt)
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 7. DURASI AKTUAL (DA) = (JP − JM) − DJ */}
                             <td className="py-3.5 px-4 text-center font-bold text-slate-800 dark:text-slate-100">
                               <div className="flex flex-col items-center gap-0.5">
                                 <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">
@@ -4158,6 +4330,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     statusUpper === "SELESAI" ||
                     statusUpper === "HADIR_MEMENUHI" ||
                     statusUpper === "HADIR_TIDAK_MEMENUHI";
+                  const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
+                  const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
+                  const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
 
                   const liveElapsedMins = rec.attendedAt
                     ? calculateDurationMinutes(rec.attendedAt, rec.completedAt)
@@ -4168,7 +4343,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     recAny.actualInZoneMinutes !== undefined
                       ? Number(recAny.actualInZoneMinutes)
                       : 0;
-                  const durationMins = isLeaveOrPending
+                  const durationMins = !hasValidSession
                     ? 0
                     : storedMins > 0
                     ? storedMins
@@ -4180,9 +4355,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                   const targetZonaMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                     ? Number(recAny.targetDurationMinutes) 
                     : Math.round(targetZonaHours * 60);
-                  const isDurationSufficient = durationMins >= targetZonaMins;
-                  const percentZona = Math.min(100, Math.round((durationMins / targetZonaMins) * 100));
-                  const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
+                  const isDurationSufficient = hasValidSession && durationMins >= targetZonaMins;
+                  const percentZona = hasValidSession && targetZonaMins > 0 ? Math.min(100, Math.round((durationMins / targetZonaMins) * 100)) : 0;
 
                   return (
                     <div
@@ -4234,13 +4408,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           ) : (isCompleted || String(rec.status).toUpperCase() === "HADIR_MEMENUHI" || String(rec.status).toUpperCase() === "HADIR_TIDAK_MEMENUHI" || String(rec.status).toUpperCase() === "SELESAI") ? (
                             (() => {
                               const stUpper = String(rec.status || "").toUpperCase();
-                              const isMem = rec.isMemenuhiDurasi !== undefined
-                                ? rec.isMemenuhiDurasi
-                                : (stUpper === "HADIR_MEMENUHI"
-                                  ? true
-                                  : (stUpper === "HADIR_TIDAK_MEMENUHI" || stUpper === "SELESAI_TELAT")
-                                  ? false
-                                  : isDurationSufficient);
+                              const isMem = stUpper === "SELESAI_TELAT"
+                                ? false
+                                : (durationMins >= targetZonaMins && durationMins > 0);
                               return isMem ? (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shrink-0">
                                   Hadir & Memenuhi
@@ -5417,17 +5587,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-              const durationMins = isLeaveOrPending ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
+              const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
+              const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended;
+              const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const durationMins = !hasValidAttendanceSession ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
                 : scheduleTargetHours;
               const targetMins = recAny.targetDurationMinutes !== undefined && Number(recAny.targetDurationMinutes) > 0 
                 ? Number(recAny.targetDurationMinutes) 
                 : Math.round(targetHours * 60);
-              const ratioPercent = recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending
+              const ratioPercent = !hasValidAttendanceSession || durationMins === 0
+                ? 0
+                : (recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending)
                 ? Number(recAny.targetRatioPercent)
                 : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
-              const isMemenuhi = isLeaveOrPending || isTanpaKeterangan || isBelumAdaJadwal
+              const isMemenuhi = !hasValidAttendanceSession
                 ? false
                 : rec.isMemenuhiDurasi !== undefined
                 ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
@@ -5445,9 +5620,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const lng = liveLoc ? Number(liveLoc.longitude) : Number(rec.longitude);
               const hasGps = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
 
+              const modalJedaMins = recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null
+                ? Number(recAny.durasiJedaMenit)
+                : isTerjeda
+                ? Math.max(0, liveElapsedMins - durationMins)
+                : 0;
+              const modalJedaText = isLeaveOrPending ? "-" : formatDurasiIndo(modalJedaMins);
+
               return (
                 <div className="space-y-3.5">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
                       <span className="block text-[10px] font-bold text-slate-400 uppercase">Jam Masuk (JM)</span>
                       <span className="text-xs font-mono font-black text-slate-800 dark:text-slate-100">
@@ -5460,13 +5642,22 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         {!isLeaveOrPending && checkOutTimestamp ? formatTimeDot(checkOutTimestamp) : "-"}
                       </span>
                     </div>
+                    <div className="p-3 bg-amber-50/50 dark:bg-amber-950/30 rounded-xl border border-amber-200/70 dark:border-amber-900/50 text-center">
+                      <span className="block text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase">Durasi Jeda (DJ)</span>
+                      <span className={`text-xs font-black ${modalJedaMins > 0 ? "text-amber-700 dark:text-amber-300" : "text-slate-400"}`}>
+                        {modalJedaText}
+                      </span>
+                      {modalJedaMins > 0 && (
+                        <span className="block text-[9px] text-amber-600/80 dark:text-amber-400/80 font-mono">{modalJedaMins} mnt</span>
+                      )}
+                    </div>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/70 dark:border-slate-800 text-center">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = JP − JM</span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase">DA = (JP−JM)−DJ</span>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">
-                        {isLeaveOrPending ? "0 menit" : formatDurasiIndo(durationMins)}
+                        {!hasValidAttendanceSession || durationMins === 0 ? "0 menit" : formatDurasiIndo(durationMins)}
                       </span>
                       {/* Sub-label: menit aktual */}
-                      {!isLeaveOrPending && durationMins > 0 && (
+                      {hasValidAttendanceSession && durationMins > 0 && (
                         <span className="block text-[9px] text-slate-400 font-medium">{durationMins} mnt</span>
                       )}
                     </div>

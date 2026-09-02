@@ -9,7 +9,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   calculateInZoneDurationMinutes,
   calculateLiveInZoneMinutes,
-  calculateLiveInZoneSeconds,
+  calculateTotalJedaMinutes,
+  formatDurasiMenitIndo,
   getScheduleTargetDurationMinutes,
   parseScheduleTimeString,
   parseScheduleTimeRange,
@@ -17,6 +18,25 @@ import {
 } from "./kknAttendanceService.js";
 import { prisma } from "../lib/prisma.js";
 import { configService } from "./configService.js";
+import { smartZoneService } from "./smartZoneService.js";
+
+vi.mock("./smartZoneService.js", () => {
+  return {
+    smartZoneService: {
+      isStudentInGroupZone: vi.fn().mockResolvedValue({
+        isInside: false,
+        matchedPosko: null,
+        matchedPoskoId: null,
+        matchedMethod: "NONE",
+        distanceToNearest: 9999,
+        nearestPoskoName: null,
+        allPoskos: [],
+        autoPolygonActive: false,
+      }),
+      updateGroupAutoPolygon: vi.fn().mockResolvedValue(undefined),
+    },
+  };
+});
 
 vi.mock("../lib/prisma.js", () => {
   return {
@@ -47,6 +67,10 @@ vi.mock("../lib/prisma.js", () => {
         update: vi.fn(),
         upsert: vi.fn(),
       },
+      poskoKkn: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
       pointHistory: {
         findFirst: vi.fn(),
         create: vi.fn(),
@@ -55,6 +79,14 @@ vi.mock("../lib/prisma.js", () => {
         create: vi.fn(),
       },
       studentLeaveRequest: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      presensiMandiri: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      logbookKkn: {
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -72,6 +104,7 @@ vi.mock("./configService.js", () => {
         attendanceMinDurationSeconds: 0,
       }),
       getConfig: vi.fn(),
+      isDateKknHoliday: vi.fn().mockResolvedValue({ isHoliday: false }),
     },
   };
 });
@@ -487,7 +520,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
 
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         return {
           id: "att-rec-1",
           studentId,
@@ -529,7 +562,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
 
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         return {
           id: "att-rec-1",
           studentId,
@@ -602,7 +635,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       } as any);
 
       let updatedData: any = null;
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updatedData = data;
         return {
           id: "att-ssot-1",
@@ -683,7 +716,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
 
       let updatedData: any = null;
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updatedData = data;
         return {
           id: "att-ssot-2",
@@ -775,7 +808,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       } as any);
 
       const updates: any[] = [];
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updates.push(data);
         return {
           ...mockAtt,
@@ -852,7 +885,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
 
       const updates: any[] = [];
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updates.push(data);
         return {
           ...mockAtt,
@@ -1002,7 +1035,6 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         alasan: "Pembersihan posko mandiri",
       });
 
-      expect(result.success ?? true).toBeTruthy();
       expect(result.kegiatanId).toBe(scheduleId);
       expect(result.statusKegiatan).toBe("TIDAK_ADA_KEGIATAN");
       expect(result.totalMahasiswaTerdampak).toBe(2);
@@ -1190,6 +1222,257 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       await service.autoCheckOutEndedSchedules();
 
       expect(checkOutSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("calculateTotalJedaMinutes & formatDurasiMenitIndo", () => {
+    it("should calculate total jeda minutes from jedaLogs array", () => {
+      const att = {
+        attendedAt: new Date("2026-09-01T08:00:00Z"),
+        checkOutAt: new Date("2026-09-01T16:00:00Z"),
+        actualInZoneMinutes: 420,
+        jedaLogs: [
+          {
+            waktuJeda: "2026-09-01T10:00:00Z",
+            waktuResume: "2026-09-01T10:30:00Z",
+          },
+          {
+            waktuJeda: "2026-09-01T12:00:00Z",
+            waktuResume: "2026-09-01T12:30:00Z",
+          },
+        ],
+      };
+
+      const jeda = calculateTotalJedaMinutes(att);
+      expect(jeda).toBe(60); // 30 mins + 30 mins
+      expect(formatDurasiMenitIndo(jeda)).toBe("1 Jam");
+    });
+
+    it("should format minutes cleanly in Indonesian", () => {
+      expect(formatDurasiMenitIndo(0)).toBe("0 Menit");
+      expect(formatDurasiMenitIndo(45)).toBe("45 Menit");
+      expect(formatDurasiMenitIndo(60)).toBe("1 Jam");
+      expect(formatDurasiMenitIndo(135)).toBe("2 Jam 15 Menit");
+    });
+
+    it("should return 0 jeda for permission or sick leaves", () => {
+      const att = {
+        attendedAt: new Date("2026-09-01T08:00:00Z"),
+        status: "IZIN",
+        jedaLogs: [{ waktuJeda: "2026-09-01T08:30:00Z", waktuResume: "2026-09-01T09:00:00Z" }],
+      };
+      expect(calculateTotalJedaMinutes(att)).toBe(0);
+    });
+  });
+
+  describe("mulaiKegiatan - Multi-Posko & Geofence Fallback", () => {
+    const studentUserId = "mhs-multiposko-1";
+    const scheduleId = "sch-multiposko-1";
+    const kelompokId = "kel-multiposko-1";
+
+    const baseSchedule = {
+      id: scheduleId,
+      title: "Kegiatan Harian KKN",
+      date: new Date(),
+      time: "00:00 - 23:59",
+      latitude: -6.8915,
+      longitude: 107.6107,
+      radius: 100,
+      isActive: true,
+      kelompokId,
+    };
+
+    const baseStudent = {
+      userId: studentUserId,
+      nim: "130121099",
+      jurusan: "Informatika",
+      kelompokId,
+      user: {
+        id: studentUserId,
+        name: "Mahasiswa Multi Posko",
+        phone: "08123456789",
+      },
+    };
+
+    beforeEach(() => {
+      vi.mocked(prisma.schedule.findUnique).mockResolvedValue(baseSchedule as any);
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValue(baseStudent as any);
+      vi.mocked(prisma.poskoKkn.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({
+        id: "att-created-1",
+        studentId: studentUserId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date(),
+      } as any);
+      vi.mocked(prisma.studentLocation.create).mockResolvedValue({ id: "loc-1" } as any);
+    });
+
+    it("should succeed when student starts kegiatan inside primary posko geofence", async () => {
+      const result = await service.mulaiKegiatan(studentUserId, scheduleId, {
+        latitude: -6.8915,
+        longitude: 107.6107,
+        deviceInfo: "Android 14",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.attendanceStatus).toBe("BERLANGSUNG");
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalled();
+    });
+
+    it("should succeed with SmartZone fallback when student is at alternative multi-posko", async () => {
+      // Koordinat di posko alternatif (misal 1 km dari posko utama)
+      const altLat = -6.9;
+      const altLng = 107.62;
+
+      vi.mocked(smartZoneService.isStudentInGroupZone).mockResolvedValueOnce({
+        isInside: true,
+        matchedPosko: "Posko Cabang RW 05",
+        matchedPoskoId: "posko-cabang-5",
+        matchedMethod: "POSKO_MULTI",
+        distanceToNearest: 10,
+        nearestPoskoName: "Posko Cabang RW 05",
+        allPoskos: [],
+        autoPolygonActive: false,
+      });
+
+      const result = await service.mulaiKegiatan(studentUserId, scheduleId, {
+        latitude: altLat,
+        longitude: altLng,
+        poskoId: "posko-cabang-5",
+        deskripsiKegiatan: "Mulai piket posko alternatif",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.attendanceStatus).toBe("BERLANGSUNG");
+      expect(smartZoneService.isStudentInGroupZone).toHaveBeenCalledWith(
+        altLat,
+        altLng,
+        kelompokId,
+        expect.any(Number)
+      );
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalled();
+    });
+
+    it("should throw OUT_OF_GEOFENCE when student is outside primary posko and outside all multi-poskos", async () => {
+      const farLat = -6.99;
+      const farLng = 107.75;
+
+      vi.mocked(smartZoneService.isStudentInGroupZone).mockResolvedValueOnce({
+        isInside: false,
+        matchedPosko: null,
+        matchedPoskoId: null,
+        matchedMethod: "NONE",
+        distanceToNearest: 15000,
+        nearestPoskoName: "Posko Utama",
+        allPoskos: [],
+        autoPolygonActive: false,
+      });
+
+      await expect(
+        service.mulaiKegiatan(studentUserId, scheduleId, {
+          latitude: farLat,
+          longitude: farLng,
+        })
+      ).rejects.toThrow(/OUT_OF_GEOFENCE/);
+    });
+  });
+
+  describe("processWeekdayAutoAlpha", () => {
+    it("should bypass auto-alpha when date is Saturday or Sunday (Weekend)", async () => {
+      // 2026-09-06 is Sunday
+      const result = await service.processWeekdayAutoAlpha("2026-09-06");
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(false);
+      expect(result.totalMarkedAlpha).toBe(0);
+      expect(result.reason).toContain("Akhir pekan");
+    });
+
+    it("should mark student as ALPA on a weekday when there is no activity, leave, or logbook", async () => {
+      // 2026-09-01 is Tuesday (Weekday)
+      const targetDate = "2026-09-01";
+      const schedId = "sch-weekday-1";
+      const studentId = "student-alpha-1";
+
+      vi.mocked(prisma.schedule.findMany).mockResolvedValueOnce([
+        {
+          id: schedId,
+          title: "Kegiatan Posko KKN Kelompok 1",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          isActive: true,
+          attendances: [],
+          kelompok: {
+            id: "kel-1",
+            name: "Kelompok 1",
+            students: [{ userId: studentId, user: { id: studentId, name: "Mahasiswa Alpha" } }],
+          },
+        } as any,
+      ]);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.presensiMandiri.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLeaveRequest.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.logbookKkn.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.activityAttendance.upsert).mockResolvedValue({ id: "att-alpa-1" } as any);
+
+      const result = await service.processWeekdayAutoAlpha(targetDate);
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(true);
+      expect(result.totalMarkedAlpha).toBe(1);
+      expect(prisma.activityAttendance.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            studentId_scheduleId: {
+              studentId,
+              scheduleId: schedId,
+            },
+          },
+          create: expect.objectContaining({
+            status: "ALPA",
+            method: "ALPA_AUTO",
+          }),
+        })
+      );
+    });
+
+    it("should bypass student when student submitted a logbook on that weekday", async () => {
+      const targetDate = "2026-09-01";
+      const schedId = "sch-weekday-2";
+      const studentId = "student-logbook-1";
+
+      vi.mocked(prisma.schedule.findMany).mockResolvedValueOnce([
+        {
+          id: schedId,
+          title: "Kegiatan Posko KKN Kelompok 2",
+          latitude: -6.8915,
+          longitude: 107.6107,
+          isActive: true,
+          attendances: [],
+          kelompok: {
+            id: "kel-2",
+            name: "Kelompok 2",
+            students: [{ userId: studentId, user: { id: studentId, name: "Mahasiswa Logbook" } }],
+          },
+        } as any,
+      ]);
+
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.presensiMandiri.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.studentLeaveRequest.findFirst).mockResolvedValue(null);
+      // Student has logbook:
+      vi.mocked(prisma.logbookKkn.findFirst).mockResolvedValueOnce({
+        id: "logbook-1",
+        penulisId: studentId,
+      } as any);
+
+      const result = await service.processWeekdayAutoAlpha(targetDate);
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(true);
+      expect(result.totalMarkedAlpha).toBe(0);
+      expect(result.totalBypassed).toBe(1);
     });
   });
 });

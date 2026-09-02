@@ -10,8 +10,11 @@ import { configService } from "./configService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { isPointInPolygonWithBuffer } from "../utils/geoUtils.js";
-import { calculateDistance } from "./kknAttendanceService.js";
-import { pointService } from "./pointService.js";
+import {
+  calculateDistance,
+  calculateLiveInZoneSeconds,
+  calculateLiveInZoneMinutes,
+} from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
@@ -1162,7 +1165,7 @@ export class KknService {
             ? JSON.parse(student.kelompok.cakupanRw)
             : student.kelompok.cakupanRw;
         if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
-      } catch (_) {}
+      } catch {}
     }
     if (!targetRwId) {
       const firstRw = await prisma.rw.findFirst();
@@ -1390,12 +1393,6 @@ export class KknService {
           qrLower.includes("ang") ||
           qrLower.includes("non") ||
           qrLower.includes("2");
-        const isOrg =
-          !isAnorg &&
-          (qrLower.includes("organik") ||
-            qrLower.includes("org") ||
-            qrLower.includes("ogn") ||
-            qrLower.includes("1"));
         const categoryTarget = isAnorg ? "NON_ORGANIC" : "ORGANIC";
 
         if (!bin) {
@@ -1494,7 +1491,7 @@ export class KknService {
         } else if (typeof parsed === "number" || typeof parsed === "string") {
           rwNum = String(parsed).padStart(2, "0");
         }
-      } catch (_) {}
+      } catch {}
     }
 
     const matchingRw = await prisma.rw.findFirst({
@@ -1573,7 +1570,7 @@ export class KknService {
       alamat: payload.alamat || "-",
       latitude: lat,
       longitude: lng,
-      radius: payload.radius != null ? Number(payload.radius) : 150,
+      radius: payload.radius != null ? Number(payload.radius) : 500,
       fotoUrl: payload.foto,
     });
 
@@ -1586,7 +1583,7 @@ export class KknService {
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
-          radius: Number((posko as any).radius) || 150,
+          radius: Number((posko as any).radius) || 500,
           status: "APPROVED",
         },
       },
@@ -1657,7 +1654,7 @@ export class KknService {
     const parsedRadius =
       payload.radius !== undefined
         ? Number(payload.radius)
-        : Number((existingPosko as any)?.radius) || 150;
+        : Number((existingPosko as any)?.radius) || 500;
     const posko = await poskoKknService.upsertPosko(student.kelompokId, {
       nama: poskoName,
       alamat: payload.alamat !== undefined ? payload.alamat : existingPosko?.alamat || "-",
@@ -1680,14 +1677,14 @@ export class KknService {
           longitude: existingPosko?.longitude ? Number(existingPosko.longitude) : null,
           nama: existingPosko?.nama,
           alamat: existingPosko?.alamat,
-          radius: Number((existingPosko as any)?.radius) || 150,
+          radius: Number((existingPosko as any)?.radius) || 500,
         },
         newValue: {
           poskoId: posko.id,
           kelompokId: student.kelompokId,
           latitude: lat,
           longitude: lng,
-          radius: Number((posko as any).radius) || 150,
+          radius: Number((posko as any).radius) || 500,
           nama: posko.nama,
           alamat: posko.alamat,
           status: "APPROVED",
@@ -1901,7 +1898,7 @@ export class KknService {
         totalAnggota: p.kelompok?.students.length || 0,
         statusApproval: pAny.statusApproval || "APPROVED",
         isUtama: true,
-        radius: pAny.radius || 150,
+        radius: pAny.radius || 500,
         createdAt: p.createdAt,
       };
     });
@@ -1934,12 +1931,12 @@ export class KknService {
             totalAnggota: off.totalAnggota || 0,
             statusApproval: off.statusApproval || "APPROVED",
             isUtama: off.isUtama,
-            radius: off.radius || 150,
+            radius: off.radius || 500,
             createdAt: off.createdAt,
           });
         }
       }
-    } catch (_poskoServiceErr) {
+    } catch {
       // silent fallback
     }
 
@@ -1982,7 +1979,7 @@ export class KknService {
       alamat: payload.alamat?.trim() || "-",
       latitude: lat,
       longitude: lng,
-      radius: payload.radius != null ? Number(payload.radius) : 150,
+      radius: payload.radius != null ? Number(payload.radius) : 500,
       fotoUrl: payload.foto || undefined,
       keterangan: payload.statusApproval || undefined,
     });
@@ -1998,12 +1995,12 @@ export class KknService {
             kelompokId: posko.kelompokId,
             latitude: lat,
             longitude: lng,
-            radius: Number((posko as any).radius) || 150,
+            radius: Number((posko as any).radius) || 500,
             status: "APPROVED",
           },
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return posko;
   }
@@ -2054,7 +2051,7 @@ export class KknService {
     const parsedRadius =
       payload.radius !== undefined
         ? Number(payload.radius)
-        : Number((existing as any)?.radius) || 150;
+        : Number((existing as any)?.radius) || 500;
     const posko = await poskoKknService.upsertPosko(targetKelompokId, {
       nama: payload.nama !== undefined ? payload.nama.trim() : existing.nama,
       alamat: payload.alamat !== undefined ? payload.alamat.trim() : existing.alamat,
@@ -2079,18 +2076,18 @@ export class KknService {
             alamat: existing.alamat,
             latitude: Number(existing.latitude),
             longitude: Number(existing.longitude),
-            radius: Number((existing as any)?.radius) || 150,
+            radius: Number((existing as any)?.radius) || 500,
           },
           newValue: {
             nama: posko.nama,
             alamat: posko.alamat,
             latitude: Number(posko.latitude),
             longitude: Number(posko.longitude),
-            radius: Number((posko as any).radius) || 150,
+            radius: Number((posko as any).radius) || 500,
           },
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return posko;
   }
@@ -2131,7 +2128,7 @@ export class KknService {
           },
         },
       });
-    } catch (_) {}
+    } catch {}
 
     return { success: true, message: "Posko KKN berhasil dihapus." };
   }
@@ -2241,7 +2238,7 @@ export class KknService {
       longitude: poskoLng,
       poskoLatitude: poskoLat,
       poskoLongitude: poskoLng,
-      radiusMeter: 200,
+      radiusMeter: 500,
       totalGroupPoints,
       members,
     };
@@ -2257,9 +2254,8 @@ export class KknService {
       scheduleId?: string;
     }
   ) {
-    let targetDate = payload.tanggalKegiatanTerkait
-      ? new Date(payload.tanggalKegiatanTerkait)
-      : new Date();
+    const targetDateRaw = payload.tanggalKegiatanTerkait || (payload as any).startDate;
+    let targetDate = targetDateRaw ? new Date(targetDateRaw) : new Date();
 
     if (isNaN(targetDate.getTime())) {
       targetDate = new Date();
@@ -2325,7 +2321,9 @@ export class KknService {
       }
     }
 
-    const leaveType = (payload.kategori || "IZIN").toUpperCase().includes("SAKIT")
+    const leaveType = (payload.kategori || (payload as any).type || "IZIN")
+      .toUpperCase()
+      .includes("SAKIT")
       ? "SAKIT"
       : "IZIN";
 
@@ -2333,7 +2331,7 @@ export class KknService {
       data: {
         studentId,
         type: leaveType,
-        reason: payload.deskripsi || "Berhalangan hadir kegiatan KKN",
+        reason: payload.deskripsi || (payload as any).reason || "Berhalangan hadir kegiatan KKN",
         evidenceUrl: payload.fotoBuktiUrl || null,
         startDate,
         endDate,
@@ -2701,7 +2699,7 @@ export class KknService {
       ruleConfigs.attendanceMinDurationHours * 60 +
       ruleConfigs.attendanceMinDurationMinutes +
       ruleConfigs.attendanceMinDurationSeconds / 60;
-    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 2;
+    const targetDurationMinutes = ruleTargetMinutes > 0 ? ruleTargetMinutes : 240;
 
     // Hitung batas hari WIB (UTC+7) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â jadwal disimpan UTC, harus query dengan window WIB
     const nowForBoundary = new Date();
@@ -2956,18 +2954,21 @@ export class KknService {
         attStatUpper === "DI_ZONA"
       ) {
         attendanceStatus = "berlangsung";
-      } else if (attStatUpper === "HADIR_MEMENUHI") {
-        attendanceStatus = "hadir_memenuhi";
-        isMemenuhiDurasi = true;
-      } else if (attStatUpper === "HADIR_TIDAK_MEMENUHI" || attStatUpper === "SELESAI_TELAT") {
-        attendanceStatus = "hadir_tidak_memenuhi";
-        isMemenuhiDurasi = false;
       } else if (
+        attStatUpper === "HADIR_MEMENUHI" ||
+        attStatUpper === "HADIR_TIDAK_MEMENUHI" ||
+        attStatUpper === "SELESAI_TELAT" ||
         attStatUpper === "HADIR" ||
         attStatUpper === "SELESAI" ||
         attendanceForActiveSchedule.checkOutAt !== null
       ) {
-        attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
+        if (attStatUpper === "SELESAI_TELAT") {
+          attendanceStatus = "hadir_tidak_memenuhi";
+          isMemenuhiDurasi = false;
+        } else {
+          attendanceStatus = isDurMet ? "hadir_memenuhi" : "hadir_tidak_memenuhi";
+          isMemenuhiDurasi = isDurMet;
+        }
       } else {
         attendanceStatus = attStatUpper.toLowerCase();
       }
@@ -2993,7 +2994,6 @@ export class KknService {
       };
     }
 
-    let scheduleDurationMinutes = 0;
     let isOvernight = false;
     if (activeSchedule?.time && activeSchedule.time.includes("-")) {
       const parts = activeSchedule.time.split("-");
@@ -3002,10 +3002,7 @@ export class KknService {
       if (startParts.length >= 2 && endParts.length >= 2) {
         const startMins = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
         const endMins = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
-        if (endMins > startMins) {
-          scheduleDurationMinutes = endMins - startMins;
-        } else {
-          scheduleDurationMinutes = 24 * 60 - startMins + endMins;
+        if (endMins <= startMins) {
           isOvernight = true;
         }
       }
@@ -3064,70 +3061,12 @@ export class KknService {
       }
     }
 
-    // Calculate precise total seconds in zone from studentLocation logs for this schedule window
+    // Calculate precise total seconds & minutes in zone from active attendance (SSOT)
     let actualInZoneSeconds = 0;
-    if (activeSchedule) {
-      if (attendanceForActiveSchedule) {
-        try {
-          const queryStartLogs = new Date(attendanceForActiveSchedule.attendedAt);
-
-          const logs = await prisma.studentLocation.findMany({
-            where: {
-              studentId: { in: studentUserIds },
-              recordedAt: { gte: queryStartLogs },
-            },
-            orderBy: { recordedAt: "asc" },
-          });
-          if (logs.length >= 2) {
-            const bufferMeters = (ruleConfigs as any).geofenceBufferMeters || 15.0;
-            const geofence = {
-              latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : -6.8915,
-              longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : 107.6107,
-              radius: activeSchedule.radius ? Number(activeSchedule.radius) : 150,
-              polygon: activeSchedule.polygon,
-            };
-            const inZonePoints = logs.filter((l) => {
-              const lat = Number(l.latitude);
-              const lng = Number(l.longitude);
-              if (
-                geofence.polygon &&
-                Array.isArray(geofence.polygon) &&
-                geofence.polygon.length >= 3
-              ) {
-                const polyPoints = (geofence.polygon as any[]).map((p) => ({
-                  lat: Number(p[0]),
-                  lng: Number(p[1]),
-                }));
-                return isPointInPolygonWithBuffer({ lat, lng }, polyPoints, bufferMeters);
-              } else {
-                const dist = calculateDistance(lat, lng, geofence.latitude, geofence.longitude);
-                return dist <= geofence.radius + bufferMeters;
-              }
-            });
-            const tFirst = new Date(inZonePoints[0].recordedAt).getTime();
-            const tLast = new Date(inZonePoints[inZonePoints.length - 1].recordedAt).getTime();
-            let totalMs = 0;
-            for (let i = 0; i < inZonePoints.length - 1; i++) {
-              const t1 = new Date(inZonePoints[i].recordedAt).getTime();
-              const t2 = new Date(inZonePoints[i + 1].recordedAt).getTime();
-              const diff = t2 - t1;
-              if (diff > 0 && diff <= 5 * 60 * 1000) {
-                totalMs += diff;
-              }
-            }
-            const overallSpan = Math.max(0, tLast - tFirst);
-            totalMs = Math.max(totalMs, overallSpan);
-            actualInZoneSeconds = Math.floor(totalMs / 1000);
-          }
-        } catch (_) {
-          // Fallback jika query bermasalah
-        }
-      } else {
-        actualInZoneSeconds = 0;
-      }
-    }
-    if (actualInZoneSeconds === 0 && attendanceForActiveSchedule?.actualInZoneMinutes) {
-      actualInZoneSeconds = attendanceForActiveSchedule.actualInZoneMinutes * 60;
+    let actualInZoneMinutes = 0;
+    if (attendanceForActiveSchedule) {
+      actualInZoneSeconds = calculateLiveInZoneSeconds(attendanceForActiveSchedule);
+      actualInZoneMinutes = calculateLiveInZoneMinutes(attendanceForActiveSchedule);
     }
 
     // Jika ada jadwal kegiatan spesifik untuk kelompoknya, gunakan data & koordinat jadwal tersebut!
@@ -3168,8 +3107,7 @@ export class KknService {
         radiusMeter: activeSchedule.radius || 100,
         radius: activeSchedule.radius || 100,
         targetDurationMinutes: finalTargetDurationMinutes,
-        actualInZoneMinutes:
-          attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+        actualInZoneMinutes,
         actualInZoneSeconds,
         attendanceStatus,
         status: attendanceStatus,
@@ -3216,8 +3154,7 @@ export class KknService {
       radiusMeter: 100,
       radius: 100,
       targetDurationMinutes,
-      actualInZoneMinutes:
-        attendanceForActiveSchedule?.actualInZoneMinutes ?? Math.floor(actualInZoneSeconds / 60),
+      actualInZoneMinutes,
       actualInZoneSeconds,
       attendanceStatus,
       status: attendanceStatus,
@@ -4173,12 +4110,7 @@ export class KknService {
     };
   }
 
-  async updateLogbookPemanfaatan(userId: string, id: string, payload: any) {
-    const student = await prisma.studentKkn.findUnique({
-      where: { userId },
-      include: { assignedRw: true, kelompok: true, user: { select: { name: true } } },
-    });
-
+  async updateLogbookPemanfaatan(_userId: string, id: string, payload: any) {
     // Check existing pemanfaatan
     let existing = await prisma.pemanfaatan.findUnique({
       where: { id },
@@ -4211,7 +4143,6 @@ export class KknService {
       teknologi,
       kategoriSampah,
       bahanBaku,
-      wilayahDampingan,
       rwId,
       waktuPelaksanaan,
       tanggalPencatatan,
@@ -4223,9 +4154,16 @@ export class KknService {
       fotoDokumentasiUrl,
       foto,
       fotoBukti,
+      program,
+      namaProgram,
     } = payload;
 
     const updatePemanfaatanData: any = {};
+
+    const cleanProgram = program || namaProgram;
+    if (cleanProgram) {
+      updatePemanfaatanData.program = cleanProgram;
+    }
 
     const cleanTeknologi = jenisPemanfaatan || teknologi;
     if (cleanTeknologi) {
@@ -4337,6 +4275,7 @@ export class KknService {
 
     return {
       id: updatedPemanfaatan?.id || logbookTarget?.id,
+      program: updatedPemanfaatan?.program || cleanProgram || existing?.program,
       teknologi: updatedPemanfaatan?.teknologi || cleanTeknologi,
       bahanBaku: updatedPemanfaatan?.bahanBaku || cleanBahanBaku,
       volumeBahanBaku: updatedPemanfaatan
@@ -4485,7 +4424,19 @@ export class KknService {
   }
 
   async updatePanenHasil(userId: string, id: string, payload: any) {
-    const existing = await prisma.pemanfaatan.findUnique({ where: { id } });
+    const targetId = id || payload.pemanfaatanId || payload.id;
+    let existing = await prisma.pemanfaatan.findUnique({ where: { id: targetId } });
+    if (!existing) {
+      const matchedLogbook = await prisma.logbookKkn.findUnique({
+        where: { id: targetId },
+      });
+      if (matchedLogbook?.programKerjaId) {
+        existing = await prisma.pemanfaatan.findFirst({
+          where: { programKerjaId: matchedLogbook.programKerjaId },
+        });
+      }
+    }
+
     if (!existing) {
       throw new Error("Laporan panen hasil tidak ditemukan.");
     }
@@ -4512,7 +4463,7 @@ export class KknService {
       }
     }
 
-    const rawNilai = nilaiEkonomiRp !== undefined ? nilaiEkonomiRp : luasLahanM2;
+    const rawNilai = luasLahanM2 !== undefined ? luasLahanM2 : nilaiEkonomiRp;
     if (rawNilai !== undefined && rawNilai !== null && rawNilai !== "") {
       const numNilai =
         typeof rawNilai === "string"
@@ -4539,7 +4490,7 @@ export class KknService {
 
     // Rule 2: PUT/UPDATE murni hanya mengubah data teks, angka beban, dan foto. DILARANG mengubah PointHistory.
     const report = await prisma.pemanfaatan.update({
-      where: { id },
+      where: { id: existing.id },
       data: updateData,
     });
 
@@ -4663,7 +4614,9 @@ export class KknService {
       return {
         warga,
         claimedBinsCount: unassignedBins.length,
-        claimedBins: unassignedBins.map(({ registeredByStudentId, ...rest }) => rest),
+        claimedBins: unassignedBins.map(
+          ({ registeredByStudentId: _registeredByStudentId, ...rest }) => rest
+        ),
         gamification: {
           pointsEarned: points,
           category: "PARTISIPASI_STREAK",
@@ -4807,7 +4760,13 @@ export class KknService {
     } else {
       tipeArea = "RADIUS";
       polygonKoordinat = null;
-      radiusMeters = kelompok.schedules?.[0]?.radius || 200;
+      const customPoskoRadius = kelompok.poskoKkn?.radius
+        ? Number(kelompok.poskoKkn.radius)
+        : null;
+      const customScheduleRadius = kelompok.schedules?.[0]?.radius
+        ? Number(kelompok.schedules[0].radius)
+        : null;
+      radiusMeters = customPoskoRadius || customScheduleRadius || 500;
     }
 
     return {

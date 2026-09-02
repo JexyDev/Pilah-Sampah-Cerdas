@@ -138,7 +138,18 @@ const ManajemenTempatSampah: React.FC = () => {
   const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp: number } | null>(null);
 
   // Map settings
-  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">("google_vector");
+  const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
+  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
+    return isMapSU ? "google_satellite" : "google_vector";
+  });
+
+  // Sync default satellite for SU on user load
+  useEffect(() => {
+    if (user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER") {
+      setMapTileProvider("google_satellite");
+    }
+  }, [user?.peran]);
+
   const [mapCategoryFilter, setMapCategoryFilter] = useState<string>("Semua");
   const [mapStatusFilter, setMapStatusFilter] = useState<string>("Semua");
   const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);

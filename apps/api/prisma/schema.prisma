@@ -156,6 +156,7 @@ model User {
   status                String                   @default("Aktif")
   address               String?                  @map("alamat")
   phone                 String                   @unique @map("no_telepon")
+  email                 String?                  @map("email")
   mustChangePassword    Boolean                  @default(false) @map("harus_ganti_password")
   wargaSubtype          String?                  @map("subtipe_warga")
   nip                   String?                  @map("nip")
@@ -412,7 +413,7 @@ model PoskoKkn {
   alamat     String
   latitude   Decimal     @db.Decimal(11, 8)
   longitude  Decimal     @db.Decimal(11, 8)
-  radius     Int         @default(150)
+  radius     Int         @default(500)
   fotoUrl    String?     @map("foto_url")
   keterangan String?
   createdAt  DateTime    @default(now()) @map("dibuat_pada")
@@ -432,7 +433,7 @@ model PoskoKknMulti {
   latitude   Decimal     @db.Decimal(11, 8)
   longitude  Decimal     @db.Decimal(11, 8)
   isUtama    Boolean     @default(false) @map("is_utama")
-  radius     Int         @default(150)
+  radius     Int         @default(500)
   fotoUrl    String?     @map("foto_url")
   keterangan String?
   createdAt  DateTime    @default(now()) @map("dibuat_pada")
@@ -1012,7 +1013,7 @@ model Schedule {
   latitude    Decimal?             @db.Decimal(11, 8)
   longitude   Decimal?             @db.Decimal(11, 8)
   polygon     Json?
-  radius      Int?                 @default(200)
+  radius      Int?                 @default(500)
   kelompokId  String?              @map("id_kelompok")
   isActive    Boolean              @default(true) @map("is_aktif")
   kelompok    KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)

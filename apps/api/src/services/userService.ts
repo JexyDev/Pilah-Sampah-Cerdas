@@ -131,9 +131,8 @@ export class UserService {
           { name: { contains: q, mode: "insensitive" } },
           { phone: { contains: q, mode: "insensitive" } },
           { address: { contains: q, mode: "insensitive" } },
-          { nim: { contains: q, mode: "insensitive" } },
+          { studentProfile: { nim: { contains: q, mode: "insensitive" } } },
           { nip: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
           { role: { name: { contains: q, mode: "insensitive" } } },
           { rw: { name: { contains: q, mode: "insensitive" } } },
           { rw: { kelurahan: { name: { contains: q, mode: "insensitive" } } } },
@@ -243,7 +242,7 @@ export class UserService {
 
       const rwObj =
         u.rw || u.rt?.rw || u.households?.[0]?.rw || u.studentProfile?.assignedRw || u.rwOwned;
-      let kelurahanName = rwObj?.kelurahan?.name || "-";
+      let kelurahanName = rwObj?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || "-";
       let kecamatanName = rwObj?.kelurahan?.kecamatan?.name || "-";
       let kabupatenName =
         u.kabupaten || (rwObj?.kelurahan?.kecamatan as any)?.kabupaten?.name || "Kota Bandung";
@@ -941,7 +940,7 @@ export class UserService {
           }
         }
 
-        let targetKelompokId: string | null = null;
+        let targetKelompokId: string | null | undefined = undefined;
         if (data.kelompokId !== undefined) {
           targetKelompokId = data.kelompokId || null;
         } else if (Array.isArray(data.dplKelompokIds)) {
@@ -981,7 +980,7 @@ export class UserService {
           }
         }
 
-        if (!targetKelompokId) {
+        if (targetKelompokId === null) {
           await tx.user.update({
             where: { id },
             data: { address: null },
@@ -1004,7 +1003,7 @@ export class UserService {
             assignedRwId: studentProfile?.assignedRwId
               ? parseInt(studentProfile.assignedRwId)
               : parsedRwId || u.rwId,
-            kelompokId: targetKelompokId,
+            kelompokId: targetKelompokId !== undefined ? targetKelompokId : null,
             whitelistStatus: "APPROVED",
           },
           update: {
@@ -1015,7 +1014,8 @@ export class UserService {
             ...((studentProfile?.jenjangPendidikan || jenjangPendidikan) && {
               jenjangPendidikan: studentProfile?.jenjangPendidikan || jenjangPendidikan,
             }),
-            kelompokId: targetKelompokId,
+            ...(targetKelompokId !== undefined && { kelompokId: targetKelompokId }),
+            ...(parsedRwId !== null && parsedRwId !== undefined ? { assignedRwId: parsedRwId } : {}),
           },
         });
       }

@@ -990,18 +990,6 @@ export const PoskoKknPage: React.FC = () => {
                             <ExternalLink size={12} />
                           </a>
                         )}
-                        {/* Tombol Inspeksi Zona & Geofence */}
-                        {posko.kelompokId && (
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/developer/inspeksi-zona?kelompokId=${posko.kelompokId}`)}
-                            className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                            title="Buka Inspeksi Geofence & Zona Presensi Kelompok Ini"
-                          >
-                            <Radio size={14} className="text-emerald-600 dark:text-emerald-400" />
-                            <span>Inspeksi Zona &amp; Geofence</span>
-                          </button>
-                        )}
                         {canEditPosko && (
                           <button
                             type="button"

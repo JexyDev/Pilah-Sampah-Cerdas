@@ -18,6 +18,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { logbookApiService } from "../../services/logbookService";
 import { compressImage } from "../../utils/compressImage";
@@ -51,7 +52,8 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -63,10 +65,13 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
       const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.8 });
       setFotoFile(compressed);
       setFotoPreview(URL.createObjectURL(compressed));
-      showToast.success("Foto berhasil diambil dan dikompresi!");
+      showToast.success("Foto bukti kegiatan berhasil dimuat!");
     } catch {
       setFotoFile(file);
       setFotoPreview(URL.createObjectURL(file));
+    } finally {
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   };
 
@@ -233,11 +238,16 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
             />
           </div>
 
-          {/* Foto Bukti Kegiatan (Kamera Langsung) */}
+          {/* Foto Bukti Kegiatan (Kamera Langsung & Unggah Galeri) */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Foto Bukti Kegiatan *</label>
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-bold text-slate-400 uppercase">Foto Bukti Kegiatan *</label>
+              <span className="text-[9px] text-slate-400">Kamera atau Galeri</span>
+            </div>
+
+            {/* Input khusus Kamera Langsung (iOS / Android Camera Viewfinder) */}
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
@@ -245,29 +255,86 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
               onChange={handlePhotoCapture}
             />
 
+            {/* Input khusus Unggah File / Galeri Foto */}
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoCapture}
+            />
+
             {fotoPreview ? (
-              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 max-h-44">
-                <img src={fotoPreview} alt="Bukti" className="w-full h-full object-cover" />
+              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-500 max-h-48 shadow-sm">
+                <img src={fotoPreview} alt="Bukti Kegiatan" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-black/30 pointer-events-none" />
+                
+                {/* Tombol Hapus */}
                 <button
                   type="button"
                   onClick={() => {
                     setFotoFile(null);
                     setFotoPreview(null);
+                    if (cameraInputRef.current) cameraInputRef.current.value = "";
+                    if (galleryInputRef.current) galleryInputRef.current.value = "";
                   }}
-                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 text-white rounded-full hover:bg-slate-900 transition"
+                  className="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition cursor-pointer shadow-md"
+                  title="Hapus Foto"
                 >
                   <X size={14} />
                 </button>
+
+                {/* Bottom Bar Info & Action */}
+                <div className="absolute bottom-2 left-2 right-2 py-1.5 px-3 bg-slate-900/85 backdrop-blur-md rounded-xl text-[10px] text-white flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                    <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                    <span className="font-semibold truncate">{fotoFile?.name || "Foto Siap Dikirim"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="text-[10px] font-bold text-emerald-300 hover:text-emerald-200 underline cursor-pointer"
+                    >
+                      Kamera
+                    </button>
+                    <span className="text-slate-500">|</span>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="text-[10px] font-bold text-teal-300 hover:text-teal-200 underline cursor-pointer"
+                    >
+                      Galeri
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-4 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 rounded-2xl flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 transition cursor-pointer"
-              >
-                <Camera size={20} className="text-emerald-600" />
-                <span className="font-bold text-xs">Ambil Foto dengan Kamera iPhone</span>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="py-3.5 px-2.5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 rounded-2xl flex flex-col items-center justify-center gap-1.5 bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition cursor-pointer group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Camera size={18} />
+                  </div>
+                  <span className="font-bold text-[11px] text-center">Ambil Foto Langsung</span>
+                  <span className="text-[9px] text-slate-400 text-center">Buka kamera gawai</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="py-3.5 px-2.5 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 rounded-2xl flex flex-col items-center justify-center gap-1.5 bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition cursor-pointer group"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <ImageIcon size={18} />
+                  </div>
+                  <span className="font-bold text-[11px] text-center">Pilih dari Galeri</span>
+                  <span className="text-[9px] text-slate-400 text-center">Unggah file album/dokumen</span>
+                </button>
+              </div>
             )}
           </div>
 

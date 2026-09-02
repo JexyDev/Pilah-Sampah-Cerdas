@@ -36,13 +36,13 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import { ConfirmModal } from "../../components/common/ConfirmModal";
 import {
   logbookApiService,
   type LogbookMahasiswaItem,
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
 // Helper Format Tanggal
 const formatDateShort = (dateStr: string): string => {
@@ -156,6 +156,13 @@ export const LogbookKknPage: React.FC = () => {
   const [validationCatatan, setValidationCatatan] = useState("");
   const [isSubmittingQuickVerif, setIsSubmittingQuickVerif] = useState(false);
 
+  // 2-Step Deletion Modal State (Validasi 2 Langkah Hapus Logbook)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetItem, setDeleteTargetItem] = useState<LogbookMahasiswaItem | null>(null);
+  const [deleteConfirmChecked, setDeleteConfirmChecked] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [isDeletingLogbook, setIsDeletingLogbook] = useState(false);
+
   // Multi-Select & Validasi Semua (Batch Validation) State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
@@ -170,10 +177,6 @@ export const LogbookKknPage: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configInputDays, setConfigInputDays] = useState<number>(1);
   const [isSubmittingConfig, setIsSubmittingConfig] = useState(false);
-
-  // Delete Confirmation Modal State
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load Data
   const fetchData = async () => {
@@ -415,27 +418,36 @@ export const LogbookKknPage: React.FC = () => {
     }
   };
 
-  // Delete Logbook Activity Handler (DPL, Super User, Penulis)
-  const handleDeleteLogbook = (id: string) => {
-    setDeleteTargetId(id);
+  // Open Delete Modal with 2-Step Verification
+  const handleOpenDeleteModal = (item: LogbookMahasiswaItem) => {
+    setDeleteTargetItem(item);
+    setDeleteConfirmChecked(false);
+    setDeleteConfirmationText("");
+    setShowDeleteModal(true);
   };
 
-  const executeDeleteLogbook = async () => {
-    if (!deleteTargetId) return;
-    setIsDeleting(true);
+  // Execute Confirmed Delete Logbook Activity (Validasi 2 Langkah)
+  const handleConfirmDeleteLogbook = async () => {
+    if (!deleteTargetItem) return;
+    if (!deleteConfirmChecked || deleteConfirmationText.trim().toUpperCase() !== "HAPUS") {
+      toast.error("Lengkapi 2 langkah validasi: centang konfirmasi dan ketik 'HAPUS'.");
+      return;
+    }
+    setIsDeletingLogbook(true);
     try {
-      await logbookApiService.deleteMahasiswaLogbook(deleteTargetId);
-      toast.success("Logbook aktivitas berhasil dihapus");
-      if (selectedItemDetail?.id === deleteTargetId) {
+      await logbookApiService.deleteMahasiswaLogbook(deleteTargetItem.id);
+      toast.success("Catatan logbook aktivitas berhasil dihapus secara permanen.");
+      setShowDeleteModal(false);
+      if (selectedItemDetail?.id === deleteTargetItem.id) {
         setIsDetailModalOpen(false);
         setSelectedItemDetail(null);
       }
-      setDeleteTargetId(null);
+      setDeleteTargetItem(null);
       await fetchData();
     } catch (err: any) {
       toast.error(err.response?.data?.message || err.message || "Gagal menghapus logbook");
     } finally {
-      setIsDeleting(false);
+      setIsDeletingLogbook(false);
     }
   };
 
@@ -1049,21 +1061,48 @@ export const LogbookKknPage: React.FC = () => {
                             {memberCount > 0 ? `${memberCount}/${memberCount}` : "Tim"}
                           </td>
 
-                          {/* 9. Bukti */}
+                          {/* 9. Bukti (Thumbnail Visual & Quick Zoom) */}
                           <td className="p-3.5 align-top whitespace-nowrap text-center">
                             {item.fotoBuktiUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
-                                  setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
-                                }}
-                                className="text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 font-semibold hover:underline cursor-pointer"
-                              >
-                                Foto Bukti
-                              </button>
+                              <div className="inline-flex flex-col items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPreviewPhotoUrl(resolveImageUrl(item.fotoBuktiUrl));
+                                    setPreviewTitle(`Bukti: ${item.tempat} (${formatDateShort(item.tanggalKegiatan)})`);
+                                  }}
+                                  className="relative group w-14 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shadow-2xs hover:shadow-md hover:scale-105 transition-all duration-150 cursor-pointer flex items-center justify-center"
+                                  title="Klik untuk memperbesar foto bukti"
+                                >
+                                  <img
+                                    src={resolveImageUrl(item.fotoBuktiUrl)}
+                                    alt="Bukti Logbook"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.currentTarget;
+                                      target.style.display = "none";
+                                      const parent = target.parentElement;
+                                      if (parent && !parent.querySelector(".fallback-label")) {
+                                        parent.classList.add("bg-emerald-50", "dark:bg-emerald-950/30");
+                                        const label = document.createElement("span");
+                                        label.className = "fallback-label text-[10px] font-bold text-emerald-700 dark:text-emerald-400";
+                                        label.innerText = "Foto";
+                                        parent.appendChild(label);
+                                      }
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                                    <Eye className="w-4 h-4" />
+                                  </div>
+                                </button>
+                                <span className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                                  {Array.isArray((item as any).attachmentUrls) && (item as any).attachmentUrls.length > 1
+                                    ? `${(item as any).attachmentUrls.length} Foto`
+                                    : "Foto Bukti"}
+                                </span>
+                              </div>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-slate-400 dark:text-slate-500 text-xs font-medium">-</span>
                             )}
                           </td>
 
@@ -1085,17 +1124,17 @@ export const LogbookKknPage: React.FC = () => {
                                 }`}
                                 title={item.statusApproval === "MENUNGGU_VERIFIKASI_DPL" ? "Tinjau aktivitas" : "Lihat detil"}
                               >
-                                <Eye className="w-3.5 h-3.5" />
+                                <Eye size={14} className="w-3.5 h-3.5 shrink-0" />
                                 <span>{item.statusApproval === "MENUNGGU_VERIFIKASI_DPL" ? "Tinjau" : "Lihat"}</span>
                               </button>
                               {!isPimpinan && (
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteLogbook(item.id)}
-                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer shadow-2xs"
-                                  title="Hapus logbook aktivitas"
+                                  onClick={() => handleOpenDeleteModal(item)}
+                                  className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer shadow-2xs flex items-center justify-center"
+                                  title="Hapus logbook aktivitas (Validasi 2 Langkah)"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 size={14} className="w-3.5 h-3.5 shrink-0" />
                                 </button>
                               )}
                             </div>
@@ -1399,11 +1438,11 @@ export const LogbookKknPage: React.FC = () => {
                 <div className="flex items-center justify-between pt-2">
                   <button
                     type="button"
-                    onClick={() => handleDeleteLogbook(selectedItemDetail.id)}
+                    onClick={() => handleOpenDeleteModal(selectedItemDetail)}
                     className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50/60 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                    title="Hapus logbook aktivitas ini"
+                    title="Hapus logbook aktivitas ini (Validasi 2 Langkah)"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 size={14} className="w-3.5 h-3.5 shrink-0" />
                     <span>Hapus Logbook</span>
                   </button>
 
@@ -1563,6 +1602,132 @@ export const LogbookKknPage: React.FC = () => {
       )}
 
       {/* ─────────────────────────────────────────────
+          5B. MODAL: KONFIRMASI HAPUS LOGBOOK (VALIDASI 2 LANGKAH)
+          ───────────────────────────────────────────── */}
+      {showDeleteModal && deleteTargetItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in zoom-in-95 duration-150 text-xs text-slate-700 dark:text-slate-300">
+            
+            {/* Header Modal */}
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-800">
+                <Trash2 size={20} className="shrink-0" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  Hapus Logbook Aktivitas
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Validasi 2 langkah untuk mencegah penghapusan data secara tidak sengaja.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isDeletingLogbook) {
+                    setShowDeleteModal(false);
+                    setDeleteTargetItem(null);
+                  }
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+              >
+                <X size={18} className="shrink-0" />
+              </button>
+            </div>
+
+            {/* Target Summary Card */}
+            <div className="bg-slate-50 dark:bg-slate-900/70 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-bold text-slate-900 dark:text-slate-100">
+                  {deleteTargetItem.penulisNama} {deleteTargetItem.penulisNim ? `(${deleteTargetItem.penulisNim})` : ""}
+                </span>
+                <span className="font-semibold text-slate-500">
+                  {formatDateShort(deleteTargetItem.tanggalKegiatan)}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                {deleteTargetItem.kelompokNama} • {deleteTargetItem.tempat}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 italic line-clamp-2 bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                "{deleteTargetItem.deskripsi}"
+              </p>
+            </div>
+
+            {/* Step 1: Checkbox Confirmation */}
+            <div className="p-3 bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl space-y-2">
+              <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 font-bold text-[11px]">
+                <span className="px-1.5 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-200 text-[10px]">
+                  Langkah 1
+                </span>
+                <span>Konfirmasi Persetujuan Risiko</span>
+              </div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none text-[11px] text-rose-900 dark:text-rose-200 font-medium">
+                <input
+                  type="checkbox"
+                  checked={deleteConfirmChecked}
+                  onChange={(e) => setDeleteConfirmChecked(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer accent-rose-600 shrink-0"
+                />
+                <span>
+                  Saya memahami bahwa data logbook ini akan dihapus secara permanen dari database dan tidak dapat dipulihkan.
+                </span>
+              </label>
+            </div>
+
+            {/* Step 2: Type HAPUS */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2">
+              <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
+                <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-[10px]">
+                  Langkah 2
+                </span>
+                <span>Ketik Kata Kunci Konfirmasi</span>
+              </div>
+              <label className="block text-[11px] text-slate-600 dark:text-slate-400">
+                Ketik kata <span className="text-rose-600 dark:text-rose-400 font-black">HAPUS</span> pada kolom di bawah ini:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                placeholder="Ketik HAPUS..."
+                disabled={!deleteConfirmChecked}
+                className="w-full px-3 py-2 text-xs font-bold text-center uppercase tracking-widest bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-700 rounded-xl text-rose-600 dark:text-rose-400 placeholder:text-slate-400 placeholder:normal-case placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <button
+                type="button"
+                disabled={isDeletingLogbook}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteTargetItem(null);
+                }}
+                className="py-2 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !deleteConfirmChecked ||
+                  deleteConfirmationText.trim().toUpperCase() !== "HAPUS" ||
+                  isDeletingLogbook
+                }
+                onClick={handleConfirmDeleteLogbook}
+                className="py-2 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isDeletingLogbook && <RefreshCw size={14} className="w-3.5 h-3.5 animate-spin shrink-0" />}
+                <Trash2 size={14} className="w-3.5 h-3.5 shrink-0" />
+                <span>Hapus Logbook Permanen</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────
           6. MODAL: PREVIEW FOTO LIGHTBOX
           ───────────────────────────────────────────── */}
       {previewPhotoUrl && (
@@ -1656,18 +1821,6 @@ export const LogbookKknPage: React.FC = () => {
         </div>
       )}
 
-      {/* Confirmation Modal for Delete Logbook */}
-      <ConfirmModal
-        isOpen={!!deleteTargetId}
-        onClose={() => setDeleteTargetId(null)}
-        onConfirm={executeDeleteLogbook}
-        title="Hapus Logbook Aktivitas"
-        message="Apakah Anda yakin ingin menghapus catatan logbook aktivitas ini? Data yang dihapus tidak dapat dikembalikan."
-        confirmText="Hapus Logbook"
-        cancelText="Batal"
-        type="danger"
-        isLoading={isDeleting}
-      />
     </div>
   );
 };

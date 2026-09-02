@@ -10,8 +10,8 @@ import React, { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
-import { printQrStickers } from "../../utils/printQrStickers";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
+import { printQrStickers } from "../../utils/printQrStickers";
 
 interface BinQr {
   id: string;
@@ -39,6 +39,8 @@ export const MasterQrManager: React.FC = () => {
   const [inactiveBins, setInactiveBins] = useState<InactiveBin[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [inactivateTargetQr, setInactivateTargetQr] = useState<string | null>(null);
+  const [isInactivating, setIsInactivating] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<string>("");
 
   // Approvals states
@@ -54,8 +56,6 @@ export const MasterQrManager: React.FC = () => {
   const [rtRwId, setRtRwId] = useState<string>("");
   const [categories, setCategories] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
-  const [qrToInactivate, setQrToInactivate] = useState<string | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
   const fetchQrData = async () => {
     try {
@@ -213,24 +213,24 @@ export const MasterQrManager: React.FC = () => {
   };
 
   const handleInactivateQr = (qrCode: string) => {
-    setQrToInactivate(qrCode);
+    setInactivateTargetQr(qrCode);
   };
 
-  const executeInactivateQr = async () => {
-    if (!qrToInactivate) return;
-    setIsActionLoading(true);
+  const handleConfirmInactivateQr = async () => {
+    if (!inactivateTargetQr) return;
     try {
-      const res = await api.put(`/bins/${qrToInactivate}/broken`);
+      setIsInactivating(true);
+      const res = await api.put(`/bins/${inactivateTargetQr}/broken`);
       if (res.data.success) {
-        toast.success(`QR Code ${qrToInactivate} berhasil dinonaktifkan (BROKEN)`);
-        setQrToInactivate(null);
+        toast.success(`QR Code ${inactivateTargetQr} berhasil dinonaktifkan (BROKEN)`);
+        setInactivateTargetQr(null);
         fetchQrData();
       }
     } catch (e: any) {
       console.error("Gagal menonaktifkan QR:", e);
       toast.error(e.response?.data?.message || "Gagal menonaktifkan QR Code");
     } finally {
-      setIsActionLoading(false);
+      setIsInactivating(false);
     }
   };
 
@@ -624,17 +624,17 @@ export const MasterQrManager: React.FC = () => {
         </div>
       )}
 
-      {/* Confirmation Modal for Inactivating QR */}
+      {/* Modern BERSEKA Confirmation Modal for Inactivating QR Code */}
       <ConfirmModal
-        isOpen={!!qrToInactivate}
-        onClose={() => setQrToInactivate(null)}
-        onConfirm={executeInactivateQr}
+        isOpen={Boolean(inactivateTargetQr)}
+        onClose={() => setInactivateTargetQr(null)}
+        onConfirm={handleConfirmInactivateQr}
+        isLoading={isInactivating}
         title="Nonaktifkan QR Code"
-        message={`Apakah Anda yakin ingin menonaktifkan QR Code ${qrToInactivate}? Status tempat sampah akan diubah menjadi BROKEN.`}
-        confirmText="Nonaktifkan"
+        message={`Apakah Anda yakin ingin menonaktifkan QR Code ${inactivateTargetQr || ""}? Status tempat sampah akan diubah menjadi RUSAK (BROKEN).`}
+        confirmText="Ya, Nonaktifkan QR"
         cancelText="Batal"
         type="danger"
-        isLoading={isActionLoading}
       />
     </div>
   );

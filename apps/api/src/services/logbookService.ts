@@ -137,14 +137,8 @@ export class LogbookService {
         where.kelompokId = { in: dplGroupIds };
       }
     } else if (isMhs) {
-      const studentProfile = await prisma.studentKkn.findUnique({
-        where: { userId },
-      });
-      if (studentProfile?.kelompokId) {
-        where.kelompokId = studentProfile.kelompokId;
-      } else {
-        where.penulisId = userId;
-      }
+      // Mahasiswa KKN hanya melihat logbook aktivitas per individu (penulisId)
+      where.penulisId = userId;
     } else if (filters.groupId && filters.groupId !== "ALL") {
       where.kelompokId = filters.groupId;
     }
@@ -263,40 +257,70 @@ export class LogbookService {
       orderBy: [{ tanggalKegiatan: "desc" }, { createdAt: "desc" }],
     });
 
-    return logbooks.map((item, index) => ({
-      nomor: item.nomor || index + 1,
-      id: item.id,
-      kelompokId: item.kelompokId,
-      kelompokNama: item.kelompok?.name || "Kelompok KKN",
-      kelurahan: item.kelompok?.kelurahan || "-",
-      cakupanRw: item.kelompok?.cakupanRw || [],
-      penulisId: item.penulisId,
-      penulisNama: item.penulis?.name || "Mahasiswa",
-      penulisNim: item.penulis?.studentProfile?.nim || "-",
-      penulisJurusan: item.penulis?.studentProfile?.jurusan || "-",
-      penulisFakultas: item.penulis?.studentProfile?.fakultas || "-",
-      penulisFotoProfil: item.penulis?.fotoProfil || null,
-      isKetua: Boolean(item.penulis?.studentProfile?.isKetua),
-      tanggalKegiatan: item.tanggalKegiatan
+    // Peta foto bukti per kelompok dan tanggal untuk fallback aktivitas kelompok yang dikerjakan bersama
+    const groupPhotoMap = new Map<string, { fotoBuktiUrl: string; attachmentUrls: string[] }>();
+    for (const item of logbooks) {
+      if (item.fotoBuktiUrl && item.fotoBuktiUrl.trim() !== "") {
+        const dateStr = item.tanggalKegiatan ? item.tanggalKegiatan.toISOString().split("T")[0] : "";
+        const key = `${item.kelompokId}_${dateStr}`;
+        if (!groupPhotoMap.has(key)) {
+          const rawAttachments = Array.isArray(item.attachmentUrls) && (item.attachmentUrls as string[]).length > 0
+            ? (item.attachmentUrls as string[]).map((u) => (typeof u === "string" ? u.replace(/\.(heic|heif)$/i, ".jpg") : u))
+            : [item.fotoBuktiUrl.replace(/\.(heic|heif)$/i, ".jpg")];
+          groupPhotoMap.set(key, {
+            fotoBuktiUrl: item.fotoBuktiUrl.replace(/\.(heic|heif)$/i, ".jpg"),
+            attachmentUrls: rawAttachments,
+          });
+        }
+      }
+    }
+
+    return logbooks.map((item, index) => {
+      const dateStr = item.tanggalKegiatan
         ? item.tanggalKegiatan.toISOString().split("T")[0]
-        : "-",
-      waktuMulai: item.waktuMulai || "-",
-      waktuSelesai: item.waktuSelesai || "-",
-      waktuLengkap: item.waktuMulai
-        ? `${item.waktuMulai}${item.waktuSelesai ? ` - ${item.waktuSelesai}` : ""}`
-        : "-",
-      tempat: item.tempat,
-      deskripsi: item.deskripsi,
-      fotoBuktiUrl: item.fotoBuktiUrl,
-      attachmentUrls: Array.isArray(item.attachmentUrls)
-        ? (item.attachmentUrls as string[])
-        : item.fotoBuktiUrl
-          ? [item.fotoBuktiUrl]
-          : [],
-      platformOs: item.platformOs || "ANDROID",
-      tipeAktivitas: item.tipeAktivitas,
-      pekanKe: item.pekanKe,
-      statusApproval: item.statusApproval,
+        : "-";
+      const groupKey = `${item.kelompokId}_${dateStr}`;
+      const groupFallback = groupPhotoMap.get(groupKey);
+
+      const resolvedFotoBuktiUrl = (item.fotoBuktiUrl || groupFallback?.fotoBuktiUrl || null)?.replace(
+        /\.(heic|heif)$/i,
+        ".jpg"
+      );
+
+      const rawAttachments = Array.isArray(item.attachmentUrls) && (item.attachmentUrls as string[]).length > 0
+        ? (item.attachmentUrls as string[]).map((u) => (typeof u === "string" ? u.replace(/\.(heic|heif)$/i, ".jpg") : u))
+        : resolvedFotoBuktiUrl
+          ? [resolvedFotoBuktiUrl]
+          : groupFallback?.attachmentUrls || [];
+
+      return {
+        nomor: item.nomor || index + 1,
+        id: item.id,
+        kelompokId: item.kelompokId,
+        kelompokNama: item.kelompok?.name || "Kelompok KKN",
+        kelurahan: item.kelompok?.kelurahan || "-",
+        cakupanRw: item.kelompok?.cakupanRw || [],
+        penulisId: item.penulisId,
+        penulisNama: item.penulis?.name || "Mahasiswa",
+        penulisNim: item.penulis?.studentProfile?.nim || "-",
+        penulisJurusan: item.penulis?.studentProfile?.jurusan || "-",
+        penulisFakultas: item.penulis?.studentProfile?.fakultas || "-",
+        penulisFotoProfil: item.penulis?.fotoProfil ? item.penulis.fotoProfil.replace(/\.(heic|heif)$/i, ".jpg") : null,
+        isKetua: Boolean(item.penulis?.studentProfile?.isKetua),
+        tanggalKegiatan: dateStr,
+        waktuMulai: item.waktuMulai || "-",
+        waktuSelesai: item.waktuSelesai || "-",
+        waktuLengkap: item.waktuMulai
+          ? `${item.waktuMulai}${item.waktuSelesai ? ` - ${item.waktuSelesai}` : ""}`
+          : "-",
+        tempat: item.tempat,
+        deskripsi: item.deskripsi,
+        fotoBuktiUrl: resolvedFotoBuktiUrl,
+        attachmentUrls: rawAttachments,
+        platformOs: item.platformOs || "ANDROID",
+        tipeAktivitas: item.tipeAktivitas,
+        pekanKe: item.pekanKe,
+        statusApproval: item.statusApproval,
       programKerjaId: item.programKerjaId,
       programKerja: item.programKerja
         ? {
@@ -352,7 +376,8 @@ export class LogbookService {
       catatanDpl: item.catatanDpl,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
-    }));
+    };
+    });
   }
 
   /**
@@ -455,6 +480,30 @@ export class LogbookService {
     }
 
     const item = logbook;
+    let resolvedFotoBuktiUrl = item.fotoBuktiUrl ? item.fotoBuktiUrl.replace(/\.(heic|heif)$/i, ".jpg") : null;
+    let resolvedAttachments = Array.isArray(item.attachmentUrls) && (item.attachmentUrls as string[]).length > 0
+      ? (item.attachmentUrls as string[]).map((u) => (typeof u === "string" ? u.replace(/\.(heic|heif)$/i, ".jpg") : u))
+      : resolvedFotoBuktiUrl
+        ? [resolvedFotoBuktiUrl]
+        : [];
+
+    if (!resolvedFotoBuktiUrl && item.kelompokId && item.tanggalKegiatan) {
+      const groupPeer = await prisma.logbookKkn.findFirst({
+        where: {
+          kelompokId: item.kelompokId,
+          tanggalKegiatan: item.tanggalKegiatan,
+          fotoBuktiUrl: { not: null },
+        },
+        select: { fotoBuktiUrl: true, attachmentUrls: true },
+      });
+      if (groupPeer?.fotoBuktiUrl) {
+        resolvedFotoBuktiUrl = groupPeer.fotoBuktiUrl.replace(/\.(heic|heif)$/i, ".jpg");
+        resolvedAttachments = Array.isArray(groupPeer.attachmentUrls) && (groupPeer.attachmentUrls as string[]).length > 0
+          ? (groupPeer.attachmentUrls as string[]).map((u) => (typeof u === "string" ? u.replace(/\.(heic|heif)$/i, ".jpg") : u))
+          : [resolvedFotoBuktiUrl];
+      }
+    }
+
     return {
       id: item.id,
       nomor: item.nomor || 1,
@@ -467,7 +516,7 @@ export class LogbookService {
       penulisNim: item.penulis?.studentProfile?.nim || "-",
       penulisJurusan: item.penulis?.studentProfile?.jurusan || "-",
       penulisFakultas: item.penulis?.studentProfile?.fakultas || "-",
-      penulisFotoProfil: item.penulis?.fotoProfil || null,
+      penulisFotoProfil: item.penulis?.fotoProfil ? item.penulis.fotoProfil.replace(/\.(heic|heif)$/i, ".jpg") : null,
       isKetua: Boolean(item.penulis?.studentProfile?.isKetua),
       tanggalKegiatan: item.tanggalKegiatan
         ? item.tanggalKegiatan.toISOString().split("T")[0]
@@ -479,12 +528,8 @@ export class LogbookService {
         : "-",
       tempat: item.tempat,
       deskripsi: item.deskripsi,
-      fotoBuktiUrl: item.fotoBuktiUrl,
-      attachmentUrls: Array.isArray(item.attachmentUrls)
-        ? (item.attachmentUrls as string[])
-        : item.fotoBuktiUrl
-          ? [item.fotoBuktiUrl]
-          : [],
+      fotoBuktiUrl: resolvedFotoBuktiUrl,
+      attachmentUrls: resolvedAttachments,
       platformOs: item.platformOs || "ANDROID",
       tipeAktivitas: item.tipeAktivitas,
       pekanKe: item.pekanKe,

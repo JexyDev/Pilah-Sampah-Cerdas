@@ -105,6 +105,25 @@ export class CronService {
       tzOptions
     );
 
+    // Auto-mark ALPA (Tanpa Keterangan) for weekdays (Senin-Jumat) without any presence/leave/logbook at 23:55 WIB
+    cron.schedule(
+      "55 23 * * 1-5",
+      () => {
+        kknAttendanceService.processWeekdayAutoAlpha();
+      },
+      tzOptions
+    );
+
+    // Fallback auto-mark ALPA for previous weekday at 00:02 AM WIB
+    cron.schedule(
+      "2 0 * * 2-6",
+      () => {
+        const yesterday = new Date(Date.now() + 7 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000);
+        kknAttendanceService.processWeekdayAutoAlpha(yesterday.toISOString().slice(0, 10));
+      },
+      tzOptions
+    );
+
     // === SMART ZONE: Batch auto-polygon update setiap 5 menit saat ada mahasiswa aktif ===
     cron.schedule(
       "*/5 * * * *",
@@ -605,7 +624,7 @@ export class CronService {
                 isRead: false,
               },
             });
-          } catch (_notifErr) {
+          } catch {
             console.error(
               `[CronService] Failed to send geofence warning notification for ${att.studentId}`
             );
