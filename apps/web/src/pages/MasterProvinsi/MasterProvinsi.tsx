@@ -73,15 +73,11 @@ const MasterProvinsi: React.FC = () => {
         status: "Aktif",
       }));
 
-      // Default fallback Jawa Barat if database empty
-      setProvinsiList(
-        list.length > 0
-          ? list
-          : [{ id: "1", nama: "Jawa Barat", kodeIso: "ID-JB", ibuKota: "Bandung", status: "Aktif" }]
-      );
+      setProvinsiList(list);
     } catch (err: any) {
       console.error("Gagal memuat data provinsi dari backend:", err);
       setError("Gagal memuat data provinsi dari server real-time.");
+      setProvinsiList([]);
     } finally {
       setLoading(false);
     }

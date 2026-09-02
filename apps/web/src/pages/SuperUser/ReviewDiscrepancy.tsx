@@ -95,8 +95,8 @@ export const ReviewDiscrepancy: React.FC = () => {
         payload.finalWeight = finalWeight;
       }
       
-      const res = await api.put(`/waste/logs/${id}/resolve`, payload).catch(() => ({ data: { success: true } }));
-      if (res.data.success) {
+      const res = await api.put(`/waste/logs/${id}/resolve`, payload);
+      if (res.data && res.data.success) {
         toast.success(`Putusan diskrepansi (${finalClassification}) berhasil disetujui & poin diperbarui`);
         setLogs((prev) =>
           prev.map((item) =>
@@ -179,11 +179,11 @@ export const ReviewDiscrepancy: React.FC = () => {
       actualWeightPetugas: newWeight,
       geolocation: "-6.8890, 107.6150",
       createdAt: new Date().toISOString(),
-      evidencePhotoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80",
+      evidencePhotoUrl: "",
       discrepancyStatus: "PENDING_REVIEW",
       category: { name: `Setoran Sampah ${newAiCategory}` },
       household: {
-        user: { name: newWargaName || "Warga Baru", email: "warga@pilahsampah.id" },
+        user: { name: newWargaName || "Warga", email: "" },
         rtRw: { name: newRtRw, kelurahan: { name: newKelurahan } },
       },
     };
