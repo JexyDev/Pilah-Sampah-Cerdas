@@ -741,6 +741,7 @@ export class KknAttendanceService {
               : {}),
           },
         });
+D
         if (todaySch) {
           currentScheduleId = todaySch.id;
           attendanceStatus = "BELUM_MULAI";
