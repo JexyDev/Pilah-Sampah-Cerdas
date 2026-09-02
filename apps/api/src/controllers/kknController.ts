@@ -584,7 +584,7 @@ export class KknController {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
       const parsedRadius =
-        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
+        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 150;
       const payload = {
         nama: req.body.nama,
         alamat: req.body.alamat,
@@ -605,7 +605,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 500,
+        radius: Number((data as any).radius) || 150,
       };
       res.status(201).json({
         success: true,
@@ -652,7 +652,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 500,
+        radius: Number((data as any).radius) || 150,
       };
       res.status(200).json({
         success: true,
@@ -663,6 +663,32 @@ export class KknController {
       console.error("[KknController] updatePosko error:", error);
       const statusCode = error.statusCode || 400;
       res.status(statusCode).json({ success: false, message: error.message });
+    }
+  }
+
+  async getUnifiedZones(req: Request, res: Response): Promise<void> {
+    try {
+      const { poskoKknService } = await import("../services/poskoKknService.js");
+      const user = (req as any).user;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+
+      const data = await poskoKknService.getUnifiedZones({
+        kelompokId,
+        kelurahan,
+        userId: user?.userId,
+        role: user?.role,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Data peta zona KKN terpadu berhasil dimuat",
+        totalGroups: data.length,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getUnifiedZones error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 

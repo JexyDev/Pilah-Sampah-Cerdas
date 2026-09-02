@@ -109,7 +109,7 @@ export class PoskoKknController {
         ...posko,
         foto: posko.fotoUrl || null,
         fotoUrl: posko.fotoUrl || null,
-        radius: Number((posko as any).radius) || 500,
+        radius: Number((posko as any).radius) || 150,
         statusApproval: statusApproval || posko.keterangan || "APPROVED",
       };
 
@@ -118,6 +118,35 @@ export class PoskoKknController {
         .json({ success: true, message: "Posko KKN berhasil disimpan", data: resData });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message || "Gagal menyimpan posko" });
+    }
+  }
+
+  /** GET /posko-kkn/unified-zones — Unified Map Service (Single Source of Truth) */
+  async getUnifiedZones(req: Request, res: Response): Promise<void> {
+    try {
+      const user = (req as any).user;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+
+      const data = await poskoKknService.getUnifiedZones({
+        kelompokId,
+        kelurahan,
+        userId: user?.userId,
+        role: user?.role,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Data peta zona KKN terpadu berhasil dimuat",
+        totalGroups: data.length,
+        data,
+      });
+    } catch (err: any) {
+      console.error("[PoskoKknController.getUnifiedZones] error:", err);
+      res.status(500).json({
+        success: false,
+        message: err.message || "Gagal mengambil data peta zona KKN terpadu",
+      });
     }
   }
 

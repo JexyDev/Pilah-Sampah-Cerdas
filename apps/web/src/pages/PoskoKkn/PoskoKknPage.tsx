@@ -307,20 +307,39 @@ export const PoskoKknPage: React.FC = () => {
     fetchKelompokList();
   }, [fetchPoskoList, fetchFacilities, fetchKelompokList]);
 
-  // Metrik Penghitungan Posko Terpadu (Sinkron dengan Inspeksi Geofence Zona KKN)
+  // ============================================================================
+  // ✅ PERBAIKAN BUG: Unique Group Aggregation untuk Menghindari Multi-Counting
+  // ============================================================================
   const metrics = useMemo(() => {
     const totalPosko = items.length;
     const totalKelompok = Math.max(kelompokList.length, items.length);
     const verified = items.filter((i) => i.statusApproval === "APPROVED").length;
 
-    // Total Mahasiswa dari 15 Posko yang sudah terdaftar
-    const totalMahasiswaPosko = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
-    // Total Mahasiswa KKN keseluruhan se-Kecamatan Coblong (32 Kelompok)
-    let totalMahasiswaSemua = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
+    // 1. Gunakan Map untuk mengisolasi 1 kelompokId -> 1 totalAnggota riil (mencegah double-counting jika ada multi-posko)
+    const uniqueGroupStudentMap = new Map<string, number>();
+    items.forEach((item) => {
+      const key = item.kelompokId || item.id;
+      if (key && !uniqueGroupStudentMap.has(key)) {
+        uniqueGroupStudentMap.set(key, item.totalAnggota || 0);
+      }
+    });
+
+    // 2. Jumlahkan total mahasiswa riil hanya dari kelompok yang unik
+    const totalMahasiswaPosko = Array.from(uniqueGroupStudentMap.values()).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+
+    // 3. Hitung total mahasiswa dari seluruh kelompok KKN (termasuk yang belum ada posko)
+    let totalMahasiswaSemua = kelompokList.reduce(
+      (acc, curr) => acc + (curr.students?.length || 0),
+      0
+    );
     if (totalMahasiswaSemua === 0) {
       totalMahasiswaSemua = totalMahasiswaPosko;
     }
 
+    // 4. Hitung unik DPL pendamping
     const dplSet = new Set<string>();
     items.forEach((i) => {
       if (i.dplName && !i.dplName.includes("Belum")) dplSet.add(i.dplName.trim());
@@ -331,7 +350,14 @@ export const PoskoKknPage: React.FC = () => {
     });
     const totalDpl = dplSet.size;
 
-    return { totalPosko, totalKelompok, verified, totalMahasiswaPosko, totalMahasiswaSemua, totalDpl };
+    return {
+      totalPosko,
+      totalKelompok,
+      verified,
+      totalMahasiswaPosko,
+      totalMahasiswaSemua,
+      totalDpl,
+    };
   }, [items, kelompokList]);
 
   // Kelompok yang belum mendaftarkan titik Posko KKN
@@ -1610,7 +1636,7 @@ export const PoskoKknPage: React.FC = () => {
 
                 const resolvedFoto = resolveImageUrl(item.foto || item.fotoUrl);
                 const isApproved = item.statusApproval === "APPROVED";
-                const itemRadius = Number(item.radius) || 500;
+                const itemRadius = Number(item.radius) || 150;
 
                 return (
                   <React.Fragment key={item.id}>
@@ -1984,7 +2010,7 @@ export const PoskoKknPage: React.FC = () => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-1.5 py-0.5 rounded-md">
                                 <Radio size={10} className="text-indigo-500" />
-                                {Number(item.radius) || 500}m
+                                {Number(item.radius) || 150}m
                               </span>
                               {hasValidCoords ? (
                                 <button
@@ -2319,7 +2345,7 @@ export const PoskoKknPage: React.FC = () => {
                   </span>
                   <p className="font-extrabold text-sm text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
                     <Radio size={14} className="text-indigo-500" />
-                    <span>{Number(detailModalPosko.radius) || 500} Meter</span>
+                    <span>{Number(detailModalPosko.radius) || 150} Meter</span>
                   </p>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 sm:text-right">
@@ -2583,7 +2609,7 @@ export const PoskoKknPage: React.FC = () => {
                     Radius Geofence Presensi (Meter)
                   </label>
                   <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded-lg">
-                    {formData.radius || 500} meter
+                    {formData.radius || 150} meter
                   </span>
                 </div>
 
@@ -2595,7 +2621,7 @@ export const PoskoKknPage: React.FC = () => {
                       min={10}
                       max={5000}
                       step={10}
-                      placeholder="500"
+                      placeholder="150"
                       value={formData.radius}
                       onChange={(e) => setFormData((prev) => ({ ...prev, radius: e.target.value }))}
                       className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/10 text-slate-900 dark:text-slate-100 pr-16"
@@ -2610,7 +2636,7 @@ export const PoskoKknPage: React.FC = () => {
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Pilihan Cepat:</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {[150, 300, 500, 750, 1000].map((r) => (
+                    {[100, 150, 200, 300, 500].map((r) => (
                       <button
                         key={r}
                         type="button"
@@ -2621,7 +2647,7 @@ export const PoskoKknPage: React.FC = () => {
                             : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
                         }`}
                       >
-                        {r} m {r === 500 ? "(Default Rekomendasi)" : ""}
+                        {r} m {r === 150 ? "(Standar Presensi)" : ""}
                       </button>
                     ))}
                   </div>

@@ -32,7 +32,7 @@ async function buildGeofence(
         where: { kelompokId: schedule.kelompokId },
       });
       if (posko && posko.latitude && posko.longitude) {
-        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 500;
+        const pRadius = Number((posko as any).radius) || Number(schedule.radius) || 150;
         return {
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
@@ -47,7 +47,7 @@ async function buildGeofence(
         orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
       });
       if (multiPosko && multiPosko.latitude && multiPosko.longitude) {
-        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 500;
+        const mRadius = Number(multiPosko.radius) || Number(schedule.radius) || 150;
         return {
           latitude: Number(multiPosko.latitude),
           longitude: Number(multiPosko.longitude),
@@ -65,7 +65,7 @@ async function buildGeofence(
         return {
           latitude: Number(facPosko.latitude),
           longitude: Number(facPosko.longitude),
-          radius: Math.max(150, Number(schedule.radius) || 500),
+          radius: Math.max(150, Number(schedule.radius) || 150),
           polygon: schedule.polygon,
         };
       }
@@ -79,7 +79,7 @@ async function buildGeofence(
     return {
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
-      radius: Math.max(150, Number(schedule.radius) || 500),
+      radius: Math.max(150, Number(schedule.radius) || 150),
       polygon: schedule.polygon,
     };
   }
@@ -91,7 +91,7 @@ async function buildGeofence(
 
   const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
   const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 150;
 
   return {
     latitude: defaultLat,
@@ -147,7 +147,7 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
       alamat: primary.alamat || "-",
       latitude: Number(primary.latitude),
       longitude: Number(primary.longitude),
-      radius: Math.max(150, Number((primary as any).radius) || 500),
+      radius: Math.max(150, Number((primary as any).radius) || 150),
       isUtama: true,
       type: "POSKO_UTAMA",
       fotoUrl: primary.fotoUrl || null,
@@ -163,7 +163,7 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
           alamat: m.alamat || "-",
           latitude: Number(m.latitude),
           longitude: Number(m.longitude),
-          radius: Math.max(150, Number(m.radius) || 500),
+          radius: Math.max(150, Number(m.radius) || 150),
           isUtama: m.isUtama || false,
           type: "POSKO_MULTI",
           fotoUrl: m.fotoUrl || null,
@@ -884,6 +884,7 @@ export class KknAttendanceService {
             Boolean(existingAtt.checkOutAt));
 
         if (existingAtt && !isAttFinished) {
+          let currentAttStatus = existingAtt.status;
           const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           // ─────────────────────────────────────────────────────────────────────────────
           // AUTO-PAUSE dengan GRACE PERIOD — Mencegah false pause akibat GPS glitch

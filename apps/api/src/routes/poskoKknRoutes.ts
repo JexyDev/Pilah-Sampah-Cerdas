@@ -15,6 +15,13 @@ const router = Router();
 
 // ─── Posko Utama (Existing) ──────────────────────────────────────────────────
 
+// Unified Map Service: Semua role authenticated bisa melihat peta terpadu (SSOT)
+router.get(
+  "/unified-zones",
+  authMiddleware,
+  poskoKknController.getUnifiedZones.bind(poskoKknController)
+);
+
 // Semua role authenticated bisa lihat daftar posko
 router.get("/", authMiddleware, poskoKknController.getAll.bind(poskoKknController));
 

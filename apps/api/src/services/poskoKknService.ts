@@ -106,6 +106,8 @@ export class PoskoKknService {
       existingFacility?.statusApproval ||
       (existingPosko?.keterangan === "PENDING" || existingPosko?.keterangan === "REJECTED" ? existingPosko.keterangan : "APPROVED");
 
+    const parsedRadius = data.radius !== undefined ? Math.max(150, Number(data.radius)) : 500;
+
     const posko = await prisma.poskoKkn.upsert({
       where: { kelompokId },
       update: {
@@ -113,7 +115,7 @@ export class PoskoKknService {
         alamat: data.alamat,
         latitude: data.latitude,
         longitude: data.longitude,
-        ...(data.radius !== undefined ? { radius: data.radius } : {}),
+        radius: parsedRadius,
         ...(effectiveFotoUrl !== undefined ? { fotoUrl: effectiveFotoUrl } : {}),
         keterangan: effectiveStatus,
       },
@@ -123,7 +125,7 @@ export class PoskoKknService {
         alamat: data.alamat,
         latitude: data.latitude,
         longitude: data.longitude,
-        radius: data.radius ?? 500,
+        radius: parsedRadius,
         fotoUrl: effectiveFotoUrl ?? null,
         keterangan: effectiveStatus,
       },
@@ -139,40 +141,69 @@ export class PoskoKknService {
       },
     });
 
-    // Otomatis sinkronkan jadwal hari ini dan jadwal aktif kelompok dengan koordinat Posko baru
+    // Otomatis cascade sinkronkan seluruh jadwal aktif kelompok (hari ini & masa depan) dengan koordinat dan radius Posko baru
     try {
       const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+      const dateStr = wibNow.toISOString().slice(0, 10);
+      const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
 
+      // Update seluruh jadwal aktif dari hari ini ke depan
       await prisma.schedule.updateMany({
         where: {
           kelompokId,
-          date: { gte: startOfDay, lte: endOfDay },
+          isActive: true,
+          date: { gte: startOfDay },
         },
         data: {
           latitude: data.latitude,
           longitude: data.longitude,
           location: data.alamat,
+          radius: parsedRadius,
         },
       });
 
-      // Update juga jadwal akan datang yang lokasinya masih default
+      // Update juga jadwal akan datang yang lokasinya masih default / null
       await prisma.schedule.updateMany({
         where: {
           kelompokId,
-          date: { gt: endOfDay },
           OR: [{ latitude: null }, { latitude: 0 }, { location: null }, { location: "-" }],
         },
         data: {
           latitude: data.latitude,
           longitude: data.longitude,
           location: data.alamat,
+          radius: parsedRadius,
         },
       });
     } catch (syncErr) {
       console.warn("[PoskoKknService.upsertPosko] Failed to cascade update schedules:", syncErr);
     }
+
+    // Refresh smart auto-polygon
+    try {
+      const { smartZoneService } = await import("./smartZoneService.js");
+      await smartZoneService.updateGroupAutoPolygon(kelompokId);
+    } catch (_) {}
+
+    // Kirim Silent Push ke seluruh mahasiswa kelompok agar mobile reload zona secara real-time
+    try {
+      const { notificationIntegrationService } = await import("./notificationIntegrationService.js");
+      const students = await prisma.studentKkn.findMany({
+        where: { kelompokId },
+        include: { user: true },
+      });
+      for (const s of students) {
+        if (s.user?.fcmToken) {
+          notificationIntegrationService
+            .sendSilentDataPush(s.user.fcmToken, {
+              event: "POSKO_UPDATED",
+              kelompokId,
+            })
+            .catch(() => {});
+        }
+      }
+    } catch (_) {}
 
     // ─── SINKRONISASI KE TABEL FACILITY (POSKO_KKN) UNTUK MENU POSKO WEB ───
     try {
@@ -406,7 +437,7 @@ export class PoskoKknService {
           foto: resolvedFoto,
           fotoUrl: resolvedFoto,
           keterangan: p.keterangan || null,
-          radius: Number((p as any).radius) || 500,
+          radius: Number((p as any).radius) || 150,
           isUtama: true,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
@@ -454,7 +485,7 @@ export class PoskoKknService {
           foto: resolvedFoto,
           fotoUrl: resolvedFoto,
           keterangan: p.keterangan || null,
-          radius: p.radius || 500,
+          radius: Number(p.radius) || 150,
           isUtama: p.isUtama ?? false,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
@@ -551,7 +582,7 @@ export class PoskoKknService {
         latitude: data.latitude,
         longitude: data.longitude,
         isUtama: data.isUtama ?? false,
-        radius: data.radius ?? 500,
+        radius: data.radius ? Math.max(150, Number(data.radius)) : 150,
         fotoUrl: data.fotoUrl ?? null,
         keterangan: data.keterangan ?? null,
       },
@@ -593,7 +624,7 @@ export class PoskoKknService {
             longitude: data.longitude,
             location: data.nama,
             title: `Kegiatan Harian ${data.nama}`,
-            radius: Math.max(150, data.radius ?? 500),
+            radius: Math.max(150, data.radius ?? 150),
           },
         });
       }
@@ -646,7 +677,7 @@ export class PoskoKknService {
         ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
         ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
         ...(data.isUtama !== undefined ? { isUtama: data.isUtama } : {}),
-        ...(data.radius !== undefined ? { radius: data.radius } : {}),
+        ...(data.radius !== undefined ? { radius: Math.max(150, Number(data.radius)) } : {}),
         ...(data.fotoUrl !== undefined ? { fotoUrl: data.fotoUrl } : {}),
         ...(data.keterangan !== undefined ? { keterangan: data.keterangan } : {}),
       },
@@ -675,7 +706,7 @@ export class PoskoKknService {
             ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
             ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
             ...(data.nama !== undefined ? { location: data.nama, title: `Kegiatan Harian ${data.nama}` } : {}),
-            ...(data.radius !== undefined ? { radius: Math.max(150, data.radius) } : {}),
+            ...(data.radius !== undefined ? { radius: Math.max(150, Number(data.radius)) } : {}),
           },
         });
       }
@@ -760,7 +791,7 @@ export class PoskoKknService {
         latitude: Number(primary.latitude),
         longitude: Number(primary.longitude),
         isUtama: true,
-        radius: Number((primary as any).radius) || 500,
+        radius: Number((primary as any).radius) || 150,
         type: "POSKO_UTAMA",
         foto: primary.fotoUrl ?? null,
         fotoUrl: primary.fotoUrl ?? null,
@@ -775,7 +806,7 @@ export class PoskoKknService {
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
         isUtama: p.isUtama,
-        radius: p.radius || 500,
+        radius: Number(p.radius) || 150,
         type: "POSKO_MULTI",
         foto: p.fotoUrl ?? null,
         fotoUrl: p.fotoUrl ?? null,
@@ -806,6 +837,280 @@ export class PoskoKknService {
         isActive: autoPolygon !== null && autoPolygon.length >= 3,
       },
     };
+  }
+
+  /**
+   * UNIFIED MAP SERVICE (Single Source of Truth)
+   * Menggabungkan seluruh data posko (Primary, Multi, Facility), jadwal aktif (termasuk polygon & radius),
+   * auto-polygon smart zone, dan status mahasiswa dalam format terpadu untuk Web Inspeksi, Web Posko, dan Mobile.
+   */
+  async getUnifiedZones(query?: {
+    kelompokId?: string;
+    kelurahan?: string;
+    userId?: string;
+    role?: string;
+  }) {
+    let whereKelompok: any = {};
+    if (query?.kelompokId) {
+      whereKelompok.id = query.kelompokId;
+    }
+    if (query?.kelurahan && query.kelurahan !== "ALL") {
+      whereKelompok.kelurahan = { equals: query.kelurahan, mode: "insensitive" };
+    }
+
+    // Role-based filtering if applicable
+    if (query?.userId && query?.role) {
+      const normalizedRole = query.role.toUpperCase();
+      const isAdmin = [
+        "DEVELOPER",
+        "ADMIN_DLH",
+        "DLH",
+        "DLH_ADMIN",
+        "SUPER_USER",
+        "ADMIN",
+        "PANITIA_TASKFORCE",
+        "PEMIMPIN",
+      ].some((r) => normalizedRole.includes(r));
+
+      if (!isAdmin) {
+        if (normalizedRole.includes("MAHASISWA")) {
+          whereKelompok.students = { some: { userId: query.userId } };
+        } else if (normalizedRole.includes("DPL") || normalizedRole.includes("DOSEN")) {
+          const userDpl = await prisma.user.findUnique({
+            where: { id: query.userId },
+            select: { id: true, name: true, nip: true },
+          });
+          const orConds: any[] = [{ dplId: query.userId }, { dpl: { id: query.userId } }];
+          if (userDpl?.name) {
+            orConds.push({ dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" } });
+            orConds.push({ dpl: { name: { equals: userDpl.name.trim(), mode: "insensitive" } } });
+          }
+          if (userDpl?.nip) {
+            orConds.push({ dpl: { nip: userDpl.nip } });
+          }
+          whereKelompok.OR = orConds;
+        }
+      }
+    }
+
+    const groups = await prisma.kelompokKkn.findMany({
+      where: whereKelompok,
+      orderBy: { name: "asc" },
+      include: {
+        dpl: { select: { id: true, name: true, phone: true } },
+        poskoKkn: true,
+        poskoMulti: {
+          orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+        },
+        facilities: {
+          where: { jenis: "posko_kkn" },
+        },
+        students: {
+          include: {
+            user: { select: { id: true, name: true, phone: true } },
+          },
+        },
+      },
+    });
+
+    // Ambil jadwal aktif hari ini / terkini untuk setiap kelompok
+    const now = new Date();
+    const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const dateStr = wibNow.toISOString().slice(0, 10);
+    const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+    const endOfDay = new Date(`${dateStr}T23:59:59+07:00`);
+
+    const groupIds = (groups as any[]).map((g: any) => g.id);
+    const activeSchedules = await prisma.schedule.findMany({
+      where: {
+        kelompokId: { in: groupIds },
+        isActive: true,
+        date: { gte: startOfDay, lte: endOfDay },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const fallbackSchedules = await prisma.schedule.findMany({
+      where: {
+        kelompokId: { in: groupIds },
+        isActive: true,
+        date: { gt: endOfDay },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    // Ambil lokasi aktif mahasiswa terkini (30 menit terakhir)
+    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const recentLocations = await prisma.studentLocation.findMany({
+      where: { recordedAt: { gte: thirtyMinsAgo } },
+      orderBy: { recordedAt: "desc" },
+    });
+
+    const studentLocMap = new Map<string, any>();
+    for (const loc of recentLocations) {
+      if (!studentLocMap.has(loc.studentId)) {
+        studentLocMap.set(loc.studentId, loc);
+      }
+    }
+
+    const unifiedZones = (groups as any[]).map((g: any) => {
+      const todaySched = activeSchedules.find((s) => s.kelompokId === g.id);
+      const futureSched = fallbackSchedules.find((s) => s.kelompokId === g.id);
+      const activeSchedule = todaySched || futureSched || null;
+
+      // Compile all posko points
+      const allPoskoList: Array<{
+        id: string;
+        nama: string;
+        alamat: string;
+        latitude: number;
+        longitude: number;
+        radius: number;
+        isUtama: boolean;
+        type: "POSKO_UTAMA" | "POSKO_MULTI";
+        fotoUrl: string | null;
+        keterangan: string | null;
+        statusApproval: string;
+      }> = [];
+
+      const facPosko = g.facilities?.[0];
+      if (g.poskoKkn && g.poskoKkn.latitude && g.poskoKkn.longitude) {
+        const resolvedFoto = g.poskoKkn.fotoUrl || facPosko?.foto || null;
+        const statusApproval =
+          g.poskoKkn.keterangan === "PENDING" || g.poskoKkn.keterangan === "REJECTED"
+            ? g.poskoKkn.keterangan
+            : facPosko?.statusApproval || "APPROVED";
+
+        allPoskoList.push({
+          id: g.poskoKkn.id,
+          nama: g.poskoKkn.nama,
+          alamat: g.poskoKkn.alamat,
+          latitude: Number(g.poskoKkn.latitude),
+          longitude: Number(g.poskoKkn.longitude),
+          radius: Number((g.poskoKkn as any).radius) || 150,
+          isUtama: true,
+          type: "POSKO_UTAMA",
+          fotoUrl: resolvedFoto,
+          keterangan: g.poskoKkn.keterangan,
+          statusApproval,
+        });
+      }
+
+      if (Array.isArray(g.poskoMulti)) {
+        for (const m of g.poskoMulti) {
+          if (m.latitude && m.longitude) {
+            allPoskoList.push({
+              id: m.id,
+              nama: m.nama,
+              alamat: m.alamat,
+              latitude: Number(m.latitude),
+              longitude: Number(m.longitude),
+              radius: Number(m.radius) || 150,
+              isUtama: m.isUtama,
+              type: "POSKO_MULTI",
+              fotoUrl: m.fotoUrl || null,
+              keterangan: m.keterangan,
+              statusApproval: "APPROVED",
+            });
+          }
+        }
+      }
+
+      // Determine center coordinate & geofence source
+      const primaryPosko = allPoskoList.find((p) => p.isUtama) || allPoskoList[0] || null;
+      let centerLat = -6.8915; // default Coblong
+      let centerLng = 107.6107;
+      let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
+      let radius = 150;
+      let schedulePolygon: any = null;
+
+      if (primaryPosko) {
+        centerLat = primaryPosko.latitude;
+        centerLng = primaryPosko.longitude;
+        radius = primaryPosko.radius || 150;
+        geofenceSource = "POSKO_RESMI";
+      } else if (activeSchedule && activeSchedule.latitude && activeSchedule.longitude) {
+        centerLat = Number(activeSchedule.latitude);
+        centerLng = Number(activeSchedule.longitude);
+        radius = Number(activeSchedule.radius) || 150;
+        geofenceSource = "JADWAL_KEGIATAN";
+        if (activeSchedule.polygon) schedulePolygon = activeSchedule.polygon;
+      }
+
+      // Parse auto-polygon
+      let autoPolygon: Array<{ lat: number; lng: number }> | null = null;
+      if (g.autoPolygon && Array.isArray(g.autoPolygon)) {
+        autoPolygon = (g.autoPolygon as any[]).map((p: any) => ({
+          lat: Array.isArray(p) ? Number(p[0]) : Number(p.lat ?? p.latitude),
+          lng: Array.isArray(p) ? Number(p[1]) : Number(p.lng ?? p.longitude),
+        }));
+      }
+
+      // Compile detailed students
+      const studentsDetailed = (g.students || []).map((st) => {
+        const uId = st.userId;
+        const loc = uId ? studentLocMap.get(uId) : null;
+        return {
+          id: st.id,
+          userId: st.userId,
+          name: st.user?.name || "Mahasiswa",
+          phone: st.user?.phone || st.noWa || "-",
+          isKetua: st.isKetua,
+          location: loc
+            ? {
+                latitude: Number(loc.latitude),
+                longitude: Number(loc.longitude),
+                recordedAt: loc.recordedAt,
+              }
+            : null,
+        };
+      });
+
+      const ketua = g.students?.find((s) => s.isKetua) || g.students?.[0];
+
+      return {
+        kelompokId: g.id,
+        kelompokName: g.name,
+        kelurahan: g.kelurahan || "Coblong",
+        dpl: g.dpl
+          ? { id: g.dpl.id, name: g.dpl.name, phone: g.dpl.phone }
+          : { id: null, name: g.dplNamaMentah || "Belum Diset", phone: "-" },
+        pic: ketua?.user?.name || "Ketua Kelompok",
+        kontak: ketua?.user?.phone || (ketua as any)?.noWa || "-",
+        center: { latitude: centerLat, longitude: centerLng },
+        radius,
+        geofenceSource,
+        hasRegisteredPosko: allPoskoList.length > 0,
+        primaryPosko,
+        poskoList: allPoskoList,
+        totalPosko: allPoskoList.length,
+        activeSchedule: activeSchedule
+          ? {
+              id: activeSchedule.id,
+              title: activeSchedule.title,
+              date: activeSchedule.date,
+              time: activeSchedule.time,
+              category: activeSchedule.category,
+              location: activeSchedule.location,
+              latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : null,
+              longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : null,
+              radius: Number(activeSchedule.radius) || 150,
+              polygon: activeSchedule.polygon,
+            }
+          : null,
+        autoZone: {
+          polygon: autoPolygon,
+          updatedAt: g.autoPolygonUpdatedAt,
+          studentCount: g.autoPolygonStudentCount ?? 0,
+          isActive: autoPolygon !== null && autoPolygon.length >= 3,
+        },
+        students: studentsDetailed,
+        totalStudents: studentsDetailed.length,
+        activeGpsCount: studentsDetailed.filter((s) => s.location !== null).length,
+      };
+    });
+
+    return unifiedZones;
   }
 }
 

@@ -285,7 +285,7 @@ export const ZonaInspectorPage: React.FC = () => {
   const [editingGroup, setEditingGroup] = useState<any | null>(null);
   const [editMode, setEditMode] = useState<"CIRCLE" | "POLYGON">("CIRCLE");
   const [editPoints, setEditPoints] = useState<[number, number][]>([[-6.8906, 107.615]]);
-  const [editRadius, setEditRadius] = useState<number>(500);
+  const [editRadius, setEditRadius] = useState<number>(150);
   const [editPoskoForm, setEditPoskoForm] = useState({
     nama: "",
     alamat: "",
@@ -373,7 +373,7 @@ export const ZonaInspectorPage: React.FC = () => {
       let lat = CoblongGeo.CENTER[0];
       let lng = CoblongGeo.CENTER[1];
       let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
-      let radius = 500;
+      let radius = 150;
       let polygon: [number, number][] | null = null;
 
       if (primaryPosko && primaryPosko.latitude && primaryPosko.longitude) {
@@ -417,7 +417,7 @@ export const ZonaInspectorPage: React.FC = () => {
             for (const gp of groupPoskos) {
               const gpLat = Number(gp.latitude);
               const gpLng = Number(gp.longitude);
-              const gpRadius = gp.radius ? Number(gp.radius) : 500;
+              const gpRadius = gp.radius ? Number(gp.radius) : 150;
               const d = calculateDistance(gpLat, gpLng, sLat, sLng);
               if (d < minDistance) minDistance = d;
               if (d <= gpRadius) {
@@ -575,7 +575,7 @@ export const ZonaInspectorPage: React.FC = () => {
   // ─── OPEN CRUD MODAL ───
   const handleOpenEditModal = (group: any) => {
     setEditingGroup(group);
-    setEditRadius(group.radius || 200);
+    setEditRadius(group.radius || 150);
 
     if (group.polygon && group.polygon.length >= 3) {
       setEditMode("POLYGON");
@@ -613,6 +613,7 @@ export const ZonaInspectorPage: React.FC = () => {
         alamat: editPoskoForm.alamat.trim() || `Kel. ${editingGroup.kelurahan || "Coblong"}`,
         latitude: lat,
         longitude: lng,
+        radius: editRadius,
         keterangan: editPoskoForm.keterangan || undefined,
       });
 
@@ -979,7 +980,7 @@ export const ZonaInspectorPage: React.FC = () => {
                         group.poskos.map((gp: any, pIdx: number) => {
                           const gpLat = Number(gp.latitude);
                           const gpLng = Number(gp.longitude);
-                          const gpRadius = gp.radius ? Number(gp.radius) : 500;
+                          const gpRadius = gp.radius ? Number(gp.radius) : 150;
                           return (
                             <Circle
                               key={`group-circle-${group.id}-posko-${gp.id || pIdx}`}
@@ -1868,7 +1869,7 @@ export const ZonaInspectorPage: React.FC = () => {
                                 : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500"
                             }`}
                           >
-                            {r}m {r === 200 ? "(Standar)" : ""}
+                            {r}m {r === 150 ? "(Standar)" : ""}
                           </button>
                         ))}
                       </div>
