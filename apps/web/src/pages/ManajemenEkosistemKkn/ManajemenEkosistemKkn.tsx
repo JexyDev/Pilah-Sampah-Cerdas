@@ -471,8 +471,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      <div className="border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-none -mx-1 px-1">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max pb-0.5" aria-label="Tabs">
           {(isDpl
             ? [{ id: "kelompok", label: `Kelompok Saya (${kelompokList.length})`, icon: GraduationCap }]
             : [
@@ -490,10 +490,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   activeTab === tab.id
                     ? "border-emerald-600 text-emerald-700"
                     : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm flex items-center gap-2 cursor-pointer transition-colors`}
+                } whitespace-nowrap py-3.5 sm:py-4 px-1 border-b-2 font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-colors`}
               >
-                <Icon size={16} />
-                {tab.label}
+                <Icon size={16} className="shrink-0" />
+                <span>{tab.label}</span>
               </button>
             );
           })}
@@ -501,12 +501,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs">
         {activeTab === "kelompok" && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Filter & Search Bar */}
-            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-1">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
@@ -515,7 +515,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="Cari kelompok, DPL, ketua, kelurahan..."
                     value={searchKelompok}
                     onChange={(e) => setSearchKelompok(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white"
+                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white"
                   />
                   {searchKelompok && (
                     <button
@@ -535,7 +535,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       value={filterKelurahan}
                       onChange={(e) => setFilterKelurahan(e.target.value)}
                       aria-label="Filter Kelurahan"
-                      className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                      className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer w-full sm:w-auto"
                     >
                       <option value="ALL">Semua Kelurahan</option>
                       {kelurahanOptions.map((kel) => (
@@ -549,7 +549,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               {/* Action Buttons & Rows per page */}
-              <div className="flex items-center gap-3 justify-between sm:justify-end">
+              <div className="flex flex-wrap items-center gap-3 justify-between sm:justify-end">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
                   <span>Tampilkan:</span>
                   <select
@@ -569,7 +569,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 {!isReadOnly && (
                   <button
                     onClick={handleOpenAddKelompok}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <Plus size={18} />
                     Tambah Kelompok

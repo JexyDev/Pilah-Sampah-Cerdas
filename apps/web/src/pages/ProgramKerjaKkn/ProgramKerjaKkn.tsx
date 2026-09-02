@@ -1000,7 +1000,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* Toolbar Filter */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
             {/* Filter 1: Kelompok */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
