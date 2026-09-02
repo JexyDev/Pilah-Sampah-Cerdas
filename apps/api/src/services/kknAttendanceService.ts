@@ -217,14 +217,13 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 }
 
 /**
- * Helper: Calculate total accumulated duration (minutes) spent inside geofence
- * from studentLocation records.
- */
-/**
- * Helper: Calculate live in-zone minutes based on check-in time and jedaLogs
- * without counting any time spent while paused/jeda.
- * Includes strict sanity check & max daily cap (max 8 hours / 480 mins)
- * to prevent runaway 24h+ zombie durations.
+ * Helper: Hitung durasi aktual presensi secara wall-clock sederhana.
+ *
+ * LOSS MODE: Durasi = checkOutAt (atau now) − attendedAt, tanpa pengurangan jeda.
+ * GPS ping tidak menentukan durasi — hanya untuk monitoring DPL via WebSocket.
+ * jedaLogs dipertahankan di DB untuk historis tapi tidak dipakai untuk kalkulasi.
+ *
+ * Max cap: 8 jam (480 menit) per hari untuk mencegah akumulasi zombie.
  */
 export function calculateLiveInZoneMinutes(att: {
   attendedAt: Date | string;
@@ -247,72 +246,37 @@ export function calculateLiveInZoneMinutes(att: {
     return 0;
   }
 
-  // Max daily limit cap (8 hours = 480 minutes) to prevent non-sensical multi-day accumulations
+  // Max daily cap: 8 jam = 480 menit
   const MAX_DAILY_MINUTES_CAP = 480;
 
   const attendedDate = new Date(att.attendedAt);
   const now = new Date();
 
-  // If attendedAt is from a previous calendar day (in WIB +7), don't use live Date.now()
+  // Cek apakah sesi dari hari sebelumnya (WIB +7)
   const attendedWibDay = new Date(attendedDate.getTime() + 7 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10);
   const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const isPastDay = attendedWibDay < nowWibDay;
 
-  // If session is from a past day, use stored in-zone minutes (or capped value)
+  // Sesi dari hari sebelumnya → gunakan nilai tersimpan
   if (isPastDay) {
     return Math.min(Math.max(0, att.actualInZoneMinutes ?? 0), MAX_DAILY_MINUTES_CAP);
   }
 
+  // LOSS MODE: wall-clock murni — tidak ada pengurangan jeda
   const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
   const attendedMs = attendedDate.getTime();
   const grossMinutes = Math.max(0, Math.floor((sessionEndMs - attendedMs) / 60000));
 
-  const jedaLogsArray = (att.jedaLogs as any[]) || [];
-  let totalPauseMs = 0;
-
-  if (Array.isArray(jedaLogsArray) && jedaLogsArray.length > 0) {
-    for (const log of jedaLogsArray) {
-      if (!log || typeof log !== "object") continue;
-      // Skip unconfirmed PENDING_PAUSE (GPS glitches)
-      if (log.type === "PENDING_PAUSE" && !log.confirmed) continue;
-
-      if (log.waktuJeda) {
-        const pStart = new Date(log.waktuJeda).getTime();
-        if (!isNaN(pStart)) {
-          if (log.waktuResume) {
-            const pEnd = new Date(log.waktuResume).getTime();
-            if (!isNaN(pEnd) && pEnd > pStart) {
-              totalPauseMs += pEnd - pStart;
-            }
-          } else {
-            // Sesi sedang dijeda aktif
-            if (sessionEndMs > pStart) {
-              totalPauseMs += sessionEndMs - pStart;
-            }
-          }
-        }
-      } else if (typeof log.durasiJedaMenit === "number") {
-        totalPauseMs += log.durasiJedaMenit * 60000;
-      }
-    }
-  }
-
-  const pauseMinutes = Math.floor(totalPauseMs / 60000);
-  const netMinutes = Math.max(0, grossMinutes - pauseMinutes);
-
-  return Math.min(netMinutes, MAX_DAILY_MINUTES_CAP);
+  return Math.min(grossMinutes, MAX_DAILY_MINUTES_CAP);
 }
 
 /**
- * Helper: Calculate live in-zone SECONDS with per-second precision.
- * Versi presisi detik dari calculateLiveInZoneMinutes — logika identik
- * tapi menggunakan / 1000 (bukan / 60000) sehingga nilai bertambah tiap
- * detik, bukan loncat setiap 60 detik.
+ * Helper: Hitung durasi aktual presensi dalam DETIK — wall-clock sederhana.
  *
- * Digunakan khusus untuk field `actualInZoneSeconds` di response ping
- * agar mobile dapat sync timer per detik tanpa ada lompatan 60 detik.
+ * LOSS MODE: Durasi = checkOutAt (atau now) − attendedAt, tanpa pengurangan jeda.
+ * Per-detik precision agar mobile sync timer tidak loncat 60 detik.
  * Daily cap: 8 jam = 28800 detik.
  */
 export function calculateLiveInZoneSeconds(att: {
@@ -353,106 +317,28 @@ export function calculateLiveInZoneSeconds(att: {
     return Math.min(Math.max(0, (att.actualInZoneMinutes ?? 0) * 60), MAX_DAILY_SECONDS_CAP);
   }
 
+  // LOSS MODE: wall-clock murni — tidak ada pengurangan jeda
   const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
   const attendedMs = attendedDate.getTime();
   const grossSecs = Math.max(0, Math.floor((sessionEndMs - attendedMs) / 1000));
 
-  const jedaLogsArray = (att.jedaLogs as any[]) || [];
-  let totalPauseMs = 0;
-
-  if (Array.isArray(jedaLogsArray) && jedaLogsArray.length > 0) {
-    for (const log of jedaLogsArray) {
-      if (!log || typeof log !== "object") continue;
-      // Skip unconfirmed PENDING_PAUSE (GPS glitches)
-      if (log.type === "PENDING_PAUSE" && !log.confirmed) continue;
-
-      if (log.waktuJeda) {
-        const pStart = new Date(log.waktuJeda).getTime();
-        if (!isNaN(pStart)) {
-          if (log.waktuResume) {
-            const pEnd = new Date(log.waktuResume).getTime();
-            if (!isNaN(pEnd) && pEnd > pStart) {
-              totalPauseMs += pEnd - pStart;
-            }
-          } else {
-            // Sesi sedang dijeda aktif
-            if (sessionEndMs > pStart) {
-              totalPauseMs += sessionEndMs - pStart;
-            }
-          }
-        }
-      } else if (typeof log.durasiJedaMenit === "number") {
-        totalPauseMs += log.durasiJedaMenit * 60000;
-      }
-    }
-  }
-
-  const pauseSecs = Math.floor(totalPauseMs / 1000);
-  const netSecs = Math.max(0, grossSecs - pauseSecs);
-
-  return Math.min(netSecs, MAX_DAILY_SECONDS_CAP);
+  return Math.min(grossSecs, MAX_DAILY_SECONDS_CAP);
 }
 
 /**
- * Helper: Menghitung total akumulasi menit jeda/istirahat/keluar zona.
- * Memastikan kalkulasi matematis transparan:
- * Gross Duration (JP - JM) = Durasi Bersih Aktif (DA) + Durasi Jeda (DJ).
+ * Helper: Durasi jeda — LOSS MODE selalu return 0.
+ *
+ * Sistem tidak lagi memiliki konsep jeda otomatis.
+ * Fungsi dipertahankan untuk kompatibilitas API response.
  */
-export function calculateTotalJedaMinutes(att: {
+export function calculateTotalJedaMinutes(_att: {
   attendedAt?: Date | string | null;
   checkOutAt?: Date | string | null;
   jedaLogs?: any;
   status?: string;
   actualInZoneMinutes?: number | null;
 }): number {
-  if (!att || !att.attendedAt) return 0;
-  const statusUpper = String(att.status || "").toUpperCase();
-  if (
-    statusUpper.includes("SAKIT") ||
-    statusUpper.includes("IZIN") ||
-    statusUpper === "ALPA" ||
-    statusUpper === "ALPHA" ||
-    statusUpper === "TIDAK_ADA_KEGIATAN" ||
-    statusUpper === "SKIP_KEGIATAN"
-  ) {
-    return 0;
-  }
-
-  const jedaLogsArray = (att.jedaLogs as any[]) || [];
-  const nowMs = Date.now();
-  const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : nowMs;
-
-  let totalJedaMs = 0;
-  if (Array.isArray(jedaLogsArray) && jedaLogsArray.length > 0) {
-    for (const log of jedaLogsArray) {
-      if (!log || typeof log !== "object") continue;
-      if (log.waktuJeda) {
-        const startPause = new Date(log.waktuJeda).getTime();
-        const endPause = log.waktuResume ? new Date(log.waktuResume).getTime() : sessionEndMs;
-        if (!isNaN(startPause) && !isNaN(endPause) && endPause > startPause) {
-          totalJedaMs += endPause - startPause;
-        }
-      } else if (typeof log.durasiJedaMenit === "number") {
-        totalJedaMs += log.durasiJedaMenit * 60000;
-      }
-    }
-  }
-
-  const logsJedaMins = Math.max(0, Math.floor(totalJedaMs / 60000));
-
-  // Sanity check terhadap selisih waktu kotor (Gross) vs waktu bersih (actualInZoneMinutes)
-  const attendedMs = new Date(att.attendedAt).getTime();
-  const grossMinutes = Math.max(0, Math.floor((sessionEndMs - attendedMs) / 60000));
-  const cleanMins = att.actualInZoneMinutes ?? 0;
-
-  if (logsJedaMins > 0) {
-    return logsJedaMins;
-  }
-
-  if (att.checkOutAt && cleanMins > 0 && grossMinutes > cleanMins) {
-    return grossMinutes - cleanMins;
-  }
-
+  // LOSS MODE: tidak ada jeda — selalu 0
   return 0;
 }
 
@@ -893,206 +779,49 @@ export class KknAttendanceService {
             Boolean(existingAtt.checkOutAt));
 
         if (existingAtt && !isAttFinished) {
-          let currentAttStatus = existingAtt.status;
-          const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           // ─────────────────────────────────────────────────────────────────────────────
-          // AUTO-PAUSE dengan GRACE PERIOD — Mencegah false pause akibat GPS glitch
+          // LOSS MODE: GPS hanya untuk monitoring DPL — tidak mempengaruhi durasi/status
           //
-          // Konteks: Saat mahasiswa minimize app, OS Android "mencekik" akses GPS sesaat.
-          // Ping terakhir dari Dart Timer (15 detik) bisa menggunakan koordinat cache/network
-          // yang tidak akurat, sehingga mahasiswa seolah "keluar zona" padahal tidak.
-          // Foreground Service (30 detik) akan segera mengirim koordinat akurat berikutnya.
+          // Status presensi SELALU BERLANGSUNG selama sesi aktif (attendedAt sampai checkout).
+          // Auto-pause, grace period, dan TERJEDA otomatis dihapus total.
+          // Durasi dihitung dari wall-clock: attendedAt → now (saat ping) atau checkOutAt.
           //
-          // Solusi: Jangan vonis TERJEDA dari 1 ping. Tunggu 90 detik (3 siklus ping).
-          // Jika mahasiswa kembali ke zona sebelum 90 detik → hapus pending, tidak ada perubahan.
+          // GPS ping tetap disimpan ke studentLocation dan di-broadcast ke DPL via WebSocket
+          // untuk keperluan monitoring map real-time. Tapi tidak ada pengaruh pada status.
           // ─────────────────────────────────────────────────────────────────────────────
-          if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const GRACE_PERIOD_MS = 90_000; // 90 detik = 3 siklus ping background (30 detik)
 
-            // Cek apakah sudah ada entri "pending pause" dari ping sebelumnya
-            const pendingPauseIdx = currentLogs.findIndex(
-              (l: any) => l.type === "PENDING_PAUSE" && !l.confirmed
-            );
-            const pendingPauseLog = pendingPauseIdx !== -1 ? currentLogs[pendingPauseIdx] : null;
-
-            if (!pendingPauseLog) {
-              // === PING PERTAMA DI LUAR ZONA ===
-              // Kemungkinan GPS glitch. Catat sebagai "pending", JANGAN ubah status.
-              const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
-              currentLogs.push({
-                type: "PENDING_PAUSE",
-                alasan: "Keluar Zona Geofence (Menunggu Konfirmasi Grace Period)",
-                waktuDeteksiKeluar: new Date().toISOString(),
-                durasiSebelumJedaDetik: currentLiveSecs,
-                durasiSebelumJedaMenit: Math.floor(currentLiveSecs / 60),
-                autoTriggered: true,
-                confirmed: false,
-              });
-
-              // Hanya update jedaLogs — STATUS TETAP "BERLANGSUNG"
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: { jedaLogs: currentLogs },
-              });
-              existingAtt.jedaLogs = currentLogs as any;
-              // currentAttStatus TIDAK BERUBAH — tetap "BERLANGSUNG"
-            } else {
-              // === PING BERIKUTNYA — CEK APAKAH GRACE PERIOD SUDAH TERLAMPAUI ===
-              const firstDetectedAt = new Date(pendingPauseLog.waktuDeteksiKeluar).getTime();
-              const elapsedMs = Date.now() - firstDetectedAt;
-
-              if (elapsedMs >= GRACE_PERIOD_MS) {
-                // Grace period terlampaui → mahasiswa memang benar-benar di luar zona → TERJEDA
-                const currentLiveSecs =
-                  pendingPauseLog.durasiSebelumJedaDetik ?? calculateLiveInZoneSeconds(existingAtt);
-                const currentLiveMins = Math.floor(currentLiveSecs / 60);
-
-                pendingPauseLog.confirmed = true;
-                pendingPauseLog.waktuJeda = new Date().toISOString();
-                pendingPauseLog.alasan =
-                  "Keluar Zona Geofence (Otomatis — Grace Period Terlampaui)";
-
-                currentAttStatus = "TERJEDA";
-                existingAtt.actualInZoneMinutes = currentLiveMins;
-
-                await prisma.activityAttendance.update({
-                  where: { id: existingAtt.id },
-                  data: {
-                    status: "TERJEDA",
-                    actualInZoneMinutes: currentLiveMins,
-                    jedaLogs: currentLogs,
-                  },
-                });
-                existingAtt.status = "TERJEDA";
-                existingAtt.jedaLogs = currentLogs as any;
-
-                websocketService.broadcastStudentAttendance({
-                  id: existingAtt.id,
-                  studentId: existingAtt.studentId,
-                  scheduleId: existingAtt.scheduleId,
-                  status: "TERJEDA",
-                  currentStatus: "DI_LUAR_ZONA",
-                  attendedAt: existingAtt.attendedAt.toISOString(),
-                  actualInZoneMinutes: currentLiveMins,
-                });
-              }
-              // Jika belum lewat grace period: ABAIKAN, status tetap BERLANGSUNG
-            }
-          }
-
-          // ─────────────────────────────────────────────────────────────────────────────
-          // BERSIHKAN PENDING_PAUSE JIKA MAHASISWA KEMBALI KE ZONA SEBELUM GRACE PERIOD
-          // Ini adalah skenario normal: GPS glitch sesaat, lalu kembali akurat.
-          // Hapus pending seolah tidak pernah terjadi → TIDAK ada interupsi bagi user.
-          // ─────────────────────────────────────────────────────────────────────────────
-          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const pendingIdx = currentLogs.findIndex(
-              (l: any) => l.type === "PENDING_PAUSE" && !l.confirmed
-            );
-            if (pendingIdx !== -1) {
-              currentLogs.splice(pendingIdx, 1);
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: { jedaLogs: currentLogs },
-              });
-              existingAtt.jedaLogs = currentLogs as any;
-            }
-          }
-
-          // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko (HANYA jika sebelumnya di-jeda otomatis)
-          if (isCurrInside && currentAttStatus === "TERJEDA") {
-            let canAutoResume = false;
-            let lastJeda: any = null;
-            if (currentLogs.length > 0) {
-              lastJeda = currentLogs[currentLogs.length - 1];
-              if (
-                lastJeda &&
-                (lastJeda.autoTriggered || lastJeda.staleGpsAnomaly) &&
-                !lastJeda.waktuResume
-              ) {
-                canAutoResume = true;
-              }
-            }
-
-            if (canAutoResume) {
-              const prevSecs =
-                lastJeda &&
-                lastJeda.durasiSebelumJedaDetik !== undefined &&
-                lastJeda.durasiSebelumJedaDetik !== null
-                  ? Number(lastJeda.durasiSebelumJedaDetik)
-                  : existingAtt.actualInZoneMinutes
-                    ? existingAtt.actualInZoneMinutes * 60
-                    : 0;
-
-              if (lastJeda && !lastJeda.waktuResume) {
-                lastJeda.waktuResume = new Date().toISOString();
-                lastJeda.durasiSebelumResumeMenit = Math.max(
-                  existingAtt.actualInZoneMinutes || 0,
-                  lastJeda.durasiSebelumJedaMenit || 0
-                );
-                lastJeda.durasiSebelumResumeDetik = prevSecs;
-              } else if (!lastJeda) {
-                currentLogs.push({
-                  alasan: "Auto-Resume: Mahasiswa aktif kembali di dalam zona",
-                  waktuResume: new Date().toISOString(),
-                  durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
-                  durasiSebelumResumeDetik: (existingAtt.actualInZoneMinutes || 0) * 60,
-                  autoTriggered: true,
-                });
-              }
-
-              currentAttStatus = "BERLANGSUNG";
-
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: {
-                  status: "BERLANGSUNG",
-                  jedaLogs: currentLogs,
-                },
-              });
-
-              existingAtt.status = "BERLANGSUNG";
-              existingAtt.jedaLogs = currentLogs as any;
-
-              websocketService.broadcastStudentAttendance({
-                id: existingAtt.id,
-                studentId: existingAtt.studentId,
-                scheduleId: existingAtt.scheduleId,
-                status: "BERLANGSUNG",
-                currentStatus: "DI_ZONA",
-                attendedAt: existingAtt.attendedAt.toISOString(),
-                actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
-              });
-            }
-          }
-
-          // Hitung durasi aktual hanya jika status BERLANGSUNG dan DI DALAM ZONA
-          // [SSOT Backend]: Durasi mutlak hanya berasal dari kalkulasi internal backend
-          let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
-          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
-            durationInZone = liveCalculatedMins;
-
+          // Jika status TERJEDA dari versi lama → auto-recover ke BERLANGSUNG
+          if (existingAtt.status === "TERJEDA") {
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
-              data: { actualInZoneMinutes: durationInZone },
+              data: { status: "BERLANGSUNG" },
             });
-
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: existingAtt.status,
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: durationInZone,
-            });
-
-            // Simpan referensi untuk kalkulasi actualInZoneSeconds presisi detik di response
-            activeAttendanceForSeconds = existingAtt;
+            existingAtt.status = "BERLANGSUNG";
           }
 
-          // Hanya ambil durasi jika sesuai dengan schedule yang sedang dikerjakan saat ini
-          // atau jika belum ada sesi aktif, hindari penggabungan silang (cross-merging)
+          // Hitung durasi wall-clock untuk sesi aktif (diperbarui setiap ping)
+          const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
+          const durationInZone = liveCalculatedMins;
+
+          await prisma.activityAttendance.update({
+            where: { id: existingAtt.id },
+            data: { actualInZoneMinutes: durationInZone },
+          });
+
+          // Broadcast status BERLANGSUNG ke DPL untuk monitoring real-time
+          websocketService.broadcastStudentAttendance({
+            id: existingAtt.id,
+            studentId: existingAtt.studentId,
+            scheduleId: existingAtt.scheduleId,
+            status: "BERLANGSUNG",
+            attendedAt: existingAtt.attendedAt.toISOString(),
+            actualInZoneMinutes: durationInZone,
+          });
+
+          // Simpan referensi untuk response presisi detik
+          activeAttendanceForSeconds = existingAtt;
+
+          // Hanya ambil durasi untuk schedule yang sedang aktif
           if (activeAtt && activeAtt.scheduleId === sch.id) {
             inZoneMinutes = durationInZone;
           } else if (!activeAtt) {
@@ -1462,143 +1191,46 @@ export class KknAttendanceService {
           activeJamMasuk = existingAtt.attendedAt.toISOString();
           activeTargetDurationMinutes = durasiWajibMenit;
 
-          const currentLogs = (existingAtt.jedaLogs as any[]) || [];
-          let currentAttStatus = existingAtt.status;
+          // ─────────────────────────────────────────────────────────────────────────────
+          // LOSS MODE: Batch GPS update tidak mempengaruhi status/durasi via geofence
+          //
+          // Status SELALU BERLANGSUNG selama sesi aktif. Durasi dihitung wall-clock.
+          // Auto-pause/resume via geofence dihapus total.
+          // GPS batch tetap disimpan ke studentLocation untuk monitoring DPL.
+          // ─────────────────────────────────────────────────────────────────────────────
 
-          // Auto-Pause saat keluar zona (dengan toleransi GPS Drift / Jitter)
-          if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const recentLocations = await prisma.studentLocation.findMany({
-              where: { studentId },
-              orderBy: { recordedAt: "desc" },
-              take: 3,
-            });
-
-            const effectiveRad = geofence.radius + bufferMeters;
-            let outOfZoneCount = 0;
-            for (const rLoc of recentLocations) {
-              const rDist = calculateDistance(
-                Number(rLoc.latitude),
-                Number(rLoc.longitude),
-                geofence.latitude,
-                geofence.longitude
-              );
-              if (rDist > effectiveRad) {
-                outOfZoneCount++;
-              }
-            }
-
-            const currentDist = latestLoc
-              ? calculateDistance(
-                  Number(latestLoc.latitude),
-                  Number(latestLoc.longitude),
-                  geofence.latitude,
-                  geofence.longitude
-                )
-              : 0;
-
-            const isFarOutside = currentDist > effectiveRad + 80;
-            const isConfirmedOutOfZone = outOfZoneCount >= 2 || isFarOutside;
-
-            if (isConfirmedOutOfZone) {
-              const currentLiveMins = calculateLiveInZoneMinutes(existingAtt);
-              currentLogs.push({
-                alasan: "Keluar Zona Geofence (Otomatis)",
-                waktuJeda: new Date().toISOString(),
-                durasiSebelumJedaMenit: currentLiveMins,
-                autoTriggered: true,
-              });
-              currentAttStatus = "TERJEDA";
-              existingAtt.actualInZoneMinutes = currentLiveMins;
-              await prisma.activityAttendance.update({
-                where: { id: existingAtt.id },
-                data: {
-                  status: "TERJEDA",
-                  actualInZoneMinutes: currentLiveMins,
-                  jedaLogs: currentLogs,
-                },
-              });
-              existingAtt.status = "TERJEDA";
-              existingAtt.jedaLogs = currentLogs as any;
-              websocketService.broadcastStudentAttendance({
-                id: existingAtt.id,
-                studentId: existingAtt.studentId,
-                scheduleId: existingAtt.scheduleId,
-                status: "TERJEDA",
-                currentStatus: "DI_LUAR_ZONA",
-                attendedAt: existingAtt.attendedAt.toISOString(),
-                actualInZoneMinutes: currentLiveMins,
-              });
-            }
-          }
-
-          // [TAMBAHAN] Auto-Resume saat kembali ke zona (HANYA jika sebelumnya di-jeda otomatis)
-          if (isCurrInside && currentAttStatus === "TERJEDA") {
-            if (currentLogs.length > 0) {
-              const lastJeda = currentLogs[currentLogs.length - 1];
-              // Hanya lanjutkan otomatis jika yang menjeda adalah sistem (autoTriggered)
-              // dan belum ada waktuResume-nya
-              if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
-                lastJeda.waktuResume = new Date().toISOString();
-                const resumeMins = Math.max(
-                  existingAtt.actualInZoneMinutes || 0,
-                  lastJeda.durasiSebelumJedaMenit || 0
-                );
-                lastJeda.durasiSebelumResumeMenit = resumeMins;
-                lastJeda.durasiSebelumResumeDetik =
-                  lastJeda.durasiSebelumJedaDetik ?? resumeMins * 60;
-                currentAttStatus = "BERLANGSUNG";
-
-                await prisma.activityAttendance.update({
-                  where: { id: existingAtt.id },
-                  data: {
-                    status: "BERLANGSUNG",
-                    jedaLogs: currentLogs,
-                  },
-                });
-
-                existingAtt.status = "BERLANGSUNG";
-                existingAtt.jedaLogs = currentLogs as any;
-
-                websocketService.broadcastStudentAttendance({
-                  id: existingAtt.id,
-                  studentId: existingAtt.studentId,
-                  scheduleId: existingAtt.scheduleId,
-                  status: "BERLANGSUNG",
-                  currentStatus: "DI_ZONA",
-                  attendedAt: existingAtt.attendedAt.toISOString(),
-                  actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
-                });
-              }
-            }
-          }
-
-          // [SSOT Backend]: Durasi mutlak hanya berasal dari kalkulasi internal backend, abaikan payload mobile
-          let durationInZone = existingAtt.actualInZoneMinutes ?? 0;
-          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
-            durationInZone = liveCalculatedMins;
-
+          // Jika status TERJEDA dari versi lama → auto-recover ke BERLANGSUNG
+          if (existingAtt.status === "TERJEDA") {
             await prisma.activityAttendance.update({
               where: { id: existingAtt.id },
-              data: { actualInZoneMinutes: durationInZone },
+              data: { status: "BERLANGSUNG" },
             });
-
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "BERLANGSUNG",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: durationInZone,
-            });
+            existingAtt.status = "BERLANGSUNG";
           }
+
+          // Hitung dan perbarui durasi wall-clock
+          const liveCalculatedMins = calculateLiveInZoneMinutes(existingAtt);
+          const durationInZone = liveCalculatedMins;
+
+          await prisma.activityAttendance.update({
+            where: { id: existingAtt.id },
+            data: { actualInZoneMinutes: durationInZone },
+          });
+
+          websocketService.broadcastStudentAttendance({
+            id: existingAtt.id,
+            studentId: existingAtt.studentId,
+            scheduleId: existingAtt.scheduleId,
+            status: "BERLANGSUNG",
+            attendedAt: existingAtt.attendedAt.toISOString(),
+            actualInZoneMinutes: durationInZone,
+          });
 
           activeActualInZoneSeconds = calculateLiveInZoneSeconds(existingAtt);
           inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
         }
 
-        // Catatan: Status tetap BERLANGSUNG sampai mahasiswa menekan tombol "Absen Sekarang" (manual check-in)
-        // Lokasi GPS ping hanya memperbarui actualInZoneMinutes tanpa mengubah status ke HADIR secara otomatis
+        // GPS ping tersimpan ke studentLocation untuk monitoring DPL — tidak ada auto-attendance
       }
     }
 
@@ -2202,61 +1834,13 @@ export class KknAttendanceService {
       Math.floor((checkOutTime.getTime() - attendedTime.getTime()) / (1000 * 60))
     );
 
-    // Calculate actual in-zone duration from GPS logs (not simple time diff)
-    const sessionStart = attendance.attendedAt
-      ? new Date(attendance.attendedAt)
-      : new Date(checkOutTime);
-    const todayLogsForCheckout = await prisma.studentLocation.findMany({
-      where: {
-        studentId,
-        recordedAt: { gte: sessionStart },
-      },
-      orderBy: { recordedAt: "asc" },
-    });
-
     const schedule = await prisma.schedule.findUnique({
       where: { id: attendance.scheduleId },
     });
 
-    const checkoutRuleConfigs = await configService.getRuleEngineConfigs();
-    const checkoutBufferMeters = (checkoutRuleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
-
-    let logsCalculatedMins = 0;
-    if (schedule && todayLogsForCheckout.length >= 2) {
-      const checkoutGeofence = {
-        latitude: schedule.latitude ? Number(schedule.latitude) : -6.8915,
-        longitude: schedule.longitude ? Number(schedule.longitude) : 107.6107,
-        radius: schedule.radius ? Number(schedule.radius) : 500,
-        polygon: schedule.polygon,
-      };
-      logsCalculatedMins = calculateInZoneDurationMinutes(
-        todayLogsForCheckout,
-        checkoutGeofence,
-        checkoutBufferMeters,
-        (attendance.jedaLogs as any[]) || []
-      );
-    }
-
-    const storedMins = attendance.actualInZoneMinutes ?? 0;
-    const isPaused = attendance.status === "TERJEDA";
-    const jedaLogsArray = (attendance.jedaLogs as any[]) || [];
-    const hasJeda = jedaLogsArray.length > 0;
-
-    let liveMins = storedMins;
-    if (attendance.attendedAt) {
-      liveMins = calculateLiveInZoneMinutes(attendance);
-    }
-
-    // [SSOT Backend]: Durasi mutlak berasal dari kalkulasi internal backend (mengabaikan input durasi dari mobile payload)
-    let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, logsCalculatedMins));
-
-    // Only fallback to rawDurationMinutes if session was active (NOT paused), had NO jeda logs, and actualInZoneMins is still 0 (e.g. legacy/no-gps ping)
-    if (actualInZoneMins === 0 && rawDurationMinutes > 0 && !isPaused && !hasJeda) {
-      actualInZoneMins = Math.min(480, rawDurationMinutes);
-    } else if (isPaused || hasJeda) {
-      // If paused or has jeda, liveMins strictly caps duration to before-pause
-      actualInZoneMins = Math.min(480, liveMins);
-    }
+    // LOSS MODE: Durasi = wall-clock murni (checkOutAt − attendedAt), tanpa GPS in-zone, tanpa jedaLogs
+    // GPS log hanya untuk monitoring DPL, bukan untuk menentukan durasi.
+    const actualInZoneMins = Math.min(480, rawDurationMinutes);
 
     // Determine final status: HADIR_MEMENUHI or HADIR_TIDAK_MEMENUHI
     let durasiWajibMenit = 240;
@@ -3987,8 +3571,7 @@ export class KknAttendanceService {
     // Upsert session di activityAttendance
     let attendance;
     if (existingSession && existingSession.status === "BERLANGSUNG") {
-      // Jika statusnya sudah BERLANGSUNG (sedang resume dari Jeda),
-      // JANGAN reset attendedAt dan actualInZoneMinutes
+      // Sesi sudah BERLANGSUNG — update koordinat dan data kegiatan saja
       attendance = await prisma.activityAttendance.update({
         where: { id: existingSession.id },
         data: {
@@ -4000,30 +3583,9 @@ export class KknAttendanceService {
         },
       });
     } else {
-      // Mulai kegiatan baru atau update dari status DI_ZONA/DALAM_RADIUS/TERJEDA
-      const currentLogs = (existingSession?.jedaLogs as any[]) || [];
-      if (existingSession?.status === "TERJEDA") {
-        const lastLog = currentLogs.length > 0 ? currentLogs[currentLogs.length - 1] : null;
-        if (lastLog && !lastLog.waktuResume) {
-          lastLog.waktuResume = new Date().toISOString();
-          const resumeMins = Math.max(
-            existingSession.actualInZoneMinutes || 0,
-            lastLog.durasiSebelumJedaMenit || 0
-          );
-          lastLog.durasiSebelumResumeMenit = resumeMins;
-          lastLog.durasiSebelumResumeDetik =
-            lastLog.durasiSebelumJedaDetik ?? resumeMins * 60;
-        } else {
-          currentLogs.push({
-            alasan: "Resume Kegiatan",
-            waktuResume: new Date().toISOString(),
-            durasiSebelumResumeMenit: existingSession.actualInZoneMinutes || 0,
-            durasiSebelumResumeDetik: (existingSession.actualInZoneMinutes || 0) * 60,
-            autoTriggered: true,
-          });
-        }
-      }
-
+      // Mulai kegiatan baru atau recovery dari status TERJEDA lama
+      // LOSS MODE: Tidak ada resume jedaLogs — langsung BERLANGSUNG.
+      // attendedAt dipertahankan dari sesi lama agar durasi wall-clock terus dihitung sejak awal.
       attendance = await prisma.activityAttendance.upsert({
         where: {
           studentId_scheduleId: {
@@ -4032,14 +3594,15 @@ export class KknAttendanceService {
           },
         },
         update: {
+          // Pertahankan attendedAt original agar wall-clock tidak direset
           attendedAt: existingSession?.attendedAt || new Date(),
           status: "BERLANGSUNG",
           latitude,
           longitude,
           method: "GPS_ACTIVITY",
           checkOutAt: null,
-          actualInZoneMinutes: existingSession?.actualInZoneMinutes || 0,
-          jedaLogs: currentLogs,
+          // LOSS MODE: actualInZoneMinutes akan diperbarui oleh wall-clock ping berikutnya
+          // jedaLogs dipertahankan untuk historis tapi tidak mempengaruhi durasi
           ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
           ...(fotoUrl ? { fotoUrl } : {}),
         },
@@ -4051,7 +3614,6 @@ export class KknAttendanceService {
           latitude,
           longitude,
           method: "GPS_ACTIVITY",
-          jedaLogs: currentLogs,
           ...(deskripsiKegiatan ? { deskripsiKegiatan } : {}),
           ...(fotoUrl ? { fotoUrl } : {}),
         },
@@ -4131,39 +3693,24 @@ export class KknAttendanceService {
     }
 
     // Record into system history / audit trail
-    const isResumeSession = existingSession?.status === "TERJEDA";
-    if (isResumeSession) {
-      auditTrailService
-        .recordPresensiLanjut({
-          studentId: studentUserId,
-          scheduleId: schedule.id,
-          scheduleTitle: schedule.title,
-          kelompokName: student.kelompok?.name || schedule.kelompok?.name || "-",
-          durasiSebelumResumeMenit: existingSession?.actualInZoneMinutes || 0,
-          waktuResume: new Date().toISOString(),
-          studentName: student.user?.name,
-          nim: student.nim,
-        })
-        .catch((err) => console.warn("[Audit] Presensi lanjut log error:", err));
-    } else {
-      auditTrailService
-        .recordPresensiMasuk({
-          studentId: studentUserId,
-          scheduleId: schedule.id,
-          scheduleTitle: schedule.title,
-          kelompokName: student.kelompok?.name || schedule.kelompok?.name || "-",
-          kelurahan: student.kelompok?.kelurahan || "-",
-          latitude,
-          longitude,
-          method: "GPS_ACTIVITY",
-          status: attendance.status,
-          deskripsiKegiatan,
-          fotoUrl,
-          studentName: student.user?.name,
-          nim: student.nim,
-        })
-        .catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
-    }
+    // LOSS MODE: Tidak ada resume session — semua check-in dicatat sebagai PresensiMasuk
+    auditTrailService
+      .recordPresensiMasuk({
+        studentId: studentUserId,
+        scheduleId: schedule.id,
+        scheduleTitle: schedule.title,
+        kelompokName: student.kelompok?.name || schedule.kelompok?.name || "-",
+        kelurahan: student.kelompok?.kelurahan || "-",
+        latitude,
+        longitude,
+        method: "GPS_ACTIVITY",
+        status: attendance.status,
+        deskripsiKegiatan,
+        fotoUrl,
+        studentName: student.user?.name,
+        nim: student.nim,
+      })
+      .catch((err) => console.warn("[Audit] Presensi masuk log error:", err));
 
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
@@ -4249,7 +3796,14 @@ export class KknAttendanceService {
   }
 
   /**
-   * Menjeda sesi kegiatan
+   * [LOSS MODE - DEPRECATED] Endpoint jeda dinonaktifkan.
+   *
+   * Sistem presensi saat ini menggunakan "Loss Mode" — durasi dihitung dari wall-clock
+   * (attendedAt sampai checkOutAt/sekarang) tanpa pengurangan jeda.
+   *
+   * Endpoint ini dipertahankan untuk backward compatibility mobile tapi tidak lagi
+   * mengubah status atau memotong durasi. Catatan alasan disimpan sebagai log saja.
+   *
    * Endpoint: POST /api/v1/kkn/kegiatan/:id/jeda
    */
   async jedaKegiatan(
@@ -4285,67 +3839,35 @@ export class KknAttendanceService {
       throw new Error("Kegiatan sudah diselesaikan.");
     }
 
-    // [SSOT Backend]: Hitung durasi live backend secara mutlak tanpa bergantung pada payload mobile
-    const calculatedMins = calculateLiveInZoneMinutes(existing);
-    const calculatedSecs = calculateLiveInZoneSeconds(existing);
-
-    const currentLogs = (existing.jedaLogs as any[]) || [];
+    // LOSS MODE: Jeda tidak mempengaruhi durasi atau status.
+    // Catat alasan sebagai log informasional saja.
+    // Status TETAP BERLANGSUNG, durasi terus berjalan dari attendedAt.
+    const currentLogs = (existing.jedaLogs as any[] | null) || [];
     currentLogs.push({
       alasan: payload.alasan,
-      waktuJeda: new Date().toISOString(),
-      durasiSebelumJedaMenit: calculatedMins,
-      durasiSebelumJedaDetik: calculatedSecs,
+      waktuCatat: new Date().toISOString(),
+      mode: "LOSS_MODE_INFO_ONLY",
+      note: "Jeda tidak mempengaruhi durasi — sistem menggunakan wall-clock.",
     });
 
-    const updated = await prisma.activityAttendance.update({
+    // Simpan catatan log saja, status & actualInZoneMinutes TIDAK diubah
+    await prisma.activityAttendance.update({
       where: { id: existing.id },
-      data: {
-        status: "TERJEDA",
-        actualInZoneMinutes: calculatedMins,
-        jedaLogs: currentLogs,
-      },
+      data: { jedaLogs: currentLogs },
     });
 
-    try {
-      websocketService.broadcastStudentAttendance({
-        id: updated.id,
-        studentId: studentUserId,
-        scheduleId,
-        status: "TERJEDA",
-        currentStatus: "DI_LUAR_ZONA",
-        actualInZoneMinutes: calculatedMins,
-        attendedAt: updated.attendedAt.toISOString(),
-      });
-    } catch {}
+    // Hitung durasi wall-clock saat ini untuk response
+    const currentLiveMins = calculateLiveInZoneMinutes(existing);
 
-    // Record into system history / audit trail
-    prisma.user
-      .findUnique({
-        where: { id: studentUserId },
-        include: { studentProfile: { include: { kelompok: true } } },
-      })
-      .then(async (studentUserForJeda) => {
-        const schedForJeda = await prisma.schedule.findUnique({
-          where: { id: scheduleId },
-          select: { title: true },
-        });
-        auditTrailService
-          .recordPresensiJeda({
-            studentId: studentUserId,
-            scheduleId,
-            scheduleTitle: schedForJeda?.title || "Kegiatan KKN",
-            kelompokName: studentUserForJeda?.studentProfile?.kelompok?.name || "-",
-            alasan: payload.alasan,
-            durasiSebelumJedaMenit: calculatedMins,
-            waktuJeda: new Date().toISOString(),
-            studentName: studentUserForJeda?.name,
-            nim: studentUserForJeda?.studentProfile?.nim,
-          })
-          .catch((err) => console.warn("[Audit] Presensi jeda log error:", err));
-      })
-      .catch(() => {});
-
-    return updated;
+    return {
+      success: true,
+      message:
+        "Catatan diterima. Durasi presensi tetap berjalan (Loss Mode — tidak ada jeda).",
+      lossMode: true,
+      status: existing.status,
+      actualInZoneMinutes: currentLiveMins,
+      attendedAt: existing.attendedAt,
+    };
   }
 
   /**
