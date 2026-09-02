@@ -584,7 +584,7 @@ export class KknController {
         fotoUrl = `/uploads/${req.file.filename}`;
       }
       const parsedRadius =
-        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 150;
+        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
       const payload = {
         nama: req.body.nama,
         alamat: req.body.alamat,
@@ -605,7 +605,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 150,
+        radius: Number((data as any).radius) || 500,
       };
       res.status(201).json({
         success: true,
@@ -652,7 +652,7 @@ export class KknController {
         ...data,
         foto: (data as any).fotoUrl || (data as any).foto || null,
         fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 150,
+        radius: Number((data as any).radius) || 500,
       };
       res.status(200).json({
         success: true,
