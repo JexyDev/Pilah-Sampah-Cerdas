@@ -718,12 +718,7 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
-      const { totalDurasiDalamZonaMenit, totalDurasiDalamZonaDetik, alasan } = req.body;
-
-      if (!alasan) {
-        res.status(400).json({ success: false, message: "Alasan jeda wajib diisi." });
-        return;
-      }
+      const { alasan, totalDurasiDalamZonaMenit, totalDurasiDalamZonaDetik } = req.body;
 
       const result = await kknAttendanceService.jedaKegiatan(studentUserId, id, {
         alasan,
@@ -733,50 +728,44 @@ export const kknAttendanceController = {
           totalDurasiDalamZonaDetik !== undefined ? Number(totalDurasiDalamZonaDetik) : undefined,
       });
 
-      res.status(200).json({
-        success: true,
-        message: "Kegiatan berhasil dijeda sementara.",
-        data: result,
-      });
+      res.status(200).json(result);
     } catch (error: any) {
       console.error("[KknAttendanceController] jedaKegiatan error:", error);
-      res.status(500).json({
+      const statusCode =
+        error.message?.includes("tidak ditemukan") ? 404 :
+        error.message?.includes("diselesaikan") || error.message?.includes("tidak bisa dijeda") ? 422 :
+        500;
+      res.status(statusCode).json({
         success: false,
-        error: "INTERNAL_SERVER_ERROR",
+        error: statusCode === 500 ? "INTERNAL_SERVER_ERROR" : "VALIDATION_ERROR",
         message: error.message || "Gagal menjeda kegiatan KKN",
       });
     }
   },
 
-  recordOutOfZoneViolation: async (req: Request, res: Response): Promise<void> => {
+  lanjutKegiatan: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
-      const { scheduleId, outOfZoneMinutes } = req.body;
+      const { id } = req.params;
 
-      if (!scheduleId) {
-        res.status(400).json({
-          success: false,
-          error: "VALIDATION_ERROR",
-          message: "scheduleId wajib disertakan",
-        });
-        return;
-      }
-
-      const result = await kknAttendanceService.recordOutOfZoneViolation(studentUserId, {
-        scheduleId,
-        outOfZoneMinutes: Number(outOfZoneMinutes) || 0,
-      });
+      const result = await kknAttendanceService.lanjutKegiatan(studentUserId, id);
 
       res.status(200).json(result);
     } catch (error: any) {
-      console.error("[KknAttendanceController] recordOutOfZoneViolation error:", error);
-      res.status(500).json({
+      console.error("[KknAttendanceController] lanjutKegiatan error:", error);
+      const statusCode =
+        error.message?.includes("tidak ditemukan") ? 404 :
+        error.message?.includes("TERJEDA") ? 422 :
+        500;
+      res.status(statusCode).json({
         success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: error.message || "Gagal mencatat pelanggaran keluar zona",
+        error: statusCode === 500 ? "INTERNAL_SERVER_ERROR" : "VALIDATION_ERROR",
+        message: error.message || "Gagal melanjutkan kegiatan KKN",
       });
     }
   },
+
+  // [Q4 REMOVED] recordOutOfZoneViolation dihapus — LOSS MODE tidak memiliki penalti zona
   getPresensiHistory: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;

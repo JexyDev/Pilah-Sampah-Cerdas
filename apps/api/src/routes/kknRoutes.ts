@@ -650,6 +650,13 @@ router.post(
 );
 
 router.post(
+  "/kegiatan/:id/lanjut",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.lanjutKegiatan
+);
+
+router.post(
   "/kegiatan/:id/selesai",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
@@ -665,12 +672,7 @@ router.post(
   kknAttendanceController.absenAlias
 );
 
-router.post(
-  "/out-of-zone-violation",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.recordOutOfZoneViolation
-);
+// [Q4 REMOVED] /out-of-zone-violation endpoint dihapus (LOSS MODE)
 
 router.get(
   "/kegiatan/:id/presensi-history",
