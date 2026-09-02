@@ -325,7 +325,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             }
           } else {
             _accumulatedSeconds = serverSecs;
-            _zoneEntryTime ??= DateTime.now();
+            _zoneEntryTime = null;
           }
           await _savePersistentTimer();
         } else if (activeZone['actualInZoneMinutes'] != null) {
@@ -340,7 +340,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
             }
           } else {
             _accumulatedSeconds = serverSecs;
-            _zoneEntryTime ??= DateTime.now();
+            _zoneEntryTime = null;
           }
           await _savePersistentTimer();
         }
@@ -464,7 +464,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           }
         } else {
           _accumulatedSeconds = serverSecs;
-          _zoneEntryTime ??= DateTime.now();
+          _zoneEntryTime = null;
         }
         await _savePersistentTimer();
 
@@ -870,12 +870,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       final shouldSync = diff > 0 || diff < -90;
 
       if (shouldSync) {
-        // [FIX] Saat koreksi ke atas: pakai server (server lebih maju → mobile tertinggal).
-        // Saat koreksi ke bawah (diff < -90): pakai server juga — server adalah sumber
-        // kebenaran, nilai lokal yang terlalu jauh maju perlu dikoreksi.
-        // Tidak pakai max() lagi agar nilai server selalu bisa mengoreksi ke bawah.
+        // [FIX] Saat koreksi: pakai server sebagai Single Source of Truth.
+        // PENTING: Reset _zoneEntryTime ke DateTime.now() agar tick timer berikutnya
+        // tidak menjumlahkan ulang delta sesi lama di atas serverSecs (mencegah double-counting & jumping).
         _accumulatedSeconds = serverSecs;
+        if (_zoneEntryTime != null) {
+          _zoneEntryTime = DateTime.now();
+        }
         state = state.copyWith(inZoneDurationSeconds: serverSecs);
+        _savePersistentTimer();
 
         // Sync ke background service agar isolate background tidak drift jauh.
         if (_backgroundServiceStarted) {
@@ -1116,7 +1119,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
                 }
               } else {
                 _accumulatedSeconds = serverSeconds;
-                _zoneEntryTime ??= DateTime.now();
+                _zoneEntryTime = null;
               }
               await _savePersistentTimer();
 
