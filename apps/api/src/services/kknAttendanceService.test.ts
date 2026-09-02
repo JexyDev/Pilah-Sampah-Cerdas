@@ -71,6 +71,11 @@ vi.mock("../lib/prisma.js", () => {
         findUnique: vi.fn(),
         findFirst: vi.fn(),
       },
+      poskoKknMulti: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
       pointHistory: {
         findFirst: vi.fn(),
         create: vi.fn(),

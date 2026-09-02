@@ -101,6 +101,80 @@ async function buildGeofence(
   };
 }
 
+/**
+ * Helper: Ambil seluruh posko yang terdaftar pada kelompok (Posko Utama + seluruh Multi-Posko).
+ * Digunakan untuk validasi multi-posko yang komprehensif pada presensi KKN.
+ */
+export async function getGroupPoskoList(kelompokId: string): Promise<
+  Array<{
+    id: string;
+    nama: string;
+    alamat: string;
+    latitude: number;
+    longitude: number;
+    radius: number;
+    isUtama: boolean;
+    type: "POSKO_UTAMA" | "POSKO_MULTI";
+    fotoUrl?: string | null;
+  }>
+> {
+  const [primary, multi] = await Promise.all([
+    prisma.poskoKkn.findUnique({
+      where: { kelompokId },
+    }),
+    (prisma as any).poskoKknMulti.findMany({
+      where: { kelompokId },
+      orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+    }).catch(() => []),
+  ]);
+
+  const list: Array<{
+    id: string;
+    nama: string;
+    alamat: string;
+    latitude: number;
+    longitude: number;
+    radius: number;
+    isUtama: boolean;
+    type: "POSKO_UTAMA" | "POSKO_MULTI";
+    fotoUrl?: string | null;
+  }> = [];
+
+  if (primary && primary.latitude && primary.longitude) {
+    list.push({
+      id: primary.id,
+      nama: primary.nama,
+      alamat: primary.alamat || "-",
+      latitude: Number(primary.latitude),
+      longitude: Number(primary.longitude),
+      radius: Math.max(150, Number((primary as any).radius) || 500),
+      isUtama: true,
+      type: "POSKO_UTAMA",
+      fotoUrl: primary.fotoUrl || null,
+    });
+  }
+
+  if (Array.isArray(multi)) {
+    for (const m of multi) {
+      if (m.latitude && m.longitude) {
+        list.push({
+          id: m.id,
+          nama: m.nama,
+          alamat: m.alamat || "-",
+          latitude: Number(m.latitude),
+          longitude: Number(m.longitude),
+          radius: Math.max(150, Number(m.radius) || 500),
+          isUtama: m.isUtama || false,
+          type: "POSKO_MULTI",
+          fotoUrl: m.fotoUrl || null,
+        });
+      }
+    }
+  }
+
+  return list;
+}
+
 // Helper: Haversine Formula (meters)
 export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371e3; // Earth radius in meters
@@ -728,31 +802,58 @@ export class KknAttendanceService {
           continue;
         }
 
+        const targetKelompokId = sch.kelompokId || student?.kelompokId;
+        const groupPoskos = targetKelompokId ? await getGroupPoskoList(targetKelompokId) : [];
+
         const geofence = await buildGeofence(sch);
 
-        // 1. Cek posisi saat ini terhadap geofence kegiatan ini
-        const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
+        // 1. Cek posisi saat ini terhadap seluruh posko kelompok (Multi-Posko & Polygon)
         let isCurrInside = false;
-        if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-          const polyPoints = (geofence.polygon as any[]).map((p) => {
-            const val0 = Number(p[0]);
-            const val1 = Number(p[1]);
-            const pLat = Math.abs(val0) > 45 ? val1 : val0;
-            const pLng = Math.abs(val0) > 45 ? val0 : val1;
-            return { lat: pLat, lng: pLng };
-          });
-          const inPoly = isPointInPolygonWithBuffer(
-            { lat: latitude, lng: longitude },
-            polyPoints,
-            bufferMeters
-          );
-          isCurrInside = inPoly || dist <= geofence.radius + bufferMeters;
-        } else {
-          isCurrInside = dist <= geofence.radius + bufferMeters;
+        let nearestPoskoDist = 999999;
+        let nearestPoskoRadius = 500;
+        let matchedPoskoInfo: any = null;
+
+        if (groupPoskos.length > 0) {
+          for (const gp of groupPoskos) {
+            const pDist = calculateDistance(latitude, longitude, gp.latitude, gp.longitude);
+            if (pDist < nearestPoskoDist) {
+              nearestPoskoDist = pDist;
+              nearestPoskoRadius = gp.radius;
+            }
+            if (pDist <= gp.radius + bufferMeters) {
+              isCurrInside = true;
+              matchedPoskoInfo = gp;
+              break;
+            }
+          }
         }
 
-        // SMART ZONE MULTI-POSKO CHECK (Mencegah false auto-pause mahasiswa di multi-posko)
-        const targetKelompokId = sch.kelompokId || student?.kelompokId;
+        if (!isCurrInside) {
+          const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
+          if (dist < nearestPoskoDist) {
+            nearestPoskoDist = dist;
+            nearestPoskoRadius = geofence.radius;
+          }
+          if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+            const polyPoints = (geofence.polygon as any[]).map((p) => {
+              const val0 = Number(p[0]);
+              const val1 = Number(p[1]);
+              const pLat = Math.abs(val0) > 45 ? val1 : val0;
+              const pLng = Math.abs(val0) > 45 ? val0 : val1;
+              return { lat: pLat, lng: pLng };
+            });
+            const inPoly = isPointInPolygonWithBuffer(
+              { lat: latitude, lng: longitude },
+              polyPoints,
+              bufferMeters
+            );
+            isCurrInside = inPoly || dist <= geofence.radius + bufferMeters;
+          } else {
+            isCurrInside = dist <= geofence.radius + bufferMeters;
+          }
+        }
+
+        // SMART ZONE MULTI-POSKO CHECK (Fallback Adaptive Polygon)
         if (!isCurrInside && targetKelompokId) {
           try {
             const szResult = await smartZoneService.isStudentInGroupZone(
@@ -763,6 +864,9 @@ export class KknAttendanceService {
             );
             if (szResult.isInside) {
               isCurrInside = true;
+            }
+            if (szResult.distanceToNearest < nearestPoskoDist) {
+              nearestPoskoDist = szResult.distanceToNearest;
             }
           } catch {
             // Fallback non-critical
@@ -781,8 +885,6 @@ export class KknAttendanceService {
 
         if (existingAtt && !isAttFinished) {
           const currentLogs = (existingAtt.jedaLogs as any[]) || [];
-          let currentAttStatus = existingAtt.status;
-
           // ─────────────────────────────────────────────────────────────────────────────
           // AUTO-PAUSE dengan GRACE PERIOD — Mencegah false pause akibat GPS glitch
           //
@@ -1592,6 +1694,8 @@ export class KknAttendanceService {
 
     const isMemenuhiDurasi = isAttended && attendanceStatus === "HADIR_MEMENUHI";
 
+    const groupPoskos = schedule.kelompokId ? await getGroupPoskoList(schedule.kelompokId) : [];
+
     return {
       scheduleId: schedule.id,
       title: officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : schedule.title,
@@ -1601,6 +1705,8 @@ export class KknAttendanceService {
       targetDurationMinutes,
       durationMinutes: targetDurationMinutes,
       polygon: schedule.polygon,
+      poskoList: groupPoskos,
+      totalPosko: groupPoskos.length,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
       isAttended,
       attendanceStatus: attendanceStatus || "BELUM_ABSEN",
@@ -1720,7 +1826,7 @@ export class KknAttendanceService {
         isInside = distance <= effectiveRadius;
       }
 
-      // SMART ZONE FALLBACK: Jika tidak masuk schedule geofence, cek multi-posko kelompok
+      // SMART ZONE & MULTI-POSKO CHECK: Periksa seluruh posko kelompok dan auto-polygon
       if (!isInside) {
         try {
           const schedForSz = await prisma.schedule.findUnique({
@@ -1728,14 +1834,24 @@ export class KknAttendanceService {
             select: { kelompokId: true },
           });
           if (schedForSz?.kelompokId) {
-            const szCheck = await smartZoneService.isStudentInGroupZone(
-              latitude,
-              longitude,
-              schedForSz.kelompokId,
-              bufferMeters
-            );
-            if (szCheck.isInside) {
-              isInside = true;
+            const groupPoskos = await getGroupPoskoList(schedForSz.kelompokId);
+            for (const gp of groupPoskos) {
+              if (calculateDistance(latitude, longitude, gp.latitude, gp.longitude) <= gp.radius + bufferMeters) {
+                isInside = true;
+                break;
+              }
+            }
+
+            if (!isInside) {
+              const szCheck = await smartZoneService.isStudentInGroupZone(
+                latitude,
+                longitude,
+                schedForSz.kelompokId,
+                bufferMeters
+              );
+              if (szCheck.isInside) {
+                isInside = true;
+              }
             }
           }
         } catch {
@@ -3392,6 +3508,53 @@ export class KknAttendanceService {
               ? "Tidak Ada Kegiatan"
               : statusKehadiran;
 
+      const allPoskoList: Array<{
+        id: string;
+        nama: string;
+        alamat: string;
+        latitude: number;
+        longitude: number;
+        radius: number;
+        isUtama: boolean;
+        type: "POSKO_UTAMA" | "POSKO_MULTI";
+        fotoUrl?: string | null;
+      }> = [];
+
+      if ((sch.kelompok as any)?.poskoKkn) {
+        const pk = (sch.kelompok as any).poskoKkn;
+        if (pk.latitude && pk.longitude) {
+          allPoskoList.push({
+            id: pk.id,
+            nama: pk.nama,
+            alamat: pk.alamat || "-",
+            latitude: Number(pk.latitude),
+            longitude: Number(pk.longitude),
+            radius: Math.max(150, Number(pk.radius) || 500),
+            isUtama: true,
+            type: "POSKO_UTAMA",
+            fotoUrl: pk.fotoUrl || null,
+          });
+        }
+      }
+
+      if (Array.isArray((sch.kelompok as any)?.poskoMulti)) {
+        for (const pm of (sch.kelompok as any).poskoMulti) {
+          if (pm.latitude && pm.longitude) {
+            allPoskoList.push({
+              id: pm.id,
+              nama: pm.nama,
+              alamat: pm.alamat || "-",
+              latitude: Number(pm.latitude),
+              longitude: Number(pm.longitude),
+              radius: Math.max(150, Number(pm.radius) || 500),
+              isUtama: pm.isUtama || false,
+              type: "POSKO_MULTI",
+              fotoUrl: pm.fotoUrl || null,
+            });
+          }
+        }
+      }
+
       const officialPosko =
         (sch.kelompok as any)?.poskoKkn ||
         (sch.kelompok as any)?.poskoMulti?.[0];
@@ -3461,6 +3624,8 @@ export class KknAttendanceService {
           radiusMeter: poskoRadiusNum,
           polygon: sch.polygon || null,
         },
+        poskoList: allPoskoList,
+        totalPosko: allPoskoList.length,
         status: scheduleStatus,
         statusKehadiran,
         attendanceStatus: statusKehadiran,
@@ -3594,30 +3759,77 @@ export class KknAttendanceService {
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 25;
 
+    const kelompokIdToCheck = schedule.kelompokId || student.kelompokId;
+    const groupPoskos = kelompokIdToCheck ? await getGroupPoskoList(kelompokIdToCheck) : [];
     const geofence = await buildGeofence(schedule);
-    const distToZone = calculateDistance(
-      latitude,
-      longitude,
-      geofence.latitude,
-      geofence.longitude
-    );
 
     let isInsideOnStart = false;
-    if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-      const polyPoints = (geofence.polygon as any[]).map((p) => {
-        const val0 = Number(p[0]);
-        const val1 = Number(p[1]);
-        return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
-      });
-      isInsideOnStart =
-        isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) ||
-        distToZone <= geofence.radius + bufferMeters;
-    } else {
-      isInsideOnStart = distToZone <= geofence.radius + bufferMeters;
+    let matchedPosko: any = null;
+    let nearestDist = 999999;
+    let nearestRadius = 500;
+    let nearestName = "Posko KKN";
+
+    // 1. Jika client mengirimkan poskoId spesifik, periksa posko tersebut terlebih dahulu
+    if (poskoId && groupPoskos.length > 0) {
+      const targeted = groupPoskos.find((p) => p.id === poskoId);
+      if (targeted) {
+        const distTarget = calculateDistance(latitude, longitude, targeted.latitude, targeted.longitude);
+        nearestDist = distTarget;
+        nearestRadius = targeted.radius;
+        nearestName = targeted.nama;
+        if (distTarget <= targeted.radius + bufferMeters) {
+          isInsideOnStart = true;
+          matchedPosko = targeted;
+        }
+      }
     }
 
-    // SMART ZONE FALLBACK: Jika tidak masuk schedule geofence (posko utama), cek multi-posko kelompok
-    const kelompokIdToCheck = schedule.kelompokId || student.kelompokId;
+    // 2. Jika belum cocok, periksa ke seluruh posko yang terdaftar pada kelompok (Multi-Posko)
+    if (!isInsideOnStart && groupPoskos.length > 0) {
+      for (const gp of groupPoskos) {
+        const d = calculateDistance(latitude, longitude, gp.latitude, gp.longitude);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearestRadius = gp.radius;
+          nearestName = gp.nama;
+        }
+        if (d <= gp.radius + bufferMeters) {
+          isInsideOnStart = true;
+          matchedPosko = gp;
+          break;
+        }
+      }
+    }
+
+    // 3. Jika belum cocok, periksa geofence jadwal (circle atau polygon)
+    if (!isInsideOnStart) {
+      const distToZone = calculateDistance(
+        latitude,
+        longitude,
+        geofence.latitude,
+        geofence.longitude
+      );
+      if (distToZone < nearestDist) {
+        nearestDist = distToZone;
+        nearestRadius = geofence.radius;
+        nearestName = schedule.title || "Posko Utama";
+      }
+
+      if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+        const polyPoints = (geofence.polygon as any[]).map((p) => {
+          const val0 = Number(p[0]);
+          const val1 = Number(p[1]);
+          return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
+        });
+        isInsideOnStart =
+          isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) ||
+          distToZone <= geofence.radius + bufferMeters;
+      } else {
+        isInsideOnStart = distToZone <= geofence.radius + bufferMeters;
+      }
+    }
+
+    // 4. SMART ZONE FALLBACK: Adaptive polygon dari persebaran aktif kelompok
     if (!isInsideOnStart && kelompokIdToCheck) {
       try {
         const szCheck = await smartZoneService.isStudentInGroupZone(
@@ -3628,17 +3840,22 @@ export class KknAttendanceService {
         );
         if (szCheck.isInside) {
           isInsideOnStart = true;
+          matchedPosko = szCheck.matchedPosko ? { nama: szCheck.matchedPosko } : null;
+        }
+        if (szCheck.distanceToNearest < nearestDist) {
+          nearestDist = szCheck.distanceToNearest;
+          nearestName = szCheck.nearestPoskoName || nearestName;
         }
       } catch (_szErr) {
-        // Abaikan jika fallback gagal (isInsideOnStart tetap false)
+        // Abaikan jika fallback gagal
       }
     }
 
     if (!isInsideOnStart) {
-      const distanceInt = Math.round(distToZone);
-      const allowedRadius = geofence.radius + bufferMeters;
+      const distanceInt = Math.round(nearestDist);
+      const allowedRadius = nearestRadius + bufferMeters;
       throw new Error(
-        `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona Posko KKN (Jarak: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di lokasi Posko/Wilayah KKN.`
+        `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona ${nearestName} (Jarak ke posko terdekat: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di salah satu lokasi Posko/Wilayah KKN kelompok Anda.`
       );
     }
 
@@ -3885,12 +4102,25 @@ export class KknAttendanceService {
       durasiWajibMenit,
       attendedAt: attendance.attendedAt.toISOString(),
       lokasi: {
-        alamat: schedule.location || "Lokasi Kegiatan KKN",
-        latitude: schedule.latitude ? Number(schedule.latitude) : latitude,
-        longitude: schedule.longitude ? Number(schedule.longitude) : longitude,
-        radiusMeter: schedule.radius || 200,
+        alamat: matchedPosko?.alamat || schedule.location || "Lokasi Kegiatan KKN",
+        latitude: matchedPosko?.latitude ?? (schedule.latitude ? Number(schedule.latitude) : latitude),
+        longitude: matchedPosko?.longitude ?? (schedule.longitude ? Number(schedule.longitude) : longitude),
+        radiusMeter: matchedPosko?.radius ?? (schedule.radius || 200),
         polygon: schedule.polygon || null,
       },
+      matchedPosko: matchedPosko
+        ? {
+            id: matchedPosko.id,
+            nama: matchedPosko.nama,
+            alamat: matchedPosko.alamat,
+            latitude: matchedPosko.latitude,
+            longitude: matchedPosko.longitude,
+            radius: matchedPosko.radius,
+            type: matchedPosko.type,
+          }
+        : null,
+      poskoList: groupPoskos,
+      totalPosko: groupPoskos.length,
       geofenceBufferMeters: (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15,
       invalidationHours: (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2,
       serverTimestamp: new Date().toISOString(),

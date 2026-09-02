@@ -1721,14 +1721,8 @@ const ManajemenTempatSampah: React.FC = () => {
 
                     {/* 7. DIVERIFIKASI PADA */}
                     <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">
-                      {bin.verifiedAt ? (
-                        bin.verifiedAt === "Belum Diaktivasi" ? (
-                          <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
-                        ) : (
-                          <span>{bin.verifiedAt}</span>
-                        )
-                      ) : bin.realStatus === "ACTIVE_BOUND" || bin.userId ? (
-                        "17 Agustus 2026, 09.00"
+                      {bin.verifiedAt && bin.verifiedAt !== "Belum Diaktivasi" ? (
+                        <span>{bin.verifiedAt}</span>
                       ) : (
                         <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
                       )}
