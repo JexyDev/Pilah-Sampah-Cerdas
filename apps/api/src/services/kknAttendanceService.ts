@@ -233,10 +233,7 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Hitung total durasi pause (ms) dari jedaLogs manual */
-function calcTotalPauseMs(
-  jedaLogs: any[],
-  sessionEndMs: number
-): number {
+function calcTotalPauseMs(jedaLogs: any[], sessionEndMs: number): number {
   let totalMs = 0;
   for (const log of jedaLogs) {
     if (!log || typeof log !== "object" || log.mode === "LOSS_MODE_INFO_ONLY") continue;
@@ -269,7 +266,14 @@ export function calculateLiveInZoneMinutes(att: {
   if (!att?.attendedAt) return 0;
 
   const statusUpper = String(att.status ?? "").toUpperCase();
-  const nonActiveStatuses = ["SAKIT", "IZIN", "ALPA", "ALPHA", "TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"];
+  const nonActiveStatuses = [
+    "SAKIT",
+    "IZIN",
+    "ALPA",
+    "ALPHA",
+    "TIDAK_ADA_KEGIATAN",
+    "SKIP_KEGIATAN",
+  ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
   const MAX_CAP = 480; // menit
@@ -277,8 +281,7 @@ export function calculateLiveInZoneMinutes(att: {
   const now = new Date();
 
   // Sesi dari hari sebelumnya (WIB +7) → gunakan nilai tersimpan
-  const toWibDay = (d: Date) =>
-    new Date(d.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+  const toWibDay = (d: Date) => new Date(d.getTime() + 7 * 3600000).toISOString().slice(0, 10);
   if (toWibDay(attendedDate) < toWibDay(now)) {
     return Math.min(Math.max(0, att.actualInZoneMinutes ?? 0), MAX_CAP);
   }
@@ -305,7 +308,14 @@ export function calculateLiveInZoneSeconds(att: {
   if (!att?.attendedAt) return 0;
 
   const statusUpper = String(att.status ?? "").toUpperCase();
-  const nonActiveStatuses = ["SAKIT", "IZIN", "ALPA", "ALPHA", "TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"];
+  const nonActiveStatuses = [
+    "SAKIT",
+    "IZIN",
+    "ALPA",
+    "ALPHA",
+    "TIDAK_ADA_KEGIATAN",
+    "SKIP_KEGIATAN",
+  ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
   const MAX_CAP = 28800; // detik (8 jam)
@@ -313,8 +323,7 @@ export function calculateLiveInZoneSeconds(att: {
   const now = new Date();
 
   // Sesi dari hari sebelumnya (WIB +7) → gunakan nilai tersimpan
-  const toWibDay = (d: Date) =>
-    new Date(d.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+  const toWibDay = (d: Date) => new Date(d.getTime() + 7 * 3600000).toISOString().slice(0, 10);
   if (toWibDay(attendedDate) < toWibDay(now)) {
     return Math.min(Math.max(0, (att.actualInZoneMinutes ?? 0) * 60), MAX_CAP);
   }
@@ -340,7 +349,14 @@ export function calculateTotalJedaMinutes(att: {
 }): number {
   if (!att?.attendedAt) return 0;
   const statusUpper = String(att.status ?? "").toUpperCase();
-  const nonActiveStatuses = ["SAKIT", "IZIN", "ALPA", "ALPHA", "TIDAK_ADA_KEGIATAN", "SKIP_KEGIATAN"];
+  const nonActiveStatuses = [
+    "SAKIT",
+    "IZIN",
+    "ALPA",
+    "ALPHA",
+    "TIDAK_ADA_KEGIATAN",
+    "SKIP_KEGIATAN",
+  ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
   const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : Date.now();
@@ -853,7 +869,7 @@ export class KknAttendanceService {
           },
         },
       })
-      .catch(() => { });
+      .catch(() => {});
 
     // 3. Evaluasi Kondisi B (Otomatis): Hitung akumulasi durasi in-zone dari tabel studentLocation
     const autoAttendanceTriggered: string[] = [];
@@ -891,14 +907,14 @@ export class KknAttendanceService {
 
     // SMART ZONE: Trigger auto-polygon update for this group (async, non-blocking)
     if (student?.kelompokId && latestLoc) {
-      smartZoneService.updateGroupAutoPolygon(student.kelompokId).catch(() => { });
+      smartZoneService.updateGroupAutoPolygon(student.kelompokId).catch(() => {});
       // Pre-check smart zone for response enrichment
       smartZoneService
         .isStudentInGroupZone(latestLoc.latitude, latestLoc.longitude, student.kelompokId)
         .then((result) => {
           smartZoneResult = result;
         })
-        .catch(() => { });
+        .catch(() => {});
     }
 
     const activeSchedules = await prisma.schedule.findMany({
@@ -957,7 +973,7 @@ export class KknAttendanceService {
           if (isSchedDateToday) {
             const graceMinutes =
               existingAtt &&
-                (existingAtt.status === "BERLANGSUNG" || existingAtt.status === "TERJEDA")
+              (existingAtt.status === "BERLANGSUNG" || existingAtt.status === "TERJEDA")
                 ? 180
                 : 60;
             isExpired = currentMinutesTotal > endMinutesTotal + graceMinutes;
@@ -1071,11 +1087,11 @@ export class KknAttendanceService {
 
             const currentDist = latestLoc
               ? calculateDistance(
-                Number(latestLoc.latitude),
-                Number(latestLoc.longitude),
-                geofence.latitude,
-                geofence.longitude
-              )
+                  Number(latestLoc.latitude),
+                  Number(latestLoc.longitude),
+                  geofence.latitude,
+                  geofence.longitude
+                )
               : 0;
 
             const isFarOutside = currentDist > effectiveRad + 80;
@@ -1678,9 +1694,9 @@ export class KknAttendanceService {
           jurusan: studentUser?.studentProfile?.jurusan || "-",
           kelompok: studentUser?.studentProfile?.kelompok
             ? {
-              id: studentUser.studentProfile.kelompok.id,
-              name: studentUser.studentProfile.kelompok.name,
-            }
+                id: studentUser.studentProfile.kelompok.id,
+                name: studentUser.studentProfile.kelompok.name,
+              }
             : undefined,
         },
       },
@@ -2216,14 +2232,14 @@ export class KknAttendanceService {
     const leaveRequests =
       allStudentUserIds.length > 0
         ? await prisma.studentLeaveRequest.findMany({
-          where: {
-            studentId: { in: allStudentUserIds },
-            startDate: { lte: endOfDay },
-            endDate: { gte: startOfDay },
-            status: { in: ["PENDING", "APPROVED", "CANCEL_REQUESTED", "OVERRIDDEN_HADIR"] },
-          },
-          orderBy: { createdAt: "desc" },
-        })
+            where: {
+              studentId: { in: allStudentUserIds },
+              startDate: { lte: endOfDay },
+              endDate: { gte: startOfDay },
+              status: { in: ["PENDING", "APPROVED", "CANCEL_REQUESTED", "OVERRIDDEN_HADIR"] },
+            },
+            orderBy: { createdAt: "desc" },
+          })
         : [];
 
     const leaveMap = new Map<string, (typeof leaveRequests)[0]>();
@@ -2247,17 +2263,17 @@ export class KknAttendanceService {
     const cumulativeRecords =
       allStudentIds.length > 0
         ? await prisma.activityAttendance.findMany({
-          where: {
-            studentId: { in: allStudentIds },
-          },
-          select: {
-            studentId: true,
-            actualInZoneMinutes: true,
-            status: true,
-            attendedAt: true,
-            checkOutAt: true,
-          },
-        })
+            where: {
+              studentId: { in: allStudentIds },
+            },
+            select: {
+              studentId: true,
+              actualInZoneMinutes: true,
+              status: true,
+              attendedAt: true,
+              checkOutAt: true,
+            },
+          })
         : [];
 
     const cumulativeMap = new Map<
@@ -2411,12 +2427,12 @@ export class KknAttendanceService {
         completedAt: isFinished ? att.checkOutAt || (att as any).completedAt || null : null,
         leaveRequest: leave
           ? {
-            id: leave.id,
-            type: leave.type,
-            reason: leave.reason,
-            evidenceUrl: leave.evidenceUrl,
-            status: leave.status,
-          }
+              id: leave.id,
+              type: leave.type,
+              reason: leave.reason,
+              evidenceUrl: leave.evidenceUrl,
+              status: leave.status,
+            }
           : undefined,
       };
     });
@@ -2842,8 +2858,8 @@ export class KknAttendanceService {
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
-      ruleConfigs.attendanceMinDurationMinutes +
-      Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 240;
+        ruleConfigs.attendanceMinDurationMinutes +
+        Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 240;
 
     let targetDate = new Date();
     if (targetTanggal) {
@@ -3233,7 +3249,7 @@ export class KknAttendanceService {
               radius: poskoRadiusNum,
             },
           })
-          .catch(() => { });
+          .catch(() => {});
       }
 
       const jedaLogsObj = (att?.jedaLogs as any) || {};
@@ -3558,7 +3574,7 @@ export class KknAttendanceService {
               status: "SELESAI",
             },
           })
-          .catch(() => { });
+          .catch(() => {});
       } else {
         throw new Error(
           `CONCURRENCY_CONFLICT: Selesaikan sesi kegiatan '${activeOtherSession.schedule?.title || "sebelumnya"}' terlebih dahulu sebelum memulai kegiatan baru.`
@@ -3593,8 +3609,7 @@ export class KknAttendanceService {
             lastLog.durasiSebelumJedaMenit || 0
           );
           lastLog.durasiSebelumResumeMenit = resumeMins;
-          lastLog.durasiSebelumResumeDetik =
-            lastLog.durasiSebelumJedaDetik ?? resumeMins * 60;
+          lastLog.durasiSebelumResumeDetik = lastLog.durasiSebelumJedaDetik ?? resumeMins * 60;
         } else {
           currentLogs.push({
             alasan: "Resume Kegiatan",
@@ -3749,8 +3764,8 @@ export class KknAttendanceService {
 
     const durasiWajibMenit =
       ruleConfigs.attendanceMinDurationHours * 60 +
-      ruleConfigs.attendanceMinDurationMinutes +
-      Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 240;
+        ruleConfigs.attendanceMinDurationMinutes +
+        Math.round(ruleConfigs.attendanceMinDurationSeconds / 60) || 240;
 
     return {
       sessionId: `SES-${schedule.id.slice(0, 8)}-${studentUserId.slice(-6)}`,
@@ -3771,14 +3786,14 @@ export class KknAttendanceService {
       },
       matchedPosko: matchedPosko
         ? {
-          id: matchedPosko.id,
-          nama: matchedPosko.nama,
-          alamat: matchedPosko.alamat,
-          latitude: matchedPosko.latitude,
-          longitude: matchedPosko.longitude,
-          radius: matchedPosko.radius,
-          type: matchedPosko.type,
-        }
+            id: matchedPosko.id,
+            nama: matchedPosko.nama,
+            alamat: matchedPosko.alamat,
+            latitude: matchedPosko.latitude,
+            longitude: matchedPosko.longitude,
+            radius: matchedPosko.radius,
+            type: matchedPosko.type,
+          }
         : null,
       poskoList: groupPoskos,
       totalPosko: groupPoskos.length,
@@ -3852,12 +3867,12 @@ export class KknAttendanceService {
 
     if (!existing) throw new Error("Kegiatan aktif tidak ditemukan.");
 
-    if (
-      existing.status !== "BERLANGSUNG" ||
-      existing.checkOutAt
-    ) {
+    if (existing.status !== "BERLANGSUNG" || existing.checkOutAt) {
       throw new Error(
-        existing.checkOutAt || ["SELESAI", "HADIR", "SELESAI_TELAT", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI"].includes(existing.status)
+        existing.checkOutAt ||
+          ["SELESAI", "HADIR", "SELESAI_TELAT", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI"].includes(
+            existing.status
+          )
           ? "Kegiatan sudah diselesaikan."
           : "Kegiatan tidak sedang berlangsung — tidak bisa dijeda."
       );
@@ -3940,10 +3955,7 @@ export class KknAttendanceService {
    * Timer dilanjutkan dari titik berhenti (jedaLogs terakhir mendapat waktuResume).
    * Endpoint: POST /api/v1/kkn/kegiatan/:scheduleId/lanjut
    */
-  async lanjutKegiatan(
-    studentUserId: string,
-    scheduleId: string
-  ) {
+  async lanjutKegiatan(studentUserId: string, scheduleId: string) {
     const existing = await prisma.activityAttendance.findUnique({
       where: {
         studentId_scheduleId: { studentId: studentUserId, scheduleId },
@@ -4005,8 +4017,6 @@ export class KknAttendanceService {
     };
   }
 
-
-
   /**
    * Watchdog Anomali GPS:
    * Mendeteksi mahasiswa yang statusnya BERLANGSUNG/DI_ZONA tetapi HP mati / aplikasi ditutup / sinyal GPS hilang > 15 menit.
@@ -4062,9 +4072,7 @@ export class KknAttendanceService {
         }
 
         const latestLoc = att.student?.locations?.[0];
-        const lastPingTime = latestLoc
-          ? new Date(latestLoc.recordedAt).getTime()
-          : 0;
+        const lastPingTime = latestLoc ? new Date(latestLoc.recordedAt).getTime() : 0;
 
         // Titik aktivitas terakhir adalah yang terbaru antara ping terakhir atau waktu aktif
         const latestActivityTime = Math.max(lastPingTime, activeSinceTime);
@@ -4204,7 +4212,7 @@ export class KknAttendanceService {
                 message: `Kegiatan ${att.schedule.title} telah usai. Sistem telah mencatat jam kepulangan Anda secara otomatis.`,
               },
             })
-            .catch(() => { });
+            .catch(() => {});
 
           // Notifikasi Push FCM
           if (att.student.fcmToken) {
@@ -4214,7 +4222,7 @@ export class KknAttendanceService {
                 "Kegiatan Selesai ✅",
                 `Kegiatan ${att.schedule.title} usai. Checkout berhasil otomatis.`
               )
-              .catch(() => { });
+              .catch(() => {});
           }
         }
       }
@@ -4563,11 +4571,11 @@ export class KknAttendanceService {
           isKetua: r.student?.studentProfile?.isKetua || false,
           kelompok: kknGroup
             ? {
-              id: kknGroup.id,
-              name: kknGroup.name,
-              kelurahan: kknGroup.kelurahan,
-              dplName: (kknGroup as any).dpl?.name || "-",
-            }
+                id: kknGroup.id,
+                name: kknGroup.name,
+                kelurahan: kknGroup.kelurahan,
+                dplName: (kknGroup as any).dpl?.name || "-",
+              }
             : null,
           totalSessions: 0,
           totalMinutes: 0,
@@ -4711,11 +4719,11 @@ export class KknAttendanceService {
         isKetua: att.student?.studentProfile?.isKetua ?? false,
         kelompok: kknGroup
           ? {
-            id: kknGroup.id,
-            name: kknGroup.name,
-            kelurahan: kknGroup.kelurahan,
-            dplName: (kknGroup as any).dpl?.name ?? "-",
-          }
+              id: kknGroup.id,
+              name: kknGroup.name,
+              kelurahan: kknGroup.kelurahan,
+              dplName: (kknGroup as any).dpl?.name ?? "-",
+            }
           : null,
         scheduleId: att.scheduleId,
         namaKegiatan: att.schedule?.title ?? "Kegiatan Harian Lapangan",
@@ -5063,7 +5071,7 @@ export class KknAttendanceService {
           actualInZoneMinutes: calculatedMinutes,
         },
       });
-    } catch { }
+    } catch {}
 
     return record;
   }
@@ -5150,7 +5158,7 @@ export class KknAttendanceService {
       const diffMins = Math.floor(
         (new Date(payload.checkOutAt).getTime() -
           new Date(updateData.attendedAt || existing.attendedAt).getTime()) /
-        60000
+          60000
       );
       if (diffMins >= 0 && updateData.actualInZoneMinutes === undefined) {
         updateData.actualInZoneMinutes = diffMins;
@@ -5199,7 +5207,7 @@ export class KknAttendanceService {
         },
         newValue: updateData,
       });
-    } catch { }
+    } catch {}
 
     return updated;
   }
@@ -5230,7 +5238,7 @@ export class KknAttendanceService {
           attendedAt: existing.attendedAt,
         },
       });
-    } catch { }
+    } catch {}
 
     return { id, success: true, message: "Data presensi berhasil dihapus" };
   }
@@ -5313,7 +5321,7 @@ export class KknAttendanceService {
           actualInZoneMinutes: finalMinutes,
         },
       });
-    } catch { }
+    } catch {}
 
     return updated;
   }
@@ -5368,8 +5376,8 @@ export class KknAttendanceService {
       const holidayCheck =
         typeof configService?.isDateKknHoliday === "function"
           ? await configService
-            .isDateKknHoliday(targetDate)
-            .catch(() => ({ isHoliday: false, reason: undefined }))
+              .isDateKknHoliday(targetDate)
+              .catch(() => ({ isHoliday: false, reason: undefined }))
           : { isHoliday: false, reason: undefined };
       if (holidayCheck?.isHoliday) {
         console.log(
