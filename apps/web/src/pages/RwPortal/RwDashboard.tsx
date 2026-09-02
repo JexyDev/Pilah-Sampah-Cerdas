@@ -86,7 +86,7 @@ export const RwDashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800 dark:text-slate-200">Wilayah Tugas:</span>
             <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 font-semibold border border-slate-200 dark:border-slate-700">
-              {(user as any)?.rw?.name || user?.address || user?.wilayah || "Wilayah RW"} • Kecamatan Coblong
+              {(user as any)?.rw?.name || user?.address || user?.wilayah || "Wilayah RW"}{(user as any)?.rw?.kelurahan?.name ? ` • Kel. ${(user as any).rw.kelurahan.name}` : ""}
             </span>
           </div>
 
@@ -308,7 +308,7 @@ export const RwDashboard: React.FC = () => {
                 {rwSummary?.petugasResidu?.name || "Petugas Residu Lapangan"}
               </h4>
               <p className="text-xs text-slate-400 mt-0.5">
-                {rwSummary?.petugasResidu?.phone ? `Kontak: ${rwSummary.petugasResidu.phone}` : "Sektor Operasional Coblong"}
+                {rwSummary?.petugasResidu?.phone ? `Kontak: ${rwSummary.petugasResidu.phone}` : "Sektor Operasional RW"}
               </p>
               <div className="mt-4 pt-3 border-t border-slate-800 space-y-2 text-xs text-slate-300">
                 <div className="flex justify-between">
@@ -317,7 +317,7 @@ export const RwDashboard: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Kelurahan:</span>
-                  <strong className="text-slate-200">{(user as any)?.rw?.kelurahan?.name || user?.wilayah || "Kecamatan Coblong"}</strong>
+                  <strong className="text-slate-200">{(user as any)?.rw?.kelurahan?.name || user?.kelurahan || "Wilayah Kelurahan"}</strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Window Tugas:</span>

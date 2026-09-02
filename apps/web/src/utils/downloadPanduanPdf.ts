@@ -19,7 +19,7 @@ export const downloadPanduanPdf = () => {
     <html lang="id">
     <head>
       <meta charset="UTF-8">
-      <title>Buku Panduan Operasional Ekosistem BERSEKA - Kecamatan Coblong</title>
+      <title>Buku Panduan Operasional Ekosistem BERSEKA</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         
@@ -242,7 +242,7 @@ export const downloadPanduanPdf = () => {
             <p>Buku Panduan Operasional &amp; Tata Kelola Pemilahan Sampah Terintegrasi</p>
           </div>
           <div style="text-align: right;">
-            <span class="badge-doc">Kecamatan Coblong • 2026</span>
+            <span class="badge-doc">Panduan Resmi • 2026</span>
           </div>
         </div>
 
@@ -250,7 +250,7 @@ export const downloadPanduanPdf = () => {
         <div class="section-box">
           <div class="section-title">1. Ketentuan Utama Ekosistem</div>
           <p style="font-size: 9pt; color: #334155; margin-top: 4px;">
-            BERSEKA menghadirkan ekosistem tata kelola sampah berbasis geolokasi dan akuntabilitas data di Kecamatan Coblong, Kota Bandung.
+            BERSEKA menghadirkan ekosistem tata kelola sampah berbasis geolokasi dan akuntabilitas data di seluruh wilayah operasional binaan.
           </p>
           <ul style="font-size: 8.5pt;">
             <li><strong>Autentikasi Akun Warga:</strong> Menggunakan Nomor WhatsApp (+62) dengan verifikasi Kode OTP tanpa penggunaan NIK.</li>
@@ -380,11 +380,11 @@ export const downloadPanduanPdf = () => {
         </div>
 
         <div class="note-box">
-          📌 <strong>Catatan Resmi:</strong> Buku Panduan ini diterbitkan oleh Tim KKN Berdampak UNIKOM dan Pengembang Sistem untuk operasional tata kelola sampah di Kecamatan Coblong, Kota Bandung. Hubungi <code>kknberdampak@unikom.ac.id</code> untuk informasi lebih lanjut.
+          📌 <strong>Catatan Resmi:</strong> Buku Panduan ini diterbitkan oleh Tim KKN Berdampak UNIKOM dan Pengembang Sistem untuk operasional tata kelola sampah di seluruh wilayah binaan. Hubungi <code>kknberdampak@unikom.ac.id</code> untuk informasi lebih lanjut.
         </div>
 
         <div class="footer">
-          BERSEKA Ecosystem • KKN Berdampak UNIKOM • Kecamatan Coblong, Kota Bandung (2026)
+          BERSEKA Ecosystem • KKN Berdampak UNIKOM • Wilayah Operasional (2026)
         </div>
       </div>
 

@@ -205,7 +205,7 @@ export default function RekapSetoran() {
       d.warga || "-",
       d.phone || "-",
       formatRukunWarga(d.rw || d.rtRw),
-      d.kelurahan || "Coblong",
+      d.kelurahan || "-",
       d.jenis || "Organik",
       Number(d.berat || 0),
       Math.round(d.poin || 0),
@@ -272,7 +272,7 @@ export default function RekapSetoran() {
       <PageHeader
         icon={Receipt}
         category="Audit Transaksi Pemilahan"
-        scope="Kecamatan Coblong"
+        scope={user?.wilayah || "Semua Wilayah"}
         title="Pemantauan & Rekapitulasi"
         description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
       />
@@ -460,7 +460,7 @@ export default function RekapSetoran() {
 
                       {/* Warga */}
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 align-middle">
-                        {item.warga || "Warga Coblong"}
+                        {item.warga || "Warga"}
                         {item.phone && (
                           <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
                             {item.phone}
@@ -601,13 +601,13 @@ export default function RekapSetoran() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">{selectedDeposit.warga || "Warga Coblong"}</h4>
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">{selectedDeposit.warga || "Warga"}</h4>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#c3dafe] dark:border-blue-800/50">
                       {formatRukunWarga(selectedDeposit.rw || selectedDeposit.rtRw)}
                     </span>
                     <span className="inline-block bg-[#e8f8f0] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#b8ebd0] dark:border-emerald-800/50">
-                      Kel. {selectedDeposit.kelurahan || "Coblong"}
+                      {selectedDeposit.kelurahan ? `Kel. ${selectedDeposit.kelurahan}` : "Wilayah Binaan"}
                     </span>
                     {selectedDeposit.phone && (
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">

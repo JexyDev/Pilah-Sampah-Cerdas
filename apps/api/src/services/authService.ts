@@ -682,20 +682,36 @@ export class AuthService {
 
     // Try finding by name and optional kelurahan
     let whereClause: any = {};
-    if (kelurahan) {
+    if (kelurahan && kelurahan.trim() && kelurahan !== "-") {
+      const cleanKel = kelurahan
+        .replace(/^Kel\.\s*/i, "")
+        .replace(/^Kelurahan\s*/i, "")
+        .trim();
       const kel = await prisma.kelurahan.findFirst({
-        where: { name: { equals: kelurahan, mode: "insensitive" } },
+        where: {
+          OR: [
+            { name: { equals: kelurahan.trim(), mode: "insensitive" } },
+            { name: { equals: cleanKel, mode: "insensitive" } },
+            { name: { contains: cleanKel, mode: "insensitive" } },
+          ],
+        },
       });
       if (kel) {
         whereClause.kelurahanId = kel.id;
       }
     }
 
-    if (rtRw) {
+    if (rtRw && rtRw.trim() && rtRw !== "-") {
+      const cleanDigits = rtRw.replace(/\D/g, "");
+      const formattedRw = cleanDigits ? `RW ${cleanDigits.padStart(2, "0")}` : rtRw.trim();
       const areaMatch = await prisma.rw.findFirst({
         where: {
           ...whereClause,
-          name: { contains: rtRw, mode: "insensitive" },
+          OR: [
+            { name: { contains: rtRw.trim(), mode: "insensitive" } },
+            { name: { contains: formattedRw, mode: "insensitive" } },
+            ...(cleanDigits ? [{ name: { contains: cleanDigits, mode: "insensitive" } }] : []),
+          ],
         },
       });
       if (areaMatch) return areaMatch.id;

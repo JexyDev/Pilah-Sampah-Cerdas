@@ -174,7 +174,7 @@ export const MahasiswaProkerMobile: React.FC = () => {
                     <h4 className="text-xs font-black text-slate-900 dark:text-white">
                       {posko.nama || posko.name}
                     </h4>
-                    <p className="text-[10px] text-slate-400">{posko.kelurahan || "Kecamatan Coblong"}</p>
+                    <p className="text-[10px] text-slate-400">{posko.kelurahan ? `Kel. ${posko.kelurahan}` : "Wilayah Dampingan"}</p>
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-300">

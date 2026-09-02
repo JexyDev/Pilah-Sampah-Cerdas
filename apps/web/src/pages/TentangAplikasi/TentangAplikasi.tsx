@@ -105,7 +105,7 @@ const Informasi: React.FC = () => {
       default:
         return {
           title: "Pengguna Sistem BERSEKA",
-          desc: "Panduan umum operasional dan standar prosedur pemilahan sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) di Kecamatan Coblong.",
+          desc: "Panduan umum operasional dan standar prosedur pemilahan sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) di seluruh wilayah operasional binaan.",
           icon: Users,
           color: "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
         };
@@ -121,12 +121,12 @@ const Informasi: React.FC = () => {
       <PageHeader
         icon={Info}
         category={isTechnicalRole ? `Sistem BERSEKA v${APP_CONFIG.version}` : "Pusat Panduan & SOP"}
-        scope="Kecamatan Coblong"
+        scope={user?.wilayah || "Wilayah Operasional"}
         title={isTechnicalRole ? "Informasi Sistem BERSEKA" : "Pusat Panduan & Informasi Operasional"}
         description={
           isTechnicalRole
             ? "Platform manajemen pemilahan sampah cerdas BERSEKA berbasis inferensi AI, gamifikasi insentif poin warga, serta pemantauan telemetri real-time yang terintegrasi dari aplikasi mobile hingga dashboard eksekutif."
-            : "Pedoman resmi pemilahan sampah cerdas terpadu BERSEKA (Bersih, Sehat, Kampung Asri) di Kecamatan Coblong. Pelajari alur operasional pemilahan, standar prosedur layanan, serta panduan fitur sesuai tugas peran Anda."
+            : "Pedoman resmi pemilahan sampah cerdas terpadu BERSEKA (Bersih, Sehat, Kampung Asri). Pelajari alur operasional pemilahan, standar prosedur layanan, serta panduan fitur sesuai tugas peran Anda."
         }
         actions={
           <div className="bg-emerald-50 border border-emerald-200/80 px-4 py-2 rounded-xl text-center">
@@ -416,7 +416,7 @@ const Informasi: React.FC = () => {
                       <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">1. Ekosistem &amp; Alokasi Kelompok</h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Kelola kelompok KKN, penugasan DPL, dan alokasi ketua kelompok di menu <strong>Ekosistem Dampingan</strong> untuk 6 kelurahan di Kecamatan Coblong.
+                      Kelola kelompok KKN, penugasan DPL, dan alokasi ketua kelompok di menu <strong>Ekosistem Dampingan</strong> untuk seluruh kelurahan di wilayah dampingan.
                     </p>
                   </div>
 

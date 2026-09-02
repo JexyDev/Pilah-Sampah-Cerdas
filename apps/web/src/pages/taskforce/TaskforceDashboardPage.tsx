@@ -10,6 +10,7 @@ import {
   Users,
   GraduationCap,
   ClipboardCheck,
+  FileCheck,
   FileText,
   BarChart3,
   Search,
@@ -279,7 +280,7 @@ export const TaskforceDashboardPage: React.FC = () => {
       </div>
 
       {/* Quick Action Navigation Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         <Link
           to="/pelaksanaan/kelompok"
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-teal-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
@@ -305,8 +306,24 @@ export const TaskforceDashboardPage: React.FC = () => {
               <ClipboardCheck size={20} />
             </div>
             <div>
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi Mahasiswa</h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Audit Absensi &amp; Izin</p>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Monitoring Lapangan</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition" />
+        </Link>
+
+        <Link
+          to="/ajuan-absensi"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl hover:border-purple-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition">
+              <FileCheck size={20} />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Ajukan Absensi</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Verifikasi Izin &amp; Sakit</p>
             </div>
           </div>
           <ChevronRight size={18} className="text-slate-400 group-hover:translate-x-1 transition" />

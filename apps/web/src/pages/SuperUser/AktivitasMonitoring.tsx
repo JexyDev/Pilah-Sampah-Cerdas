@@ -192,7 +192,7 @@ export const AktivitasMonitoring: React.FC = () => {
               : "Wilayah Binaan KKN"
             : isLurah
               ? `Kelurahan ${user?.kelurahan || "Cipaganti"}`
-              : "Kecamatan Coblong"
+              : (user?.wilayah || "Semua Wilayah")
         }
         title="Pemantauan & Rekapitulasi"
         description={
@@ -200,7 +200,7 @@ export const AktivitasMonitoring: React.FC = () => {
             ? "Monitoring analitik volume sampah terpilah warga wilayah binaan KKN, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
             : isLurah
               ? `Monitoring analitik volume sampah terpilah warga Kelurahan ${user?.kelurahan || "Cipaganti"}, riwayat log fisik, dan skor kepatuhan lingkungan terpadu.`
-              : "Monitoring analitik volume sampah terpilah warga Coblong, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+              : "Monitoring analitik volume sampah terpilah warga, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
         }
         actions={
           <div className="flex flex-wrap items-center gap-2.5">

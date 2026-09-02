@@ -1,4 +1,4 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin } from "lucide-react";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -40,12 +40,23 @@ const cleanKelurahanName = (raw: string | undefined | null) => {
     .replace(/^urahan\s*/i, "")
     .replace(/^Kelurahan\s*/i, "")
     .trim();
+
+  // If the raw text is actually a full address or too long, extract canonical kelurahan or return "-"
+  if (clean.includes(",") || clean.split(/\s+/).length > 3) {
+    const known = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+    for (const k of known) {
+      if (clean.toLowerCase().includes(k.toLowerCase())) return `Kel. ${k}`;
+    }
+    return "-";
+  }
+
   return clean ? `Kel. ${clean}` : "-";
 };
 
 const detectKelurahanName = (u: any): string => {
-  if (u?.kelurahan && u.kelurahan !== "-") {
-    return cleanKelurahanName(u.kelurahan);
+  if (u?.kelurahan && u.kelurahan !== "-" && u.kelurahan.trim() !== "") {
+    const cleaned = cleanKelurahanName(u.kelurahan);
+    if (cleaned !== "-") return cleaned;
   }
 
   const combinedText = `${u?.name || ""} ${u?.address || ""} ${u?.wilayah || ""} ${u?.rw || ""}`.toLowerCase();
@@ -66,8 +77,7 @@ const detectKelurahanName = (u: any): string => {
     }
   }
 
-  const fallback = cleanKelurahanName(u?.address);
-  return fallback !== "-" ? fallback : "Kel. Sadang Serang";
+  return "Kel. Sadang Serang";
 };
 
 const getCleanKelName = (raw: string | undefined | null) => {
@@ -80,12 +90,13 @@ const getCleanKelName = (raw: string | undefined | null) => {
   return clean && clean !== "-" ? clean : "Cipaganti";
 };
 
-const formatKecamatanName = (raw: string | undefined | null): string => {
-  if (!raw || raw === "-" || raw.trim() === "") return "-";
-  let clean = String(raw).trim();
-  clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
-  if (!clean || clean === "-") return "-";
-  return `Kecamatan ${clean}`;
+const formatKecamatanName = (raw: string | undefined | null, u?: any): string => {
+  if (raw && raw !== "-" && raw.trim() !== "") {
+    let clean = String(raw).trim();
+    clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
+    if (clean && clean !== "-") return `Kecamatan ${clean}`;
+  }
+  return "Kecamatan Coblong";
 };
 
 const getCleanKabupatenName = (raw: string | undefined | null): string => {
@@ -280,6 +291,10 @@ const ManajemenPengguna: React.FC = () => {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Kelurahan Filter State
+  const [selectedKelurahanFilter, setSelectedKelurahanFilter] = useState<string>("Semua");
+  const [isKelurahanDropdownOpen, setIsKelurahanDropdownOpen] = useState(false);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -868,9 +883,22 @@ const ManajemenPengguna: React.FC = () => {
     setUserToDelete(null);
   };
 
+  // Kelurahan filtered users
+  const filteredUsers = useMemo(() => {
+    if (selectedKelurahanFilter === "Semua") return users;
+    const target = selectedKelurahanFilter.toLowerCase().trim();
+    return users.filter((u: any) => {
+      const kel = detectKelurahanName(u).toLowerCase();
+      const rawKel = (u.kelurahan || "").toLowerCase();
+      const addr = (u.address || "").toLowerCase();
+      const wil = (u.wilayah || "").toLowerCase();
+      return kel.includes(target) || rawKel.includes(target) || addr.includes(target) || wil.includes(target);
+    });
+  }, [users, selectedKelurahanFilter]);
+
   // Pagination calculation
-  const totalPages = Math.ceil(users.length / rowsPerPage) || 1;
-  const paginatedUsers = users.slice(
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage) || 1;
+  const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -1175,7 +1203,7 @@ const ManajemenPengguna: React.FC = () => {
               Total Pengguna
             </p>
             <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
-              {users.length}
+              {filteredUsers.length}
             </h3>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
@@ -1189,7 +1217,7 @@ const ManajemenPengguna: React.FC = () => {
               Status Aktif
             </p>
             <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-              {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
+              {filteredUsers.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
             </h3>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
@@ -1228,49 +1256,112 @@ const ManajemenPengguna: React.FC = () => {
             />
           </div>
 
-          {/* Status Akun Filter Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
-            >
-              <span className={`w-2 h-2 rounded-full ${
-                selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
-              }`} />
-              <span>{selectedStatus === "Semua" ? "Semua Status" : selectedStatus}</span>
-              <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
+          {/* Action Filters: Kelurahan & Status */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+            {/* Filter Kelurahan (6 Kelurahan di Coblong) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsKelurahanDropdownOpen(!isKelurahanDropdownOpen);
+                  setIsStatusDropdownOpen(false);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  selectedKelurahanFilter !== "Semua"
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                }`}
+              >
+                <MapPin size={13} className={selectedKelurahanFilter !== "Semua" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+                <span>{selectedKelurahanFilter === "Semua" ? "Semua Kelurahan" : `Kel. ${selectedKelurahanFilter}`}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isKelurahanDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
 
-            {isStatusDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                  {[
-                    { value: "Semua", label: "Semua Status", color: "bg-slate-400" },
-                    { value: "Aktif", label: "Aktif", color: "bg-emerald-500" },
-                    { value: "Nonaktif", label: "Nonaktif", color: "bg-rose-500" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setSelectedStatus(opt.value);
-                        setIsStatusDropdownOpen(false);
-                      }}
-                      className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
-                        selectedStatus === opt.value
-                          ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
-                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${opt.color}`} />
-                      <span>{opt.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+              {isKelurahanDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsKelurahanDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {[
+                      { value: "Semua", label: "Semua Kelurahan" },
+                      { value: "Cipaganti", label: "Kel. Cipaganti" },
+                      { value: "Dago", label: "Kel. Dago" },
+                      { value: "Lebak Gede", label: "Kel. Lebak Gede" },
+                      { value: "Lebak Siliwangi", label: "Kel. Lebak Siliwangi" },
+                      { value: "Sadang Serang", label: "Kel. Sadang Serang" },
+                      { value: "Sekeloa", label: "Kel. Sekeloa" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedKelurahanFilter(opt.value);
+                          setIsKelurahanDropdownOpen(false);
+                          setCurrentPage(1);
+                        }}
+                        className={`flex items-center justify-between w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
+                          selectedKelurahanFilter === opt.value
+                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400 font-black"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {selectedKelurahanFilter === opt.value && (
+                          <CheckCircle size={13} className="text-[#009966] dark:text-emerald-400 shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Status Akun Filter Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStatusDropdownOpen(!isStatusDropdownOpen);
+                  setIsKelurahanDropdownOpen(false);
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
+              >
+                <span className={`w-2 h-2 rounded-full ${
+                  selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
+                }`} />
+                <span>{selectedStatus === "Semua" ? "Semua Status" : selectedStatus}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isStatusDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {[
+                      { value: "Semua", label: "Semua Status", color: "bg-slate-400" },
+                      { value: "Aktif", label: "Aktif", color: "bg-emerald-500" },
+                      { value: "Nonaktif", label: "Nonaktif", color: "bg-rose-500" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStatus(opt.value);
+                          setIsStatusDropdownOpen(false);
+                        }}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
+                          selectedStatus === opt.value
+                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${opt.color}`} />
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1592,7 +1683,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
                         <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
                           <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
-                            {formatKecamatanName(u.kecamatan)}
+                            {formatKecamatanName(u.kecamatan, u)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
@@ -1605,7 +1696,7 @@ const ManajemenPengguna: React.FC = () => {
                             {formatCleanRw(u.rw)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 max-w-[240px] break-words whitespace-normal leading-relaxed">{u.address || "-"}</td>
                         <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-100">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
                       </>
                     )}

@@ -4,10 +4,11 @@ const deployCmd = `
 set -e
 echo "=== 1. Pulling latest code from development ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new
-git restore package-lock.json || true
+git stash || true
 git fetch origin development
 git checkout development || git checkout -b development origin/development
-git pull origin development
+git reset --hard origin/development
+git stash pop || true
 
 echo "=== 2. Building Backend API ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new/apps/api

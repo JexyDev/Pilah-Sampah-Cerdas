@@ -1745,8 +1745,9 @@ const Dashboard: React.FC = () => {
 
         const isDistrictScope =
           !effectiveWilayah ||
-          effectiveWilayah === "Kecamatan Coblong" ||
           effectiveWilayah === "Semua Wilayah" ||
+          effectiveWilayah === "Kecamatan Coblong" ||
+          effectiveWilayah.toLowerCase().includes("kecamatan") ||
           effectiveWilayah === "Sistem Pusat" ||
           effectiveWilayah === "PT Makerindo";
 

@@ -156,7 +156,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
         <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-2 text-xs">
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Wilayah KKN:</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200">{user?.wilayah || "Coblong"}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">{user?.wilayah || user?.kelurahan || "Wilayah Dampingan"}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-400">No. Telepon:</span>

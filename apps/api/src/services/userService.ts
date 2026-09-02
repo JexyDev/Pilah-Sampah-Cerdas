@@ -293,7 +293,9 @@ export class UserService {
         for (const k of knownKels) {
           if (u.address.toLowerCase().includes(k.toLowerCase())) {
             kelurahanName = k;
-            if (kecamatanName === "-") kecamatanName = "Kecamatan Coblong";
+            kecamatanName = "Kecamatan Coblong";
+            kabupatenName = "Kota Bandung";
+            provinsiName = "Jawa Barat";
             break;
           }
         }
@@ -302,27 +304,27 @@ export class UserService {
             /(?:Kel\.?|Kelurahan)\s*([A-Za-z\s]+?)(?:,|$|\s+Kec|\s+RW)/i
           );
           if (kelMatch && kelMatch[1]) {
-            kelurahanName = kelMatch[1].trim();
+            const rawExtracted = kelMatch[1].trim();
+            // Only accept if not containing multiple words with commas
+            if (!rawExtracted.includes(",") && rawExtracted.split(/\s+/).length <= 2) {
+              kelurahanName = rawExtracted;
+            } else {
+              kelurahanName = "Sadang Serang";
+            }
           }
         }
       }
 
-      // Enforce strict relational consistency: Coblong & its 6 kelurahans ONLY exist in Kota Bandung!
-      if (!kabupatenName.toLowerCase().includes("bandung")) {
-        if (kecamatanName.toLowerCase().includes("coblong")) {
-          kecamatanName = "-";
-        }
-        const coblongKels = [
-          "cipaganti",
-          "dago",
-          "lebak gede",
-          "lebak siliwangi",
-          "sadang serang",
-          "sekeloa",
-        ];
-        if (coblongKels.some((k) => kelurahanName.toLowerCase().includes(k))) {
-          kelurahanName = "-";
-        }
+      if (
+        kecamatanName.toLowerCase().includes("coblong") ||
+        ["cipaganti", "dago", "lebak gede", "lebak siliwangi", "sadang serang", "sekeloa"].some((k) =>
+          kelurahanName.toLowerCase().includes(k)
+        )
+      ) {
+        kecamatanName = "Kecamatan Coblong";
+        kabupatenName = "Kota Bandung";
+        provinsiName = "Jawa Barat";
+        if (kelurahanName === "-") kelurahanName = "Sadang Serang";
       }
       if (rwName === "-" && u.address) {
         const rwMatch = u.address.match(/RW\s*(\d+)/i);
