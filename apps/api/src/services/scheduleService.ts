@@ -102,7 +102,7 @@ export const scheduleService = {
         data.radius = (ruleConfigs as any).attendanceGeofenceBufferMeters
           ? 500 + (ruleConfigs as any).attendanceGeofenceBufferMeters
           : 500;
-      } catch (_err) {
+      } catch {
         data.radius = 500;
       }
     }
@@ -157,15 +157,85 @@ export const scheduleService = {
       isActive?: boolean;
     }
   ) => {
-    return prisma.schedule.update({
+    const parsedRadius =
+      data.radius !== undefined && !isNaN(Number(data.radius))
+        ? Math.max(50, Number(data.radius))
+        : undefined;
+
+    const updated = await prisma.schedule.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        ...(parsedRadius !== undefined ? { radius: parsedRadius } : {}),
+      },
       include: {
         kelompok: {
           select: { id: true, name: true, kelurahan: true },
         },
       },
     });
+
+    // Otomatis write-back ke PoskoKkn, Facility, dan cascade ke jadwal aktif kelompok lainnya
+    if (updated.kelompokId) {
+      const kId = updated.kelompokId;
+      const hasLat = data.latitude !== undefined && !isNaN(Number(data.latitude)) && Number(data.latitude) !== 0;
+      const hasLng = data.longitude !== undefined && !isNaN(Number(data.longitude)) && Number(data.longitude) !== 0;
+
+      if (hasLat || hasLng || parsedRadius !== undefined || data.location) {
+        try {
+          // Write-back ke PoskoKkn utama jika ada
+          await prisma.poskoKkn.updateMany({
+            where: { kelompokId: kId },
+            data: {
+              ...(hasLat ? { latitude: Number(data.latitude) } : {}),
+              ...(hasLng ? { longitude: Number(data.longitude) } : {}),
+              ...(parsedRadius !== undefined ? { radius: parsedRadius } : {}),
+              ...(data.location ? { alamat: data.location } : {}),
+            },
+          });
+
+          // Write-back ke Facility (posko_kkn)
+          await prisma.facility.updateMany({
+            where: { kelompokId: kId, jenis: "posko_kkn" },
+            data: {
+              ...(hasLat ? { latitude: Number(data.latitude) } : {}),
+              ...(hasLng ? { longitude: Number(data.longitude) } : {}),
+              ...(data.location ? { alamat: data.location } : {}),
+            },
+          });
+
+          // Cascade update ke seluruh jadwal aktif ke depan milik kelompok tersebut
+          const now = new Date();
+          const wibNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+          const dateStr = wibNow.toISOString().slice(0, 10);
+          const startOfDay = new Date(`${dateStr}T00:00:00+07:00`);
+
+          await prisma.schedule.updateMany({
+            where: {
+              kelompokId: kId,
+              id: { not: id },
+              isActive: true,
+              date: { gte: startOfDay },
+            },
+            data: {
+              ...(hasLat ? { latitude: Number(data.latitude) } : {}),
+              ...(hasLng ? { longitude: Number(data.longitude) } : {}),
+              ...(parsedRadius !== undefined ? { radius: parsedRadius } : {}),
+              ...(data.location ? { location: data.location } : {}),
+              ...(data.polygon !== undefined ? { polygon: data.polygon } : {}),
+            },
+          });
+
+          // Trigger smart zone update
+          const { smartZoneService } = await import("./smartZoneService.js");
+          await smartZoneService.updateGroupAutoPolygon(kId);
+        } catch (cascadeErr) {
+          console.warn("[scheduleService.updateSchedule] Cascade write-back error:", cascadeErr);
+        }
+      }
+    }
+
+    return updated;
   },
 
   cleanAllDuplicateSchedules: async () => {
@@ -203,7 +273,7 @@ export const scheduleService = {
 
       let removedDuplicatesCount = 0;
 
-      for (const [_key, list] of groupDateMap.entries()) {
+      for (const [, list] of groupDateMap.entries()) {
         if (list.length <= 1) continue;
 
         // Pilih primary schedule: yang punya presensi terbanyak atau paling baru
@@ -321,12 +391,12 @@ export const scheduleService = {
           poskoLat = Number(officialPosko.latitude);
           poskoLng = Number(officialPosko.longitude);
           poskoName = officialPosko.nama || poskoName;
-          poskoRadius = Math.max(150, Number(officialPosko.radius) || 500);
+          poskoRadius = Math.max(50, Number(officialPosko.radius) || 500);
         } else if (facilityPosko && facilityPosko.latitude && facilityPosko.longitude) {
           poskoLat = Number(facilityPosko.latitude);
           poskoLng = Number(facilityPosko.longitude);
           poskoName = facilityPosko.nama || poskoName;
-          poskoRadius = Math.max(150, Number((facilityPosko as any)?.radius) || 500);
+          poskoRadius = Math.max(50, Number((facilityPosko as any)?.radius) || 500);
         } else {
           // Fallback kelurahan resmi
           const kel = (group.kelurahan || group.name || "").toLowerCase();
@@ -396,9 +466,12 @@ export const scheduleService = {
           // Adaptasi aman: Jika jadwal yang sudah ada (primarySchedule) memiliki radius kustom di database
           // dan posko resmi tidak secara spesifik memiliki nilai radius baru, pertahankan radius kustom tersebut.
           const existingScheduleRadius = Number(primarySchedule.radius) || 0;
-          const targetScheduleRadius = (officialPosko && Number(officialPosko.radius) > 0)
-            ? Math.max(150, Number(officialPosko.radius))
-            : (existingScheduleRadius > 0 ? existingScheduleRadius : poskoRadius);
+          const targetScheduleRadius =
+            officialPosko && Number(officialPosko.radius) > 0
+              ? Math.max(50, Number(officialPosko.radius))
+              : existingScheduleRadius > 0
+                ? existingScheduleRadius
+                : poskoRadius;
 
           if (
             Number(primarySchedule.latitude) !== poskoLat ||
@@ -436,7 +509,7 @@ export const scheduleService = {
             },
           });
           createdCount++;
-        } catch (_createErr) {
+        } catch {
           // Concurrent creation safe
         }
       }

@@ -128,13 +128,22 @@ const KategoriSampah: React.FC<KategoriSampahProps> = ({ openAddModalSignal }) =
     }
 
     const nameLower = (cat?.name || "").toLowerCase();
+    let bgStart = "#10b981";
+    let bgEnd = "#059669";
+    let label = "🌱 ORGANIK";
+
     if (nameLower.includes("anorganik") || nameLower.includes("inorganic") || nameLower.includes("non")) {
-      return "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=600";
+      bgStart = "#f59e0b";
+      bgEnd = "#d97706";
+      label = "♻️ ANORGANIK";
+    } else if (nameLower.includes("residu") || nameLower.includes("b3")) {
+      bgStart = "#64748b";
+      bgEnd = "#475569";
+      label = "⚠️ RESIDU / B3";
     }
-    if (nameLower.includes("organik") || nameLower.includes("organic")) {
-      return "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=600";
-    }
-    return "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&q=80&w=600";
+
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" fill="url(#grad)"/><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${bgStart};stop-opacity:1" /><stop offset="100%" style="stop-color:${bgEnd};stop-opacity:1" /></linearGradient></defs><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-size="22" font-weight="bold">${label}</text></svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, name: string) => {

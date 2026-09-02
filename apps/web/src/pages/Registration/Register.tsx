@@ -184,7 +184,7 @@ export const Register: React.FC = () => {
                 Bergabunglah Dalam Gerakan Kebersihan
               </h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Daftarkan diri Anda untuk berpartisipasi aktif dalam tata kelola sampah Kecamatan Coblong.
+                Daftarkan diri Anda untuk berpartisipasi aktif dalam tata kelola sampah lingkungan Anda.
               </p>
             </div>
 

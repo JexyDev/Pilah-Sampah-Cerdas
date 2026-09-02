@@ -141,8 +141,8 @@ export default function SetorSampah() {
 
   // Clean Warga Name
   const cleanWargaName = (rawName?: string) => {
-    if (!rawName) return "Warga Coblong";
-    return rawName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim() || "Warga Coblong";
+    if (!rawName) return "Warga";
+    return rawName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim() || "Warga";
   };
 
   // Format Rukun Warga
@@ -340,7 +340,7 @@ export default function SetorSampah() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold tracking-wider uppercase text-slate-500 dark:text-slate-400">
-              {isLurah ? `Kelurahan ${userKelurahan}` : "Kecamatan Coblong"}
+              {isLurah ? `Kelurahan ${userKelurahan}` : (user?.wilayah || "Semua Wilayah")}
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -585,7 +585,7 @@ export default function SetorSampah() {
                           {formatRukunWarga(log.rw || log.rtRw)}
                         </div>
                         <div className="text-[10px] text-slate-400">
-                          Kel. {log.kelurahan || "Coblong"}
+                          {log.kelurahan ? `Kel. ${log.kelurahan}` : "-"}
                         </div>
                       </td>
 
@@ -755,7 +755,7 @@ export default function SetorSampah() {
                     {formatRukunWarga(selectedLog.rw || selectedLog.rtRw)}
                   </div>
                   <div className="text-[11px] text-slate-500 font-semibold">
-                    Kel. {selectedLog.kelurahan || "Coblong"}
+                    {selectedLog.kelurahan ? `Kel. ${selectedLog.kelurahan}` : "Wilayah Binaan"}
                   </div>
                 </div>
 

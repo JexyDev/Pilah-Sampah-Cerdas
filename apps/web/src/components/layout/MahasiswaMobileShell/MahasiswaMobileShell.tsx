@@ -78,7 +78,7 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
                 </span>
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                {user?.wilayah || "Area KKN Coblong"}
+                {user?.wilayah || user?.kelurahan || "Area KKN Mahasiswa"}
               </p>
             </div>
           </div>

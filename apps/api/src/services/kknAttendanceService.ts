@@ -36,7 +36,7 @@ async function buildGeofence(
         return {
           latitude: Number(posko.latitude),
           longitude: Number(posko.longitude),
-          radius: Math.max(150, pRadius),
+          radius: Math.max(50, pRadius),
           polygon: schedule.polygon,
         };
       }
@@ -51,7 +51,7 @@ async function buildGeofence(
         return {
           latitude: Number(multiPosko.latitude),
           longitude: Number(multiPosko.longitude),
-          radius: Math.max(150, mRadius),
+          radius: Math.max(50, mRadius),
           polygon: schedule.polygon,
         };
       }
@@ -65,7 +65,7 @@ async function buildGeofence(
         return {
           latitude: Number(facPosko.latitude),
           longitude: Number(facPosko.longitude),
-          radius: Math.max(150, Number(schedule.radius) || 500),
+          radius: Math.max(50, Number(schedule.radius) || 500),
           polygon: schedule.polygon,
         };
       }
@@ -79,7 +79,7 @@ async function buildGeofence(
     return {
       latitude: Number(schedule.latitude),
       longitude: Number(schedule.longitude),
-      radius: Math.max(150, Number(schedule.radius) || 500),
+      radius: Math.max(50, Number(schedule.radius) || 500),
       polygon: schedule.polygon,
     };
   }
@@ -96,9 +96,85 @@ async function buildGeofence(
   return {
     latitude: defaultLat,
     longitude: defaultLng,
-    radius: Math.max(150, Number(schedule.radius) || defaultRadius),
+    radius: Math.max(50, Number(schedule.radius) || defaultRadius),
     polygon: schedule.polygon,
   };
+}
+
+/**
+ * Helper: Ambil seluruh posko yang terdaftar pada kelompok (Posko Utama + seluruh Multi-Posko).
+ * Digunakan untuk validasi multi-posko yang komprehensif pada presensi KKN.
+ */
+export async function getGroupPoskoList(kelompokId: string): Promise<
+  Array<{
+    id: string;
+    nama: string;
+    alamat: string;
+    latitude: number;
+    longitude: number;
+    radius: number;
+    isUtama: boolean;
+    type: "POSKO_UTAMA" | "POSKO_MULTI";
+    fotoUrl?: string | null;
+  }>
+> {
+  const [primary, multi] = await Promise.all([
+    prisma.poskoKkn.findUnique({
+      where: { kelompokId },
+    }),
+    (prisma as any).poskoKknMulti
+      .findMany({
+        where: { kelompokId },
+        orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+      })
+      .catch(() => []),
+  ]);
+
+  const list: Array<{
+    id: string;
+    nama: string;
+    alamat: string;
+    latitude: number;
+    longitude: number;
+    radius: number;
+    isUtama: boolean;
+    type: "POSKO_UTAMA" | "POSKO_MULTI";
+    fotoUrl?: string | null;
+  }> = [];
+
+  if (primary && primary.latitude && primary.longitude) {
+    list.push({
+      id: primary.id,
+      nama: primary.nama,
+      alamat: primary.alamat || "-",
+      latitude: Number(primary.latitude),
+      longitude: Number(primary.longitude),
+      radius: Math.max(50, Number((primary as any).radius) || 500),
+      isUtama: true,
+      type: "POSKO_UTAMA",
+      fotoUrl: primary.fotoUrl || null,
+    });
+  }
+
+  if (Array.isArray(multi)) {
+    for (const m of multi) {
+      if (m.latitude && m.longitude) {
+        list.push({
+          id: m.id,
+          nama: m.nama,
+          alamat: m.alamat || "-",
+          latitude: Number(m.latitude),
+          longitude: Number(m.longitude),
+          radius: Math.max(50, Number(m.radius) || 500),
+          isUtama: m.isUtama || false,
+          type: "POSKO_MULTI",
+          fotoUrl: m.fotoUrl || null,
+        });
+      }
+    }
+  }
+
+  return list;
 }
 
 // Helper: Haversine Formula (meters)
@@ -282,7 +358,7 @@ export function calculateLiveInZoneSeconds(att: {
   if (lastLog.waktuJeda && !lastLog.waktuResume) {
     // Sesi terjeda — gunakan durasi sebelum jeda (dalam detik)
     const baseSecs =
-      (lastLog.durasiSebelumJedaDetik !== undefined && lastLog.durasiSebelumJedaDetik !== null)
+      lastLog.durasiSebelumJedaDetik !== undefined && lastLog.durasiSebelumJedaDetik !== null
         ? Number(lastLog.durasiSebelumJedaDetik)
         : (Number(lastLog.durasiSebelumJedaMenit) || 0) * 60;
     return Math.min(Math.max(0, baseSecs), maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
@@ -291,7 +367,7 @@ export function calculateLiveInZoneSeconds(att: {
   if (lastLog.waktuResume) {
     const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
     const baseSecs =
-      (lastLog.durasiSebelumResumeDetik !== undefined && lastLog.durasiSebelumResumeDetik !== null)
+      lastLog.durasiSebelumResumeDetik !== undefined && lastLog.durasiSebelumResumeDetik !== null
         ? Number(lastLog.durasiSebelumResumeDetik)
         : (Number(lastLog.durasiSebelumResumeMenit) || 0) * 60;
     const elapsedSinceResumeSecs = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 1000));
@@ -728,31 +804,58 @@ export class KknAttendanceService {
           continue;
         }
 
+        const targetKelompokId = sch.kelompokId || student?.kelompokId;
+        const groupPoskos = targetKelompokId ? await getGroupPoskoList(targetKelompokId) : [];
+
         const geofence = await buildGeofence(sch);
 
-        // 1. Cek posisi saat ini terhadap geofence kegiatan ini
-        const dist = calculateDistance(latitude, longitude, geofence.latitude, geofence.longitude);
+        // 1. Cek posisi saat ini terhadap seluruh posko kelompok (Multi-Posko & Polygon)
         let isCurrInside = false;
-        if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-          const polyPoints = (geofence.polygon as any[]).map((p) => {
-            const val0 = Number(p[0]);
-            const val1 = Number(p[1]);
-            const pLat = Math.abs(val0) > 45 ? val1 : val0;
-            const pLng = Math.abs(val0) > 45 ? val0 : val1;
-            return { lat: pLat, lng: pLng };
-          });
-          const inPoly = isPointInPolygonWithBuffer(
-            { lat: latitude, lng: longitude },
-            polyPoints,
-            bufferMeters
-          );
-          isCurrInside = inPoly || dist <= geofence.radius + bufferMeters;
-        } else {
-          isCurrInside = dist <= geofence.radius + bufferMeters;
+        let nearestPoskoDist = 999999;
+
+        if (groupPoskos.length > 0) {
+          for (const gp of groupPoskos) {
+            const pDist = calculateDistance(latitude, longitude, gp.latitude, gp.longitude);
+            if (pDist < nearestPoskoDist) {
+              nearestPoskoDist = pDist;
+            }
+            if (pDist <= gp.radius + bufferMeters) {
+              isCurrInside = true;
+              break;
+            }
+          }
         }
 
-        // SMART ZONE MULTI-POSKO CHECK (Mencegah false auto-pause mahasiswa di multi-posko)
-        const targetKelompokId = sch.kelompokId || student?.kelompokId;
+        if (!isCurrInside) {
+          const dist = calculateDistance(
+            latitude,
+            longitude,
+            geofence.latitude,
+            geofence.longitude
+          );
+          if (dist < nearestPoskoDist) {
+            nearestPoskoDist = dist;
+          }
+          if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+            const polyPoints = (geofence.polygon as any[]).map((p) => {
+              const val0 = Number(p[0]);
+              const val1 = Number(p[1]);
+              const pLat = Math.abs(val0) > 45 ? val1 : val0;
+              const pLng = Math.abs(val0) > 45 ? val0 : val1;
+              return { lat: pLat, lng: pLng };
+            });
+            const inPoly = isPointInPolygonWithBuffer(
+              { lat: latitude, lng: longitude },
+              polyPoints,
+              bufferMeters
+            );
+            isCurrInside = inPoly || dist <= geofence.radius + bufferMeters;
+          } else {
+            isCurrInside = dist <= geofence.radius + bufferMeters;
+          }
+        }
+
+        // SMART ZONE MULTI-POSKO CHECK (Fallback Adaptive Polygon)
         if (!isCurrInside && targetKelompokId) {
           try {
             const szResult = await smartZoneService.isStudentInGroupZone(
@@ -763,6 +866,9 @@ export class KknAttendanceService {
             );
             if (szResult.isInside) {
               isCurrInside = true;
+            }
+            if (szResult.distanceToNearest < nearestPoskoDist) {
+              nearestPoskoDist = szResult.distanceToNearest;
             }
           } catch {
             // Fallback non-critical
@@ -780,82 +886,176 @@ export class KknAttendanceService {
             Boolean(existingAtt.checkOutAt));
 
         if (existingAtt && !isAttFinished) {
-          const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           let currentAttStatus = existingAtt.status;
-
-          // Auto-Pause saat keluar zona
+          const currentLogs = (existingAtt.jedaLogs as any[]) || [];
+          // ─────────────────────────────────────────────────────────────────────────────
+          // AUTO-PAUSE dengan GRACE PERIOD — Mencegah false pause akibat GPS glitch
+          //
+          // Konteks: Saat mahasiswa minimize app, OS Android "mencekik" akses GPS sesaat.
+          // Ping terakhir dari Dart Timer (15 detik) bisa menggunakan koordinat cache/network
+          // yang tidak akurat, sehingga mahasiswa seolah "keluar zona" padahal tidak.
+          // Foreground Service (30 detik) akan segera mengirim koordinat akurat berikutnya.
+          //
+          // Solusi: Jangan vonis TERJEDA dari 1 ping. Tunggu 90 detik (3 siklus ping).
+          // Jika mahasiswa kembali ke zona sebelum 90 detik → hapus pending, tidak ada perubahan.
+          // ─────────────────────────────────────────────────────────────────────────────
           if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
-            const currentLiveMins = Math.floor(currentLiveSecs / 60);
-            currentLogs.push({
-              alasan: "Keluar Zona Geofence (Otomatis)",
-              waktuJeda: new Date().toISOString(),
-              durasiSebelumJedaMenit: currentLiveMins,
-              durasiSebelumJedaDetik: currentLiveSecs,
-              autoTriggered: true,
-            });
-            currentAttStatus = "TERJEDA";
-            existingAtt.actualInZoneMinutes = currentLiveMins;
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
-                status: "TERJEDA",
-                actualInZoneMinutes: currentLiveMins,
-                jedaLogs: currentLogs,
-              },
-            });
-            existingAtt.status = "TERJEDA";
-            existingAtt.jedaLogs = currentLogs as any;
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "TERJEDA",
-              currentStatus: "DI_LUAR_ZONA",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: currentLiveMins,
-            });
-          }
+            const GRACE_PERIOD_MS = 90_000; // 90 detik = 3 siklus ping background (30 detik)
 
-          // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko (HANYA jika sebelumnya di-jeda otomatis)
-          if (isCurrInside && currentAttStatus === "TERJEDA") {
-            if (currentLogs.length > 0) {
-              const lastJeda = currentLogs[currentLogs.length - 1];
-              if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
-                const prevSecs =
-                  lastJeda.durasiSebelumJedaDetik !== undefined && lastJeda.durasiSebelumJedaDetik !== null
-                    ? Number(lastJeda.durasiSebelumJedaDetik)
-                    : (existingAtt.actualInZoneMinutes ? existingAtt.actualInZoneMinutes * 60 : 0);
-                lastJeda.waktuResume = new Date().toISOString();
-                lastJeda.durasiSebelumResumeMenit = Math.max(
-                  existingAtt.actualInZoneMinutes || 0,
-                  lastJeda.durasiSebelumJedaMenit || 0
-                );
-                lastJeda.durasiSebelumResumeDetik = prevSecs;
+            // Cek apakah sudah ada entri "pending pause" dari ping sebelumnya
+            const pendingPauseIdx = currentLogs.findIndex(
+              (l: any) => l.type === "PENDING_PAUSE" && !l.confirmed
+            );
+            const pendingPauseLog = pendingPauseIdx !== -1 ? currentLogs[pendingPauseIdx] : null;
 
-                currentAttStatus = "BERLANGSUNG";
+            if (!pendingPauseLog) {
+              // === PING PERTAMA DI LUAR ZONA ===
+              // Kemungkinan GPS glitch. Catat sebagai "pending", JANGAN ubah status.
+              const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
+              currentLogs.push({
+                type: "PENDING_PAUSE",
+                alasan: "Keluar Zona Geofence (Menunggu Konfirmasi Grace Period)",
+                waktuDeteksiKeluar: new Date().toISOString(),
+                durasiSebelumJedaDetik: currentLiveSecs,
+                durasiSebelumJedaMenit: Math.floor(currentLiveSecs / 60),
+                autoTriggered: true,
+                confirmed: false,
+              });
+
+              // Hanya update jedaLogs — STATUS TETAP "BERLANGSUNG"
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: { jedaLogs: currentLogs },
+              });
+              existingAtt.jedaLogs = currentLogs as any;
+              // currentAttStatus TIDAK BERUBAH — tetap "BERLANGSUNG"
+            } else {
+              // === PING BERIKUTNYA — CEK APAKAH GRACE PERIOD SUDAH TERLAMPAUI ===
+              const firstDetectedAt = new Date(pendingPauseLog.waktuDeteksiKeluar).getTime();
+              const elapsedMs = Date.now() - firstDetectedAt;
+
+              if (elapsedMs >= GRACE_PERIOD_MS) {
+                // Grace period terlampaui → mahasiswa memang benar-benar di luar zona → TERJEDA
+                const currentLiveSecs =
+                  pendingPauseLog.durasiSebelumJedaDetik ?? calculateLiveInZoneSeconds(existingAtt);
+                const currentLiveMins = Math.floor(currentLiveSecs / 60);
+
+                pendingPauseLog.confirmed = true;
+                pendingPauseLog.waktuJeda = new Date().toISOString();
+                pendingPauseLog.alasan =
+                  "Keluar Zona Geofence (Otomatis — Grace Period Terlampaui)";
+
+                currentAttStatus = "TERJEDA";
+                existingAtt.actualInZoneMinutes = currentLiveMins;
 
                 await prisma.activityAttendance.update({
                   where: { id: existingAtt.id },
                   data: {
-                    status: "BERLANGSUNG",
+                    status: "TERJEDA",
+                    actualInZoneMinutes: currentLiveMins,
                     jedaLogs: currentLogs,
                   },
                 });
-
-                existingAtt.status = "BERLANGSUNG";
+                existingAtt.status = "TERJEDA";
                 existingAtt.jedaLogs = currentLogs as any;
 
                 websocketService.broadcastStudentAttendance({
                   id: existingAtt.id,
                   studentId: existingAtt.studentId,
                   scheduleId: existingAtt.scheduleId,
-                  status: "BERLANGSUNG",
-                  currentStatus: "DI_ZONA",
+                  status: "TERJEDA",
+                  currentStatus: "DI_LUAR_ZONA",
                   attendedAt: existingAtt.attendedAt.toISOString(),
-                  actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+                  actualInZoneMinutes: currentLiveMins,
                 });
               }
+              // Jika belum lewat grace period: ABAIKAN, status tetap BERLANGSUNG
+            }
+          }
+
+          // ─────────────────────────────────────────────────────────────────────────────
+          // BERSIHKAN PENDING_PAUSE JIKA MAHASISWA KEMBALI KE ZONA SEBELUM GRACE PERIOD
+          // Ini adalah skenario normal: GPS glitch sesaat, lalu kembali akurat.
+          // Hapus pending seolah tidak pernah terjadi → TIDAK ada interupsi bagi user.
+          // ─────────────────────────────────────────────────────────────────────────────
+          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
+            const pendingIdx = currentLogs.findIndex(
+              (l: any) => l.type === "PENDING_PAUSE" && !l.confirmed
+            );
+            if (pendingIdx !== -1) {
+              currentLogs.splice(pendingIdx, 1);
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: { jedaLogs: currentLogs },
+              });
+              existingAtt.jedaLogs = currentLogs as any;
+            }
+          }
+
+          // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko (HANYA jika sebelumnya di-jeda otomatis)
+          if (isCurrInside && currentAttStatus === "TERJEDA") {
+            let canAutoResume = false;
+            let lastJeda: any = null;
+            if (currentLogs.length > 0) {
+              lastJeda = currentLogs[currentLogs.length - 1];
+              if (
+                lastJeda &&
+                (lastJeda.autoTriggered || lastJeda.staleGpsAnomaly) &&
+                !lastJeda.waktuResume
+              ) {
+                canAutoResume = true;
+              }
+            }
+
+            if (canAutoResume) {
+              const prevSecs =
+                lastJeda &&
+                lastJeda.durasiSebelumJedaDetik !== undefined &&
+                lastJeda.durasiSebelumJedaDetik !== null
+                  ? Number(lastJeda.durasiSebelumJedaDetik)
+                  : existingAtt.actualInZoneMinutes
+                    ? existingAtt.actualInZoneMinutes * 60
+                    : 0;
+
+              if (lastJeda && !lastJeda.waktuResume) {
+                lastJeda.waktuResume = new Date().toISOString();
+                lastJeda.durasiSebelumResumeMenit = Math.max(
+                  existingAtt.actualInZoneMinutes || 0,
+                  lastJeda.durasiSebelumJedaMenit || 0
+                );
+                lastJeda.durasiSebelumResumeDetik = prevSecs;
+              } else if (!lastJeda) {
+                currentLogs.push({
+                  alasan: "Auto-Resume: Mahasiswa aktif kembali di dalam zona",
+                  waktuResume: new Date().toISOString(),
+                  durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
+                  durasiSebelumResumeDetik: (existingAtt.actualInZoneMinutes || 0) * 60,
+                  autoTriggered: true,
+                });
+              }
+
+              currentAttStatus = "BERLANGSUNG";
+
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "BERLANGSUNG",
+                  jedaLogs: currentLogs,
+                },
+              });
+
+              existingAtt.status = "BERLANGSUNG";
+              existingAtt.jedaLogs = currentLogs as any;
+
+              websocketService.broadcastStudentAttendance({
+                id: existingAtt.id,
+                studentId: existingAtt.studentId,
+                scheduleId: existingAtt.scheduleId,
+                status: "BERLANGSUNG",
+                currentStatus: "DI_ZONA",
+                attendedAt: existingAtt.attendedAt.toISOString(),
+                actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+              });
             }
           }
 
@@ -922,7 +1122,9 @@ export class KknAttendanceService {
         // dapat sync timer per detik. Fallback ke menit * 60 untuk sesi TERJEDA/selesai.
         actualInZoneSeconds: activeAttendanceForSeconds
           ? calculateLiveInZoneSeconds(activeAttendanceForSeconds)
-          : inZoneMinutes * 60,
+          : activeAtt
+            ? calculateLiveInZoneSeconds(activeAtt)
+            : inZoneMinutes * 60,
         actualInZoneMinutes: inZoneMinutes,
         autoAttendanceTriggered,
         poskoArea: null,
@@ -1256,36 +1458,70 @@ export class KknAttendanceService {
           const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           let currentAttStatus = existingAtt.status;
 
-          // Auto-Pause saat keluar zona
+          // Auto-Pause saat keluar zona (dengan toleransi GPS Drift / Jitter)
           if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const currentLiveMins = calculateLiveInZoneMinutes(existingAtt);
-            currentLogs.push({
-              alasan: "Keluar Zona Geofence (Otomatis)",
-              waktuJeda: new Date().toISOString(),
-              durasiSebelumJedaMenit: currentLiveMins,
-              autoTriggered: true,
+            const recentLocations = await prisma.studentLocation.findMany({
+              where: { studentId },
+              orderBy: { recordedAt: "desc" },
+              take: 3,
             });
-            currentAttStatus = "TERJEDA";
-            existingAtt.actualInZoneMinutes = currentLiveMins;
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
+
+            const effectiveRad = geofence.radius + bufferMeters;
+            let outOfZoneCount = 0;
+            for (const rLoc of recentLocations) {
+              const rDist = calculateDistance(
+                Number(rLoc.latitude),
+                Number(rLoc.longitude),
+                geofence.latitude,
+                geofence.longitude
+              );
+              if (rDist > effectiveRad) {
+                outOfZoneCount++;
+              }
+            }
+
+            const currentDist = latestLoc
+              ? calculateDistance(
+                  Number(latestLoc.latitude),
+                  Number(latestLoc.longitude),
+                  geofence.latitude,
+                  geofence.longitude
+                )
+              : 0;
+
+            const isFarOutside = currentDist > effectiveRad + 80;
+            const isConfirmedOutOfZone = outOfZoneCount >= 2 || isFarOutside;
+
+            if (isConfirmedOutOfZone) {
+              const currentLiveMins = calculateLiveInZoneMinutes(existingAtt);
+              currentLogs.push({
+                alasan: "Keluar Zona Geofence (Otomatis)",
+                waktuJeda: new Date().toISOString(),
+                durasiSebelumJedaMenit: currentLiveMins,
+                autoTriggered: true,
+              });
+              currentAttStatus = "TERJEDA";
+              existingAtt.actualInZoneMinutes = currentLiveMins;
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "TERJEDA",
+                  actualInZoneMinutes: currentLiveMins,
+                  jedaLogs: currentLogs,
+                },
+              });
+              existingAtt.status = "TERJEDA";
+              existingAtt.jedaLogs = currentLogs as any;
+              websocketService.broadcastStudentAttendance({
+                id: existingAtt.id,
+                studentId: existingAtt.studentId,
+                scheduleId: existingAtt.scheduleId,
                 status: "TERJEDA",
+                currentStatus: "DI_LUAR_ZONA",
+                attendedAt: existingAtt.attendedAt.toISOString(),
                 actualInZoneMinutes: currentLiveMins,
-                jedaLogs: currentLogs,
-              },
-            });
-            existingAtt.status = "TERJEDA";
-            existingAtt.jedaLogs = currentLogs as any;
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "TERJEDA",
-              currentStatus: "DI_LUAR_ZONA",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: currentLiveMins,
-            });
+              });
+            }
           }
 
           // [TAMBAHAN] Auto-Resume saat kembali ke zona (HANYA jika sebelumnya di-jeda otomatis)
@@ -1347,7 +1583,7 @@ export class KknAttendanceService {
             });
           }
 
-          activeActualInZoneSeconds = durationInZone * 60;
+          activeActualInZoneSeconds = calculateLiveInZoneSeconds(existingAtt);
           inZoneMinutes = Math.max(inZoneMinutes, durationInZone);
         }
 
@@ -1357,7 +1593,21 @@ export class KknAttendanceService {
     }
 
     // Determine attendance status
-    const attendanceStatus = activeScheduleId ? "BERLANGSUNG" : "TIDAK_ADA_KEGIATAN";
+    let attendanceStatus = "TIDAK_ADA_KEGIATAN";
+    if (activeScheduleId) {
+      const scheduleAtt = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId,
+          scheduleId: activeScheduleId,
+        },
+        select: { status: true },
+      });
+      if (scheduleAtt) {
+        attendanceStatus = scheduleAtt.status;
+      } else {
+        attendanceStatus = "BERLANGSUNG";
+      }
+    }
 
     return {
       success: true,
@@ -1488,6 +1738,8 @@ export class KknAttendanceService {
 
     const isMemenuhiDurasi = isAttended && attendanceStatus === "HADIR_MEMENUHI";
 
+    const groupPoskos = schedule.kelompokId ? await getGroupPoskoList(schedule.kelompokId) : [];
+
     return {
       scheduleId: schedule.id,
       title: officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : schedule.title,
@@ -1497,6 +1749,8 @@ export class KknAttendanceService {
       targetDurationMinutes,
       durationMinutes: targetDurationMinutes,
       polygon: schedule.polygon,
+      poskoList: groupPoskos,
+      totalPosko: groupPoskos.length,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
       isAttended,
       attendanceStatus: attendanceStatus || "BELUM_ABSEN",
@@ -1616,7 +1870,7 @@ export class KknAttendanceService {
         isInside = distance <= effectiveRadius;
       }
 
-      // SMART ZONE FALLBACK: Jika tidak masuk schedule geofence, cek multi-posko kelompok
+      // SMART ZONE & MULTI-POSKO CHECK: Periksa seluruh posko kelompok dan auto-polygon
       if (!isInside) {
         try {
           const schedForSz = await prisma.schedule.findUnique({
@@ -1624,14 +1878,27 @@ export class KknAttendanceService {
             select: { kelompokId: true },
           });
           if (schedForSz?.kelompokId) {
-            const szCheck = await smartZoneService.isStudentInGroupZone(
-              latitude,
-              longitude,
-              schedForSz.kelompokId,
-              bufferMeters
-            );
-            if (szCheck.isInside) {
-              isInside = true;
+            const groupPoskos = await getGroupPoskoList(schedForSz.kelompokId);
+            for (const gp of groupPoskos) {
+              if (
+                calculateDistance(latitude, longitude, gp.latitude, gp.longitude) <=
+                gp.radius + bufferMeters
+              ) {
+                isInside = true;
+                break;
+              }
+            }
+
+            if (!isInside) {
+              const szCheck = await smartZoneService.isStudentInGroupZone(
+                latitude,
+                longitude,
+                schedForSz.kelompokId,
+                bufferMeters
+              );
+              if (szCheck.isInside) {
+                isInside = true;
+              }
             }
           }
         } catch {
@@ -1986,7 +2253,8 @@ export class KknAttendanceService {
     if (schedule) {
       durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
     }
-    const isMemenuhi = durasiWajibMenit > 0 ? actualInZoneMins >= durasiWajibMenit : actualInZoneMins >= 240;
+    const isMemenuhi =
+      durasiWajibMenit > 0 ? actualInZoneMins >= durasiWajibMenit : actualInZoneMins >= 240;
     const checkoutFinalStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
     const statusDisplay = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
 
@@ -3288,9 +3556,55 @@ export class KknAttendanceService {
               ? "Tidak Ada Kegiatan"
               : statusKehadiran;
 
+      const allPoskoList: Array<{
+        id: string;
+        nama: string;
+        alamat: string;
+        latitude: number;
+        longitude: number;
+        radius: number;
+        isUtama: boolean;
+        type: "POSKO_UTAMA" | "POSKO_MULTI";
+        fotoUrl?: string | null;
+      }> = [];
+
+      if ((sch.kelompok as any)?.poskoKkn) {
+        const pk = (sch.kelompok as any).poskoKkn;
+        if (pk.latitude && pk.longitude) {
+          allPoskoList.push({
+            id: pk.id,
+            nama: pk.nama,
+            alamat: pk.alamat || "-",
+            latitude: Number(pk.latitude),
+            longitude: Number(pk.longitude),
+            radius: Math.max(50, Number(pk.radius) || 500),
+            isUtama: true,
+            type: "POSKO_UTAMA",
+            fotoUrl: pk.fotoUrl || null,
+          });
+        }
+      }
+
+      if (Array.isArray((sch.kelompok as any)?.poskoMulti)) {
+        for (const pm of (sch.kelompok as any).poskoMulti) {
+          if (pm.latitude && pm.longitude) {
+            allPoskoList.push({
+              id: pm.id,
+              nama: pm.nama,
+              alamat: pm.alamat || "-",
+              latitude: Number(pm.latitude),
+              longitude: Number(pm.longitude),
+              radius: Math.max(50, Number(pm.radius) || 500),
+              isUtama: pm.isUtama || false,
+              type: "POSKO_MULTI",
+              fotoUrl: pm.fotoUrl || null,
+            });
+          }
+        }
+      }
+
       const officialPosko =
-        (sch.kelompok as any)?.poskoKkn ||
-        (sch.kelompok as any)?.poskoMulti?.[0];
+        (sch.kelompok as any)?.poskoKkn || (sch.kelompok as any)?.poskoMulti?.[0];
       const latNum = officialPosko?.latitude
         ? Number(officialPosko.latitude)
         : sch.latitude
@@ -3302,9 +3616,9 @@ export class KknAttendanceService {
           ? Number(sch.longitude)
           : 107.615;
       const poskoRadiusNum = officialPosko?.radius
-        ? Math.max(150, Number(officialPosko.radius))
+        ? Math.max(50, Number(officialPosko.radius))
         : sch.radius
-          ? Math.max(150, Number(sch.radius))
+          ? Math.max(50, Number(sch.radius))
           : 500;
       const titleStr = officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : sch.title;
       const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
@@ -3357,6 +3671,8 @@ export class KknAttendanceService {
           radiusMeter: poskoRadiusNum,
           polygon: sch.polygon || null,
         },
+        poskoList: allPoskoList,
+        totalPosko: allPoskoList.length,
         status: scheduleStatus,
         statusKehadiran,
         attendanceStatus: statusKehadiran,
@@ -3409,7 +3725,7 @@ export class KknAttendanceService {
       poskoId?: string;
     }
   ) {
-    const { latitude, longitude, deviceInfo, deskripsiKegiatan, fotoUrl, poskoId } = payload;
+    const { latitude, longitude, deskripsiKegiatan, fotoUrl, poskoId } = payload;
 
     const schedule = await prisma.schedule.findUnique({
       where: { id: scheduleId },
@@ -3490,30 +3806,82 @@ export class KknAttendanceService {
     const ruleConfigs = await configService.getRuleEngineConfigs();
     const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 25;
 
+    const kelompokIdToCheck = schedule.kelompokId || student.kelompokId;
+    const groupPoskos = kelompokIdToCheck ? await getGroupPoskoList(kelompokIdToCheck) : [];
     const geofence = await buildGeofence(schedule);
-    const distToZone = calculateDistance(
-      latitude,
-      longitude,
-      geofence.latitude,
-      geofence.longitude
-    );
 
     let isInsideOnStart = false;
-    if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
-      const polyPoints = (geofence.polygon as any[]).map((p) => {
-        const val0 = Number(p[0]);
-        const val1 = Number(p[1]);
-        return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
-      });
-      isInsideOnStart =
-        isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) ||
-        distToZone <= geofence.radius + bufferMeters;
-    } else {
-      isInsideOnStart = distToZone <= geofence.radius + bufferMeters;
+    let matchedPosko: any = null;
+    let nearestDist = 999999;
+    let nearestRadius = 500;
+    let nearestName = "Posko KKN";
+
+    // 1. Jika client mengirimkan poskoId spesifik, periksa posko tersebut terlebih dahulu
+    if (poskoId && groupPoskos.length > 0) {
+      const targeted = groupPoskos.find((p) => p.id === poskoId);
+      if (targeted) {
+        const distTarget = calculateDistance(
+          latitude,
+          longitude,
+          targeted.latitude,
+          targeted.longitude
+        );
+        nearestDist = distTarget;
+        nearestRadius = targeted.radius;
+        nearestName = targeted.nama;
+        if (distTarget <= targeted.radius + bufferMeters) {
+          isInsideOnStart = true;
+          matchedPosko = targeted;
+        }
+      }
     }
 
-    // SMART ZONE FALLBACK: Jika tidak masuk schedule geofence (posko utama), cek multi-posko kelompok
-    const kelompokIdToCheck = schedule.kelompokId || student.kelompokId;
+    // 2. Jika belum cocok, periksa ke seluruh posko yang terdaftar pada kelompok (Multi-Posko)
+    if (!isInsideOnStart && groupPoskos.length > 0) {
+      for (const gp of groupPoskos) {
+        const d = calculateDistance(latitude, longitude, gp.latitude, gp.longitude);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearestRadius = gp.radius;
+          nearestName = gp.nama;
+        }
+        if (d <= gp.radius + bufferMeters) {
+          isInsideOnStart = true;
+          matchedPosko = gp;
+          break;
+        }
+      }
+    }
+
+    // 3. Jika belum cocok, periksa geofence jadwal (circle atau polygon)
+    if (!isInsideOnStart) {
+      const distToZone = calculateDistance(
+        latitude,
+        longitude,
+        geofence.latitude,
+        geofence.longitude
+      );
+      if (distToZone < nearestDist) {
+        nearestDist = distToZone;
+        nearestRadius = geofence.radius;
+        nearestName = schedule.title || "Posko Utama";
+      }
+
+      if (geofence.polygon && Array.isArray(geofence.polygon) && geofence.polygon.length >= 3) {
+        const polyPoints = (geofence.polygon as any[]).map((p) => {
+          const val0 = Number(p[0]);
+          const val1 = Number(p[1]);
+          return { lat: Math.abs(val0) > 45 ? val1 : val0, lng: Math.abs(val0) > 45 ? val0 : val1 };
+        });
+        isInsideOnStart =
+          isPointInPolygonWithBuffer({ lat: latitude, lng: longitude }, polyPoints, bufferMeters) ||
+          distToZone <= geofence.radius + bufferMeters;
+      } else {
+        isInsideOnStart = distToZone <= geofence.radius + bufferMeters;
+      }
+    }
+
+    // 4. SMART ZONE FALLBACK: Adaptive polygon dari persebaran aktif kelompok
     if (!isInsideOnStart && kelompokIdToCheck) {
       try {
         const szCheck = await smartZoneService.isStudentInGroupZone(
@@ -3524,17 +3892,22 @@ export class KknAttendanceService {
         );
         if (szCheck.isInside) {
           isInsideOnStart = true;
+          matchedPosko = szCheck.matchedPosko ? { nama: szCheck.matchedPosko } : null;
         }
-      } catch (_szErr) {
-        // Abaikan jika fallback gagal (isInsideOnStart tetap false)
+        if (szCheck.distanceToNearest < nearestDist) {
+          nearestDist = szCheck.distanceToNearest;
+          nearestName = szCheck.nearestPoskoName || nearestName;
+        }
+      } catch {
+        // Abaikan jika fallback gagal
       }
     }
 
     if (!isInsideOnStart) {
-      const distanceInt = Math.round(distToZone);
-      const allowedRadius = geofence.radius + bufferMeters;
+      const distanceInt = Math.round(nearestDist);
+      const allowedRadius = nearestRadius + bufferMeters;
       throw new Error(
-        `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona Posko KKN (Jarak: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di lokasi Posko/Wilayah KKN.`
+        `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona ${nearestName} (Jarak ke posko terdekat: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di salah satu lokasi Posko/Wilayah KKN kelompok Anda.`
       );
     }
 
@@ -3781,12 +4154,27 @@ export class KknAttendanceService {
       durasiWajibMenit,
       attendedAt: attendance.attendedAt.toISOString(),
       lokasi: {
-        alamat: schedule.location || "Lokasi Kegiatan KKN",
-        latitude: schedule.latitude ? Number(schedule.latitude) : latitude,
-        longitude: schedule.longitude ? Number(schedule.longitude) : longitude,
-        radiusMeter: schedule.radius || 200,
+        alamat: matchedPosko?.alamat || schedule.location || "Lokasi Kegiatan KKN",
+        latitude:
+          matchedPosko?.latitude ?? (schedule.latitude ? Number(schedule.latitude) : latitude),
+        longitude:
+          matchedPosko?.longitude ?? (schedule.longitude ? Number(schedule.longitude) : longitude),
+        radiusMeter: matchedPosko?.radius ?? (schedule.radius || 200),
         polygon: schedule.polygon || null,
       },
+      matchedPosko: matchedPosko
+        ? {
+            id: matchedPosko.id,
+            nama: matchedPosko.nama,
+            alamat: matchedPosko.alamat,
+            latitude: matchedPosko.latitude,
+            longitude: matchedPosko.longitude,
+            radius: matchedPosko.radius,
+            type: matchedPosko.type,
+          }
+        : null,
+      poskoList: groupPoskos,
+      totalPosko: groupPoskos.length,
       geofenceBufferMeters: (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15,
       invalidationHours: (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2,
       serverTimestamp: new Date().toISOString(),
@@ -3874,13 +4262,14 @@ export class KknAttendanceService {
 
     // [SSOT Backend]: Hitung durasi live backend secara mutlak tanpa bergantung pada payload mobile
     const calculatedMins = calculateLiveInZoneMinutes(existing);
+    const calculatedSecs = calculateLiveInZoneSeconds(existing);
 
     const currentLogs = (existing.jedaLogs as any[]) || [];
     currentLogs.push({
       alasan: payload.alasan,
       waktuJeda: new Date().toISOString(),
       durasiSebelumJedaMenit: calculatedMins,
-      durasiSebelumJedaDetik: calculatedMins * 60,
+      durasiSebelumJedaDetik: calculatedSecs,
     });
 
     const updated = await prisma.activityAttendance.update({
@@ -4023,7 +4412,7 @@ export class KknAttendanceService {
     try {
       const now = new Date();
       const ruleConfigs = await configService.getRuleEngineConfigs();
-      const STALE_THRESHOLD_MINUTES = (ruleConfigs as any).attendanceStaleGpsMinutes ?? 5;
+      const STALE_THRESHOLD_MINUTES = (ruleConfigs as any).attendanceStaleGpsMinutes ?? 15;
       const staleThresholdMs = STALE_THRESHOLD_MINUTES * 60 * 1000;
 
       const activeAttendances = await prisma.activityAttendance.findMany({
@@ -4164,7 +4553,7 @@ export class KknAttendanceService {
         // Jam pulang tidak diputus otomatis di jam 16:00. Mahasiswa dapat beraktivitas fleksibel.
         // Auto-checkout hanya mengeksekusi sesi yang tersangkut dari hari sebelumnya (isPastDate)
         // atau saat pergantian hari di penghujung malam (>= 23:50 WIB).
-        const isEndOfDayCutoff = currentMins >= (23 * 60 + 50);
+        const isEndOfDayCutoff = currentMins >= 23 * 60 + 50;
 
         if (isPastDate || isEndOfDayCutoff) {
           console.log(
@@ -4513,13 +4902,9 @@ export class KknAttendanceService {
 
       const isFinishedSummary =
         Boolean(r.checkOutAt) ||
-        [
-          "HADIR_MEMENUHI",
-          "HADIR_TIDAK_MEMENUHI",
-          "HADIR",
-          "SELESAI",
-          "SELESAI_TELAT",
-        ].includes(st);
+        ["HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI", "HADIR", "SELESAI", "SELESAI_TELAT"].includes(
+          st
+        );
 
       if (isFinishedSummary) {
         if (st === "SELESAI_TELAT" || mins < targetMinMenit) {
@@ -4573,7 +4958,8 @@ export class KknAttendanceService {
         } else {
           agg.hadirMemenuhi++;
         }
-      } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA") agg.berlangsung++;
+      } else if (st === "BERLANGSUNG" || st === "DALAM_RADIUS" || st === "DI_ZONA")
+        agg.berlangsung++;
       else if (st === "TERJEDA") agg.terjeda++;
       else if (st.includes("IZIN") || st.includes("SAKIT")) agg.izinSakit++;
     }
@@ -4624,7 +5010,9 @@ export class KknAttendanceService {
         st.includes("ALPHA") ||
         !att.attendedAt;
 
-      let actualMins = isLeaveOrAlpha ? 0 : Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
+      let actualMins = isLeaveOrAlpha
+        ? 0
+        : Math.min(480, Math.max(0, att.actualInZoneMinutes ?? 0));
       if (!isLeaveOrAlpha) {
         if (st === "BERLANGSUNG" && !att.checkOutAt && att.attendedAt) {
           const liveMins = calculateLiveInZoneMinutes(att);
@@ -4645,13 +5033,9 @@ export class KknAttendanceService {
 
       const isFinishedItem =
         Boolean(att.checkOutAt) ||
-        [
-          "HADIR_MEMENUHI",
-          "HADIR_TIDAK_MEMENUHI",
-          "HADIR",
-          "SELESAI",
-          "SELESAI_TELAT",
-        ].includes(st);
+        ["HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI", "HADIR", "SELESAI", "SELESAI_TELAT"].includes(
+          st
+        );
 
       const isMemenuhi = isFinishedItem && st !== "SELESAI_TELAT" && actualMins >= targetMinMenit;
 
@@ -4721,7 +5105,10 @@ export class KknAttendanceService {
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
         targetMinMenit,
-        rasioKehadiran: Number(((actualMins / targetMinMenit) * 100).toFixed(1)),
+        rasioKehadiran: Math.min(
+          100,
+          Math.max(0, Number(((actualMins / targetMinMenit) * 100).toFixed(1)))
+        ),
         status: computedStatus,
         statusDisplay,
         isMemenuhiDurasi: isMemenuhi,
@@ -4900,6 +5287,19 @@ export class KknAttendanceService {
           jedaLogs: skipMetadata,
         },
       });
+    }
+
+    // 5.1. Update status_kegiatan dan detail_skip pada model Schedule
+    try {
+      await prisma.schedule.update({
+        where: { id: schedule.id },
+        data: {
+          statusKegiatan: "TIDAK_ADA_KEGIATAN",
+          detailSkip: skipMetadata,
+        },
+      });
+    } catch {
+      // Non-blocking fallback jika schema belum dimigrasi di db lokal
     }
 
     // 6. Audit Trail Logging
@@ -5294,7 +5694,7 @@ export class KknAttendanceService {
    * 1. Tidak ada presensi kegiatan (ActivityAttendance / PresensiMandiri)
    * 2. Tidak ada pengajuan izin/sakit yang disetujui (StudentLeaveRequest)
    * 3. Tidak ada pembuatan logbook (LogbookKkn)
-   * 
+   *
    * Hari Sabtu dan Minggu (Weekend) DIBYPASS / DIKECUALIKAN secara mutlak dari auto-alpha.
    */
   async processWeekdayAutoAlpha(targetDateStr?: string): Promise<{
@@ -5398,9 +5798,11 @@ export class KknAttendanceService {
 
       for (const sched of schedules) {
         // Cek apakah jadwal ini ditandai skip / tidak ada kegiatan oleh kelompok/DPL
-        const isScheduleSkipped = sched.attendances.some(
-          (a) => a.status === "TIDAK_ADA_KEGIATAN" || a.status === "SKIP_KEGIATAN"
-        );
+        const isScheduleSkipped =
+          (sched as any).statusKegiatan === "TIDAK_ADA_KEGIATAN" ||
+          sched.attendances.some(
+            (a) => a.status === "TIDAK_ADA_KEGIATAN" || a.status === "SKIP_KEGIATAN"
+          );
         if (isScheduleSkipped) {
           continue;
         }

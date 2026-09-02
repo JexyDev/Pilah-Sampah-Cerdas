@@ -188,7 +188,7 @@ const getInitialUser = (): User | null => {
         user.wilayah === "PT Makerindo" ||
         !user.wilayah)
     ) {
-      user.wilayah = "Kecamatan Coblong";
+      user.wilayah = "Semua Wilayah";
       const storage = getActiveStorage();
       storage.setItem("psc_user", JSON.stringify(user));
     }

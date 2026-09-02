@@ -53,9 +53,9 @@ export const kelompokService = {
       prisma.kelompokKkn.findMany({
         where: whereClause,
         include: {
-          dpl: { select: { id: true, name: true, phone: true } },
+          dpl: { select: { id: true, name: true, phone: true, email: true, nip: true } },
           students: {
-            include: { user: { select: { id: true, name: true, phone: true } } },
+            include: { user: { select: { id: true, name: true, phone: true, email: true } } },
           },
         },
         skip,
@@ -77,9 +77,9 @@ export const kelompokService = {
     return prisma.kelompokKkn.findUnique({
       where: { id },
       include: {
-        dpl: { select: { id: true, name: true, phone: true } },
+        dpl: { select: { id: true, name: true, phone: true, email: true, nip: true } },
         students: {
-          include: { user: { select: { id: true, name: true, phone: true } } },
+          include: { user: { select: { id: true, name: true, phone: true, email: true } } },
         },
       },
     });
@@ -170,7 +170,7 @@ export const kelompokService = {
   getDplList: async () => {
     return prisma.user.findMany({
       where: { role: { name: { in: ["DPL", "DOSEN_PEMBIMBING"] } } },
-      select: { id: true, name: true, phone: true, nip: true },
+      select: { id: true, name: true, phone: true, nip: true, email: true, programStudi: true },
       orderBy: { name: "asc" },
     });
   },

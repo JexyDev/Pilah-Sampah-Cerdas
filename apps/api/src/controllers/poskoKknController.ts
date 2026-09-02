@@ -121,6 +121,35 @@ export class PoskoKknController {
     }
   }
 
+  /** GET /posko-kkn/unified-zones — Unified Map Service (Single Source of Truth) */
+  async getUnifiedZones(req: Request, res: Response): Promise<void> {
+    try {
+      const user = (req as any).user;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+
+      const data = await poskoKknService.getUnifiedZones({
+        kelompokId,
+        kelurahan,
+        userId: user?.userId,
+        role: user?.role,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Data peta zona KKN terpadu berhasil dimuat",
+        totalGroups: data.length,
+        data,
+      });
+    } catch (err: any) {
+      console.error("[PoskoKknController.getUnifiedZones] error:", err);
+      res.status(500).json({
+        success: false,
+        message: err.message || "Gagal mengambil data peta zona KKN terpadu",
+      });
+    }
+  }
+
   /** DELETE /posko-kkn/:kelompokId */
   async deletePosko(req: Request, res: Response): Promise<void> {
     try {

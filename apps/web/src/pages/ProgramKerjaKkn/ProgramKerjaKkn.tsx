@@ -1000,7 +1000,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* Toolbar Filter */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
             {/* Filter 1: Kelompok */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
@@ -1480,7 +1480,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </label>
                 {isDpl && kelompokList.length <= 1 ? (
                   <div className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold flex items-center justify-between">
-                    <span>{kelompokList[0]?.name || "Kelompok Binaan"} ({kelompokList[0]?.kelurahan ? `Kel. ${kelompokList[0]?.kelurahan}` : "Coblong"})</span>
+                    <span>{kelompokList[0]?.name || "Kelompok Binaan"} ({kelompokList[0]?.kelurahan ? `Kel. ${kelompokList[0]?.kelurahan}` : "Wilayah Binaan"})</span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/50">
                       Otomatis
                     </span>

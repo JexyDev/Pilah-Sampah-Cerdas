@@ -23,6 +23,7 @@ import {
   Loader2,
   Calendar,
   CalendarDays,
+  CalendarOff,
   Clock,
   MapPin,
   Search,
@@ -34,6 +35,7 @@ import {
   Download,
   Navigation,
   CheckCircle2,
+  FileCheck,
   FileSpreadsheet,
   Map as MapIcon,
   ChevronDown,
@@ -2499,14 +2501,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const isSuperUserOrDev = ["SUPER_USER", "DEVELOPER"].includes(userRole);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 dark:bg-slate-800/60 p-4 md:p-6 space-y-5 text-slate-800 dark:text-slate-100">
+    <div className="space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-100 w-full min-w-0 max-w-full overflow-x-hidden">
       {/* Header Utama: Ringkas, Informatif & Aksi Cepat */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex items-start sm:items-center gap-3.5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs w-full min-w-0 max-w-full overflow-hidden">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
           <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
             <CheckCircle2 size={22} className="text-emerald-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Monitoring & Validasi Presensi Mahasiswa
@@ -2522,7 +2524,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         </div>
 
         {/* Action Buttons Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto min-w-0">
           {/* WebSocket Live Status Indicator Badge - Eksklusif Role Developer / Super User */}
           {isSuperUserOrDev && (
             <div
@@ -2556,13 +2558,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
           {/* Filter Kelompok KKN (Multi-Tenant Selector untuk Developer / Super User / DLH / Camat) */}
           {!isDpl ? (
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs w-full sm:w-auto min-w-0">
               <Users size={14} className="text-emerald-600 shrink-0" />
               <span className="text-[11px] font-bold text-slate-500 shrink-0">Kelompok:</span>
               <select
                 value={selectedKelompokId}
                 onChange={(e) => handleSelectKelompok(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[220px] truncate"
+                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 w-full sm:w-auto sm:max-w-[220px] truncate min-w-0"
               >
                 <option value="">Semua Kelompok (Seluruh Wilayah)</option>
                 {groups.map((g) => (
@@ -2573,9 +2575,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </select>
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 shadow-2xs">
+            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 shadow-2xs w-full sm:w-auto">
               <Users size={14} className="text-emerald-700 shrink-0" />
-              <span className="text-xs font-black">
+              <span className="text-xs font-black truncate">
                 {formatKelompokDisplayName(groups.find((g) => g.id === selectedKelompokId) || groups[0])}
               </span>
             </div>
@@ -2584,7 +2586,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           <button
             type="button"
             onClick={() => setShowMap(!showMap)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+            className={`w-full sm:w-auto justify-center px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
               showMap
                 ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs"
                 : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
@@ -2598,18 +2600,28 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {/* Tombol Akses Laporan & Log Presensi */}
           <Link
             to="/monitoring-kegiatan/laporan-presensi"
-            className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-300 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shadow-2xs active:scale-95"
+            className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-300 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shadow-2xs active:scale-95"
             title="Buka Laporan Rekapitulasi & Log Detail Presensi Mahasiswa"
           >
             <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>Laporan &amp; Log Presensi</span>
           </Link>
 
+          {/* Tombol Akses Ajukan Absensi / Izin */}
+          <Link
+            to="/monitoring-kegiatan/pengajuan-izin"
+            className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-purple-300 dark:border-purple-700/80 bg-purple-50/90 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-800 dark:text-purple-300 shadow-2xs active:scale-95"
+            title="Buka Halaman Verifikasi Ajukan Absensi & Pengajuan Izin/Sakit"
+          >
+            <FileCheck size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
+            <span>Ajukan Absensi</span>
+          </Link>
+
           {isSuperUserOrDev && (
             <button
               type="button"
               onClick={openConfigModal}
-              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               title="Atur Hari, Jam Kerja & Target Kegiatan KKN (Khusus Developer & Super User)"
             >
               <Settings size={14} className="text-emerald-600" />
@@ -2621,7 +2633,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <button
               type="button"
               onClick={handleOpenAddModal}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus size={15} />
               <span>Buat Kegiatan</span>
@@ -3503,9 +3515,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Konten Utama: Tabel & Kartu Rekapitulasi Presensi */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
         {/* Toolbar: Search, Filter Tabs, View Switcher */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative min-w-[220px] flex-1 max-w-md">
+          <div className="relative min-w-[200px] flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
@@ -3518,7 +3530,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <button
                 type="button"
                 onClick={() => setStudentSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -3526,7 +3538,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Date Range Filter Controls (Notulensi Item 12: Filter Tanggal) */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
               <Calendar size={13} className="text-emerald-600 shrink-0" />
               <span className="text-[10px] font-bold text-slate-400">Dari:</span>
@@ -3575,13 +3587,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Filter Status Chips */}
-          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+          <div className="w-full xl:w-auto overflow-x-auto scrollbar-none -mx-1 px-1">
             {!isDpl && (
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+              <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400 min-w-max">
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("ALL")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "ALL"
                       ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3592,7 +3604,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("ACTIVE")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "ACTIVE"
                       ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3603,7 +3615,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("COMPLETED")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "COMPLETED"
                       ? "bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-400 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3614,7 +3626,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("IZIN_SAKIT")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "IZIN_SAKIT"
                       ? "bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3625,7 +3637,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "NOT_ATTENDED"
                       ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3759,10 +3771,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
                         const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                         const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+                        const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
                         
                         const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
                         const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
-                        const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                        const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
                         const recAny = rec as any;
                         const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
 
@@ -3776,7 +3789,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
                         const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
-                        const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished || isOverrideDpl) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                        const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished || isOverrideDpl) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
 
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
@@ -3933,6 +3946,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                                     <XCircle size={13} className="text-rose-600" />
                                     <span>Tanpa Keterangan</span>
+                                  </span>
+                                ) : isTidakAdaKegiatan ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700" title={rec.deskripsiKegiatan || (rec as any).jedaLogs?.alasan || "Tidak ada kegiatan (Dikosongkan DPL/Ketua)"}>
+                                    <CalendarOff size={13} className="text-slate-500" />
+                                    <span>Tidak Ada Kegiatan</span>
                                   </span>
                                 ) : isTerjeda ? (
                                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title="Sesi terjeda otomatis karena GPS terputus atau keluar zona">
@@ -4332,7 +4350,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     statusUpper === "HADIR_TIDAK_MEMENUHI";
                   const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                   const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
-                  const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                  const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
+                  const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
 
                   const liveElapsedMins = rec.attendedAt
                     ? calculateDurationMinutes(rec.attendedAt, rec.completedAt)
@@ -4392,6 +4411,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           {isBelumAdaJadwal ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 shrink-0">
                               Belum Ada Jadwal
+                            </span>
+                          ) : isTidakAdaKegiatan ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shrink-0" title={rec.deskripsiKegiatan || recAny.jedaLogs?.alasan || "Tidak ada kegiatan"}>
+                              Tidak Ada Kegiatan
                             </span>
                           ) : String(rec.status).toUpperCase().includes("SAKIT") ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
@@ -4862,7 +4885,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             setFormData((prev) => ({
                               ...prev,
                               kelompokId: newGroupId,
-                              location: targetGroup ? locInfo.fullAddress : (prev.location || "Kecamatan Coblong, Kota Bandung"),
+                              location: targetGroup ? locInfo.fullAddress : (prev.location || "Wilayah Operasional Binaan"),
                               title: targetGroup ? `${cat} - Kel. ${locInfo.kelurahan}${rwTag}` : `${cat} - Kegiatan Bersama Seluruh Wilayah`,
                             }));
                           }}
@@ -5581,15 +5604,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const isLeaveOrPending = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN");
               const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
               const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+              const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
               const isTerjeda = statusUpper === "TERJEDA" || String(rec.currentStatus || "").toUpperCase() === "TERJEDA";
               const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
-              const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
               const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
               const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
               const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended;
-              const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
               const durationMins = !hasValidAttendanceSession ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
@@ -5600,8 +5624,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const ratioPercent = !hasValidAttendanceSession || durationMins === 0
                 ? 0
                 : (recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending)
-                ? Number(recAny.targetRatioPercent)
-                : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
+                ? Math.min(100, Math.max(0, Number(recAny.targetRatioPercent)))
+                : (targetMins > 0 ? Math.min(100, Math.round((durationMins / targetMins) * 100)) : 0);
               const isMemenuhi = !hasValidAttendanceSession
                 ? false
                 : rec.isMemenuhiDurasi !== undefined
@@ -5611,7 +5635,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const modalTargetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
               const modalTargetKumulatifMins = Math.round(modalTargetKumulatif * 60);
               const modalActualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
-              const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2)) : 0;
+              const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Math.min(100, Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2))) : 0;
 
               const liveLoc = studentLocations.find(
                 (l) => l.studentId === rec.student?.id || l.student?.id === rec.student?.id

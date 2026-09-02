@@ -381,7 +381,12 @@ export const DplDashboardPage: React.FC = () => {
   // Filtered & Paginated Students for Modal Detail Kelompok (Mendukung 44+ Mahasiswa)
   const modalGroupStudents = useMemo(() => {
     if (!selectedGroupForDetail) return [];
-    return students.filter((s) => s.kelompokName === selectedGroupForDetail.name);
+    return students.filter(
+      (s) =>
+        s.kelompokId === selectedGroupForDetail.id ||
+        s.kelompokName === selectedGroupForDetail.name ||
+        (s.kelompokName || "").toLowerCase().trim() === (selectedGroupForDetail.name || "").toLowerCase().trim()
+    );
   }, [selectedGroupForDetail, students]);
 
   const filteredModalGroupStudents = useMemo(() => {
@@ -527,21 +532,19 @@ export const DplDashboardPage: React.FC = () => {
         set.add(String((user as any).kecamatan).trim());
       } else if ((user as any)?.kabupaten && String((user as any).kabupaten).trim() !== "") {
         set.add(String((user as any).kabupaten).trim());
-      } else if (user?.wilayah && user.wilayah.trim() !== "") {
+      } else if (user?.wilayah && user.wilayah.trim() !== "" && user.wilayah !== "Semua Wilayah") {
         set.add(user.wilayah.trim());
-      } else {
-        set.add("Coblong");
       }
     }
     return Array.from(set);
   }, [groups, user]);
 
   const kecamatanBadgeLabel = useMemo(() => {
-    if (dplKecamatanList.length === 0) return "Kec. Coblong";
-    if (dplKecamatanList.length === 1) return `Kec. ${dplKecamatanList[0]}`;
+    if (dplKecamatanList.length === 0) return user?.wilayah || "Wilayah Dampingan";
+    if (dplKecamatanList.length === 1) return dplKecamatanList[0].toLowerCase().startsWith("kec") ? dplKecamatanList[0] : `Kec. ${dplKecamatanList[0]}`;
     if (dplKecamatanList.length <= 2) return `Kec. ${dplKecamatanList.join(", ")}`;
     return `${dplKecamatanList.length} Kecamatan (${dplKecamatanList.slice(0, 2).map((k) => `Kec. ${k}`).join(", ")}...)`;
-  }, [dplKecamatanList]);
+  }, [dplKecamatanList, user]);
 
   // Dynamic Kelurahan & RW calculation from DPL groups & student allocations
   const dplKelurahanList = useMemo(() => {
@@ -636,7 +639,31 @@ export const DplDashboardPage: React.FC = () => {
   const avgOverallAttendance =
     groups.length > 0 && groups.some((g) => (g.avgAttendanceRate || 0) > 0)
       ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length)
+      : students.length > 0 && students.some((s) => (s.attendanceRate || 0) > 0)
+      ? Math.round(students.reduce((acc, s) => acc + (s.attendanceRate || 0), 0) / students.length)
       : 0;
+
+  const totalActualHours = useMemo(() => {
+    const sumGroupHours = groups.reduce((acc, g) => acc + (g.actualHours || 0), 0);
+    if (sumGroupHours > 0) return Math.round(sumGroupHours);
+    const sumStudentHours = students.reduce(
+      (acc, s) => acc + (s.totalHours || 0) + ((s.remainingMinutes || 0) / 60),
+      0
+    );
+    return Math.round(sumStudentHours);
+  }, [groups, students]);
+
+  const avgHoursPerStudent = totalAllStudents > 0 ? (totalActualHours / totalAllStudents).toFixed(1) : "0.0";
+
+  const activeTodayCount = useMemo(() => {
+    const sumGroupsActive = groups.reduce((acc, g) => acc + ((g as any).activeTodayCount || 0), 0);
+    if (sumGroupsActive > 0) return sumGroupsActive;
+    return students.filter((s) => s.attendedCount > 0).length;
+  }, [groups, students]);
+
+  const totalActivatedBins = groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0);
+  const totalOrganikBins = groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0);
+  const totalAnorganikBins = groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0);
 
   const renderActionModals = () => {
     return (
@@ -764,7 +791,7 @@ export const DplDashboardPage: React.FC = () => {
               {/* Modal Body with Scroll */}
               <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
                 {/* Ringkasan Profil & Wilayah Kelompok */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
                   <div className="space-y-1">
                     <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Total Mahasiswa</span>
                     <div className="flex items-center gap-1.5">
@@ -783,9 +810,23 @@ export const DplDashboardPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Dosen Pendamping</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.dpl?.name || "-"}>
+                      {selectedGroupForDetail.dpl?.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
                     <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Ketua Kelompok</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.ketua?.name || "-"}>
                       {selectedGroupForDetail.ketua?.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Jam Presensi Total</span>
+                    <span className="text-base font-black text-blue-600 dark:text-blue-400 block truncate">
+                      {selectedGroupForDetail.actualHours ? `${selectedGroupForDetail.actualHours} Jam` : `${Math.round((selectedGroupForDetail.avgAttendanceRate || 0) * 2)} Jam`}
                     </span>
                   </div>
 
@@ -868,6 +909,8 @@ export const DplDashboardPage: React.FC = () => {
                           <th className="py-3 px-3">NIM</th>
                           <th className="py-3 px-3">Nama Mahasiswa</th>
                           <th className="py-3 px-3">Program Studi</th>
+                          <th className="py-3 px-3 text-center">Presensi Lapangan</th>
+                          <th className="py-3 px-3 text-center">Jam Presensi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
@@ -892,6 +935,14 @@ export const DplDashboardPage: React.FC = () => {
                             </td>
                             <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
                               {st.jurusan || "-"} {st.fakultas ? `(${st.fakultas})` : ""}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-extrabold text-[11px]">
+                                {st.attendanceRate || 0}%
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200">
+                              {st.totalHours || 0} Jam {st.remainingMinutes ? `${st.remainingMinutes}m` : ""}
                             </td>
                           </tr>
                         ))}
@@ -1436,8 +1487,8 @@ export const DplDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Quick Action Navigation Cards (Pintu Akses Operasional) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      {/* Quick Action Navigation Cards (Pintu Akses Operasional) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         <Link
           to="/manajemen-ekosistem-kkn"
           className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
@@ -1460,6 +1511,21 @@ export const DplDashboardPage: React.FC = () => {
               <ClipboardCheck size={20} />
             </div>
             <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+        </Link>
+
+        <Link
+          to="/monitoring-kegiatan/pengajuan-izin"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-purple-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition shrink-0">
+              <FileCheck size={20} />
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">Ajukan Absensi</h4>
+            </div>
           </div>
           <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
         </Link>

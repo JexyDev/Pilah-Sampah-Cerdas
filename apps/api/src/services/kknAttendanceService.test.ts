@@ -9,7 +9,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   calculateInZoneDurationMinutes,
   calculateLiveInZoneMinutes,
-  calculateLiveInZoneSeconds,
   calculateTotalJedaMinutes,
   formatDurasiMenitIndo,
   getScheduleTargetDurationMinutes,
@@ -69,6 +68,11 @@ vi.mock("../lib/prisma.js", () => {
         upsert: vi.fn(),
       },
       poskoKkn: {
+        findUnique: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      poskoKknMulti: {
+        findMany: vi.fn().mockResolvedValue([]),
         findUnique: vi.fn(),
         findFirst: vi.fn(),
       },
@@ -521,7 +525,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
 
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         return {
           id: "att-rec-1",
           studentId,
@@ -563,7 +567,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       vi.mocked(prisma.studentLocation.findMany).mockResolvedValue([]);
 
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         return {
           id: "att-rec-1",
           studentId,
@@ -636,7 +640,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       } as any);
 
       let updatedData: any = null;
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updatedData = data;
         return {
           id: "att-ssot-1",
@@ -717,7 +721,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
 
       let updatedData: any = null;
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updatedData = data;
         return {
           id: "att-ssot-2",
@@ -809,7 +813,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       } as any);
 
       const updates: any[] = [];
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updates.push(data);
         return {
           ...mockAtt,
@@ -886,7 +890,7 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(mockAtt as any);
 
       const updates: any[] = [];
-      vi.mocked(prisma.activityAttendance.update).mockImplementation(async ({ data }: any) => {
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
         updates.push(data);
         return {
           ...mockAtt,
@@ -1036,7 +1040,6 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
         alasan: "Pembersihan posko mandiri",
       });
 
-      expect(result.success ?? true).toBeTruthy();
       expect(result.kegiatanId).toBe(scheduleId);
       expect(result.statusKegiatan).toBe("TIDAK_ADA_KEGIATAN");
       expect(result.totalMahasiswaTerdampak).toBe(2);
@@ -1326,8 +1329,8 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
     it("should succeed with SmartZone fallback when student is at alternative multi-posko", async () => {
       // Koordinat di posko alternatif (misal 1 km dari posko utama)
-      const altLat = -6.9000;
-      const altLng = 107.6200;
+      const altLat = -6.9;
+      const altLng = 107.62;
 
       vi.mocked(smartZoneService.isStudentInGroupZone).mockResolvedValueOnce({
         isInside: true,
@@ -1359,8 +1362,8 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     });
 
     it("should throw OUT_OF_GEOFENCE when student is outside primary posko and outside all multi-poskos", async () => {
-      const farLat = -6.9900;
-      const farLng = 107.7500;
+      const farLat = -6.99;
+      const farLng = 107.75;
 
       vi.mocked(smartZoneService.isStudentInGroupZone).mockResolvedValueOnce({
         isInside: false,
@@ -1478,4 +1481,3 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
     });
   });
 });
-

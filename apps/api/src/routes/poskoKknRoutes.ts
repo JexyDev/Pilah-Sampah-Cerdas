@@ -15,6 +15,13 @@ const router = Router();
 
 // ─── Posko Utama (Existing) ──────────────────────────────────────────────────
 
+// Unified Map Service: Semua role authenticated bisa melihat peta terpadu (SSOT)
+router.get(
+  "/unified-zones",
+  authMiddleware,
+  poskoKknController.getUnifiedZones.bind(poskoKknController)
+);
+
 // Semua role authenticated bisa lihat daftar posko
 router.get("/", authMiddleware, poskoKknController.getAll.bind(poskoKknController));
 
@@ -26,20 +33,20 @@ router.get(
   poskoKknController.getMyPosko.bind(poskoKknController)
 );
 
-// Daftar / update posko - Ketua KKN, Admin, Developer
+// Daftar / update posko - Ketua KKN, Admin, Developer, Taskforce, DPL
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "DPL"]),
   safeUploadSingleImage("foto"),
   poskoKknController.upsert.bind(poskoKknController)
 );
 
-// Hapus posko utama - Admin & Developer saja
+// Hapus posko utama - Admin, Developer, Taskforce
 router.delete(
   "/:kelompokId",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE"]),
   poskoKknController.deletePosko.bind(poskoKknController)
 );
 
@@ -78,7 +85,7 @@ router.get("/kelompok/:kelompokId/multi", authMiddleware, smartZoneController.ge
 router.post(
   "/multi",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "DPL"]),
   smartZoneController.addMultiPosko
 );
 
@@ -89,7 +96,7 @@ router.post(
 router.put(
   "/multi/:poskoId",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "DPL"]),
   smartZoneController.updateMultiPosko
 );
 
@@ -100,7 +107,7 @@ router.put(
 router.delete(
   "/multi/:poskoId",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE", "DPL"]),
   smartZoneController.deleteMultiPosko
 );
 
@@ -119,7 +126,7 @@ router.get("/smart-zone/:kelompokId/preview", authMiddleware, smartZoneControlle
 router.post(
   "/smart-zone/:kelompokId/regenerate",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "DEVELOPER", "PANITIA_TASKFORCE"]),
   smartZoneController.forceRegeneratePolygon
 );
 

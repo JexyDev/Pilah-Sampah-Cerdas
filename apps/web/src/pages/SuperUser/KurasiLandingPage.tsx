@@ -56,7 +56,7 @@ export const KurasiLandingPage: React.FC = () => {
     id: "",
     title: "",
     date: new Date().toISOString().slice(0, 10),
-    location: "Kecamatan Coblong, Kota Bandung",
+    location: "Wilayah Operasional BERSEKA",
     category: "Edukasi Pemilahan",
     imageUrl: "/image/activity-1.webp",
     description: "",
@@ -70,14 +70,6 @@ export const KurasiLandingPage: React.FC = () => {
   const [prokerCandidates, setProkerCandidates] = useState<any[]>([]);
   const [logbookCandidates, setLogbookCandidates] = useState<any[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
-  const [confirmConfig, setConfirmConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    type: "danger" | "warning";
-    onConfirm: () => Promise<void>;
-  } | null>(null);
 
   const presetImages = [
     { label: "Edukasi & Sosialisasi", url: "/image/activity-1.webp" },
@@ -241,8 +233,8 @@ export const KurasiLandingPage: React.FC = () => {
 
     const cleanDesc = lines.slice(1).join("\n\n") || rawDesc.replace(/\*\*/g, "");
     const locationText = proker.kelurahan
-      ? `Kelurahan ${proker.kelurahan}, Kec. Coblong`
-      : "Kecamatan Coblong, Kota Bandung";
+      ? `Kelurahan ${proker.kelurahan}`
+      : "Wilayah Operasional BERSEKA";
 
     let category = "Aksi Bersih Lingkungan";
     let img = "/image/activity-1.png";
@@ -287,14 +279,14 @@ export const KurasiLandingPage: React.FC = () => {
       : new Date().toISOString().slice(0, 10);
 
     const locationText = logbook.tempat
-      ? `${logbook.tempat}, Kelurahan ${logbook.kelurahan || "Coblong"}`
-      : `Kelurahan ${logbook.kelurahan || "Lebak Gede"}, Kec. Coblong`;
+      ? `${logbook.tempat}, Kelurahan ${logbook.kelurahan || "Binaan"}`
+      : `Kelurahan ${logbook.kelurahan || "Binaan"}`;
 
     const cleanTitle = logbook.prokerDeskripsi
       ? `${logbook.prokerDeskripsi.replace(/\*\*/g, "").slice(0, 60)} (${logbook.kelompokNama || "KKN"})`
       : logbook.deskripsi
       ? logbook.deskripsi.split("\n")[0].replace(/\*\*/g, "").slice(0, 75)
-      : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Coblong"}`;
+      : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Wilayah Binaan"}`;
 
     let img = logbook.fotoBuktiUrl || "/image/activity-1.png";
 
@@ -375,17 +367,17 @@ export const KurasiLandingPage: React.FC = () => {
   };
 
   const handleResetToRealProkerDefaults = () => {
-    setConfirmConfig({
-      isOpen: true,
-      title: "Muat Ulang Kurasi Standar",
-      message: "Muat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil?",
-      confirmText: "Muat Ulang",
-      type: "warning",
-      onConfirm: async () => {
-        await executeResetToRealProkerDefaults();
-        setConfirmConfig(null);
-      },
-    });
+    setShowResetConfirmModal(true);
+  };
+
+  const handleConfirmResetToRealProkerDefaults = async () => {
+    setIsActionLoading(true);
+    try {
+      await executeResetToRealProkerDefaults();
+      setShowResetConfirmModal(false);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const toggleSdgTag = (tag: string) => {
@@ -689,7 +681,7 @@ export const KurasiLandingPage: React.FC = () => {
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Misal: Balai RW 03, Kelurahan Lebak Gede, Kec. Coblong"
+                  placeholder="Misal: Balai RW 03, Kelurahan Lebak Gede"
                   className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
                 />
               </div>

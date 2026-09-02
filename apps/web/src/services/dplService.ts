@@ -66,6 +66,7 @@ export interface StudentDetail {
   fakultas: string;
   fotoProfil?: string;
   isKetua: boolean;
+  kelompokId?: string | null;
   kelompokName: string;
   assessmentScore: number;
   baseAssessmentScore?: number;

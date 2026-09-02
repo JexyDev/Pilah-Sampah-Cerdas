@@ -666,6 +666,32 @@ export class KknController {
     }
   }
 
+  async getUnifiedZones(req: Request, res: Response): Promise<void> {
+    try {
+      const { poskoKknService } = await import("../services/poskoKknService.js");
+      const user = (req as any).user;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+
+      const data = await poskoKknService.getUnifiedZones({
+        kelompokId,
+        kelurahan,
+        userId: user?.userId,
+        role: user?.role,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Data peta zona KKN terpadu berhasil dimuat",
+        totalGroups: data.length,
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getUnifiedZones error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async deletePosko(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;

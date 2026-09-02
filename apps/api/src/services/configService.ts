@@ -65,6 +65,7 @@ export class ConfigService {
       "attendance_min_duration_hours",
       "attendance_min_duration_minutes",
       "attendance_min_duration_seconds",
+      "attendance_stale_gps_minutes",
       "attendance_out_of_zone_tolerance_minutes",
       "attendance_out_of_zone_penalty_points",
       "attendance_out_of_zone_penalty_active",
@@ -116,6 +117,7 @@ export class ConfigService {
       attendanceMinDurationHours: parseInt(map["attendance_min_duration_hours"] || "4", 10),
       attendanceMinDurationMinutes: parseInt(map["attendance_min_duration_minutes"] || "0", 10),
       attendanceMinDurationSeconds: parseInt(map["attendance_min_duration_seconds"] || "0", 10),
+      attendanceStaleGpsMinutes: parseInt(map["attendance_stale_gps_minutes"] || "15", 10),
       attendanceOutOfZoneToleranceMinutes: parseInt(
         map["attendance_out_of_zone_tolerance_minutes"] || "5",
         10

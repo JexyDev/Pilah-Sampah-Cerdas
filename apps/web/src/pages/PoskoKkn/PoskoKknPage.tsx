@@ -79,6 +79,7 @@ export interface PoskoItem {
   totalAnggota: number;
   statusApproval: string;
   createdAt: string;
+  isUtama?: boolean;
 }
 
 export interface FacilityItem {
@@ -152,12 +153,19 @@ export const getKelurahanGeo = (kelurahanName?: string | null) => {
   return matchedKey ? KELURAHAN_GEODATA[matchedKey] : KELURAHAN_GEODATA["DAGO"];
 };
 
-// Custom Marker Pin Icon untuk Posko KKN (Indigo Theme)
-const createPoskoMarkerIcon = (nama?: string) => {
+// Custom Marker Pin Icon untuk Posko KKN (Indigo Theme untuk Posko Utama, Emerald Theme untuk Posko Kegiatan/Tambahan)
+const createPoskoMarkerIcon = (nama?: string, isUtama: boolean = true) => {
+  const bgGrad = isUtama
+    ? "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)"
+    : "linear-gradient(135deg, #059669 0%, #047857 100%)";
+  const shadow = isUtama
+    ? "0 4px 12px rgba(79, 70, 229, 0.45)"
+    : "0 4px 12px rgba(5, 150, 105, 0.45)";
+
   return L.divIcon({
     className: "custom-posko-icon",
     html: `
-      <div title="${nama || "Posko KKN"}" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); width: 32px; height: 32px; border-radius: 10px; border: 2.5px solid white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.45); display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; transition: transform 0.15s ease;">
+      <div title="${nama || "Posko KKN"}" style="background: ${bgGrad}; width: 32px; height: 32px; border-radius: 10px; border: 2.5px solid white; box-shadow: ${shadow}; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; transition: transform 0.15s ease;">
         <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>
           <path d="M22 10v6"/>
@@ -307,20 +315,40 @@ export const PoskoKknPage: React.FC = () => {
     fetchKelompokList();
   }, [fetchPoskoList, fetchFacilities, fetchKelompokList]);
 
-  // Metrik Penghitungan Posko Terpadu (Sinkron dengan Inspeksi Geofence Zona KKN)
+  // ============================================================================
+  // ✅ PERBAIKAN BUG: Unique Group Aggregation untuk Menghindari Multi-Counting
+  // ============================================================================
   const metrics = useMemo(() => {
     const totalPosko = items.length;
-    const totalKelompok = Math.max(kelompokList.length, items.length);
     const verified = items.filter((i) => i.statusApproval === "APPROVED").length;
 
-    // Total Mahasiswa dari 15 Posko yang sudah terdaftar
-    const totalMahasiswaPosko = items.reduce((acc, curr) => acc + (curr.totalAnggota || 0), 0);
-    // Total Mahasiswa KKN keseluruhan se-Kecamatan Coblong (32 Kelompok)
-    let totalMahasiswaSemua = kelompokList.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
+    // 1. Gunakan Map untuk mengisolasi 1 kelompokId -> 1 totalAnggota riil (mencegah double-counting jika ada multi-posko)
+    const uniqueGroupStudentMap = new Map<string, number>();
+    items.forEach((item) => {
+      const key = item.kelompokId || item.id;
+      if (key && !uniqueGroupStudentMap.has(key)) {
+        uniqueGroupStudentMap.set(key, item.totalAnggota || 0);
+      }
+    });
+
+    const totalKelompok = Math.max(kelompokList.length, uniqueGroupStudentMap.size);
+
+    // 2. Jumlahkan total mahasiswa riil hanya dari kelompok yang unik
+    const totalMahasiswaPosko = Array.from(uniqueGroupStudentMap.values()).reduce(
+      (acc, curr) => acc + curr,
+      0
+    );
+
+    // 3. Hitung total mahasiswa dari seluruh kelompok KKN (termasuk yang belum ada posko)
+    let totalMahasiswaSemua = kelompokList.reduce(
+      (acc, curr) => acc + (curr.students?.length || 0),
+      0
+    );
     if (totalMahasiswaSemua === 0) {
       totalMahasiswaSemua = totalMahasiswaPosko;
     }
 
+    // 4. Hitung unik DPL pendamping
     const dplSet = new Set<string>();
     items.forEach((i) => {
       if (i.dplName && !i.dplName.includes("Belum")) dplSet.add(i.dplName.trim());
@@ -331,7 +359,14 @@ export const PoskoKknPage: React.FC = () => {
     });
     const totalDpl = dplSet.size;
 
-    return { totalPosko, totalKelompok, verified, totalMahasiswaPosko, totalMahasiswaSemua, totalDpl };
+    return {
+      totalPosko,
+      totalKelompok,
+      verified,
+      totalMahasiswaPosko,
+      totalMahasiswaSemua,
+      totalDpl,
+    };
   }, [items, kelompokList]);
 
   // Kelompok yang belum mendaftarkan titik Posko KKN
@@ -623,7 +658,7 @@ export const PoskoKknPage: React.FC = () => {
         description={
           isDpl
             ? "Pangkalan posko, kontak tim mahasiswa, titik koordinat GPS, dan lokasi kelompok KKN binaan Anda."
-            : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di wilayah Kecamatan Coblong."
+            : "Direktori pangkalan posko kegiatan mahasiswa KKN, kelompok binaan, dosen pendamping lapangan (DPL), dan titik koordinat GPS di seluruh wilayah operasional."
         }
         icon={GraduationCap}
       />
@@ -725,7 +760,7 @@ export const PoskoKknPage: React.FC = () => {
                             </h4>
                             <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                               <MapPin size={12} className="text-rose-500" />
-                              <span>Kelurahan {kelurahanGeo.name}, Kec. Coblong</span>
+                              <span>Kelurahan {kelurahanGeo.name} &bull; Wilayah Binaan</span>
                             </p>
                           </div>
                         </div>
@@ -929,12 +964,25 @@ export const PoskoKknPage: React.FC = () => {
             })()
           ) : (
             (() => {
-              const posko = items[0];
-              const latNum = Number(posko.latitude);
-              const lngNum = Number(posko.longitude);
-              const isValidCoord = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
-              const resolvedFoto = resolveImageUrl(posko.foto || posko.fotoUrl);
-              const kelurahanGeo = getKelurahanGeo(posko.kelurahan);
+              // Metadata Kelompok dari posko pertama atau kelompokList
+              const firstPosko = items[0];
+              const kelompokName = firstPosko?.kelompokName || kelompokList[0]?.name || "Kelompok KKN";
+              const rawKelurahan = firstPosko?.kelurahan || kelompokList[0]?.kelurahan || "Dago";
+              const kelurahanGeo = getKelurahanGeo(rawKelurahan);
+
+              // Ambil seluruh koordinat posko yang valid untuk peta
+              const validPoskoCoords = items
+                .map((p) => ({
+                  lat: Number(p.latitude),
+                  lng: Number(p.longitude),
+                  posko: p,
+                }))
+                .filter((p) => !isNaN(p.lat) && !isNaN(p.lng) && p.lat !== 0 && p.lng !== 0);
+
+              const defaultCenter: [number, number] =
+                validPoskoCoords.length > 0
+                  ? [validPoskoCoords[0].lat, validPoskoCoords[0].lng]
+                  : kelurahanGeo?.centroid || CoblongGeo.CENTER;
 
               // Fasilitas di Kelurahan Posko Binaan
               const dplFacilities = facilities.filter((fac) => {
@@ -942,14 +990,17 @@ export const PoskoKknPage: React.FC = () => {
                 const lng = Number(fac.longitude);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return false;
                 const fKel = (fac.rw?.kelurahan?.name || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
-                const targetKel = (posko.kelurahan || kelurahanGeo.name || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
+                const targetKel = (rawKelurahan || kelurahanGeo.name || "").toLowerCase().replace(/^(kelurahan|kel\.)\s*/i, "").trim();
                 const fAlamat = (fac.alamat || "").toLowerCase();
                 return (fKel && (fKel.includes(targetKel) || targetKel.includes(fKel))) || fAlamat.includes(targetKel);
               });
 
+              const totalUtama = items.filter((p) => p.isUtama).length || 1;
+              const totalTambahan = Math.max(0, items.length - totalUtama);
+
               return (
                 <div className="space-y-6 animate-in fade-in duration-200">
-                  {/* Hero Posko Banner */}
+                  {/* Hero Summary Banner Kelompok Binaan DPL */}
                   <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-xs">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
                       <div className="flex items-start gap-4">
@@ -959,47 +1010,49 @@ export const PoskoKknPage: React.FC = () => {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="px-2.5 py-0.5 rounded-md text-[11px] font-extrabold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                              {posko.kelompokName}
+                              {kelompokName}
                             </span>
                             <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                               <CheckCircle2 size={12} />
-                              <span>Terverifikasi</span>
+                              <span>{items.length} Posko Terdaftar</span>
                             </span>
                           </div>
                           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-1.5 tracking-tight">
-                            {posko.nama}
+                            Posko Kelompok {kelompokName}
                           </h2>
                           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-1.5">
                             <MapPin size={14} className="text-rose-500 shrink-0" />
-                            <span>Kelurahan {posko.kelurahan} &bull; {formatCleanRw(posko.rwName)} &bull; Kec. Coblong</span>
+                            <span>
+                              Kelurahan {rawKelurahan} &bull; Wilayah Binaan DPL ({items.length} Titik Posko: {totalUtama} Utama{totalTambahan > 0 ? `, ${totalTambahan} Kegiatan` : ""})
+                            </span>
                           </p>
                         </div>
                       </div>
 
                       {/* Quick Actions */}
                       <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                        {isValidCoord && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${latNum},${lngNum}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                          >
-                            <Navigation size={14} />
-                            <span>Buka di Google Maps</span>
-                            <ExternalLink size={12} />
-                          </a>
-                        )}
                         {canEditPosko && (
                           <button
                             type="button"
-                            onClick={() => handleOpenEditModal(posko)}
-                            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
+                            onClick={handleOpenAddModal}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
                           >
-                            <Pencil size={13} />
-                            <span>Edit &amp; Upload Foto Posko</span>
+                            <Plus size={14} />
+                            <span>Tambah Posko Kegiatan</span>
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fetchPoskoList();
+                            fetchFacilities();
+                            fetchKelompokList();
+                          }}
+                          className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        >
+                          <RefreshCw size={13} />
+                          <span>Segarkan Data</span>
+                        </button>
                       </div>
                     </div>
 
@@ -1009,18 +1062,18 @@ export const PoskoKknPage: React.FC = () => {
                         <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                           Ketua Kelompok (PIC)
                         </span>
-                        <span className="text-base font-black text-slate-900 dark:text-slate-100 mt-1 block">
-                          {posko.pic || "Ketua Kelompok"}
+                        <span className="text-base font-black text-slate-900 dark:text-slate-100 mt-1 block truncate">
+                          {firstPosko.pic || "Ketua Kelompok"}
                         </span>
-                        {formatWhatsAppUrl(posko.kontak) ? (
+                        {formatWhatsAppUrl(firstPosko.kontak) ? (
                           <a
-                            href={formatWhatsAppUrl(posko.kontak)}
+                            href={formatWhatsAppUrl(firstPosko.kontak)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 mt-1"
+                            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 mt-1 truncate"
                           >
-                            <Phone size={12} />
-                            <span>WhatsApp: {posko.kontak}</span>
+                            <Phone size={12} className="shrink-0" />
+                            <span className="truncate">WhatsApp: {firstPosko.kontak}</span>
                           </a>
                         ) : (
                           <span className="text-xs text-slate-400 font-medium mt-1 block">Kontak belum tersedia</span>
@@ -1032,7 +1085,7 @@ export const PoskoKknPage: React.FC = () => {
                           Total Mahasiswa Bimbingan
                         </span>
                         <span className="text-base font-black text-slate-900 dark:text-slate-100 mt-1 block">
-                          {posko.totalAnggota || 0} Mahasiswa Aktif
+                          {firstPosko.totalAnggota || kelompokList[0]?.students?.length || 0} Mahasiswa Aktif
                         </span>
                         <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-1">
                           <Users size={12} />
@@ -1042,32 +1095,21 @@ export const PoskoKknPage: React.FC = () => {
 
                       <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
                         <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                          Koordinat &amp; Geofence
+                          Total Posko Terdaftar
                         </span>
-                        <span className="text-sm font-black text-slate-800 dark:text-slate-200 mt-1 font-mono block">
-                          {isValidCoord ? `${latNum.toFixed(5)}, ${lngNum.toFixed(5)}` : "Belum diset"}
+                        <span className="text-base font-black text-slate-900 dark:text-slate-100 mt-1 block">
+                          {items.length} Pangkalan Posko
                         </span>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap text-xs">
                           <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 px-2 py-0.5 rounded-md">
-                            <Radio size={10} className="text-indigo-500" />
-                            Radius {Number(posko.radius) || 500}m
+                            <Building2 size={10} className="text-indigo-500" />
+                            {totalUtama} Utama
                           </span>
-                          {isValidCoord && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopyCoordinate(posko.id, posko.latitude, posko.longitude)}
-                              className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
-                            >
-                              {copiedCoordId === posko.id ? (
-                                <span className="text-emerald-600 flex items-center gap-1">
-                                  <Check size={12} /> Tersalin!
-                                </span>
-                              ) : (
-                                <span className="flex items-center gap-1">
-                                  <Copy size={12} /> Salin
-                                </span>
-                              )}
-                            </button>
+                          {totalTambahan > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded-md">
+                              <Radio size={10} className="text-emerald-500" />
+                              {totalTambahan} Kegiatan
+                            </span>
                           )}
                         </div>
                       </div>
@@ -1075,75 +1117,229 @@ export const PoskoKknPage: React.FC = () => {
                   </div>
 
                   {/* 2 Column Details & Map */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Left: Foto, Alamat & Fasilitas Kebersihan */}
-                    <div className="lg:col-span-5 space-y-6">
-                      {/* Foto Posko Card */}
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                            <Eye size={14} />
-                            <span>Dokumentasi Posko</span>
-                          </h4>
-                          {canEditPosko && (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditModal(posko)}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1 cursor-pointer shadow-2xs"
-                            >
-                              <Upload size={12} />
-                              <span>{posko.foto || posko.fotoUrl ? "Ubah Foto" : "Unggah Foto"}</span>
-                            </button>
-                          )}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    {/* Left Column: DYNAMIC ITERATION OF ALL POSKO CARDS */}
+                    <div className="lg:col-span-6 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building2 size={18} className="text-indigo-600 dark:text-indigo-400" />
+                          <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">
+                            Daftar Titik Posko Bimbingan
+                          </h3>
                         </div>
-                        {resolvedFoto ? (
-                          <div
-                            onClick={() => setPreviewImage({ url: resolvedFoto, title: posko.nama, subtitle: posko.alamat })}
-                            className="relative aspect-video rounded-2xl overflow-hidden cursor-pointer group border border-slate-200 dark:border-slate-700 bg-slate-950 shadow-xs"
-                          >
-                            <img
-                              src={resolvedFoto}
-                              alt={posko.nama}
-                              onError={(e) => handlePoskoImageError(e, posko.nama)}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
-                              <Eye size={18} />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="aspect-video rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-800/80 dark:to-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center gap-2 text-indigo-600 dark:text-indigo-400 p-6 text-center">
-                            <GraduationCap size={32} />
-                            <span className="font-bold text-xs">Belum ada foto posko</span>
-                            {canEditPosko && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditModal(posko)}
-                                className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-2xs mt-1"
-                              >
-                                Upload Foto Sekarang
-                              </button>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="pt-2">
-                          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Alamat Lengkap
-                          </span>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1 leading-relaxed">
-                            {posko.alamat || "Alamat fisik posko belum tercatat lengkap."}
-                          </p>
-                        </div>
+                        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">
+                          {items.length} Titik Posko
+                        </span>
                       </div>
 
-                      {/* Card Fasilitas Kebersihan di Sekitar Posko */}
+                      {/* Map through ALL Posko Items dynamically */}
+                      {items.map((posko, index) => {
+                        const isUtama = posko.isUtama ?? (index === 0);
+                        const latNum = Number(posko.latitude);
+                        const lngNum = Number(posko.longitude);
+                        const isValidCoord = !isNaN(latNum) && !isNaN(lngNum) && latNum !== 0 && lngNum !== 0;
+                        const resolvedFoto = resolveImageUrl(posko.foto || posko.fotoUrl);
+
+                        return (
+                          <div
+                            key={posko.id || index}
+                            className={`bg-white dark:bg-slate-900 rounded-3xl border ${
+                              isUtama
+                                ? "border-indigo-200 dark:border-indigo-800/80 ring-1 ring-indigo-500/10"
+                                : "border-slate-200 dark:border-slate-800"
+                            } p-5 sm:p-6 shadow-xs space-y-5 transition duration-200 hover:shadow-md`}
+                          >
+                            {/* Card Top: Badges & Actions */}
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+                              <div className="space-y-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span
+                                    className={`px-2.5 py-0.5 rounded-md text-[10.5px] font-black uppercase tracking-wider ${
+                                      isUtama
+                                        ? "bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                                        : "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                    }`}
+                                  >
+                                    {isUtama ? "Posko Utama" : `Posko Kegiatan #${index}`}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1 ${
+                                      posko.statusApproval === "APPROVED"
+                                        ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                        : "bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                                    }`}
+                                  >
+                                    <CheckCircle2 size={11} />
+                                    <span>{posko.statusApproval === "APPROVED" ? "Terverifikasi" : "Pending Approval"}</span>
+                                  </span>
+                                </div>
+                                <h4 className="text-lg font-black text-slate-900 dark:text-slate-100">
+                                  {posko.nama}
+                                </h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
+                                  <MapPin size={13} className="text-rose-500 shrink-0" />
+                                  <span>Kelurahan {posko.kelurahan} &bull; {formatCleanRw(posko.rwName)}</span>
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                                {isValidCoord && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewOnMap(latNum, lngNum)}
+                                    className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900 transition flex items-center gap-1 text-xs font-bold cursor-pointer shadow-2xs"
+                                    title="Fokuskan posko ini pada peta"
+                                  >
+                                    <Crosshair size={13} />
+                                    <span>Fokus Peta</span>
+                                  </button>
+                                )}
+                                {canEditPosko && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditModal(posko)}
+                                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center gap-1 text-xs font-bold cursor-pointer shadow-2xs"
+                                    title="Edit & Unggah Foto Posko"
+                                  >
+                                    <Pencil size={12} />
+                                    <span>Edit</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Card Body: Foto & Details Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                              {/* Foto Thumbnail */}
+                              <div className="sm:col-span-5">
+                                {resolvedFoto ? (
+                                  <div
+                                    onClick={() => setPreviewImage({ url: resolvedFoto, title: posko.nama, subtitle: posko.alamat })}
+                                    className="relative aspect-video sm:aspect-square rounded-2xl overflow-hidden cursor-pointer group border border-slate-200 dark:border-slate-700 bg-slate-950 shadow-xs"
+                                  >
+                                    <img
+                                      src={resolvedFoto}
+                                      alt={posko.nama}
+                                      onError={(e) => handlePoskoImageError(e, posko.nama)}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                    />
+                                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white">
+                                      <Eye size={18} />
+                                    </div>
+                                    <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[9.5px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                                      <Eye size={10} />
+                                      <span>Lihat Foto</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="aspect-video sm:aspect-square rounded-2xl bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-800/80 dark:to-indigo-950/40 border border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center gap-1.5 text-indigo-600 dark:text-indigo-400 p-4 text-center">
+                                    <GraduationCap size={28} />
+                                    <span className="font-bold text-[11px]">Belum ada foto</span>
+                                    {canEditPosko && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenEditModal(posko)}
+                                        className="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[10.5px] font-bold hover:bg-indigo-700 transition shadow-2xs mt-1 cursor-pointer"
+                                      >
+                                        Unggah Foto
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Posko Info Details */}
+                              <div className="sm:col-span-7 space-y-3 text-xs">
+                                <div>
+                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                    Alamat Posko
+                                  </span>
+                                  <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 leading-relaxed">
+                                    {posko.alamat || "Alamat fisik belum dicatat lengkap."}
+                                  </p>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                                  <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      PIC Posko
+                                    </span>
+                                    <p className="font-extrabold text-slate-800 dark:text-slate-200 truncate mt-0.5">
+                                      {posko.pic || "Ketua Kelompok"}
+                                    </p>
+                                    {formatWhatsAppUrl(posko.kontak) ? (
+                                      <a
+                                        href={formatWhatsAppUrl(posko.kontak)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[11px] font-bold text-emerald-600 hover:underline flex items-center gap-1 mt-0.5"
+                                      >
+                                        <Phone size={10} />
+                                        <span>Hubungi PIC</span>
+                                      </a>
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400 italic block mt-0.5">Kontak belum ada</span>
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                                      Radius Geofence
+                                    </span>
+                                    <p className="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1 mt-0.5">
+                                      <Radio size={12} className="text-indigo-500" />
+                                      <span>{Number(posko.radius) || 500}m</span>
+                                    </p>
+                                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                                      Presensi Kehadiran
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Koordinat & Actions */}
+                                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                                  <div className="font-mono font-bold text-[11px] text-slate-600 dark:text-slate-400">
+                                    {isValidCoord ? `${latNum.toFixed(5)}, ${lngNum.toFixed(5)}` : "Koordinat belum diset"}
+                                  </div>
+
+                                  <div className="flex items-center gap-1.5">
+                                    {isValidCoord && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCopyCoordinate(posko.id, posko.latitude, posko.longitude)}
+                                          className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer"
+                                          title="Salin Koordinat"
+                                        >
+                                          {copiedCoordId === posko.id ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                                        </button>
+                                        <a
+                                          href={`https://www.google.com/maps/search/?api=1&query=${latNum},${lngNum}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 transition cursor-pointer"
+                                          title="Buka di Google Maps"
+                                        >
+                                          <ExternalLink size={12} />
+                                        </a>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Card Fasilitas Kebersihan di Kelurahan Binaan */}
                       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <FileCheck size={16} className="text-emerald-600 dark:text-emerald-400" />
                             <h4 className="text-xs font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                              Fasilitas di Kelurahan {posko.kelurahan}
+                              Fasilitas Kebersihan di Kelurahan {rawKelurahan}
                             </h4>
                           </div>
                           <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
@@ -1153,10 +1349,10 @@ export const PoskoKknPage: React.FC = () => {
 
                         {dplFacilities.length === 0 ? (
                           <p className="text-xs text-slate-400 italic py-2">
-                            Belum ada fasilitas kebersihan terdata di Kelurahan {posko.kelurahan}.
+                            Belum ada fasilitas kebersihan terdata di Kelurahan {rawKelurahan}.
                           </p>
                         ) : (
-                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                             {dplFacilities.map((f) => (
                               <div
                                 key={f.id}
@@ -1184,134 +1380,188 @@ export const PoskoKknPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Right: Map */}
-                    <div className="lg:col-span-7">
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs h-[480px] flex flex-col">
+                    {/* Right Column: GIS MULTI-POSKO INTERACTIVE MAP */}
+                    <div className="lg:col-span-6 lg:sticky lg:top-6">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs h-[560px] flex flex-col">
                         <div className="flex items-center justify-between px-2 pb-3 mb-2 border-b border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2">
                             <Compass size={16} className="text-indigo-600" />
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              Lokasi Presisi Posko &amp; Fasilitas GIS
+                              Peta Sebaran {items.length} Posko &amp; Wilayah Kelurahan {kelurahanGeo.name}
                             </span>
                           </div>
-                          {isValidCoord && (
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleViewOnMap(latNum, lngNum)}
-                                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 flex items-center gap-1 cursor-pointer"
-                              >
-                                <Crosshair size={13} />
-                                <span>Fokus Posko</span>
-                              </button>
-                            </div>
+                          {validPoskoCoords.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMapTargetCenter([validPoskoCoords[0].lat, validPoskoCoords[0].lng]);
+                                setMapTargetZoom(15);
+                              }}
+                              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Crosshair size={13} />
+                              <span>Reset Pandangan</span>
+                            </button>
                           )}
                         </div>
 
                         <div className="flex-1 rounded-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700">
-                          {isValidCoord ? (
-                            <MapContainer
-                              center={[latNum, lngNum]}
-                              zoom={16}
-                              style={{ height: "100%", width: "100%" }}
-                              className="z-0"
-                            >
-                              <ThemeTileLayer />
-                              <MapFlyToController center={mapTargetCenter || [latNum, lngNum]} zoom={mapTargetZoom} />
+                          <MapContainer
+                            center={defaultCenter}
+                            zoom={15}
+                            style={{ height: "100%", width: "100%" }}
+                            className="z-0"
+                          >
+                            <ThemeTileLayer />
+                            <MapFlyToController center={mapTargetCenter || defaultCenter} zoom={mapTargetZoom} />
 
-                              {/* Batas Poligon Kelurahan */}
-                              {kelurahanGeo?.bounds && (
-                                <Polygon
-                                  positions={kelurahanGeo.bounds}
-                                  pathOptions={{
-                                    color: kelurahanGeo.color || "#4f46e5",
-                                    fillColor: kelurahanGeo.color || "#4f46e5",
-                                    fillOpacity: 0.08,
-                                    weight: 2,
-                                    dashArray: "4, 6",
-                                  }}
-                                >
-                                  <Popup>
-                                    <div className="p-1 text-xs">
-                                      <strong className="text-indigo-600 block">Kelurahan {kelurahanGeo.name}</strong>
-                                      <p className="text-slate-500 mt-0.5">Wilayah Kelompok Bimbingan.</p>
-                                    </div>
-                                  </Popup>
-                                </Polygon>
-                              )}
-
-                              {/* Radius Geofence Circle */}
-                              <Circle
-                                center={[latNum, lngNum]}
-                                radius={Number(posko.radius) || 500}
+                            {/* Batas Poligon Kelurahan */}
+                            {kelurahanGeo?.bounds && (
+                              <Polygon
+                                positions={kelurahanGeo.bounds}
                                 pathOptions={{
-                                  color: "#4f46e5",
-                                  fillColor: "#6366f1",
-                                  fillOpacity: 0.15,
-                                  weight: 1.5,
-                                  dashArray: "4, 4",
+                                  color: kelurahanGeo.color || "#4f46e5",
+                                  fillColor: kelurahanGeo.color || "#4f46e5",
+                                  fillOpacity: 0.08,
+                                  weight: 2,
+                                  dashArray: "4, 6",
                                 }}
-                              />
-
-                              {/* Marker Posko KKN */}
-                              <Marker position={[latNum, lngNum]} icon={createPoskoMarkerIcon(posko.nama)}>
-                                <Popup maxWidth={320}>
-                                  <div className="p-1 space-y-1 text-xs">
-                                    <div className="flex items-center gap-1">
-                                      <span className="px-1.5 py-0.5 rounded text-[9.5px] font-black bg-indigo-100 text-indigo-800">
-                                        POSKO KKN
-                                      </span>
-                                    </div>
-                                    <strong className="text-slate-900 font-bold">{posko.nama}</strong>
-                                    <p className="text-slate-500">{posko.alamat}</p>
-                                    <p className="text-indigo-600 font-semibold">{posko.kelompokName}</p>
-                                    <p className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1 pt-1 border-t border-slate-100">
-                                      <Radio size={11} /> Radius Geofence: {Number(posko.radius) || 500}m
-                                    </p>
+                              >
+                                <Popup>
+                                  <div className="p-1 text-xs">
+                                    <strong className="text-indigo-600 block">Kelurahan {kelurahanGeo.name}</strong>
+                                    <p className="text-slate-500 mt-0.5">Wilayah Kelompok Bimbingan.</p>
                                   </div>
                                 </Popup>
-                              </Marker>
+                              </Polygon>
+                            )}
 
-                              {/* Marker Fasilitas Kebersihan di Kelurahan Binaan */}
-                              {dplFacilities.map((fac) => {
-                                const fLat = Number(fac.latitude);
-                                const fLng = Number(fac.longitude);
-                                if (isNaN(fLat) || isNaN(fLng) || fLat === 0 || fLng === 0) return null;
-                                return (
-                                  <Marker
-                                    key={fac.id}
-                                    position={[fLat, fLng]}
-                                    icon={createFacilityIcon(fac.jenis, fac.nama)}
-                                  >
-                                    <Popup maxWidth={280}>
-                                      <div className="p-1 text-xs space-y-1">
-                                        <div className="flex items-center justify-between gap-1">
-                                          <span className="text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                                            {fac.jenis.replace(/_/g, " ")}
-                                          </span>
-                                        </div>
-                                        <strong className="text-slate-900 font-bold block">{fac.nama}</strong>
-                                        {fac.alamat && <p className="text-slate-500 text-[11px]">{fac.alamat}</p>}
-                                        {fac.pic && (
-                                          <p className="text-[10.5px] text-slate-600">
-                                            <strong>PIC:</strong> {fac.pic} {fac.kontak ? `(${fac.kontak})` : ""}
-                                          </p>
-                                        )}
+                            {/* Radius Geofence Circle for ALL Poskos */}
+                            {items.map((p, idx) => {
+                              const lat = Number(p.latitude);
+                              const lng = Number(p.longitude);
+                              if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
+                              const isUtama = p.isUtama ?? (idx === 0);
+                              return (
+                                <Circle
+                                  key={`circle-${p.id || idx}`}
+                                  center={[lat, lng]}
+                                  radius={Number(p.radius) || 500}
+                                  pathOptions={{
+                                    color: isUtama ? "#4f46e5" : "#059669",
+                                    fillColor: isUtama ? "#6366f1" : "#10b981",
+                                    fillOpacity: 0.14,
+                                    weight: 1.5,
+                                    dashArray: "4, 4",
+                                  }}
+                                />
+                              );
+                            })}
+
+                            {/* Markers for ALL Poskos */}
+                            {items.map((p, idx) => {
+                              const lat = Number(p.latitude);
+                              const lng = Number(p.longitude);
+                              if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return null;
+                              const isUtama = p.isUtama ?? (idx === 0);
+                              return (
+                                <Marker
+                                  key={`marker-${p.id || idx}`}
+                                  position={[lat, lng]}
+                                  icon={createPoskoMarkerIcon(p.nama, isUtama)}
+                                >
+                                  <Popup maxWidth={320}>
+                                    <div className="p-1 space-y-1.5 text-xs">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span
+                                          className={`px-1.5 py-0.5 rounded text-[9.5px] font-black uppercase ${
+                                            isUtama ? "bg-indigo-100 text-indigo-800" : "bg-emerald-100 text-emerald-800"
+                                          }`}
+                                        >
+                                          {isUtama ? "Posko Utama" : `Posko Kegiatan #${idx}`}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-bold">
+                                          Radius {Number(p.radius) || 500}m
+                                        </span>
                                       </div>
-                                    </Popup>
-                                  </Marker>
-                                );
-                              })}
-                            </MapContainer>
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800">
-                              <MapPin size={32} className="mb-2 text-slate-300" />
-                              <p className="text-xs font-semibold">Titik koordinat posko belum ditentukan</p>
+                                      <strong className="text-slate-900 font-bold block text-sm">{p.nama}</strong>
+                                      <p className="text-slate-500 text-[11px]">{p.alamat}</p>
+                                      <p className="text-indigo-600 font-semibold text-[11px]">{p.kelompokName} &bull; {formatCleanRw(p.rwName)}</p>
+                                      {p.pic && (
+                                        <p className="text-[10.5px] text-slate-600 pt-1 border-t border-slate-100">
+                                          <strong>PIC:</strong> {p.pic} {p.kontak ? `(${p.kontak})` : ""}
+                                        </p>
+                                      )}
+                                      <div className="pt-1 flex items-center justify-between">
+                                        <a
+                                          href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="text-[10.5px] font-bold text-blue-600 hover:underline flex items-center gap-1"
+                                        >
+                                          <ExternalLink size={10} /> Google Maps
+                                        </a>
+                                      </div>
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                              );
+                            })}
+
+                            {/* Markers for Facilities in Kelurahan */}
+                            {showFacilitiesLayer && dplFacilities.map((fac) => {
+                              const fLat = Number(fac.latitude);
+                              const fLng = Number(fac.longitude);
+                              if (isNaN(fLat) || isNaN(fLng) || fLat === 0 || fLng === 0) return null;
+                              return (
+                                <Marker
+                                  key={fac.id}
+                                  position={[fLat, fLng]}
+                                  icon={createFacilityIcon(fac.jenis, fac.nama)}
+                                >
+                                  <Popup maxWidth={280}>
+                                    <div className="p-1 text-xs space-y-1">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span className="text-[9.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                                          {fac.jenis.replace(/_/g, " ")}
+                                        </span>
+                                      </div>
+                                      <strong className="text-slate-900 font-bold block">{fac.nama}</strong>
+                                      {fac.alamat && <p className="text-slate-500 text-[11px]">{fac.alamat}</p>}
+                                      {fac.pic && (
+                                        <p className="text-[10.5px] text-slate-600">
+                                          <strong>PIC:</strong> {fac.pic} {fac.kontak ? `(${fac.kontak})` : ""}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                              );
+                            })}
+                          </MapContainer>
+
+                          {/* Map Legend Overlay */}
+                          <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md text-[11px] space-y-1 z-[1000]">
+                            <div className="font-bold text-slate-800 dark:text-slate-200 text-[11.5px] mb-1">
+                              Legenda Peta Posko
                             </div>
-                          )}
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-md bg-indigo-600 inline-block shadow-2xs"></span>
+                              <span className="text-slate-600 dark:text-slate-300">Posko Utama</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-md bg-emerald-600 inline-block shadow-2xs"></span>
+                              <span className="text-slate-600 dark:text-slate-300">Posko Kegiatan / Tambahan</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-md bg-amber-500 inline-block shadow-2xs"></span>
+                              <span className="text-slate-600 dark:text-slate-300">Fasilitas Kebersihan</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
+
                   </div>
                 </div>
               );
@@ -1449,7 +1699,7 @@ export const PoskoKknPage: React.FC = () => {
                   Peta Sebaran Posko KKN &amp; Fasilitas Kebersihan
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Kecamatan Coblong, Kota Bandung ({filteredItems.length} posko aktif, {facilities.length} fasilitas)
+                  Cakupan Wilayah Binaan ({filteredItems.length} posko aktif, {facilities.length} fasilitas)
                 </p>
               </div>
             </div>
@@ -1782,7 +2032,7 @@ export const PoskoKknPage: React.FC = () => {
                   Daftar Direktori Posko KKN Mahasiswa
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Menampilkan {filteredItems.length} posko terdata di Kecamatan Coblong
+                  Menampilkan {filteredItems.length} posko terdata di wilayah operasional
                 </p>
               </div>
             </div>
@@ -2251,7 +2501,7 @@ export const PoskoKknPage: React.FC = () => {
                     Kelurahan {detailModalPosko.kelurahan}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-300">
-                    {formatCleanRw(detailModalPosko.rwName)} &bull; Kecamatan Coblong
+                    {formatCleanRw(detailModalPosko.rwName)} &bull; Wilayah Binaan
                   </p>
                 </div>
 

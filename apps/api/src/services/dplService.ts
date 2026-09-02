@@ -510,7 +510,7 @@ export async function ensureDplKelompokRelation(dplUserId: string) {
     // 2. Ambil data profil DPL
     const dplUser = await prisma.user.findUnique({
       where: { id: dplUserId },
-      select: { id: true, name: true, phone: true, nip: true },
+      select: { id: true, name: true, phone: true, email: true, nip: true },
     });
     if (!dplUser) return;
 
@@ -1272,7 +1272,7 @@ export const dplService = {
         const totalHours = Math.floor(totalMinutes / 60);
         const remainingMinutes = totalMinutes % 60;
         const targetHours = configTargets.targetTotalJam || 200;
-        const progressPercentage = Math.round((totalMinutes / (targetHours * 60 || 1)) * 100);
+        const progressPercentage = Math.min(100, Math.round((totalMinutes / (targetHours * 60 || 1)) * 100));
 
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },
@@ -1290,6 +1290,7 @@ export const dplService = {
           fakultas: st.fakultas || "-",
           fotoProfil: st.user?.fotoProfil || null,
           isKetua: Boolean(st.isKetua),
+          kelompokId: st.kelompokId || st.kelompok?.id || null,
           kelompokName: st.kelompok?.name || "-",
           assessmentScore: finalCalculatedScore,
           baseAssessmentScore: baseScore,

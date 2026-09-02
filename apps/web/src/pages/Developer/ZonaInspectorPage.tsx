@@ -575,7 +575,7 @@ export const ZonaInspectorPage: React.FC = () => {
   // ─── OPEN CRUD MODAL ───
   const handleOpenEditModal = (group: any) => {
     setEditingGroup(group);
-    setEditRadius(group.radius || 200);
+    setEditRadius(group.radius || 500);
 
     if (group.polygon && group.polygon.length >= 3) {
       setEditMode("POLYGON");
@@ -613,6 +613,7 @@ export const ZonaInspectorPage: React.FC = () => {
         alamat: editPoskoForm.alamat.trim() || `Kel. ${editingGroup.kelurahan || "Coblong"}`,
         latitude: lat,
         longitude: lng,
+        radius: editRadius,
         keterangan: editPoskoForm.keterangan || undefined,
       });
 
@@ -1868,7 +1869,7 @@ export const ZonaInspectorPage: React.FC = () => {
                                 : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500"
                             }`}
                           >
-                            {r}m {r === 200 ? "(Standar)" : ""}
+                            {r}m {r === 500 ? "(Standar)" : ""}
                           </button>
                         ))}
                       </div>

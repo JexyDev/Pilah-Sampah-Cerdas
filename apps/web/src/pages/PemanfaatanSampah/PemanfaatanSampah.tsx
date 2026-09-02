@@ -334,7 +334,7 @@ export const PemanfaatanSampah: React.FC = () => {
     <div className="pb-24 lg:pb-8">
       <PageHeader
         title="Fasilitas Pengelolaan Sampah"
-        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, POC, TPS) di Kecamatan Coblong."
+        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, POC, TPS) di seluruh wilayah binaan."
         icon={Sprout}
       />
 
@@ -524,7 +524,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   Peta Sebaran Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Wilayah Kecamatan Coblong, Kota Bandung ({filteredItems.length} titik aktif)
+                  Cakupan Wilayah Binaan ({filteredItems.length} titik aktif)
                 </p>
               </div>
             </div>
@@ -709,7 +709,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   Daftar Inventaris Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Menampilkan {filteredItems.length} fasilitas terdata di Kecamatan Coblong
+                  Menampilkan {filteredItems.length} fasilitas terdata di wilayah operasional
                 </p>
               </div>
             </div>
@@ -909,7 +909,7 @@ export const PemanfaatanSampah: React.FC = () => {
                             <div className="flex items-center gap-1.5">
                               <MapPin size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Coblong"}
+                                {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
                               </span>
                             </div>
 

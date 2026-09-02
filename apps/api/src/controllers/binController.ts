@@ -48,15 +48,25 @@ export class BinController {
 
       const bins = await binService.getAllBins(req.user, filters);
       let mappedBins = bins.map((bin: any) => {
-        const currentVol = Number(bin.currentVolumeLiter);
-        const maxVol = Number(bin.maxCapacityLiter);
+        const currentVol = Number(bin.currentVolumeLiter || 0);
+        const maxVol = Number(bin.maxCapacityLiter || 25);
         const kapasitas = maxVol > 0 ? Math.round((currentVol / maxVol) * 100) : 0;
 
         const isInactive7Days = bin.updatedAt
           ? Date.now() - new Date(bin.updatedAt).getTime() > 7 * 24 * 60 * 60 * 1000
           : false;
 
-        const isActivated = bin.status === "ACTIVE_BOUND" || bin.status === "ACTIVE" || bin.userId;
+        // Resolve the effective owner from direct user or primary/first binOwnerships
+        const effectiveOwner =
+          bin.user ||
+          bin.binOwnerships?.find((bo: any) => bo.type === "UTAMA")?.user ||
+          bin.binOwnerships?.[0]?.user ||
+          null;
+
+        const isBound = Boolean(effectiveOwner);
+        const effectiveUserId = effectiveOwner?.id || bin.userId || null;
+        const isActivated = (bin.status === "ACTIVE_BOUND" || bin.status === "ACTIVE") && isBound;
+
         let verifiedAtStr = "Belum Diaktivasi";
         if (isActivated && bin.updatedAt) {
           const d = new Date(bin.updatedAt);
@@ -120,8 +130,8 @@ export class BinController {
         }
 
         const calculatedAddress =
-          bin.user?.address ||
-          bin.user?.households?.[0]?.address ||
+          effectiveOwner?.address ||
+          effectiveOwner?.households?.[0]?.address ||
           (bin.rw?.name ? `${bin.rw.name}, Coblong` : "Kecamatan Coblong");
 
         return {
@@ -130,15 +140,15 @@ export class BinController {
           kode: ensureTcFormat(bin.qrCode, bin.category?.name),
           lokasi: calculatedAddress,
           address: calculatedAddress,
-          wargaAddress: bin.user?.address || bin.user?.households?.[0]?.address || null,
+          wargaAddress: effectiveOwner?.address || effectiveOwner?.households?.[0]?.address || null,
           rw: bin.rw?.name || (bin.rwId ? `ID RT/RW: ${bin.rwId}` : "Belum Terikat"),
           kelurahan: bin.rw?.kelurahan?.name || null,
-          user: bin.user
+          user: effectiveOwner
             ? {
-                id: bin.user.id,
-                name: bin.user.name,
-                phone: bin.user.phone,
-                address: bin.user.address || bin.user.households?.[0]?.address || null,
+                id: effectiveOwner.id,
+                name: effectiveOwner.name,
+                phone: effectiveOwner.phone,
+                address: effectiveOwner.address || effectiveOwner.households?.[0]?.address || null,
               }
             : null,
           kapasitas,
@@ -163,10 +173,11 @@ export class BinController {
           longitude: bin.longitude,
           currentVolumeLiter: currentVol,
           category: bin.category,
-          wargaName: bin.user?.name || null,
-          wargaPhone: bin.user?.phone || null,
+          wargaName: effectiveOwner?.name || null,
+          wargaPhone: effectiveOwner?.phone || null,
           kknName: bin.qrBatch?.assignedPic?.name || "-",
-          userId: bin.userId || null,
+          userId: effectiveUserId,
+          isBound,
           realStatus: bin.status,
           needsInspection: isInactive7Days && bin.status === "ACTIVE_BOUND",
           lastActivityLog,
@@ -294,12 +305,32 @@ export class BinController {
     try {
       const { id } = req.params;
       const { name, kelurahanId, latitude, longitude } = req.body;
+
+      const user = req.user;
+      if (user && user.role === "RW") {
+        let userRwId = user.rwId;
+        if (!userRwId) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.userId },
+            select: { rwId: true },
+          });
+          userRwId = dbUser?.rwId ?? undefined;
+        }
+        if (!userRwId || Number(userRwId) !== Number(id)) {
+          res.status(403).json({
+            error: "FORBIDDEN",
+            message: "Akses ditolak: Anda hanya berwenang mengubah lokasi wilayah RW Anda sendiri.",
+          });
+          return;
+        }
+      }
+
       const updatedArea = await binService.updateArea(
         Number(id),
         name,
         kelurahanId,
-        latitude ? Number(latitude) : undefined,
-        longitude ? Number(longitude) : undefined
+        latitude !== undefined && latitude !== null && latitude !== "" ? Number(latitude) : undefined,
+        longitude !== undefined && longitude !== null && longitude !== "" ? Number(longitude) : undefined
       );
       res.status(200).json({
         success: true,

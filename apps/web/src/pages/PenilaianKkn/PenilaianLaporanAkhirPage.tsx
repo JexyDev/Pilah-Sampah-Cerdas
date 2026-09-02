@@ -256,7 +256,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
   // Clean Markdown/Asterisks from Title
   const getCleanTitle = (title?: string | null) => {
-    if (!title) return "Laporan Akhir KKN Tematik Coblong";
+    if (!title) return "Laporan Akhir KKN Tematik BERSEKA";
     return title.replace(/\*\*/g, "").trim();
   };
 
@@ -327,7 +327,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       <body>
         <div class="header">
           <h2>LEMBAR EVALUASI LAPORAN AKHIR KKN</h2>
-          <p>Kecamatan Coblong - Program Pengelolaan & Pemilahan Sampah Terpadu</p>
+          <p>Program Pengelolaan & Pemilahan Sampah Terpadu BERSEKA</p>
         </div>
         <table class="meta-table">
           <tr><td class="label">Nama Mahasiswa</td><td><strong>${selectedStudent.nama}</strong></td></tr>
@@ -356,7 +356,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         </div>
         <div style="margin-bottom: 20px; font-size: 9pt; background: #f8fafc; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
           <strong>Catatan / Umpan Balik DPL:</strong>
-          <p style="margin: 4px 0 0 0; color: #334155;">${catatanInput || "Laporan akhir telah memenuhi seluruh standar kriteria KKN Tematik Coblong."}</p>
+          <p style="margin: 4px 0 0 0; color: #334155;">${catatanInput || "Laporan akhir telah memenuhi seluruh standar kriteria KKN Tematik BERSEKA."}</p>
         </div>
         <div class="sig-row">
           <div>
@@ -419,7 +419,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
         <div class="kop">
           <h3>Pemerintah Kota Bandung &bull; Lembaga Penelitian & Pengabdian Masyarakat</h3>
           <h2>KULIAH KERJA NYATA (KKN) TEMATIK BERSEKA</h2>
-          <p>Wilayah Kecamatan Coblong - Sistem Pengelolaan Sampah Cerdas & Berkelanjutan</p>
+          <p>Sistem Pengelolaan Sampah Cerdas & Berkelanjutan</p>
         </div>
 
         <div class="doc-title">
@@ -438,7 +438,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
 
         <div class="section-heading">I. Ruang Lingkup &amp; Latar Belakang Program</div>
         <p class="content-text">
-          Program Kuliah Kerja Nyata (KKN) Tematik BERSEKA di wilayah ${student.kelompok} difokuskan pada optimalisasi pengelolaan dan pemilahan sampah organik dan anorganik berbasis partisipasi masyarakat di tingkat RW wilayah Kecamatan Coblong.
+          Program Kuliah Kerja Nyata (KKN) Tematik BERSEKA di wilayah ${student.kelompok} difokuskan pada optimalisasi pengelolaan dan pemilahan sampah organik dan anorganik berbasis partisipasi masyarakat di tingkat RW binaan.
         </p>
 
         <div class="section-heading">II. Capaian &amp; Rekapitulasi Pelaksanaan</div>
@@ -1196,7 +1196,7 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
                       {getCleanTitle(selectedStudent.judulLaporan)}
                     </h2>
                     <p className="text-xs text-slate-500 mt-2">
-                      Wilayah Dampingan: <strong>{selectedStudent.kelompok}</strong> &bull; Kecamatan Coblong &bull; Periode 2026
+                      Wilayah Dampingan: <strong>{selectedStudent.kelompok}</strong> &bull; Periode 2026
                     </p>
                   </div>
 

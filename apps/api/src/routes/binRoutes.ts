@@ -249,7 +249,7 @@ router.post(
 router.put(
   "/areas/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
   binController.updateArea
 );
 router.delete(

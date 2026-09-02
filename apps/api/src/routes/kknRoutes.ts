@@ -524,6 +524,20 @@ router.put(
 
 /**
  * @swagger
+ * /api/v1/kkn/zona-map-unified:
+ *   get:
+ *     summary: Mendapatkan seluruh data peta zona KKN terpadu (SSOT)
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat data zona KKN terpadu
+ */
+router.get("/zona-map-unified", authMiddleware, kknController.getUnifiedZones);
+
+/**
+ * @swagger
  * /api/v1/kkn/posko:
  *   get:
  *     summary: Mendapatkan seluruh daftar Posko KKN di seluruh kelurahan

@@ -356,15 +356,15 @@ const Leaderboard: React.FC = () => {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto animate-fade-in">
       {/* 1. HEADER BANNER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shrink-0 font-bold">
-            <Trophy size={24} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200 shrink-0 font-bold">
+            <Trophy size={22} className="sm:w-6 sm:h-6" />
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
               Peringkat Warga
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">
@@ -375,44 +375,46 @@ const Leaderboard: React.FC = () => {
       </div>
 
       {/* 2. SYSTEM TOGGLE + SUB-TABS */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3 sm:space-y-4 w-full min-w-0 max-w-full overflow-hidden">
         {/* System Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto min-w-0">
             <button
               onClick={() => {
                 setSystem("system1");
                 setSearchTerm("");
               }}
-              className={`px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+              className={`px-2.5 sm:px-4 py-2 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 min-w-0 ${
                 system === "system1"
                   ? "bg-[#009966] text-white shadow-2xs"
                   : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
               }`}
             >
-              <Users size={14} /> Warga dan Wilayah
+              <Users size={14} className="shrink-0" />
+              <span className="truncate">Warga dan Wilayah</span>
             </button>
             <button
               onClick={() => {
                 setSystem("system2");
                 setSearchTerm("");
               }}
-              className={`px-4 py-2 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+              className={`px-2.5 sm:px-4 py-2 rounded-xl font-black text-[11px] sm:text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 min-w-0 ${
                 system === "system2"
                   ? "bg-[#009966] text-white shadow-2xs"
                   : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
               }`}
             >
-              <GraduationCap size={14} /> Program KKN
+              <GraduationCap size={14} className="shrink-0" />
+              <span className="truncate">Program KKN</span>
             </button>
           </div>
 
           {/* View Mode Toggle (Visual Chart vs Table vs Both) */}
           {system === "system1" && !["kelurahan", "overview"].includes(s1Tab) && (
-            <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 self-start sm:self-auto">
+            <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 self-start sm:self-auto overflow-x-auto scrollbar-none">
               <button
                 onClick={() => setViewDisplayMode("BOTH")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                   viewDisplayMode === "BOTH"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
@@ -420,11 +422,11 @@ const Leaderboard: React.FC = () => {
                 title="Tampilkan Grafik & Tabel"
               >
                 <BarChart3 size={13} className="text-[#009966] dark:text-emerald-400" />
-                <span className="hidden md:inline">Grafik &amp; Tabel</span>
+                <span className="hidden sm:inline">Grafik &amp; Tabel</span>
               </button>
               <button
                 onClick={() => setViewDisplayMode("CHART_ONLY")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                   viewDisplayMode === "CHART_ONLY"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
@@ -432,11 +434,11 @@ const Leaderboard: React.FC = () => {
                 title="Tampilkan Grafik Saja"
               >
                 <BarChart3 size={13} className="text-amber-500" />
-                <span className="hidden md:inline">Grafik</span>
+                <span className="hidden sm:inline">Grafik</span>
               </button>
               <button
                 onClick={() => setViewDisplayMode("GRID_TABLE")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
                   viewDisplayMode === "GRID_TABLE"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
@@ -444,14 +446,14 @@ const Leaderboard: React.FC = () => {
                 title="Tampilkan Tabel Saja"
               >
                 <LayoutList size={13} className="text-blue-600 dark:text-blue-400" />
-                <span className="hidden md:inline">Tabel</span>
+                <span className="hidden sm:inline">Tabel</span>
               </button>
             </div>
           )}
         </div>
 
         {/* Sub-Category Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {system === "system1" ? (
             <>
               {[
@@ -470,14 +472,14 @@ const Leaderboard: React.FC = () => {
                       setS1Tab(tab.id);
                       setSearchTerm("");
                     }}
-                    className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                    className={`px-3.5 sm:px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                       active
                         ? "bg-amber-50 text-amber-700 border border-amber-200"
                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
                     }`}
                   >
-                    <TabIcon size={14} />
-                    <span>{tab.label}</span>
+                    <TabIcon size={14} className="shrink-0" />
+                    <span className="whitespace-nowrap">{tab.label}</span>
                   </button>
                 );
               })}
@@ -497,14 +499,14 @@ const Leaderboard: React.FC = () => {
                       setS2Tab(tab.id);
                       setSearchTerm("");
                     }}
-                    className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                    className={`px-3.5 sm:px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                       active
                         ? "bg-amber-50 text-amber-700 border border-amber-200"
                         : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200"
                     }`}
                   >
-                    <TabIcon size={14} />
-                    <span>{tab.label}</span>
+                    <TabIcon size={14} className="shrink-0" />
+                    <span className="whitespace-nowrap">{tab.label}</span>
                   </button>
                 );
               })}
@@ -521,9 +523,9 @@ const Leaderboard: React.FC = () => {
       ) : (
         <>
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black border border-amber-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+              <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black border border-amber-200 shrink-0">
                 <Trophy size={20} />
               </div>
               <div>
@@ -532,8 +534,8 @@ const Leaderboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center font-black border border-emerald-200">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center font-black border border-emerald-200 shrink-0">
                 <Recycle size={20} />
               </div>
               <div>
@@ -542,8 +544,8 @@ const Leaderboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-black border border-sky-200">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center gap-4">
+              <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-black border border-sky-200 shrink-0">
                 <TrendingUp size={20} />
               </div>
               <div>
@@ -554,19 +556,30 @@ const Leaderboard: React.FC = () => {
           </div>
 
           {/* Page Title */}
-          <div className="text-center space-y-1 py-2">
-            <h2 className="text-xl font-black text-slate-800 dark:text-slate-100">{pageTitle}</h2>
+          <div className="text-center space-y-1 py-1 sm:py-2">
+            <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100">{pageTitle}</h2>
             <p className="text-slate-500 text-xs font-semibold">{pageSubtitle}</p>
           </div>
 
           {/* Top 3 Podium Cards */}
           {top3.length > 0 && (
-            <div className="flex flex-col md:flex-row justify-center items-end gap-4 md:gap-6 pt-6 pb-2">
+            <div className="flex flex-row justify-center items-end gap-2 sm:gap-4 md:gap-6 pt-10 sm:pt-12 pb-3 sm:pb-4">
               {top3.map((u) => {
                 const isFirst = u.rank === 1;
                 const isSecond = u.rank === 2;
 
-                const heightClass = isFirst ? "h-56" : isSecond ? "h-48" : "h-40";
+                const heightClass = isFirst
+                  ? "h-44 sm:h-52 md:h-56"
+                  : isSecond
+                  ? "h-36 sm:h-44 md:h-48"
+                  : "h-32 sm:h-40 md:h-40";
+
+                const orderClass = isFirst
+                  ? "order-2"
+                  : isSecond
+                  ? "order-1"
+                  : "order-3";
+
                 const colorClass = isFirst
                   ? "from-amber-400 to-amber-500"
                   : isSecond
@@ -578,25 +591,29 @@ const Leaderboard: React.FC = () => {
                   <div
                     key={u.id}
                     onClick={() => setSelectedItem(u)}
-                    className={`w-full md:w-60 flex flex-col items-center justify-end relative cursor-pointer group transition-transform hover:-translate-y-1 order-${
-                      isFirst ? "2" : isSecond ? "1" : "3"
-                    }`}
+                    className={`flex-1 max-w-[125px] sm:max-w-[180px] md:max-w-none md:w-60 flex flex-col items-center justify-end relative cursor-pointer group transition-transform hover:-translate-y-1 ${orderClass}`}
                   >
-                    <div className="absolute -top-10 z-10 flex flex-col items-center">
-                      <Medal color={medalColor} size={40} className="drop-shadow-md group-hover:scale-110 transition" />
-                      <span className="font-extrabold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-full text-[11px] shadow-sm border border-slate-200 dark:border-slate-800 mt-[-8px]">
+                    <div className="absolute -top-8 sm:-top-10 z-10 flex flex-col items-center">
+                      <Medal
+                        color={medalColor}
+                        size={30}
+                        className="sm:w-9 sm:h-9 md:w-10 md:h-10 drop-shadow-md group-hover:scale-110 transition"
+                      />
+                      <span className="font-extrabold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 px-1.5 sm:px-2.5 py-0.5 rounded-full text-[9.5px] sm:text-[11px] shadow-sm border border-slate-200 dark:border-slate-800 mt-[-6px] sm:mt-[-8px] whitespace-nowrap">
                         Peringkat {u.rank}
                       </span>
                     </div>
                     <div
-                      className={`w-full rounded-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-md flex flex-col justify-end ${heightClass} group-hover:shadow-xl transition`}
+                      className={`w-full rounded-xl sm:rounded-2xl bg-gradient-to-t ${colorClass} p-2.5 sm:p-4 text-center shadow-md flex flex-col justify-end ${heightClass} group-hover:shadow-xl transition`}
                     >
-                      <h3 className="font-black text-white text-sm truncate drop-shadow-md">{u.name}</h3>
-                      <p className="text-white/90 font-extrabold text-xs mt-1">
+                      <h3 className="font-black text-white text-xs sm:text-sm truncate drop-shadow-md">
+                        {u.name}
+                      </h3>
+                      <p className="text-white/90 font-extrabold text-[11px] sm:text-xs mt-0.5 sm:mt-1">
                         {Math.round(u.points).toLocaleString("id-ID")}{" "}
-                        <span className="text-[10px] font-bold text-white/80">Poin</span>
+                        <span className="text-[9px] sm:text-[10px] font-bold text-white/80">Poin</span>
                       </p>
-                      <span className="text-[10px] text-white/90 font-extrabold mt-2 underline opacity-0 group-hover:opacity-100 transition">
+                      <span className="hidden sm:inline-block text-[10px] text-white/90 font-extrabold mt-2 underline opacity-0 group-hover:opacity-100 transition">
                         Lihat Detail →
                       </span>
                     </div>
@@ -608,39 +625,39 @@ const Leaderboard: React.FC = () => {
 
           {/* VISUAL RECHARTS BAR CHART PANEL (Bentuk Chart UI) */}
           {(viewDisplayMode === "BOTH" || viewDisplayMode === "CHART_ONLY") && top10ChartData.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0">
-                    <BarChart3 size={20} />
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200 shrink-0">
+                    <BarChart3 size={18} className="sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-slate-800 dark:text-slate-100 tracking-tight">
+                    <h3 className="font-black text-sm sm:text-base text-slate-800 dark:text-slate-100 tracking-tight">
                       Grafik Perbandingan Top 10 — {pageTitle}
                     </h3>
-                    <p className="text-xs text-slate-500 font-semibold">
+                    <p className="text-[11px] sm:text-xs text-slate-500 font-semibold">
                       Visualisasi batang distribusi perolehan {pointsLabel.toLowerCase()} peserta terbaik
                     </p>
                   </div>
                 </div>
-                <span className="text-[11px] bg-emerald-50 text-[#009966] px-3 py-1 rounded-full font-black border border-emerald-200">
+                <span className="text-[10px] sm:text-[11px] bg-emerald-50 text-[#009966] px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full font-black border border-emerald-200 shrink-0">
                   Real-time DB
                 </span>
               </div>
 
-              <div className="h-72 w-full pt-2">
+              <div className="h-64 sm:h-72 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={top10ChartData} margin={{ top: 20, right: 20, left: 0, bottom: 25 }}>
+                  <BarChart data={top10ChartData} margin={{ top: 15, right: 10, left: -20, bottom: 25 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis
                       dataKey="name"
-                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                      tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
                       interval={0}
-                      angle={-15}
+                      angle={-20}
                       textAnchor="end"
                     />
                     <YAxis
-                      tick={{ fill: "#64748b", fontSize: 11, fontWeight: 700 }}
+                      tick={{ fill: "#64748b", fontSize: 10, fontWeight: 700 }}
                       axisLine={false}
                       tickLine={false}
                     />
@@ -658,7 +675,7 @@ const Leaderboard: React.FC = () => {
 
           {/* TABLE DISPLAY PANEL WITH STANDARDIZED PAGINATION */}
           {(viewDisplayMode === "BOTH" || viewDisplayMode === "GRID_TABLE") && (
-            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col justify-between">
               <div>
                 {/* Search Toolbar */}
                 <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
