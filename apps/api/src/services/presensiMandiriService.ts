@@ -6,13 +6,15 @@
 
 import { prisma } from "../lib/prisma.js";
 import { auditTrailService } from "./auditTrailService.js";
+import { websocketService } from "./websocketService.js";
 
 const MAX_DESKRIPSI_LENGTH = 500;
 
 export class PresensiMandiriService {
   /**
-   * Check-in presensi mandiri — berlaku TANPA jadwal aktif.
+   * Check-in presensi mandiri — berlaku dengan atau tanpa jadwal aktif.
    * Foto bukti wajib. Deskripsi kegiatan wajib (max 500 karakter).
+   * Otomatis sinkronisasi ke ActivityAttendance (kehadiran_kegiatan) jika ada jadwal KKN aktif hari ini.
    */
   async checkIn(params: {
     studentId: string;
@@ -33,7 +35,7 @@ export class PresensiMandiriService {
 
     const student = await prisma.studentKkn.findUnique({
       where: { userId: studentId },
-      select: { kelompokId: true },
+      select: { kelompokId: true, nim: true, jurusan: true },
     });
 
     if (!student) throw new Error("STUDENT_PROFILE_INCOMPLETE");
@@ -62,7 +64,7 @@ export class PresensiMandiriService {
         status: "AKTIF",
       },
       include: {
-        student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
+        student: { select: { id: true, name: true, phone: true, studentProfile: { select: { nim: true, jurusan: true } } } },
         kelompok: { select: { id: true, name: true, kelurahan: true } },
       },
     });
@@ -85,11 +87,101 @@ export class PresensiMandiriService {
       })
       .catch((err) => console.warn("[Audit] Presensi mandiri check-in log error:", err));
 
+    // [AUTO-SYNC] Bridge presensi mandiri ke ActivityAttendance (Jadwal KKN Resmi)
+    try {
+      const activeSchedule = await prisma.schedule.findFirst({
+        where: {
+          date: { gte: todayStart, lte: todayEnd },
+          isActive: true,
+          ...(student.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (activeSchedule) {
+        const syncedAtt = await prisma.activityAttendance.upsert({
+          where: {
+            studentId_scheduleId: {
+              studentId,
+              scheduleId: activeSchedule.id,
+            },
+          },
+          update: {
+            status: "BERLANGSUNG",
+            attendedAt: new Date(),
+            latitude,
+            longitude,
+            method: "GPS_MANDIRI_SYNC",
+            deskripsiKegiatan: deskripsiKegiatan.trim(),
+            fotoUrl,
+            platformOs: platformOs || "IOS_SAFARI_WEB",
+            checkOutAt: null,
+          },
+          create: {
+            studentId,
+            scheduleId: activeSchedule.id,
+            status: "BERLANGSUNG",
+            attendedAt: new Date(),
+            latitude,
+            longitude,
+            method: "GPS_MANDIRI_SYNC",
+            deskripsiKegiatan: deskripsiKegiatan.trim(),
+            fotoUrl,
+            platformOs: platformOs || "IOS_SAFARI_WEB",
+          },
+        });
+
+        // Broadcast realtime updates ke web dashboard via WebSocket
+        websocketService.broadcastStudentAttendance({
+          id: syncedAtt.id,
+          studentId,
+          scheduleId: activeSchedule.id,
+          status: "BERLANGSUNG",
+          currentStatus: "DALAM_ZONA",
+          attendedAt: syncedAtt.attendedAt.toISOString(),
+          actualInZoneMinutes: 0,
+        });
+      }
+
+      // Record student GPS point log
+      const newLoc = await prisma.studentLocation.create({
+        data: {
+          studentId,
+          latitude,
+          longitude,
+        },
+      });
+
+      websocketService.broadcastStudentLocation({
+        id: newLoc.id,
+        studentId,
+        latitude,
+        longitude,
+        recordedAt: newLoc.recordedAt,
+        namaMahasiswa: record.student?.name || "Mahasiswa",
+        nim: student.nim || "",
+        jurusan: student.jurusan || "",
+        kelompokId: student.kelompokId || null,
+        student: {
+          id: studentId,
+          name: record.student?.name || "Mahasiswa",
+          phone: record.student?.phone || "",
+          studentProfile: {
+            nim: student.nim || "",
+            jurusan: student.jurusan || "",
+            kelompokId: student.kelompokId || null,
+          },
+        },
+      });
+    } catch (syncErr) {
+      console.warn("[PresensiMandiri] Auto-sync to ActivityAttendance warning:", syncErr);
+    }
+
     return {
       presensiId: record.id,
       studentId: record.studentId,
-      nim: record.student.studentProfile?.nim ?? null,
-      namaLengkap: record.student.name,
+      nim: record.student?.studentProfile?.nim ?? null,
+      namaLengkap: record.student?.name,
       kelompok: record.kelompok
         ? {
             id: record.kelompok.id,
@@ -123,7 +215,7 @@ export class PresensiMandiriService {
     if (record.status === "SELESAI") throw new Error("ALREADY_CHECKED_OUT");
 
     const checkOutAt = new Date();
-    const durasiMenit = Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000);
+    const durasiMenit = Math.max(1, Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000));
 
     const updateData: any = { status: "SELESAI", checkOutAt, durasiMenit };
     if (deskripsiKegiatan && deskripsiKegiatan.trim().length > 0) {
@@ -152,6 +244,45 @@ export class PresensiMandiriService {
         deskripsiKegiatan: updated.deskripsiKegiatan,
       })
       .catch((err) => console.warn("[Audit] Presensi mandiri check-out log error:", err));
+
+    // [AUTO-SYNC] Sinkronisasi penyelesaian sesi di ActivityAttendance
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const activeAttendance = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId,
+          attendedAt: { gte: todayStart },
+          status: { in: ["BERLANGSUNG", "TERJEDA", "DALAM_RADIUS", "DI_ZONA"] },
+        },
+        orderBy: { attendedAt: "desc" },
+      });
+
+      if (activeAttendance) {
+        const finalStatus = durasiMenit >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+        const syncedFinish = await prisma.activityAttendance.update({
+          where: { id: activeAttendance.id },
+          data: {
+            status: finalStatus,
+            checkOutAt,
+            actualInZoneMinutes: durasiMenit,
+            ...(updateData.deskripsiKegiatan ? { deskripsiKegiatan: updateData.deskripsiKegiatan } : {}),
+          },
+        });
+
+        websocketService.broadcastStudentAttendance({
+          id: syncedFinish.id,
+          studentId,
+          scheduleId: syncedFinish.scheduleId,
+          status: finalStatus,
+          currentStatus: "CHECKED_OUT",
+          attendedAt: syncedFinish.attendedAt.toISOString(),
+          actualInZoneMinutes: durasiMenit,
+        });
+      }
+    } catch (finishSyncErr) {
+      console.warn("[PresensiMandiri] Auto-sync finish to ActivityAttendance warning:", finishSyncErr);
+    }
 
     return {
       presensiId: updated.id,

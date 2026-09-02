@@ -294,12 +294,32 @@ export class BinController {
     try {
       const { id } = req.params;
       const { name, kelurahanId, latitude, longitude } = req.body;
+
+      const user = req.user;
+      if (user && user.role === "RW") {
+        let userRwId = user.rwId;
+        if (!userRwId) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.userId },
+            select: { rwId: true },
+          });
+          userRwId = dbUser?.rwId ?? undefined;
+        }
+        if (!userRwId || Number(userRwId) !== Number(id)) {
+          res.status(403).json({
+            error: "FORBIDDEN",
+            message: "Akses ditolak: Anda hanya berwenang mengubah lokasi wilayah RW Anda sendiri.",
+          });
+          return;
+        }
+      }
+
       const updatedArea = await binService.updateArea(
         Number(id),
         name,
         kelurahanId,
-        latitude ? Number(latitude) : undefined,
-        longitude ? Number(longitude) : undefined
+        latitude !== undefined && latitude !== null && latitude !== "" ? Number(latitude) : undefined,
+        longitude !== undefined && longitude !== null && longitude !== "" ? Number(longitude) : undefined
       );
       res.status(200).json({
         success: true,

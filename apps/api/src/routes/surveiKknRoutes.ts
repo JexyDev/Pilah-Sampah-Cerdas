@@ -74,19 +74,13 @@ router.get(
 
 /**
  * PUT /api/v1/survei-kkn/:id
- * Update detail survei KKN (beserta relasinya).
+ * Update detail data survei KKN (seluruh relasi).
  */
 router.put(
   "/:id",
-  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE"]),
-  surveiKknController.updateSurveyById
+  roleMiddleware(["SUPER_USER", "PANITIA_TASKFORCE", "DPL"]),
+  surveiKknController.updateSurvey
 );
-
-/**
- * PUT /api/v1/survei-kkn/:id
- * Update data survei KKN (seluruh relasi).
- */
-router.put("/:id", roleMiddleware(["SUPER_USER", "DPL"]), surveiKknController.updateSurvey);
 
 /**
  * POST /api/v1/survei-kkn/import
