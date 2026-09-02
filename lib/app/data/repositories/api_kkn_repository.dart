@@ -810,14 +810,11 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan}) async {
+  Future<Map<String, dynamic>> jedaKegiatan(String id, {required String alasan}) async {
     try {
       final response = await apiClient.dio.post(
         ApiEndpoints.kknJedaKegiatan(id),
         data: {
-          'totalDurasiDalamZonaMenit': totalDurasiDalamZonaMenit,
-          if (accumulatedSeconds != null) 'totalDurasiDalamZonaDetik': accumulatedSeconds,
-          if (accumulatedSeconds != null) 'accumulatedDuration': accumulatedSeconds,
           'alasan': alasan,
         },
       );
@@ -835,22 +832,25 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes}) async {
+  Future<Map<String, dynamic>> lanjutKegiatan(String id, {required double latitude, required double longitude}) async {
     try {
       final response = await apiClient.dio.post(
-        ApiEndpoints.kknOutOfZoneViolation,
+        ApiEndpoints.kknLanjutKegiatan(id),
         data: {
-          'scheduleId': scheduleId,
-          'outOfZoneMinutes': outOfZoneMinutes,
+          'latitude': latitude,
+          'longitude': longitude,
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data['data'] as Map<String, dynamic>? ?? response.data as Map<String, dynamic>;
+        return response.data as Map<String, dynamic>? ?? {'success': true};
       }
-      return {};
+      throw Exception('Gagal melanjutkan kegiatan');
     } catch (e) {
-      debugPrint('[KKN] recordOutOfZoneViolation error: $e');
-      return {};
+      if (e is DioException) {
+        final msg = _extractError(e.response?.data, '');
+        throw Exception(msg ?? 'Gagal melanjutkan kegiatan');
+      }
+      rethrow;
     }
   }
 

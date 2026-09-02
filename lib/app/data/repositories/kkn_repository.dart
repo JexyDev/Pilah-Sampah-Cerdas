@@ -141,12 +141,15 @@ abstract class KknRepository {
 
   /// Akhiri kegiatan KKN
   /// POST /api/v1/kkn/kegiatan/{id}/selesai (multipart/form-data)
-  Future<Map<String, dynamic>> jedaKegiatan(String id, {required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan});
-  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude});
+  /// Jeda kegiatan KKN (manual oleh mahasiswa)
+  /// POST /api/v1/kkn/kegiatan/{id}/jeda
+  Future<Map<String, dynamic>> jedaKegiatan(String id, {required String alasan});
 
-  /// Catat pelanggaran keluar zona (penalti poin)
-  /// POST /api/v1/kkn/out-of-zone-violation
-  Future<Map<String, dynamic>> recordOutOfZoneViolation({required String scheduleId, required double outOfZoneMinutes});
+  /// Lanjutkan kegiatan setelah jeda
+  /// POST /api/v1/kkn/kegiatan/{id}/lanjut
+  Future<Map<String, dynamic>> lanjutKegiatan(String id, {required double latitude, required double longitude});
+
+  Future<Map<String, dynamic>> selesaiKegiatan(String id, {required String sessionId, required int totalDurasiDalamZonaMenit, int? accumulatedSeconds, required String alasan, String? deskripsiKegiatan, String? fotoPath, double? latitude, double? longitude});
 
   /// Ambil riwayat presensi (jam masuk, jam pulang, durasi aktual/target) — untuk tampilan historis setelah GPS mati
   /// GET /api/v1/kkn/kegiatan/{id}/presensi-history
