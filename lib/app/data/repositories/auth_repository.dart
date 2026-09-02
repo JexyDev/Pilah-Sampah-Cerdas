@@ -38,6 +38,9 @@ abstract class AuthRepository {
   /// Mengunggah foto profil baru.
   Future<void> uploadAvatar(String imagePath);
 
+  /// Menghapus foto profil.
+  Future<void> deleteAvatar();
+
   /// Memperbarui profil pengguna.
   Future<bool> updateProfile({
     required String name,

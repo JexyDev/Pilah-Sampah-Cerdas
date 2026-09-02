@@ -371,6 +371,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Hapus foto profil
+  Future<bool> deleteAvatar() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _authRepository.deleteAvatar();
+      if (state.user != null) {
+        state = state.copyWith(
+          user: state.user!.copyWith(fotoProfil: ''),
+          isLoading: false,
+        );
+      } else {
+        await fetchProfile();
+        state = state.copyWith(isLoading: false);
+      }
+      return true;
+    } on AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorCode: e.code);
+      return false;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorCode: 'DELETE_FAILED');
+      return false;
+    }
+  }
+
   void clearError() {
     state = state.copyWith(clearError: true);
   }
