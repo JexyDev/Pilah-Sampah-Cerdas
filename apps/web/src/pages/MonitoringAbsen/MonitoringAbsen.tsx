@@ -23,6 +23,7 @@ import {
   Loader2,
   Calendar,
   CalendarDays,
+  CalendarOff,
   Clock,
   MapPin,
   Search,
@@ -3770,10 +3771,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                         const isOverrideDpl = methodUpper === "OVERRIDE_DPL" || statusUpper.includes("OVERRIDE") || currentStatusUpper === "OVERRIDDEN_HADIR";
                         const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                         const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+                        const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
                         
                         const isTerjeda = statusUpper === "TERJEDA" || currentStatusUpper === "TERJEDA";
                         const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
-                        const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                        const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
                         const recAny = rec as any;
                         const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
 
@@ -3787,7 +3789,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                         const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
                         const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended && !isOverrideDpl && !isBerlangsung && !isTerjeda;
-                        const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished || isOverrideDpl) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                        const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished || isOverrideDpl) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
 
                         const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
                         const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
@@ -3944,6 +3946,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                                     <XCircle size={13} className="text-rose-600" />
                                     <span>Tanpa Keterangan</span>
+                                  </span>
+                                ) : isTidakAdaKegiatan ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700" title={rec.deskripsiKegiatan || (rec as any).jedaLogs?.alasan || "Tidak ada kegiatan (Dikosongkan DPL/Ketua)"}>
+                                    <CalendarOff size={13} className="text-slate-500" />
+                                    <span>Tidak Ada Kegiatan</span>
                                   </span>
                                 ) : isTerjeda ? (
                                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700" title="Sesi terjeda otomatis karena GPS terputus atau keluar zona">
@@ -4343,7 +4350,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     statusUpper === "HADIR_TIDAK_MEMENUHI";
                   const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
                   const isBelumAdaJadwal = rec.status === "BELUM_ADA_JADWAL";
-                  const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+                  const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
+                  const hasValidSession = (Boolean(rec.attendedAt) || isActivePresence || isCompleted) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
 
                   const liveElapsedMins = rec.attendedAt
                     ? calculateDurationMinutes(rec.attendedAt, rec.completedAt)
@@ -4403,6 +4411,10 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                           {isBelumAdaJadwal ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 shrink-0">
                               Belum Ada Jadwal
+                            </span>
+                          ) : isTidakAdaKegiatan ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 shrink-0" title={rec.deskripsiKegiatan || recAny.jedaLogs?.alasan || "Tidak ada kegiatan"}>
+                              Tidak Ada Kegiatan
                             </span>
                           ) : String(rec.status).toUpperCase().includes("SAKIT") ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
@@ -5592,15 +5604,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const isLeaveOrPending = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN");
               const isTanpaKeterangan = statusUpper.includes("ALPHA") || statusUpper.includes("TANPA_KETERANGAN") || statusUpper.includes("ALPA");
               const isBelumAdaJadwal = statusUpper === "BELUM_ADA_JADWAL";
+              const isTidakAdaKegiatan = statusUpper === "TIDAK_ADA_KEGIATAN" || statusUpper === "SKIP_KEGIATAN";
               const isTerjeda = statusUpper === "TERJEDA" || String(rec.currentStatus || "").toUpperCase() === "TERJEDA";
               const isBerlangsung = (statusUpper === "BERLANGSUNG" || statusUpper === "DALAM_RADIUS" || statusUpper === "DI_ZONA") && !isTerjeda;
-              const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const isAttended = Boolean(rec.attendedAt) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
               const checkOutTimestamp = rec.completedAt || recAny.checkOutAt;
               const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, checkOutTimestamp) : 0;
               const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
               const isFinished = statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI" || statusUpper === "SELESAI_TELAT" || (checkOutTimestamp !== null && checkOutTimestamp !== undefined);
               const isHadir = (statusUpper === "HADIR" || isFinished) && isAttended;
-              const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal;
+              const hasValidAttendanceSession = (isAttended || isBerlangsung || isTerjeda || isHadir || isFinished) && !isLeaveOrPending && !isTanpaKeterangan && !isBelumAdaJadwal && !isTidakAdaKegiatan;
               const durationMins = !hasValidAttendanceSession ? 0 : isTerjeda ? storedMins : (storedMins > 0 ? storedMins : liveElapsedMins);
               const targetHours = recAny.targetHours !== undefined && Number(recAny.targetHours) > 0 
                 ? Number(recAny.targetHours) 
