@@ -106,7 +106,7 @@ export class PoskoKknService {
       existingFacility?.statusApproval ||
       (existingPosko?.keterangan === "PENDING" || existingPosko?.keterangan === "REJECTED" ? existingPosko.keterangan : "APPROVED");
 
-    const parsedRadius = data.radius !== undefined ? Math.max(150, Number(data.radius)) : 500;
+    const parsedRadius = data.radius !== undefined ? Math.max(50, Number(data.radius)) : 500;
 
     const posko = await prisma.poskoKkn.upsert({
       where: { kelompokId },
@@ -437,7 +437,7 @@ export class PoskoKknService {
           foto: resolvedFoto,
           fotoUrl: resolvedFoto,
           keterangan: p.keterangan || null,
-          radius: Number((p as any).radius) || 150,
+          radius: Number((p as any).radius) || 500,
           isUtama: true,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
@@ -485,7 +485,7 @@ export class PoskoKknService {
           foto: resolvedFoto,
           fotoUrl: resolvedFoto,
           keterangan: p.keterangan || null,
-          radius: Number(p.radius) || 150,
+          radius: Number(p.radius) || 500,
           isUtama: p.isUtama ?? false,
           kelompokId: p.kelompokId,
           kelompokName: p.kelompok?.name || "Kelompok KKN",
