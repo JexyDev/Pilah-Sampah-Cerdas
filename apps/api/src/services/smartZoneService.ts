@@ -138,6 +138,32 @@ export class SmartZoneService {
         source: "POSKO_MULTI",
       });
     }
+
+    const facilities = await prisma.facility
+      .findMany({
+        where: { kelompokId, jenis: "posko_kkn" },
+        select: {
+          id: true,
+          nama: true,
+          latitude: true,
+          longitude: true,
+        },
+      })
+      .catch(() => []);
+    for (const f of facilities) {
+      if (f.latitude && f.longitude && !result.some((existing) => existing.id === f.id)) {
+        result.push({
+          id: f.id,
+          nama: f.nama,
+          lat: Number(f.latitude),
+          lng: Number(f.longitude),
+          isUtama: false,
+          radius: DEFAULT_POSKO_RADIUS_M,
+          source: "POSKO_MULTI",
+        });
+      }
+    }
+
     return result;
   }
 

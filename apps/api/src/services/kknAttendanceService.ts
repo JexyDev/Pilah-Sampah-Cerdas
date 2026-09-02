@@ -118,7 +118,7 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
     fotoUrl?: string | null;
   }>
 > {
-  const [primary, multi] = await Promise.all([
+  const [primary, multi, facilities] = await Promise.all([
     prisma.poskoKkn.findUnique({
       where: { kelompokId },
     }),
@@ -126,6 +126,11 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
       .findMany({
         where: { kelompokId },
         orderBy: [{ isUtama: "desc" }, { createdAt: "asc" }],
+      })
+      .catch(() => []),
+    prisma.facility
+      .findMany({
+        where: { kelompokId, jenis: "posko_kkn" },
       })
       .catch(() => []),
   ]);
@@ -174,6 +179,24 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
     }
   }
 
+  if (Array.isArray(facilities)) {
+    for (const f of facilities) {
+      if (f.latitude && f.longitude && !list.some((existing) => existing.id === f.id)) {
+        list.push({
+          id: f.id,
+          nama: f.nama,
+          alamat: f.alamat || "-",
+          latitude: Number(f.latitude),
+          longitude: Number(f.longitude),
+          radius: Math.max(50, Number((f as any).radius) || 500),
+          isUtama: false,
+          type: "POSKO_MULTI",
+          fotoUrl: f.foto || null,
+        });
+      }
+    }
+  }
+
   return list;
 }
 
@@ -206,10 +229,11 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 export function calculateLiveInZoneMinutes(att: {
   attendedAt: Date | string;
   actualInZoneMinutes?: number | null;
+  checkOutAt?: Date | string | null;
   jedaLogs?: any;
   status?: string;
 }): number {
-  if (!att.attendedAt) return 0;
+  if (!att || !att.attendedAt) return 0;
 
   const statusUpper = String(att.status || "").toUpperCase();
   if (
@@ -236,56 +260,49 @@ export function calculateLiveInZoneMinutes(att: {
   const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const isPastDay = attendedWibDay < nowWibDay;
 
-  // Absolute physical ceiling: elapsed time since check-in
-  const maxElapsedMinutes = Math.max(
-    0,
-    Math.floor((now.getTime() - attendedDate.getTime()) / 60000)
-  );
-
   // If session is from a past day, use stored in-zone minutes (or capped value)
   if (isPastDay) {
     return Math.min(Math.max(0, att.actualInZoneMinutes ?? 0), MAX_DAILY_MINUTES_CAP);
   }
 
+  const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
+  const attendedMs = attendedDate.getTime();
+  const grossMinutes = Math.max(0, Math.floor((sessionEndMs - attendedMs) / 60000));
+
   const jedaLogsArray = (att.jedaLogs as any[]) || [];
-  if (jedaLogsArray.length === 0) {
-    if (statusUpper === "TERJEDA") {
-      return Math.min(
-        Math.max(0, att.actualInZoneMinutes ?? 0),
-        maxElapsedMinutes,
-        MAX_DAILY_MINUTES_CAP
-      );
+  let totalPauseMs = 0;
+
+  if (Array.isArray(jedaLogsArray) && jedaLogsArray.length > 0) {
+    for (const log of jedaLogsArray) {
+      if (!log || typeof log !== "object") continue;
+      // Skip unconfirmed PENDING_PAUSE (GPS glitches)
+      if (log.type === "PENDING_PAUSE" && !log.confirmed) continue;
+
+      if (log.waktuJeda) {
+        const pStart = new Date(log.waktuJeda).getTime();
+        if (!isNaN(pStart)) {
+          if (log.waktuResume) {
+            const pEnd = new Date(log.waktuResume).getTime();
+            if (!isNaN(pEnd) && pEnd > pStart) {
+              totalPauseMs += pEnd - pStart;
+            }
+          } else {
+            // Sesi sedang dijeda aktif
+            if (sessionEndMs > pStart) {
+              totalPauseMs += sessionEndMs - pStart;
+            }
+          }
+        }
+      } else if (typeof log.durasiJedaMenit === "number") {
+        totalPauseMs += log.durasiJedaMenit * 60000;
+      }
     }
-    return Math.min(maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
   }
 
-  const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
-  if (!lastLog) {
-    return Math.min(maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
-  }
+  const pauseMinutes = Math.floor(totalPauseMs / 60000);
+  const netMinutes = Math.max(0, grossMinutes - pauseMinutes);
 
-  if (lastLog.waktuJeda && !lastLog.waktuResume) {
-    const baseMins = Number(lastLog.durasiSebelumJedaMenit) || 0;
-    return Math.min(Math.max(0, baseMins), maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
-  }
-
-  if (lastLog.waktuResume) {
-    const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
-    const baseMins = Number(lastLog.durasiSebelumResumeMenit) || 0;
-    const elapsedSinceResume = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 60000));
-    const computed = baseMins + elapsedSinceResume;
-    return Math.min(Math.max(0, computed), maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
-  }
-
-  if (statusUpper === "TERJEDA") {
-    return Math.min(
-      Math.max(0, att.actualInZoneMinutes ?? 0),
-      maxElapsedMinutes,
-      MAX_DAILY_MINUTES_CAP
-    );
-  }
-
-  return Math.min(maxElapsedMinutes, MAX_DAILY_MINUTES_CAP);
+  return Math.min(netMinutes, MAX_DAILY_MINUTES_CAP);
 }
 
 /**
@@ -301,10 +318,11 @@ export function calculateLiveInZoneMinutes(att: {
 export function calculateLiveInZoneSeconds(att: {
   attendedAt: Date | string;
   actualInZoneMinutes?: number | null;
+  checkOutAt?: Date | string | null;
   jedaLogs?: any;
   status?: string;
 }): number {
-  if (!att.attendedAt) return 0;
+  if (!att || !att.attendedAt) return 0;
 
   const statusUpper = String(att.status || "").toUpperCase();
   if (
@@ -330,60 +348,49 @@ export function calculateLiveInZoneSeconds(att: {
   const nowWibDay = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const isPastDay = attendedWibDay < nowWibDay;
 
-  // Absolute physical ceiling in seconds
-  const maxElapsedSecs = Math.max(0, Math.floor((now.getTime() - attendedDate.getTime()) / 1000));
-
   // Sesi dari hari sebelumnya → gunakan nilai tersimpan
   if (isPastDay) {
     return Math.min(Math.max(0, (att.actualInZoneMinutes ?? 0) * 60), MAX_DAILY_SECONDS_CAP);
   }
 
+  const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
+  const attendedMs = attendedDate.getTime();
+  const grossSecs = Math.max(0, Math.floor((sessionEndMs - attendedMs) / 1000));
+
   const jedaLogsArray = (att.jedaLogs as any[]) || [];
-  if (jedaLogsArray.length === 0) {
-    if (statusUpper === "TERJEDA") {
-      return Math.min(
-        Math.max(0, (att.actualInZoneMinutes ?? 0) * 60),
-        maxElapsedSecs,
-        MAX_DAILY_SECONDS_CAP
-      );
+  let totalPauseMs = 0;
+
+  if (Array.isArray(jedaLogsArray) && jedaLogsArray.length > 0) {
+    for (const log of jedaLogsArray) {
+      if (!log || typeof log !== "object") continue;
+      // Skip unconfirmed PENDING_PAUSE (GPS glitches)
+      if (log.type === "PENDING_PAUSE" && !log.confirmed) continue;
+
+      if (log.waktuJeda) {
+        const pStart = new Date(log.waktuJeda).getTime();
+        if (!isNaN(pStart)) {
+          if (log.waktuResume) {
+            const pEnd = new Date(log.waktuResume).getTime();
+            if (!isNaN(pEnd) && pEnd > pStart) {
+              totalPauseMs += pEnd - pStart;
+            }
+          } else {
+            // Sesi sedang dijeda aktif
+            if (sessionEndMs > pStart) {
+              totalPauseMs += sessionEndMs - pStart;
+            }
+          }
+        }
+      } else if (typeof log.durasiJedaMenit === "number") {
+        totalPauseMs += log.durasiJedaMenit * 60000;
+      }
     }
-    return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
   }
 
-  const lastLog = jedaLogsArray[jedaLogsArray.length - 1];
-  if (!lastLog) {
-    return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
-  }
+  const pauseSecs = Math.floor(totalPauseMs / 1000);
+  const netSecs = Math.max(0, grossSecs - pauseSecs);
 
-  if (lastLog.waktuJeda && !lastLog.waktuResume) {
-    // Sesi terjeda — gunakan durasi sebelum jeda (dalam detik)
-    const baseSecs =
-      lastLog.durasiSebelumJedaDetik !== undefined && lastLog.durasiSebelumJedaDetik !== null
-        ? Number(lastLog.durasiSebelumJedaDetik)
-        : (Number(lastLog.durasiSebelumJedaMenit) || 0) * 60;
-    return Math.min(Math.max(0, baseSecs), maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
-  }
-
-  if (lastLog.waktuResume) {
-    const resumeTimeMs = new Date(lastLog.waktuResume).getTime();
-    const baseSecs =
-      lastLog.durasiSebelumResumeDetik !== undefined && lastLog.durasiSebelumResumeDetik !== null
-        ? Number(lastLog.durasiSebelumResumeDetik)
-        : (Number(lastLog.durasiSebelumResumeMenit) || 0) * 60;
-    const elapsedSinceResumeSecs = Math.max(0, Math.floor((now.getTime() - resumeTimeMs) / 1000));
-    const computedSecs = baseSecs + elapsedSinceResumeSecs;
-    return Math.min(Math.max(0, computedSecs), maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
-  }
-
-  if (statusUpper === "TERJEDA") {
-    return Math.min(
-      Math.max(0, (att.actualInZoneMinutes ?? 0) * 60),
-      maxElapsedSecs,
-      MAX_DAILY_SECONDS_CAP
-    );
-  }
-
-  return Math.min(maxElapsedSecs, MAX_DAILY_SECONDS_CAP);
+  return Math.min(netSecs, MAX_DAILY_SECONDS_CAP);
 }
 
 /**
@@ -1532,10 +1539,13 @@ export class KknAttendanceService {
               // dan belum ada waktuResume-nya
               if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
                 lastJeda.waktuResume = new Date().toISOString();
-                lastJeda.durasiSebelumResumeMenit = Math.max(
+                const resumeMins = Math.max(
                   existingAtt.actualInZoneMinutes || 0,
                   lastJeda.durasiSebelumJedaMenit || 0
                 );
+                lastJeda.durasiSebelumResumeMenit = resumeMins;
+                lastJeda.durasiSebelumResumeDetik =
+                  lastJeda.durasiSebelumJedaDetik ?? resumeMins * 60;
                 currentAttStatus = "BERLANGSUNG";
 
                 await prisma.activityAttendance.update({
@@ -3993,10 +4003,25 @@ export class KknAttendanceService {
       // Mulai kegiatan baru atau update dari status DI_ZONA/DALAM_RADIUS/TERJEDA
       const currentLogs = (existingSession?.jedaLogs as any[]) || [];
       if (existingSession?.status === "TERJEDA") {
-        currentLogs.push({
-          waktuResume: new Date().toISOString(),
-          durasiSebelumResumeMenit: existingSession.actualInZoneMinutes || 0,
-        });
+        const lastLog = currentLogs.length > 0 ? currentLogs[currentLogs.length - 1] : null;
+        if (lastLog && !lastLog.waktuResume) {
+          lastLog.waktuResume = new Date().toISOString();
+          const resumeMins = Math.max(
+            existingSession.actualInZoneMinutes || 0,
+            lastLog.durasiSebelumJedaMenit || 0
+          );
+          lastLog.durasiSebelumResumeMenit = resumeMins;
+          lastLog.durasiSebelumResumeDetik =
+            lastLog.durasiSebelumJedaDetik ?? resumeMins * 60;
+        } else {
+          currentLogs.push({
+            alasan: "Resume Kegiatan",
+            waktuResume: new Date().toISOString(),
+            durasiSebelumResumeMenit: existingSession.actualInZoneMinutes || 0,
+            durasiSebelumResumeDetik: (existingSession.actualInZoneMinutes || 0) * 60,
+            autoTriggered: true,
+          });
+        }
       }
 
       attendance = await prisma.activityAttendance.upsert({
@@ -4434,35 +4459,61 @@ export class KknAttendanceService {
       });
 
       for (const att of activeAttendances) {
+        const currentLogs = (att.jedaLogs as any[]) || [];
+
+        // 1. Cari waktu resume terakhir jika ada jeda sebelumnya
+        let lastResumeTime = 0;
+        if (currentLogs.length > 0) {
+          for (let i = currentLogs.length - 1; i >= 0; i--) {
+            if (currentLogs[i] && currentLogs[i].waktuResume) {
+              const rTime = new Date(currentLogs[i].waktuResume).getTime();
+              if (!isNaN(rTime) && rTime > lastResumeTime) {
+                lastResumeTime = rTime;
+              }
+            }
+          }
+        }
+
+        const attendedTime = new Date(att.attendedAt).getTime();
+        const activeSinceTime = Math.max(attendedTime, lastResumeTime);
+
+        // Guard: Jangan jeda sesi yang baru mulai / baru di-resume kurang dari staleThresholdMs
+        if (now.getTime() - activeSinceTime < staleThresholdMs) {
+          continue;
+        }
+
         const latestLoc = att.student?.locations?.[0];
         const lastPingTime = latestLoc
           ? new Date(latestLoc.recordedAt).getTime()
-          : new Date(att.attendedAt).getTime();
-        const timeSinceLastPingMs = now.getTime() - lastPingTime;
+          : 0;
 
-        // Jika tidak ada ping GPS selama > 5 menit (HP mati / aplikasi di-kill / GPS dimatikan)
+        // Titik aktivitas terakhir adalah yang terbaru antara ping terakhir atau waktu aktif
+        const latestActivityTime = Math.max(lastPingTime, activeSinceTime);
+        const timeSinceLastPingMs = now.getTime() - latestActivityTime;
+
+        // Jika tidak ada ping GPS selama > threshold sejak aktivitas terakhir (HP mati / aplikasi di-kill / GPS dimatikan)
         if (timeSinceLastPingMs > staleThresholdMs) {
           console.log(
             `[Watchdog Stale GPS] Mendeteksi HP mati / GPS terputus untuk Mahasiswa ${att.student?.name} (${att.studentId}). Menjeda sesi otomatis.`
           );
 
-          const currentLogs = (att.jedaLogs as any[]) || [];
-          const lastPingDate = new Date(lastPingTime);
+          // Waktu jeda adalah waktu ping terakhir (atau batas waktu aktif)
+          const pauseTime = Math.max(latestActivityTime, activeSinceTime);
+          const pauseDate = new Date(pauseTime);
 
-          // Hitung durasi aktual yang valid sampai waktu ping terakhir
-          let validMins = calculateLiveInZoneMinutes(att);
-          if (att.attendedAt) {
-            const diffFromAttended = Math.max(
-              0,
-              Math.floor((lastPingTime - new Date(att.attendedAt).getTime()) / 60000)
-            );
-            validMins = Math.min(validMins, diffFromAttended);
-          }
+          // Hitung durasi aktual yang valid sampai waktu jeda
+          const validSecs = calculateLiveInZoneSeconds({
+            ...att,
+            status: "BERLANGSUNG",
+            checkOutAt: pauseDate,
+          });
+          const validMins = Math.floor(validSecs / 60);
 
           currentLogs.push({
             alasan: "Anomali Sinyal GPS Terputus / HP Mati / Aplikasi Ditutup (Otomatis)",
-            waktuJeda: lastPingDate.toISOString(),
+            waktuJeda: pauseDate.toISOString(),
             durasiSebelumJedaMenit: validMins,
+            durasiSebelumJedaDetik: validSecs,
             autoTriggered: true,
             staleGpsAnomaly: true,
           });
