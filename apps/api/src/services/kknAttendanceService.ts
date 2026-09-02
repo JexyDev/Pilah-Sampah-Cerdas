@@ -783,38 +783,65 @@ export class KknAttendanceService {
           const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           let currentAttStatus = existingAtt.status;
 
-          // Auto-Pause saat keluar zona
+          // Auto-Pause saat keluar zona (dengan toleransi GPS Drift / Jitter)
           if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
-            const currentLiveMins = Math.floor(currentLiveSecs / 60);
-            currentLogs.push({
-              alasan: "Keluar Zona Geofence (Otomatis)",
-              waktuJeda: new Date().toISOString(),
-              durasiSebelumJedaMenit: currentLiveMins,
-              durasiSebelumJedaDetik: currentLiveSecs,
-              autoTriggered: true,
+            // Cek lokasi sebelumnya untuk membedakan lonjakan instan (GPS Jitter) vs benar-benar keluar zona
+            const recentLocations = await prisma.studentLocation.findMany({
+              where: { studentId: userId },
+              orderBy: { recordedAt: "desc" },
+              take: 3,
             });
-            currentAttStatus = "TERJEDA";
-            existingAtt.actualInZoneMinutes = currentLiveMins;
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
+
+            const effectiveRad = geofence.radius + bufferMeters;
+            let outOfZoneCount = 0;
+            for (const rLoc of recentLocations) {
+              const rDist = calculateDistance(
+                Number(rLoc.latitude),
+                Number(rLoc.longitude),
+                geofence.latitude,
+                geofence.longitude
+              );
+              if (rDist > effectiveRad) {
+                outOfZoneCount++;
+              }
+            }
+
+            // Trigger auto-pause jika jarak jauh (> radius + buffer + 80m) ATAU sudah >= 2 ping berturut-turut di luar zona
+            const isFarOutside = dist > effectiveRad + 80;
+            const isConfirmedOutOfZone = outOfZoneCount >= 2 || isFarOutside;
+
+            if (isConfirmedOutOfZone) {
+              const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
+              const currentLiveMins = Math.floor(currentLiveSecs / 60);
+              currentLogs.push({
+                alasan: "Keluar Zona Geofence (Otomatis)",
+                waktuJeda: new Date().toISOString(),
+                durasiSebelumJedaMenit: currentLiveMins,
+                durasiSebelumJedaDetik: currentLiveSecs,
+                autoTriggered: true,
+              });
+              currentAttStatus = "TERJEDA";
+              existingAtt.actualInZoneMinutes = currentLiveMins;
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "TERJEDA",
+                  actualInZoneMinutes: currentLiveMins,
+                  jedaLogs: currentLogs,
+                },
+              });
+              existingAtt.status = "TERJEDA";
+              existingAtt.jedaLogs = currentLogs as any;
+              websocketService.broadcastStudentAttendance({
+                id: existingAtt.id,
+                studentId: existingAtt.studentId,
+                scheduleId: existingAtt.scheduleId,
                 status: "TERJEDA",
+                currentStatus: "DI_LUAR_ZONA",
+                attendedAt: existingAtt.attendedAt.toISOString(),
                 actualInZoneMinutes: currentLiveMins,
-                jedaLogs: currentLogs,
-              },
-            });
-            existingAtt.status = "TERJEDA";
-            existingAtt.jedaLogs = currentLogs as any;
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "TERJEDA",
-              currentStatus: "DI_LUAR_ZONA",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: currentLiveMins,
-            });
+              });
+            }
           }
 
           // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko (HANYA jika sebelumnya di-jeda otomatis)
@@ -1256,36 +1283,70 @@ export class KknAttendanceService {
           const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           let currentAttStatus = existingAtt.status;
 
-          // Auto-Pause saat keluar zona
+          // Auto-Pause saat keluar zona (dengan toleransi GPS Drift / Jitter)
           if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            const currentLiveMins = calculateLiveInZoneMinutes(existingAtt);
-            currentLogs.push({
-              alasan: "Keluar Zona Geofence (Otomatis)",
-              waktuJeda: new Date().toISOString(),
-              durasiSebelumJedaMenit: currentLiveMins,
-              autoTriggered: true,
+            const recentLocations = await prisma.studentLocation.findMany({
+              where: { studentId },
+              orderBy: { recordedAt: "desc" },
+              take: 3,
             });
-            currentAttStatus = "TERJEDA";
-            existingAtt.actualInZoneMinutes = currentLiveMins;
-            await prisma.activityAttendance.update({
-              where: { id: existingAtt.id },
-              data: {
+
+            const effectiveRad = geofence.radius + bufferMeters;
+            let outOfZoneCount = 0;
+            for (const rLoc of recentLocations) {
+              const rDist = calculateDistance(
+                Number(rLoc.latitude),
+                Number(rLoc.longitude),
+                geofence.latitude,
+                geofence.longitude
+              );
+              if (rDist > effectiveRad) {
+                outOfZoneCount++;
+              }
+            }
+
+            const currentDist = latestLoc
+              ? calculateDistance(
+                  Number(latestLoc.latitude),
+                  Number(latestLoc.longitude),
+                  geofence.latitude,
+                  geofence.longitude
+                )
+              : 0;
+
+            const isFarOutside = currentDist > effectiveRad + 80;
+            const isConfirmedOutOfZone = outOfZoneCount >= 2 || isFarOutside;
+
+            if (isConfirmedOutOfZone) {
+              const currentLiveMins = calculateLiveInZoneMinutes(existingAtt);
+              currentLogs.push({
+                alasan: "Keluar Zona Geofence (Otomatis)",
+                waktuJeda: new Date().toISOString(),
+                durasiSebelumJedaMenit: currentLiveMins,
+                autoTriggered: true,
+              });
+              currentAttStatus = "TERJEDA";
+              existingAtt.actualInZoneMinutes = currentLiveMins;
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "TERJEDA",
+                  actualInZoneMinutes: currentLiveMins,
+                  jedaLogs: currentLogs,
+                },
+              });
+              existingAtt.status = "TERJEDA";
+              existingAtt.jedaLogs = currentLogs as any;
+              websocketService.broadcastStudentAttendance({
+                id: existingAtt.id,
+                studentId: existingAtt.studentId,
+                scheduleId: existingAtt.scheduleId,
                 status: "TERJEDA",
+                currentStatus: "DI_LUAR_ZONA",
+                attendedAt: existingAtt.attendedAt.toISOString(),
                 actualInZoneMinutes: currentLiveMins,
-                jedaLogs: currentLogs,
-              },
-            });
-            existingAtt.status = "TERJEDA";
-            existingAtt.jedaLogs = currentLogs as any;
-            websocketService.broadcastStudentAttendance({
-              id: existingAtt.id,
-              studentId: existingAtt.studentId,
-              scheduleId: existingAtt.scheduleId,
-              status: "TERJEDA",
-              currentStatus: "DI_LUAR_ZONA",
-              attendedAt: existingAtt.attendedAt.toISOString(),
-              actualInZoneMinutes: currentLiveMins,
-            });
+              });
+            }
           }
 
           // [TAMBAHAN] Auto-Resume saat kembali ke zona (HANYA jika sebelumnya di-jeda otomatis)

@@ -130,9 +130,19 @@ const Monitoring: React.FC = () => {
   const [tableSearchInput, setTableSearchInput] = useState<string>("");
   const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
-  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">("cartodb");
+  const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
+  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
+    return isMapSU ? "google_satellite" : "cartodb";
+  });
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
   const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
+
+  // Sync default satellite for SU on user load
+  useEffect(() => {
+    if (user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER") {
+      setMapTileProvider("google_satellite");
+    }
+  }, [user?.peran]);
 
   // Pagination for Table
   const [currentPage, setCurrentPage] = useState<number>(1);

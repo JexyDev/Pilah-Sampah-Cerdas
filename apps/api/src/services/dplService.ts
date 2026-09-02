@@ -510,7 +510,7 @@ export async function ensureDplKelompokRelation(dplUserId: string) {
     // 2. Ambil data profil DPL
     const dplUser = await prisma.user.findUnique({
       where: { id: dplUserId },
-      select: { id: true, name: true, phone: true, nip: true },
+      select: { id: true, name: true, phone: true, email: true, nip: true },
     });
     if (!dplUser) return;
 

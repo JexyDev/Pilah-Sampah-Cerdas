@@ -156,6 +156,7 @@ model User {
   status                String                   @default("Aktif")
   address               String?                  @map("alamat")
   phone                 String                   @unique @map("no_telepon")
+  email                 String?                  @map("email")
   mustChangePassword    Boolean                  @default(false) @map("harus_ganti_password")
   wargaSubtype          String?                  @map("subtipe_warga")
   nip                   String?                  @map("nip")

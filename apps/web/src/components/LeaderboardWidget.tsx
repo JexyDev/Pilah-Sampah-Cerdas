@@ -103,7 +103,7 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
       </div>
 
       {/* Item List */}
-      <div className="my-3 flex-1 flex flex-col justify-start space-y-2 min-h-[240px]">
+      <div className="my-3 flex-1 flex flex-col justify-start space-y-1.5 min-h-[240px]">
         {displayItems.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 italic text-xs py-8">
             Belum ada data poin terverifikasi.
@@ -115,55 +115,54 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
             const isHovered = hoveredIndex === idx;
 
             return (
-              <div
+              <Link
                 key={`${item.rank}-${item.name}`}
+                to={`${linkTo}&search=${encodeURIComponent(item.name)}`}
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
-                className={`flex items-center gap-1.5 text-xs group px-2 py-1.5 rounded-xl transition-all duration-150 border min-w-0 ${
+                className={`flex items-center gap-2 text-xs group px-2.5 py-2 rounded-xl transition-all duration-150 border min-w-0 ${
                   isHovered
                     ? "bg-slate-50 dark:bg-slate-800/80 border-slate-300/80 dark:border-slate-700 shadow-xs scale-[1.01]"
-                    : "bg-white dark:bg-slate-900 border-transparent"
+                    : "bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
                 }`}
+                title={`Lihat detail peringkat untuk ${item.name}`}
               >
                 {/* Rank Icon / Medal */}
                 {getRankBadge(item.rank)}
 
-                {/* Name & Subtitle */}
+                {/* Name & Subtitle - Generous room to avoid text clipping */}
                 <div className="flex-1 min-w-0 pr-1">
-                  <p className="font-extrabold text-slate-800 dark:text-slate-200 text-[12px] sm:text-[13px] leading-snug group-hover:text-emerald-700 dark:group-hover:text-emerald-400 truncate" title={item.name}>
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100 text-[12px] sm:text-[12.5px] leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate" title={item.name}>
                     {item.name}
                   </p>
                   {item.subtitle && (
-                    <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400 leading-tight font-medium truncate">
+                    <p className="text-[10px] sm:text-[10.5px] text-slate-400 dark:text-slate-400 leading-tight font-medium truncate mt-0.5" title={item.subtitle}>
                       {item.subtitle}
                     </p>
                   )}
                 </div>
 
-                {/* Interactive Progress Bar & Percentage Ratio */}
-                <div className="w-16 sm:w-24 shrink-0 flex flex-col items-end gap-0.5">
-                  <div className="flex justify-between items-center w-full text-[9px] text-slate-500 dark:text-slate-400 font-bold">
-                    <span className="text-slate-400 font-normal hidden sm:inline">Rasio</span>
-                    <span className="text-slate-700 dark:text-slate-300">{rawPct}%</span>
+                {/* Compact Point & Ratio Display */}
+                <div className="shrink-0 flex flex-col items-end text-right pl-1">
+                  <div className="flex items-baseline gap-1">
+                    <span className={`font-black text-[12px] sm:text-[12.5px] font-mono leading-none ${item.points < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}>
+                      {item.points.toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-400 uppercase">
+                      {unitLabel}
+                    </span>
                   </div>
-                  <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative border border-slate-200/50 dark:border-slate-700">
-                    <div
-                      className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
-                      style={{ width: `${barPct}%`, backgroundColor: barColor }}
-                    />
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="w-12 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/60 dark:border-slate-700">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                      />
+                    </div>
+                    <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-400 w-5 text-right">{rawPct}%</span>
                   </div>
                 </div>
-
-                {/* Points */}
-                <div className="w-14 sm:w-16 text-right shrink-0">
-                  <span className={`font-extrabold text-[11px] sm:text-[13px] font-mono block leading-none truncate ${item.points < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-800 dark:text-slate-100"}`}>
-                    {item.points.toLocaleString("id-ID")}
-                  </span>
-                  <span className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-400 font-bold block mt-0.5 uppercase">
-                    {unitLabel}
-                  </span>
-                </div>
-              </div>
+              </Link>
             );
           })
         )}
@@ -635,7 +634,7 @@ export const LeaderboardWidget: React.FC = () => {
             barColor="#10b981"
             items={dplList}
             maxPoints={dplList[0]?.points || 0}
-            linkTo="/peringkat?system=system2&tab=students"
+            linkTo="/peringkat?system=system2&tab=dpl"
           />
         </div>
       </div>
