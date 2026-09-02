@@ -63,6 +63,7 @@ export const TaskforceDashboardPage: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [kelompokList, setKelompokList] = useState<KelompokItem[]>([]);
+  const [dplList, setDplList] = useState<any[]>([]);
   const [totalMahasiswaDB, setTotalMahasiswaDB] = useState(0);
   const [totalSurveiKelurahan, setTotalSurveiKelurahan] = useState(0);
 
@@ -75,7 +76,16 @@ export const TaskforceDashboardPage: React.FC = () => {
       const safeGroups = Array.isArray(groupsData) ? sortKelompokList(groupsData, (k: any) => k.name) : [];
       setKelompokList(safeGroups);
 
-      // 2. Fetch total mahasiswa KKN dari DB (bukan dari kelompok list)
+      // 2. Fetch DPLs terdaftar
+      try {
+        const resDpl = await api.get("/kelompok/dpls");
+        const dplsData = resDpl.data?.data || (Array.isArray(resDpl.data) ? resDpl.data : []);
+        setDplList(Array.isArray(dplsData) ? dplsData : []);
+      } catch (err) {
+        console.warn("Gagal memuat list DPL terdaftar:", err);
+      }
+
+      // 3. Fetch total mahasiswa KKN dari DB (bukan dari kelompok list)
       try {
         const resMhs = await api.get("/users?roleName=MAHASISWA_KKN&limit=0");
         const mhsData = resMhs.data?.data || [];
@@ -89,7 +99,7 @@ export const TaskforceDashboardPage: React.FC = () => {
         setTotalMahasiswaDB(fallbackTotal);
       }
 
-      // 3. Fetch total kelurahan yang sudah ada data survei dari DB
+      // 4. Fetch total kelurahan yang sudah ada data survei dari DB
       try {
         const resSurvei = await api.get("/survei-kkn?limit=0");
         const surveiData = resSurvei.data?.data || [];
@@ -126,9 +136,16 @@ export const TaskforceDashboardPage: React.FC = () => {
     (k) => k?.students && Array.isArray(k.students) && k.students.some((s) => s.isKetua)
   ).length;
   const kelompokWithoutLeader = totalKelompok - kelompokWithLeader;
-  const totalDplCount =
-    new Set(safeKelompokList.map((k) => k?.dplId || k?.dplNamaMentah).filter(Boolean)).size;
-  // totalMahasiswaDB di-fetch langsung dari GET /users?roleName=MAHASISWA_KKN (100% dari DB)
+
+  // Real DPL stats & dynamic 1-to-1 relation calculation
+  const totalDplCount = dplList.length > 0
+    ? dplList.length
+    : new Set(safeKelompokList.map((k) => k?.dplId || k?.dpl?.id || k?.dplNamaMentah).filter(Boolean)).size;
+
+  const kelompokWithDpl = safeKelompokList.filter(
+    (k) => !!k.dplId || !!k.dpl || (k.dplNamaMentah && k.dplNamaMentah.trim() !== "")
+  ).length;
+  const kelompokWithoutDpl = totalKelompok - kelompokWithDpl;
   const totalStudentsCount = totalMahasiswaDB > 0
     ? totalMahasiswaDB
     : safeKelompokList.reduce(
@@ -234,9 +251,20 @@ export const TaskforceDashboardPage: React.FC = () => {
           </div>
           <div className="mt-4">
             <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalDplCount}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              Terhubung 1-to-1 ke 32 Kelompok KKN
-            </p>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1" title="Kelompok KKN yang terhubung dengan DPL (relasi 1-to-1)">
+                <CheckCircle2 size={13} /> {kelompokWithDpl} Terhubung (1-to-1)
+              </span>
+              {kelompokWithoutDpl > 0 ? (
+                <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki DPL">
+                  <AlertCircle size={13} /> {kelompokWithoutDpl} Tanpa DPL
+                </span>
+              ) : (
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Seluruh kelompok telah terhubung 1-to-1 dengan DPL">
+                  <CheckCircle2 size={13} /> 100% Terhubung
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

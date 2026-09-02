@@ -769,7 +769,7 @@ export const LaporanPresensiPage: React.FC = () => {
         const actualMins = it.durasiAktualMenit ?? it.durasiMenit ?? 0;
         const targetMin = it.targetMinMenit ?? 240;
         const jedaMins = it.durasiJedaMenit ?? 0;
-        const rasio = it.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1));
+        const rasio = Math.min(100, Math.max(0, it.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1))));
         const keterpenuhan = it.isMemenuhiDurasi ? "MEMENUHI (>= 4 Jam)" : "KURANG DARI TARGET (< 4 Jam)";
 
         return [
@@ -1513,7 +1513,7 @@ export const LaporanPresensiPage: React.FC = () => {
                     const isIzinSakit = item.status.includes("IZIN") || item.status.includes("SAKIT");
                     const actualMins = item.durasiAktualMenit ?? item.durasiMenit ?? 0;
                     const targetMin = item.targetMinMenit ?? 240;
-                    const rasio = item.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1));
+                    const rasio = Math.min(100, Math.max(0, item.rasioKehadiran ?? Number(((actualMins / targetMin) * 100).toFixed(1))));
                     const jedaMins = item.durasiJedaMenit ?? 0;
 
                     return (
@@ -2225,7 +2225,7 @@ export const LaporanPresensiPage: React.FC = () => {
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Rasio Sesi</span>
                             <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                              {item.rasioKehadiran ?? 0}% ({item.durasiMenit}/{item.targetMinMenit || 240}m)
+                              {Math.min(100, Math.max(0, item.rasioKehadiran ?? 0))}% ({item.durasiMenit}/{item.targetMinMenit || 240}m)
                             </span>
                           </div>
                         </div>

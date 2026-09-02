@@ -21,7 +21,10 @@ import {
   UserMinus,
   Eye,
   ExternalLink,
-  Phone
+  Phone,
+  CheckCircle2,
+  AlertCircle,
+  Award
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -297,6 +300,29 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     return filteredDplList.slice(start, start + dplRowsPerPage);
   }, [filteredDplList, dplPage]);
 
+  // Summary KPI Metrics
+  const totalKelompok = kelompokList.length;
+  const kelompokWithLeader = useMemo(() => {
+    return kelompokList.filter((k) =>
+      k?.students && Array.isArray(k.students) && k.students.some((s: any) => s.isKetua)
+    ).length;
+  }, [kelompokList]);
+  const kelompokWithoutLeader = totalKelompok - kelompokWithLeader;
+
+  const totalDpl = dplList.length;
+  const kelompokWithDpl = useMemo(() => {
+    return kelompokList.filter(
+      (k) => !!k.dplId || !!k.dpl || (k.dplNamaMentah && k.dplNamaMentah.trim() !== "")
+    ).length;
+  }, [kelompokList]);
+  const kelompokWithoutDpl = totalKelompok - kelompokWithDpl;
+  const totalStudentsCount = useMemo(() => {
+    return kelompokList.reduce(
+      (acc, k) => acc + (Array.isArray(k.students) ? k.students.length : 0),
+      0
+    );
+  }, [kelompokList]);
+
   // Kelompok Submit Handlers
   const handleOpenDetailKelompok = (k: any) => {
     setSelectedDetailKelompok(k);
@@ -467,6 +493,97 @@ export const ManajemenEkosistemKkn: React.FC = () => {
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             Pengelolaan kelompok mahasiswa KKN, alokasi wilayah dampingan, dan struktur dosen pendamping lapangan.
           </p>
+        </div>
+      </div>
+
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Card 1: Kelompok KKN */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-teal-600 dark:text-teal-400 tracking-wider">
+              Kelompok KKN
+            </span>
+            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 rounded-xl">
+              <GraduationCap size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalKelompok}</h3>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Kelompok yang telah memiliki ketua">
+                <CheckCircle2 size={13} /> {kelompokWithLeader} Ada Ketua
+              </span>
+              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki ketua">
+                <AlertCircle size={13} /> {kelompokWithoutLeader} Tanpa Ketua
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: DPL Terdaftar */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider">
+              DPL Terdaftar
+            </span>
+            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
+              <Award size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalDpl}</h3>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1" title="Kelompok KKN yang terhubung 1-to-1 dengan DPL">
+                <CheckCircle2 size={13} /> {kelompokWithDpl} Terhubung (1-to-1)
+              </span>
+              {kelompokWithoutDpl > 0 ? (
+                <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki DPL">
+                  <AlertCircle size={13} /> {kelompokWithoutDpl} Tanpa DPL
+                </span>
+              ) : (
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Seluruh kelompok telah terhubung 1-to-1 dengan DPL">
+                  <CheckCircle2 size={13} /> 100% Terhubung
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Total Mahasiswa KKN */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">
+              Mahasiswa KKN
+            </span>
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <Users size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalStudentsCount}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              Terdistribusi di {totalKelompok} Kelompok KKN
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Universitas Mitra */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
+              Universitas Mitra
+            </span>
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
+              <BookOpen size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{uniList.length}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0] || "UNIKOM"}>
+              {uniList[0] || "UNIKOM"}
+            </p>
+          </div>
         </div>
       </div>
 

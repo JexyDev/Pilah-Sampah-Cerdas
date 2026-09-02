@@ -992,43 +992,62 @@ export class KknAttendanceService {
 
           // [AUTO-RESUME] Saat kembali / aktif di dalam zona geofence posko (HANYA jika sebelumnya di-jeda otomatis)
           if (isCurrInside && currentAttStatus === "TERJEDA") {
+            let canAutoResume = false;
+            let lastJeda: any = null;
             if (currentLogs.length > 0) {
-              const lastJeda = currentLogs[currentLogs.length - 1];
-              if (lastJeda.autoTriggered && !lastJeda.waktuResume) {
-                const prevSecs =
-                  lastJeda.durasiSebelumJedaDetik !== undefined && lastJeda.durasiSebelumJedaDetik !== null
-                    ? Number(lastJeda.durasiSebelumJedaDetik)
-                    : (existingAtt.actualInZoneMinutes ? existingAtt.actualInZoneMinutes * 60 : 0);
+              lastJeda = currentLogs[currentLogs.length - 1];
+              if (lastJeda && (lastJeda.autoTriggered || lastJeda.staleGpsAnomaly || !lastJeda.waktuResume)) {
+                canAutoResume = true;
+              }
+            } else {
+              canAutoResume = true;
+            }
+
+            if (canAutoResume) {
+              const prevSecs =
+                lastJeda && lastJeda.durasiSebelumJedaDetik !== undefined && lastJeda.durasiSebelumJedaDetik !== null
+                  ? Number(lastJeda.durasiSebelumJedaDetik)
+                  : (existingAtt.actualInZoneMinutes ? existingAtt.actualInZoneMinutes * 60 : 0);
+
+              if (lastJeda && !lastJeda.waktuResume) {
                 lastJeda.waktuResume = new Date().toISOString();
                 lastJeda.durasiSebelumResumeMenit = Math.max(
                   existingAtt.actualInZoneMinutes || 0,
                   lastJeda.durasiSebelumJedaMenit || 0
                 );
                 lastJeda.durasiSebelumResumeDetik = prevSecs;
-
-                currentAttStatus = "BERLANGSUNG";
-
-                await prisma.activityAttendance.update({
-                  where: { id: existingAtt.id },
-                  data: {
-                    status: "BERLANGSUNG",
-                    jedaLogs: currentLogs,
-                  },
-                });
-
-                existingAtt.status = "BERLANGSUNG";
-                existingAtt.jedaLogs = currentLogs as any;
-
-                websocketService.broadcastStudentAttendance({
-                  id: existingAtt.id,
-                  studentId: existingAtt.studentId,
-                  scheduleId: existingAtt.scheduleId,
-                  status: "BERLANGSUNG",
-                  currentStatus: "DI_ZONA",
-                  attendedAt: existingAtt.attendedAt.toISOString(),
-                  actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+              } else if (!lastJeda) {
+                currentLogs.push({
+                  alasan: "Auto-Resume: Mahasiswa aktif kembali di dalam zona",
+                  waktuResume: new Date().toISOString(),
+                  durasiSebelumResumeMenit: existingAtt.actualInZoneMinutes || 0,
+                  durasiSebelumResumeDetik: (existingAtt.actualInZoneMinutes || 0) * 60,
+                  autoTriggered: true,
                 });
               }
+
+              currentAttStatus = "BERLANGSUNG";
+
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: {
+                  status: "BERLANGSUNG",
+                  jedaLogs: currentLogs,
+                },
+              });
+
+              existingAtt.status = "BERLANGSUNG";
+              existingAtt.jedaLogs = currentLogs as any;
+
+              websocketService.broadcastStudentAttendance({
+                id: existingAtt.id,
+                studentId: existingAtt.studentId,
+                scheduleId: existingAtt.scheduleId,
+                status: "BERLANGSUNG",
+                currentStatus: "DI_ZONA",
+                attendedAt: existingAtt.attendedAt.toISOString(),
+                actualInZoneMinutes: existingAtt.actualInZoneMinutes || 0,
+              });
             }
           }
 
@@ -4358,7 +4377,7 @@ export class KknAttendanceService {
     try {
       const now = new Date();
       const ruleConfigs = await configService.getRuleEngineConfigs();
-      const STALE_THRESHOLD_MINUTES = (ruleConfigs as any).attendanceStaleGpsMinutes ?? 5;
+      const STALE_THRESHOLD_MINUTES = (ruleConfigs as any).attendanceStaleGpsMinutes ?? 15;
       const staleThresholdMs = STALE_THRESHOLD_MINUTES * 60 * 1000;
 
       const activeAttendances = await prisma.activityAttendance.findMany({
@@ -5056,7 +5075,7 @@ export class KknAttendanceService {
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
         targetMinMenit,
-        rasioKehadiran: Number(((actualMins / targetMinMenit) * 100).toFixed(1)),
+        rasioKehadiran: Math.min(100, Math.max(0, Number(((actualMins / targetMinMenit) * 100).toFixed(1)))),
         status: computedStatus,
         statusDisplay,
         isMemenuhiDurasi: isMemenuhi,

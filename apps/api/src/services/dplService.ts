@@ -1272,7 +1272,7 @@ export const dplService = {
         const totalHours = Math.floor(totalMinutes / 60);
         const remainingMinutes = totalMinutes % 60;
         const targetHours = configTargets.targetTotalJam || 200;
-        const progressPercentage = Math.round((totalMinutes / (targetHours * 60 || 1)) * 100);
+        const progressPercentage = Math.min(100, Math.round((totalMinutes / (targetHours * 60 || 1)) * 100));
 
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },

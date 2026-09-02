@@ -5611,8 +5611,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const ratioPercent = !hasValidAttendanceSession || durationMins === 0
                 ? 0
                 : (recAny.targetRatioPercent !== undefined && recAny.targetRatioPercent !== null && recAny.targetRatioPercent !== 0 && !isLeaveOrPending)
-                ? Number(recAny.targetRatioPercent)
-                : (targetMins > 0 ? Math.round((durationMins / targetMins) * 100) : 0);
+                ? Math.min(100, Math.max(0, Number(recAny.targetRatioPercent)))
+                : (targetMins > 0 ? Math.min(100, Math.round((durationMins / targetMins) * 100)) : 0);
               const isMemenuhi = !hasValidAttendanceSession
                 ? false
                 : rec.isMemenuhiDurasi !== undefined
@@ -5622,7 +5622,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               const modalTargetKumulatif = Number(configTargets.targetTotalJam) || (scheduleTargetHours * Number(configTargets.targetTotalHari || 50));
               const modalTargetKumulatifMins = Math.round(modalTargetKumulatif * 60);
               const modalActualCumMinutes = rec.totalMinutes !== undefined && rec.totalMinutes !== null ? Number(rec.totalMinutes) : Math.round((rec.totalHours || 0) * 60);
-              const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2)) : 0;
+              const modalPercentCapaian = modalTargetKumulatifMins > 0 ? Math.min(100, Number(((modalActualCumMinutes / modalTargetKumulatifMins) * 100).toFixed(2))) : 0;
 
               const liveLoc = studentLocations.find(
                 (l) => l.studentId === rec.student?.id || l.student?.id === rec.student?.id
