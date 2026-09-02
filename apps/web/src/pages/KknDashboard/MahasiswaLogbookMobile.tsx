@@ -214,9 +214,9 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
 
       {/* 3. Modal Detail Logbook */}
       {selectedLogbook && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60">
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[88vh] flex flex-col animate-in slide-in-from-bottom duration-200">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
               <h3 className="text-sm font-black text-slate-900 dark:text-white">Detail Logbook Kegiatan</h3>
               <button
                 onClick={() => setSelectedLogbook(null)}
@@ -265,7 +265,7 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
               )}
             </div>
 
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60">
+            <div className="p-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 shrink-0">
               <button
                 onClick={() => setSelectedLogbook(null)}
                 className="w-full py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 font-bold rounded-xl text-slate-800 dark:text-slate-200 transition cursor-pointer"

@@ -114,10 +114,10 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-200">
         {/* Header Modal */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
           <div className="space-y-0.5">
             <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
               <FileText size={18} className="text-emerald-600" />
@@ -134,7 +134,7 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] space-y-4 overflow-y-auto flex-1 text-xs">
           {/* Tipe Aktivitas (Kelompok vs Individu) */}
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe Aktivitas</label>

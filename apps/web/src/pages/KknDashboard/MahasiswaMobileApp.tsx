@@ -36,7 +36,7 @@ export const MahasiswaMobileApp: React.FC = () => {
   };
 
   return (
-    <IOSSafariGate>
+    <>
       <MahasiswaMobileShell activeTab={activeTab} onTabChange={setActiveTab}>
         {(tab) => {
           switch (tab) {
@@ -79,7 +79,7 @@ export const MahasiswaMobileApp: React.FC = () => {
         }}
         prokerList={prokerList}
       />
-    </IOSSafariGate>
+    </>
   );
 };
 

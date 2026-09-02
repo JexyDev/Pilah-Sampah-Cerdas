@@ -496,10 +496,10 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
 
       {/* 3. MODAL: TAMBAH USULAN PROGRAM KERJA */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-200">
             {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
               <div className="space-y-0.5">
                 <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Target size={18} className="text-emerald-600" />
@@ -516,7 +516,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
             </div>
 
             {/* Modal Form Body */}
-            <form onSubmit={handleCreateProker} className="p-4 space-y-3.5 overflow-y-auto flex-1 text-xs">
+            <form onSubmit={handleCreateProker} className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] space-y-3.5 overflow-y-auto flex-1 text-xs">
               {/* Judul Proker */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
@@ -643,10 +643,10 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
 
       {/* 4. MODAL: DETAIL & EVALUASI PROGRAM KERJA */}
       {selectedProker && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-200">
             {/* Detail Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80 dark:bg-slate-800/60">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
               <div className="space-y-1 min-w-0 pr-2">
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                   {selectedProker.kategori || "Program Kerja"}
@@ -664,7 +664,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
             </div>
 
             {/* Detail Body */}
-            <div className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+            <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] space-y-4 overflow-y-auto flex-1 text-xs">
               {/* Status Grid */}
               <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
                 <div className="space-y-0.5">
