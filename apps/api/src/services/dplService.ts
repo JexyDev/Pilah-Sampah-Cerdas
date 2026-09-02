@@ -1290,6 +1290,7 @@ export const dplService = {
           fakultas: st.fakultas || "-",
           fotoProfil: st.user?.fotoProfil || null,
           isKetua: Boolean(st.isKetua),
+          kelompokId: st.kelompokId || st.kelompok?.id || null,
           kelompokName: st.kelompok?.name || "-",
           assessmentScore: finalCalculatedScore,
           baseAssessmentScore: baseScore,
