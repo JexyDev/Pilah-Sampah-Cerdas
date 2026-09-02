@@ -783,64 +783,107 @@ export class KknAttendanceService {
           const currentLogs = (existingAtt.jedaLogs as any[]) || [];
           let currentAttStatus = existingAtt.status;
 
-          // Auto-Pause saat keluar zona (dengan toleransi GPS Drift / Jitter)
+          // ─────────────────────────────────────────────────────────────────────────────
+          // AUTO-PAUSE dengan GRACE PERIOD — Mencegah false pause akibat GPS glitch
+          //
+          // Konteks: Saat mahasiswa minimize app, OS Android "mencekik" akses GPS sesaat.
+          // Ping terakhir dari Dart Timer (15 detik) bisa menggunakan koordinat cache/network
+          // yang tidak akurat, sehingga mahasiswa seolah "keluar zona" padahal tidak.
+          // Foreground Service (30 detik) akan segera mengirim koordinat akurat berikutnya.
+          //
+          // Solusi: Jangan vonis TERJEDA dari 1 ping. Tunggu 90 detik (3 siklus ping).
+          // Jika mahasiswa kembali ke zona sebelum 90 detik → hapus pending, tidak ada perubahan.
+          // ─────────────────────────────────────────────────────────────────────────────
           if (!isCurrInside && currentAttStatus === "BERLANGSUNG") {
-            // Cek lokasi sebelumnya untuk membedakan lonjakan instan (GPS Jitter) vs benar-benar keluar zona
-            const recentLocations = await prisma.studentLocation.findMany({
-              where: { studentId: userId },
-              orderBy: { recordedAt: "desc" },
-              take: 3,
-            });
+            const GRACE_PERIOD_MS = 90_000; // 90 detik = 3 siklus ping background (30 detik)
 
-            const effectiveRad = geofence.radius + bufferMeters;
-            let outOfZoneCount = 0;
-            for (const rLoc of recentLocations) {
-              const rDist = calculateDistance(
-                Number(rLoc.latitude),
-                Number(rLoc.longitude),
-                geofence.latitude,
-                geofence.longitude
-              );
-              if (rDist > effectiveRad) {
-                outOfZoneCount++;
-              }
-            }
+            // Cek apakah sudah ada entri "pending pause" dari ping sebelumnya
+            const pendingPauseIdx = currentLogs.findIndex(
+              (l: any) => l.type === "PENDING_PAUSE" && !l.confirmed
+            );
+            const pendingPauseLog = pendingPauseIdx !== -1 ? currentLogs[pendingPauseIdx] : null;
 
-            // Trigger auto-pause jika jarak jauh (> radius + buffer + 80m) ATAU sudah >= 2 ping berturut-turut di luar zona
-            const isFarOutside = dist > effectiveRad + 80;
-            const isConfirmedOutOfZone = outOfZoneCount >= 2 || isFarOutside;
-
-            if (isConfirmedOutOfZone) {
+            if (!pendingPauseLog) {
+              // === PING PERTAMA DI LUAR ZONA ===
+              // Kemungkinan GPS glitch. Catat sebagai "pending", JANGAN ubah status.
               const currentLiveSecs = calculateLiveInZoneSeconds(existingAtt);
-              const currentLiveMins = Math.floor(currentLiveSecs / 60);
               currentLogs.push({
-                alasan: "Keluar Zona Geofence (Otomatis)",
-                waktuJeda: new Date().toISOString(),
-                durasiSebelumJedaMenit: currentLiveMins,
+                type: "PENDING_PAUSE",
+                alasan: "Keluar Zona Geofence (Menunggu Konfirmasi Grace Period)",
+                waktuDeteksiKeluar: new Date().toISOString(),
                 durasiSebelumJedaDetik: currentLiveSecs,
+                durasiSebelumJedaMenit: Math.floor(currentLiveSecs / 60),
                 autoTriggered: true,
+                confirmed: false,
               });
-              currentAttStatus = "TERJEDA";
-              existingAtt.actualInZoneMinutes = currentLiveMins;
+
+              // Hanya update jedaLogs — STATUS TETAP "BERLANGSUNG"
               await prisma.activityAttendance.update({
                 where: { id: existingAtt.id },
-                data: {
-                  status: "TERJEDA",
-                  actualInZoneMinutes: currentLiveMins,
-                  jedaLogs: currentLogs,
-                },
+                data: { jedaLogs: currentLogs },
               });
-              existingAtt.status = "TERJEDA";
               existingAtt.jedaLogs = currentLogs as any;
-              websocketService.broadcastStudentAttendance({
-                id: existingAtt.id,
-                studentId: existingAtt.studentId,
-                scheduleId: existingAtt.scheduleId,
-                status: "TERJEDA",
-                currentStatus: "DI_LUAR_ZONA",
-                attendedAt: existingAtt.attendedAt.toISOString(),
-                actualInZoneMinutes: currentLiveMins,
+              // currentAttStatus TIDAK BERUBAH — tetap "BERLANGSUNG"
+
+            } else {
+              // === PING BERIKUTNYA — CEK APAKAH GRACE PERIOD SUDAH TERLAMPAUI ===
+              const firstDetectedAt = new Date(pendingPauseLog.waktuDeteksiKeluar).getTime();
+              const elapsedMs = Date.now() - firstDetectedAt;
+
+              if (elapsedMs >= GRACE_PERIOD_MS) {
+                // Grace period terlampaui → mahasiswa memang benar-benar di luar zona → TERJEDA
+                const currentLiveSecs =
+                  pendingPauseLog.durasiSebelumJedaDetik ?? calculateLiveInZoneSeconds(existingAtt);
+                const currentLiveMins = Math.floor(currentLiveSecs / 60);
+
+                pendingPauseLog.confirmed = true;
+                pendingPauseLog.waktuJeda = new Date().toISOString();
+                pendingPauseLog.alasan = "Keluar Zona Geofence (Otomatis — Grace Period Terlampaui)";
+
+                currentAttStatus = "TERJEDA";
+                existingAtt.actualInZoneMinutes = currentLiveMins;
+
+                await prisma.activityAttendance.update({
+                  where: { id: existingAtt.id },
+                  data: {
+                    status: "TERJEDA",
+                    actualInZoneMinutes: currentLiveMins,
+                    jedaLogs: currentLogs,
+                  },
+                });
+                existingAtt.status = "TERJEDA";
+                existingAtt.jedaLogs = currentLogs as any;
+
+                websocketService.broadcastStudentAttendance({
+                  id: existingAtt.id,
+                  studentId: existingAtt.studentId,
+                  scheduleId: existingAtt.scheduleId,
+                  status: "TERJEDA",
+                  currentStatus: "DI_LUAR_ZONA",
+                  attendedAt: existingAtt.attendedAt.toISOString(),
+                  actualInZoneMinutes: currentLiveMins,
+                });
+              }
+              // Jika belum lewat grace period: ABAIKAN, status tetap BERLANGSUNG
+            }
+          }
+
+          // ─────────────────────────────────────────────────────────────────────────────
+          // BERSIHKAN PENDING_PAUSE JIKA MAHASISWA KEMBALI KE ZONA SEBELUM GRACE PERIOD
+          // Ini adalah skenario normal: GPS glitch sesaat, lalu kembali akurat.
+          // Hapus pending seolah tidak pernah terjadi → TIDAK ada interupsi bagi user.
+          // ─────────────────────────────────────────────────────────────────────────────
+          if (isCurrInside && currentAttStatus === "BERLANGSUNG") {
+            const pendingIdx = currentLogs.findIndex(
+              (l: any) => l.type === "PENDING_PAUSE" && !l.confirmed
+            );
+            if (pendingIdx !== -1) {
+              currentLogs.splice(pendingIdx, 1);
+              await prisma.activityAttendance.update({
+                where: { id: existingAtt.id },
+                data: { jedaLogs: currentLogs },
               });
+              existingAtt.jedaLogs = currentLogs as any;
             }
           }
 
