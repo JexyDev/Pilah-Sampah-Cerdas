@@ -125,10 +125,10 @@ describe("UserService", () => {
         activeBinsCount: 0,
         provinsi: "Jawa Barat",
         kabupaten: "Kota Bandung",
-        kecamatan: "-",
+        kecamatan: "Kecamatan Coblong",
         kelurahan: "Dago",
         rw: "RT 01 / RW 01",
-        address: "Sekretariat RT 01 / RW 01, Dago, Kota Bandung",
+        address: "Sekretariat RT 01 / RW 01, Dago, Kecamatan Coblong, Kota Bandung",
         wilayah: "RT 01 / RW 01, Dago",
         setoran: 4.0,
         totalPoin: 150,
@@ -136,6 +136,117 @@ describe("UserService", () => {
         dplKelompok: [],
         petugasResidu: null,
       });
+    });
+
+    it("should search Pimpinan by NIP, Institusi, and Jabatan", async () => {
+      const mockUsers = [
+        {
+          id: "pimpinan-1",
+          name: "Prof. Dr. Ir. Rektor",
+          phone: "+628111111111",
+          nip: "4127.34.02.001",
+          institusi: "Universitas Komputer Indonesia",
+          jabatan: "Rektor",
+          role: { name: "PEMIMPIN" },
+          status: "Aktif",
+        },
+      ];
+      vi.mocked(userRepository.findMany).mockResolvedValue(mockUsers as any);
+
+      const resNip = await userService.getAllUsers(
+        { search: "4127.34", roleName: "PEMIMPIN" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resNip).toHaveLength(1);
+
+      const resInst = await userService.getAllUsers(
+        { search: "Komputer", roleName: "PEMIMPIN" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resInst).toHaveLength(1);
+
+      const resJab = await userService.getAllUsers(
+        { search: "Rektor", roleName: "PEMIMPIN" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resJab).toHaveLength(1);
+    });
+
+    it("should search DPL by NIP, Kelompok, Jenjang, and Prodi", async () => {
+      const mockUsers = [
+        {
+          id: "dpl-1",
+          name: "Dr. Dosen DPL",
+          phone: "+628222222222",
+          nip: "4127.34.02.005",
+          programStudi: "Teknik Informatika",
+          jenjangPendidikan: "S1",
+          role: { name: "DPL" },
+          status: "Aktif",
+          dplKelompok: [{ id: "kel-1", name: "Kelompok 1 Dago", kelurahan: "Dago" }],
+        },
+      ];
+      vi.mocked(userRepository.findMany).mockResolvedValue(mockUsers as any);
+
+      const resGroup = await userService.getAllUsers(
+        { search: "Kelompok 1", roleName: "DPL" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resGroup).toHaveLength(1);
+
+      const resProdi = await userService.getAllUsers(
+        { search: "Informatika", roleName: "DPL" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resProdi).toHaveLength(1);
+    });
+
+    it("should search Lurah by Kecamatan and Rukun Warga list", async () => {
+      const mockUsers = [
+        {
+          id: "lurah-1",
+          name: "Lurah Dago",
+          phone: "+628333333333",
+          role: { name: "LURAH" },
+          status: "Aktif",
+          address: "Kel. Dago",
+          kelurahan: "Dago",
+          kecamatan: "Kecamatan Coblong",
+        },
+      ];
+      vi.mocked(userRepository.findMany).mockResolvedValue(mockUsers as any);
+
+      const resKec = await userService.getAllUsers(
+        { search: "Coblong", roleName: "LURAH" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resKec).toHaveLength(1);
+
+      const resRw = await userService.getAllUsers(
+        { search: "RW 05", roleName: "LURAH" },
+        { userId: "su-1", role: "SUPER_USER" }
+      );
+      expect(resRw).toHaveLength(1);
+    });
+  });
+
+  describe("updateUser", () => {
+    it("should throw CANNOT_DEACTIVATE_SELF when user attempts to deactivate own account", async () => {
+      vi.mocked(userRepository.findById).mockResolvedValue({
+        id: "user-me",
+        name: "Super User Logged In",
+        phone: "+6281234567890",
+        role: { name: "SUPER_USER" },
+        roleId: 2,
+      } as any);
+
+      await expect(
+        userService.updateUser(
+          "user-me",
+          { status: "Nonaktif" },
+          { userId: "user-me", role: "SUPER_USER" }
+        )
+      ).rejects.toThrow("CANNOT_DEACTIVATE_SELF");
     });
   });
 

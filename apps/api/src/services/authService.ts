@@ -12,7 +12,27 @@ import { comparePassword, hashPassword } from "../utils/hashUtils.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwtUtils.js";
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
 import { websocketService } from "./websocketService.js";
+import { DatabaseUnavailableError } from "../utils/errors.js";
 import crypto from "crypto";
+
+/** Deteksi Prisma / Node DB connection error, re-throw sebagai DatabaseUnavailableError */
+function rethrowIfDbDown(error: any): never {
+  const code: string = error?.code ?? "";
+  const msg: string = error?.message ?? "";
+  if (
+    code.startsWith("P10") ||
+    error?.name === "PrismaClientInitializationError" ||
+    msg.includes("Can't reach database") ||
+    msg.includes("connection limit") ||
+    msg.includes("ECONNREFUSED") ||
+    msg.includes("ETIMEDOUT") ||
+    msg.includes("socket hang up") ||
+    msg.includes("Connection refused")
+  ) {
+    throw new DatabaseUnavailableError();
+  }
+  throw error;
+}
 
 export class AuthService {
   /**

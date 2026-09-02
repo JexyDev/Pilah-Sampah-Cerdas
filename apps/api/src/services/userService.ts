@@ -102,6 +102,25 @@ function formatTitleCaseName(name?: string): string {
     .join(" ");
 }
 
+const KELURAHAN_RW_MAP: Record<string, string[]> = {
+  Cipaganti: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07"],
+  Dago: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13"],
+  "Lebak Gede": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13"],
+  "Lebak Siliwangi": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06"],
+  "Sadang Serang": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13", "RW 14", "RW 15", "RW 16", "RW 17", "RW 18", "RW 19", "RW 20", "RW 21"],
+  Sekeloa: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13", "RW 14", "RW 15", "RW 16"],
+};
+
+const getCleanKelName = (raw: string | undefined | null) => {
+  if (!raw || raw === "-" || raw === "Kel. -") return "Cipaganti";
+  let clean = String(raw)
+    .replace(/^Kel\.\s*/i, "")
+    .replace(/^urahan\s*/i, "")
+    .replace(/^Kelurahan\s*/i, "")
+    .trim();
+  return clean && clean !== "-" ? clean : "Cipaganti";
+};
+
 export class UserService {
   async getAllUsers(
     filters: {
@@ -126,17 +145,60 @@ export class UserService {
 
     if (search && search.trim()) {
       const q = search.trim();
+      const qLower = q.toLowerCase();
+      const searchOrs: any[] = [
+        { name: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+        { address: { contains: q, mode: "insensitive" } },
+        { nip: { contains: q, mode: "insensitive" } },
+        { institusi: { contains: q, mode: "insensitive" } },
+        { jabatan: { contains: q, mode: "insensitive" } },
+        { programStudi: { contains: q, mode: "insensitive" } },
+        { jenjangPendidikan: { contains: q, mode: "insensitive" } },
+        { provinsi: { contains: q, mode: "insensitive" } },
+        { kabupaten: { contains: q, mode: "insensitive" } },
+        { studentProfile: { nim: { contains: q, mode: "insensitive" } } },
+        { studentProfile: { jurusan: { contains: q, mode: "insensitive" } } },
+        { studentProfile: { fakultas: { contains: q, mode: "insensitive" } } },
+        { studentProfile: { jenjangPendidikan: { contains: q, mode: "insensitive" } } },
+        { studentProfile: { kelompok: { name: { contains: q, mode: "insensitive" } } } },
+        { studentProfile: { kelompok: { kelurahan: { contains: q, mode: "insensitive" } } } },
+        { studentProfile: { assignedRw: { name: { contains: q, mode: "insensitive" } } } },
+        { dplKelompok: { some: { name: { contains: q, mode: "insensitive" } } } },
+        { dplKelompok: { some: { kelurahan: { contains: q, mode: "insensitive" } } } },
+        { role: { name: { contains: q, mode: "insensitive" } } },
+        { rw: { name: { contains: q, mode: "insensitive" } } },
+        { rw: { kelurahan: { name: { contains: q, mode: "insensitive" } } } },
+        { rw: { kelurahan: { kecamatan: { name: { contains: q, mode: "insensitive" } } } } },
+        { rw: { kelurahan: { kecamatan: { kabupaten: { name: { contains: q, mode: "insensitive" } } } } } },
+        { rw: { kelurahan: { kecamatan: { kabupaten: { provinsi: { name: { contains: q, mode: "insensitive" } } } } } } },
+        { households: { some: { rw: { name: { contains: q, mode: "insensitive" } } } } },
+        { rt: { name: { contains: q, mode: "insensitive" } } },
+        { rt: { rw: { name: { contains: q, mode: "insensitive" } } } },
+      ];
+
+      // Expand Prisma search for known default computed keywords across special roles
+      if ("universitas komputer indonesia".includes(qLower) || "unikom".includes(qLower)) {
+        searchOrs.push({ role: { name: { in: ["PEMIMPIN", "PANITIA_TASKFORCE"] } } });
+      }
+      if ("rektor".includes(qLower)) {
+        searchOrs.push({ role: { name: "PEMIMPIN" } });
+      }
+      if ("task force".includes(qLower) || "taskforce".includes(qLower) || "panitia".includes(qLower)) {
+        searchOrs.push({ role: { name: "PANITIA_TASKFORCE" } });
+      }
+      if ("jawa barat".includes(qLower) || "kota bandung".includes(qLower) || "bandung".includes(qLower)) {
+        searchOrs.push({ role: { name: { in: ["ADMIN_DLH", "CAMAT", "LURAH"] } } });
+      }
+      if ("coblong".includes(qLower) || "kecamatan coblong".includes(qLower)) {
+        searchOrs.push({ role: { name: { in: ["CAMAT", "LURAH"] } } });
+      }
+      if (/\b\d+\b/.test(q) || qLower.startsWith("rw")) {
+        searchOrs.push({ role: { name: "LURAH" } });
+      }
+
       andConditions.push({
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { phone: { contains: q, mode: "insensitive" } },
-          { address: { contains: q, mode: "insensitive" } },
-          { studentProfile: { nim: { contains: q, mode: "insensitive" } } },
-          { nip: { contains: q, mode: "insensitive" } },
-          { role: { name: { contains: q, mode: "insensitive" } } },
-          { rw: { name: { contains: q, mode: "insensitive" } } },
-          { rw: { kelurahan: { name: { contains: q, mode: "insensitive" } } } },
-        ],
+        OR: searchOrs,
       });
     }
 
@@ -434,8 +496,18 @@ export class UserService {
         email: u.phone,
         phone: u.phone,
         nip: u.nip || null,
-        institusi: u.institusi || null,
-        jabatan: u.jabatan || null,
+        institusi:
+          u.institusi ||
+          (["PEMIMPIN", "PANITIA_TASKFORCE"].includes(u.role?.name)
+            ? "Universitas Komputer Indonesia"
+            : null),
+        jabatan:
+          u.jabatan ||
+          (u.role?.name === "PEMIMPIN"
+            ? "Rektor"
+            : u.role?.name === "PANITIA_TASKFORCE"
+              ? "Anggota Task Force"
+              : null),
         programStudi: u.programStudi || null,
         jenjangPendidikan: u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan || null,
         jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga || null,
@@ -447,7 +519,10 @@ export class UserService {
         activeBinsCount,
         provinsi: u.provinsi || provinsiName || "Jawa Barat",
         kabupaten: u.kabupaten || kabupatenName || "Kota Bandung",
-        kecamatan: kecamatanName,
+        kecamatan:
+          ["LURAH", "CAMAT"].includes(u.role?.name) && (kecamatanName === "-" || !kecamatanName)
+            ? "Kecamatan Coblong"
+            : kecamatanName,
         kelurahan: kelurahanName,
         rw: rwName,
         address: formattedAddress,
@@ -504,6 +579,61 @@ export class UserService {
           : null,
       };
     });
+
+    if (search && search.trim()) {
+      const qLower = search.trim().toLowerCase();
+      const qNum = qLower.replace(/\D/g, "");
+      const qRwNormalized = qNum ? `rw ${qNum.padStart(2, "0")}` : "";
+
+      mapped = mapped.filter((u: any) => {
+        const dplKelompokNames = Array.isArray(u.dplKelompok)
+          ? u.dplKelompok.map((k: any) => `${k.name || ""} ${k.kelurahan || ""} ${k.cakupanRw || ""}`).join(" ")
+          : "";
+        const mhsKelompok = u.studentProfile?.kelompok
+          ? `${u.studentProfile.kelompok.name || ""} ${u.studentProfile.kelompok.kelurahan || ""} ${u.studentProfile.kelompok.dplName || ""}`
+          : "";
+
+        let lurahRws = "";
+        if (u.role === "LURAH") {
+          const kelClean = getCleanKelName(u.kelurahan || u.address);
+          const knownRws = KELURAHAN_RW_MAP[kelClean] || [];
+          lurahRws = knownRws.join(" ");
+        }
+
+        const combined = [
+          u.name,
+          u.phone,
+          u.email,
+          u.nip,
+          u.nim,
+          u.institusi,
+          u.jabatan,
+          u.programStudi,
+          u.jenjangPendidikan,
+          u.provinsi,
+          u.kabupaten,
+          u.kecamatan,
+          u.kelurahan,
+          u.rw,
+          u.address,
+          u.wilayah,
+          u.status,
+          dplKelompokNames,
+          mhsKelompok,
+          lurahRws,
+          u.petugasResidu?.name,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        if (combined.includes(qLower)) return true;
+        if (qRwNormalized && combined.includes(qRwNormalized)) return true;
+        if (qNum && u.role === "LURAH" && lurahRws.toLowerCase().includes(`rw ${qNum.padStart(2, "0")}`)) return true;
+
+        return false;
+      });
+    }
 
     if (status === "Sudah Teraktivasi") {
       mapped = mapped.filter((u: any) => u.binStatus === "Sudah Teraktivasi");
@@ -766,7 +896,7 @@ export class UserService {
     }
 
     if (
-      currentUser?.userId === id &&
+      (currentUser?.userId === id || (user.phone && (currentUser as any)?.phone === user.phone)) &&
       status &&
       ["Nonaktif", "INACTIVE", "NONAKTIF"].includes(status)
     ) {
