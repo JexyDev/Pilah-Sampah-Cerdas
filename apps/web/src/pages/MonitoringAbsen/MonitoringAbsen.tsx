@@ -4873,7 +4873,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                             setFormData((prev) => ({
                               ...prev,
                               kelompokId: newGroupId,
-                              location: targetGroup ? locInfo.fullAddress : (prev.location || "Kecamatan Coblong, Kota Bandung"),
+                              location: targetGroup ? locInfo.fullAddress : (prev.location || "Wilayah Operasional Binaan"),
                               title: targetGroup ? `${cat} - Kel. ${locInfo.kelurahan}${rwTag}` : `${cat} - Kegiatan Bersama Seluruh Wilayah`,
                             }));
                           }}

@@ -681,7 +681,7 @@ export const KurasiLandingPage: React.FC = () => {
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Misal: Balai RW 03, Kelurahan Lebak Gede, Kec. Coblong"
+                  placeholder="Misal: Balai RW 03, Kelurahan Lebak Gede"
                   className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
                 />
               </div>
