@@ -996,11 +996,9 @@ export class KknAttendanceService {
             let lastJeda: any = null;
             if (currentLogs.length > 0) {
               lastJeda = currentLogs[currentLogs.length - 1];
-              if (lastJeda && (lastJeda.autoTriggered || lastJeda.staleGpsAnomaly || !lastJeda.waktuResume)) {
+              if (lastJeda && (lastJeda.autoTriggered || lastJeda.staleGpsAnomaly) && !lastJeda.waktuResume) {
                 canAutoResume = true;
               }
-            } else {
-              canAutoResume = true;
             }
 
             if (canAutoResume) {
