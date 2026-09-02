@@ -134,7 +134,7 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
   const [searchParams] = useSearchParams();
 
   const allowedRoleTabs = useMemo(() => {
@@ -737,6 +737,17 @@ const ManajemenPengguna: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const isSelfAccount = modalType === "edit" && user && selectedUser && (
+      selectedUser.id === user.id ||
+      selectedUser.id === (user as any).userId ||
+      (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+    );
+
+    if (isSelfAccount && (formData.status === "Nonaktif" || formData.status === "INACTIVE" || formData.status === "NONAKTIF")) {
+      showToast.error("Anda tidak dapat menonaktifkan akun Anda sendiri saat sedang login demi mencegah risiko tak sengaja terkunci dari sistem (lockout).");
+      return;
+    }
+
     // Password validation check
     if (!isPasswordValid) {
       if (modalType === "add" && !formData.password) {
@@ -1249,7 +1260,7 @@ const ManajemenPengguna: React.FC = () => {
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari nama, No. HP..."
+              placeholder="Cari nama, No. HP, NIP, institusi, wilayah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
@@ -2718,7 +2729,11 @@ const ManajemenPengguna: React.FC = () => {
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Status Akun</label>
                       {(() => {
-                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (selectedUser.id === user.id || (selectedUser.phone && user.phone && selectedUser.phone === user.phone));
+                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (
+                          selectedUser.id === user.id ||
+                          selectedUser.id === (user as any).userId ||
+                          (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+                        );
                         return (
                           <>
                             <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
