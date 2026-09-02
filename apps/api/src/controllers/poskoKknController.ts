@@ -109,7 +109,7 @@ export class PoskoKknController {
         ...posko,
         foto: posko.fotoUrl || null,
         fotoUrl: posko.fotoUrl || null,
-        radius: Number((posko as any).radius) || 150,
+        radius: Number((posko as any).radius) || 500,
         statusApproval: statusApproval || posko.keterangan || "APPROVED",
       };
 
