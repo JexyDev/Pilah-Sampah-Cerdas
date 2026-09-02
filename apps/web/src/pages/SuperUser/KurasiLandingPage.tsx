@@ -70,14 +70,6 @@ export const KurasiLandingPage: React.FC = () => {
   const [prokerCandidates, setProkerCandidates] = useState<any[]>([]);
   const [logbookCandidates, setLogbookCandidates] = useState<any[]>([]);
   const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
-  const [confirmConfig, setConfirmConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    type: "danger" | "warning";
-    onConfirm: () => Promise<void>;
-  } | null>(null);
 
   const presetImages = [
     { label: "Edukasi & Sosialisasi", url: "/image/activity-1.webp" },
@@ -375,17 +367,17 @@ export const KurasiLandingPage: React.FC = () => {
   };
 
   const handleResetToRealProkerDefaults = () => {
-    setConfirmConfig({
-      isOpen: true,
-      title: "Muat Ulang Kurasi Standar",
-      message: "Muat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil?",
-      confirmText: "Muat Ulang",
-      type: "warning",
-      onConfirm: async () => {
-        await executeResetToRealProkerDefaults();
-        setConfirmConfig(null);
-      },
-    });
+    setShowResetConfirmModal(true);
+  };
+
+  const handleConfirmResetToRealProkerDefaults = async () => {
+    setIsActionLoading(true);
+    try {
+      await executeResetToRealProkerDefaults();
+      setShowResetConfirmModal(false);
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const toggleSdgTag = (tag: string) => {
