@@ -735,11 +735,6 @@ void initKknForegroundTask() {
       channelDescription: 'Notifikasi persisten saat pemantauan lokasi KKN aktif',
       channelImportance: NotificationChannelImportance.DEFAULT,
       priority: NotificationPriority.HIGH,
-      iconData: const NotificationIconData(
-        resType: ResourceType.mipmap,
-        resPrefix: ResourcePrefix.ic,
-        name: 'launcher',
-      ),
     ),
     iosNotificationOptions: const IOSNotificationOptions(
       showNotification: true,
