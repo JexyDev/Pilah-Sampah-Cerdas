@@ -2500,14 +2500,14 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   const isSuperUserOrDev = ["SUPER_USER", "DEVELOPER"].includes(userRole);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-slate-950 dark:bg-slate-800/60 p-4 md:p-6 space-y-5 text-slate-800 dark:text-slate-100">
+    <div className="space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-100 w-full min-w-0 max-w-full overflow-x-hidden">
       {/* Header Utama: Ringkas, Informatif & Aksi Cepat */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-        <div className="flex items-start sm:items-center gap-3.5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs w-full min-w-0 max-w-full overflow-hidden">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
           <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
             <CheckCircle2 size={22} className="text-emerald-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Monitoring & Validasi Presensi Mahasiswa
@@ -2523,7 +2523,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         </div>
 
         {/* Action Buttons Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto min-w-0">
           {/* WebSocket Live Status Indicator Badge - Eksklusif Role Developer / Super User */}
           {isSuperUserOrDev && (
             <div
@@ -2557,13 +2557,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
           {/* Filter Kelompok KKN (Multi-Tenant Selector untuk Developer / Super User / DLH / Camat) */}
           {!isDpl ? (
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs w-full sm:w-auto">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs w-full sm:w-auto min-w-0">
               <Users size={14} className="text-emerald-600 shrink-0" />
               <span className="text-[11px] font-bold text-slate-500 shrink-0">Kelompok:</span>
               <select
                 value={selectedKelompokId}
                 onChange={(e) => handleSelectKelompok(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 flex-1 sm:max-w-[220px] truncate"
+                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 w-full sm:w-auto sm:max-w-[220px] truncate min-w-0"
               >
                 <option value="">Semua Kelompok (Seluruh Wilayah)</option>
                 {groups.map((g) => (
@@ -2574,9 +2574,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </select>
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 shadow-2xs">
+            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 shadow-2xs w-full sm:w-auto">
               <Users size={14} className="text-emerald-700 shrink-0" />
-              <span className="text-xs font-black">
+              <span className="text-xs font-black truncate">
                 {formatKelompokDisplayName(groups.find((g) => g.id === selectedKelompokId) || groups[0])}
               </span>
             </div>
@@ -2585,7 +2585,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           <button
             type="button"
             onClick={() => setShowMap(!showMap)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
+            className={`w-full sm:w-auto justify-center px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border ${
               showMap
                 ? "bg-emerald-50 text-emerald-800 border-emerald-300 shadow-2xs"
                 : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
@@ -2599,7 +2599,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {/* Tombol Akses Laporan & Log Presensi */}
           <Link
             to="/monitoring-kegiatan/laporan-presensi"
-            className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-300 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shadow-2xs active:scale-95"
+            className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-emerald-300 dark:border-emerald-700/80 bg-emerald-50/90 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 shadow-2xs active:scale-95"
             title="Buka Laporan Rekapitulasi & Log Detail Presensi Mahasiswa"
           >
             <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -2609,7 +2609,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           {/* Tombol Akses Ajukan Absensi / Izin */}
           <Link
             to="/monitoring-kegiatan/pengajuan-izin"
-            className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-purple-300 dark:border-purple-700/80 bg-purple-50/90 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-800 dark:text-purple-300 shadow-2xs active:scale-95"
+            className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-purple-300 dark:border-purple-700/80 bg-purple-50/90 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-800 dark:text-purple-300 shadow-2xs active:scale-95"
             title="Buka Halaman Verifikasi Ajukan Absensi & Pengajuan Izin/Sakit"
           >
             <FileCheck size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
@@ -2620,7 +2620,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <button
               type="button"
               onClick={openConfigModal}
-              className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
               title="Atur Hari, Jam Kerja & Target Kegiatan KKN (Khusus Developer & Super User)"
             >
               <Settings size={14} className="text-emerald-600" />
@@ -2632,7 +2632,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <button
               type="button"
               onClick={handleOpenAddModal}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus size={15} />
               <span>Buat Kegiatan</span>
