@@ -987,7 +987,7 @@ export class PoskoKknService {
           alamat: g.poskoKkn.alamat,
           latitude: Number(g.poskoKkn.latitude),
           longitude: Number(g.poskoKkn.longitude),
-          radius: Number((g.poskoKkn as any).radius) || 150,
+          radius: Number((g.poskoKkn as any).radius) || 500,
           isUtama: true,
           type: "POSKO_UTAMA",
           fotoUrl: resolvedFoto,
@@ -1005,7 +1005,7 @@ export class PoskoKknService {
               alamat: m.alamat,
               latitude: Number(m.latitude),
               longitude: Number(m.longitude),
-              radius: Number(m.radius) || 150,
+              radius: Number(m.radius) || 500,
               isUtama: m.isUtama,
               type: "POSKO_MULTI",
               fotoUrl: m.fotoUrl || null,
@@ -1021,18 +1021,18 @@ export class PoskoKknService {
       let centerLat = -6.8915; // default Coblong
       let centerLng = 107.6107;
       let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
-      let radius = 150;
+      let radius = 500;
       let schedulePolygon: any = null;
 
       if (primaryPosko) {
         centerLat = primaryPosko.latitude;
         centerLng = primaryPosko.longitude;
-        radius = primaryPosko.radius || 150;
+        radius = primaryPosko.radius || 500;
         geofenceSource = "POSKO_RESMI";
       } else if (activeSchedule && activeSchedule.latitude && activeSchedule.longitude) {
         centerLat = Number(activeSchedule.latitude);
         centerLng = Number(activeSchedule.longitude);
-        radius = Number(activeSchedule.radius) || 150;
+        radius = Number(activeSchedule.radius) || 500;
         geofenceSource = "JADWAL_KEGIATAN";
         if (activeSchedule.polygon) schedulePolygon = activeSchedule.polygon;
       }
@@ -1094,7 +1094,7 @@ export class PoskoKknService {
               location: activeSchedule.location,
               latitude: activeSchedule.latitude ? Number(activeSchedule.latitude) : null,
               longitude: activeSchedule.longitude ? Number(activeSchedule.longitude) : null,
-              radius: Number(activeSchedule.radius) || 150,
+              radius: Number(activeSchedule.radius) || 500,
               polygon: activeSchedule.polygon,
             }
           : null,
