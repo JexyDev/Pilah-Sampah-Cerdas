@@ -582,7 +582,7 @@ export class PoskoKknService {
         latitude: data.latitude,
         longitude: data.longitude,
         isUtama: data.isUtama ?? false,
-        radius: data.radius ? Math.max(150, Number(data.radius)) : 150,
+        radius: data.radius ? Math.max(50, Number(data.radius)) : 500,
         fotoUrl: data.fotoUrl ?? null,
         keterangan: data.keterangan ?? null,
       },
@@ -624,7 +624,7 @@ export class PoskoKknService {
             longitude: data.longitude,
             location: data.nama,
             title: `Kegiatan Harian ${data.nama}`,
-            radius: Math.max(150, data.radius ?? 150),
+            radius: Math.max(50, data.radius ?? 500),
           },
         });
       }
@@ -677,7 +677,7 @@ export class PoskoKknService {
         ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
         ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
         ...(data.isUtama !== undefined ? { isUtama: data.isUtama } : {}),
-        ...(data.radius !== undefined ? { radius: Math.max(150, Number(data.radius)) } : {}),
+        ...(data.radius !== undefined ? { radius: Math.max(50, Number(data.radius)) } : {}),
         ...(data.fotoUrl !== undefined ? { fotoUrl: data.fotoUrl } : {}),
         ...(data.keterangan !== undefined ? { keterangan: data.keterangan } : {}),
       },
@@ -706,7 +706,7 @@ export class PoskoKknService {
             ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
             ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
             ...(data.nama !== undefined ? { location: data.nama, title: `Kegiatan Harian ${data.nama}` } : {}),
-            ...(data.radius !== undefined ? { radius: Math.max(150, Number(data.radius)) } : {}),
+            ...(data.radius !== undefined ? { radius: Math.max(50, Number(data.radius)) } : {}),
           },
         });
       }
@@ -791,7 +791,7 @@ export class PoskoKknService {
         latitude: Number(primary.latitude),
         longitude: Number(primary.longitude),
         isUtama: true,
-        radius: Number((primary as any).radius) || 150,
+        radius: Number((primary as any).radius) || 500,
         type: "POSKO_UTAMA",
         foto: primary.fotoUrl ?? null,
         fotoUrl: primary.fotoUrl ?? null,
@@ -806,7 +806,7 @@ export class PoskoKknService {
         latitude: Number(p.latitude),
         longitude: Number(p.longitude),
         isUtama: p.isUtama,
-        radius: Number(p.radius) || 150,
+        radius: Number(p.radius) || 500,
         type: "POSKO_MULTI",
         foto: p.fotoUrl ?? null,
         fotoUrl: p.fotoUrl ?? null,
