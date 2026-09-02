@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -8,6 +8,7 @@
 
 export interface DeviceValidationResult {
   isIOS: boolean;
+  isMac: boolean;
   isSafari: boolean;
   isValid: boolean;
   reason?: "NOT_IOS" | "NOT_SAFARI" | "IN_APP_BROWSER";
@@ -20,6 +21,7 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   if (typeof window === "undefined" || typeof navigator === "undefined") {
     return {
       isIOS: true,
+      isMac: true,
       isSafari: true,
       isValid: true,
       detectedOS: "iOS Device",
@@ -27,6 +29,9 @@ export function checkIsIOSSafari(): DeviceValidationResult {
       userAgent: "",
     };
   }
+
+  // Check manual testing bypass in localStorage
+  const hasLocalBypass = localStorage.getItem("BERSEKA_DEV_BYPASS_IOS_GATE") === "true";
 
   const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
   const platform = navigator.platform || "";
@@ -39,7 +44,10 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   const isIPod = /iPod/i.test(ua);
   const isIOS = isIPhone || isIPad || isIPod;
 
-  // 2. Identify Non-Safari Browser Engines on iOS
+  // 2. macOS / MacBook Detection
+  const isMac = /Macintosh|Mac OS X|Mac_PowerPC/i.test(ua) || (platform === "MacIntel" && !isIPad);
+
+  // 3. Identify Non-Safari Browser Engines on iOS
   const isCriOS = /CriOS/i.test(ua); // Chrome on iOS
   const isFxiOS = /FxiOS/i.test(ua); // Firefox on iOS
   const isEdgiOS = /EdgiOS/i.test(ua); // Edge on iOS
@@ -47,8 +55,7 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   const isUC = /UCBrowser/i.test(ua);
   const isInApp = /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat|Bytedance|TikTok|wv/i.test(ua);
 
-  // 3. Genuine Safari Engine Validation on iOS
-  // Safari on iOS contains "Safari" and "Version/XX.X" and none of third-party custom scheme signatures
+  // 4. Genuine Safari Engine Validation
   const isSafariCore = /Safari/i.test(ua) && /Version\//i.test(ua);
   const isSafari = isSafariCore && !isCriOS && !isFxiOS && !isEdgiOS && !isOperaIOS && !isUC && !isInApp;
 
@@ -57,9 +64,9 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   if (isIPhone) detectedOS = "Apple iPhone (iOS)";
   else if (isIPad) detectedOS = "Apple iPad (iPadOS)";
   else if (isIPod) detectedOS = "Apple iPod Touch (iOS)";
+  else if (isMac) detectedOS = "Apple MacBook / Mac (macOS)";
   else if (/Android/i.test(ua)) detectedOS = "Android OS Device";
   else if (/Windows/i.test(ua)) detectedOS = "Windows PC / Desktop";
-  else if (/Macintosh|Mac OS/i.test(ua)) detectedOS = "Apple macOS Desktop";
   else if (/Linux/i.test(ua)) detectedOS = "Linux Desktop";
 
   // Human readable Browser name
@@ -75,9 +82,23 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   else if (/Edge|Edg/i.test(ua)) detectedBrowser = "Microsoft Edge";
   else if (/Opera|OPR/i.test(ua)) detectedBrowser = "Opera Browser";
 
+  // If local bypass active or testing on Apple macOS (MacBook)
+  if (hasLocalBypass || isMac) {
+    return {
+      isIOS: isIOS || isMac,
+      isMac,
+      isSafari: true,
+      isValid: true,
+      detectedOS,
+      detectedBrowser,
+      userAgent: ua,
+    };
+  }
+
   if (!isIOS) {
     return {
       isIOS: false,
+      isMac,
       isSafari: false,
       isValid: false,
       reason: "NOT_IOS",
@@ -90,6 +111,7 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   if (isInApp) {
     return {
       isIOS: true,
+      isMac,
       isSafari: false,
       isValid: false,
       reason: "IN_APP_BROWSER",
@@ -102,6 +124,7 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   if (!isSafari) {
     return {
       isIOS: true,
+      isMac,
       isSafari: false,
       isValid: false,
       reason: "NOT_SAFARI",
@@ -113,6 +136,7 @@ export function checkIsIOSSafari(): DeviceValidationResult {
 
   return {
     isIOS: true,
+    isMac,
     isSafari: true,
     isValid: true,
     detectedOS,

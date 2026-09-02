@@ -236,10 +236,10 @@ export const dplController = {
         statusUsulan,
         statusPelaksanaan,
       } = req.body;
-      if (!kelompokId || !deskripsi) {
+      if (!deskripsi) {
         res
           .status(400)
-          .json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
+          .json({ error: "BAD_REQUEST", message: "Deskripsi program kerja wajib diisi" });
         return;
       }
       const data = await dplService.createProgramKerja(dplUserId, userRole, {

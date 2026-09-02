@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -86,14 +86,14 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
     user?.peran === "DEVELOPER" ||
     user?.peran === "ADMIN_DLH";
 
-  // If valid OR developer bypass is active, render children
-  if (validation.isValid || (isDevOrAdmin && devBypass)) {
+  // If valid OR testing bypass is active, render children
+  if (validation.isValid || devBypass) {
     return (
       <>
-        {isDevOrAdmin && devBypass && !validation.isValid && (
+        {devBypass && !validation.isValid && (
           <div className="bg-amber-500 text-slate-950 px-3 py-1 text-[11px] font-mono font-bold flex items-center justify-between z-50 sticky top-0 shadow-xs">
             <span className="flex items-center gap-1.5 truncate">
-              ⚠️ <span>DEV BYPASS: Validasi iOS Safari Non-Aktif</span>
+              ⚠️ <span>MODE PENGUJIAN: Validasi iOS Safari dilewati</span>
             </span>
             <button
               onClick={toggleDevBypass}
@@ -252,18 +252,16 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
           </button>
         </div>
 
-        {/* Developer Bypass Option (Dev / Admin Only) */}
-        {isDevOrAdmin && (
-          <div className="pt-2 border-t border-slate-800/80 text-center">
-            <button
-              onClick={toggleDevBypass}
-              className="inline-flex items-center gap-1.5 text-[11px] font-mono text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
-            >
-              <Code2 size={13} />
-              <span>Bypass Validasi (Mode Pengembang / Admin)</span>
-            </button>
-          </div>
-        )}
+        {/* Testing / Developer Bypass Option */}
+        <div className="pt-2 border-t border-slate-800/80 text-center">
+          <button
+            onClick={toggleDevBypass}
+            className="inline-flex items-center gap-1.5 text-[11px] font-mono text-amber-400/90 hover:text-amber-300 transition-colors cursor-pointer py-1 px-3 rounded-lg bg-amber-500/10 border border-amber-500/20"
+          >
+            <Code2 size={13} />
+            <span>Aktifkan Mode Pengujian (MacBook / Desktop)</span>
+          </button>
+        </div>
       </div>
 
       {/* Bottom Footer Note */}

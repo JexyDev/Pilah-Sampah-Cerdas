@@ -59,7 +59,7 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex flex-col font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-[100dvh] bg-slate-100 dark:bg-slate-950 flex flex-col font-sans text-slate-800 dark:text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
       {/* 1. Mobile Top App Bar (iOS Status-Bar Safe) */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-2xs pt-[env(safe-area-inset-top,0px)]">
         <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between gap-3">
@@ -105,7 +105,7 @@ export const MahasiswaMobileShell: React.FC<MahasiswaMobileShellProps> = ({
       </header>
 
       {/* 2. Main Scrollable Content View (Max Mobile Width 480px for optimal reading) */}
-      <main className="flex-1 max-w-md w-full mx-auto pb-[calc(env(safe-area-inset-bottom,0px)+75px)] px-3.5 pt-3.5 space-y-4">
+      <main className="flex-1 max-w-md w-full mx-auto pb-[calc(env(safe-area-inset-bottom,0px)+95px)] px-3.5 pt-3.5 space-y-4">
         {children(currentTab)}
       </main>
 
