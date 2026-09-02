@@ -425,21 +425,21 @@ export const HasilPemanfaatan: React.FC = () => {
       />
 
       {/* Segmented Top Navigation Sub-Tabs */}
-      <div className="bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex items-center gap-1.5">
+      <div className="bg-slate-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col sm:flex-row gap-1.5">
         <button
           onClick={() => {
             setActiveSectionTab("HASIL");
             setSearchQuery("");
             setKategoriFilter("ALL");
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeSectionTab === "HASIL"
               ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
               : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
           }`}
         >
-          <PackageCheck size={16} />
-          <span>Rekapitulasi Produk & Hasil Olahan ({programs.length})</span>
+          <PackageCheck size={16} className="shrink-0" />
+          <span className="truncate">Rekapitulasi Produk &amp; Hasil Olahan ({programs.length})</span>
         </button>
         <button
           onClick={() => {
@@ -447,14 +447,14 @@ export const HasilPemanfaatan: React.FC = () => {
             setSearchQuery("");
             setKategoriFilter("ALL");
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
             activeSectionTab === "FEEDBACK"
               ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
               : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50"
           }`}
         >
-          <MessageSquare size={16} />
-          <span>Aspirasi & Evaluasi Warga ({items.length})</span>
+          <MessageSquare size={16} className="shrink-0" />
+          <span className="truncate">Aspirasi &amp; Evaluasi Warga ({items.length})</span>
         </button>
       </div>
 
@@ -462,44 +462,46 @@ export const HasilPemanfaatan: React.FC = () => {
       {activeSectionTab === "HASIL" && (
         <>
           {/* KPI Metric Summary Cards - Hasil Produk */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
               <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
                 <Leaf className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Hasil Panen Olahan</p>
-                <p className="text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Hasil Panen Olahan</p>
+                <p className="text-base sm:text-lg font-black text-emerald-700 dark:text-emerald-400 mt-0.5 truncate">{totalPanenKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg/L</span></p>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
               <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
                 <TrendingUp className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Nilai Ekonomi Daur</p>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">Rp {totalNilaiEkonomi.toLocaleString("id-ID")}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Nilai Ekonomi Daur</p>
+                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate" title={`Rp ${totalNilaiEkonomi.toLocaleString("id-ID")}`}>
+                  Rp {totalNilaiEkonomi.toLocaleString("id-ID")}
+                </p>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
               <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl shrink-0 border border-slate-200 dark:border-slate-700">
                 <Boxes className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Total Bahan Terolah</p>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Total Bahan Terolah</p>
+                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{totalBahanMasukKg.toLocaleString("id-ID")} <span className="text-xs font-semibold text-slate-400">Kg</span></p>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-4.5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5 min-w-0">
               <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-700/50">
                 <Building2 className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider">Program & Fasilitas</p>
-                <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10.5px] text-slate-400 dark:text-slate-400 font-black uppercase tracking-wider truncate">Program &amp; Fasilitas</p>
+                <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{programs.length} <span className="text-xs font-semibold text-slate-400">Titik Olahan</span></p>
               </div>
             </div>
           </div>
