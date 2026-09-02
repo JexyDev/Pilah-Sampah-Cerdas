@@ -592,13 +592,13 @@ class _PengajuanIzinFormViewState extends ConsumerState<PengajuanIzinFormView> {
 
             // Upload Foto Bukti
             Text(
-              _selectedKategori == KategoriIzin.sakit ? 'Foto Bukti Surat Sakit / Resep Dokter' : 'Foto Dokumen Pendukung Izin', 
+              _selectedKategori == KategoriIzin.sakit ? 'Foto Bukti Surat Keterangan Sakit' : 'Foto Dokumen Pendukung Izin', 
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)
             ),
             const SizedBox(height: 4),
             Text(
               _selectedKategori == KategoriIzin.sakit 
-                ? 'Wajib — surat keterangan sakit dari dokter, resep obat, dsb.' 
+                ? 'Wajib — surat keterangan sakit / bukti periksa dokter.' 
                 : 'Wajib — surat izin instansi, surat pengantar, atau dokumen relevan lainnya.', 
               style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)
             ),

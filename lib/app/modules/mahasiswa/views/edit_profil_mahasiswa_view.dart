@@ -71,8 +71,57 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+  void _showAvatarOptions() {
+    final user = ref.read(authProvider).user;
+    final hasPhoto = (_profileImage != null) ||
+        (user?.fotoProfil != null && user!.fotoProfil!.isNotEmpty);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded, color: AppColors.primaryGreen),
+                  title: const Text('Ambil Foto dari Kamera'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                  title: const Text('Pilih dari Galeri'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+                if (hasPhoto)
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline_rounded, color: AppColors.dangerRed),
+                    title: const Text('Hapus Foto Profil', style: TextStyle(color: AppColors.dangerRed)),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _confirmDeletePhoto();
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picked = await _picker.pickImage(source: source, imageQuality: 80);
     if (picked != null) {
       setState(() => _profileImage = File(picked.path));
       final success = await ref.read(authProvider.notifier).uploadAvatar(picked.path);
@@ -82,6 +131,44 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
           _showPopup('Foto profil berhasil diperbarui!', true);
         } else {
           _showPopup('Gagal mengunggah foto profil.', false);
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmDeletePhoto() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Hapus Foto Profil?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Foto profil Anda akan dihapus dan kembali ke avatar default.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.dangerRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      final success = await ref.read(authProvider.notifier).deleteAvatar();
+      if (mounted) {
+        if (success) {
+          setState(() => _profileImage = null);
+          ref.read(authProvider.notifier).fetchProfile();
+          _showPopup('Foto profil berhasil dihapus!', true);
+        } else {
+          _showPopup('Gagal menghapus foto profil.', false);
         }
       }
     }
@@ -264,7 +351,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
               child: Column(
                 children: [
                   GestureDetector(
-                    onTap: _pickImage,
+                    onTap: _showAvatarOptions,
                     child: Stack(
                       alignment: Alignment.bottomRight,
                       children: [

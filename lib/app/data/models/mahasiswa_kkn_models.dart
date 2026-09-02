@@ -36,15 +36,44 @@ class KknDashboardData extends Equatable {
     final student = json['studentKkn'] as Map<String, dynamic>? ?? {};
     final user = json['user'] as Map<String, dynamic>? ?? {};
     final mhs = json['mahasiswa'] as Map<String, dynamic>? ?? {};
+    final stats = json['stats'] as Map<String, dynamic>? ?? {};
     
+    final pointVal = (json['contributionPoints'] ??
+            json['points'] ??
+            json['pointKkn'] ??
+            json['totalPoints'] ??
+            stats['contributionPoints'] ??
+            stats['points'] ??
+            stats['pointKkn'] ??
+            stats['totalPoints'] ??
+            0) as num?;
+
+    final totalBins = (json['totalRegisteredBins'] ??
+            json['registeredBins'] ??
+            stats['totalRegisteredBins'] ??
+            stats['registeredBins'] ??
+            0) as num?;
+
+    final limit = (json['assignmentLimit'] ??
+            stats['assignmentLimit'] ??
+            0) as num?;
+
+    final quota = (json['remainingQuota'] ??
+            stats['remainingQuota'] ??
+            0) as num?;
+
+    final progress = (json['progressPercentage'] ??
+            stats['progressPercentage'] ??
+            0.0) as num?;
+
     return KknDashboardData(
       nim: student['nim']?.toString() ?? mhs['nim']?.toString() ?? user['nim']?.toString() ?? json['nim']?.toString() ?? '',
-      jurusan: student['jurusan']?.toString() ?? mhs['jurusan']?.toString() ?? user['jurusan']?.toString() ?? json['jurusan']?.toString() ?? '',
-      totalRegisteredBins: (json['totalRegisteredBins'] as num?)?.toInt() ?? 0,
-      assignmentLimit: (json['assignmentLimit'] as num?)?.toInt() ?? 0,
-      remainingQuota: (json['remainingQuota'] as num?)?.toInt() ?? 0,
-      progressPercentage: (json['progressPercentage'] as num?)?.toDouble() ?? 0.0,
-      contributionPoints: (json['contributionPoints'] as num?)?.toInt() ?? 0,
+      jurusan: student['jurusan']?.toString() ?? mhs['jurusan']?.toString() ?? student['programStudi']?.toString() ?? user['programStudi']?.toString() ?? json['jurusan']?.toString() ?? '',
+      totalRegisteredBins: totalBins.toInt(),
+      assignmentLimit: limit.toInt(),
+      remainingQuota: quota.toInt(),
+      progressPercentage: progress.toDouble(),
+      contributionPoints: pointVal?.toInt() ?? 0,
     );
   }
 

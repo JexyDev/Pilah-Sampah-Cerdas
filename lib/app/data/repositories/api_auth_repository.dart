@@ -558,6 +558,23 @@ class ApiAuthRepository implements AuthRepository {
     }
   }
 
+  // ————————————————————————————————————————————————————— Delete Avatar —————————————————————————————————————————————————————————————
+  @override
+  Future<void> deleteAvatar() async {
+    try {
+      final response = await apiClient.dio.delete('/auth/avatar');
+      if (response.statusCode != 200) {
+        throw const AuthException('DELETE_FAILED', 'Gagal menghapus foto profil');
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message']?.toString();
+      throw AuthException('NETWORK_ERROR', msg ?? 'Terjadi kesalahan jaringan');
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      throw const AuthException('UNKNOWN_ERROR', 'Gagal menghapus foto profil.');
+    }
+  }
+
   @override
   Future<String?> forgotPassword({required String phone}) async {
     try {
@@ -751,8 +768,8 @@ class ApiAuthRepository implements AuthRepository {
     String rw = '';
 
     // 1. Coba flat field langsung
-    kelurahan = userMap['kelurahan']?.toString() ?? '';
-    rw = userMap['rw']?.toString() ?? '';
+    kelurahan = userMap['kelurahan']?.toString() ?? userMap['kelurahanName']?.toString() ?? '';
+    rw = userMap['rw']?.toString() ?? userMap['rwName']?.toString() ?? '';
 
     // 2. Jika rw adalah object nested (seperti struktur warga)
     if (rw.isEmpty && userMap['rw'] is Map) {
@@ -814,8 +831,8 @@ class ApiAuthRepository implements AuthRepository {
     }
 
     final String nim = userMap['nim']?.toString() ?? sp?['nim']?.toString() ?? userMap['profile']?['nim']?.toString() ?? '';
-    final String prodi = userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? '';
-    final String jurusan = userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? '';
+    final String prodi = userMap['programStudi']?.toString() ?? userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? sp?['programStudi']?.toString() ?? userMap['jurusan']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? '';
+    final String jurusan = userMap['jurusan']?.toString() ?? userMap['programStudi']?.toString() ?? sp?['jurusan']?.toString() ?? userMap['prodi']?.toString() ?? sp?['prodi']?.toString() ?? userMap['profile']?['jurusan']?.toString() ?? userMap['profile']?['prodi']?.toString() ?? '';
     final String fakultas = userMap['fakultas']?.toString() ?? sp?['fakultas']?.toString() ?? userMap['profile']?['fakultas']?.toString() ?? '';
     final String universitas = userMap['universitas']?.toString() ?? sp?['universitas']?.toString() ?? userMap['profile']?['universitas']?.toString() ?? '';
     final String jenjang = userMap['jenjangPendidikan']?.toString() ?? sp?['jenjangPendidikan']?.toString() ?? userMap['profile']?['jenjangPendidikan']?.toString() ?? userMap['strata']?.toString() ?? 'S1';
