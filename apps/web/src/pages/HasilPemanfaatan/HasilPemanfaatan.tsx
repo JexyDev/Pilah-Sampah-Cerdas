@@ -639,7 +639,7 @@ export const HasilPemanfaatan: React.FC = () => {
       {activeSectionTab === "FEEDBACK" && (
         <>
           {/* KPI Metric Summary Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
             <div className="bg-white dark:bg-slate-900 p-4.5 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center gap-3.5">
               <div className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl shrink-0">
                 <MessageSquare className="w-5 h-5" />
