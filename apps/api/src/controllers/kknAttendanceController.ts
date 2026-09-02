@@ -747,6 +747,38 @@ export const kknAttendanceController = {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
+      const { latitude, longitude } = req.body;
+
+      if (latitude === undefined || longitude === undefined) {
+        res.status(400).json({
+          success: false,
+          message: "Koordinat latitude dan longitude wajib dikirim untuk validasi zona.",
+        });
+        return;
+      }
+
+      const result = await kknAttendanceService.lanjutKegiatan(studentUserId, id, {
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+      });
+
+      res.status(200).json(result);
+    } catch (error: any) {
+      console.error("[KknAttendanceController] lanjutKegiatan error:", error);
+      const message = error.message || "Gagal melanjutkan kegiatan KKN";
+      const status = message.includes("OUT_OF_GEOFENCE") ? 403 : 500;
+      res.status(status).json({
+        success: false,
+        error: status === 403 ? "OUT_OF_GEOFENCE" : "INTERNAL_SERVER_ERROR",
+        message,
+      });
+    }
+  },
+
+  recordOutOfZoneViolation: async (req: Request, res: Response): Promise<void> => { (feat(api): lanjutKegiatan dengan geofence + checkout wajib di zona)
+    try {
+      const studentUserId = (req as any).user?.userId || (req as any).user?.id;
+      const { id } = req.params;
 
       const result = await kknAttendanceService.lanjutKegiatan(studentUserId, id);
 
