@@ -2251,7 +2251,7 @@ export const PoskoKknPage: React.FC = () => {
                     Kelurahan {detailModalPosko.kelurahan}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-300">
-                    {formatCleanRw(detailModalPosko.rwName)} &bull; Kecamatan Coblong
+                    {formatCleanRw(detailModalPosko.rwName)} &bull; Wilayah Binaan
                   </p>
                 </div>
 

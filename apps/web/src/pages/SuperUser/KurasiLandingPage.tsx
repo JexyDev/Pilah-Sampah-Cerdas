@@ -56,7 +56,7 @@ export const KurasiLandingPage: React.FC = () => {
     id: "",
     title: "",
     date: new Date().toISOString().slice(0, 10),
-    location: "Kecamatan Coblong, Kota Bandung",
+    location: "Wilayah Operasional BERSEKA",
     category: "Edukasi Pemilahan",
     imageUrl: "/image/activity-1.webp",
     description: "",
@@ -233,8 +233,8 @@ export const KurasiLandingPage: React.FC = () => {
 
     const cleanDesc = lines.slice(1).join("\n\n") || rawDesc.replace(/\*\*/g, "");
     const locationText = proker.kelurahan
-      ? `Kelurahan ${proker.kelurahan}, Kec. Coblong`
-      : "Kecamatan Coblong, Kota Bandung";
+      ? `Kelurahan ${proker.kelurahan}`
+      : "Wilayah Operasional BERSEKA";
 
     let category = "Aksi Bersih Lingkungan";
     let img = "/image/activity-1.png";
@@ -279,14 +279,14 @@ export const KurasiLandingPage: React.FC = () => {
       : new Date().toISOString().slice(0, 10);
 
     const locationText = logbook.tempat
-      ? `${logbook.tempat}, Kelurahan ${logbook.kelurahan || "Coblong"}`
-      : `Kelurahan ${logbook.kelurahan || "Lebak Gede"}, Kec. Coblong`;
+      ? `${logbook.tempat}, Kelurahan ${logbook.kelurahan || "Binaan"}`
+      : `Kelurahan ${logbook.kelurahan || "Binaan"}`;
 
     const cleanTitle = logbook.prokerDeskripsi
       ? `${logbook.prokerDeskripsi.replace(/\*\*/g, "").slice(0, 60)} (${logbook.kelompokNama || "KKN"})`
       : logbook.deskripsi
       ? logbook.deskripsi.split("\n")[0].replace(/\*\*/g, "").slice(0, 75)
-      : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Coblong"}`;
+      : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Wilayah Binaan"}`;
 
     let img = logbook.fotoBuktiUrl || "/image/activity-1.png";
 
