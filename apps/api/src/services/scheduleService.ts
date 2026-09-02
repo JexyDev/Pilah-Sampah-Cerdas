@@ -159,7 +159,7 @@ export const scheduleService = {
   ) => {
     const parsedRadius =
       data.radius !== undefined && !isNaN(Number(data.radius))
-        ? Math.max(150, Number(data.radius))
+        ? Math.max(50, Number(data.radius))
         : undefined;
 
     const updated = await prisma.schedule.update({
@@ -391,12 +391,12 @@ export const scheduleService = {
           poskoLat = Number(officialPosko.latitude);
           poskoLng = Number(officialPosko.longitude);
           poskoName = officialPosko.nama || poskoName;
-          poskoRadius = Math.max(150, Number(officialPosko.radius) || 500);
+          poskoRadius = Math.max(50, Number(officialPosko.radius) || 500);
         } else if (facilityPosko && facilityPosko.latitude && facilityPosko.longitude) {
           poskoLat = Number(facilityPosko.latitude);
           poskoLng = Number(facilityPosko.longitude);
           poskoName = facilityPosko.nama || poskoName;
-          poskoRadius = Math.max(150, Number((facilityPosko as any)?.radius) || 500);
+          poskoRadius = Math.max(50, Number((facilityPosko as any)?.radius) || 500);
         } else {
           // Fallback kelurahan resmi
           const kel = (group.kelurahan || group.name || "").toLowerCase();
@@ -468,7 +468,7 @@ export const scheduleService = {
           const existingScheduleRadius = Number(primarySchedule.radius) || 0;
           const targetScheduleRadius =
             officialPosko && Number(officialPosko.radius) > 0
-              ? Math.max(150, Number(officialPosko.radius))
+              ? Math.max(50, Number(officialPosko.radius))
               : existingScheduleRadius > 0
                 ? existingScheduleRadius
                 : poskoRadius;
