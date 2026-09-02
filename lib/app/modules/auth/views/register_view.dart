@@ -345,18 +345,15 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     };
 
     if (_selectedRole == 'Warga') {
-      // Gabungkan kecamatan ke address agar tersimpan tanpa membuat backend crash
       final baseAddress = InputSanitizer.sanitize(_alamatController.text);
       final kec = InputSanitizer.sanitize(_kecamatanController.text);
       final kab = InputSanitizer.sanitize(_kotaController.text);
       final prov = InputSanitizer.sanitize(_provinsiController.text);
       
-      List<String> addrParts = [baseAddress];
-      if (kec.isNotEmpty) addrParts.add('Kec. $kec');
-      if (kab.isNotEmpty) addrParts.add(kab);
-      if (prov.isNotEmpty) addrParts.add(prov);
-      
-      data['address'] = addrParts.join(', ');
+      data['address'] = baseAddress.isNotEmpty ? baseAddress : 'Jl. Lingkungan Warga';
+      data['kecamatan'] = kec.isNotEmpty ? kec : 'Coblong';
+      data['kabupaten'] = kab.isNotEmpty ? kab : 'Kota Bandung';
+      data['provinsi'] = prov.isNotEmpty ? prov : 'Jawa Barat';
       data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
