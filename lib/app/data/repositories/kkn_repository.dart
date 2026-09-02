@@ -133,7 +133,7 @@ abstract class KknRepository {
 
   /// Konfirmasi mulai kegiatan KKN (check-in awal)
   /// POST /api/v1/kkn/kegiatan/{id}/mulai
-  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo});
+  Future<Map<String, dynamic>> mulaiKegiatan(String id, double latitude, double longitude, {String? deviceInfo, String? poskoId});
 
   /// Akhiri kegiatan KKN
   /// POST /api/v1/kkn/kegiatan/{id}/selesai (multipart/form-data)

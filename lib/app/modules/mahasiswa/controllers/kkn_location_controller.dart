@@ -550,6 +550,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         pos.latitude,
         pos.longitude,
         deviceInfo: await _getDeviceInfo(),
+        poskoId: selectedPosko?['id']?.toString(),
       );
 
       final sessionId = response['sessionId']?.toString();
@@ -577,6 +578,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
 
       // Parse lokasi dari response backend
       final lokasi = response['lokasi'] as Map<String, dynamic>?;
+      final matchedPosko = response['matchedPosko'] as Map<String, dynamic>?;
       Map<String, dynamic> targetData = <String, dynamic>{
         ...response,
         if (lokasi != null) ...{
@@ -593,14 +595,15 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         'statusKehadiran': response['statusKehadiran'] ?? 'BERLANGSUNG',
       };
 
-      // [PILIH POSKO] Jika mahasiswa memilih posko tertentu, koordinat posko itu
-      // menggantikan koordinat default dari backend sebagai zona geofence-nya.
-      if (selectedPosko != null) {
-        final poskoLat = (selectedPosko['latitude'] as num?)?.toDouble();
-        final poskoLng = (selectedPosko['longitude'] as num?)?.toDouble();
-        final poskoRadius = (selectedPosko['radius'] as num?)?.toDouble() ?? 150.0;
-        final poskoAddress = selectedPosko['alamat']?.toString() ??
-            selectedPosko['nama']?.toString() ??
+      // [PILIH POSKO] Jika mahasiswa memilih posko tertentu atau backend mencocokkan posko tertentu,
+      // koordinat posko itu menggantikan koordinat default sebagai zona geofence-nya.
+      final effectivePosko = selectedPosko ?? matchedPosko;
+      if (effectivePosko != null) {
+        final poskoLat = (effectivePosko['latitude'] as num?)?.toDouble();
+        final poskoLng = (effectivePosko['longitude'] as num?)?.toDouble();
+        final poskoRadius = (effectivePosko['radius'] as num?)?.toDouble() ?? 150.0;
+        final poskoAddress = effectivePosko['alamat']?.toString() ??
+            effectivePosko['nama']?.toString() ??
             'Posko KKN';
         if (poskoLat != null && poskoLng != null) {
           targetData = {
@@ -644,10 +647,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isTracking: false, // Reset agar startTracking() tidak skip
         clearError: true,
         attendanceTime: response['attendedAt']?.toString(),
-        // Simpan posko yang dipilih ke state (null jika tidak dipilih)
-        selectedPoskoId: selectedPosko?['id']?.toString(),
-        selectedPoskoName: selectedPosko?['nama']?.toString(),
-        selectedPoskoType: selectedPosko?['type']?.toString(),
+        // Simpan posko yang dipilih / dicocokkan ke state
+        selectedPoskoId: effectivePosko?['id']?.toString(),
+        selectedPoskoName: effectivePosko?['nama']?.toString(),
+        selectedPoskoType: effectivePosko?['type']?.toString(),
       );
 
       // [FIX A2] Start GPS tracking dengan flag forceBackgroundStart

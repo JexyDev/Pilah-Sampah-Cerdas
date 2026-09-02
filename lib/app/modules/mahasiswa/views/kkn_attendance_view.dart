@@ -1343,7 +1343,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
 
                 if (!isResuming) {
                   final mapState = ref.read(kknMapProvider);
-                  final poskoList = mapState.groupZone?.poskoList ?? [];
+                  List<PoskoItem> poskoList = List.from(mapState.groupZone?.poskoList ?? []);
+                  if (poskoList.isEmpty) {
+                    final currentKegiatan = state.kegiatanList.firstWhere(
+                      (k) => k['id']?.toString() == id || k['scheduleId']?.toString() == id,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    final rawPoskoList = currentKegiatan['poskoList'] as List<dynamic>?;
+                    if (rawPoskoList != null && rawPoskoList.isNotEmpty) {
+                      poskoList = rawPoskoList
+                          .map((e) => PoskoItem.fromJson(Map<String, dynamic>.from(e as Map)))
+                          .toList();
+                    }
+                  }
 
                   if (poskoList.isNotEmpty) {
                     if (!mounted) return;
