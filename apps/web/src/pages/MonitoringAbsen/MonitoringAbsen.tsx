@@ -2523,7 +2523,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         </div>
 
         {/* Action Buttons Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
           {/* WebSocket Live Status Indicator Badge - Eksklusif Role Developer / Super User */}
           {isSuperUserOrDev && (
             <div
@@ -2557,13 +2557,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
           {/* Filter Kelompok KKN (Multi-Tenant Selector untuk Developer / Super User / DLH / Camat) */}
           {!isDpl ? (
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs w-full sm:w-auto">
               <Users size={14} className="text-emerald-600 shrink-0" />
               <span className="text-[11px] font-bold text-slate-500 shrink-0">Kelompok:</span>
               <select
                 value={selectedKelompokId}
                 onChange={(e) => handleSelectKelompok(e.target.value)}
-                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 max-w-[220px] truncate"
+                className="bg-transparent text-xs font-black text-slate-800 dark:text-slate-100 outline-none cursor-pointer pr-1 flex-1 sm:max-w-[220px] truncate"
               >
                 <option value="">Semua Kelompok (Seluruh Wilayah)</option>
                 {groups.map((g) => (
@@ -3514,9 +3514,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       {/* Konten Utama: Tabel & Kartu Rekapitulasi Presensi */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
         {/* Toolbar: Search, Filter Tabs, View Switcher */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
           {/* Search Input */}
-          <div className="relative min-w-[220px] flex-1 max-w-md">
+          <div className="relative min-w-[200px] flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
               type="text"
@@ -3529,7 +3529,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <button
                 type="button"
                 onClick={() => setStudentSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -3537,7 +3537,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Date Range Filter Controls (Notulensi Item 12: Filter Tanggal) */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
               <Calendar size={13} className="text-emerald-600 shrink-0" />
               <span className="text-[10px] font-bold text-slate-400">Dari:</span>
@@ -3586,13 +3586,13 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           </div>
 
           {/* Filter Status Chips */}
-          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+          <div className="w-full xl:w-auto overflow-x-auto scrollbar-none -mx-1 px-1">
             {!isDpl && (
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400">
+              <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400 min-w-max">
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("ALL")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "ALL"
                       ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3603,7 +3603,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("ACTIVE")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "ACTIVE"
                       ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3614,7 +3614,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("COMPLETED")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "COMPLETED"
                       ? "bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-400 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3625,7 +3625,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("IZIN_SAKIT")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "IZIN_SAKIT"
                       ? "bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 shadow-xs font-black"
                       : "hover:text-slate-900"
@@ -3636,7 +3636,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <button
                   type="button"
                   onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
-                  className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
                     attendanceFilterTab === "NOT_ATTENDED"
                       ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
                       : "hover:text-slate-900"
