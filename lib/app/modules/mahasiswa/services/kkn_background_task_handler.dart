@@ -305,6 +305,15 @@ class KknBackgroundTaskHandler extends TaskHandler {
       distance = distToTarget;
       nowInside = distance <= effectiveRadius;
     }
+
+    // Filter GPS Drift / Sinyal Lemah saat Layar Mati:
+    // Jika akurasi GPS buruk (> 60 meter) dan sebelumnya sudah berada di dalam zona,
+    // toleransi jarak diperluas sesuai akurasi agar tidak false-positive TERJEDA saat HP di kantong.
+    if (!nowInside && _isInsideRadius && pos.accuracy > 60.0) {
+      if (distToTarget <= effectiveRadius + pos.accuracy) {
+        nowInside = true;
+      }
+    }
     
     // ═════════════════════════════════════════════════════════
     // STEP 3: Update durasi zona
@@ -724,8 +733,13 @@ void initKknForegroundTask() {
       channelId: 'kkn_location_channel',
       channelName: 'Pantauan Lokasi KKN',
       channelDescription: 'Notifikasi persisten saat pemantauan lokasi KKN aktif',
-      channelImportance: NotificationChannelImportance.LOW,
-      priority: NotificationPriority.LOW,
+      channelImportance: NotificationChannelImportance.DEFAULT,
+      priority: NotificationPriority.HIGH,
+      iconData: const NotificationIconData(
+        resType: ResourceType.mipmap,
+        resPrefix: ResourcePrefix.ic,
+        name: 'launcher',
+      ),
     ),
     iosNotificationOptions: const IOSNotificationOptions(
       showNotification: true,

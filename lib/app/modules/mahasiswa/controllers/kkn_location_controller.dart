@@ -916,6 +916,16 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         permission == LocationPermission.unableToDetermine) {
       return false;
     }
+
+    // Minta pengecualian optimasi baterai agar Android tidak membunuh service di latar belakang
+    if (Platform.isAndroid) {
+      try {
+        if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
+          await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+        }
+      } catch (_) {}
+    }
+
     return true;
   }
 
