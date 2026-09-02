@@ -310,17 +310,63 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedRole == 'Warga' || _selectedRole == 'Mahasiswa' || _selectedRole == 'Petugas Pemilahan' || _selectedRole == 'Petugas') {
-      if (_selectedKelurahan == null) {
+      if (_provinsiController.text.trim().isEmpty) {
+        _showToast('Provinsi wajib dipilih');
+        return;
+      }
+      if (_kotaController.text.trim().isEmpty) {
+        _showToast('Kota / Kabupaten wajib dipilih');
+        return;
+      }
+      if (_kecamatanController.text.trim().isEmpty) {
+        _showToast('Kecamatan wajib dipilih');
+        return;
+      }
+      if (_selectedKelurahan == null || _selectedKelurahan!.trim().isEmpty) {
         _showToast('Kelurahan wajib dipilih');
         return;
       }
-      if (_selectedRw == null) {
+      if (_selectedRw == null || _selectedRw!.trim().isEmpty) {
         _showToast('RW wajib dipilih');
         return;
       }
     }
 
+    if (_selectedRole == 'Warga') {
+      final baseAddress = InputSanitizer.sanitize(_alamatController.text);
+      if (baseAddress.isEmpty) {
+        _showToast('Alamat rumah wajib diisi');
+        return;
+      }
+      final familyText = _familySizeController.text.trim();
+      if (familyText.isEmpty) {
+        _showToast('Jumlah anggota keluarga wajib diisi');
+        return;
+      }
+      final familyCount = int.tryParse(familyText);
+      if (familyCount == null || familyCount < 1) {
+        _showToast('Jumlah anggota keluarga minimal 1 orang');
+        return;
+      }
+    }
+
     if (_selectedRole == 'Mahasiswa') {
+      if (_nimController.text.trim().isEmpty) {
+        _showToast('NIM wajib diisi');
+        return;
+      }
+      if (_universitasController.text.trim().isEmpty) {
+        _showToast('Universitas wajib diisi');
+        return;
+      }
+      if (_fakultasController.text.trim().isEmpty) {
+        _showToast('Fakultas wajib diisi');
+        return;
+      }
+      if (_jurusanController.text.trim().isEmpty) {
+        _showToast('Program Studi wajib diisi');
+        return;
+      }
       if (_tglMulaiKKN == null) {
         _showToast('Tanggal mulai KKN wajib diisi');
         return;
