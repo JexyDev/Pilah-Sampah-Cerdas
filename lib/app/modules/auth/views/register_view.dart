@@ -350,10 +350,10 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
       final kab = InputSanitizer.sanitize(_kotaController.text);
       final prov = InputSanitizer.sanitize(_provinsiController.text);
       
-      data['address'] = baseAddress.isNotEmpty ? baseAddress : 'Jl. Lingkungan Warga';
-      data['kecamatan'] = kec.isNotEmpty ? kec : 'Coblong';
-      data['kabupaten'] = kab.isNotEmpty ? kab : 'Kota Bandung';
-      data['provinsi'] = prov.isNotEmpty ? prov : 'Jawa Barat';
+      data['address'] = baseAddress;
+      data['kecamatan'] = kec;
+      data['kabupaten'] = kab;
+      data['provinsi'] = prov;
       data['rw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['rtRw'] = _selectedRw != null ? 'RW $_selectedRw' : '';
       data['kelurahan'] = _selectedKelurahan ?? '';
