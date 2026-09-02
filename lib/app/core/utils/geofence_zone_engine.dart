@@ -122,7 +122,7 @@ class GeofenceZoneEngine {
     required double userLng,
     double? targetLat,
     double? targetLng,
-    double radiusMeters = 150.0,
+    double radiusMeters = 500.0,
     List<List<double>>? polygon,
   }) {
     final now = DateTime.now();
