@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Bell, 
@@ -13,7 +14,10 @@ import {
   ChevronRight,
   AlertTriangle,
   CheckCircle2,
-  Info
+  Info,
+  LogOut,
+  User,
+  ChevronDown
 } from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
@@ -42,18 +46,23 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   // Dropdown visibility states
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Refs for closing on outside click
   const notifRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node))
         setShowNotifications(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node))
+        setShowProfileDropdown(false);
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
@@ -557,42 +566,129 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
         {/* Vertical Separator */}
         <div className="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
 
-        {/* User Profile Pill Card (Direct Navigation to Pengaturan / Profil) */}
-        <div
-          onClick={() => navigate("/profil")}
-          title="Profil Pengguna"
-          className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-1.5 sm:py-1.5 flex items-center gap-2 sm:gap-3 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
-        >
-          <div className="hidden sm:flex flex-col items-center justify-center text-center gap-0.5">
-            <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">
-              {user?.name || "Super User"}
-            </span>
-            <span className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
-              {user?.peran ? (
-                user.peran === "SUPER_USER" ? "ADMIN" :
-                user.peran === "DEVELOPER" ? "DEVELOPER" :
-                user.peran === "MAHASISWA_KKN" ? "MAHASISWA" :
-                user.peran === "PANITIA_TASKFORCE" ? "TASK FORCE" :
-                user.peran.replace("_", " ")
-              ) : "ADMIN"}
-            </span>
-          </div>
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
-            {user?.fotoProfil ? (
-              <img
-                src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-                onError={(e) => handleAvatarError(e, user?.name)}
-              />
-            ) : (
-              <span>
-                {user?.name ? user.name.trim()[0].toUpperCase() : "S"}
+        {/* User Profile Pill Card with Dropdown (Direct Navigation & Logout) */}
+        <div className="relative" ref={profileRef}>
+          <div
+            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            title="Menu Akun Pengguna"
+            className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-2 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
+          >
+            <div className="hidden sm:flex flex-col items-center justify-center text-center gap-0.5">
+              <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">
+                {user?.name || "Pengguna"}
               </span>
-            )}
+              <span className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+                {user?.peran ? (
+                  user.peran === "SUPER_USER" ? "ADMIN" :
+                  user.peran === "DEVELOPER" ? "DEVELOPER" :
+                  user.peran === "MAHASISWA_KKN" ? "MAHASISWA" :
+                  user.peran === "PANITIA_TASKFORCE" ? "TASK FORCE" :
+                  user.peran.replace("_", " ")
+                ) : "ADMIN"}
+              </span>
+            </div>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
+              {user?.fotoProfil ? (
+                <img
+                  src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                  onError={(e) => handleAvatarError(e, user?.name)}
+                />
+              ) : (
+                <span>
+                  {user?.name ? user.name.trim()[0].toUpperCase() : "U"}
+                </span>
+              )}
+            </div>
+            <ChevronDown size={14} className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${showProfileDropdown ? "rotate-180" : ""}`} />
           </div>
+
+          {/* Profile Dropdown Menu */}
+          {showProfileDropdown && (
+            <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80">
+                <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{user?.name || "Pengguna"}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{user?.email || "user@berseka.id"}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setShowProfileDropdown(false);
+                    navigate("/profil");
+                  }}
+                  className="w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 hover:text-[#009966] dark:hover:text-emerald-400 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <User size={15} className="text-slate-400" />
+                  <span>Profil Saya</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileDropdown(false);
+                    navigate("/tentang-aplikasi");
+                  }}
+                  className="w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 hover:text-[#009966] dark:hover:text-emerald-400 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <Info size={15} className="text-slate-400" />
+                  <span>Tentang Aplikasi</span>
+                </button>
+              </div>
+
+              <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  onClick={() => {
+                    setShowProfileDropdown(false);
+                    setShowLogoutModal(true);
+                  }}
+                  className="w-full px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <LogOut size={15} className="text-rose-500" />
+                  <span>Keluar Akun</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Logout Confirmation Modal - Rendered via Portal to ensure center-screen alignment outside backdrop-filter stacking context */}
+      {showLogoutModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-100 dark:border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
+                <LogOut size={26} />
+              </div>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Konfirmasi Keluar</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem BERSEKA?
+                </p>
+              </div>
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    logout();
+                    navigate("/login");
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition cursor-pointer"
+                >
+                  Ya, Keluar
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </header>
   );
 };

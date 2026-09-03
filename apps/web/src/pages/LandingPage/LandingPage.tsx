@@ -74,14 +74,14 @@ import "./LandingPage.css";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type CampaignCategory = "all" | "organic" | "recycle" | "kkn" | "education";
-type MarketCategory = "all" | "pupuk" | "ecoenzyme" | "kerajinan" | "bibit";
+type CampaignCategory = string;
+type MarketCategory = "all" | "sayuran_buah" | "telur" | "daging" | "pupuk" | "ecoenzyme" | "kerajinan" | "bibit" | string;
 type WasteTypeKey = "organik" | "plastik" | "kertas" | "jelantah" | "logam";
 
 interface ActionCampaign {
   id: string;
   title: string;
-  category: "organic" | "recycle" | "kkn" | "education";
+  category: string;
   categoryLabel: string;
   categoryColor: string;
   initiator: string;
@@ -100,7 +100,7 @@ interface ActionCampaign {
 interface MarketProduct {
   id: string;
   title: string;
-  category: "pupuk" | "ecoenzyme" | "kerajinan" | "bibit";
+  category: string;
   categoryLabel: string;
   categoryColor: string;
   initiator: string;
@@ -377,6 +377,74 @@ const MARKET_PRODUCTS: MarketProduct[] = [
     imageUrl: "/image/activity-2.webp",
     description: "Larva Black Soldier Fly kering oven berprotein 42% dan tinggi asam amino. Pakan suplemen terbaik untuk ikan koi, lele, burung berkicau, dan unggas.",
     benefits: ["Protein hewani tinggi 42%", "Meningkatkan kecerahan warna sisik dan daya tahan ikan", "Tahan simpan hingga 6 bulan"]
+  },
+  {
+    id: "prod-07",
+    title: "Telur Ayam Kampung Segar Organik (Isi 10 Butir)",
+    category: "telur",
+    categoryLabel: "Telur Segar",
+    categoryColor: "bg-amber-100 text-amber-800",
+    initiator: "Peternak Binaan KKN RW 05",
+    priceIdr: 28000,
+    pricePoints: 280,
+    stock: 40,
+    unit: "Tray (10 butir)",
+    rating: 4.9,
+    soldCount: 88,
+    imageUrl: "/image/activity-3.webp",
+    description: "Telur ayam kampung segar dari ayam yang dibudidayakan bebas residu dengan suplemen pakan maggot BSF alami kaya omega dan protein tinggi.",
+    benefits: ["Kuning telur oranye pekat kaya nutrisi", "Bebas hormon dan antibiotik sintetis", "Dipanen segar setiap pagi"]
+  },
+  {
+    id: "prod-08",
+    title: "Daging Ayam Kampung Segar Siap Olah (1 Ekor)",
+    category: "daging",
+    categoryLabel: "Daging Segar",
+    categoryColor: "bg-rose-100 text-rose-800",
+    initiator: "Koperasi Binaan BERSEKA RW 03",
+    priceIdr: 65000,
+    pricePoints: 650,
+    stock: 20,
+    unit: "Ekor (~0.9 - 1.1 kg)",
+    rating: 5.0,
+    soldCount: 45,
+    imageUrl: "/image/activity-2.webp",
+    description: "Daging ayam kampung segar diproses higienis dan halal, hasil peternakan terintegrasi biokonversi sirkular ramah lingkungan.",
+    benefits: ["Tekstur daging gurih, padat, dan rendah lemak", "Diproses higienis dan bersertifikat halal", "Kemas vakum kedap udara menjaga kesegaran"]
+  },
+  {
+    id: "prod-09",
+    title: "Sayur Bayam Hijau & Kangkung Hidroponik Kompos",
+    category: "sayuran",
+    categoryLabel: "Sayuran Segar",
+    categoryColor: "bg-emerald-100 text-emerald-800",
+    initiator: "Kebun Kompos KWT RW 02",
+    priceIdr: 8000,
+    pricePoints: 80,
+    stock: 60,
+    unit: "Ikat (~350 gr)",
+    rating: 4.9,
+    soldCount: 150,
+    imageUrl: "/image/landingpage.webp",
+    description: "Sayuran hijau segar hasil budidaya pekarangan lestari dengan nutrisi pupuk kasgot organik murni tanpa pestisida kimia.",
+    benefits: ["Dipetik langsung saat pesanan masuk", "Bebas pestisida kimia sintetis", "Daun renyah dan kaya zat besi"]
+  },
+  {
+    id: "prod-10",
+    title: "Pisang Cavendish & Pepaya Manis Kebun Berseka",
+    category: "buah",
+    categoryLabel: "Buah Segar",
+    categoryColor: "bg-yellow-100 text-yellow-800",
+    initiator: "Kelompok Tani Binaan KKN RW 04",
+    priceIdr: 22000,
+    pricePoints: 220,
+    stock: 30,
+    unit: "Sisir / Pcs (~1.2 kg)",
+    rating: 4.8,
+    soldCount: 75,
+    imageUrl: "/image/kkn-hero-sorting.webp",
+    description: "Buah-buahan segar matang pohon bernutrisi tinggi yang disuburkan menggunakan kompos organik fermentasi sampah rumah tangga.",
+    benefits: ["Manis alami matang pohon", "Rasa segar dan kulit mulus", "Mendukung ekonomi petani lokal Bojongsoang"]
   }
 ];
 
@@ -499,6 +567,8 @@ export const LandingPage: React.FC = () => {
     kegiatanCount?: number;
     wargaCount?: number;
     totalSampahKg?: number;
+    sampahOrganikKg?: number;
+    sampahAnorganikKg?: number;
     kelurahanCount?: number;
     tingkatPemilahanPercent?: number;
     totalPoin?: number;
@@ -523,6 +593,17 @@ export const LandingPage: React.FC = () => {
         }
       } catch (err) {
         console.warn("[LandingPage] Live stats fallback.", err);
+      }
+    };
+
+    const fetchPublicProkers = async () => {
+      try {
+        const res = await api.get("/system/public-proker");
+        if (res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+          setCampaigns(res.data.data);
+        }
+      } catch (err) {
+        console.warn("[LandingPage] Proker fetch error, falling back to CMS content.", err);
       }
     };
 
@@ -562,8 +643,13 @@ export const LandingPage: React.FC = () => {
       }
     };
 
-    fetchLandingStats();
-    fetchLandingDynamicContent();
+    const initLandingData = async () => {
+      await syncFromCmsStorage();
+      await fetchLandingDynamicContent();
+      await fetchPublicProkers();
+      await fetchLandingStats();
+    };
+    initLandingData();
 
     const handleCustomCmsUpdate = (e: any) => {
       const d = e.detail?.data;
@@ -611,7 +697,7 @@ export const LandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const sections = ["#about", "#program", "#pasar", "#berita", "#kalkulator", "#testimoni", "#mitra", "#faq"];
+    const sections = ["#about", "#program", "#pasar", "#berita", "#kalkulator", "#testimoni"];
     const handleScroll = () => {
       const scrollY = window.scrollY;
       if (scrollY < 150) {
@@ -680,33 +766,109 @@ export const LandingPage: React.FC = () => {
     };
   }, [calcWasteType, calcWeightKg]);
 
-  // ── Filtered Campaigns & Products ───────────────────────────────────────────
+  // ── Dynamic Campaign Categories & Max 2 Action Cards ─────────────────────────
+  const campaignCategories = useMemo(() => {
+    const cats = Array.from(
+      new Set(campaigns.map((c) => c.categoryLabel || c.category))
+    ).filter(Boolean);
+    return ["Semua", ...cats];
+  }, [campaigns]);
+
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((camp) => {
-      const matchCat = activeCategory === "all" || camp.category === activeCategory;
-      const matchSearch =
-        searchQuery.trim() === "" ||
-        camp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        camp.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        camp.initiator.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCat && matchSearch;
-    });
+    return campaigns
+      .filter((camp) => {
+        const matchCat =
+          activeCategory === "all" ||
+          activeCategory === "Semua" ||
+          camp.category === activeCategory ||
+          camp.categoryLabel === activeCategory;
+        const matchSearch =
+          searchQuery.trim() === "" ||
+          camp.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          camp.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          camp.initiator.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchCat && matchSearch;
+      })
+      .slice(0, 2);
   }, [activeCategory, searchQuery, campaigns]);
 
+  // ── Pasar Berseka Filtered Products (Buah, Sayuran, Telur, Daging) ───────────
   const filteredMarketProducts = useMemo(() => {
     return marketProducts.filter((prod) => {
-      return activeMarketCategory === "all" || prod.category === activeMarketCategory;
+      if (activeMarketCategory === "all") return true;
+      if (activeMarketCategory === "sayuran_buah") {
+        return (
+          prod.category === "sayuran" ||
+          prod.category === "buah" ||
+          prod.category === "bibit" ||
+          prod.categoryLabel.toLowerCase().includes("sayur") ||
+          prod.categoryLabel.toLowerCase().includes("buah")
+        );
+      }
+      if (activeMarketCategory === "telur") {
+        return prod.category === "telur" || prod.categoryLabel.toLowerCase().includes("telur");
+      }
+      if (activeMarketCategory === "daging") {
+        return prod.category === "daging" || prod.categoryLabel.toLowerCase().includes("daging");
+      }
+      return prod.category === activeMarketCategory;
     });
   }, [activeMarketCategory, marketProducts]);
 
+  // ── Filtered News (Max 2 articles, 3-Day Retention Filter + Fallback Option A) ─
+  const displayNews = useMemo(() => {
+    const parseDateMs = (dateStr?: string): number => {
+      if (!dateStr) return NaN;
+      let t = new Date(dateStr).getTime();
+      if (!isNaN(t)) return t;
+
+      const monthMap: Record<string, string> = {
+        januari: "January", jan: "Jan",
+        februari: "February", feb: "Feb",
+        maret: "March", mar: "Mar",
+        april: "April", apr: "Apr",
+        mei: "May",
+        juni: "June", jun: "Jun",
+        juli: "July", jul: "Jul",
+        agustus: "August", agu: "Aug", ags: "Aug",
+        september: "September", sep: "Sep",
+        oktober: "October", okt: "Oct",
+        november: "November", nov: "Nov",
+        desember: "December", des: "Dec",
+      };
+      let normalized = dateStr.toLowerCase();
+      for (const [idMonth, enMonth] of Object.entries(monthMap)) {
+        if (normalized.includes(idMonth)) {
+          normalized = normalized.replace(idMonth, enMonth);
+          break;
+        }
+      }
+      return new Date(normalized).getTime();
+    };
+
+    const threeDaysAgoMs = Date.now() - 3 * 24 * 60 * 60 * 1000;
+    const recent = (newsList || []).filter((n) => {
+      if (!n.date) return false;
+      const parsed = parseDateMs(n.date);
+      return !isNaN(parsed) && parsed >= threeDaysAgoMs;
+    });
+    // Fallback: If 0 articles within 3 days, show 2 most recent published articles (Option A approved)
+    const base = recent.length > 0 ? recent : newsList;
+    return (base || []).slice(0, 2);
+  }, [newsList]);
+
   // Format stats safely
-  const formattedWasteTotal = statsData?.totalSampahKg !== undefined
-    ? `${Math.round(statsData.totalSampahKg * 100) / 100} kg`
-    : "1.428 kg";
+  const formattedOrganikTotal = statsData?.sampahOrganikKg !== undefined
+    ? `${Math.round(statsData.sampahOrganikKg * 100) / 100} kg`
+    : "850 kg";
+
+  const formattedAnorganikTotal = statsData?.sampahAnorganikKg !== undefined
+    ? `${Math.round(statsData.sampahAnorganikKg * 100) / 100} kg`
+    : "578 kg";
 
   const formattedWargaTotal = statsData?.wargaCount !== undefined
     ? `${statsData.wargaCount.toLocaleString("id-ID")}`
-    : "348";
+    : "725";
 
   const formattedKelurahanTotal = statsData?.kelurahanCount !== undefined
     ? `${statsData.kelurahanCount}`
@@ -753,19 +915,25 @@ export const LandingPage: React.FC = () => {
               Berita
             </button>
             <button onClick={() => scrollToSection("#kalkulator")} className={`nav-link-item ${activeSection === "#kalkulator" ? "active" : ""}`}>
-              Kalkulator Berkah
+              Kalkulator BERSEKA
             </button>
             <button onClick={() => scrollToSection("#testimoni")} className={`nav-link-item ${activeSection === "#testimoni" ? "active" : ""}`}>
               Kisah Warga
-            </button>
-            <button onClick={() => scrollToSection("#faq")} className={`nav-link-item ${activeSection === "#faq" ? "active" : ""}`}>
-              FAQ
             </button>
           </div>
 
           {/* Action CTAs */}
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2.5">
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="btn-secondary-white py-2 px-3 text-xs text-slate-700 hover:text-[#005841]"
+                title="Hubungi Posko & Tim KKN BERSEKA"
+              >
+                <MessageCircle size={15} className="text-emerald-700" />
+                <span>Hubungi Kami</span>
+              </button>
+
               <button
                 onClick={() => setShowApkModal(true)}
                 className="btn-secondary-white py-2 px-3.5 text-xs"
@@ -820,13 +988,20 @@ export const LandingPage: React.FC = () => {
                 Berita &amp; Cerita Aksi
               </button>
               <button onClick={() => scrollToSection("#kalkulator")} className="text-left py-2 hover:text-[#005841]">
-                Kalkulator Berkah Sampah
+                Kalkulator BERSEKA
               </button>
               <button onClick={() => scrollToSection("#testimoni")} className="text-left py-2 hover:text-[#005841]">
                 Kisah Warga
               </button>
-              <button onClick={() => scrollToSection("#faq")} className="text-left py-2 hover:text-[#005841]">
-                FAQ
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowContactModal(true);
+                }}
+                className="text-left py-2 hover:text-[#005841] flex items-center gap-2"
+              >
+                <MessageCircle size={15} className="text-emerald-700" />
+                <span>Hubungi Kami</span>
               </button>
             </div>
 
@@ -871,13 +1046,17 @@ export const LandingPage: React.FC = () => {
                 </span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-[1.15] tracking-tight">
-                Pilah Sampah Jadi Berkah,{" "}
-                <span className="hero-title-gradient">Wujudkan Kampung Asri Berdaya</span>
-              </h1>
+              <div className="space-y-1">
+                <span className="text-xs sm:text-sm font-black text-[#005841] tracking-widest uppercase block">
+                  BERSIH, SEHAT, KAMPUNG ASRI
+                </span>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-[1.05] tracking-tight">
+                  <span className="hero-title-gradient">BERSEKA</span>
+                </h1>
+              </div>
 
               <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-2xl">
-                Bergotong royong mengubah sisa makanan dan sampah daur ulang menjadi nilai ekonomi, pakan biokonversi maggot, pupuk organik, dan produk UMKM KKN warga secara real-time.
+                Mengangkat kearifan lokal Sunda <em>&ldquo;Berseka&rdquo;</em> yang bermakna hidup bersih, apik, dan tertata rapi, platform <strong>BERSEKA</strong> mengintegrasikan pemilahan sampah dari sumber rumah tangga, verifikasi kode QR fisik tempat sampah, audit klasifikasi berbasis kecerdasan buatan (AI), serta pengangkutan residu secara terstruktur di wilayah Kecamatan Coblong.
               </p>
 
               {/* Quick CTA Actions */}
@@ -954,9 +1133,12 @@ export const LandingPage: React.FC = () => {
                           {slide.title}
                         </h3>
                         <div className="flex items-center justify-between text-xs pt-1 border-t border-white/20 text-slate-200 font-medium">
-                          <span>{slide.metric}</span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            Aksi Lapangan Mahasiswa KKN
+                          </span>
                           <span className="text-emerald-300 font-bold flex items-center gap-1">
-                            <TrendingUp size={13} /> {slide.highlight}
+                            <CheckCircle2 size={13} /> Dokumentasi Terverifikasi
                           </span>
                         </div>
                       </div>
@@ -1002,26 +1184,37 @@ export const LandingPage: React.FC = () => {
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="impact-strip-card text-left">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sampah Terpilah</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sampah Organik</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[#005841] flex items-center justify-center">
-                  <Recycle size={18} />
+                  <Leaf size={18} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedWasteTotal}</div>
+              <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedOrganikTotal}</div>
               <p className="text-[11px] text-emerald-700 font-bold mt-1 flex items-center gap-1">
-                <TrendingUp size={13} /> Terkelola &amp; Tervalidasi
+                <TrendingUp size={13} /> Maggot BSF &amp; Kompos
               </p>
             </div>
 
             <div className="impact-strip-card text-left">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Warga Berpartisipasi</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Sampah Anorganik</span>
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+                  <Recycle size={18} />
+                </div>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedAnorganikTotal}</div>
+              <p className="text-[11px] text-teal-700 font-bold mt-1">Daur Ulang Bank Sampah</p>
+            </div>
+
+            <div className="impact-strip-card text-left">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pengguna Terlibat</span>
                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#0468bf] flex items-center justify-center">
                   <Users size={18} />
                 </div>
               </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedWargaTotal} KK</div>
-              <p className="text-[11px] text-blue-700 font-bold mt-1">Rumah Tangga Pemilah</p>
+              <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedWargaTotal} Pengguna</div>
+              <p className="text-[11px] text-blue-700 font-bold mt-1">Master Pengguna Terlibat</p>
             </div>
 
             <div className="impact-strip-card text-left">
@@ -1032,18 +1225,7 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
               <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedKelurahanTotal} Kelurahan</div>
-              <p className="text-[11px] text-amber-700 font-bold mt-1">Dampingan KKN Tematik</p>
-            </div>
-
-            <div className="impact-strip-card text-left">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Poin &amp; Berkah Tersalur</span>
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
-                  <Award size={18} />
-                </div>
-              </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900">{formattedPointsTotal}</div>
-              <p className="text-[11px] text-purple-700 font-bold mt-1">Poin Reward Terdistribusi</p>
+              <p className="text-[11px] text-amber-700 font-bold mt-1">Master Wilayah Dampingan</p>
             </div>
           </div>
         </div>
@@ -1103,46 +1285,26 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Category Filter Tabs */}
+          {/* Category Filter Tabs (Dynamic from Program Kerja) */}
           <div className="flex items-center gap-2.5 overflow-x-auto pb-4 mb-8 no-scrollbar">
-            <button
-              onClick={() => setActiveCategory("all")}
-              className={`category-tab-btn ${activeCategory === "all" ? "active" : ""}`}
-            >
-              <Sparkles size={15} />
-              <span>Semua Inisiatif ({campaigns.length})</span>
-            </button>
-            <button
-              onClick={() => setActiveCategory("organic")}
-              className={`category-tab-btn ${activeCategory === "organic" ? "active" : ""}`}
-            >
-              <Leaf size={15} />
-              <span>Organik &amp; Maggot</span>
-            </button>
-            <button
-              onClick={() => setActiveCategory("recycle")}
-              className={`category-tab-btn ${activeCategory === "recycle" ? "active" : ""}`}
-            >
-              <Recycle size={15} />
-              <span>Bank Sampah &amp; Daur Ulang</span>
-            </button>
-            <button
-              onClick={() => setActiveCategory("kkn")}
-              className={`category-tab-btn ${activeCategory === "kkn" ? "active" : ""}`}
-            >
-              <GraduationCap size={15} />
-              <span>Inisiatif KKN Mahasiswa</span>
-            </button>
-            <button
-              onClick={() => setActiveCategory("education")}
-              className={`category-tab-btn ${activeCategory === "education" ? "active" : ""}`}
-            >
-              <Megaphone size={15} />
-              <span>Edukasi &amp; Sosialisasi</span>
-            </button>
+            {campaignCategories.map((catName) => {
+              const isActive =
+                (catName === "Semua" && (activeCategory === "all" || activeCategory === "Semua")) ||
+                activeCategory === catName;
+              return (
+                <button
+                  key={catName}
+                  onClick={() => setActiveCategory(catName === "Semua" ? "all" : catName)}
+                  className={`category-tab-btn ${isActive ? "active" : ""}`}
+                >
+                  <Sparkles size={14} />
+                  <span>{catName}</span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Campaign Cards Grid */}
+          {/* Campaign Cards Grid (Strictly 2 Cards Max) */}
           {filteredCampaigns.length === 0 ? (
             <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
               <Info size={36} className="mx-auto text-slate-400 mb-3" />
@@ -1150,7 +1312,7 @@ export const LandingPage: React.FC = () => {
               <p className="text-xs text-slate-500 mt-1">Coba gunakan kata kunci pencarian lain atau pilih kategori lain.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
               {filteredCampaigns.map((camp) => {
                 const progressPercent = Math.min(Math.round((camp.currentAmount / camp.targetAmount) * 100), 100);
 
@@ -1269,94 +1431,123 @@ export const LandingPage: React.FC = () => {
               <span>Semua Produk ({marketProducts.length})</span>
             </button>
             <button
+              onClick={() => setActiveMarketCategory("sayuran_buah")}
+              className={`category-tab-btn ${activeMarketCategory === "sayuran_buah" ? "active" : ""}`}
+            >
+              <Leaf size={15} />
+              <span>Buah &amp; Sayuran</span>
+            </button>
+            <button
+              onClick={() => setActiveMarketCategory("telur")}
+              className={`category-tab-btn ${activeMarketCategory === "telur" ? "active" : ""}`}
+            >
+              <Tag size={15} />
+              <span>Telur Segar</span>
+            </button>
+            <button
+              onClick={() => setActiveMarketCategory("daging")}
+              className={`category-tab-btn ${activeMarketCategory === "daging" ? "active" : ""}`}
+            >
+              <ShoppingBag size={15} />
+              <span>Daging Segar</span>
+            </button>
+            <button
               onClick={() => setActiveMarketCategory("pupuk")}
               className={`category-tab-btn ${activeMarketCategory === "pupuk" ? "active" : ""}`}
             >
-              <Leaf size={15} />
-              <span>Pupuk &amp; Pakan Organik</span>
+              <Recycle size={15} />
+              <span>Pupuk &amp; Pakan Maggot</span>
             </button>
             <button
               onClick={() => setActiveMarketCategory("ecoenzyme")}
               className={`category-tab-btn ${activeMarketCategory === "ecoenzyme" ? "active" : ""}`}
             >
               <Flame size={15} />
-              <span>Eco-Enzyme Kebersihan</span>
-            </button>
-            <button
-              onClick={() => setActiveMarketCategory("kerajinan")}
-              className={`category-tab-btn ${activeMarketCategory === "kerajinan" ? "active" : ""}`}
-            >
-              <Recycle size={15} />
-              <span>Daur Ulang Kreatif</span>
-            </button>
-            <button
-              onClick={() => setActiveMarketCategory("bibit")}
-              className={`category-tab-btn ${activeMarketCategory === "bibit" ? "active" : ""}`}
-            >
-              <Building2 size={15} />
-              <span>Bibit &amp; Tanaman Sayur</span>
+              <span>Eco-Enzyme &amp; Kerajinan</span>
             </button>
           </div>
 
           {/* Market Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-left">
-            {filteredMarketProducts.map((product) => (
-              <div key={product.id} className="market-product-card group">
-                <div className="market-product-img-box">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.title}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/image/activity-1.webp";
-                    }}
-                  />
-                  <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase shadow-xs ${product.categoryColor}`}>
-                    {product.categoryLabel}
-                  </span>
-                  <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 text-white text-[11px] font-bold backdrop-blur-xs flex items-center gap-1">
-                    ⭐ {product.rating} ({product.soldCount} terjual)
-                  </span>
-                </div>
-
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-slate-400 block truncate">
-                      Oleh: {product.initiator}
+          {filteredMarketProducts.length === 0 ? (
+            <div className="py-16 px-6 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl space-y-4 max-w-lg mx-auto animate-in fade-in duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200 shadow-2xs">
+                <ShoppingBag size={26} />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-extrabold text-slate-800 text-base">
+                  Belum Ada Produk Tersedia
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                  Produk olahan dan hasil panen untuk kategori ini sedang dalam tahap produksi atau menunggu jadwal panen berikutnya oleh kelompok KKN binaan.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveMarketCategory("all")}
+                className="btn-primary-emerald py-2.5 px-5 text-xs font-bold mx-auto cursor-pointer"
+              >
+                <span>Lihat Semua Produk ({marketProducts.length})</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-left">
+              {filteredMarketProducts.map((product) => (
+                <div key={product.id} className="market-product-card group">
+                  <div className="market-product-img-box">
+                    <img
+                      src={product.imageUrl}
+                      alt={product.title}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/image/activity-1.webp";
+                      }}
+                    />
+                    <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase shadow-xs ${product.categoryColor}`}>
+                      {product.categoryLabel}
                     </span>
-                    <h3 className="font-black text-slate-900 text-sm sm:text-base line-clamp-2 group-hover:text-[#005841] transition-colors">
-                      {product.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 line-clamp-2 font-normal">
-                      {product.description}
-                    </p>
+                    <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 text-white text-[11px] font-bold backdrop-blur-xs flex items-center gap-1">
+                      ⭐ {product.rating} ({product.soldCount} terjual)
+                    </span>
                   </div>
 
-                  <div className="space-y-3 pt-3 border-t border-slate-100">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-xs text-slate-400 font-bold block">Harga / Poin:</span>
-                        <div className="text-base font-black text-slate-900">
-                          Rp {product.priceIdr.toLocaleString("id-ID")}
-                        </div>
-                      </div>
-                      <span className="market-point-badge">
-                        <Award size={14} />
-                        <span>atau {product.pricePoints} Poin</span>
+                  <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-bold text-slate-400 block truncate">
+                        Oleh: {product.initiator}
                       </span>
+                      <h3 className="font-black text-slate-900 text-sm sm:text-base line-clamp-2 group-hover:text-[#005841] transition-colors">
+                        {product.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 line-clamp-2 font-normal">
+                        {product.description}
+                      </p>
                     </div>
 
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-[#005841] text-[#005841] hover:text-white border border-emerald-200 hover:border-[#005841] font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <ShoppingBag size={15} />
-                      <span>Beli / Tukar Produk</span>
-                    </button>
+                    <div className="space-y-3 pt-3 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-slate-400 font-bold block">Harga / Poin:</span>
+                          <div className="text-base font-black text-slate-900">
+                            Rp {product.priceIdr.toLocaleString("id-ID")}
+                          </div>
+                        </div>
+                        <span className="market-point-badge">
+                          <Award size={14} />
+                          <span>atau {product.pricePoints} Poin</span>
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedProduct(product)}
+                        className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-[#005841] text-[#005841] hover:text-white border border-emerald-200 hover:border-[#005841] font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <ShoppingBag size={15} />
+                        <span>Beli / Tukar Produk</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -1378,9 +1569,9 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Clean 3-Column News Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-left">
-            {newsList.map((news) => (
+          {/* Clean 2-Column News Grid (Max 2 Articles, 3-Day Retention Filter) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 text-left max-w-4xl mx-auto">
+            {displayNews.map((news) => (
               <div
                 key={news.id}
                 onClick={() => setSelectedNews(news)}
@@ -1436,10 +1627,10 @@ export const LandingPage: React.FC = () => {
             <div className="text-center space-y-2 mb-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-[#005841] rounded-full text-xs font-extrabold uppercase tracking-wider">
                 <Sparkles size={14} />
-                <span>Simulasi Berkah Sampah</span>
+                <span>Kalkulator BERSEKA</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                Kalkulator Dampak &amp; Nilai Sampah Anda
+                Kalkulator BERSEKA: Dampak &amp; Nilai Sampah Anda
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto">
                 Hitung langsung kontribusi pemilahan sampah rumah tangga Anda terhadap pengurangan emisi karbon dan estimasi poin berkah BERSEKA.
@@ -1563,6 +1754,14 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <div className="text-xs sm:text-sm font-semibold text-slate-200">
                   <strong className="text-emerald-300 font-bold">Dampak Konkret:</strong> {calculatorResult.conversionText}
+                </div>
+              </div>
+
+              {/* Scientific Methodology & Citation Footnote */}
+              <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-2.5 text-left">
+                <Info size={16} className="text-emerald-700 shrink-0 mt-0.5" />
+                <div className="text-[11px] text-slate-600 leading-relaxed">
+                  <strong className="text-emerald-900 font-bold">Sumber Metodologi &amp; Faktor Reduksi:</strong> Perhitungan reduksi emisi gas rumah kaca (GRK) mengacu pada standar faktor emisi inventarisasi gas rumah kaca KLHK RI dan IPCC Guidelines for National Greenhouse Gas Inventories (~0.85 kg CO₂e per kg sampah organik terolah melalui biokonversi maggot BSF &amp; komposting aerobik tanpa pembusukan anaerobik TPA; ~1.60 kg CO₂e per kg plastik daur ulang menggantikan polimer murni virgin).
                 </div>
               </div>
 
@@ -1775,34 +1974,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ───────────────── 11. MITRA & EKOSISTEM KOLABORASI ───────────────── */}
-      <section id="mitra" className="py-14 sm:py-16 bg-white border-y border-slate-200/80">
-        <div className="container-custom text-center space-y-8">
-          <div className="space-y-1">
-            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-              Didukung &amp; Diterapkan Bersama
-            </span>
-            <h3 className="text-lg font-black text-slate-800">
-              Ekosistem Kolaboratif Penanganan Sampah
-            </h3>
-          </div>
 
-          <div className="flex items-center justify-center gap-8 sm:gap-14 flex-wrap grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100">
-            <div className="flex items-center gap-2">
-              <img src="/logos/unikom.webp" alt="UNIKOM" className="h-11 w-auto object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-              <span className="font-extrabold text-slate-800 text-sm">Universitas Komputer Indonesia</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <img src="/logos/dlh.webp" alt="Dinas Lingkungan Hidup" className="h-10 w-auto object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-              <span className="font-extrabold text-slate-800 text-sm">Dinas Lingkungan Hidup</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <img src="/logos/kota-bandung.webp" alt="Pemerintah Kota Bandung" className="h-10 w-auto object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-              <span className="font-extrabold text-slate-800 text-sm">Pemerintah Desa &amp; Kelurahan</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ───────────────── 12. APP DOWNLOAD SHOWCASE CTA ───────────────── */}
       <section className="py-16 sm:py-20 bg-[#f7faf7]">
@@ -1930,7 +2102,7 @@ export const LandingPage: React.FC = () => {
                 <li><button onClick={() => scrollToSection("#program")} className="footer-link">Program Aksi Warga</button></li>
                 <li><button onClick={() => scrollToSection("#pasar")} className="footer-link">Pasar Berseka (Produk KKN)</button></li>
                 <li><button onClick={() => scrollToSection("#berita")} className="footer-link">Berita &amp; Cerita Lapangan</button></li>
-                <li><button onClick={() => scrollToSection("#kalkulator")} className="footer-link">Kalkulator Berkah</button></li>
+                <li><button onClick={() => scrollToSection("#kalkulator")} className="footer-link">Kalkulator BERSEKA</button></li>
                 <li><button onClick={() => scrollToSection("#faq")} className="footer-link">Pusat Bantuan &amp; FAQ</button></li>
               </ul>
             </div>
@@ -2264,35 +2436,109 @@ export const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* ───────────────── MODAL: CONTACT US ───────────────── */}
+      {/* ───────────────── MODAL: CONTACT US (Official UNIKOM & Posko) ───────────────── */}
       {showContactModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100 text-left relative">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 text-left relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowContactModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition cursor-pointer"
             >
               <X size={20} />
             </button>
 
             <div className="space-y-1">
-              <h3 className="font-black text-slate-900 text-lg">Hubungi Posko &amp; Tim KKN BERSEKA</h3>
-              <p className="text-xs text-slate-500 font-medium">Layanan pemesanan produk Pasar Berseka, konsultasi wilayah, dan penjemputan sampah.</p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-[#005841] rounded-full text-xs font-black uppercase tracking-wider">
+                <MessageCircle size={14} />
+                <span>Pusat Informasi &amp; Kontak</span>
+              </div>
+              <h3 className="font-black text-slate-900 text-xl">Hubungi Posko &amp; Tim KKN BERSEKA</h3>
+              <p className="text-xs text-slate-500 font-medium">Layanan informasi pemilahan sampah, pemesanan produk Pasar Berseka, dan kemitraan wilayah.</p>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-200 font-medium">
-              <p><strong>Posko Pusat KKN UNIKOM:</strong><br />Gedung Miracle Lt. 3, Universitas Komputer Indonesia, Jl. Dipati Ukur No. 112-116, Coblong, Kota Bandung.</p>
-              <p><strong>Posko Wilayah Bojongsoang:</strong><br />Balai RW 03 &amp; Rumah Kompos RW 05, Desa Bojongsoang, Kab. Bandung.</p>
-              <p><strong>Email Layanan:</strong> kontak@berseka.unikom.ac.id</p>
-              <p><strong>WhatsApp Hotline:</strong> +62 821-2345-6789</p>
+            <div className="space-y-3.5 text-xs text-slate-700 font-medium">
+              {/* Kampus UNIKOM */}
+              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200/80 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                    <Building2 size={15} className="text-[#005841]" />
+                    Kampus Pusat UNIKOM
+                  </span>
+                  <a
+                    href="https://maps.google.com/?q=Universitas+Komputer+Indonesia"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] text-[#005841] hover:underline font-bold flex items-center gap-1"
+                  >
+                    <span>Google Maps</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  Jl. Dipati Ukur No. 112-116, Lebakgede, Kec. Coblong, Kota Bandung, Jawa Barat 40132
+                </p>
+              </div>
+
+              {/* Posko Wilayah KKN */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1">
+                <span className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                  <MapPin size={15} className="text-emerald-700" />
+                  Posko Dampingan Lapangan
+                </span>
+                <p className="text-slate-600 leading-relaxed">
+                  Balai Warga RW 03 &amp; Rumah Kompos RW 05, Desa Bojongsoang, Kec. Bojongsoang, Kab. Bandung
+                </p>
+              </div>
+
+              {/* Kontak WhatsApp & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href="https://wa.me/6285715516065"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3.5 bg-green-50 hover:bg-green-100/80 border border-green-200 rounded-2xl flex items-center gap-3 text-green-900 transition cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-green-600 text-white flex items-center justify-center shrink-0">
+                    <Smartphone size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-green-700 font-bold block uppercase tracking-wider">WhatsApp Hotline</span>
+                    <span className="text-xs font-black text-green-950">+62 857-1551-6065</span>
+                  </div>
+                </a>
+
+                <a
+                  href="mailto:cdc@unikom.ac.id"
+                  className="p-3.5 bg-blue-50 hover:bg-blue-100/80 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 transition cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-[#0468bf] text-white flex items-center justify-center shrink-0">
+                    <Newspaper size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-blue-700 font-bold block uppercase tracking-wider">Email Resmi</span>
+                    <span className="text-xs font-black text-blue-950">cdc@unikom.ac.id</span>
+                  </div>
+                </a>
+              </div>
             </div>
 
-            <button
-              onClick={() => setShowContactModal(false)}
-              className="btn-primary-emerald w-full justify-center py-2.5 text-xs"
-            >
-              Tutup
-            </button>
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="https://wa.me/6285715516065"
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary-emerald flex-1 justify-center py-2.5 text-xs"
+              >
+                <Smartphone size={15} />
+                <span>Chat via WhatsApp</span>
+              </a>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="btn-secondary-white py-2.5 px-5 text-xs"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

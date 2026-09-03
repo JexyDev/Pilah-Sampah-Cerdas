@@ -18,7 +18,7 @@ export interface HeroSlideItem {
 export interface MarketProductItem {
   id: string;
   title: string;
-  category: "pupuk" | "ecoenzyme" | "kerajinan" | "bibit";
+  category: "pupuk" | "ecoenzyme" | "kerajinan" | "bibit" | "sayuran" | "buah" | "telur" | "daging" | string;
   categoryLabel: string;
   categoryColor: string;
   initiator: string;
@@ -232,6 +232,78 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       imageUrl: "/image/activity-2.webp",
       description: "Larva Black Soldier Fly kering oven berprotein 42% dan tinggi asam amino. Pakan suplemen terbaik untuk ikan koi, lele, burung berkicau, dan unggas.",
       benefits: ["Protein hewani tinggi 42%", "Meningkatkan kecerahan warna sisik dan daya tahan ikan", "Tahan simpan hingga 6 bulan"],
+      isPublished: true,
+    },
+    {
+      id: "prod-07",
+      title: "Telur Ayam Kampung Segar Organik (Isi 10 Butir)",
+      category: "telur",
+      categoryLabel: "Telur Segar",
+      categoryColor: "bg-amber-100 text-amber-800",
+      initiator: "Peternak Binaan KKN RW 05",
+      priceIdr: 28000,
+      pricePoints: 280,
+      stock: 40,
+      unit: "Tray (10 butir)",
+      rating: 4.9,
+      soldCount: 88,
+      imageUrl: "/image/activity-3.webp",
+      description: "Telur ayam kampung segar dari ayam yang dibudidayakan bebas residu dengan suplemen pakan maggot BSF alami kaya omega dan protein tinggi.",
+      benefits: ["Kuning telur oranye pekat kaya nutrisi", "Bebas hormon dan antibiotik sintetis", "Dipanen segar setiap pagi"],
+      isPublished: true,
+    },
+    {
+      id: "prod-08",
+      title: "Daging Ayam Kampung Segar Siap Olah (1 Ekor)",
+      category: "daging",
+      categoryLabel: "Daging Segar",
+      categoryColor: "bg-rose-100 text-rose-800",
+      initiator: "Koperasi Binaan BERSEKA RW 03",
+      priceIdr: 65000,
+      pricePoints: 650,
+      stock: 20,
+      unit: "Ekor (~0.9 - 1.1 kg)",
+      rating: 5.0,
+      soldCount: 45,
+      imageUrl: "/image/activity-2.webp",
+      description: "Daging ayam kampung segar diproses higienis dan halal, hasil peternakan terintegrasi biokonversi sirkular ramah lingkungan.",
+      benefits: ["Tekstur daging gurih, padat, dan rendah lemak", "Diproses higienis dan bersertifikat halal", "Kemas vakum kedap udara menjaga kesegaran"],
+      isPublished: true,
+    },
+    {
+      id: "prod-09",
+      title: "Sayur Bayam Hijau & Kangkung Hidroponik Kompos",
+      category: "sayuran",
+      categoryLabel: "Sayuran Segar",
+      categoryColor: "bg-emerald-100 text-emerald-800",
+      initiator: "Kebun Kompos KWT RW 02",
+      priceIdr: 8000,
+      pricePoints: 80,
+      stock: 60,
+      unit: "Ikat (~350 gr)",
+      rating: 4.9,
+      soldCount: 150,
+      imageUrl: "/image/landingpage.webp",
+      description: "Sayuran hijau segar hasil budidaya pekarangan lestari dengan nutrisi pupuk kasgot organik murni tanpa pestisida kimia.",
+      benefits: ["Dipetik langsung saat pesanan masuk", "Bebas pestisida kimia sintetis", "Daun renyah dan kaya zat besi"],
+      isPublished: true,
+    },
+    {
+      id: "prod-10",
+      title: "Pisang Cavendish & Pepaya Manis Kebun Berseka",
+      category: "buah",
+      categoryLabel: "Buah Segar",
+      categoryColor: "bg-yellow-100 text-yellow-800",
+      initiator: "Kelompok Tani Binaan KKN RW 04",
+      priceIdr: 22000,
+      pricePoints: 220,
+      stock: 30,
+      unit: "Sisir / Pcs (~1.2 kg)",
+      rating: 4.8,
+      soldCount: 75,
+      imageUrl: "/image/kkn-hero-sorting.webp",
+      description: "Buah-buahan segar matang pohon bernutrisi tinggi yang disuburkan menggunakan kompos organik fermentasi sampah rumah tangga.",
+      benefits: ["Manis alami matang pohon", "Rasa segar dan kulit mulus", "Mendukung ekonomi petani lokal Bojongsoang"],
       isPublished: true,
     },
   ],
@@ -450,6 +522,17 @@ export async function saveCmsContent(content: LandingContentPayload): Promise<vo
 }
 
 // ── Load CMS Content ─────────────────────────────────────────────────────────
+// Helper to merge missing default products into existing client cache
+function mergeWithDefaults(data: LandingContentPayload): LandingContentPayload {
+  const existingIds = new Set((data.marketProducts || []).map((p) => p.id));
+  const missing = DEFAULT_CMS_CONTENT.marketProducts.filter((p) => !existingIds.has(p.id));
+  return {
+    ...DEFAULT_CMS_CONTENT,
+    ...data,
+    marketProducts: [...(data.marketProducts || []), ...missing],
+  };
+}
+
 export async function loadCmsContent(): Promise<StoredPayload> {
   // 1. Try IndexedDB first
   try {
@@ -463,7 +546,10 @@ export async function loadCmsContent(): Promise<StoredPayload> {
     });
 
     if (stored && stored.data && Array.isArray(stored.data.marketProducts)) {
-      return stored;
+      return {
+        ...stored,
+        data: mergeWithDefaults(stored.data),
+      };
     }
   } catch (err) {
     console.warn("[cmsStorage] IndexedDB read warning:", err);
@@ -475,10 +561,13 @@ export async function loadCmsContent(): Promise<StoredPayload> {
     if (cached) {
       const parsed = JSON.parse(cached);
       if (parsed?.data) {
-        return parsed;
+        return {
+          ...parsed,
+          data: mergeWithDefaults(parsed.data),
+        };
       }
       if (parsed?.marketProducts) {
-        return { data: parsed, lastModified: Date.now() };
+        return { data: mergeWithDefaults(parsed), lastModified: Date.now() };
       }
     }
   } catch (err) {

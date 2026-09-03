@@ -3465,6 +3465,25 @@ export class KknService {
       ];
     }
 
+    // Enforce H+5 Soft-Expiry Rule: If approved > 5 days ago and still BELUM_MULAI, soft-cancel
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+    await prisma.programKerjaKkn
+      .updateMany({
+        where: {
+          ...whereClause,
+          statusUsulan: "DISETUJUI",
+          statusPelaksanaan: "BELUM_MULAI",
+          updatedAt: { lt: fiveDaysAgo },
+        },
+        data: {
+          statusUsulan: "KADALUARSA_OTOMATIS",
+          status: "DITOLAK",
+          catatanDpl:
+            "Dibatalkan otomatis oleh sistem (H+5): Program kerja tidak dimulai dalam 5 hari setelah disetujui.",
+        },
+      })
+      .catch(() => {});
+
     const list = await prisma.programKerjaKkn.findMany({
       where: whereClause,
       include: {

@@ -74,6 +74,8 @@ router.get(
  * Public Landing Page statistics (No auth required)
  */
 router.get("/landing-stats", systemController.getLandingStats);
+router.get("/public-proker", systemController.getPublicProgramKerja);
+router.get("/curated-activities", systemController.getCuratedActivities);
 
 /**
  * Public & Admin Landing Page Dynamic CMS Content

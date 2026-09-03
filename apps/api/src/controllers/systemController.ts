@@ -94,6 +94,20 @@ export class SystemController {
   }
 
   /**
+   * Get public approved Program Kerja for Landing Page
+   */
+  async getPublicProgramKerja(req: Request, res: Response): Promise<void> {
+    try {
+      const list = await systemService.getPublicProgramKerja();
+      res.status(200).json({ success: true, data: list });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
+  /**
    * Get all dynamic Landing Page CMS content (Public)
    */
   async getLandingContent(req: Request, res: Response): Promise<void> {

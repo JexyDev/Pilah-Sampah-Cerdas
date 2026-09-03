@@ -29,6 +29,7 @@ import {
   Phone,
   Eye,
   Building2,
+  Play,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -559,6 +560,24 @@ export const ProgramKerjaKkn: React.FC = () => {
     }
   };
 
+  // Quick Action: Mulai Pelaksanaan Proker (BELUM_MULAI -> SEDANG_BERJALAN)
+  const handleStartProker = async (proker: ProgramKerjaItem) => {
+    try {
+      await dplService.decideProgramKerja(
+        proker.id,
+        "SEDANG_BERJALAN",
+        undefined,
+        undefined,
+        "SEDANG_BERJALAN"
+      );
+      toast.success(`Program kerja #${proker.nomor} berhasil diaktifkan: Sedang Berjalan`);
+      fetchData();
+    } catch (err: any) {
+      console.error("Gagal memulai program kerja:", err);
+      toast.error(err.response?.data?.message || "Gagal memulai program kerja");
+    }
+  };
+
   // Quick Action: Reject Modal Submit
   const handleRejectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -604,9 +623,9 @@ export const ProgramKerjaKkn: React.FC = () => {
     }
   };
 
-  // Normalizer Status Usulan (Menunggu Persetujuan, Disetujui, Ditolak)
-  const normalizeStatusUsulan = (statusUsulan?: string, legacyStatus?: string): "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" => {
-    let u = statusUsulan;
+  // Normalizer Status Usulan (Menunggu Persetujuan, Disetujui, Ditolak, Kadaluarsa)
+  const normalizeStatusUsulan = (statusUsulan?: string, legacyStatus?: string): "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" | "KADALUARSA" => {
+    let u = String(statusUsulan || "").toUpperCase();
     const leg = String(legacyStatus || "").toUpperCase();
     if (!u) {
       if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
@@ -614,6 +633,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       else u = "BELUM_DISETUJUI";
     }
     if (u === "DISETUJUI" || u === "DITERIMA") return "DISETUJUI";
+    if (u === "KADALUARSA_OTOMATIS" || u === "KADALUARSA") return "KADALUARSA";
     if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") return "DITOLAK";
     return "BELUM_DISETUJUI";
   };
@@ -874,6 +894,20 @@ export const ProgramKerjaKkn: React.FC = () => {
             )}
           </div>
         );
+      case "KADALUARSA":
+        return (
+          <div className="flex flex-col items-center gap-1" title={catatanDpl || "Dibatalkan otomatis oleh sistem (H+5)"}>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-full font-bold text-[11px] shadow-2xs">
+              <Clock size={12} className="shrink-0 text-slate-500" />
+              <span>Kadaluarsa (H+5)</span>
+            </span>
+            {catatanDpl && (
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold max-w-[150px] truncate" title={catatanDpl}>
+                {catatanDpl}
+              </span>
+            )}
+          </div>
+        );
     }
   };
 
@@ -1071,6 +1105,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 <option value="BELUM_DISETUJUI">Menunggu Persetujuan</option>
                 <option value="DISETUJUI">Disetujui</option>
                 <option value="DITOLAK">Ditolak</option>
+                <option value="KADALUARSA">Kadaluarsa (H+5)</option>
               </select>
             </div>
 
@@ -1378,11 +1413,11 @@ export const ProgramKerjaKkn: React.FC = () => {
                               </div>
                             )}
 
-                            {/* Decision Action when Ditolak -> quick re-approve */}
-                            {normalizedU === "DITOLAK" && (
+                            {/* Decision Action when Ditolak or Kadaluarsa -> quick re-approve */}
+                            {(normalizedU === "DITOLAK" || normalizedU === "KADALUARSA") && (
                               <button
                                 onClick={() => handleApproveProker(p)}
-                                title="Ubah Keputusan jadi Disetujui (ACC)"
+                                title="Ubah Keputusan jadi Disetujui (ACC Ulang)"
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
                               >
                                 <Check size={13} strokeWidth={3} />
@@ -1390,24 +1425,36 @@ export const ProgramKerjaKkn: React.FC = () => {
                               </button>
                             )}
 
-                            {/* Decision Action when Disetujui -> option to reject if revision needed */}
+                            {/* Decision Action when Disetujui -> option to start execution or reject */}
                             {normalizedU === "DISETUJUI" && (
-                              <button
-                                onClick={() =>
-                                  setRejectModal({
-                                    isOpen: true,
-                                    id: p.id,
-                                    deskripsi: p.deskripsi,
-                                    catatanDpl: p.catatanDpl || "",
-                                    isSubmitting: false,
-                                  })
-                                }
-                                title="Tolak / Minta Revisi"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-600 dark:text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all cursor-pointer active:scale-95"
-                              >
-                                <X size={13} />
-                                <span>Tolak</span>
-                              </button>
+                              <div className="flex items-center gap-1">
+                                {normalizedP === "BELUM_MULAI" && (
+                                  <button
+                                    onClick={() => handleStartProker(p)}
+                                    title="Mulai Pelaksanaan Program Kerja (Ubah status jadi Sedang Berjalan)"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all cursor-pointer shadow-2xs active:scale-95"
+                                  >
+                                    <Play size={12} fill="currentColor" />
+                                    <span>Mulai</span>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() =>
+                                    setRejectModal({
+                                      isOpen: true,
+                                      id: p.id,
+                                      deskripsi: p.deskripsi,
+                                      catatanDpl: p.catatanDpl || "",
+                                      isSubmitting: false,
+                                    })
+                                  }
+                                  title="Tolak / Minta Revisi"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-600 dark:text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all cursor-pointer active:scale-95"
+                                >
+                                  <X size={13} />
+                                  <span>Tolak</span>
+                                </button>
+                              </div>
                             )}
 
                             {/* Standard Edit & Delete */}

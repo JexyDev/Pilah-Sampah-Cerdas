@@ -368,41 +368,6 @@ const CollapsedClockButton: React.FC<{ dateStr: string; timeStr: string }> = ({ 
   );
 };
 
-const CollapsedLogoutButton: React.FC<{ onClick: () => void }> = ({ onClick }) => {
-  const [isHovered, setIsHovered] = React.useState(false);
-  const [coords, setCoords] = React.useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  const containerRef = React.useRef<HTMLButtonElement>(null);
-
-  const handleMouseEnter = () => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setCoords({ top: rect.top + (rect.height - 30) / 2, left: rect.right + 12 });
-    }
-    setIsHovered(true);
-  };
-
-  return (
-    <button
-      ref={containerRef}
-      onClick={onClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={() => setIsHovered(false)}
-      className="w-10 h-10 rounded-2xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-all relative group cursor-pointer shrink-0"
-    >
-      <LogOut size={18} />
-      {isHovered && (
-        <Portal>
-          <div
-            style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
-            className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
-          >
-            Keluar
-          </div>
-        </Portal>
-      )}
-    </button>
-  );
-};
 
 const NavGroupCollapsed: React.FC<{
   icon: LucideIcon;
@@ -624,7 +589,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const userRole = (((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase()) as UserRole;
-  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+  const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
 
   // Live real-time clock state
   const [timeStr, setTimeStr] = React.useState("");
@@ -661,15 +626,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     }
   };
 
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  const confirmLogout = () => {
-    logout();
-    showToast.success("Berhasil keluar dari sistem");
-    navigate("/login");
-  };
 
   const ALL_ROLES: UserRole[] = [
     "DEVELOPER",
@@ -856,7 +812,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             },
             {
               to: "/monitoring-kegiatan/pengajuan-izin",
-              label: "Pengajuan Izin/Sakit",
+              label: "Verifikasi Izin/Sakit",
               allowed: [
                 "DEVELOPER",
                 "SUPER_USER",
@@ -1371,7 +1327,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {/* Bottom Actions for Collapsed Mode */}
             <div className="flex flex-col items-center pt-2 border-t border-slate-100 dark:border-slate-800 w-full px-2 shrink-0 gap-2">
               <CollapsedClockButton dateStr={dateStr} timeStr={timeStr} />
-              <CollapsedLogoutButton onClick={handleLogout} />
             </div>
           </div>
         ) : (
@@ -1463,8 +1418,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
               })}
             </nav>
 
-            {/* Bottom Footer Section: Real-time System Clock Card & Clean Logout Button */}
-            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 space-y-3.5">
+            {/* Bottom Footer Section: Real-time System Clock Card */}
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
               {/* Real-time System Clock Card */}
               <div className="w-full bg-[#f2f8f4]/90 dark:bg-slate-800/90 hover:bg-[#ebf7ee] dark:hover:bg-slate-700/90 p-2.5 rounded-2xl border border-[#c8e6b2]/80 dark:border-slate-700/80 shadow-xs text-center space-y-0.5 transition-all duration-300 relative z-10 hover:scale-[1.02] backdrop-blur-xs">
                 <div className="flex items-center justify-center gap-1.5 text-slate-500 dark:text-slate-400 mb-0.5">
@@ -1477,49 +1432,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                   {timeStr || "09.55.12"}
                 </p>
               </div>
-
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-start gap-3 px-3.5 py-2.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition-all duration-200 cursor-pointer group font-semibold text-xs border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60 active:scale-[0.98]"
-              >
-                <LogOut size={16} className="text-rose-500 dark:text-rose-400 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                <span className="text-rose-600 dark:text-rose-400 font-bold text-xs">Keluar</span>
-              </button>
             </div>
           </div>
         )}
       </aside>
-
-      {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col p-6 space-y-4 text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-2xs">
-              <LogOut size={26} />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Konfirmasi Keluar</h3>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
-                Apakah Anda yakin ingin keluar dari sistem BERSEKA?
-              </p>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                onClick={confirmLogout}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-2xs cursor-pointer"
-              >
-                Ya, Keluar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

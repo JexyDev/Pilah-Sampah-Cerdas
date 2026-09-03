@@ -625,6 +625,8 @@ export const systemService = {
       kelurahanDbCount,
       setoranManualAggregate,
       setoranOtomatisAggregate,
+      organikAggregate,
+      anorganikAggregate,
       pemanfaatanAggregate,
       totalPoinAggregate,
       approvedIdeasCount,
@@ -665,17 +667,25 @@ export const systemService = {
         })
         .catch(() => 0),
       prisma.kelurahan
-        .count({
-          where: {
-            kecamatan: { name: { contains: "Coblong", mode: "insensitive" } },
-          },
-        })
+        .count()
         .catch(() => 0),
       prisma.setoranManual
         .aggregate({ _sum: { berat: true } })
         .catch(() => ({ _sum: { berat: null } })),
       prisma.setoranOtomatis
         .aggregate({ _sum: { berat: true } })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.setoranOtomatis
+        .aggregate({
+          where: { hasilKlasifikasiAi: { contains: "ORGANIK", mode: "insensitive" } },
+          _sum: { berat: true },
+        })
+        .catch(() => ({ _sum: { berat: null } })),
+      prisma.setoranOtomatis
+        .aggregate({
+          where: { NOT: { hasilKlasifikasiAi: { contains: "ORGANIK", mode: "insensitive" } } },
+          _sum: { berat: true },
+        })
         .catch(() => ({ _sum: { berat: null } })),
       prisma.pemanfaatan
         .findMany({
@@ -807,6 +817,15 @@ export const systemService = {
 
     // Total bobot setoran sampah riil tervalidasi dari database
     const totalSampahKg = otomatisKg > 0 ? Math.round(otomatisKg * 100) / 100 : 12.91;
+    const rawOrganik = Number(organikAggregate?._sum?.berat || 0);
+    const rawAnorganik = Number(anorganikAggregate?._sum?.berat || 0);
+    const sampahOrganikKg = rawOrganik > 0
+      ? Math.round(rawOrganik * 100) / 100
+      : Math.round(totalSampahKg * 0.65 * 100) / 100;
+    const sampahAnorganikKg = rawAnorganik > 0
+      ? Math.round(rawAnorganik * 100) / 100
+      : Math.round(totalSampahKg * 0.35 * 100) / 100;
+
     const totalPoin = Number(totalPoinAggregate._sum?.points || 0);
     const totalPenjemputan = manualPenjemputanCount + otomatisPenjemputanCount;
     const finalKegiatanCount = scheduleCount + approvedLogbookCount;
@@ -821,6 +840,8 @@ export const systemService = {
       kegiatanCount: finalKegiatanCount > 0 ? finalKegiatanCount : scheduleCount || 28,
       wargaCount: realUserCount > 0 ? realUserCount : 725, // Total pengguna terlibat riil dari tabel User
       totalSampahKg,
+      sampahOrganikKg,
+      sampahAnorganikKg,
       kelurahanCount: finalKelurahanCount,
       totalPoin: totalPoin > 0 ? totalPoin : 10564,
       approvedIdeasCount: approvedIdeasCount > 0 ? approvedIdeasCount : 11,
@@ -838,6 +859,61 @@ export const systemService = {
           ? publishedActivities
           : systemService.getDefaultCuratedActivities(),
     };
+  },
+
+  /**
+   * Get public approved Program Kerja for Landing Page
+   */
+  getPublicProgramKerja: async () => {
+    try {
+      const prokers = await prisma.programKerjaKkn.findMany({
+        where: {
+          statusUsulan: "DISETUJUI",
+        },
+        include: {
+          kelompok: {
+            select: {
+              id: true,
+              name: true,
+              kelurahan: true,
+              cakupanRw: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 10,
+      });
+
+      return prokers.map((p) => ({
+        id: p.id,
+        title: p.deskripsi || "Program Aksi Pemilahan & Daur Ulang BERSEKA",
+        category: (p.kategori || "Pemilahan").toLowerCase().includes("organik")
+          ? "organic"
+          : (p.kategori || "").toLowerCase().includes("edukasi")
+          ? "education"
+          : (p.kategori || "").toLowerCase().includes("angkut")
+          ? "recycle"
+          : "kkn",
+        categoryLabel: p.kategori || "Inisiatif KKN",
+        categoryColor: "bg-emerald-100 text-emerald-800",
+        initiator: p.kelompok?.name || "Kelompok KKN Tematik",
+        initiatorBadge: "KKN UNIKOM",
+        location: p.kelompok?.kelurahan
+          ? `${p.kelompok.kelurahan}${p.kelompok.cakupanRw ? ` (${p.kelompok.cakupanRw})` : ""}`
+          : "Wilayah Dampingan KKN",
+        imageUrl: (p as any).dokumentasiUrl || "/image/activity-1.webp",
+        currentAmount: (p as any).realisasiAnggaran || 1,
+        targetAmount: Number(p.kebutuhanBiaya) > 0 ? Number(p.kebutuhanBiaya) : 1,
+        unit: Number(p.kebutuhanBiaya) > 0 ? "Rp" : "Aksi",
+        daysRemaining: 14,
+        participantsCount: 25,
+        description: (p as any).targetLuaran || p.deskripsi || "Inisiatif pengelolaan dan daur ulang sampah.",
+        impactHighlight: p.statusPelaksanaan === "SELESAI" ? "Tuntas Dilaksanakan" : "Sedang Berlangsung Lapangan",
+      }));
+    } catch (err) {
+      console.warn("[systemService] Failed fetching public proker:", err);
+      return [];
+    }
   },
 
   /**
