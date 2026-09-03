@@ -908,17 +908,20 @@ export class AuthService {
     }
 
     const { universityId, ...userBaseData } = userData;
+    void universityId;
 
     return prisma.user.create({
       data: {
-        ...userBaseData,
+        name: userBaseData.name,
+        phone: userBaseData.phone,
         password: hashedPassword,
+        address: userBaseData.address || null,
+        nip: userBaseData.nip || null,
+        institusi: userBaseData.institusi || null,
+        programStudi: userBaseData.programStudi || null,
+        jenjangPendidikan: userBaseData.jenjangPendidikan || null,
         roleId: role.id,
-        dosenPembimbing: {
-          create: {
-            universityId: universityId,
-          },
-        },
+        status: "Aktif",
       },
     });
   }

@@ -5,7 +5,7 @@ import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw, Pencil, X } from "lucide-react";
 import { printQrStickers } from "../../utils/printQrStickers";
 import { exportToXlsx } from "../../utils/exportXlsx";
 
@@ -56,6 +56,49 @@ export const MasterQrManager: React.FC = () => {
   const [rtRwId, setRtRwId] = useState<string>("");
   const [categories, setCategories] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
+
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editingBin, setEditingBin] = useState<BinQr | null>(null);
+  const [editCategoryId, setEditCategoryId] = useState<string>("");
+  const [editRtRwId, setEditRtRwId] = useState<string>("");
+  const [editStatus, setEditStatus] = useState<string>("");
+  const [editMaxCapacity, setEditMaxCapacity] = useState<number>(25);
+  const [submittingEdit, setSubmittingEdit] = useState<boolean>(false);
+
+  const handleOpenEditModal = (bin: BinQr) => {
+    setEditingBin(bin);
+    setEditCategoryId(bin.category?.id || "");
+    setEditRtRwId((bin.rtRw as any)?.id ? String((bin.rtRw as any).id) : "");
+    setEditStatus(bin.status || "PRINTED");
+    setEditMaxCapacity((bin as any).maxCapacityLiter || 25);
+    setShowEditModal(true);
+  };
+
+  const handleExecuteEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBin) return;
+    try {
+      setSubmittingEdit(true);
+      const res = await api.put(`/bins/${editingBin.id}`, {
+        categoryId: editCategoryId || undefined,
+        rtRwId: editRtRwId || undefined,
+        status: editStatus || undefined,
+        maxCapacityLiter: editMaxCapacity,
+      });
+      if (res.data?.success || res.status === 200) {
+        toast.success(`Data QR Code ${editingBin.qrCode} berhasil diperbarui!`);
+        setShowEditModal(false);
+        setEditingBin(null);
+        fetchQrData();
+      }
+    } catch (error: any) {
+      console.error("Gagal memperbarui QR Code:", error);
+      toast.error(error.response?.data?.message || "Gagal memperbarui data QR");
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
 
   // Replacement modal states
   const [showReplaceModal, setShowReplaceModal] = useState<boolean>(false);
