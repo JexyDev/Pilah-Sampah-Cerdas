@@ -294,7 +294,11 @@ describe("Mobile Findings Backend Tests", () => {
 
       expect(detail.recentLogs).toHaveLength(2);
       expect(detail.recentLogs[0].discrepancyStatus).toBe("NONE");
+      expect(detail.recentLogs[0].is_correct).toBe(true);
+      expect(detail.recentLogs[0].isCorrect).toBe(true);
       expect(detail.recentLogs[1].discrepancyStatus).toBe("MISMATCH");
+      expect(detail.recentLogs[1].is_correct).toBe(false);
+      expect(detail.recentLogs[1].isCorrect).toBe(false);
     });
 
     it("should handle new warga with 0 activities cleanly without NaN or null errors", async () => {

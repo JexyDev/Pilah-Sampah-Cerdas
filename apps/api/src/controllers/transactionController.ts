@@ -7,6 +7,7 @@
 
 import { Request, Response } from "express";
 import { transactionService } from "../services/transactionService.js";
+import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 export const transactionController = {
   getDeposits: async (req: Request, res: Response) => {
@@ -32,6 +33,13 @@ export const transactionController = {
         const anorganikPercent = 100 - organikPercent;
         const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
+        const sortingStatus = evaluateSortingStatus(
+          d.confidenceAi,
+          d.discrepancy_status || d.discrepancyStatus,
+          d.hasilKlasifikasiAi,
+          d.bin?.category
+        );
+
         return {
           id: d.id,
           warga: wargaName,
@@ -47,6 +55,12 @@ export const transactionController = {
           confidence: Math.max(organikPercent, anorganikPercent),
           organikPercent,
           anorganikPercent,
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
           fotoUrl: d.fotoSampahUrl || null,
           fotoProfil: d.warga?.fotoProfil || null,
           isManual: false,
@@ -69,6 +83,12 @@ export const transactionController = {
           confidence: null,
           organikPercent: 0,
           anorganikPercent: 0,
+          ai_confidence: null,
+          aiConfidence: null,
+          discrepancy_status: "NONE",
+          discrepancyStatus: "NONE",
+          is_correct: true,
+          isCorrect: true,
           fotoUrl: m.fotoResiduUrl || null,
           fotoProfil: m.petugas?.fotoProfil || null,
           isManual: true,
@@ -110,6 +130,13 @@ export const transactionController = {
         const anorganikPercent = 100 - organikPercent;
         const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
+        const sortingStatus = evaluateSortingStatus(
+          d.confidenceAi,
+          d.discrepancy_status || d.discrepancyStatus,
+          d.hasilKlasifikasiAi,
+          d.bin?.category
+        );
+
         return {
           id: d.id,
           jenis: finalJenis,
@@ -129,6 +156,12 @@ export const transactionController = {
           confidence: Math.max(organikPercent, anorganikPercent),
           organikPercent,
           anorganikPercent,
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
         };
       });
 
@@ -233,6 +266,12 @@ export const transactionController = {
           confidence: null,
           organikPercent: 0,
           anorganikPercent: 0,
+          ai_confidence: null,
+          aiConfidence: null,
+          discrepancy_status: "NONE",
+          discrepancyStatus: "NONE",
+          is_correct: true,
+          isCorrect: true,
           gps: dep.lokasiGps,
           fotoUrl: dep.fotoResiduUrl,
           fotoProfil: dep.petugas?.fotoProfil || null,
@@ -255,6 +294,13 @@ export const transactionController = {
       const anorganikPercent = 100 - organikPercent;
       const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
 
+      const sortingStatus = evaluateSortingStatus(
+        dep.confidenceAi,
+        dep.discrepancy_status || dep.discrepancyStatus,
+        dep.hasilKlasifikasiAi,
+        dep.bin?.category
+      );
+
       const mappedDeposit = {
         id: dep.id,
         warga: dep.warga?.name || "Warga Coblong",
@@ -270,6 +316,12 @@ export const transactionController = {
         confidence: Math.max(organikPercent, anorganikPercent),
         organikPercent,
         anorganikPercent,
+        ai_confidence: sortingStatus.ai_confidence,
+        aiConfidence: sortingStatus.aiConfidence,
+        discrepancy_status: sortingStatus.discrepancy_status,
+        discrepancyStatus: sortingStatus.discrepancyStatus,
+        is_correct: sortingStatus.is_correct,
+        isCorrect: sortingStatus.isCorrect,
         gps: dep.lokasiGps,
         fotoUrl: dep.fotoSampahUrl,
         fotoProfil: dep.warga?.fotoProfil || null,

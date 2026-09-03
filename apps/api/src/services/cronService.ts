@@ -86,13 +86,12 @@ export class CronService {
       tzOptions
     );
 
-    // Auto checkout ended KKN schedules at end of day
+// Auto checkout ended KKN schedules every minute
     cron.schedule(
       "* * * * *",
       () => {
         kknAttendanceService.autoCheckOutEndedSchedules();
-        // [LOSS MODE] Nonaktifkan watchdog stale GPS auto-pause. Jeda hanya manual by mahasiswa.
-        // kknAttendanceService.handleStaleGpsSessions();
+
       },
       tzOptions
     );

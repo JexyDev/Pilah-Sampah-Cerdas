@@ -942,7 +942,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                 <span>Waktu Terjeda Sementara: {primaryKegiatan.durasiJedaFormatted || "0 Menit"}</span>
               </div>
               <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-relaxed">
-                Penghitungan durasi dihentikan sementara karena Anda berada di luar radius posko atau aplikasi diminimalkan. Masuk kembali ke lokasi posko dan pastikan GPS aktif untuk melanjutkan sesi secara otomatis.
+                Sesi dalam keadaan dijeda. Masuk kembali ke dalam zona KKN dan klik "Lanjutkan Sesi" untuk melanjutkan penghitungan durasi.
               </p>
             </div>
           )}

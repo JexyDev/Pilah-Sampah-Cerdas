@@ -19,6 +19,7 @@ import {
 import { parseProkerDeskripsi } from "./dplService.js";
 import { calculateNilaiEkonomi, normalizeJenisOlahan } from "./pemanfaatanService.js";
 import { logbookService } from "./logbookService.js";
+import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
   if (!kategori) return "Lainnya";
@@ -355,14 +356,29 @@ export class KknService {
         u.pointHistory?.reduce((acc: number, curr: any) => acc + Number(curr.points || 0), 0) ||
         Math.round(totalKg * 10);
 
-      const recentLogs = setoranLogs.slice(0, 5).map((log: any) => ({
-        weightKg: Number(log.berat || 0),
-        category:
-          log.hasilKlasifikasiAi === "organik"
-            ? "Organik"
-            : primaryBin.category?.name || "Anorganik",
-        isCorrect: true,
-      }));
+      const recentLogs = setoranLogs.slice(0, 5).map((log: any) => {
+        const sortingStatus = evaluateSortingStatus(
+          log.confidenceAi,
+          log.discrepancy_status || log.discrepancyStatus,
+          log.hasilKlasifikasiAi,
+          primaryBin.category
+        );
+        return {
+          id: log.id,
+          weightKg: Number(log.berat || 0),
+          category:
+            log.hasilKlasifikasiAi === "organik"
+              ? "Organik"
+              : primaryBin.category?.name || "Anorganik",
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
+          createdAt: log.createdAt,
+        };
+      });
 
       const binOrganik = userBins.find((b: any) => isOrganikBin(b));
       const binAnorganik = userBins.find((b: any) => isAnorganikBin(b));
@@ -508,6 +524,7 @@ export class KknService {
       where: { wargaId: warga.id },
       select: {
         hasilKlasifikasiAi: true,
+        confidenceAi: true,
         bin: {
           select: { category: true },
         },
@@ -517,26 +534,41 @@ export class KknService {
     let correctCount = 0;
     let incorrectCount = 0;
     for (const log of allLogsForCount) {
-      const isMatch = checkClassificationMatch(log.hasilKlasifikasiAi, log.bin?.category);
-      if (isMatch) {
+      const sortingStatus = evaluateSortingStatus(
+        log.confidenceAi,
+        (log as any).discrepancy_status || (log as any).discrepancyStatus,
+        log.hasilKlasifikasiAi,
+        log.bin?.category
+      );
+      if (sortingStatus.is_correct) {
         correctCount++;
       } else {
         incorrectCount++;
       }
     }
 
-    // 3. Status Benar/Salah (discrepancyStatus) di recentLogs
+    // 3. Status Benar/Salah (discrepancyStatus, is_correct) di recentLogs
     const recentLogs =
       warga.setoranOtomatis?.map((log: any) => {
-        const isMatch = checkClassificationMatch(log.hasilKlasifikasiAi, log.bin?.category);
+        const sortingStatus = evaluateSortingStatus(
+          log.confidenceAi,
+          log.discrepancy_status || log.discrepancyStatus,
+          log.hasilKlasifikasiAi,
+          log.bin?.category
+        );
         return {
           id: log.id,
           weightKg: Number(log.berat || 0),
           volumeLiter: 0,
           category:
             (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
           createdAt: log.createdAt,
-          discrepancyStatus: isMatch ? "NONE" : "MISMATCH",
         };
       }) || [];
 
@@ -728,11 +760,27 @@ export class KknService {
         binAnorganik?.registeredByStudentId ||
         null;
 
-      const recentLogs = (w.setoranOtomatis || []).slice(0, 5).map((log: any) => ({
-        date: new Date(log.createdAt).toISOString().split("T")[0],
-        wasteType: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        weightKg: Number(log.berat),
-      }));
+      const recentLogs = (w.setoranOtomatis || []).slice(0, 5).map((log: any) => {
+        const sortingStatus = evaluateSortingStatus(
+          log.confidenceAi,
+          log.discrepancy_status || log.discrepancyStatus,
+          log.hasilKlasifikasiAi,
+          primaryBin?.category
+        );
+        return {
+          id: log.id,
+          date: new Date(log.createdAt).toISOString().split("T")[0],
+          wasteType: log.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          weightKg: Number(log.berat),
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
+          createdAt: log.createdAt,
+        };
+      });
 
       const lat = household?.latitude
         ? Number(household.latitude)

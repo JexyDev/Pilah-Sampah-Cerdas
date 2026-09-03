@@ -63,13 +63,14 @@ export class AuthRepository {
 
       const phoneArray = Array.from(candidatePhones);
 
-      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, atau NIP dosen
+      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, NIP dosen, atau Email
       const user = (await prisma.user.findFirst({
         where: {
           OR: [
             { phone: { in: phoneArray } },
-            { studentProfile: { nim: { in: [raw, digitsOnly, cleaned] } } },
-            { nip: { in: [raw, digitsOnly, cleaned] } },
+            { studentProfile: { nim: { in: [raw, digitsOnly, cleaned].filter(Boolean) } } },
+            { nip: { in: [raw, digitsOnly, cleaned].filter(Boolean) } },
+            ...(raw.includes("@") ? [{ email: { equals: raw, mode: "insensitive" as const } }] : []),
           ],
         },
         include: {

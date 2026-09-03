@@ -82,7 +82,7 @@ export default function RekapSetoran() {
       // 1. Filter Kategori
       if (filterKategori !== "ALL") {
         const catUpper = (d.jenis || "").toUpperCase();
-        if (filterKategori === "ORGANIC" && !catUpper.includes("ORGANIK") && !catUpper.includes("ORGANIC")) return false;
+        if (filterKategori === "ORGANIC" && (!catUpper.includes("ORGANIK") || catUpper.includes("ANORGANIK") || catUpper.includes("NON"))) return false;
         if (filterKategori === "NON_ORGANIC" && !catUpper.includes("ANORGANIK") && !catUpper.includes("NON_ORGANIC") && !catUpper.includes("NON-ORGANIC")) return false;
         if (filterKategori === "RESIDU" && !catUpper.includes("RESIDU")) return false;
       }
@@ -252,6 +252,13 @@ export default function RekapSetoran() {
 
   const renderCategoryBadge = (cat?: string) => {
     const jenisUpper = (cat || "").toUpperCase();
+    if (jenisUpper.includes("ANORGANIK") || jenisUpper.includes("NON_ORGANIC") || jenisUpper.includes("NON-ORGANIC")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
+          <Layers size={13} /> Anorganik
+        </span>
+      );
+    }
     if (jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC")) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 shadow-2xs">
@@ -259,9 +266,16 @@ export default function RekapSetoran() {
         </span>
       );
     }
+    if (jenisUpper.includes("RESIDU")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-rose-100/90 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 shadow-2xs">
+          <Trash2 size={13} /> Residu
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
-        <Layers size={13} /> Anorganik
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-slate-100/90 dark:bg-slate-950/60 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700/50 shadow-2xs">
+        {cat || "Unknown"}
       </span>
     );
   };

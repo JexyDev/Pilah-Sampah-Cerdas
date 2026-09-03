@@ -565,8 +565,8 @@ export const AktivitasMonitoring: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedTransactions.map((t) => {
-                  const isOrganik = t.tipe?.toLowerCase().includes("organik");
                   const isAnorganik = t.tipe?.toLowerCase().includes("anorganik");
+                  const isOrganik = t.tipe?.toLowerCase().includes("organik") && !isAnorganik;
 
                   return (
                     <tr key={t.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-all">

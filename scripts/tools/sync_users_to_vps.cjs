@@ -5,18 +5,9 @@ const { execSync } = require('child_process');
 
 const LOCAL_DUMP_PATH = path.resolve(__dirname, '../../database/local_users_dump.sql');
 
-console.log('=== SINKRONISASI DATA PENGGUNA LOKAL KE VPS ===');
-console.log('Mengekstrak data pengguna lokal (Admin, DPL, Mahasiswa, Petugas Pemilah, Pimpinan, Developer)...');
-
-try {
-  const pgDumpCmd = `docker exec psc-postgres pg_dump -U psc_user -d psc_db --clean --if-exists --no-owner --no-privileges`;
-  const dumpData = execSync(pgDumpCmd, { maxBuffer: 50 * 1024 * 1024 }).toString();
-  fs.writeFileSync(LOCAL_DUMP_PATH, dumpData);
-  console.log(`✓ Dump lokal berhasil dibuat (${(dumpData.length / 1024).toFixed(2)} KB).`);
-} catch (err) {
-  console.error('Gagal membuat dump lokal via Docker:', err.message);
-  process.exit(1);
-}
+console.error('⛔ DILARANG: Sinkronisasi/Overwrite database lokal ke VPS telah DINONAKTIFKAN secara permanen.');
+console.error('Data pengguna dan mahasiswa di VPS telah dimodifikasi secara manual oleh tim dan merupakan Single Source of Truth.');
+process.exit(1);
 
 const conn = new Client();
 

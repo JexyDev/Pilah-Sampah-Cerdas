@@ -233,7 +233,7 @@ export default function SetorSampah() {
       // 4. Category
       if (filterCategory !== "ALL") {
         const catUpper = (log.jenis || "").toUpperCase();
-        if (filterCategory === "ORGANIC" && !catUpper.includes("ORGANIK")) return false;
+        if (filterCategory === "ORGANIC" && (!catUpper.includes("ORGANIK") || catUpper.includes("ANORGANIK"))) return false;
         if (filterCategory === "NON_ORGANIC" && !catUpper.includes("ANORGANIK")) return false;
         if (filterCategory === "RESIDU" && !catUpper.includes("RESIDU")) return false;
       }
@@ -289,17 +289,17 @@ export default function SetorSampah() {
 
   const renderCategoryTag = (jenis?: string) => {
     const j = (jenis || "").toUpperCase();
-    if (j.includes("ORGANIK")) {
-      return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs">
-          <Leaf size={13} /> Organik
-        </span>
-      );
-    }
-    if (j.includes("ANORGANIK")) {
+    if (j.includes("ANORGANIK") || j.includes("NON_ORGANIC") || j.includes("NON-ORGANIC")) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 shadow-2xs">
           <Layers size={13} /> Anorganik
+        </span>
+      );
+    }
+    if (j.includes("ORGANIK") || j.includes("ORGANIC")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs">
+          <Leaf size={13} /> Organik
         </span>
       );
     }
