@@ -645,6 +645,13 @@ router.post(
 );
 
 router.post(
+  "/kegiatan/:id/skip",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.skipKegiatan
+);
+
+router.post(
   "/kegiatan/:id/jeda",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
