@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Info,
   BrainCircuit,
@@ -34,6 +34,7 @@ import {
   Scale,
   Smile,
   BarChart3,
+  ClipboardCheck,
 } from "lucide-react";
 import { APP_CONFIG } from "../../config/appConfig";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -42,10 +43,17 @@ import PageHeader from "../../components/common/PageHeader";
 const Informasi: React.FC = () => {
   const { user } = useAuthStore();
   const isTechnicalRole = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER";
+  const isDpl = user?.peran === "DPL" || user?.peran === "DOSEN_PEMBIMBING";
 
   // Tab State
   const [techTab, setTechTab] = useState<"EXECUTIVE" | "AI_MODEL" | "ROLES" | "TECH_STACK">("EXECUTIVE");
   const [userTab, setUserTab] = useState<"ROLE_GUIDE" | "WORKFLOW" | "FAQ">("ROLE_GUIDE");
+
+  useEffect(() => {
+    if (isDpl && userTab === "WORKFLOW") {
+      setUserTab("ROLE_GUIDE");
+    }
+  }, [isDpl, userTab]);
 
   // Get Friendly Role Title & Context
   const getRoleInfo = () => {
@@ -201,16 +209,18 @@ const Informasi: React.FC = () => {
             <BookOpen size={16} /> Panduan Peran Anda ({roleInfo.title.split(" ")[0]})
           </button>
 
-          <button
-            onClick={() => setUserTab("WORKFLOW")}
-            className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
-              userTab === "WORKFLOW"
-                ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-            }`}
-          >
-            <Layers size={16} /> Alur Kerja &amp; SOP Pemilahan
-          </button>
+          {!isDpl && (
+            <button
+              onClick={() => setUserTab("WORKFLOW")}
+              className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                userTab === "WORKFLOW"
+                  ? "bg-[#009966] text-white shadow-md shadow-emerald-700/20"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+              }`}
+            >
+              <Layers size={16} /> Alur Kerja &amp; SOP Pemilahan
+            </button>
+          )}
 
           <button
             onClick={() => setUserTab("FAQ")}
@@ -275,12 +285,12 @@ const Informasi: React.FC = () => {
                   <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
-                        <Sparkles size={20} />
+                        <ClipboardCheck size={20} />
                       </div>
-                      <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">3. Pemantauan Inovasi &amp; Daur Ulang</h3>
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">3. Pemantauan Presensi &amp; Program Kerja</h3>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Pantau perkembangan program inovasi lingkungan dan bank sampah warga binaan mahasiswa pada Tab <strong>Inovasi &amp; Hasil</strong> untuk bahan evaluasi laporan akhir KKN.
+                      Pantau rekapitulasi presensi harian, logbook kegiatan mahasiswa, dan perkembangan realisasi program kerja kelompok dampingan secara berkala untuk bahan evaluasi KKN.
                     </p>
                   </div>
 
@@ -437,7 +447,7 @@ const Informasi: React.FC = () => {
           )}
 
           {/* TAB: WORKFLOW & SOP */}
-          {userTab === "WORKFLOW" && (
+          {!isDpl && userTab === "WORKFLOW" && (
             <div className="space-y-6 animate-fade-in">
               <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
                 <div className="border-b border-slate-100 dark:border-slate-800 pb-4">

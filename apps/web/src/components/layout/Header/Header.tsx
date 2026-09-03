@@ -623,16 +623,6 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                   <User size={15} className="text-slate-400" />
                   <span>Profil Saya</span>
                 </button>
-                <button
-                  onClick={() => {
-                    setShowProfileDropdown(false);
-                    navigate("/tentang-aplikasi");
-                  }}
-                  className="w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 hover:text-[#009966] dark:hover:text-emerald-400 flex items-center gap-2.5 transition-colors cursor-pointer"
-                >
-                  <Info size={15} className="text-slate-400" />
-                  <span>Tentang Aplikasi</span>
-                </button>
               </div>
 
               <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80">
