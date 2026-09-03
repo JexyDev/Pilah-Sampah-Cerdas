@@ -145,13 +145,28 @@ class ApiClient {
               throw Exception('Refresh failed with status ${refreshRes.statusCode}');
             }
           } catch (refreshErr, stackTrace) {
-            // ── Refresh GAGAL → force logout ───────────────────────────
             debugPrint('[ApiClient] Refresh token failed: $refreshErr');
             debugPrint('[ApiClient] Stacktrace: $stackTrace');
             
             _isRefreshing = false;
             _rejectPendingRequests();
-            await _forceLogout();
+
+            // ── Cek apakah error murni karena token tidak valid / kedaluwarsa permanen
+            // Hanya lakukan force logout jika server memberikan kode status 401 / 403.
+            // Jika kegagalan karena masalah jaringan (Timeout, Offline, 502/503/504),
+            // JANGAN logout paksa agar pengguna tidak terlempar keluar di lapangan saat sinyal drop.
+            bool isExplicitAuthFailure = false;
+            if (refreshErr is DioException) {
+              final status = refreshErr.response?.statusCode;
+              if (status == 401 || status == 403) {
+                isExplicitAuthFailure = true;
+              }
+            }
+
+            if (isExplicitAuthFailure) {
+              await _forceLogout();
+            }
+
             return handler.next(e);
           }
 

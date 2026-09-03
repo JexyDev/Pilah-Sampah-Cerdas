@@ -351,7 +351,7 @@ class _LoginViewState extends ConsumerState<LoginView> {
                                 textInputAction: TextInputAction.done,
                                 onFieldSubmitted: (_) => _onLogin(),
                                 decoration: InputDecoration(
-                                  hintText: 'Masukkan kata sandi...',
+                                  hintText: 'Kata sandi atau NIM...',
                                   prefixIcon: const Icon(
                                     Icons.lock_outline_rounded,
                                     color: AppColors.textSecondary,
