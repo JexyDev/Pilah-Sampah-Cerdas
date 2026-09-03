@@ -16,6 +16,7 @@ import {
   calculateLiveInZoneMinutes,
 } from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
+import { calculateNilaiEkonomi, normalizeJenisOlahan } from "./pemanfaatanService.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
   if (!kategori) return "Lainnya";
@@ -3682,6 +3683,92 @@ export class KknService {
         }
       : null;
 
+    // Query seluruh data Logbook Pemanfaatan terkait proker ini
+    const pemanfaatanWhere: any = {
+      OR: [
+        { programKerjaId: id },
+        ...(proker.deskripsi ? [{ program: proker.deskripsi }] : []),
+      ],
+    };
+
+    const pemanfaatanLogs = await prisma.pemanfaatan.findMany({
+      where: pemanfaatanWhere,
+      include: {
+        rw: { select: { id: true, name: true, kelurahan: { select: { id: true, name: true } } } },
+      },
+      orderBy: { tanggalPencatatan: "desc" },
+    });
+
+    let totalBeratInputKg = 0;
+    let totalBeratOutputKg = 0;
+    let totalNilaiEkonomi = 0;
+
+    const teknologiMap = new Map<
+      string,
+      {
+        teknologi: string;
+        totalBeratInputKg: number;
+        totalBeratOutputKg: number;
+        totalNilaiEkonomi: number;
+        count: number;
+      }
+    >();
+
+    const pemanfaatanEntries = pemanfaatanLogs.map((p) => {
+      const beratInput = Number(p.volumeBahanBaku) || 0;
+      const beratOutput = Number(p.hasil) || 0;
+      const recordedEkonomi = Number(p.luasLahanM2) || 0;
+      const nilaiEkonomi =
+        recordedEkonomi > 0 && beratOutput > 0
+          ? recordedEkonomi
+          : calculateNilaiEkonomi(p.program, p.teknologi, beratOutput, p.unitHasil || "Kg");
+
+      totalBeratInputKg += beratInput;
+      totalBeratOutputKg += beratOutput;
+      totalNilaiEkonomi += nilaiEkonomi;
+
+      const cleanTek = p.teknologi ? p.teknologi.trim() : "Kompos Organik";
+      if (!teknologiMap.has(cleanTek)) {
+        teknologiMap.set(cleanTek, {
+          teknologi: cleanTek,
+          totalBeratInputKg: 0,
+          totalBeratOutputKg: 0,
+          totalNilaiEkonomi: 0,
+          count: 0,
+        });
+      }
+
+      const group = teknologiMap.get(cleanTek)!;
+      group.totalBeratInputKg = Math.round((group.totalBeratInputKg + beratInput) * 100) / 100;
+      group.totalBeratOutputKg = Math.round((group.totalBeratOutputKg + beratOutput) * 100) / 100;
+      group.totalNilaiEkonomi += nilaiEkonomi;
+      group.count += 1;
+
+      return {
+        id: p.id,
+        nomorCaraPemanfaatan: p.nomorCaraPemanfaatan,
+        teknologi: cleanTek,
+        bahanBaku: p.bahanBaku || "Sampah Organik",
+        beratInputKg: beratInput,
+        volumeBahanBaku: beratInput,
+        unitBahanBaku: p.unitBahanBaku || "Kg",
+        beratOutputKg: beratOutput,
+        hasil: beratOutput,
+        unitHasil: p.unitHasil || "Kg",
+        nilaiEkonomiRp: nilaiEkonomi,
+        fotoDokumentasiUrl: p.fotoDokumentasiUrl,
+        tanggalPencatatan: p.tanggalPencatatan
+          ? p.tanggalPencatatan.toISOString()
+          : p.createdAt.toISOString(),
+        status: beratOutput > 0 ? "PANEN" : "PROSES",
+        rwId: p.rwId,
+        rwName: p.rw?.name || (p.rwId ? `RW ${p.rwId}` : "-"),
+        kelurahanName: p.rw?.kelurahan?.name || "-",
+      };
+    });
+
+    const perTeknologi = Array.from(teknologiMap.values());
+
     return {
       id: proker.id,
       kelompokId: proker.kelompokId,
@@ -3742,6 +3829,14 @@ export class KknService {
         statusApproval: l.statusApproval,
         penulisNama: l.penulis?.name || "Mahasiswa",
       })),
+      pemanfaatan: {
+        totalBeratInputKg: Math.round(totalBeratInputKg * 100) / 100,
+        totalBeratOutputKg: Math.round(totalBeratOutputKg * 100) / 100,
+        totalNilaiEkonomi,
+        totalEntri: pemanfaatanLogs.length,
+        perTeknologi,
+        entries: pemanfaatanEntries,
+      },
       penginput,
       mahasiswaList: (proker.kelompok?.students || []).map((s) => ({
         id: s.id,
@@ -3922,6 +4017,7 @@ export class KknService {
     const report = await prisma.pemanfaatan.create({
       data: {
         rwId: targetRwId,
+        programKerjaId: programKerjaId || null,
         nomorCaraPemanfaatan: uniqueNo,
         program: programName,
         teknologi: cleanTeknologi,
