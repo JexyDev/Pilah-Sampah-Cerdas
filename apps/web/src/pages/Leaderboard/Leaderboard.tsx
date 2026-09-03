@@ -24,6 +24,8 @@ import {
   CheckCircle2,
   FileText,
   X,
+  Crown,
+  Award,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -44,7 +46,7 @@ import { EmptyTableState } from "../../components/common/EmptyTableState";
 
 type SystemType = "system1" | "system2";
 type System1Tab = "citizens" | "rtrw" | "pengangkut" | "kelurahan" | "overview";
-type System2Tab = "students" | "groups";
+type System2Tab = "students" | "groups" | "dpl";
 type ViewMode = "GRID_TABLE" | "CHART_ONLY" | "BOTH";
 
 interface GenericItem {
@@ -69,6 +71,15 @@ const BAR_COLORS = [
   "#6d28d9",
 ];
 
+const getInitials = (name: string) => {
+  if (!name) return "U";
+  const clean = name.replace(/^(Dr\.|Drs\.|Prof\.|Ir\.|H\.|Hj\.)\s+/i, "").trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 const Leaderboard: React.FC = () => {
   const {
     users,
@@ -76,6 +87,7 @@ const Leaderboard: React.FC = () => {
     pengangkut,
     kknStudents,
     kknGroups,
+    kknDpl,
     isLoading,
     error,
     fetchLeaderboard,
@@ -98,7 +110,7 @@ const Leaderboard: React.FC = () => {
     return "citizens";
   });
   const [s2Tab, setS2Tab] = useState<System2Tab>(() => {
-    if (systemParam === "system2" && ["students", "groups"].includes(tabParam || "")) {
+    if (systemParam === "system2" && ["students", "groups", "dpl"].includes(tabParam || "")) {
       return tabParam as System2Tab;
     }
     return "students";
@@ -123,7 +135,7 @@ const Leaderboard: React.FC = () => {
       setSystem(systemParam);
       if (systemParam === "system1" && ["citizens", "rtrw", "pengangkut", "kelurahan", "overview"].includes(tabParam || "")) {
         setS1Tab(tabParam as System1Tab);
-      } else if (systemParam === "system2" && ["students", "groups"].includes(tabParam || "")) {
+      } else if (systemParam === "system2" && ["students", "groups", "dpl"].includes(tabParam || "")) {
         setS2Tab(tabParam as System2Tab);
       }
     }
@@ -213,6 +225,19 @@ const Leaderboard: React.FC = () => {
             points: g.avgScore,
           };
         });
+      } else if (s2Tab === "dpl") {
+        raw = (kknDpl || []).map((dp: any, i: number) => {
+          const totalKel = dp.totalGroups || (dp.dplKelompok?.length ?? 0);
+          const totalMhs = dp.totalStudents || 0;
+          return {
+            id: dp.id || `dpl-${i}`,
+            rank: i + 1,
+            name: dp.name || "Dosen Pendamping",
+            subtitle: `${totalKel} Kelompok Dampingan`,
+            extraInfo: `${totalMhs} Mahasiswa Binaan`,
+            points: Number(dp.points || 0),
+          };
+        });
       }
     }
 
@@ -234,7 +259,7 @@ const Leaderboard: React.FC = () => {
 
       return sortOrder === "asc" ? comparison : -comparison;
     });
-  }, [system, s1Tab, s2Tab, users, rtRw, pengangkut, kknStudents, kknGroups, searchTerm, sortBy, sortOrder]);
+  }, [system, s1Tab, s2Tab, users, rtRw, pengangkut, kknStudents, kknGroups, kknDpl, searchTerm, sortBy, sortOrder, isLurah, userKelurahan]);
 
   const totalPages = useMemo(() => {
     return Math.ceil(currentData.length / itemsPerPage);
@@ -293,6 +318,13 @@ const Leaderboard: React.FC = () => {
       nameHeader = "Nama Kelompok";
       subtitleHeader = "Jumlah Anggota";
       pointsLabel = "Rerata Skor";
+    } else if (s2Tab === "dpl") {
+      pageTitle = "Peringkat Dosen Pendamping Lapangan (DPL)";
+      pageSubtitle = "Pemeringkatan DPL berdasarkan rerata capaian dan performa kelompok mahasiswa bimbingan";
+      nameHeader = "Nama Dosen (DPL)";
+      subtitleHeader = "Kelompok Dampingan";
+      extraInfoHeader = "Total Mahasiswa";
+      pointsLabel = "Rerata Poin";
     }
   }
 
@@ -305,7 +337,11 @@ const Leaderboard: React.FC = () => {
     }
   };
 
-  const top3 = currentData.slice(0, 3);
+  const top3 = useMemo(() => {
+    if (searchTerm) return [];
+    return [...currentData].sort((a, b) => a.rank - b.rank).slice(0, 3);
+  }, [currentData, searchTerm]);
+
   const top10ChartData = currentData.slice(0, 10).map((item) => ({
     name: item.name.length > 14 ? item.name.substring(0, 12) + "..." : item.name,
     fullName: item.name,
@@ -332,7 +368,7 @@ const Leaderboard: React.FC = () => {
   };
 
   // CONDITIONAL RENDERING FOR LOADING / ERROR (AFTER ALL HOOKS HAVE INITIALIZED)
-  if (isLoading && users.length === 0 && kknStudents.length === 0) {
+  if (isLoading && users.length === 0 && kknStudents.length === 0 && kknDpl.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="animate-spin text-[#009966]" size={36} />
@@ -487,6 +523,7 @@ const Leaderboard: React.FC = () => {
               {[
                 { id: "students" as System2Tab, label: "Mahasiswa", icon: Users },
                 { id: "groups" as System2Tab, label: "Kelompok KKN", icon: GraduationCap },
+                { id: "dpl" as System2Tab, label: "Dosen Pendamping (DPL)", icon: Award },
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 const active = s2Tab === tab.id;
@@ -559,50 +596,145 @@ const Leaderboard: React.FC = () => {
             <p className="text-slate-500 text-xs font-semibold">{pageSubtitle}</p>
           </div>
 
-          {/* Top 3 Podium Cards */}
+          {/* Top 3 Podium Cards (Olympic Glassmorphism Tiered Layout) */}
           {top3.length > 0 && (
-            <div className="flex flex-col md:flex-row justify-center items-end gap-4 md:gap-6 pt-6 pb-2">
-              {top3.map((u) => {
-                const isFirst = u.rank === 1;
-                const isSecond = u.rank === 2;
+            <div className="pt-8 pb-4">
+              <div className="flex flex-col md:flex-row justify-center items-end gap-5 max-w-4xl mx-auto px-2">
+                {top3.map((u) => {
+                  const isFirst = u.rank === 1;
+                  const isSecond = u.rank === 2;
 
-                const heightClass = isFirst ? "h-56" : isSecond ? "h-48" : "h-40";
-                const colorClass = isFirst
-                  ? "from-amber-400 to-amber-500"
-                  : isSecond
-                  ? "from-slate-300 to-slate-400"
-                  : "from-amber-600 to-orange-500";
-                const medalColor = isFirst ? "#FDE047" : isSecond ? "#E5E7EB" : "#FDBA74";
+                  const config = isFirst
+                    ? {
+                        orderClass: "order-1 md:order-2 z-20",
+                        minHeight: "md:min-h-[320px]",
+                        glowShadow: "shadow-xl shadow-amber-500/20 hover:shadow-2xl hover:shadow-amber-500/30",
+                        cardBorder: "border-2 border-amber-400 dark:border-amber-400/80 ring-4 ring-amber-400/15",
+                        cardBg: "bg-gradient-to-b from-amber-50/95 via-white/95 to-amber-100/40 dark:from-amber-950/40 dark:via-slate-900/90 dark:to-slate-900/95",
+                        headerGradient: "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-amber-950",
+                        badgeLabel: "JUARA 1",
+                        crownIcon: <Crown size={20} className="text-amber-500 fill-amber-400 drop-shadow-sm animate-pulse" />,
+                        avatarRing: "ring-4 ring-amber-400/60 border-2 border-amber-300 bg-gradient-to-br from-amber-400 to-yellow-300 text-amber-950",
+                        scoreBadge: "bg-amber-100/90 dark:bg-amber-950/60 border-amber-300/80 dark:border-amber-700/60 text-amber-900 dark:text-amber-300",
+                        scoreText: "text-amber-700 dark:text-amber-400",
+                        detailButton: "bg-amber-500 hover:bg-amber-600 text-white shadow-xs",
+                        stepHeight: "h-14",
+                        stepBg: "bg-gradient-to-t from-amber-500/25 to-amber-400/10 border-t-2 border-amber-400",
+                        stepNumber: "1",
+                        stepText: "text-amber-600/60 dark:text-amber-400/50",
+                      }
+                    : isSecond
+                    ? {
+                        orderClass: "order-2 md:order-1 z-10",
+                        minHeight: "md:min-h-[280px]",
+                        glowShadow: "shadow-lg shadow-slate-400/15 hover:shadow-xl hover:shadow-slate-400/25",
+                        cardBorder: "border-2 border-slate-300 dark:border-slate-700 ring-2 ring-slate-300/20",
+                        cardBg: "bg-gradient-to-b from-slate-50/95 via-white/95 to-slate-100/40 dark:from-slate-800/40 dark:via-slate-900/90 dark:to-slate-900/95",
+                        headerGradient: "bg-gradient-to-r from-slate-300 via-slate-200 to-slate-300 text-slate-800",
+                        badgeLabel: `PERINGKAT ${u.rank}`,
+                        crownIcon: <Medal size={18} className="text-slate-400 fill-slate-300 drop-shadow-xs" />,
+                        avatarRing: "ring-4 ring-slate-300/60 border-2 border-slate-200 bg-gradient-to-br from-slate-200 to-slate-300 text-slate-800",
+                        scoreBadge: "bg-slate-100/90 dark:bg-slate-800/80 border-slate-300/80 dark:border-slate-700 text-slate-700 dark:text-slate-300",
+                        scoreText: "text-slate-700 dark:text-slate-300",
+                        detailButton: "bg-slate-700 hover:bg-slate-800 text-white shadow-xs",
+                        stepHeight: "h-10",
+                        stepBg: "bg-gradient-to-t from-slate-300/25 to-slate-200/10 border-t-2 border-slate-300",
+                        stepNumber: `${u.rank}`,
+                        stepText: "text-slate-500/60 dark:text-slate-400/50",
+                      }
+                    : {
+                        orderClass: "order-3 md:order-3 z-10",
+                        minHeight: "md:min-h-[250px]",
+                        glowShadow: "shadow-lg shadow-orange-500/15 hover:shadow-xl hover:shadow-orange-500/25",
+                        cardBorder: "border-2 border-orange-300/80 dark:border-orange-700/60 ring-2 ring-orange-400/15",
+                        cardBg: "bg-gradient-to-b from-orange-50/95 via-white/95 to-orange-100/30 dark:from-orange-950/30 dark:via-slate-900/90 dark:to-slate-900/95",
+                        headerGradient: "bg-gradient-to-r from-orange-400 via-amber-400 to-orange-400 text-orange-950",
+                        badgeLabel: `PERINGKAT ${u.rank}`,
+                        crownIcon: <Award size={18} className="text-orange-500 fill-orange-400 drop-shadow-xs" />,
+                        avatarRing: "ring-4 ring-orange-300/60 border-2 border-orange-200 bg-gradient-to-br from-orange-300 to-amber-300 text-orange-950",
+                        scoreBadge: "bg-orange-100/90 dark:bg-orange-950/60 border-orange-300/80 dark:border-orange-800/60 text-orange-900 dark:text-orange-300",
+                        scoreText: "text-orange-700 dark:text-orange-400",
+                        detailButton: "bg-orange-600 hover:bg-orange-700 text-white shadow-xs",
+                        stepHeight: "h-7",
+                        stepBg: "bg-gradient-to-t from-orange-400/20 to-orange-300/10 border-t-2 border-orange-300",
+                        stepNumber: `${u.rank}`,
+                        stepText: "text-orange-600/60 dark:text-orange-400/50",
+                      };
 
-                return (
-                  <div
-                    key={u.id}
-                    onClick={() => setSelectedItem(u)}
-                    className={`w-full md:w-60 flex flex-col items-center justify-end relative cursor-pointer group transition-transform hover:-translate-y-1 order-${
-                      isFirst ? "2" : isSecond ? "1" : "3"
-                    }`}
-                  >
-                    <div className="absolute -top-10 z-10 flex flex-col items-center">
-                      <Medal color={medalColor} size={40} className="drop-shadow-md group-hover:scale-110 transition" />
-                      <span className="font-extrabold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-full text-[11px] shadow-sm border border-slate-200 dark:border-slate-800 mt-[-8px]">
-                        Peringkat {u.rank}
-                      </span>
-                    </div>
+                  const initials = getInitials(u.name);
+
+                  return (
                     <div
-                      className={`w-full rounded-2xl bg-gradient-to-t ${colorClass} p-4 text-center shadow-md flex flex-col justify-end ${heightClass} group-hover:shadow-xl transition`}
+                      key={u.id}
+                      onClick={() => setSelectedItem(u)}
+                      className={`w-full md:w-64 flex flex-col items-center justify-end relative cursor-pointer group transition-all duration-300 hover:-translate-y-2 ${config.orderClass}`}
                     >
-                      <h3 className="font-black text-white text-sm truncate drop-shadow-md">{u.name}</h3>
-                      <p className="text-white/90 font-extrabold text-xs mt-1">
-                        {Math.round(u.points).toLocaleString("id-ID")}{" "}
-                        <span className="text-[10px] font-bold text-white/80">Poin</span>
-                      </p>
-                      <span className="text-[10px] text-white/90 font-extrabold mt-2 underline opacity-0 group-hover:opacity-100 transition">
-                        Lihat Detail →
-                      </span>
+                      {/* Top Badge & Crown/Medal icon floating above */}
+                      <div className="flex flex-col items-center z-10 mb-[-26px]">
+                        <div className="relative mb-1">
+                          <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center font-black text-sm md:text-base shadow-md ${config.avatarRing}`}>
+                            {initials}
+                          </div>
+                          <div className="absolute -top-2 -right-2 bg-white dark:bg-slate-900 rounded-full p-1 shadow-md border border-slate-200 dark:border-slate-800">
+                            {config.crownIcon}
+                          </div>
+                        </div>
+                        <span className={`px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm ${config.headerGradient}`}>
+                          {config.badgeLabel}
+                        </span>
+                      </div>
+
+                      {/* Main Card Body */}
+                      <div
+                        className={`w-full rounded-2xl md:rounded-3xl ${config.cardBg} ${config.cardBorder} p-5 pt-10 text-center backdrop-blur-xl ${config.glowShadow} flex flex-col justify-between ${config.minHeight} transition-all`}
+                      >
+                        <div className="space-y-1.5 mt-1">
+                          <h3 className="font-black text-slate-800 dark:text-slate-100 text-sm md:text-base leading-snug line-clamp-2" title={u.name}>
+                            {u.name}
+                          </h3>
+                          <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1">
+                            <MapPin size={11} className="text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[180px]">{u.subtitle || "-"}</span>
+                          </p>
+                          {u.extraInfo && (
+                            <p className="text-[10.5px] font-medium text-slate-400 dark:text-slate-500 line-clamp-1">
+                              {u.extraInfo}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Score Metric Capsule */}
+                        <div className="pt-4 space-y-2.5">
+                          <div className={`py-2 px-3 rounded-xl border ${config.scoreBadge} flex flex-col items-center justify-center`}>
+                            <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                              {pointsLabel}
+                            </span>
+                            <div className="flex items-baseline gap-1 mt-0.5">
+                              <span className={`font-mono font-black text-lg md:text-xl tracking-tight ${config.scoreText}`}>
+                                {Math.round(u.points).toLocaleString("id-ID")}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Poin</span>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-center">
+                            <span className={`inline-flex items-center gap-1 text-[10.5px] font-extrabold px-3 py-1 rounded-lg opacity-90 group-hover:opacity-100 transition-all ${config.detailButton}`}>
+                              Lihat Detail →
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tiered Architectural Podium Step Base */}
+                      <div
+                        className={`hidden md:flex w-full ${config.stepHeight} ${config.stepBg} rounded-b-2xl items-center justify-center font-black text-3xl select-none ${config.stepText} shadow-inner`}
+                      >
+                        {config.stepNumber}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 

@@ -808,7 +808,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <Search className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Cari DPL, NIP, no HP, email..."
+                  placeholder="Cari DPL, NIP, no HP..."
                   value={searchDpl}
                   onChange={(e) => {
                     setSearchDpl(e.target.value);
@@ -863,8 +863,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                           </span>
                         </div>
                         {dp.nip && <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">NIP: {dp.nip}</p>}
-                        <p className="text-xs text-slate-500 mt-1">{dp.email || "Email tidak tersedia"}</p>
-                        <p className="text-xs text-slate-500 font-mono mt-0.5">{dp.phone || "No HP tidak tersedia"}</p>
+                        <p className="text-xs text-slate-500 font-mono mt-1">{dp.phone || "No HP tidak tersedia"}</p>
                       </div>
                       <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
                         <span>Universitas Mitra</span>

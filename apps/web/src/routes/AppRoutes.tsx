@@ -311,6 +311,8 @@ const AppRoutes: React.FC = () => {
                 "PEMIMPIN",
                 "WARGA",
                 "DEVELOPER",
+                "DPL",
+                "DOSEN_PEMBIMBING",
               ]}
             >
               <Leaderboard />
@@ -333,6 +335,8 @@ const AppRoutes: React.FC = () => {
                 "PEMIMPIN",
                 "WARGA",
                 "DEVELOPER",
+                "DPL",
+                "DOSEN_PEMBIMBING",
               ]}
             >
               <Leaderboard />
