@@ -14,6 +14,7 @@ import {
   calculateDistance,
   calculateLiveInZoneSeconds,
   calculateLiveInZoneMinutes,
+  kknAttendanceService,
 } from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
 import { calculateNilaiEkonomi, normalizeJenisOlahan } from "./pemanfaatanService.js";
@@ -2782,7 +2783,7 @@ export class KknService {
     const runningSession = await prisma.activityAttendance.findFirst({
       where: {
         studentId: { in: studentUserIds },
-        status: "BERLANGSUNG",
+        status: { in: ["BERLANGSUNG", "DI_ZONA", "DALAM_RADIUS", "TERJEDA"] },
         checkOutAt: null,
       },
     });
@@ -3006,55 +3007,44 @@ export class KknService {
     }
     const finalTargetDurationMinutes = targetDurationMinutes;
 
-    // Check if schedule time has expired to auto-ALPA
-    let isExpired = false;
-    if (activeSchedule?.time && activeSchedule.time.includes("-")) {
-      const parts = activeSchedule.time.split("-");
-      const endParts = parts[1].trim().replace(".", ":").split(":");
-      if (endParts.length >= 2) {
-        const endHour = parseInt(endParts[0], 10);
-        const endMin = parseInt(endParts[1], 10);
-        const rawDate = activeSchedule.date ? new Date(activeSchedule.date) : new Date();
-        const wibDate = new Date(rawDate.getTime() + 7 * 60 * 60 * 1000);
+    // Kebijakan Fleksibilitas Lapangan & Batas Maksimal 18:00 WIB:
+    // 1. Jadwal standar 08:00 - 16:00 di-hold sampai jam 18:00 WIB (jam 6 sore).
+    // 2. Mahasiswa yang aktif berkegiatan (BERLANGSUNG, TERJEDA, dsb.) TIDAK BOLEH dicap ALPA saat lewat jam 16:00.
+    // 3. Jika sudah mencapai atau melewati batas jam 18:00 WIB (1080 menit WIB) dan mahasiswa belum checkout,
+    //    sistem secara otomatis menyelesaikan presensi sebagai HADIR (HADIR_MEMENUHI).
+    const isPast18Wib = currentWibMinutes >= 18 * 60; // Batas maksimal jam 18:00 WIB (1080 menit)
+    const hasUnfinishedSession =
+      attendanceForActiveSchedule &&
+      !attendanceForActiveSchedule.checkOutAt &&
+      ["BERLANGSUNG", "DI_ZONA", "DALAM_RADIUS", "TERJEDA"].includes(
+        String(attendanceForActiveSchedule.status || "").toUpperCase()
+      );
 
-        const yyyy = wibDate.getUTCFullYear();
-        const mm = String(wibDate.getUTCMonth() + 1).padStart(2, "0");
-        const dd = String(wibDate.getUTCDate()).padStart(2, "0");
-        const hh = String(endHour).padStart(2, "0");
-        const m = String(endMin).padStart(2, "0");
+    if (isPast18Wib && hasUnfinishedSession) {
+      try {
+        const autoCheckoutResult = await kknAttendanceService.checkOutAttendance({
+          studentId: attendanceForActiveSchedule.studentId,
+          scheduleId: activeSchedule.id,
+          deskripsiKegiatan:
+            attendanceForActiveSchedule.deskripsiKegiatan ||
+            "Diselesaikan otomatis oleh sistem (Batas maksimal 18:00 WIB)",
+          isAutoCheckout: true,
+        });
 
-        const endDateObj = new Date(`${yyyy}-${mm}-${dd}T${hh}:${m}:59+07:00`);
-
-        if (isOvernight) {
-          endDateObj.setTime(endDateObj.getTime() + 24 * 60 * 60 * 1000);
+        if (autoCheckoutResult) {
+          attendanceStatus = "hadir_memenuhi";
+          isMemenuhiDurasi = true;
+          // Refresh local reference agar response payload konsisten
+          attendanceForActiveSchedule.status = "HADIR_MEMENUHI";
+          attendanceForActiveSchedule.checkOutAt = new Date();
+          attendanceForActiveSchedule.actualInZoneMinutes =
+            autoCheckoutResult?.data?.actualInZoneMinutes ?? targetDurationMinutes;
         }
-        if (new Date() > endDateObj) {
-          isExpired = true;
-        }
-      }
-    }
-
-    if (
-      isExpired &&
-      attendanceStatus !== "tidak_ada_kegiatan" &&
-      (attendanceStatus === "belum_absen" ||
-        attendanceStatus === "berlangsung" ||
-        attendanceStatus === "di_zona" ||
-        attendanceStatus === "dalam_radius")
-    ) {
-      attendanceStatus = "alpa";
-      if (
-        attendanceForActiveSchedule &&
-        (attendanceForActiveSchedule.status === "BERLANGSUNG" ||
-          attendanceForActiveSchedule.status === "DI_ZONA" ||
-          attendanceForActiveSchedule.status === "DALAM_RADIUS")
-      ) {
-        await prisma.activityAttendance
-          .update({
-            where: { id: attendanceForActiveSchedule.id },
-            data: { status: "ALPA" },
-          })
-          .catch(() => {});
+      } catch (checkoutErr) {
+        console.error(
+          `[KknService.getActiveZone] Error saat auto-checkout jam 18:00 untuk ${userId}:`,
+          checkoutErr
+        );
       }
     }
 
