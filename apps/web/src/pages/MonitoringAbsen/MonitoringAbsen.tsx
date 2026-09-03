@@ -665,7 +665,7 @@ const MonitoringAbsen: React.FC = () => {
     if (!deleteAttendanceId) return;
     setIsDeletingAttendance(true);
     try {
-      await api.delete(`/${deleteAttendanceId}`);
+      await api.delete(`/kkn-attendance/${deleteAttendanceId}`);
       toast.success("Data presensi berhasil dihapus.");
       setDeleteAttendanceId(null);
       // Refresh data tabel

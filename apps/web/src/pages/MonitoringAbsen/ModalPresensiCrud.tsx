@@ -186,7 +186,7 @@ export const ModalPresensiCrud: React.FC<Props> = ({
     setIsSaving(true);
     try {
       if (mode === "add") {
-        await api.post("/manual", {
+        await api.post("/kkn-attendance/manual", {
           scheduleId,
           studentId: selectedStudentId,
           startDateTime: masukISO,
@@ -200,7 +200,7 @@ export const ModalPresensiCrud: React.FC<Props> = ({
         });
         toast.success("Presensi manual berhasil ditambahkan.");
       } else {
-        await api.put(`/${existingRecord!.id}`, {
+        await api.put(`/kkn-attendance/${existingRecord!.id}`, {
           attendedAt: masukISO,
           checkOutAt: pulangISO,
           status,
