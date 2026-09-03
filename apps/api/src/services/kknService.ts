@@ -205,15 +205,25 @@ export class KknService {
         remainingQuota,
         progressPct,
         contributionPoints,
+        points: contributionPoints,
+        totalPoints: contributionPoints,
+        pointKkn: contributionPoints,
         maxLimit,
       },
       // Backward compatibility aliases
       nim: student?.nim || (isSuperOrAdmin ? "ADMIN" : "10123000"),
-      jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Lingkungan"),
+      jurusan: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
+      programStudi: student?.jurusan || (isSuperOrAdmin ? "Monitoring Wilayah" : "Teknik Informatika"),
+      poskoKkn: areaName,
+      poskoName: areaName,
+      wilayahKkn: areaName,
       totalRegisteredBins: totalRegistered,
       remainingQuota,
       progressPct,
       contributionPoints,
+      points: contributionPoints,
+      totalPoints: contributionPoints,
+      pointKkn: contributionPoints,
       assignmentLimit: maxLimit,
       latitude: poskoLat,
       longitude: poskoLng,
@@ -3450,6 +3460,25 @@ export class KknService {
         { kategori: { contains: q, mode: "insensitive" } },
       ];
     }
+
+    // Enforce H+5 Soft-Expiry Rule: If approved > 5 days ago and still BELUM_MULAI, soft-cancel
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+    await prisma.programKerjaKkn
+      .updateMany({
+        where: {
+          ...whereClause,
+          statusUsulan: "DISETUJUI",
+          statusPelaksanaan: "BELUM_MULAI",
+          updatedAt: { lt: fiveDaysAgo },
+        },
+        data: {
+          statusUsulan: "KADALUARSA_OTOMATIS",
+          status: "DITOLAK",
+          catatanDpl:
+            "Dibatalkan otomatis oleh sistem (H+5): Program kerja tidak dimulai dalam 5 hari setelah disetujui.",
+        },
+      })
+      .catch(() => {});
 
     const list = await prisma.programKerjaKkn.findMany({
       where: whereClause,

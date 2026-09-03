@@ -704,7 +704,7 @@ export const LaporanPresensiPage: React.FC = () => {
       ];
 
       const rows = filteredStudentAggregates.map((s, idx) => {
-        const percent = Number(((s.totalHours / (periodTargetHours || 1)) * 100).toFixed(1));
+        const percent = Math.min(100, Math.max(0, Number(((s.totalHours / (periodTargetHours || 1)) * 100).toFixed(1))));
         const statusAkhir = s.totalHours >= periodTargetHours ? "TARGET TERCAPAI" : percent >= 70 ? "ON TRACK" : "PERLU PENINGKATAN";
         return [
           idx + 1,
@@ -1330,7 +1330,7 @@ export const LaporanPresensiPage: React.FC = () => {
                   </tr>
                 ) : (
                   filteredStudentAggregates.map((student, idx) => {
-                    const percentCapaian = Number(((student.totalHours / (periodTargetHours || 1)) * 100).toFixed(1));
+                    const percentCapaian = Math.min(100, Math.max(0, Number(((student.totalHours / (periodTargetHours || 1)) * 100).toFixed(1))));
                     const isTargetMet = student.totalHours >= periodTargetHours;
                     const remainingHours = Math.max(0, Math.round((periodTargetHours - student.totalHours) * 10) / 10);
 

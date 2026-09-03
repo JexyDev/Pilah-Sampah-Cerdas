@@ -24,6 +24,7 @@ interface LeaderboardState {
   pengangkut: any[];
   kknStudents: any[];
   kknGroups: any[];
+  kknDpl: any[];
   isLoading: boolean;
   error: string | null;
   fetchLeaderboard: () => Promise<void>;
@@ -38,6 +39,7 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
   pengangkut: [],
   kknStudents: [],
   kknGroups: [],
+  kknDpl: [],
   isLoading: false,
   error: null,
   fetchLeaderboard: async () => {
@@ -74,10 +76,11 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await api.get("/gamification/leaderboard-kkn");
-      const { students, groups } = response.data.data;
+      const { students, groups, dpl } = response.data.data;
       set({
         kknStudents: students || [],
         kknGroups: groups || [],
+        kknDpl: dpl || [],
         isLoading: false,
       });
     } catch (err: any) {

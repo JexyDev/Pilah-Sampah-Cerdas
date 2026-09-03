@@ -66,6 +66,7 @@ vi.mock("../lib/prisma.js", () => {
         create: vi.fn(),
         update: vi.fn(),
         upsert: vi.fn(),
+        count: vi.fn(),
       },
       poskoKkn: {
         findUnique: vi.fn(),
@@ -1480,4 +1481,59 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.totalBypassed).toBe(1);
     });
   });
+
+  describe("getLaporanPresensi - Percentage Capping", () => {
+    it("should cap rasioKehadiran at 100% even when actual minutes exceed target duration (e.g. 480 mins vs 240 mins target)", async () => {
+      const studentId = "student-cap-1";
+      vi.mocked(prisma.activityAttendance.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.activityAttendance.findMany).mockResolvedValueOnce([
+        {
+          id: "att-cap-1",
+          studentId,
+          scheduleId: "sch-1",
+          status: "HADIR_MEMENUHI",
+          actualInZoneMinutes: 480, // 8 hours (double standard 4 hours target)
+          attendedAt: new Date("2026-09-02T08:00:00+07:00"),
+          checkOutAt: new Date("2026-09-02T16:00:00+07:00"),
+          jedaLogs: [],
+          schedule: {
+            id: "sch-1",
+            title: "Kegiatan Posko 1",
+            date: new Date("2026-09-02"),
+            time: "08:00 - 16:00",
+            kelompok: { id: "kel-1", name: "Kelompok 1", kelurahan: "Dago" },
+          },
+          student: {
+            id: studentId,
+            name: "Mahasiswa Rajin",
+            studentProfile: {
+              nim: "12345678",
+              jurusan: "Teknik Informatika",
+              isKetua: false,
+              kelompok: {
+                id: "kel-1",
+                name: "Kelompok 1",
+                kelurahan: "Dago",
+                dpl: { id: "dpl-1", name: "DPL 1" },
+              },
+            },
+          },
+        } as any,
+      ]);
+      vi.mocked(prisma.activityAttendance.findMany).mockResolvedValueOnce([]);
+
+      const report = await service.getLaporanPresensi({
+        kelompokId: "kel-1",
+        startDate: "2026-09-02",
+        endDate: "2026-09-02",
+      });
+
+      expect(report.items).toHaveLength(1);
+      expect(report.items[0].durasiAktualMenit).toBe(480);
+      expect(report.items[0].targetMinMenit).toBe(60);
+      // Rasio Kehadiran MUST be capped at 100.0% instead of 800.0%
+      expect(report.items[0].rasioKehadiran).toBe(100);
+    });
+  });
 });
+

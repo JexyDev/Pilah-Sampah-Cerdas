@@ -243,6 +243,8 @@ router.post(
   uploadAvatarMiddleware.single("avatar"),
   authController.uploadAvatar
 );
+router.delete("/avatar", authMiddleware, authController.deleteAvatar);
+router.delete("/profile/photo", authMiddleware, authController.deleteAvatar);
 
 /**
  * @swagger

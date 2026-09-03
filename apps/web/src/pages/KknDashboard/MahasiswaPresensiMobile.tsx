@@ -260,15 +260,55 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
       updateTimer();
       interval = setInterval(updateTimer, 1000);
-    } else if (isTerjeda) {
-      // Saat TERJEDA, durasi aktif terkunci di angka terakhir (tidak bertambah & tidak mundur)
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeSession, primaryKegiatan?.attendedAt, primaryKegiatan?.statusKehadiran, isLiveActiveInZone]);
+
+  // Sinkronisasi display elapsedTime saat status TERJEDA
+  useEffect(() => {
+    const isTerjeda = primaryKegiatan?.statusKehadiran === "TERJEDA";
+    if (isTerjeda) {
       const hrs = String(Math.floor(liveInZoneSecs / 3600)).padStart(2, "0");
       const mins = String(Math.floor((liveInZoneSecs % 3600) / 60)).padStart(2, "0");
       const secs = String(liveInZoneSecs % 60).padStart(2, "0");
       setElapsedTime(`${hrs}:${mins}:${secs}`);
     }
-    return () => clearInterval(interval);
-  }, [activeSession, primaryKegiatan?.attendedAt, primaryKegiatan?.statusKehadiran, isLiveActiveInZone, liveInZoneSecs]);
+  }, [primaryKegiatan?.statusKehadiran, liveInZoneSecs]);
+
+  // Screen WakeLock support untuk mencegah layar tidur saat presensi aktif
+  useEffect(() => {
+    let wakeLock: any = null;
+    const isOngoing = primaryKegiatan?.statusKehadiran === "BERLANGSUNG" || isLiveActiveInZone;
+
+    const requestWakeLock = async () => {
+      if (isOngoing && "wakeLock" in navigator) {
+        try {
+          wakeLock = await (navigator as any).wakeLock.request("screen");
+        } catch {
+          // Ignored if wake lock not supported / permitted
+        }
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChangeForWakeLock = () => {
+      if (document.visibilityState === "visible" && isOngoing) {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChangeForWakeLock);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChangeForWakeLock);
+      if (wakeLock && typeof wakeLock.release === "function") {
+        wakeLock.release().catch(() => {});
+      }
+    };
+  }, [primaryKegiatan?.statusKehadiran, isLiveActiveInZone]);
 
   const fetchPoskoData = async () => {
     try {
