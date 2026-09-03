@@ -559,8 +559,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             }
           }
 
-          final durasiMenit = state.inZoneDurationSeconds ~/ 60;
-          final durasiDetik = state.inZoneDurationSeconds % 60;
+          final durasiMenit = state.inZoneDurationSeconds;
           final waktu = DateTime.now().toLocal().toString().substring(0, 16);
 
           return SingleChildScrollView(
@@ -617,7 +616,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       const SizedBox(height: 6),
                       _buildInfoRow(
                         'Durasi di Zona',
-                        '$durasiMenit mnt $durasiDetik dtk',
+                                '$durasiMenit menit',
                       ),
                     ],
                   ),
@@ -1471,10 +1470,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     final lng = pos?.longitude.toStringAsFixed(5) ?? '-';
     final isGpsActive = state.isTracking;
 
-    final durasiMenit = state.inZoneDurationSeconds ~/ 60;
-    final durasiDetik = state.inZoneDurationSeconds % 60;
+    final durasiMenit = state.inZoneDurationSeconds;
     final targetMenit = state.targetDurationMinutes;
-    final remainingMenit = targetMenit - durasiMenit;
 
     final bool isDisabled =
         state.zoneResetWarning != null &&
@@ -1556,37 +1553,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (state.outOfZoneSeconds > 0)
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.dangerRed.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.dangerRed.withValues(alpha: 0.5),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppColors.dangerRed,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Anda berada di luar Area! Toleransi sisa: ${300 - state.outOfZoneSeconds} detik sebelum sesi dibatalkan.',
-                    style: const TextStyle(
-                      color: AppColors.dangerRed,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
               ],
@@ -2042,7 +2008,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             ? (isAlpa || isDisabled ? 'Sesi Dibatalkan' : 'Peringatan Zona KKN')
                             : (state.isInsideRadius
                                 ? 'Kamu berada di dalam radius lokasi'
-                                : 'Kamu berada di luar radius lokasi'),
+                                : 'Anda berada di luar zona KKN'),
                         style: TextStyle(
                           color: state.isInsideRadius && state.zoneResetWarning == null
                               ? AppColors.primaryGreen
@@ -2059,7 +2025,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             ? state.zoneResetWarning!
                             : (state.isInsideRadius
                                 ? 'Sinyal GPS stabil dan lokasi terdeteksi.'
-                                : 'Pergerakan absensi dihentikan sementara.'),
+                                : 'Jika sedang tidak melakukan aktivitas KKN, harap jeda kegiatan.'),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -2118,7 +2084,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '$durasiMenit mnt $durasiDetik dtk',
+                        '$durasiMenit menit',
                                 style: const TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,
@@ -2172,9 +2138,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 Text(
                   isSuccess
                       ? 'Waktu terpenuhi! Presensi Anda resmi terdaftar.'
-                      : (remainingMenit > 0
-                            ? 'Waktu tersisa: $remainingMenit menit lagi sebelum tombol absen terbuka.'
-                            : 'Waktu terpenuhi! Tombol absen sudah terbuka.'),
+                      : (durasiMenit >= targetMenit
+                            ? 'Waktu terpenuhi! Tombol absen sudah terbuka.'
+                            : 'Durasi terkumpul: $durasiMenit menit dari $targetMenit menit target.'),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -2255,19 +2221,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               height: 52,
               child: ElevatedButton.icon(
                 onPressed: () async {
-                  final result = await notifier.mulaiKegiatan(state.activeActivity!['id'].toString());
+                  final isSuccess = await notifier.lanjutKegiatan();
                   if (mounted) {
-                    if (result == null) {
+                    if (isSuccess) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Sesi berhasil dilanjutkan.'),
                           backgroundColor: AppColors.primaryGreen,
                         ),
                       );
-                    } else if (result != 'CONFLICT') {
+                    } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result),
+                        const SnackBar(
+                          content: Text('Gagal melanjutkan sesi.'),
                           backgroundColor: AppColors.dangerRed,
                         ),
                       );
