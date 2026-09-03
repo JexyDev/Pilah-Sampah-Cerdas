@@ -109,7 +109,10 @@ export const authMiddleware = async (
 
     req.user = decoded; // Attach user payload to request
     next();
-  } catch {
+  } catch (error: any) {
+    console.warn(
+      `[authMiddleware 401] URL: ${req.originalUrl} | Error: ${error?.message || error}`
+    );
     res
       .status(401)
       .json({ error: "UNAUTHORIZED", message: "Token tidak valid atau sudah kadaluarsa" });

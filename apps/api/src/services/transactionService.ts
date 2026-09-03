@@ -23,6 +23,7 @@ export class TransactionService {
           },
           bin: {
             include: {
+              category: true,
               rw: {
                 include: {
                   kelurahan: true,
@@ -70,6 +71,7 @@ export class TransactionService {
       include: {
         bin: {
           include: {
+            category: true,
             rw: {
               include: {
                 kelurahan: true,
@@ -99,6 +101,7 @@ export class TransactionService {
         },
         bin: {
           include: {
+            category: true,
             rw: {
               include: {
                 kelurahan: true,

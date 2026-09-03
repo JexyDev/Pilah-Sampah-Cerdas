@@ -16,6 +16,7 @@ import { isOrganikBin, isAnorganikBin } from "./kknService.js";
 import { auditTrailService } from "./auditTrailService.js";
 // SMART ZONE: Multi-Posko adaptive geofence engine
 import { smartZoneService, type ZoneCheckResult } from "./smartZoneService.js";
+import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 /**
  * Helper: Build unified geofence object with fallback to system defaults.
@@ -886,12 +887,26 @@ export class KknAttendanceService {
           Math.round(
             u.recentLogs.reduce((sum: number, l: any) => sum + Number(l.berat || 0), 0) * 100
           ) / 100,
-        recentLogs: u.recentLogs.slice(0, 10).map((log: any) => ({
-          ...log,
-          weightKg: Number(log.berat || 0),
-          category:
-            (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
-        })),
+        recentLogs: u.recentLogs.slice(0, 10).map((log: any) => {
+          const sortingStatus = evaluateSortingStatus(
+            log.confidenceAi,
+            log.discrepancy_status || log.discrepancyStatus,
+            log.hasilKlasifikasiAi,
+            primaryBin?.category
+          );
+          return {
+            ...log,
+            weightKg: Number(log.berat || 0),
+            category:
+              (log.hasilKlasifikasiAi || "").toLowerCase() === "organik" ? "Organik" : "Anorganik",
+            ai_confidence: sortingStatus.ai_confidence,
+            aiConfidence: sortingStatus.aiConfidence,
+            discrepancy_status: sortingStatus.discrepancy_status,
+            discrepancyStatus: sortingStatus.discrepancyStatus,
+            is_correct: sortingStatus.is_correct,
+            isCorrect: sortingStatus.isCorrect,
+          };
+        }),
       };
     });
   }
