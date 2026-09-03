@@ -173,8 +173,11 @@ const Login: React.FC = () => {
         setPasswordError("Kata sandi salah. Silakan coba lagi.");
         setPassword("");
         setTimeout(() => passwordInputRef.current?.focus(), 50);
+      } else if (storeErr === "MAHASISWA_MUST_USE_IOS_SAFARI") {
+        triggerToast("Akses Mahasiswa KKN diwajibkan menggunakan perangkat Apple iPhone dengan peramban Safari.", "error");
+        setIdentifierError("Khusus iPhone + Safari (Android & Desktop dilarang)");
       } else if (storeErr === "ROLE_NOT_ALLOWED_ON_WEB") {
-        triggerToast("Akses Web khusus Pengelola, Dosen Pendamping Lapangan (DPL), dan Mahasiswa KKN. Warga dan Petugas Pemilah hanya dapat menggunakan aplikasi seluler.", "warning");
+        triggerToast("Akses Web khusus Pengelola dan Dosen Pendamping Lapangan (DPL). Warga dan Petugas Pemilah hanya dapat menggunakan aplikasi seluler.", "warning");
         setIdentifierError("Akses Web ditutup untuk peran ini (Gunakan Aplikasi Seluler)");
       } else if (storeErr === "USER_INACTIVE") {
         triggerToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");

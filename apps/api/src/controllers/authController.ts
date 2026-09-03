@@ -140,6 +140,29 @@ export class AuthController {
       // 2. Call Service
       const result = await authService.login(phone, password);
 
+      // Enforce strict iOS Safari for MAHASISWA_KKN role
+      const userRole = result.user?.role || "";
+      if (userRole === "MAHASISWA_KKN") {
+        const ua = (req.headers["user-agent"] || "").toString();
+        const isBypass = req.headers["x-dev-bypass-ios-gate"] === "true";
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        const isCriOS = /CriOS/i.test(ua);
+        const isFxiOS = /FxiOS/i.test(ua);
+        const isEdgiOS = /EdgiOS/i.test(ua);
+        const isOperaIOS = /OPT|OPiOS/i.test(ua);
+        const isSafariCore = /Safari/i.test(ua) && /Version\//i.test(ua);
+        const isSafari = isSafariCore && !isCriOS && !isFxiOS && !isEdgiOS && !isOperaIOS;
+
+        if (!isBypass && (!isIOS || !isSafari || /Android/i.test(ua))) {
+          res.status(403).json({
+            success: false,
+            code: "MAHASISWA_MUST_USE_IOS_SAFARI",
+            message: "Akses Mahasiswa KKN hanya diizinkan melalui perangkat Apple iPhone dengan peramban resmi Safari.",
+          });
+          return;
+        }
+      }
+
       // 3. Clear rate limit attempts on success
       const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
       clearLoginAttempts(ip, phone);

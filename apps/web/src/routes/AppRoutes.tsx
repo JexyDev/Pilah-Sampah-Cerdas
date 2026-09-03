@@ -11,6 +11,8 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout/MainLayout";
 import { useAuthStore, WEB_DISABLED_ROLES } from "../store/useAuthStore";
 import type { UserRole } from "../store/useAuthStore";
+import { IOSSafariGate } from "../components/common/IOSSafariGate";
+import { checkIsIOSSafari } from "../utils/deviceValidation";
 
 // Lazy Loaded Pages for Optimal Code-Splitting & Minimal Initial Bundle Size
 const Dashboard = React.lazy(() => import("../pages/Dashboard/Dashboard"));
@@ -112,6 +114,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
   if (WEB_DISABLED_ROLES.includes(user.peran)) {
     logout();
     return <Navigate to="/login" replace />;
+  }
+
+  // Strict iOS Safari Enforcer for MAHASISWA_KKN across all protected routes
+  if (user.peran === "MAHASISWA_KKN") {
+    const devCheck = checkIsIOSSafari();
+    if (!devCheck.isValid) {
+      return <IOSSafariGate>{children}</IOSSafariGate>;
+    }
   }
 
   if (
