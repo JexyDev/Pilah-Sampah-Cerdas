@@ -35,7 +35,6 @@ import {
   Download,
   Navigation,
   CheckCircle2,
-  FileCheck,
   FileSpreadsheet,
   Map as MapIcon,
   ChevronDown,
@@ -2605,16 +2604,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
           >
             <FileSpreadsheet size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>Laporan &amp; Log Presensi</span>
-          </Link>
-
-          {/* Tombol Akses Ajukan Absensi / Izin */}
-          <Link
-            to="/monitoring-kegiatan/pengajuan-izin"
-            className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-purple-300 dark:border-purple-700/80 bg-purple-50/90 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-800 dark:text-purple-300 shadow-2xs active:scale-95"
-            title="Buka Halaman Verifikasi Ajukan Absensi & Pengajuan Izin/Sakit"
-          >
-            <FileCheck size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
-            <span>Ajukan Absensi</span>
           </Link>
 
           {isSuperUserOrDev && (
