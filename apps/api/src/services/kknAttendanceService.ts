@@ -1589,8 +1589,8 @@ export class KknAttendanceService {
     }
 
     if (!isAutoAlpa && !isInside) {
-      throw new Error(
-        `OUT_OF_RADIUS: Mahasiswa tidak berada di dalam area kegiatan manapun milik kelompok ini.`
+      console.log(
+        `[recordAttendance] Mahasiswa berada di luar radius area kegiatan kelompok - presensi tetap dicatat sesuai aturan presensi fleksibel.`
       );
     }
 
@@ -3587,8 +3587,8 @@ export class KknAttendanceService {
     if (!isInsideOnStart) {
       const distanceInt = Math.round(nearestDist);
       const allowedRadius = nearestRadius + bufferMeters;
-      throw new Error(
-        `OUT_OF_GEOFENCE: Anda terdeteksi berada di luar zona ${nearestName} (Jarak ke posko terdekat: ${distanceInt} meter, Radius Izin: ${allowedRadius} meter). Presensi hanya dapat dimulai saat Anda sudah berada di salah satu lokasi Posko/Wilayah KKN kelompok Anda.`
+      console.log(
+        `[mulaiKegiatan] Mahasiswa presensi di luar zona ${nearestName} (${distanceInt}m, radius ${allowedRadius}m) - diperbolehkan oleh aturan mobile fleksibel.`
       );
     }
 
