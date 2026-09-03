@@ -17,6 +17,7 @@ import {
 } from "./kknAttendanceService.js";
 import { parseProkerDeskripsi } from "./dplService.js";
 import { calculateNilaiEkonomi, normalizeJenisOlahan } from "./pemanfaatanService.js";
+import { logbookService } from "./logbookService.js";
 
 export function normalizeProkerKategori(kategori?: string | null): string {
   if (!kategori) return "Lainnya";
@@ -4067,8 +4068,7 @@ export class KknService {
     if (student.kelompokId) {
       try {
         const isKetua = Boolean(student.isKetua);
-        const dayOfMonth = new Date().getDate();
-        const pekanKe = dayOfMonth <= 7 ? 1 : dayOfMonth <= 14 ? 2 : dayOfMonth <= 21 ? 3 : 4;
+        const pekanKe = logbookService.calculatePekanKe(new Date(), student.startDate);
         const tempatKegiatan = facilityName
           ? `Fasilitas ${facilityName}${facilityType ? ` (${facilityType})` : ""}`
           : `RW ${targetRwId} (${student.assignedRw?.name || "Wilayah KKN"})`;
