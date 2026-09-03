@@ -1421,6 +1421,27 @@ export class KknAttendanceService {
 
     const groupPoskos = schedule.kelompokId ? await getGroupPoskoList(schedule.kelompokId) : [];
 
+    let validZones: any[] = [];
+    if (schedule.category === "POSKO_KKN" && groupPoskos.length > 0) {
+      validZones = groupPoskos.map((p) => ({
+        id: p.id,
+        nama: p.nama,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        radius: p.radius,
+      }));
+    } else {
+      validZones = [
+        {
+          id: "default",
+          nama: schedule.title || "Lokasi Kegiatan",
+          latitude: effectiveLat,
+          longitude: effectiveLng,
+          radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+        },
+      ];
+    }
+
     return {
       scheduleId: schedule.id,
       title: officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : schedule.title,
@@ -1432,6 +1453,7 @@ export class KknAttendanceService {
       polygon: schedule.polygon,
       poskoList: groupPoskos,
       totalPosko: groupPoskos.length,
+      validZones,
       isConfigured: schedule.latitude !== null && schedule.longitude !== null,
       isAttended,
       attendanceStatus: attendanceStatus || "BELUM_ABSEN",

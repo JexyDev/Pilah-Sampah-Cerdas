@@ -582,6 +582,7 @@ const MonitoringAbsen: React.FC = () => {
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [studentLocations, setStudentLocations] = useState<StudentLoc[]>([]);
+  const [activeValidZones, setActiveValidZones] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Filter & Search States
@@ -1250,8 +1251,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const studentList = tsRes.data?.data?.students || [];
         setAttendance(mapTimesheetToAttendance(studentList));
       } else if (scheduleId) {
-        const attRes = await api.get(`/kegiatan/${scheduleId}/absen`);
+        const [attRes, locDetailRes] = await Promise.all([
+          api.get(`/kegiatan/${scheduleId}/absen`),
+          api.get(`/kegiatan/${scheduleId}/lokasi`).catch(() => null)
+        ]);
         setAttendance(attRes.data.data || []);
+        if (locDetailRes && locDetailRes.data?.data?.validZones) {
+          setActiveValidZones(locDetailRes.data.data.validZones);
+        } else {
+          setActiveValidZones([]);
+        }
       } else {
         try {
           const tsRes = await api.get("/timesheet/summary", {
@@ -3246,40 +3255,58 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </Popup>
                     </Polygon>
                   ) : (() => {
-                    const lat = Number(activeSchedule.latitude);
-                    const lng = Number(activeSchedule.longitude);
-                    if (!isNaN(lat) && !isNaN(lng) && lat < 0 && lng > 0) {
-                      return (
-                        <>
-                          <Marker position={[lat, lng]} icon={createActivityMarkerIcon()}>
-                            <Popup>
-                              <div className="p-2 font-sans space-y-1 text-xs">
-                                <div className="font-extrabold text-emerald-800 dark:text-emerald-300">
-                                  {activeSchedule.title}
-                                </div>
-                                <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                                  {activeSchedule.location || "Lokasi Kegiatan KKN"}
-                                </div>
-                                <div className="text-[10px] font-bold text-slate-500">
-                                  Radius Geofence: {activeSchedule.radius || 200} meter
-                                </div>
-                              </div>
-                            </Popup>
-                          </Marker>
-                          <Circle
-                            center={[lat, lng]}
-                            radius={Number(activeSchedule.radius || 200)}
-                            pathOptions={{
-                              color: "#059669",
-                              fillColor: "#10b981",
-                              fillOpacity: 0.25,
-                              weight: 2.5,
-                            }}
-                          />
-                        </>
-                      );
-                    }
-                    return null;
+                    const zonesToRender = activeValidZones && activeValidZones.length > 0 
+                      ? activeValidZones 
+                      : [
+                          {
+                            id: activeSchedule.id,
+                            nama: activeSchedule.title,
+                            latitude: activeSchedule.latitude,
+                            longitude: activeSchedule.longitude,
+                            radius: activeSchedule.radius || 200,
+                          }
+                        ];
+
+                    return (
+                      <>
+                        {zonesToRender.map((zone, idx) => {
+                          const lat = Number(zone.latitude);
+                          const lng = Number(zone.longitude);
+                          if (!isNaN(lat) && !isNaN(lng) && lat < 0 && lng > 0) {
+                            return (
+                              <React.Fragment key={zone.id || idx}>
+                                <Marker position={[lat, lng]} icon={createActivityMarkerIcon()}>
+                                  <Popup>
+                                    <div className="p-2 font-sans space-y-1 text-xs">
+                                      <div className="font-extrabold text-emerald-800 dark:text-emerald-300">
+                                        {zone.nama || activeSchedule.title}
+                                      </div>
+                                      <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                                        {activeSchedule.location || "Lokasi Kegiatan KKN"}
+                                      </div>
+                                      <div className="text-[10px] font-bold text-slate-500">
+                                        Radius Geofence: {zone.radius || 200} meter
+                                      </div>
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                                <Circle
+                                  center={[lat, lng]}
+                                  radius={Number(zone.radius || 200)}
+                                  pathOptions={{
+                                    color: "#059669",
+                                    fillColor: "#10b981",
+                                    fillOpacity: 0.25,
+                                    weight: 2.5,
+                                  }}
+                                />
+                              </React.Fragment>
+                            );
+                          }
+                          return null;
+                        })}
+                      </>
+                    );
                   })()}
                 </>
               ) : selectedKelompokId ? (
@@ -3642,9 +3669,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 <ChevronDown size={12} className="pointer-events-none absolute right-2.5 text-slate-400" />
               </div>
             )}
-
             {/* Tombol Tambah Manual — tepat di samping dropdown */}
-            {canCrudAttendance && activeSchedule && (
+            {/* TODO: HIDE SEMENTARA */}
+            {false && canCrudAttendance && activeSchedule && (
               <button
                 type="button"
                 onClick={handleOpenAddPresensi}

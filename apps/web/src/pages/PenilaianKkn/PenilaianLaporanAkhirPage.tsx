@@ -749,8 +749,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       {/* MODAL PENILAIAN / RINCIAN PENILAIAN LAPORAN AKHIR (PERSIS SESUAI ACUAN UI) */}
       {/* ========================================================================= */}
       {isAssessmentModalOpen && selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" onClick={() => setIsAssessmentModalOpen(false)}>
           <div
+            onClick={(e) => e.stopPropagation()}
             className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 animate-in zoom-in-95 duration-150"
             role="dialog"
             aria-modal="true"
@@ -1024,8 +1025,9 @@ export const PenilaianLaporanAkhirPage: React.FC = () => {
       {/* MODAL PREVIEW PDF LAPORAN AKHIR */}
       {/* ========================================================================= */}
       {isPdfModalOpen && selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" onClick={() => setIsPdfModalOpen(false)}>
           <div
+            onClick={(e) => e.stopPropagation()}
             className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-5xl w-full max-h-[94vh] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100 animate-in zoom-in-95 duration-150"
             role="dialog"
             aria-modal="true"
