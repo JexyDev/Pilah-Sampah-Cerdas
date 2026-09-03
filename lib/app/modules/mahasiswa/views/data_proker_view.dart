@@ -114,20 +114,21 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
 
   Future<void> _updateStatus(BuildContext context, String id, String statusBaru) async {
     setState(() => _loadingStatus[id] = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final repo = ref.read(kknRepositoryProvider);
       final success = await repo.updateStatusPelaksanaan(id, statusBaru);
       if (!mounted) return;
       if (success) {
         final label = statusBaru == 'SEDANG_BERJALAN' ? 'dimulai' : 'diselesaikan';
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        messenger.showSnackBar(SnackBar(
           content: Text('Program kerja berhasil $label!'),
           backgroundColor: AppColors.primaryGreen,
           behavior: SnackBarBehavior.floating,
         ));
         ref.invalidate(prokerDataListProvider);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        messenger.showSnackBar(const SnackBar(
           content: Text('Gagal memperbarui status. Coba lagi.'),
           backgroundColor: AppColors.dangerRed,
           behavior: SnackBarBehavior.floating,
@@ -135,7 +136,7 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      messenger.showSnackBar(SnackBar(
         content: Text(e.toString().replaceAll('Exception: ', '')),
         backgroundColor: AppColors.dangerRed,
         behavior: SnackBarBehavior.floating,
@@ -192,7 +193,7 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
       ),
     );
     if (confirmed == true && mounted) {
-      await _updateStatus(context, id, statusBaru);
+      await _updateStatus(this.context, id, statusBaru);
     }
   }
 
@@ -250,12 +251,12 @@ class _DataProkerViewState extends ConsumerState<DataProkerView> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.4)),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.play_circle_rounded, size: 11, color: AppColors.primaryBlue),
-                      const SizedBox(width: 4),
-                      const Text('Sedang Berjalan',
+                      Icon(Icons.play_circle_rounded, size: 11, color: AppColors.primaryBlue),
+                      SizedBox(width: 4),
+                      Text('Sedang Berjalan',
                           style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
                     ],
                   ),
