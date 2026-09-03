@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../data/models/group_zone_models.dart';
 
 /// Hasil evaluasi posisi geofence
 class GeofenceResult {
@@ -26,6 +27,29 @@ class GeofenceResult {
         'methodUsed': methodUsed,
         'evaluatedAt': evaluatedAt.toIso8601String(),
       };
+}
+
+/// Hasil evaluasi Multi-Geofence Posko (Update KKN 2026)
+class MultiGeofenceResult {
+  final bool isInside;
+  final String? matchedZoneId;
+  final String? matchedZoneName;
+  final double distanceToTargetMeters;
+  final double? targetLat;
+  final double? targetLng;
+  final String methodUsed; // 'MULTI_ZONE' | 'SINGLE_RADIUS' | 'NO_TARGET'
+  final DateTime evaluatedAt;
+
+  const MultiGeofenceResult({
+    required this.isInside,
+    this.matchedZoneId,
+    this.matchedZoneName,
+    required this.distanceToTargetMeters,
+    this.targetLat,
+    this.targetLng,
+    required this.methodUsed,
+    required this.evaluatedAt,
+  });
 }
 
 /// Standar Target Minimum Waktu KKN
@@ -176,4 +200,83 @@ class GeofenceZoneEngine {
       evaluatedAt: now,
     );
   }
+
+  /// Evaluasi Multi-Geofence (Update KKN 2026)
+  /// Menggunakan logika OR check terhadap seluruh item validZones dari backend.
+  static MultiGeofenceResult evaluateMultiZonePosition({
+    required double userLat,
+    required double userLng,
+    List<ValidZoneItem>? validZones,
+    double? fallbackLat,
+    double? fallbackLng,
+    double fallbackRadiusMeters = 500.0,
+    double bufferMeters = 15.0,
+  }) {
+    final now = DateTime.now();
+
+    // 1. Cek Multi Geofence (validZones dari backend)
+    if (validZones != null && validZones.isNotEmpty) {
+      double minDistance = 9999999.0;
+      ValidZoneItem? nearestZone;
+
+      for (final zone in validZones) {
+        final dist = calculateHaversineDistance(
+          userLat,
+          userLng,
+          zone.latitude,
+          zone.longitude,
+        );
+
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearestZone = zone;
+        }
+
+        final effectiveRadius = zone.radius + bufferMeters;
+        if (dist <= effectiveRadius) {
+          return MultiGeofenceResult(
+            isInside: true,
+            matchedZoneId: zone.id,
+            matchedZoneName: zone.nama,
+            distanceToTargetMeters: dist,
+            targetLat: zone.latitude,
+            targetLng: zone.longitude,
+            methodUsed: 'MULTI_ZONE',
+            evaluatedAt: now,
+          );
+        }
+      }
+
+      // Jika di luar semua zona valid
+      return MultiGeofenceResult(
+        isInside: false,
+        matchedZoneId: nearestZone?.id,
+        matchedZoneName: nearestZone?.nama,
+        distanceToTargetMeters: minDistance,
+        targetLat: nearestZone?.latitude,
+        targetLng: nearestZone?.longitude,
+        methodUsed: 'MULTI_ZONE',
+        evaluatedAt: now,
+      );
+    }
+
+    // 2. Fallback ke single zone legacy
+    final singleResult = evaluatePosition(
+      userLat: userLat,
+      userLng: userLng,
+      targetLat: fallbackLat,
+      targetLng: fallbackLng,
+      radiusMeters: fallbackRadiusMeters + bufferMeters,
+    );
+
+    return MultiGeofenceResult(
+      isInside: singleResult.isInside,
+      distanceToTargetMeters: singleResult.distanceToTargetMeters,
+      targetLat: singleResult.targetLat,
+      targetLng: singleResult.targetLng,
+      methodUsed: singleResult.methodUsed,
+      evaluatedAt: singleResult.evaluatedAt,
+    );
+  }
 }
+

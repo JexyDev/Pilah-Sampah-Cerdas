@@ -19,8 +19,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../services/kkn_background_task_handler.dart';
 import '../../../core/values/app_config.dart';
+import '../../../data/models/group_zone_models.dart';
+import '../../../core/utils/geofence_zone_engine.dart';
 
 class KknLocationState {
+
   final Position? currentPosition;
   final bool isTracking;
   final String? error;
@@ -232,18 +235,30 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         final double buffer =
             (activeZone['geofenceBufferMeters'] as num?)?.toDouble() ?? 15.0;
 
+        List<ValidZoneItem> validZones = [];
+        if (activeZone['validZones'] != null && activeZone['validZones'] is List) {
+          validZones = (activeZone['validZones'] as List)
+              .map((e) => ValidZoneItem.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+        }
+
         double distance = 999999.0;
         bool isInside = false;
 
-        if (pos != null && targetLat != null && targetLng != null) {
-          distance = Geolocator.distanceBetween(
-            pos.latitude,
-            pos.longitude,
-            targetLat,
-            targetLng,
+        if (pos != null) {
+          final evalResult = GeofenceZoneEngine.evaluateMultiZonePosition(
+            userLat: pos.latitude,
+            userLng: pos.longitude,
+            validZones: validZones,
+            fallbackLat: targetLat,
+            fallbackLng: targetLng,
+            fallbackRadiusMeters: radius,
+            bufferMeters: buffer,
           );
-          isInside = distance <= (radius + buffer);
+          distance = evalResult.distanceToTargetMeters;
+          isInside = evalResult.isInside;
         }
+
 
         final status =
             (activeZone['attendanceStatus'] ??
@@ -1446,12 +1461,31 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         : 15.0;
     final effectiveRadius = radius + buffer;
 
-    // POLYGON CHECK: Jika API menyediakan polygon, gunakan Ray Casting algorithm
-    // untuk cek apakah user berada di dalam area polygon tersebut.
-    // Ini lebih akurat dan mengatasi kasus di mana titik pusat (lat/lng) salah input
-    // oleh Admin tapi polygon sudah benar.
     final polygonRaw = target['polygon'];
-    if (polygonRaw != null && polygonRaw is List && polygonRaw.length >= 3) {
+    List<ValidZoneItem> validZones = [];
+    if (target['validZones'] != null && target['validZones'] is List) {
+      validZones = (target['validZones'] as List)
+          .map((e) => ValidZoneItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
+
+
+    // MULTI-GEONFENCE CHECK: (Update KKN 2026) Prioritas utama jika validZones dikirim backend
+    if (validZones.isNotEmpty) {
+      final multiEval = GeofenceZoneEngine.evaluateMultiZonePosition(
+        userLat: pos.latitude,
+        userLng: pos.longitude,
+        validZones: validZones,
+        fallbackLat: targetLat,
+        fallbackLng: targetLng,
+        fallbackRadiusMeters: radius,
+        bufferMeters: buffer,
+      );
+      distance = multiEval.distanceToTargetMeters;
+      nowInside = multiEval.isInside;
+    } else if (polygonRaw != null && polygonRaw is List && polygonRaw.length >= 3) {
+      // POLYGON CHECK: Jika API menyediakan polygon, gunakan Ray Casting algorithm
+      // untuk cek apakah user berada di dalam area polygon tersebut.
       try {
         final polygonPoints = polygonRaw.map((point) {
           final List pts = point as List;
@@ -1487,7 +1521,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         nowInside = distance <= effectiveRadius;
       }
     } else {
-      // RADIUS CHECK: Fallback jika tidak ada polygon
+      // RADIUS CHECK: Fallback jika tidak ada polygon & validZones
       distance = Geolocator.distanceBetween(
         pos.latitude,
         pos.longitude,
@@ -1496,6 +1530,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       );
       nowInside = distance <= effectiveRadius;
     }
+
 
     state = state.copyWith(
       distanceToTarget: distance,

@@ -1007,7 +1007,38 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     List<CircleMarker> circleMarkers = [];
     List<Marker> poskoMarkers = [];
     
-    if (mapState.groupZone != null && mapState.groupZone!.poskoList.isNotEmpty) {
+    final rawValidZones = locationState.activeActivity?['validZones'];
+    if (rawValidZones != null && rawValidZones is List && rawValidZones.isNotEmpty) {
+      for (final z in rawValidZones) {
+        final Map zMap = z is Map ? z : {};
+        final lat = (zMap['latitude'] as num?)?.toDouble() ?? 0.0;
+        final lng = (zMap['longitude'] as num?)?.toDouble() ?? 0.0;
+        final radius = (zMap['radius'] as num?)?.toDouble() ?? 100.0;
+        if (lat == 0.0 || lng == 0.0) continue;
+        final point = LatLng(lat, lng);
+
+        circleMarkers.add(CircleMarker(
+          point: point,
+          radius: radius,
+          useRadiusInMeter: true,
+          color: AppColors.primaryGreen.withValues(alpha: 0.2),
+          borderColor: AppColors.primaryGreen,
+          borderStrokeWidth: 2,
+        ));
+
+        poskoMarkers.add(Marker(
+          point: point,
+          width: 40,
+          height: 40,
+          child: const Icon(
+            Icons.home_work_rounded,
+            color: AppColors.primaryGreen,
+            size: 32,
+          ),
+        ));
+      }
+    } else if (mapState.groupZone != null && mapState.groupZone!.poskoList.isNotEmpty) {
+
       for (final posko in mapState.groupZone!.poskoList) {
         final point = LatLng(posko.latitude, posko.longitude);
         
