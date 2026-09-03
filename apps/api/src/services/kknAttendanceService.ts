@@ -2912,10 +2912,228 @@ export class KknAttendanceService {
     };
   }
   /**
+   * Skip / tandai kegiatan sebagai "Tidak Ada Kegiatan".
+   *
+   * Aturan scope:
+   * - MAHASISWA biasa   → hanya untuk dirinya sendiri
+   * - MAHASISWA isKetua → untuk seluruh anggota kelompoknya
+   * - DPL               → untuk seluruh anggota kelompok binaannya
+   *
+   * Catatan: Jadwal global (kelompokId = null) TIDAK diubah status-nya;
+   * hanya record ActivityAttendance per mahasiswa yang di-upsert.
+   *
+   * Endpoint: POST /api/v1/kkn/kegiatan/:id/skip
+   */
+  async skipKegiatan(
+    scheduleId: string,
+    userId: string,
+    userRole: string,
+    alasan?: string
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      kegiatanId: string;
+      jadwalId: string;
+      statusKegiatan: string;
+      totalMahasiswaTerdampak: number;
+      alasan: string;
+      ditandaiOleh: string;
+      ditandaiPada: string;
+    };
+  }> {
+    const normalizedRole = userRole.toUpperCase();
+    const skipAlasan = alasan?.trim() || "Tidak ada kegiatan";
+    const now = new Date();
+
+    // 1. Ambil data jadwal
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: {
+        attendances: {
+          select: { status: true },
+        },
+        kelompok: {
+          include: {
+            students: {
+              select: { userId: true, isKetua: true },
+            },
+          },
+        },
+      },
+    });
+
+    if (!schedule) {
+      return { success: false, message: "Jadwal kegiatan tidak ditemukan." };
+    }
+
+    // 2. Cek apakah ada presensi yang sudah BERLANGSUNG atau SELESAI
+    const hasActiveOrFinished = schedule.attendances.some((a) =>
+      ["BERLANGSUNG", "SELESAI", "SELESAI_TELAT", "HADIR_MEMENUHI", "HADIR_TIDAK_MEMENUHI", "HADIR"].includes(
+        String(a.status).toUpperCase()
+      )
+    );
+    if (hasActiveOrFinished) {
+      return {
+        success: false,
+        message: "Tidak dapat skip kegiatan yang sudah dimulai atau selesai.",
+      };
+    }
+
+    // 3. Tentukan daftar mahasiswa yang terdampak berdasarkan role
+    let targetStudentIds: string[] = [];
+
+    const isDpl = normalizedRole.includes("DPL") || normalizedRole.includes("DOSEN");
+    const isMahasiswa = normalizedRole.includes("MAHASISWA");
+
+    if (isDpl || normalizedRole.includes("DEVELOPER") || normalizedRole.includes("SUPER_USER")) {
+      // DPL / Admin: skip untuk seluruh kelompok dalam jadwal ini
+      if (schedule.kelompok) {
+        // Jadwal spesifik kelompok — ambil semua anggota kelompok tersebut
+        targetStudentIds = schedule.kelompok.students.map((s) => s.userId);
+      } else {
+        // Jadwal global: DPL hanya boleh skip untuk kelompok binaannya
+        const dplKelompok = await prisma.kelompokKkn.findMany({
+          where: { dplId: userId },
+          include: { students: { select: { userId: true } } },
+        });
+        targetStudentIds = dplKelompok.flatMap((k) => k.students.map((s) => s.userId));
+      }
+    } else if (isMahasiswa) {
+      // Cek apakah mahasiswa ini adalah anggota dari jadwal yang diminta
+      const studentRecord = await prisma.studentKkn.findUnique({
+        where: { userId },
+        select: { isKetua: true, kelompokId: true },
+      });
+
+      if (!studentRecord) {
+        return { success: false, message: "Data mahasiswa tidak ditemukan." };
+      }
+
+      // Validasi: mahasiswa harus terdaftar di kelompok yang sama dengan jadwal
+      if (schedule.kelompokId && studentRecord.kelompokId !== schedule.kelompokId) {
+        return {
+          success: false,
+          message: "Anda tidak memiliki izin untuk melewati kegiatan ini.",
+        };
+      }
+
+      if (studentRecord.isKetua) {
+        // Ketua: skip untuk seluruh anggota kelompoknya (hanya kelompok sendiri)
+        if (studentRecord.kelompokId) {
+          const kelompok = await prisma.kelompokKkn.findUnique({
+            where: { id: studentRecord.kelompokId },
+            include: { students: { select: { userId: true } } },
+          });
+          targetStudentIds = kelompok?.students.map((s) => s.userId) || [];
+        }
+      } else {
+        // Mahasiswa biasa: hanya untuk dirinya sendiri
+        targetStudentIds = [userId];
+      }
+    } else {
+      return {
+        success: false,
+        message: "Anda tidak memiliki izin untuk melewati kegiatan ini.",
+      };
+    }
+
+    if (targetStudentIds.length === 0) {
+      return {
+        success: false,
+        message: "Tidak ada mahasiswa yang dapat di-skip pada jadwal ini.",
+      };
+    }
+
+    // 4. Upsert ActivityAttendance untuk setiap mahasiswa yang terdampak
+    const skipDetails = {
+      keteranganSkip: skipAlasan,
+      skippedBy: userId,
+      skippedAt: now.toISOString(),
+      skippedByRole: userRole,
+    };
+
+    await Promise.all(
+      targetStudentIds.map((studentId) =>
+        prisma.activityAttendance.upsert({
+          where: {
+            studentId_scheduleId: { studentId, scheduleId },
+          },
+          create: {
+            studentId,
+            scheduleId,
+            attendedAt: now,
+            method: "SKIP_MANUAL",
+            latitude: schedule.latitude || -6.89,
+            longitude: schedule.longitude || 107.61,
+            status: "TIDAK_ADA_KEGIATAN",
+            actualInZoneMinutes: 0,
+            deskripsiKegiatan: `Tidak Ada Kegiatan: ${skipAlasan}`,
+            jedaLogs: [skipDetails],
+          },
+          update: {
+            status: "TIDAK_ADA_KEGIATAN",
+            method: "SKIP_MANUAL",
+            deskripsiKegiatan: `Tidak Ada Kegiatan: ${skipAlasan}`,
+            jedaLogs: [skipDetails],
+          },
+        })
+      )
+    );
+
+    // 5. Jika jadwal ini adalah jadwal SPESIFIK kelompok (bukan global), update status jadwal itu sendiri
+    //    Jadwal global (kelompokId = null) TIDAK diubah status-nya agar tidak berdampak ke kelompok lain.
+    if (schedule.kelompokId && targetStudentIds.length === (schedule.kelompok?.students.length ?? 0)) {
+      // Seluruh anggota kelompok di-skip → update status di Schedule juga
+      await prisma.schedule.update({
+        where: { id: scheduleId },
+        data: {
+          status: "TIDAK_ADA_KEGIATAN",
+          skipDetails,
+        },
+      });
+    }
+
+    // 6. Audit log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId,
+          action: "SKIP_KEGIATAN",
+          entity: "Schedule",
+          entityId: scheduleId,
+          details: JSON.stringify({
+            alasan: skipAlasan,
+            totalTerdampak: targetStudentIds.length,
+            scope: isDpl ? "DPL" : targetStudentIds.length === 1 ? "INDIVIDUAL" : "KELOMPOK",
+          }),
+        },
+      });
+    } catch {
+      // Audit log non-critical, jangan gagalkan request utama
+    }
+
+    return {
+      success: true,
+      message: "Kegiatan berhasil ditandai sebagai Tidak Ada Kegiatan.",
+      data: {
+        kegiatanId: scheduleId,
+        jadwalId: scheduleId,
+        statusKegiatan: "TIDAK_ADA_KEGIATAN",
+        totalMahasiswaTerdampak: targetStudentIds.length,
+        alasan: skipAlasan,
+        ditandaiOleh: userId,
+        ditandaiPada: now.toISOString(),
+      },
+    };
+  }
+
+  /**
    * Mengambil daftar kegiatan KKN hari ini untuk mahasiswa yang sedang login.
    * Endpoint: GET /api/v1/kkn/kegiatan-aktif
    */
   async getKegiatanAktif(userId: string, targetTanggal?: string) {
+
     const student = await prisma.studentKkn.findUnique({
       where: { userId },
       include: {
@@ -3320,15 +3538,18 @@ export class KknAttendanceService {
           .catch(() => {});
       }
 
-      const jedaLogsObj = (att?.jedaLogs as any) || {};
+      // Ekstrak detail skip dari jedaLogs (Array format baru dari skipKegiatan())
+      const jedaLogsArr = Array.isArray(att?.jedaLogs) ? (att.jedaLogs as any[]) : [];
+      const skipLog = jedaLogsArr.find((l: any) => l.skippedBy || l.keteranganSkip);
       const isSkip = att?.status === "TIDAK_ADA_KEGIATAN" || att?.status === "SKIP_KEGIATAN";
       const keteranganSkip = isSkip
-        ? att?.deskripsiKegiatan || jedaLogsObj.alasan || "Tidak ada kegiatan"
+        ? skipLog?.keteranganSkip || att?.deskripsiKegiatan || "Tidak ada kegiatan"
         : undefined;
-      const skippedBy = isSkip ? jedaLogsObj.skippedBy || null : undefined;
+      const skippedBy = isSkip ? (skipLog?.skippedBy || null) : undefined;
       const skippedAt = isSkip
-        ? jedaLogsObj.skippedAt || (att?.attendedAt ? att.attendedAt.toISOString() : null)
+        ? (skipLog?.skippedAt || (att?.attendedAt ? att.attendedAt.toISOString() : null))
         : undefined;
+
 
       const jedaMins = isSkip ? 0 : calculateTotalJedaMinutes(att as any);
       const jedaFormatted = formatDurasiMenitIndo(jedaMins);
@@ -5547,12 +5768,16 @@ export class KknAttendanceService {
       let totalBypassed = 0;
 
       for (const sched of schedules) {
-        // Cek apakah jadwal ini ditandai skip / tidak ada kegiatan oleh kelompok/DPL
-        const isScheduleSkipped =
-          (sched as any).statusKegiatan === "TIDAK_ADA_KEGIATAN" ||
-          sched.attendances.some(
-            (a) => a.status === "TIDAK_ADA_KEGIATAN" || a.status === "SKIP_KEGIATAN"
-          );
+        // Guard 1: Cek apakah jadwal ini sudah di-skip di level jadwal (oleh Ketua/DPL)
+        // Ini mencegah seluruh kelompok mendapat ALPA jika jadwalnya memang dikosongkan.
+        if ((sched as any).statusKegiatan === "TIDAK_ADA_KEGIATAN") {
+          continue;
+        }
+
+        // Guard 2: Cek apakah ada presensi individual yang sudah berstatus skip
+        const isScheduleSkipped = sched.attendances.some(
+          (a) => a.status === "TIDAK_ADA_KEGIATAN" || a.status === "SKIP_KEGIATAN"
+        );
         if (isScheduleSkipped) {
           continue;
         }

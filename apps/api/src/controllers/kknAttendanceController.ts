@@ -606,7 +606,10 @@ export const kknAttendanceController = {
     }
   },
 
+
+
   selesaiKegiatan: async (req: Request, res: Response): Promise<void> => {
+
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
