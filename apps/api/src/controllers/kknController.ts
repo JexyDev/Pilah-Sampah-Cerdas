@@ -189,10 +189,25 @@ export class KknController {
   async createLeaveRequest(req: Request, res: Response) {
     try {
       const studentId = req.user!.userId;
-      let fotoBuktiUrl = req.body.fotoBuktiUrl;
-      if (req.file) {
+      let fotoBuktiUrl =
+        req.body.fotoBuktiUrl || req.body.evidenceUrl || req.body.fotoUrl || req.body.evidence;
+
+      const uploadedUrls = extractUploadedFileUrls(req);
+      if (uploadedUrls.length > 0) {
+        fotoBuktiUrl = uploadedUrls[0];
+      } else if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
+      } else if (req.files) {
+        if (Array.isArray(req.files) && req.files.length > 0) {
+          fotoBuktiUrl = `/uploads/${(req.files[0] as any).filename}`;
+        } else if (typeof req.files === "object") {
+          const allFiles = Object.values(req.files).flat();
+          if (allFiles.length > 0) {
+            fotoBuktiUrl = `/uploads/${(allFiles[0] as any).filename}`;
+          }
+        }
       }
+
       const data = await kknService.createLeaveRequest(studentId, {
         ...req.body,
         fotoBuktiUrl,

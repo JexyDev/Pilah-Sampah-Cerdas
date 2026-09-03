@@ -62,7 +62,7 @@ export class PoskoKknController {
 
       // MAHASISWA_KKN: auto-resolve kelompok dari data student
       if (peran === "MAHASISWA_KKN" && !targetKelompokId) {
-        const student = await prisma.studentKkn.findUnique({
+        const student = await prisma.studentKkn.findFirst({
           where: { userId },
           select: { kelompokId: true, isKetua: true },
         });
@@ -70,13 +70,6 @@ export class PoskoKknController {
           res
             .status(400)
             .json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
-          return;
-        }
-        if (!student.isKetua) {
-          res.status(403).json({
-            success: false,
-            message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko KKN",
-          });
           return;
         }
         targetKelompokId = student.kelompokId;

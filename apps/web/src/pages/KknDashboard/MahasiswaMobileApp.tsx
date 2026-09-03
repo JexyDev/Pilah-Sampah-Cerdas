@@ -36,7 +36,7 @@ export const MahasiswaMobileApp: React.FC = () => {
   };
 
   return (
-    <IOSSafariGate>
+    <>
       <MahasiswaMobileShell activeTab={activeTab} onTabChange={setActiveTab}>
         {(tab) => {
           switch (tab) {
@@ -56,7 +56,7 @@ export const MahasiswaMobileApp: React.FC = () => {
                 />
               );
             case "proker":
-              return <MahasiswaProkerMobile />;
+              return <MahasiswaProkerMobile onProkerCreated={fetchProkerList} />;
             case "profil":
               return <MahasiswaProfilMobile />;
             default:
@@ -79,7 +79,7 @@ export const MahasiswaMobileApp: React.FC = () => {
         }}
         prokerList={prokerList}
       />
-    </IOSSafariGate>
+    </>
   );
 };
 

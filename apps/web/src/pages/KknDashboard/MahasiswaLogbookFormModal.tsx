@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Camera,
@@ -113,11 +114,14 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Click outside backdrop */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
         {/* Header Modal */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
           <div className="space-y-0.5">
             <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
               <FileText size={18} className="text-emerald-600" />
@@ -126,15 +130,16 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
             <p className="text-[10px] text-slate-500">Laporan harian aktivitas KKN mahasiswa</p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
+        <form id="form-logbook-modal" onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto overscroll-contain flex-1 text-xs">
           {/* Tipe Aktivitas (Kelompok vs Individu) */}
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe Aktivitas</label>
@@ -337,27 +342,38 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
               </div>
             )}
           </div>
+        </form>
 
-          {/* Tombol Simpan */}
+        {/* Modal Action Footer - Sticky & Always Visible */}
+        <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 grid grid-cols-2 gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition cursor-pointer text-xs flex items-center justify-center"
+          >
+            Batal
+          </button>
           <button
             type="submit"
+            form="form-logbook-modal"
             disabled={isSubmitting || !deskripsi.trim() || !fotoFile}
-            className="w-full py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
-                <span>Menyimpan Logbook...</span>
+                <Loader2 size={15} className="animate-spin" />
+                <span>Menyimpan...</span>
               </>
             ) : (
               <>
-                <Send size={16} />
-                <span>Kirim Logbook ke DPL</span>
+                <Send size={15} />
+                <span>Kirim Logbook</span>
               </>
             )}
           </button>
-        </form>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

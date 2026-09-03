@@ -86,12 +86,12 @@ export class CronService {
       tzOptions
     );
 
-    // Auto checkout ended KKN schedules & handle stale GPS / dead battery anomalies every minute
+// Auto checkout ended KKN schedules every minute
     cron.schedule(
       "* * * * *",
       () => {
         kknAttendanceService.autoCheckOutEndedSchedules();
-        kknAttendanceService.handleStaleGpsSessions();
+
       },
       tzOptions
     );

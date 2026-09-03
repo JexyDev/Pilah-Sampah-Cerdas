@@ -32,6 +32,8 @@ export const dplScopeMiddleware = async (
       "DOSEN_PEMBIMBING",
       "DOSEN_PENDAMPING",
       "DOSEN_PENDAMPING_LAPANGAN",
+      "MAHASISWA_KKN",
+      "MAHASISWA",
     ];
     const isAllowed = allowedRoles.some((r) => roleName.includes(r));
 

@@ -1537,14 +1537,6 @@ export class KknService {
       throw new Error("Mahasiswa belum terdaftar dalam kelompok KKN.");
     }
 
-    if (!student.isKetua) {
-      const err: any = new Error(
-        "Akses ditolak: Hanya Ketua Kelompok KKN yang berhak mendaftarkan atau memperbarui lokasi posko."
-      );
-      err.statusCode = 403;
-      throw err;
-    }
-
     const lat = Number(payload.latitude);
     const lng = Number(payload.longitude);
     if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
@@ -1611,14 +1603,6 @@ export class KknService {
     if (!student || !student.kelompokId || !student.kelompok) {
       const err: any = new Error("Mahasiswa belum terdaftar dalam kelompok KKN.");
       err.statusCode = 404;
-      throw err;
-    }
-
-    if (!student.isKetua) {
-      const err: any = new Error(
-        "Akses ditolak: Hanya Ketua Kelompok KKN yang berhak memperbarui data posko."
-      );
-      err.statusCode = 403;
       throw err;
     }
 
@@ -2242,13 +2226,22 @@ export class KknService {
       deskripsi?: string;
       fotoBuktiUrl?: string;
       scheduleId?: string;
+      startDate?: string;
+      endDate?: string;
+      reason?: string;
+      type?: string;
     }
   ) {
-    const targetDateRaw = payload.tanggalKegiatanTerkait || (payload as any).startDate;
-    let targetDate = targetDateRaw ? new Date(targetDateRaw) : new Date();
+    const targetStartRaw = payload.startDate || payload.tanggalKegiatanTerkait;
+    let targetStartDate = targetStartRaw ? new Date(targetStartRaw) : new Date();
+    if (isNaN(targetStartDate.getTime())) {
+      targetStartDate = new Date();
+    }
 
-    if (isNaN(targetDate.getTime())) {
-      targetDate = new Date();
+    const targetEndRaw = payload.endDate || payload.tanggalKegiatanTerkait || targetStartRaw;
+    let targetEndDate = targetEndRaw ? new Date(targetEndRaw) : targetStartDate;
+    if (isNaN(targetEndDate.getTime())) {
+      targetEndDate = targetStartDate;
     }
 
     if (payload.scheduleId) {
@@ -2257,24 +2250,25 @@ export class KknService {
           where: { id: payload.scheduleId },
         });
         if (schedule && schedule.date) {
-          targetDate = new Date(schedule.date);
+          targetStartDate = new Date(schedule.date);
+          targetEndDate = new Date(schedule.date);
         }
       } catch (schErr) {
         console.warn("[createLeaveRequest] Schedule lookup fallback:", schErr);
       }
     }
 
-    const startDate = new Date(targetDate);
+    const startDate = new Date(targetStartDate);
     startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(targetDate);
+    const endDate = new Date(targetEndDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // VALIDASI H-1: Tidak boleh izin pada hari H atau hari yang sudah lewat
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (startDate.getTime() <= today.getTime()) {
+    // Validasi Tanggal: Tidak boleh mengajukan izin untuk hari yang sudah lewat (WIB Timezone)
+    const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const startWib = new Date(startDate.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (startWib < nowWib) {
       throw new Error(
-        "Pengajuan izin harus dilakukan minimal H-1. Anda tidak dapat mengajukan izin untuk hari ini atau hari yang sudah lewat."
+        "Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat."
       );
     }
 
@@ -2283,6 +2277,7 @@ export class KknService {
       where: { OR: [{ userId: studentId }, { id: studentId }] },
       include: { kelompok: { include: { dpl: true } }, user: true },
     });
+    const actualUserId = studentProfile?.userId || studentId;
     const studentUserIds = Array.from(
       new Set([studentId, studentProfile?.id, studentProfile?.userId].filter(Boolean) as string[])
     );
@@ -2319,7 +2314,7 @@ export class KknService {
 
     const leave = await (prisma as any).studentLeaveRequest.create({
       data: {
-        studentId,
+        studentId: actualUserId,
         type: leaveType,
         reason: payload.deskripsi || (payload as any).reason || "Berhalangan hadir kegiatan KKN",
         evidenceUrl: payload.fotoBuktiUrl || null,
