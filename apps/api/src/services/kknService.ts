@@ -1537,14 +1537,6 @@ export class KknService {
       throw new Error("Mahasiswa belum terdaftar dalam kelompok KKN.");
     }
 
-    if (!student.isKetua) {
-      const err: any = new Error(
-        "Akses ditolak: Hanya Ketua Kelompok KKN yang berhak mendaftarkan atau memperbarui lokasi posko."
-      );
-      err.statusCode = 403;
-      throw err;
-    }
-
     const lat = Number(payload.latitude);
     const lng = Number(payload.longitude);
     if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
@@ -1611,14 +1603,6 @@ export class KknService {
     if (!student || !student.kelompokId || !student.kelompok) {
       const err: any = new Error("Mahasiswa belum terdaftar dalam kelompok KKN.");
       err.statusCode = 404;
-      throw err;
-    }
-
-    if (!student.isKetua) {
-      const err: any = new Error(
-        "Akses ditolak: Hanya Ketua Kelompok KKN yang berhak memperbarui data posko."
-      );
-      err.statusCode = 403;
       throw err;
     }
 

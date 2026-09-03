@@ -554,6 +554,7 @@ router.post(
   "/posko",
   authMiddleware,
   roleMiddleware([
+    "MAHASISWA_KKN",
     "DEVELOPER",
     "SUPER_USER",
     "ADMIN_DLH",
@@ -570,6 +571,7 @@ router.put(
   "/posko/:id",
   authMiddleware,
   roleMiddleware([
+    "MAHASISWA_KKN",
     "DEVELOPER",
     "SUPER_USER",
     "ADMIN_DLH",

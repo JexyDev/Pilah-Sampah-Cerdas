@@ -2411,6 +2411,7 @@ export const dplService = {
     data: {
       kelompokId: string;
       nomor?: number;
+      judul?: string;
       deskripsi: string;
       kategori?: string;
       sumber?: string;
@@ -2485,8 +2486,8 @@ export const dplService = {
     }
 
     let combinedDeskripsi = (data.deskripsi || "").trim();
-    if ((data as any).judul && (data as any).judul.trim()) {
-      const cleanJ = (data as any).judul.trim().replace(/\*\*/g, "");
+    if (data.judul && data.judul.trim()) {
+      const cleanJ = data.judul.trim().replace(/\*\*/g, "");
       const cleanD = combinedDeskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim();
       combinedDeskripsi = cleanD ? `**${cleanJ}**\n\n${cleanD}` : `**${cleanJ}**`;
     }
@@ -2524,6 +2525,7 @@ export const dplService = {
     role: any,
     data: {
       nomor?: number;
+      judul?: string;
       deskripsi?: string;
       kategori?: string;
       sumber?: string;

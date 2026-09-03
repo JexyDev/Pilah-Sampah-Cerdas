@@ -30,6 +30,10 @@ import {
   BookOpen,
   Info,
   Sparkles,
+  Crosshair,
+  Pencil,
+  Navigation,
+  Check,
 } from "lucide-react";
 import api from "../../utils/api";
 import showToast from "../../utils/showToast";
@@ -61,6 +65,22 @@ interface ProkerItem {
   createdAt?: string;
 }
 
+interface PoskoItem {
+  id: string;
+  nama: string;
+  alamat?: string;
+  kelurahan?: string;
+  rw?: string | number;
+  latitude: number | string;
+  longitude: number | string;
+  radius?: number;
+  radiusMeters?: number;
+  isUtama?: boolean;
+  keterangan?: string;
+  fotoUrl?: string;
+  foto?: string;
+}
+
 const KATEGORI_OPTIONS = [
   { value: "TATA_KELOLA", label: "🏛️ Tata Kelola & Koordinasi" },
   { value: "EDUKASI", label: "📢 Edukasi & Sosialisasi Warga" },
@@ -76,14 +96,14 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
   const { user } = useAuthStore();
 
   const [prokerList, setProkerList] = useState<ProkerItem[]>([]);
-  const [poskoList, setPoskoList] = useState<any[]>([]);
+  const [poskoList, setPoskoList] = useState<PoskoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"proker" | "posko">("proker");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  // Modal State: Create Proker
+  // Modal State: Create / Edit Proker
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingProker, setIsSubmittingProker] = useState(false);
   const [formJudul, setFormJudul] = useState("");
   const [formKategori, setFormKategori] = useState("TATA_KELOLA");
   const [formDeskripsi, setFormDeskripsi] = useState("");
@@ -93,7 +113,21 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
 
   // Modal State: Detail Proker
   const [selectedProker, setSelectedProker] = useState<ProkerItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingProker, setIsDeletingProker] = useState(false);
+
+  // Modal State: Daftarkan / Edit Posko KKN
+  const [isPoskoModalOpen, setIsPoskoModalOpen] = useState(false);
+  const [isEditingPosko, setIsEditingPosko] = useState(false);
+  const [poskoFormId, setPoskoFormId] = useState<string | null>(null);
+  const [poskoFormNama, setPoskoFormNama] = useState("");
+  const [poskoFormAlamat, setPoskoFormAlamat] = useState("");
+  const [poskoFormLat, setPoskoFormLat] = useState("");
+  const [poskoFormLng, setPoskoFormLng] = useState("");
+  const [poskoFormRadius, setPoskoFormRadius] = useState("500");
+  const [poskoFormKeterangan, setPoskoFormKeterangan] = useState("");
+  const [poskoFormIsUtama, setPoskoFormIsUtama] = useState(true);
+  const [isDetectingGps, setIsDetectingGps] = useState(false);
+  const [isSubmittingPosko, setIsSubmittingPosko] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -102,18 +136,39 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [prokerRes, poskoRes] = await Promise.allSettled([
+      const [prokerRes, poskoMeRes, poskoAreasRes] = await Promise.allSettled([
         api.get("/dpl/program-kerja"),
+        api.get("/posko-kkn/me/all-zones"),
         api.get("/areas/posko"),
       ]);
 
+      // 1. Proker List
       if (prokerRes.status === "fulfilled") {
         setProkerList(prokerRes.value.data?.data || []);
       }
-      if (poskoRes.status === "fulfilled") {
-        const rawPosko = poskoRes.value.data?.data || poskoRes.value.data || [];
-        setPoskoList(Array.isArray(rawPosko) ? rawPosko : []);
+
+      // 2. Posko List
+      let loadedPoskos: PoskoItem[] = [];
+      if (poskoMeRes.status === "fulfilled" && poskoMeRes.value.data?.data) {
+        const zoneData = poskoMeRes.value.data.data;
+        if (zoneData.allPoskos && Array.isArray(zoneData.allPoskos) && zoneData.allPoskos.length > 0) {
+          loadedPoskos = zoneData.allPoskos;
+        } else if (zoneData.poskoUtama) {
+          loadedPoskos = [
+            { ...zoneData.poskoUtama, isUtama: true },
+            ...(Array.isArray(zoneData.multiPoskos) ? zoneData.multiPoskos : []),
+          ];
+        }
       }
+
+      if (loadedPoskos.length === 0 && poskoAreasRes.status === "fulfilled") {
+        const rawPosko = poskoAreasRes.value.data?.data || poskoAreasRes.value.data || [];
+        if (Array.isArray(rawPosko) && rawPosko.length > 0) {
+          loadedPoskos = rawPosko;
+        }
+      }
+
+      setPoskoList(loadedPoskos);
     } catch (err) {
       console.error("Gagal memuat proker & posko", err);
     } finally {
@@ -121,7 +176,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
     }
   };
 
-  const handleOpenCreateModal = () => {
+  // ─────────────────────────────────────────────────────────────
+  // PROKER HANDLERS
+  // ─────────────────────────────────────────────────────────────
+
+  const handleOpenCreateProkerModal = () => {
     setFormJudul("");
     setFormKategori("TATA_KELOLA");
     setFormDeskripsi("");
@@ -144,7 +203,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSubmittingProker(true);
     try {
       const payload = {
         judul: formJudul.trim(),
@@ -171,7 +230,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
         err.response?.data?.message || "Gagal mengusulkan program kerja. Coba lagi."
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProker(false);
     }
   };
 
@@ -180,7 +239,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       return;
     }
 
-    setIsDeleting(true);
+    setIsDeletingProker(true);
     try {
       await api.delete(`/dpl/program-kerja/${id}`);
       showToast.success("Program kerja berhasil dihapus");
@@ -190,7 +249,125 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
     } catch (err: any) {
       showToast.error(err.response?.data?.message || "Gagal menghapus program kerja.");
     } finally {
-      setIsDeleting(false);
+      setIsDeletingProker(false);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // POSKO HANDLERS
+  // ─────────────────────────────────────────────────────────────
+
+  const handleOpenCreatePoskoModal = () => {
+    setIsEditingPosko(false);
+    setPoskoFormId(null);
+    setPoskoFormNama("Posko KKN Kelompok");
+    setPoskoFormAlamat("");
+    setPoskoFormRadius("500");
+    setPoskoFormKeterangan("");
+    setPoskoFormIsUtama(poskoList.length === 0);
+    setPoskoFormLat("");
+    setPoskoFormLng("");
+    setIsPoskoModalOpen(true);
+
+    // Auto trigger GPS detection
+    handleDetectGpsLocation();
+  };
+
+  const handleOpenEditPoskoModal = (posko: PoskoItem) => {
+    setIsEditingPosko(true);
+    setPoskoFormId(posko.id);
+    setPoskoFormNama(posko.nama || "Posko KKN");
+    setPoskoFormAlamat(posko.alamat || "");
+    setPoskoFormLat(String(posko.latitude || ""));
+    setPoskoFormLng(String(posko.longitude || ""));
+    setPoskoFormRadius(String(posko.radiusMeters || posko.radius || 500));
+    setPoskoFormKeterangan(posko.keterangan || "");
+    setPoskoFormIsUtama(posko.isUtama ?? true);
+    setIsPoskoModalOpen(true);
+  };
+
+  const handleDetectGpsLocation = () => {
+    if (!navigator.geolocation) {
+      showToast.error("Browser tidak mendukung GPS Geolocation.");
+      return;
+    }
+
+    setIsDetectingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsDetectingGps(false);
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        setPoskoFormLat(lat);
+        setPoskoFormLng(lng);
+        showToast.success(`📍 Lokasi GPS terdeteksi: ${lat}, ${lng}`);
+      },
+      (err) => {
+        setIsDetectingGps(false);
+        console.warn("GPS detection warning:", err);
+        showToast.info("Izin lokasi belum aktif. Anda dapat mengetik koordinat manual atau mengaktifkan GPS.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const handleSubmitPosko = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!poskoFormNama.trim()) {
+      showToast.error("Nama Posko KKN wajib diisi!");
+      return;
+    }
+
+    const latNum = parseFloat(poskoFormLat);
+    const lngNum = parseFloat(poskoFormLng);
+
+    if (isNaN(latNum) || isNaN(lngNum) || latNum === 0 || lngNum === 0) {
+      showToast.error("Koordinat GPS (Latitude & Longitude) wajib diisi valid!");
+      return;
+    }
+
+    const radNum = parseInt(poskoFormRadius, 10) || 500;
+
+    setIsSubmittingPosko(true);
+    try {
+      const payload: any = {
+        nama: poskoFormNama.trim(),
+        alamat: poskoFormAlamat.trim() || "Wilayah Posko KKN",
+        latitude: latNum,
+        longitude: lngNum,
+        radius: radNum,
+        keterangan: poskoFormKeterangan.trim() || undefined,
+        isUtama: poskoFormIsUtama,
+      };
+
+      if (isEditingPosko && poskoFormId) {
+        // Update existing posko
+        if (poskoFormIsUtama) {
+          await api.post("/posko-kkn", payload);
+        } else {
+          await api.put(`/posko-kkn/multi/${poskoFormId}`, payload);
+        }
+        showToast.success("Data Posko KKN berhasil diperbarui!");
+      } else {
+        // Create new posko
+        if (poskoFormIsUtama || poskoList.length === 0) {
+          await api.post("/posko-kkn", payload);
+        } else {
+          await api.post("/posko-kkn/multi", payload);
+        }
+        showToast.success("Posko KKN berhasil didaftarkan & aktif!");
+      }
+
+      setIsPoskoModalOpen(false);
+      fetchData();
+    } catch (err: any) {
+      console.error("Gagal menyimpan Posko KKN", err);
+      showToast.error(
+        err.response?.data?.message || "Gagal menyimpan Posko KKN. Pastikan data lengkap."
+      );
+    } finally {
+      setIsSubmittingPosko(false);
     }
   };
 
@@ -225,18 +402,31 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">Program Kerja &amp; Posko</h2>
-            <p className="text-[11px] text-slate-500">Rencana aksi &amp; target KKN lapangan</p>
+            <h2 className="text-base font-black text-slate-900 dark:text-white">Program Kerja & Posko</h2>
+            <p className="text-[11px] text-slate-500">Rencana aksi & titik posko kelompok KKN</p>
           </div>
           <div className="flex items-center gap-1.5">
+            {activeTab === "proker" ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateProkerModal}
+                className="py-1.5 px-3 rounded-xl bg-[#035941] hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              >
+                <PlusCircle size={14} />
+                <span>+ Usulkan</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleOpenCreatePoskoModal}
+                className="py-1.5 px-3 rounded-xl bg-[#035941] hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+              >
+                <PlusCircle size={14} />
+                <span>+ Daftarkan Posko</span>
+              </button>
+            )}
             <button
-              onClick={handleOpenCreateModal}
-              className="py-1.5 px-3 rounded-xl bg-[#035941] hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              <PlusCircle size={14} />
-              <span>+ Usulkan</span>
-            </button>
-            <button
+              type="button"
               onClick={fetchData}
               className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer"
               title="Segarkan data"
@@ -249,6 +439,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
         {/* Main Tabs */}
         <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl text-xs font-bold">
           <button
+            type="button"
             onClick={() => setActiveTab("proker")}
             className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "proker"
@@ -260,6 +451,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
             <span>Program Kerja ({prokerList.length})</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("posko")}
             className={`py-2 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "posko"
@@ -285,6 +477,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
             ].map((st) => (
               <button
                 key={st.id}
+                type="button"
                 onClick={() => setStatusFilter(st.id)}
                 className={`py-1 px-2.5 rounded-xl whitespace-nowrap transition cursor-pointer shrink-0 border ${
                   statusFilter === st.id
@@ -324,10 +517,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
               </div>
               {statusFilter === "ALL" && (
                 <button
-                  onClick={handleOpenCreateModal}
-                  className="py-2.5 px-4 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition inline-flex items-center gap-2 cursor-pointer shadow-xs"
+                  type="button"
+                  onClick={handleOpenCreateProkerModal}
+                  className="py-3 px-5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition inline-flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
                 >
-                  <PlusCircle size={15} />
+                  <PlusCircle size={16} />
                   <span>+ Usulkan Program Kerja Pertama</span>
                 </button>
               )}
@@ -453,57 +647,128 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
         /* POSKO WILAYAH LIST */
         <div className="space-y-3">
           {poskoList.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 space-y-2">
-              <Building2 size={32} className="mx-auto text-slate-300 dark:text-slate-700" />
-              <p className="font-bold">Belum ada Posko Terdaftar</p>
-              <p className="text-[11px]">Titik posko kelompok KKN akan ditampilkan di sini.</p>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center text-xs text-slate-400 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center mx-auto">
+                <Building2 size={26} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                  Belum ada Posko KKN Terdaftar
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Daftarkan titik koordinat Posko KKN kelompok Anda untuk mengaktifkan zona presensi dan pemetaan.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenCreatePoskoModal}
+                className="py-3 px-5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider transition inline-flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
+              >
+                <PlusCircle size={16} />
+                <span>+ Daftarkan Posko KKN Sekarang</span>
+              </button>
             </div>
           ) : (
-            poskoList.map((posko, pIdx) => (
-              <div
-                key={posko.id || pIdx}
-                className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-2"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center font-bold shrink-0">
-                    <Building2 size={18} />
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white truncate">
-                      {posko.nama || posko.name || "Posko Utama KKN"}
-                    </h4>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      {posko.kelurahan ? `Kel. ${posko.kelurahan}` : "Wilayah Dampingan"}
-                      {posko.rw ? ` • RW ${posko.rw}` : ""}
+            <>
+              {poskoList.map((posko, pIdx) => {
+                const lat = Number(posko.latitude);
+                const lng = Number(posko.longitude);
+                const isPrimary = posko.isUtama ?? pIdx === 0;
+
+                return (
+                  <div
+                    key={posko.id || pIdx}
+                    className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold shrink-0">
+                          <Building2 size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs font-black text-slate-900 dark:text-white truncate">
+                              {posko.nama || "Posko KKN Kelompok"}
+                            </h4>
+                            {isPrimary && (
+                              <span className="px-2 py-0.5 rounded-full text-[8.5px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                ⭐ Posko Utama
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium">
+                            {posko.kelurahan ? `Kel. ${posko.kelurahan}` : "Wilayah KKN"}
+                            {posko.rw ? ` • RW ${posko.rw}` : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditPoskoModal(posko)}
+                        className="py-1 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer shrink-0"
+                      >
+                        <Pencil size={11} />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                      📍 {posko.alamat || "Alamat posko KKN"}
                     </p>
-                  </div>
-                </div>
 
-                <p className="text-[11px] text-slate-600 dark:text-slate-300">
-                  📍 {posko.alamat || "Alamat Posko KKN Lapangan"}
-                </p>
+                    {posko.keterangan && (
+                      <p className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-xl">
+                        ℹ️ {posko.keterangan}
+                      </p>
+                    )}
 
-                {posko.latitude && posko.longitude && (
-                  <div className="pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                    <span>GPS: {Number(posko.latitude).toFixed(5)}, {Number(posko.longitude).toFixed(5)}</span>
-                    <span className="text-emerald-600 font-bold">Radius: {posko.radiusMeters || posko.radius || 500}m</span>
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                      <span>GPS: {lat ? lat.toFixed(5) : "-"}, {lng ? lng.toFixed(5) : "-"}</span>
+                      <span className="text-emerald-600 font-bold">
+                        Radius: {posko.radiusMeters || posko.radius || 500}m
+                      </span>
+                    </div>
+
+                    {lat && lng ? (
+                      <a
+                        href={`https://www.google.com/maps?q=${lat},${lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200/60 dark:border-slate-700/60"
+                      >
+                        <Navigation size={12} className="text-emerald-600" />
+                        <span>Buka Rute di Google Maps</span>
+                        <ExternalLink size={11} className="text-slate-400" />
+                      </a>
+                    ) : null}
                   </div>
-                )}
-              </div>
-            ))
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={handleOpenCreatePoskoModal}
+                className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-emerald-500/60 text-slate-600 dark:text-slate-400 hover:text-emerald-600 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-slate-50/50 dark:bg-slate-900/50"
+              >
+                <PlusCircle size={15} />
+                <span>+ Daftarkan Posko Tambahan</span>
+              </button>
+            </>
           )}
         </div>
       )}
 
-      {/* 3. MODAL: TAMBAH USULAN PROGRAM KERJA */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 3. MODAL: TAMBAH USULAN PROGRAM KERJA                         */}
+      {/* ───────────────────────────────────────────────────────────── */}
       {isCreateModalOpen &&
         createPortal(
           <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* Click outside backdrop */}
             <div className="absolute inset-0" onClick={() => setIsCreateModalOpen(false)} />
 
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
-              {/* Modal Header */}
+              {/* Header */}
               <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
                 <div className="space-y-0.5">
                   <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -521,9 +786,8 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 </button>
               </div>
 
-              {/* Modal Form Body */}
+              {/* Form Body */}
               <form id="form-create-proker" onSubmit={handleCreateProker} className="p-4 space-y-3.5 overflow-y-auto overscroll-contain flex-1 text-xs">
-                {/* Judul Proker */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Judul Program Kerja *
@@ -538,7 +802,6 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   />
                 </div>
 
-                {/* Kategori */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Kategori Kegiatan *
@@ -556,7 +819,6 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   </select>
                 </div>
 
-                {/* Deskripsi & Target */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Deskripsi & Sasaran Program *
@@ -566,12 +828,11 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                     rows={3}
                     value={formDeskripsi}
                     onChange={(e) => setFormDeskripsi(e.target.value)}
-                    placeholder="Jelaskan tujuan kegiatan, target sasaran RW/warga, dan output capaian yang diharapkan..."
+                    placeholder="Jelaskan tujuan kegiatan, sasaran warga/RW, dan output capaian yang diharapkan..."
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
-                {/* Waktu Pelaksanaan */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Rencana Waktu / Jadwal Pelaksanaan
@@ -585,7 +846,6 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   />
                 </div>
 
-                {/* Kebutuhan Biaya */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Estimasi Kebutuhan Biaya (Rp)
@@ -601,7 +861,6 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   />
                 </div>
 
-                {/* Tautan Dokumen / Google Drive */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Tautan Proposal / Google Drive (Opsional)
@@ -616,7 +875,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 </div>
               </form>
 
-              {/* Modal Action Footer - Sticky & Always Visible */}
+              {/* Action Footer */}
               <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 grid grid-cols-2 gap-3 shrink-0">
                 <button
                   type="button"
@@ -628,10 +887,10 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 <button
                   type="submit"
                   form="form-create-proker"
-                  disabled={isSubmitting || !formJudul.trim() || !formDeskripsi.trim()}
-                  className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs"
+                  disabled={isSubmittingProker || !formJudul.trim() || !formDeskripsi.trim()}
+                  className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs active:scale-95"
                 >
-                  {isSubmitting ? (
+                  {isSubmittingProker ? (
                     <>
                       <Loader2 size={15} className="animate-spin" />
                       <span>Menyimpan...</span>
@@ -649,15 +908,16 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
           document.body
         )}
 
-      {/* 4. MODAL: DETAIL & EVALUASI PROGRAM KERJA */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 4. MODAL: DETAIL & EVALUASI PROGRAM KERJA                     */}
+      {/* ───────────────────────────────────────────────────────────── */}
       {selectedProker &&
         createPortal(
           <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-            {/* Click outside backdrop */}
             <div className="absolute inset-0" onClick={() => setSelectedProker(null)} />
 
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
-              {/* Detail Header */}
+              {/* Header */}
               <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50 dark:bg-slate-800/80 shrink-0">
                 <div className="space-y-1 min-w-0 pr-2">
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
@@ -676,7 +936,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 </button>
               </div>
 
-              {/* Detail Body */}
+              {/* Body */}
               <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] space-y-4 overflow-y-auto overscroll-contain flex-1 text-xs">
                 {/* Status Grid */}
                 <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
@@ -714,7 +974,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   </div>
                 </div>
 
-                {/* Info Details */}
+                {/* Details */}
                 <div className="space-y-2 text-xs">
                   {selectedProker.waktuPelaksanaan && (
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
@@ -780,10 +1040,10 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       <button
                         type="button"
                         onClick={() => handleDeleteProker(selectedProker.id)}
-                        disabled={isDeleting}
+                        disabled={isDeletingProker}
                         className="w-full py-3 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200 dark:border-rose-900"
                       >
-                        {isDeleting ? (
+                        {isDeletingProker ? (
                           <Loader2 size={14} className="animate-spin" />
                         ) : (
                           <Trash2 size={14} />
@@ -792,6 +1052,204 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       </button>
                     </div>
                   )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 5. MODAL: DAFTARKAN / EDIT POSKO KKN                          */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {isPoskoModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="absolute inset-0" onClick={() => setIsPoskoModalOpen(false)} />
+
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <Building2 size={18} className="text-emerald-600" />
+                    {isEditingPosko ? "Edit Data Posko KKN" : "Daftarkan Posko KKN Kelompok"}
+                  </h3>
+                  <p className="text-[10px] text-slate-500">
+                    Titik lokasi posko kelompok KKN untuk validasi presensi
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPoskoModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Form Body */}
+              <form id="form-posko-kkn" onSubmit={handleSubmitPosko} className="p-4 space-y-3.5 overflow-y-auto overscroll-contain flex-1 text-xs">
+                {/* Nama Posko */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Nama Posko KKN *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={poskoFormNama}
+                    onChange={(e) => setPoskoFormNama(e.target.value)}
+                    placeholder="Contoh: Posko KKN Kelompok 5 Dago"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Alamat Posko */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Alamat Lengkap Posko *
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={poskoFormAlamat}
+                    onChange={(e) => setPoskoFormAlamat(e.target.value)}
+                    placeholder="Contoh: Jl. Dago Pojok No. 12, Balai RW 03..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* GPS Detector Button */}
+                <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200/80 dark:border-emerald-900/60 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                      <MapPin size={14} className="text-emerald-600" />
+                      Titik Lokasi GPS (Koordinat HP)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleDetectGpsLocation}
+                      disabled={isDetectingGps}
+                      className="py-1 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      {isDetectingGps ? (
+                        <Loader2 size={11} className="animate-spin" />
+                      ) : (
+                        <Crosshair size={11} />
+                      )}
+                      <span>Ambil GPS Saat Ini</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-0.5">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Latitude *</label>
+                      <input
+                        type="text"
+                        required
+                        value={poskoFormLat}
+                        onChange={(e) => setPoskoFormLat(e.target.value)}
+                        placeholder="-6.890321"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <label className="text-[9px] font-bold text-slate-500 uppercase">Longitude *</label>
+                      <input
+                        type="text"
+                        required
+                        value={poskoFormLng}
+                        onChange={(e) => setPoskoFormLng(e.target.value)}
+                        placeholder="107.611234"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[9.5px] text-emerald-700 dark:text-emerald-300 leading-tight">
+                    💡 Klik tombol "Ambil GPS Saat Ini" saat Anda berada di lokasi posko, atau masukkan koordinat Google Maps.
+                  </p>
+                </div>
+
+                {/* Radius Presensi */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Radius Izin Presensi (Meter)
+                  </label>
+                  <input
+                    type="number"
+                    min="50"
+                    max="3000"
+                    step="50"
+                    value={poskoFormRadius}
+                    onChange={(e) => setPoskoFormRadius(e.target.value)}
+                    placeholder="500"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                  />
+                  <p className="text-[9.5px] text-slate-400">
+                    Jarak jangkauan radius presensi kegiatan (default: 500 meter).
+                  </p>
+                </div>
+
+                {/* Tipe Posko: Utama vs Tambahan */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
+                      Tetapkan sebagai Posko Utama
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      Posko sentral kelompok KKN untuk presensi harian
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={poskoFormIsUtama}
+                    onChange={(e) => setPoskoFormIsUtama(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded-md border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                </div>
+
+                {/* Keterangan */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Keterangan / Fasilitas Posko (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={poskoFormKeterangan}
+                    onChange={(e) => setPoskoFormKeterangan(e.target.value)}
+                    placeholder="Contoh: Rumah Pak RW, Posyandu Melati..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </form>
+
+              {/* Action Footer */}
+              <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 grid grid-cols-2 gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsPoskoModalOpen(false)}
+                  className="py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition cursor-pointer text-xs flex items-center justify-center"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  form="form-posko-kkn"
+                  disabled={isSubmittingPosko || !poskoFormNama.trim() || !poskoFormLat.trim() || !poskoFormLng.trim()}
+                  className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs active:scale-95"
+                >
+                  {isSubmittingPosko ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={15} />
+                      <span>{isEditingPosko ? "Simpan Perubahan" : "Daftarkan Posko"}</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>,

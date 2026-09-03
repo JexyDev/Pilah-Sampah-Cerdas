@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
@@ -94,9 +94,9 @@ export const smartZoneController = {
         return;
       }
 
-      // Auto-resolve kelompokId untuk mahasiswa (wajib Ketua)
+      // Auto-resolve kelompokId untuk mahasiswa
       if (peran === "MAHASISWA_KKN" && !kelompokId) {
-        const student = await prisma.studentKkn.findUnique({
+        const student = await prisma.studentKkn.findFirst({
           where: { userId },
           select: { kelompokId: true, isKetua: true },
         });
@@ -104,13 +104,6 @@ export const smartZoneController = {
           res
             .status(400)
             .json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
-          return;
-        }
-        if (!student.isKetua) {
-          res.status(403).json({
-            success: false,
-            message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko tambahan",
-          });
           return;
         }
         kelompokId = student.kelompokId;
