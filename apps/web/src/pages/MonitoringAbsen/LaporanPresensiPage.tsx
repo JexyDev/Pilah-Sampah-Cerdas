@@ -167,6 +167,7 @@ export const LaporanPresensiPage: React.FC = () => {
     return "ALL";
   });
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("TODAY");
@@ -602,6 +603,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const handleResetFilter = () => {
     setSelectedKelompok("ALL");
     setSelectedStatus("ALL");
+    setSelectedKelurahan("ALL");
     setDatePreset("TODAY");
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
     const todayStr = nowWib.toISOString().slice(0, 10);
@@ -619,6 +621,14 @@ export const LaporanPresensiPage: React.FC = () => {
   // Filtered student aggregates based on search query with natural roster sorting
   const filteredStudentAggregates = useMemo(() => {
     let list = studentAggregates;
+    // Filter berdasarkan kelurahan
+    if (selectedKelurahan !== "ALL") {
+      list = list.filter(
+        (s) =>
+          s.kelompok?.kelurahan &&
+          s.kelompok.kelurahan.toLowerCase() === selectedKelurahan.toLowerCase()
+      );
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
@@ -636,7 +646,7 @@ export const LaporanPresensiPage: React.FC = () => {
       getName: (s) => s.namaMahasiswa,
       getNim: (s) => s.nim,
     });
-  }, [studentAggregates, searchQuery]);
+  }, [studentAggregates, searchQuery, selectedKelurahan]);
 
   // Quick Action: View detailed log for specific student
   const handleViewStudentDetails = (studentName: string) => {
@@ -645,6 +655,15 @@ export const LaporanPresensiPage: React.FC = () => {
     setPage(1);
     toast.success(`Menampilkan log presensi harian untuk: ${studentName}`);
   };
+
+  // Daftar kelurahan unik dari groups untuk filter dropdown
+  const kelurahanOptions = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g: any) => {
+      if (g.kelurahan) set.add(g.kelurahan);
+    });
+    return Array.from(set).sort();
+  }, [groups]);
 
   // Gating status: Ekspor hanya aktif jika tanggal awal DAN tanggal akhir telah diisi
   const isExportDisabled = !startDate || !endDate;
@@ -1109,8 +1128,8 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Kelompok KKN (3 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-3">
+          {/* 2. Kelompok KKN (2 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 truncate">
               Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan)</span>}
             </label>
@@ -1128,7 +1147,35 @@ export const LaporanPresensiPage: React.FC = () => {
             </select>
           </div>
 
-          {/* 3. Dari Tanggal (2 cols) */}
+          {/* 3. Filter Kelurahan (2 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <MapPin size={11} className="text-emerald-600" />
+              Kelurahan
+              {selectedKelurahan !== "ALL" && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  Aktif
+                </span>
+              )}
+            </label>
+            <select
+              value={selectedKelurahan}
+              onChange={(e) => {
+                setSelectedKelurahan(e.target.value);
+                setPage(1);
+              }}
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate"
+            >
+              <option value="ALL">📍 Semua Kelurahan</option>
+              {kelurahanOptions.map((kel) => (
+                <option key={kel} value={kel}>
+                  Kel. {kel}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Dari Tanggal (2 cols) */}
           <div className="col-span-1 sm:col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               Dari Tanggal
@@ -1145,10 +1192,10 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* 4. Sampai Tanggal (2 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          {/* 5. Sampai Tanggal (1 col) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-1">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-              Sampai Tanggal
+              Sampai
             </label>
             <input
               type="date"
@@ -1162,7 +1209,7 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* 5. Actions: Reset & Ekspor (2 cols) */}
+          {/* 6. Actions: Reset & Ekspor (2 cols) */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex items-end gap-2">
             <button
               type="button"

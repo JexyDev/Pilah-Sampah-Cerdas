@@ -363,6 +363,13 @@ export const dplController = {
         });
         return;
       }
+      if (
+        error.message?.includes("tidak dapat ditolak") ||
+        error.message?.includes("tidak ditemukan")
+      ) {
+        res.status(400).json({ error: "BAD_REQUEST", message: error.message });
+        return;
+      }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });
     }
   },

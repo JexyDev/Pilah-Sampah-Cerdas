@@ -82,11 +82,41 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   else if (/Edge|Edg/i.test(ua)) detectedBrowser = "Microsoft Edge";
   else if (/Opera|OPR/i.test(ua)) detectedBrowser = "Opera Browser";
 
+  if (hasLocalBypass) {
+    return {
+      isIOS: true,
+      isMac: true,
+      isSafari: true,
+      isValid: true,
+      detectedOS: `${detectedOS} (Bypass Pengembang Aktif)`,
+      detectedBrowser,
+      userAgent: ua,
+    };
+  }
+
+  // Determine validity: Strict iOS + Safari WebKit
+  let isValid = false;
+  let reason: "NOT_IOS" | "NOT_SAFARI" | "IN_APP_BROWSER" | undefined;
+
+  if (!isIOS) {
+    isValid = false;
+    reason = "NOT_IOS";
+  } else if (isInApp) {
+    isValid = false;
+    reason = "IN_APP_BROWSER";
+  } else if (!isSafari) {
+    isValid = false;
+    reason = "NOT_SAFARI";
+  } else {
+    isValid = true;
+  }
+
   return {
-    isIOS: isIOS || isMac,
+    isIOS,
     isMac,
-    isSafari: true,
-    isValid: true,
+    isSafari,
+    isValid,
+    reason,
     detectedOS,
     detectedBrowser,
     userAgent: ua,

@@ -8,6 +8,7 @@
 import { create } from "zustand";
 import api from "../utils/api";
 import { useThemeStore } from "./useThemeStore";
+import { checkIsIOSSafari } from "../utils/deviceValidation";
 
 export type UserRole =
   | "DEVELOPER"
@@ -181,6 +182,13 @@ const getInitialUser = (): User | null => {
       clearAllStoredItems();
       return null;
     }
+    if (user && user.peran === "MAHASISWA_KKN") {
+      const dev = checkIsIOSSafari();
+      if (!dev.isValid) {
+        clearAllStoredItems();
+        return null;
+      }
+    }
     if (
       user &&
       (user.wilayah === "Sistem Pusat" ||
@@ -223,6 +231,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         clearAllStoredItems();
         set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
         return false;
+      }
+
+      if (normalizedRole === "MAHASISWA_KKN") {
+        const devCheck = checkIsIOSSafari();
+        if (!devCheck.isValid) {
+          clearAllStoredItems();
+          set({
+            isLoading: false,
+            error: "MAHASISWA_MUST_USE_IOS_SAFARI",
+            isAuthenticated: false,
+            user: null,
+          });
+          return false;
+        }
       }
 
       // Simpan flag remember_me di localStorage (selalu persisten sebagai referensi)
