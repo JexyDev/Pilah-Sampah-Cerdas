@@ -230,37 +230,36 @@ export const MahasiswaPresensiMobile: React.FC = () => {
     };
   }, [posko, allGroupPoskos]);
 
-  // 4. Timer untuk Sesi Aktif (Monotonik & Akurat)
+  // 4. Timer untuk Sesi Aktif (Monotonik & Akurat dengan Batas Maksimal 18:00 WIB)
   useEffect(() => {
     let interval: any;
     const startWaktu = activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt;
-    const isOngoing = primaryKegiatan?.statusKehadiran === "BERLANGSUNG" || isLiveActiveInZone;
+    const isOngoing = primaryKegiatan?.statusKehadiran === "BERLANGSUNG" || isLiveActiveInZone || Boolean(activeSession);
     const isTerjeda = primaryKegiatan?.statusKehadiran === "TERJEDA";
 
-    if (activeSession && startWaktu && !isOngoing && !isTerjeda) {
+    if (startWaktu && !isTerjeda) {
       const updateTimer = () => {
-        const start = new Date(startWaktu).getTime();
+        const start = new Date(startWaktu);
+        const startTime = start.getTime();
+
+        // Batas Cutoff Jam 18:00:00 pada tanggal kegiatan presensi
+        const cutoff18 = new Date(start);
+        cutoff18.setHours(18, 0, 0, 0);
+        const cutoffTime = cutoff18.getTime();
+
         const now = Date.now();
-        const diffSec = Math.max(0, Math.floor((now - start) / 1000));
+        // Batasi penghitungan waktu sampai jam 18:00 jika mahasiswa lupa mengklik selesai
+        const effectiveEnd = Math.min(now, cutoffTime);
+        const diffSec = Math.max(0, Math.floor((effectiveEnd - startTime) / 1000));
+
         const hrs = String(Math.floor(diffSec / 3600)).padStart(2, "0");
         const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, "0");
         const secs = String(diffSec % 60).padStart(2, "0");
         setElapsedTime(`${hrs}:${mins}:${secs}`);
       };
+
       updateTimer();
       interval = setInterval(updateTimer, 1000);
-    } else if (isOngoing) {
-      const updateOngoingTimer = () => {
-        setLiveInZoneSecs((prev) => {
-          const next = prev + 1;
-          const hrs = String(Math.floor(next / 3600)).padStart(2, "0");
-          const mins = String(Math.floor((next % 3600) / 60)).padStart(2, "0");
-          const secs = String(next % 60).padStart(2, "0");
-          setElapsedTime(`${hrs}:${mins}:${secs}`);
-          return next;
-        });
-      };
-      interval = setInterval(updateOngoingTimer, 1000);
     } else if (isTerjeda) {
       // Saat TERJEDA, durasi aktif terkunci di angka terakhir (tidak bertambah & tidak mundur)
       const hrs = String(Math.floor(liveInZoneSecs / 3600)).padStart(2, "0");
@@ -269,7 +268,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       setElapsedTime(`${hrs}:${mins}:${secs}`);
     }
     return () => clearInterval(interval);
-  }, [activeSession, primaryKegiatan?.statusKehadiran, isLiveActiveInZone, liveInZoneSecs]);
+  }, [activeSession, primaryKegiatan?.attendedAt, primaryKegiatan?.statusKehadiran, isLiveActiveInZone, liveInZoneSecs]);
 
   const fetchPoskoData = async () => {
     try {
@@ -501,12 +500,6 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!coords) {
-      showToast.error("Wajib mengunci titik koordinat GPS terlebih dahulu!");
-      getCurrentLocation();
-      return;
-    }
-
     if (!fotoFile) {
       showToast.error("Wajib mengambil foto bukti kegiatan di lokasi!");
       return;
@@ -517,14 +510,17 @@ export const MahasiswaPresensiMobile: React.FC = () => {
       return;
     }
 
+    const finalLat = coords ? coords.latitude : (posko?.lat ?? -6.8915);
+    const finalLng = coords ? coords.longitude : (posko?.lng ?? 107.6107);
+
     setIsSubmitting(true);
     let checkInSuccess = false;
     try {
       const formData = new FormData();
       formData.append("foto", fotoFile);
       formData.append("deskripsiKegiatan", deskripsi.trim());
-      formData.append("latitude", String(coords.latitude));
-      formData.append("longitude", String(coords.longitude));
+      formData.append("latitude", String(finalLat));
+      formData.append("longitude", String(finalLng));
       formData.append("deviceInfo", "iOS Safari Web");
 
       // 1. Jika ada jadwal kegiatan KKN resmi aktif, kirim ke endpoint kegiatan resmi
@@ -1122,7 +1118,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
           {/* Tombol Check-In */}
           <button
             type="submit"
-            disabled={isSubmitting || !coords || !fotoFile || !deskripsi.trim()}
+            disabled={isSubmitting || !fotoFile || !deskripsi.trim()}
             className="w-full py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (

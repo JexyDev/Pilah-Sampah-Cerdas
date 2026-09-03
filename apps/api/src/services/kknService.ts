@@ -2269,12 +2269,12 @@ export class KknService {
     const endDate = new Date(targetDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // VALIDASI H-1: Tidak boleh izin pada hari H atau hari yang sudah lewat
+    // Validasi Tanggal: Tidak boleh mengajukan izin untuk hari yang sudah lewat
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (startDate.getTime() <= today.getTime()) {
+    if (startDate.getTime() < today.getTime()) {
       throw new Error(
-        "Pengajuan izin harus dilakukan minimal H-1. Anda tidak dapat mengajukan izin untuk hari ini atau hari yang sudah lewat."
+        "Anda tidak dapat mengajukan izin untuk tanggal yang sudah lewat."
       );
     }
 

@@ -82,60 +82,8 @@ export function checkIsIOSSafari(): DeviceValidationResult {
   else if (/Edge|Edg/i.test(ua)) detectedBrowser = "Microsoft Edge";
   else if (/Opera|OPR/i.test(ua)) detectedBrowser = "Opera Browser";
 
-  // If local bypass active or testing on Apple macOS (MacBook)
-  if (hasLocalBypass || isMac) {
-    return {
-      isIOS: isIOS || isMac,
-      isMac,
-      isSafari: true,
-      isValid: true,
-      detectedOS,
-      detectedBrowser,
-      userAgent: ua,
-    };
-  }
-
-  if (!isIOS) {
-    return {
-      isIOS: false,
-      isMac,
-      isSafari: false,
-      isValid: false,
-      reason: "NOT_IOS",
-      detectedOS,
-      detectedBrowser,
-      userAgent: ua,
-    };
-  }
-
-  if (isInApp) {
-    return {
-      isIOS: true,
-      isMac,
-      isSafari: false,
-      isValid: false,
-      reason: "IN_APP_BROWSER",
-      detectedOS,
-      detectedBrowser,
-      userAgent: ua,
-    };
-  }
-
-  if (!isSafari) {
-    return {
-      isIOS: true,
-      isMac,
-      isSafari: false,
-      isValid: false,
-      reason: "NOT_SAFARI",
-      detectedOS,
-      detectedBrowser,
-      userAgent: ua,
-    };
-  }
-
   return {
-    isIOS: true,
+    isIOS: isIOS || isMac,
     isMac,
     isSafari: true,
     isValid: true,

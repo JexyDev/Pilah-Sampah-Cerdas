@@ -237,31 +237,31 @@ export const MahasiswaProfilMobile: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitIzin} className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] space-y-4 overflow-y-auto flex-1 text-xs">
+            <form id="form-izin-sakit" onSubmit={handleSubmitIzin} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Kategori</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setTipeIzin("IZIN")}
-                    className={`py-2 rounded-xl font-bold transition cursor-pointer border ${
+                    className={`py-2.5 rounded-xl font-bold transition cursor-pointer border flex items-center justify-center gap-1.5 ${
                       tipeIzin === "IZIN"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-500"
-                        : "bg-slate-50 text-slate-600 border-slate-200"
+                        ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-500 shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    Izin Keperluan
+                    <span>Izin Keperluan</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setTipeIzin("SAKIT")}
-                    className={`py-2 rounded-xl font-bold transition cursor-pointer border ${
+                    className={`py-2.5 rounded-xl font-bold transition cursor-pointer border flex items-center justify-center gap-1.5 ${
                       tipeIzin === "SAKIT"
-                        ? "bg-rose-50 text-rose-700 border-rose-500"
-                        : "bg-slate-50 text-slate-600 border-slate-200"
+                        ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-500 shadow-xs"
+                        : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    Sakit (Surat Dokter)
+                    <span>Sakit (Surat Dokter)</span>
                   </button>
                 </div>
               </div>
@@ -273,7 +273,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
                     type="date"
                     value={tanggalMulai}
                     onChange={(e) => setTanggalMulai(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
                   />
                 </div>
                 <div className="space-y-1">
@@ -282,7 +282,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
                     type="date"
                     value={tanggalSelesai}
                     onChange={(e) => setTanggalSelesai(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -294,7 +294,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
                   onChange={(e) => setAlasan(e.target.value)}
                   rows={3}
                   placeholder="Tuliskan keterangan lengkap alasan izin/sakit..."
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                 />
               </div>
 
@@ -367,15 +367,36 @@ export const MahasiswaProfilMobile: React.FC = () => {
                   </div>
                 )}
               </div>
+            </form>
 
+            {/* Modal Action Footer - Sticky & Always Visible */}
+            <div className="p-3 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/80 backdrop-blur-sm grid grid-cols-2 gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowIzinModal(false)}
+                className="py-3 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition cursor-pointer text-xs flex items-center justify-center"
+              >
+                Batal
+              </button>
               <button
                 type="submit"
+                form="form-izin-sakit"
                 disabled={isSubmitting || !alasan.trim()}
-                className="w-full py-3 bg-[#035941] text-white rounded-xl font-bold uppercase tracking-wider disabled:opacity-50"
+                className="py-3 bg-[#035941] hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs"
               >
-                {isSubmitting ? "Mengirim..." : "Kirim Pengajuan Izin"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Mengirim...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    <span>Kirim Pengajuan</span>
+                  </>
+                )}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       )}

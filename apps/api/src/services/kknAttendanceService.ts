@@ -286,7 +286,22 @@ export function calculateLiveInZoneMinutes(att: {
     return Math.min(Math.max(0, att.actualInZoneMinutes ?? 0), MAX_CAP);
   }
 
-  const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
+  // Batas Cutoff Jam 18:00:00 WIB pada tanggal kegiatan (18:00 WIB = 11:00 UTC)
+  const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
+  const cutoff18Wib = new Date(
+    Date.UTC(
+      attendedWib.getUTCFullYear(),
+      attendedWib.getUTCMonth(),
+      attendedWib.getUTCDate(),
+      11,
+      0,
+      0,
+      0
+    )
+  );
+
+  const rawEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
+  const sessionEndMs = Math.min(rawEndMs, cutoff18Wib.getTime());
   const grossMs = Math.max(0, sessionEndMs - attendedDate.getTime());
   const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
   const netMins = Math.max(0, Math.floor((grossMs - pauseMs) / 60000));
@@ -296,7 +311,7 @@ export function calculateLiveInZoneMinutes(att: {
 
 /**
  * Hitung durasi aktif presensi dalam DETIK (presisi per-detik untuk timer mobile).
- * Daily cap: 28800 detik (8 jam).
+ * Daily cap: 28800 detik (8 jam) dan batas cutoff jam 18:00 WIB.
  */
 export function calculateLiveInZoneSeconds(att: {
   attendedAt: Date | string;
@@ -328,7 +343,22 @@ export function calculateLiveInZoneSeconds(att: {
     return Math.min(Math.max(0, (att.actualInZoneMinutes ?? 0) * 60), MAX_CAP);
   }
 
-  const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
+  // Batas Cutoff Jam 18:00:00 WIB pada tanggal kegiatan (18:00 WIB = 11:00 UTC)
+  const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
+  const cutoff18Wib = new Date(
+    Date.UTC(
+      attendedWib.getUTCFullYear(),
+      attendedWib.getUTCMonth(),
+      attendedWib.getUTCDate(),
+      11,
+      0,
+      0,
+      0
+    )
+  );
+
+  const rawEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
+  const sessionEndMs = Math.min(rawEndMs, cutoff18Wib.getTime());
   const grossMs = Math.max(0, sessionEndMs - attendedDate.getTime());
   const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
   const netSecs = Math.max(0, Math.floor((grossMs - pauseMs) / 1000));
@@ -718,6 +748,43 @@ export class KknAttendanceService {
       }
     }
 
+    // 3. Cek apakah mahasiswa berada di dalam zona/posko kelompok untuk validasi tombol mobile
+    let isInsideRadius = false;
+    let distanceToTarget = 0;
+    let matchedPoskoName: string | null = null;
+
+    if (student.kelompokId) {
+      try {
+        const groupPoskos = await getGroupPoskoList(student.kelompokId);
+        let minDistance = 999999;
+        for (const gp of groupPoskos) {
+          const d = calculateDistance(latitude, longitude, gp.latitude, gp.longitude);
+          if (d < minDistance) {
+            minDistance = d;
+            matchedPoskoName = gp.nama;
+          }
+          if (d <= gp.radius + 25) {
+            isInsideRadius = true;
+          }
+        }
+        distanceToTarget = Math.round(minDistance);
+        if (!isInsideRadius) {
+          const szCheck = await smartZoneService.isStudentInGroupZone(
+            latitude,
+            longitude,
+            student.kelompokId,
+            25
+          );
+          if (szCheck.isInside) {
+            isInsideRadius = true;
+            matchedPoskoName = szCheck.matchedPosko || matchedPoskoName;
+          }
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
     return {
       success: true,
       message: "Lokasi berhasil dilacak",
@@ -726,13 +793,19 @@ export class KknAttendanceService {
         status: "OK",
         currentStatus: attendanceStatus,
         attendanceStatus,
+        isInsideRadius,
+        isInside: isInsideRadius,
+        inside: isInsideRadius,
+        distanceToTarget,
+        distance: distanceToTarget,
+        matchedPosko: matchedPoskoName,
         inZoneMinutes,
         actualInZoneSeconds: activeAttendanceForSeconds
           ? calculateLiveInZoneSeconds(activeAttendanceForSeconds)
           : inZoneMinutes * 60,
         actualInZoneMinutes: inZoneMinutes,
         autoAttendanceTriggered: false,
-        poskoArea: null,
+        poskoArea: matchedPoskoName,
       },
     };
   }
