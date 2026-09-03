@@ -103,21 +103,25 @@ export const MahasiswaProfilMobile: React.FC = () => {
       formData.append("endDate", tanggalSelesai);
       if (fotoFile) {
         formData.append("fotoBukti", fotoFile);
-        formData.append("evidence", fotoFile);
       }
 
-      await api.post("/kkn/pengajuan-izin", formData, {
+      const res = await api.post("/kkn/pengajuan-izin", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      showToast.success("Pengajuan izin berhasil dikirim ke DPL!");
-      setShowIzinModal(false);
-      setAlasan("");
-      setFotoFile(null);
-      setFotoPreview(null);
-      fetchRiwayatIzin();
+      if (res.data?.success || res.status === 200 || res.status === 201) {
+        showToast.success(res.data?.message || "Pengajuan izin berhasil dikirim ke DPL!");
+        setShowIzinModal(false);
+        setAlasan("");
+        setFotoFile(null);
+        setFotoPreview(null);
+        fetchRiwayatIzin();
+      }
     } catch (err: any) {
-      showToast.error(err.response?.data?.message || "Gagal mengajukan izin");
+      console.error("Gagal mengajukan izin:", err);
+      showToast.error(
+        err.response?.data?.message || err.message || "Gagal mengajukan izin. Silakan coba lagi."
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -1073,7 +1073,7 @@ router.post(
   ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
-  safeUploadSingleImage("fotoBukti"),
+  uploadPemanfaatanImage,
   kknController.createLeaveRequest
 );
 
