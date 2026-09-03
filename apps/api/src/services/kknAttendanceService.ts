@@ -394,9 +394,10 @@ export function calculateTotalJedaMinutes(att: {
   ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
+D
   const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : Date.now();
   const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
-  return Math.max(0, Math.floor(pauseMs / 60000));
+  return Math.max(0, Math.floor(pauseMs / 60000)); (fix(api): durasi jeda freeze saat pause + update pesan luar zona)
 }
 
 /**
