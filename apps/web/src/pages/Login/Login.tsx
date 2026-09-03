@@ -15,6 +15,8 @@ import {
   Phone,
   LogIn,
   Download,
+  ShieldAlert,
+  Smartphone,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useThemeStore } from "../../store/useThemeStore";
@@ -287,6 +289,26 @@ const Login: React.FC = () => {
               <p className="text-xs text-slate-600 leading-relaxed font-medium">
                 Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
               </p>
+            </div>
+
+            {/* Warning Khusus iOS Safari untuk Mahasiswa KKN */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-rose-50/80 to-amber-50/70 border border-rose-200/90 shadow-xs flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-600 mt-0.5">
+                <ShieldAlert size={18} />
+              </div>
+              <div className="space-y-0.5 text-left min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-xs font-black text-rose-900 tracking-tight">
+                    Khusus Mahasiswa KKN
+                  </p>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white tracking-wider">
+                    Wajib iPhone &amp; Safari
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-700 leading-snug font-medium">
+                  Portal presensi &amp; logbook mahasiswa hanya dapat diakses melalui peramban resmi <strong className="text-slate-900 font-extrabold">Apple iPhone (Safari)</strong>. Akses via Android / non-Safari otomatis diblokir sistem.
+                </p>
+              </div>
             </div>
 
             {/* Login Form */}
