@@ -402,7 +402,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
                             Text(
-                              '${bin.currentVolumeL.toStringAsFixed(1)} kg',
+                              '${bin.currentWeightKg.toStringAsFixed(1)} kg',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
                             ),
                             Text(
@@ -410,7 +410,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor),
                             ),
                             Text(
-                              '${bin.maxCapacityL.toStringAsFixed(0)} kg',
+                              '${bin.maxWeightKg.toStringAsFixed(0)} kg',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textColor, fontWeight: FontWeight.bold),
                             ),
                           ],
