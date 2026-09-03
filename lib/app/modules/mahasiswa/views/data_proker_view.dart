@@ -13,8 +13,16 @@ final prokerDataListProvider = FutureProvider.autoDispose<List<Map<String, dynam
   }).toList();
 });
 
-class DataProkerView extends ConsumerWidget {
+class DataProkerView extends ConsumerStatefulWidget {
   const DataProkerView({super.key});
+
+  @override
+  ConsumerState<DataProkerView> createState() => _DataProkerViewState();
+}
+
+class _DataProkerViewState extends ConsumerState<DataProkerView> {
+  // Tracking loading state per proker id
+  final Map<String, bool> _loadingStatus = {};
 
   Widget _buildUsulanBadge(String? statusUsulan, String? legacyStatus) {
     String u = (statusUsulan ?? '').toUpperCase();
@@ -85,6 +93,109 @@ class DataProkerView extends ConsumerWidget {
     return u == 'BELUM_DISETUJUI' || u == 'PERLU_REVISI_DPL' || u == 'DITOLAK' || u == 'TIDAK_DISETUJUI' || (u.isEmpty && l == 'BELUM_DISETUJUI') || (u.isEmpty && (l == 'DITOLAK' || l == 'TIDAK_DISETUJUI'));
   }
 
+  // Bisa mulai kerjakan jika proker sudah disetujui DPL dan belum mulai
+  bool _canMulai(String? statusUsulan, String? statusPelaksanaan, String? legacyStatus) {
+    final u = (statusUsulan ?? '').toUpperCase();
+    final p = (statusPelaksanaan ?? '').toUpperCase();
+    final l = (legacyStatus ?? '').toUpperCase();
+    final isDisetujui = u == 'DISETUJUI' || u == 'DITERIMA' ||
+        (u.isEmpty && (l == 'DITERIMA' || l == 'DISETUJUI' || l == 'SEDANG_BERJALAN' || l == 'SELESAI'));
+    final belumMulai = p.isEmpty || p == 'BELUM_MULAI';
+    return isDisetujui && belumMulai;
+  }
+
+  // Bisa selesaikan jika sedang berjalan
+  bool _canSelesaikan(String? statusPelaksanaan, String? legacyStatus) {
+    final p = (statusPelaksanaan ?? '').toUpperCase();
+    final l = (legacyStatus ?? '').toUpperCase();
+    return p == 'SEDANG_BERJALAN' || p == 'SEDANG_DILAKSANAKAN' || p == 'BERJALAN' ||
+        (p.isEmpty && (l == 'SEDANG_BERJALAN' || l == 'SEDANG_DILAKSANAKAN'));
+  }
+
+  Future<void> _updateStatus(BuildContext context, String id, String statusBaru) async {
+    setState(() => _loadingStatus[id] = true);
+    try {
+      final repo = ref.read(kknRepositoryProvider);
+      final success = await repo.updateStatusPelaksanaan(id, statusBaru);
+      if (!mounted) return;
+      if (success) {
+        final label = statusBaru == 'SEDANG_BERJALAN' ? 'dimulai' : 'diselesaikan';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Program kerja berhasil $label!'),
+          backgroundColor: AppColors.primaryGreen,
+          behavior: SnackBarBehavior.floating,
+        ));
+        ref.invalidate(prokerDataListProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Gagal memperbarui status. Coba lagi.'),
+          backgroundColor: AppColors.dangerRed,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.toString().replaceAll('Exception: ', '')),
+        backgroundColor: AppColors.dangerRed,
+        behavior: SnackBarBehavior.floating,
+      ));
+    } finally {
+      if (mounted) setState(() => _loadingStatus.remove(id));
+    }
+  }
+
+  Future<void> _confirmAndUpdate(BuildContext context, String id, String statusBaru, String judul) async {
+    final isMulai = statusBaru == 'SEDANG_BERJALAN';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              isMulai ? Icons.play_circle_rounded : Icons.check_circle_rounded,
+              color: isMulai ? AppColors.primaryBlue : AppColors.primaryGreen,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                isMulai ? 'Mulai Kerjakan?' : 'Selesaikan Proker?',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          isMulai
+              ? 'Tandai program kerja "$judul" sebagai sedang dikerjakan?'
+              : 'Tandai program kerja "$judul" sebagai sudah selesai dilaksanakan?',
+          style: const TextStyle(fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isMulai ? AppColors.primaryBlue : AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isMulai ? 'Ya, Mulai' : 'Ya, Selesai'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _updateStatus(context, id, statusBaru);
+    }
+  }
+
   String _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
     try {
@@ -94,17 +205,23 @@ class DataProkerView extends ConsumerWidget {
     } catch (_) { return raw.split('T').first; }
   }
 
-  Widget _buildProkerCard(BuildContext context, WidgetRef ref, Map<String, dynamic> item) {
+  Widget _buildProkerCard(BuildContext context, Map<String, dynamic> item) {
     final id = item['id']?.toString() ?? '';
     final judul = item['judul']?.toString() ?? '-';
     final deskripsi = item['deskripsi']?.toString() ?? '-';
     final statusUsulan = item['statusUsulan']?.toString() ?? item['status_usulan']?.toString();
+    final statusPelaksanaan = item['statusPelaksanaan']?.toString() ?? item['status_pelaksanaan']?.toString();
     final legacyStatus = item['status']?.toString();
     final catatanDpl = item['catatanDpl']?.toString() ?? item['catatan_dpl']?.toString() ?? '';
     final createdAtStr = item['createdAt']?.toString();
     final isRevisi = statusUsulan == 'PERLU_REVISI_DPL';
     final isDitolak = statusUsulan == 'DITOLAK' || statusUsulan == 'TIDAK_DISETUJUI' || legacyStatus == 'DITOLAK' || legacyStatus == 'TIDAK_DISETUJUI';
     final canEdit = _canEdit(statusUsulan, legacyStatus);
+    final canMulai = _canMulai(statusUsulan, statusPelaksanaan, legacyStatus);
+    final canSelesaikan = _canSelesaikan(statusPelaksanaan, legacyStatus);
+    final isSedangBerjalan = canSelesaikan; // SEDANG_BERJALAN = canSelesaikan sudah true
+    final isLoading = _loadingStatus[id] == true;
+    final hasActionRow = canEdit || canMulai || canSelesaikan;
 
     return Card(
       elevation: 1.5,
@@ -125,6 +242,24 @@ class DataProkerView extends ConsumerWidget {
             Wrap(spacing: 6, runSpacing: 4, children: [
               _buildKategoriBadge(item['kategori']),
               _buildUsulanBadge(statusUsulan, legacyStatus),
+              if (isSedangBerjalan)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.play_circle_rounded, size: 11, color: AppColors.primaryBlue),
+                      const SizedBox(width: 4),
+                      const Text('Sedang Berjalan',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+                    ],
+                  ),
+                ),
               if (isRevisi || isDitolak)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -184,28 +319,107 @@ class DataProkerView extends ConsumerWidget {
                 ),
               ),
             ],
-            if (canEdit && id.isNotEmpty) ...[
+            if (hasActionRow && id.isNotEmpty) ...[
               const SizedBox(height: 8),
               const Divider(height: 1),
               const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: isRevisi ? Colors.orange.shade700 : isDitolak ? Colors.red.shade700 : AppColors.primary,
-                    backgroundColor: (isRevisi ? Colors.orange : isDitolak ? Colors.red : AppColors.primary).withValues(alpha: 0.07),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    minimumSize: Size.zero,
-                  ),
-                  icon: Icon(isRevisi ? Icons.rate_review_rounded : isDitolak ? Icons.refresh_rounded : Icons.edit_rounded, size: 14),
-                  label: Text(isRevisi ? 'Revisi Sekarang' : isDitolak ? 'Ajukan Ulang' : 'Edit Proker', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  onPressed: () async {
-                    await Navigator.pushNamed(context, AppRoutes.editProgramKerja, arguments: {'id': id});
-                    ref.invalidate(prokerDataListProvider);
-                  },
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Tombol Edit / Revisi / Ajukan Ulang
+                  if (canEdit)
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: isRevisi ? Colors.orange.shade700 : isDitolak ? Colors.red.shade700 : AppColors.primary,
+                        backgroundColor: (isRevisi ? Colors.orange : isDitolak ? Colors.red : AppColors.primary).withValues(alpha: 0.07),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        minimumSize: Size.zero,
+                      ),
+                      icon: Icon(isRevisi ? Icons.rate_review_rounded : isDitolak ? Icons.refresh_rounded : Icons.edit_rounded, size: 14),
+                      label: Text(isRevisi ? 'Revisi Sekarang' : isDitolak ? 'Ajukan Ulang' : 'Edit Proker', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () async {
+                        await Navigator.pushNamed(context, AppRoutes.editProgramKerja, arguments: {'id': id});
+                        ref.invalidate(prokerDataListProvider);
+                      },
+                    ),
+
+                  // Spacer antar tombol jika ada dua tombol
+                  if (canEdit && (canMulai || canSelesaikan)) const SizedBox(width: 8),
+
+                  // Tombol Mulai Kerjakan
+                  if (canMulai)
+                    isLoading
+                        ? const SizedBox(
+                            width: 28, height: 28,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+                          )
+                        : ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryBlue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              elevation: 0,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              minimumSize: Size.zero,
+                            ),
+                            icon: const Icon(Icons.play_circle_rounded, size: 14),
+                            label: const Text('Mulai Kerjakan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            onPressed: () => _confirmAndUpdate(context, id, 'SEDANG_BERJALAN', judul),
+                          ),
+
+                  // Tombol Selesaikan
+                  if (canSelesaikan)
+                    isLoading
+                        ? const SizedBox(
+                            width: 28, height: 28,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGreen),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Tombol Lihat Program
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.primaryBlue,
+                                  backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.07),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  minimumSize: Size.zero,
+                                ),
+                                icon: const Icon(Icons.open_in_new_rounded, size: 13),
+                                label: const Text('Lihat Program',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                onPressed: () => Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.prokerDetail,
+                                  arguments: {'id': id},
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Tombol Selesaikan
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGreen,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  elevation: 0,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  minimumSize: Size.zero,
+                                ),
+                                icon: const Icon(Icons.check_circle_rounded, size: 14),
+                                label: const Text('Selesaikan',
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                onPressed: () =>
+                                    _confirmAndUpdate(context, id, 'SELESAI', judul),
+                              ),
+                            ],
+                          ),
+                ],
               ),
             ],
           ],
@@ -215,7 +429,7 @@ class DataProkerView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final listState = ref.watch(prokerDataListProvider);
 
     return Scaffold(
@@ -288,7 +502,7 @@ class DataProkerView extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               itemCount: list.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (ctx, i) => _buildProkerCard(ctx, ref, list[i]),
+              itemBuilder: (ctx, i) => _buildProkerCard(ctx, list[i]),
             ),
           );
         },

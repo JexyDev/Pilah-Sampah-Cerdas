@@ -183,6 +183,10 @@ abstract class KknRepository {
   /// DELETE /api/v1/kkn/program-kerja/:id
   Future<bool> deleteProgramKerja(String id);
 
+  /// Update status pelaksanaan Program Kerja (Mulai / Selesai)
+  /// PATCH /api/v1/kkn/program-kerja/:id
+  Future<bool> updateStatusPelaksanaan(String id, String statusPelaksanaan);
+
   /// GET /api/v1/pemanfaatan
   Future<List<dynamic>> getPemanfaatanLogs();
 

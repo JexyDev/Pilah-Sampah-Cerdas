@@ -943,6 +943,22 @@ class ApiKknRepository implements KknRepository {
   }
 
   @override
+  Future<bool> updateStatusPelaksanaan(String id, String statusPelaksanaan) async {
+    try {
+      final response = await apiClient.dio.patch(
+        '${ApiEndpoints.kknProgramKerja}/$id',
+        data: {'statusPelaksanaan': statusPelaksanaan},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(_extractError(e.response?.data, 'Gagal memperbarui status program kerja'));
+      }
+      rethrow;
+    }
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getProgramKerja() async {
     try {
       final response = await apiClient.dio.get(ApiEndpoints.kknProgramKerja);
