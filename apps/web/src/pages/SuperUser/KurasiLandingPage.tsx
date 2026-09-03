@@ -1,15 +1,10 @@
 /**
- * Project: BERSEKA - Landing Page CMS (Content Management System)
- * Allows Admin (SUPER_USER & DEVELOPER) to customize every section of the public Landing Page:
- * - Pasar Berseka (Products, Pricing, Points, Stock, Images)
- * - Hero Carousel Slides (Images, Badges, Titles, Metrics)
- * - Program Aksi & Inisiatif (Campaigns, Targets, Units, Progress)
- * - Berita & Cerita Lapangan (News Articles, Authors, Summaries)
- * - Ticker Aktivitas & FAQ
- * Features seamless Dual Storage (API + LocalStorage Instant Live Sync) and Drag & Drop Image Upload
+ * Project: BERSEKA - Kurasi Kegiatan Landing Page
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Plus,
@@ -23,1849 +18,987 @@ import {
   Save,
   RefreshCw,
   Image as ImageIcon,
-  ShoppingBag,
+  BookOpen,
   Layers,
-  Newspaper,
-  MessageSquare,
-  HelpCircle,
-  Eye,
-  ExternalLink,
-  ChevronRight,
-  Award,
-  Tag,
-  Clock,
-  X,
-  ShieldCheck,
-  TrendingUp,
-  FileText,
-  UploadCloud,
-  FolderOpen,
-  Link2,
-  Camera,
-  Check
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
-import {
-  loadCmsContent,
-  saveCmsContent,
-  resetCmsContent,
-  DEFAULT_CMS_CONTENT,
-  type HeroSlideItem,
-  type MarketProductItem,
-  type ActionCampaignItem,
-  type NewsArticleItem,
-  type LiveLogItem,
-  type FaqItem,
-  type LandingContentPayload,
-} from "../../utils/cmsStorage";
 
-// ── Shared Preset Images ──────────────────────────────────────────────────────
-const PRESET_GALLERY_IMAGES = [
-  { label: "Pemilahan & Daur Ulang", url: "/image/kkn-hero-sorting.webp", desc: "Aksi pemilahan sampah KKN" },
-  { label: "Biokonversi Maggot & Kompos", url: "/image/activity-2.webp", desc: "Budidaya maggot BSF & kasgot" },
-  { label: "Bank Sampah & Sosialisasi", url: "/image/activity-1.webp", desc: "Sosialisasi penimbangan warga" },
-  { label: "Aksi Bersih Lingkungan", url: "/image/activity-3.webp", desc: "Pelatihan eco-enzyme & POC" },
-  { label: "Komunitas & Inovasi", url: "/image/landingpage.webp", desc: "Kerjasama KKN UNIKOM" },
-];
-
-// ── Reusable Image Upload & Picker Component ──────────────────────────────────
-interface ImageUploadPickerProps {
-  label?: string;
-  value: string;
-  onChange: (url: string) => void;
-  helperText?: string;
+export interface CuratedActivityItem {
+  id: string;
+  title: string;
+  date: string;
+  location: string;
+  category: string;
+  imageUrl: string;
+  description: string;
+  sdgTags: string[];
+  isPublished: boolean;
 }
-
-const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
-  label = "Foto / Gambar",
-  value,
-  onChange,
-  helperText = "Format: PNG, JPG, JPEG, atau WebP (Maks. 10MB, otomatis dikompresi)"
-}) => {
-  const [sourceMode, setSourceMode] = useState<"upload" | "preset" | "url">("upload");
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [uploading, setUploading] = useState<boolean>(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Compress & convert file to clean base64 DataURL
-  const processAndSetFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      showToast.error("File yang dipilih harus berupa gambar (JPG/PNG/WebP)");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      showToast.error("Ukuran file terlalu besar (Maksimal 10MB)");
-      return;
-    }
-
-    setUploading(true);
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const maxWidth = 1200;
-        const maxHeight = 1200;
-        let { width, height } = img;
-
-        if (width > maxWidth || height > maxHeight) {
-          if (width > height) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL("image/webp", 0.85);
-          onChange(compressedDataUrl);
-          showToast.success("Foto berhasil diunggah!");
-        } else {
-          onChange(event.target?.result as string);
-        }
-        setUploading(false);
-      };
-      img.onerror = () => {
-        onChange(event.target?.result as string);
-        setUploading(false);
-      };
-    };
-    reader.onerror = () => {
-      showToast.error("Gagal membaca file gambar.");
-      setUploading(false);
-    };
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processAndSetFile(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processAndSetFile(file);
-    }
-  };
-
-  return (
-    <div className="space-y-2 text-left">
-      <div className="flex items-center justify-between">
-        <label className="block font-extrabold text-slate-700 text-xs">{label} *</label>
-        
-        {/* Source Mode Switcher */}
-        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-[10px] font-extrabold">
-          <button
-            type="button"
-            onClick={() => setSourceMode("upload")}
-            className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
-              sourceMode === "upload" ? "bg-white text-[#005841] shadow-2xs font-black" : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <UploadCloud size={12} />
-            <span>Unggah Foto</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSourceMode("preset")}
-            className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
-              sourceMode === "preset" ? "bg-white text-[#005841] shadow-2xs font-black" : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <FolderOpen size={12} />
-            <span>Galeri Preset</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setSourceMode("url")}
-            className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${
-              sourceMode === "url" ? "bg-white text-[#005841] shadow-2xs font-black" : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Link2 size={12} />
-            <span>URL</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── MODE 1: FILE UPLOAD (DRAG & DROP) ── */}
-      {sourceMode === "upload" && (
-        <div className="space-y-2.5">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
-          {value ? (
-            <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 group h-44 flex items-center justify-center">
-              <img
-                src={value}
-                alt="Preview"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/image/activity-1.webp";
-                }}
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-2xs">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-3 py-1.5 rounded-xl bg-white text-slate-800 text-xs font-bold hover:bg-slate-100 flex items-center gap-1 shadow-md cursor-pointer"
-                >
-                  <Camera size={14} />
-                  <span>Ganti Foto</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onChange("")}
-                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 flex items-center gap-1 shadow-md cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                  <span>Hapus</span>
-                </button>
-              </div>
-              <span className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-bold">
-                ✓ Foto Siap Digunakan
-              </span>
-            </div>
-          ) : (
-            <div
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 ${
-                isDragging
-                  ? "border-[#005841] bg-emerald-50/60 scale-[1.01]"
-                  : "border-slate-300 hover:border-[#005841] bg-slate-50/60 hover:bg-emerald-50/30"
-              }`}
-            >
-              <div className="w-11 h-11 rounded-2xl bg-emerald-100 text-[#005841] flex items-center justify-center shadow-xs">
-                {uploading ? (
-                  <RefreshCw size={20} className="animate-spin text-emerald-700" />
-                ) : (
-                  <UploadCloud size={22} />
-                )}
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-xs font-extrabold text-slate-800">
-                  {uploading ? "Memproses gambar..." : "Klik atau seret foto ke sini untuk mengunggah"}
-                </p>
-                <p className="text-[10px] text-slate-500 font-medium">
-                  {helperText}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── MODE 2: PRESET GALLERY ── */}
-      {sourceMode === "preset" && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {PRESET_GALLERY_IMAGES.map((preset, pIdx) => {
-              const isSelected = value === preset.url;
-              return (
-                <button
-                  key={pIdx}
-                  type="button"
-                  onClick={() => onChange(preset.url)}
-                  className={`relative rounded-xl overflow-hidden border p-1 text-left transition cursor-pointer flex flex-col ${
-                    isSelected
-                      ? "border-[#005841] ring-2 ring-[#005841]/30 bg-emerald-50/60"
-                      : "border-slate-200 hover:border-slate-300 bg-white"
-                  }`}
-                >
-                  <div className="relative h-20 w-full rounded-lg overflow-hidden bg-slate-800">
-                    <img
-                      src={preset.url}
-                      alt={preset.label}
-                      className="w-full h-full object-cover"
-                    />
-                    {isSelected && (
-                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#005841] text-white flex items-center justify-center shadow-xs">
-                        <Check size={12} strokeWidth={3} />
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-extrabold text-slate-800 pt-1.5 px-0.5 truncate block">
-                    {preset.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── MODE 3: DIRECT URL INPUT ── */}
-      {sourceMode === "url" && (
-        <div className="space-y-2">
-          <div className="relative">
-            <Link2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder="https://... atau /image/nama-file.webp"
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 font-semibold text-xs focus:outline-none focus:border-[#005841]"
-            />
-          </div>
-          {value && (
-            <div className="h-28 rounded-xl overflow-hidden border border-slate-200 bg-slate-900">
-              <img
-                src={value}
-                alt="Preview URL"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/image/activity-1.webp";
-                }}
-              />
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Main Page Component ───────────────────────────────────────────────────────
 
 export const KurasiLandingPage: React.FC = () => {
   const { user } = useAuthStore();
-  const isAdmin = true; // Enabled for testing and Super Admin access
+  const isDeveloper = user?.peran === "DEVELOPER" || (user as any)?.role === "DEVELOPER";
 
-  // Tab State
-  const [activeTab, setActiveTab] = useState<"pasar" | "hero" | "campaign" | "news" | "ticker_faq">("pasar");
-
-  // Main CMS Data State
-  const [content, setContent] = useState<LandingContentPayload>(DEFAULT_CMS_CONTENT);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [activities, setActivities] = useState<CuratedActivityItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [deleteTargetIndex, setDeleteTargetIndex] = useState<number | null>(null);
+  const [showResetConfirmModal, setShowResetConfirmModal] = useState<boolean>(false);
+  const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
 
-  // Modals State
-  const [modalType, setModalType] = useState<"product" | "slide" | "campaign" | "news" | "faq" | null>(null);
+  // Form modal state
+  const [showModal, setShowModal] = useState<boolean>(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [deleteConfig, setDeleteConfig] = useState<{
-    tab: string;
-    index: number;
-    title: string;
-  } | null>(null);
-
-  const [showResetModal, setShowResetModal] = useState<boolean>(false);
-
-  // Form states for modals
-  const [productForm, setProductForm] = useState<MarketProductItem>({
+  const [formData, setFormData] = useState<CuratedActivityItem>({
     id: "",
     title: "",
-    category: "pupuk",
-    categoryLabel: "Pupuk & Kompos",
-    categoryColor: "bg-emerald-100 text-emerald-800",
-    initiator: "",
-    priceIdr: 15000,
-    pricePoints: 150,
-    stock: 50,
-    unit: "Pack",
-    rating: 5.0,
-    soldCount: 0,
-    imageUrl: "/image/activity-2.webp",
-    description: "",
-    benefits: [""],
-    isPublished: true,
-  });
-
-  const [slideForm, setSlideForm] = useState<HeroSlideItem>({
-    id: "",
-    image: "/image/kkn-hero-sorting.webp",
-    badge: "Gerakan Kolaboratif",
-    title: "",
-    location: "Kecamatan Bojongsoang, Kab. Bandung",
-    metric: "100+ KK Terbina",
-    highlight: "100% Berbasis QR Code",
-    isPublished: true,
-  });
-
-  const [campaignForm, setCampaignForm] = useState<ActionCampaignItem>({
-    id: "",
-    title: "",
-    category: "organic",
-    categoryLabel: "Organik & Maggot",
-    categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    initiator: "",
-    initiatorBadge: "Terverifikasi KKN",
-    location: "Kecamatan Bojongsoang",
-    imageUrl: "/image/activity-2.webp",
-    currentAmount: 0,
-    targetAmount: 500,
-    unit: "kg",
-    daysRemaining: 14,
-    participantsCount: 20,
-    description: "",
-    impactHighlight: "",
-    isPublished: true,
-  });
-
-  const [newsForm, setNewsForm] = useState<NewsArticleItem>({
-    id: "",
-    title: "",
-    category: "Inovasi & KKN",
-    date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-    readTime: "3 min baca",
-    location: "Kecamatan Bojongsoang",
+    date: new Date().toISOString().slice(0, 10),
+    location: "Wilayah Operasional BERSEKA",
+    category: "Edukasi Pemilahan",
     imageUrl: "/image/activity-1.webp",
-    summary: "",
-    content: "",
-    author: "Tim Humas KKN UNIKOM",
+    description: "",
+    sdgTags: ["#3", "#11"],
     isPublished: true,
   });
 
-  const [faqForm, setFaqForm] = useState<FaqItem>({
-    q: "",
-    a: "",
-  });
+  // Candidate import modal state (Proker & Logbook)
+  const [showCandidateModal, setShowCandidateModal] = useState<boolean>(false);
+  const [candidateTab, setCandidateTab] = useState<"proker" | "logbook">("proker");
+  const [prokerCandidates, setProkerCandidates] = useState<any[]>([]);
+  const [logbookCandidates, setLogbookCandidates] = useState<any[]>([]);
+  const [loadingCandidates, setLoadingCandidates] = useState<boolean>(false);
 
-  // ── Fetch Landing Page Content (IndexedDB + API Hybrid) ─────────────────────
-  const fetchLandingContent = async () => {
-    // 1. Try IndexedDB & LocalStorage first for instant persistent local data
-    const localStored = await loadCmsContent();
-    if (localStored?.data) {
-      setContent(localStored.data);
-    }
+  const presetImages = [
+    { label: "Edukasi & Sosialisasi", url: "/image/activity-1.webp" },
+    { label: "Kompos & Maggot BSF", url: "/image/activity-2.webp" },
+    { label: "Aksi Bersih Sungai", url: "/image/activity-3.webp" },
+    { label: "Aksi Lapangan Mahasiswa", url: "/image/landingpage.webp" },
+  ];
 
-    // 2. Try API (if backend is reachable and newer)
+  const categoryOptions = [
+    "Edukasi Pemilahan",
+    "Pengolahan Kompos & Maggot",
+    "Aksi Bersih Lingkungan",
+    "Pemanfaatan Daur Ulang",
+    "Sosialisasi Kode QR",
+    "Monitoring & Pengangkutan",
+    "Lainnya",
+  ];
+
+  const sdgOptions = [
+    { tag: "#3", label: "SDG 3: Kehidupan Sehat & Sejahtera" },
+    { tag: "#4", label: "SDG 4: Pendidikan Berkualitas" },
+    { tag: "#11", label: "SDG 11: Kota & Permukiman Berkelanjutan" },
+    { tag: "#12", label: "SDG 12: Konsumsi & Produksi Bertanggung Jawab" },
+    { tag: "#13", label: "SDG 13: Penanganan Perubahan Iklim" },
+    { tag: "#15", label: "SDG 15: Ekosistem Daratan" },
+  ];
+
+  const fetchCuratedActivities = async () => {
+    setLoading(true);
     try {
-      const res = await api.get("/system/landing-content");
-      if (res.data?.success && res.data?.data) {
-        const serverData = res.data.data;
-        const serverTimestamp = serverData.lastModified || 0;
-        // Only override if server data is strictly newer than local modified time
-        if (serverTimestamp > (localStored.lastModified || 0)) {
-          setContent(serverData);
-          await saveCmsContent(serverData);
-        }
-        setHasUnsavedChanges(false);
+      const res = await api.get("/system/landing-curated");
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        setActivities(res.data.data);
       }
     } catch (err) {
-      console.info("[KurasiLandingPage] Operating with persistent local storage.");
+      console.warn("[KurasiLandingPage] Failed fetching activities:", err);
+      showToast.error("Gagal memuat data kurasi kegiatan");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLandingContent();
+    fetchCuratedActivities();
   }, []);
 
-  // ── Save Landing Page Content ───────────────────────────────────────────────
-  const handleSaveAll = async () => {
-    setSaving(true);
-    const updatedContent = {
-      ...content,
-      lastModified: Date.now(),
-    };
-
-    // 1. Save to IndexedDB (unlimited quota) + LocalStorage
-    await saveCmsContent(updatedContent);
-
-    // 2. Persist to API if server is online
-    try {
-      await api.put("/system/landing-content", updatedContent);
-    } catch (err: any) {
-      console.info("[KurasiLandingPage] Persisted safely in persistent browser storage.");
-    }
-
-    setSaving(false);
-    setHasUnsavedChanges(false);
-    showToast.success("Konfigurasi Landing Page berhasil diperbarui & disimpan permanen!");
+  const handleOpenAddModal = () => {
+    setEditingIndex(null);
+    setFormData({
+      id: `curated-${Date.now()}`,
+      title: "",
+      date: new Date().toISOString().slice(0, 10),
+      location: "Kelurahan Lebak Gede, Kec. Coblong",
+      category: "Edukasi Pemilahan",
+      imageUrl: "/image/activity-1.png",
+      description: "",
+      sdgTags: ["#3", "#11", "#12"],
+      isPublished: true,
+    });
+    setShowModal(true);
   };
 
-  // ── Reset to Defaults ───────────────────────────────────────────────────────
-  const handleResetToDefaults = async () => {
+  const handleOpenEditModal = (index: number) => {
+    setEditingIndex(index);
+    setFormData({ ...activities[index] });
+    setShowModal(true);
+  };
+
+  const handleTogglePublished = async (index: number) => {
+    const updated = [...activities];
+    updated[index].isPublished = !updated[index].isPublished;
+    setActivities(updated);
+    await saveActivitiesToServer(updated, false);
+  };
+
+  const handleDelete = (index: number) => {
+    setDeleteTargetIndex(index);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteTargetIndex === null) return;
+    setIsActionLoading(true);
+    try {
+      const updated = activities.filter((_, idx) => idx !== deleteTargetIndex);
+      setActivities(updated);
+      setDeleteTargetIndex(null);
+      await saveActivitiesToServer(updated, true);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim()) {
+      showToast.error("Judul kegiatan wajib diisi");
+      return;
+    }
+
+    let updated: CuratedActivityItem[];
+    if (editingIndex !== null) {
+      updated = [...activities];
+      updated[editingIndex] = formData;
+    } else {
+      updated = [formData, ...activities];
+    }
+
+    setActivities(updated);
+    setShowModal(false);
+    await saveActivitiesToServer(updated, true);
+  };
+
+  const saveActivitiesToServer = async (items: CuratedActivityItem[], showSuccessToast = true) => {
     setSaving(true);
     try {
-      await resetCmsContent();
-      setContent(DEFAULT_CMS_CONTENT);
-      try {
-        await api.post("/system/landing-content/reset");
-      } catch (e) {}
-      showToast.success("Konten Landing Page berhasil direset ke standar.");
-      setHasUnsavedChanges(false);
+      const res = await api.post("/system/landing-curated", { activities: items });
+      if (res.data?.success) {
+        if (showSuccessToast) {
+          showToast.success("Kurasi kegiatan Landing Page berhasil disimpan");
+        }
+      }
     } catch (err) {
-      showToast.error("Gagal mereset konten.");
+      console.error("[KurasiLandingPage] Failed saving activities:", err);
+      showToast.error("Gagal menyimpan ke server");
     } finally {
       setSaving(false);
-      setShowResetModal(false);
     }
   };
 
-  // ── Modal Open Handlers ─────────────────────────────────────────────────────
-  const handleOpenAddProduct = () => {
+  const fetchCandidateSources = async () => {
+    setLoadingCandidates(true);
+    setShowCandidateModal(true);
+    try {
+      const [resLogbook, resProker] = await Promise.all([
+        api.get("/system/landing-curated/logbook-sources"),
+        api.get("/system/landing-curated/proker-sources"),
+      ]);
+      if (resLogbook.data?.success && Array.isArray(resLogbook.data?.data)) {
+        setLogbookCandidates(resLogbook.data.data);
+      }
+      if (resProker.data?.success && Array.isArray(resProker.data?.data)) {
+        setProkerCandidates(resProker.data.data);
+      }
+    } catch (err) {
+      console.warn("[KurasiLandingPage] Failed fetching candidate sources:", err);
+      showToast.error("Gagal memuat kandidat kegiatan KKN");
+    } finally {
+      setLoadingCandidates(false);
+    }
+  };
+
+  const handleImportProker = (proker: any) => {
+    const rawDesc = proker.deskripsi || "";
+    // Bersihkan judul markdown (misal **Bakti Sosial**)
+    const lines = rawDesc.split("\n").map((l: string) => l.trim()).filter(Boolean);
+    let title = lines[0] || "Program Kerja Mahasiswa KKN";
+    title = title.replace(/\*\*/g, "").replace(/^#+\s*/, "");
+    if (proker.kelompokNama) {
+      title += ` - ${proker.kelompokNama}`;
+    }
+
+    const cleanDesc = lines.slice(1).join("\n\n") || rawDesc.replace(/\*\*/g, "");
+    const locationText = proker.kelurahan
+      ? `Kelurahan ${proker.kelurahan}`
+      : "Wilayah Operasional BERSEKA";
+
+    let category = "Aksi Bersih Lingkungan";
+    let img = "/image/activity-1.png";
+    let sdgTags = ["#11", "#12"];
+
+    const catLower = (proker.kategori || "").toLowerCase();
+    const descLower = rawDesc.toLowerCase();
+
+    if (catLower.includes("pengolahan") || descLower.includes("kompos") || descLower.includes("maggot")) {
+      category = "Pengolahan Kompos & Maggot";
+      img = "/image/activity-2.png";
+      sdgTags = ["#12", "#13", "#15"];
+    } else if (catLower.includes("pemilahan") || descLower.includes("pilah") || descLower.includes("edukasi")) {
+      category = "Edukasi Pemilahan";
+      img = "/image/activity-1.png";
+      sdgTags = ["#3", "#11", "#12"];
+    } else if (catLower.includes("pemanfaatan") || descLower.includes("daur ulang") || descLower.includes("bank sampah")) {
+      category = "Pemanfaatan Daur Ulang";
+      img = "/image/activity-3.png";
+      sdgTags = ["#11", "#12", "#13"];
+    }
+
     setEditingIndex(null);
-    setProductForm({
-      id: `prod-${Date.now()}`,
-      title: "",
-      category: "pupuk",
-      categoryLabel: "Pupuk & Kompos",
-      categoryColor: "bg-emerald-100 text-emerald-800",
-      initiator: "KKN Kelompok RW",
-      priceIdr: 15000,
-      pricePoints: 150,
-      stock: 50,
-      unit: "Pack",
-      rating: 5.0,
-      soldCount: 0,
-      imageUrl: "/image/activity-2.webp",
-      description: "",
-      benefits: ["100% Organik ramah lingkungan", "Mendukung ekonomi sirkular warga"],
+    setFormData({
+      id: `curated-proker-${proker.id || Date.now()}`,
+      title,
+      date: new Date().toISOString().slice(0, 10),
+      location: locationText,
+      category,
+      imageUrl: img,
+      description: cleanDesc,
+      sdgTags,
       isPublished: true,
     });
-    setModalType("product");
+    setShowCandidateModal(false);
+    setShowModal(true);
   };
 
-  const handleOpenEditProduct = (index: number) => {
-    setEditingIndex(index);
-    setProductForm({ ...content.marketProducts[index] });
-    setModalType("product");
-  };
+  const handleImportLogbook = (logbook: any) => {
+    const rawDate = logbook.tanggalKegiatan
+      ? new Date(logbook.tanggalKegiatan).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
 
-  const handleSaveProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!productForm.title.trim()) {
-      showToast.warning("Nama produk wajib diisi");
-      return;
-    }
+    const locationText = logbook.tempat
+      ? `${logbook.tempat}, Kelurahan ${logbook.kelurahan || "Binaan"}`
+      : `Kelurahan ${logbook.kelurahan || "Binaan"}`;
 
-    const updated = [...content.marketProducts];
-    if (editingIndex !== null) {
-      updated[editingIndex] = productForm;
-    } else {
-      updated.unshift(productForm);
-    }
+    const cleanTitle = logbook.prokerDeskripsi
+      ? `${logbook.prokerDeskripsi.replace(/\*\*/g, "").slice(0, 60)} (${logbook.kelompokNama || "KKN"})`
+      : logbook.deskripsi
+      ? logbook.deskripsi.split("\n")[0].replace(/\*\*/g, "").slice(0, 75)
+      : `Aksi Lingkungan Mahasiswa di ${logbook.tempat || "Wilayah Binaan"}`;
 
-    setContent({ ...content, marketProducts: updated });
-    setHasUnsavedChanges(true);
-    setModalType(null);
-    showToast.success(editingIndex !== null ? "Produk diperbarui di draft" : "Produk ditambahkan ke draft");
-  };
+    let img = logbook.fotoBuktiUrl || "/image/activity-1.png";
 
-  // ── Hero Slide Handlers ─────────────────────────────────────────────────────
-  const handleOpenAddSlide = () => {
     setEditingIndex(null);
-    setSlideForm({
-      id: `slide-${Date.now()}`,
-      image: "/image/kkn-hero-sorting.webp",
-      badge: "Gerakan Kolaboratif",
-      title: "",
-      location: "Kecamatan Bojongsoang, Kab. Bandung",
-      metric: "100+ KK Terbina",
-      highlight: "100% Berbasis QR Code",
+    setFormData({
+      id: `curated-log-${logbook.id || Date.now()}`,
+      title: cleanTitle,
+      date: rawDate,
+      location: locationText,
+      category: logbook.prokerKategori || "Edukasi & Sosialisasi",
+      imageUrl: img,
+      description: logbook.deskripsi || "Dokumentasi kegiatan lapangan mahasiswa KKN terpadu bersama masyarakat.",
+      sdgTags: ["#3", "#11", "#12"],
       isPublished: true,
     });
-    setModalType("slide");
+    setShowCandidateModal(false);
+    setShowModal(true);
   };
 
-  const handleOpenEditSlide = (index: number) => {
-    setEditingIndex(index);
-    setSlideForm({ ...content.heroSlides[index] });
-    setModalType("slide");
-  };
+  const executeResetToRealProkerDefaults = async () => {
+    try {
+      const realDefaults: CuratedActivityItem[] = [
+        {
+          id: "curated-1",
+          title: "Training of Educator Pemilahan Sampah bersama DLH & Aktivasi Bank Sampah",
+          date: "2026-08-27",
+          location: "Balai RW 05, Kelurahan Sadang Serang, Kec. Coblong",
+          category: "Edukasi & Sosialisasi",
+          imageUrl: "/uploads/1787810753706-6e97bf38-1c6b-4336-a20f-e67182c87ade.jpg",
+          description:
+            "Melaksanakan sesi Training of Educator Pemilahan Sampah bersama Ibu Ayu dari Dinas Lingkungan Hidup (DLH) Kota Bandung di Balai RW 05. Membahas aktivasi Bank Sampah sebagai upaya pemanfaatan sampah untuk kegiatan ekonomi masyarakat, serta teknik komunikasi persuasif door to door edukasi (DTDE).",
+          sdgTags: ["#11", "#12", "#13"],
+          isPublished: true,
+        },
+        {
+          id: "curated-2",
+          title: "Sosialisasi Pengelolaan & Pemilahan Sampah Sejak Dini ke Sekolah Dasar",
+          date: "2026-08-27",
+          location: "Kelurahan Lebak Siliwangi, Kec. Coblong",
+          category: "Edukasi Pemilahan",
+          imageUrl: "/uploads/1787800993979-3bea1d8c-fc69-46a9-b1c2-c9d37e4f4a83.jpg",
+          description:
+            "Pengajuan izin dan pelaksanaan program edukasi kepedulian lingkungan hidup serta tata kelola pemilahan sampah organik dan anorganik dari sumber sejak dini ke Sekolah Dasar di wilayah Kelurahan Lebak Siliwangi bersama mahasiswa KKN.",
+          sdgTags: ["#4", "#12", "#15"],
+          isPublished: true,
+        },
+        {
+          id: "curated-3",
+          title: "Pengolahan Sampah Organik Rumah Tangga Menjadi Kompos & Budidaya Maggot",
+          date: "2026-08-27",
+          location: "RW 01, Kelurahan Cipaganti, Kec. Coblong",
+          category: "Pengolahan & Pemanfaatan",
+          imageUrl: "/uploads/1787810430897-88c05dc9-798a-4a53-aa83-b1f47853bedc.jpg",
+          description:
+            "Program pembuatan instalasi pengomposan sampah sisa makanan rumah tangga dan biokonversi larva Maggot Black Soldier Fly (BSF) dari hasil pembuangan organik warga untuk pupuk alami dan pakan ternak tinggi protein.",
+          sdgTags: ["#12", "#13", "#15"],
+          isPublished: true,
+        },
+        {
+          id: "curated-4",
+          title: "Bakti Sosial & Gotong Royong Pemilahan Sampah Lingkungan Bersama Warga",
+          date: "2026-08-27",
+          location: "RW 21, Kelurahan Sadang Serang, Kec. Coblong",
+          category: "Aksi Bersih Lingkungan",
+          imageUrl: "/uploads/1787803766196-a4f6ca4f-943e-4ddb-a1aa-d6a7d9727097.jpg",
+          description:
+            "Edukasi pemilahan sampah organik dan anorganik berbasis RW serta kolaborasi bersama pengurus Karang Taruna dan masyarakat RW 21 dalam menjaga kebersihan lingkungan dan mengabadikan semangat gotong royong.",
+          sdgTags: ["#3", "#11", "#12"],
+          isPublished: true,
+        },
+      ];
 
-  const handleSaveSlide = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!slideForm.title.trim()) {
-      showToast.warning("Judul slide wajib diisi");
-      return;
+      setActivities(realDefaults);
+      await saveActivitiesToServer(realDefaults, true);
+    } catch {
+      showToast.error("Gagal memuat ulang template default");
     }
+  };
 
-    const updated = [...content.heroSlides];
-    if (editingIndex !== null) {
-      updated[editingIndex] = slideForm;
+  const handleResetToRealProkerDefaults = () => {
+    setShowResetConfirmModal(true);
+  };
+
+  const handleConfirmResetToRealProkerDefaults = async () => {
+    setIsActionLoading(true);
+    try {
+      await executeResetToRealProkerDefaults();
+      setShowResetConfirmModal(false);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const toggleSdgTag = (tag: string) => {
+    if (formData.sdgTags.includes(tag)) {
+      setFormData({
+        ...formData,
+        sdgTags: formData.sdgTags.filter((t) => t !== tag),
+      });
     } else {
-      updated.push(slideForm);
+      setFormData({
+        ...formData,
+        sdgTags: [...formData.sdgTags, tag],
+      });
     }
-
-    setContent({ ...content, heroSlides: updated });
-    setHasUnsavedChanges(true);
-    setModalType(null);
-    showToast.success(editingIndex !== null ? "Slide diperbarui di draft" : "Slide ditambahkan ke draft");
   };
 
-  // ── Campaign Handlers ───────────────────────────────────────────────────────
-  const handleOpenAddCampaign = () => {
-    setEditingIndex(null);
-    setCampaignForm({
-      id: `camp-${Date.now()}`,
-      title: "",
-      category: "organic",
-      categoryLabel: "Organik & Maggot",
-      categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Kelompok KKN UNIKOM",
-      initiatorBadge: "Terverifikasi KKN",
-      location: "Kecamatan Bojongsoang",
-      imageUrl: "/image/activity-2.webp",
-      currentAmount: 0,
-      targetAmount: 500,
-      unit: "kg",
-      daysRemaining: 14,
-      participantsCount: 20,
-      description: "",
-      impactHighlight: "",
-      isPublished: true,
-    });
-    setModalType("campaign");
-  };
-
-  const handleOpenEditCampaign = (index: number) => {
-    setEditingIndex(index);
-    setCampaignForm({ ...content.actionCampaigns[index] });
-    setModalType("campaign");
-  };
-
-  const handleSaveCampaign = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!campaignForm.title.trim()) {
-      showToast.warning("Judul program aksi wajib diisi");
-      return;
-    }
-
-    const updated = [...content.actionCampaigns];
-    if (editingIndex !== null) {
-      updated[editingIndex] = campaignForm;
-    } else {
-      updated.unshift(campaignForm);
-    }
-
-    setContent({ ...content, actionCampaigns: updated });
-    setHasUnsavedChanges(true);
-    setModalType(null);
-    showToast.success(editingIndex !== null ? "Program aksi diperbarui di draft" : "Program aksi ditambahkan ke draft");
-  };
-
-  // ── News Handlers ───────────────────────────────────────────────────────────
-  const handleOpenAddNews = () => {
-    setEditingIndex(null);
-    setNewsForm({
-      id: `news-${Date.now()}`,
-      title: "",
-      category: "Inovasi & KKN",
-      date: new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }),
-      readTime: "3 min baca",
-      location: "Kecamatan Bojongsoang",
-      imageUrl: "/image/activity-1.webp",
-      summary: "",
-      content: "",
-      author: "Tim Humas KKN UNIKOM",
-      isPublished: true,
-    });
-    setModalType("news");
-  };
-
-  const handleOpenEditNews = (index: number) => {
-    setEditingIndex(index);
-    setNewsForm({ ...content.newsItems[index] });
-    setModalType("news");
-  };
-
-  const handleSaveNews = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newsForm.title.trim()) {
-      showToast.warning("Judul berita wajib diisi");
-      return;
-    }
-
-    const updated = [...content.newsItems];
-    if (editingIndex !== null) {
-      updated[editingIndex] = newsForm;
-    } else {
-      updated.unshift(newsForm);
-    }
-
-    setContent({ ...content, newsItems: updated });
-    setHasUnsavedChanges(true);
-    setModalType(null);
-    showToast.success(editingIndex !== null ? "Berita diperbarui di draft" : "Berita ditambahkan ke draft");
-  };
-
-  // ── FAQ Handlers ────────────────────────────────────────────────────────────
-  const handleOpenAddFaq = () => {
-    setEditingIndex(null);
-    setFaqForm({ q: "", a: "" });
-    setModalType("faq");
-  };
-
-  const handleOpenEditFaq = (index: number) => {
-    setEditingIndex(index);
-    setFaqForm({ ...content.faqItems[index] });
-    setModalType("faq");
-  };
-
-  const handleSaveFaq = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!faqForm.q.trim() || !faqForm.a.trim()) {
-      showToast.warning("Pertanyaan dan jawaban wajib diisi");
-      return;
-    }
-
-    const updated = [...content.faqItems];
-    if (editingIndex !== null) {
-      updated[editingIndex] = faqForm;
-    } else {
-      updated.push(faqForm);
-    }
-
-    setContent({ ...content, faqItems: updated });
-    setHasUnsavedChanges(true);
-    setModalType(null);
-    showToast.success(editingIndex !== null ? "FAQ diperbarui di draft" : "FAQ ditambahkan ke draft");
-  };
-
-  // ── Delete Handler ──────────────────────────────────────────────────────────
-  const handleConfirmDelete = () => {
-    if (!deleteConfig) return;
-    const { tab, index } = deleteConfig;
-
-    if (tab === "product") {
-      const updated = content.marketProducts.filter((_, i) => i !== index);
-      setContent({ ...content, marketProducts: updated });
-    } else if (tab === "slide") {
-      const updated = content.heroSlides.filter((_, i) => i !== index);
-      setContent({ ...content, heroSlides: updated });
-    } else if (tab === "campaign") {
-      const updated = content.actionCampaigns.filter((_, i) => i !== index);
-      setContent({ ...content, actionCampaigns: updated });
-    } else if (tab === "news") {
-      const updated = content.newsItems.filter((_, i) => i !== index);
-      setContent({ ...content, newsItems: updated });
-    } else if (tab === "faq") {
-      const updated = content.faqItems.filter((_, i) => i !== index);
-      setContent({ ...content, faqItems: updated });
-    }
-
-    setHasUnsavedChanges(true);
-    setDeleteConfig(null);
-    showToast.info("Item dihapus dari draft.");
-  };
+  if (!isDeveloper) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-rose-200 dark:border-rose-900/40 my-6 shadow-sm">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shadow-xs">
+          <AlertCircle size={32} />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">Akses Terbatas: Khusus Developer</h2>
+        <p className="text-xs sm:text-sm text-slate-500 max-w-md leading-relaxed font-medium">
+          Halaman kurasi konten dan kegiatan Landing Page diproteksi ketat dan hanya dapat diakses serta di-CRUD oleh akun dengan peran <strong>DEVELOPER</strong>.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto text-left">
-      {/* ── Page Header ───────────────────────────────────────────────────────── */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full bg-emerald-50 text-[#005841] text-xs font-black uppercase tracking-wider border border-emerald-200 flex items-center gap-1.5">
-              <ShieldCheck size={14} />
-              <span>CMS Super Admin</span>
-            </span>
-            {hasUnsavedChanges && (
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-extrabold animate-pulse">
-                Ada perubahan belum disimpan
-              </span>
-            )}
+    <div className="space-y-6 pb-12">
+      {/* Top Header Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/40">
+                <Sparkles size={20} />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                Kurasi Kegiatan Landing Page
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed">
+              Kelola dan validasi kegiatan riil yang dipublikasikan pada seksi <strong>Kegiatan Terbaru</strong> di Landing Page publik BERSEKA. Mencegah kebocoran data simulasi/testing absensi ke pengunjung publik.
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-slate-900">
-            Kelola Konten Landing Page BERSEKA
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">
-            Atur dan publikasikan produk Pasar Berseka, banner carousel hero, program aksi, artikel berita, dan FAQ publik secara dinamis.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <button
-            type="button"
-            onClick={() => window.open("/", "_blank")}
-            className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <Eye size={15} />
-            <span>Lihat Live Web</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={handleResetToRealProkerDefaults}
+              className="px-4 py-2.5 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-2xs"
+              title="Reset dan isi otomatis kurasi dengan program kerja mahasiswa KKN riil"
+            >
+              <Sparkles size={15} />
+              <span>Sinkronkan Sorotan Proker Real</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setShowResetModal(true)}
-            className="px-4 py-2.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer"
-          >
-            <RefreshCw size={15} />
-            <span>Reset Default</span>
-          </button>
+            <button
+              onClick={fetchCandidateSources}
+              className="px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-2xs"
+            >
+              <Download size={15} />
+              <span>Tarik dari Proker / Logbook Real</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSaveAll}
-            disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-[#005841] hover:bg-[#004332] text-white text-xs font-black shadow-md shadow-[#005841]/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            <Save size={16} />
-            <span>{saving ? "Menyimpan..." : "Simpan Semua Perubahan"}</span>
-          </button>
+            <button
+              onClick={handleOpenAddModal}
+              className="px-5 py-2.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center gap-2 transition cursor-pointer shadow-md shadow-[#035941]/20"
+            >
+              <Plus size={16} />
+              <span>Tambah Sorotan Kegiatan</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Segmented Navigation Tabs ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 no-scrollbar">
-        <button
-          onClick={() => setActiveTab("pasar")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
-            activeTab === "pasar"
-              ? "bg-[#005841] text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <ShoppingBag size={15} />
-          <span>Pasar Berseka ({content.marketProducts?.length || 0})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("hero")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
-            activeTab === "hero"
-              ? "bg-[#005841] text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <ImageIcon size={15} />
-          <span>Hero Carousel ({content.heroSlides?.length || 0})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("campaign")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
-            activeTab === "campaign"
-              ? "bg-[#005841] text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <Layers size={15} />
-          <span>Program Aksi ({content.actionCampaigns?.length || 0})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("news")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
-            activeTab === "news"
-              ? "bg-[#005841] text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <Newspaper size={15} />
-          <span>Berita &amp; Artikel ({content.newsItems?.length || 0})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("ticker_faq")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs transition cursor-pointer ${
-            activeTab === "ticker_faq"
-              ? "bg-[#005841] text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
-          }`}
-        >
-          <HelpCircle size={15} />
-          <span>Ticker &amp; FAQ ({content.faqItems?.length || 0})</span>
-        </button>
+      {/* Info Banner */}
+      <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 rounded-2xl p-4 flex items-start gap-3 text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+        <AlertCircle size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+        <div>
+          <strong>Aturan Publikasi:</strong> Hanya kegiatan yang berstatus <strong>Publik (Aktif)</strong> yang akan ditampilkan kepada pengunjung Landing Page (maksimal 6 kegiatan terbaru). Pengunjung dapat mengklik kartu kegiatan untuk membaca foto dan narasi lengkap secara interaktif.
+        </div>
       </div>
 
+      {/* Activities Grid / Table */}
       {loading ? (
-        <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
-          <RefreshCw size={32} className="mx-auto text-emerald-600 animate-spin mb-3" />
-          <p className="text-xs font-bold text-slate-500">Memuat data CMS Landing Page...</p>
+        <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
+          <RefreshCw size={28} className="animate-spin text-emerald-600" />
+          <p className="text-xs font-semibold">Memuat daftar kurasi kegiatan...</p>
+        </div>
+      ) : activities.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+            <Sparkles size={28} />
+          </div>
+          <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200">
+            Belum Ada Kegiatan Dikurasi
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            Klik tombol di atas untuk menambahkan sorotan kegiatan riil pertama Anda atau menarik data dari Logbook KKN mahasiswa yang telah disetujui DPL.
+          </p>
+          <button
+            onClick={handleOpenAddModal}
+            className="px-5 py-2.5 rounded-2xl bg-[#035941] text-white font-extrabold text-xs inline-flex items-center gap-2"
+          >
+            <Plus size={16} />
+            <span>Tambah Kegiatan Sekarang</span>
+          </button>
         </div>
       ) : (
-        <>
-          {/* ════════════════════ TAB 1: PASAR BERSEKA ════════════════════ */}
-          {activeTab === "pasar" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-black text-slate-900 text-lg">Daftar Produk Pasar Berseka</h3>
-                  <p className="text-xs text-slate-500 font-medium">Kelola produk olahan KKN &amp; UMKM warga binaan yang ditampilkan di etalase publik.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {activities.map((item, index) => (
+            <div
+              key={item.id || index}
+              className={`bg-white dark:bg-slate-900 rounded-3xl border overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
+                item.isPublished
+                  ? "border-slate-200/80 dark:border-slate-800"
+                  : "border-amber-200 dark:border-amber-800/60 opacity-75"
+              }`}
+            >
+              <div>
+                {/* Photo Header */}
+                <div className="relative h-44 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <img
+                    src={item.imageUrl || "/image/activity-1.png"}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                    }}
+                  />
+                  <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1 rounded-xl text-[11px] font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 shadow-sm">
+                    <Calendar size={12} className="text-emerald-600" />
+                    <span>{item.date}</span>
+                  </div>
+
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm ${
+                        item.isPublished
+                          ? "bg-emerald-600 text-white"
+                          : "bg-amber-500 text-white"
+                      }`}
+                    >
+                      {item.isPublished ? "Publik" : "Draft"}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Body Content */}
+                <div className="p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                      {item.category}
+                    </span>
+                    {item.sdgTags?.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-medium">
+                    {item.description || "Tidak ada deskripsi rinci."}
+                  </p>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                    <MapPin size={13} className="text-[#035941] shrink-0" />
+                    <span className="truncate">{item.location}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Footer Actions */}
+              <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={handleOpenAddProduct}
-                  className="btn-primary-emerald py-2 px-4 text-xs flex items-center gap-1.5"
+                  onClick={() => handleTogglePublished(index)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+                    item.isPublished
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                      : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                  }`}
                 >
-                  <Plus size={16} />
-                  <span>Tambah Produk Baru</span>
+                  <CheckCircle2 size={13} />
+                  <span>{item.isPublished ? "Sembunyikan" : "Publikasikan"}</span>
                 </button>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {content.marketProducts?.map((prod, idx) => (
-                  <div key={prod.id || idx} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition flex flex-col justify-between">
-                    <div className="relative h-44 w-full bg-slate-900">
-                      <img
-                        src={prod.imageUrl}
-                        alt={prod.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
-                      />
-                      <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${prod.categoryColor}`}>
-                        {prod.categoryLabel}
-                      </span>
-                      <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 text-white text-[11px] font-bold">
-                        Stok: {prod.stock} {prod.unit}
-                      </span>
-                    </div>
-
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <span className="text-[11px] font-bold text-slate-400 block truncate">Inisiator: {prod.initiator}</span>
-                        <h4 className="font-extrabold text-slate-900 text-sm line-clamp-2">{prod.title}</h4>
-                        <p className="text-xs text-slate-500 line-clamp-2">{prod.description}</p>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-black text-[#005841]">Rp {prod.priceIdr.toLocaleString("id-ID")}</div>
-                          <div className="text-[11px] font-bold text-[#0468bf]">⭐ {prod.pricePoints} Poin</div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditProduct(idx)}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                            title="Edit Produk"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfig({ tab: "product", index: idx, title: prod.title })}
-                            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                            title="Hapus Produk"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ TAB 2: HERO CAROUSEL ════════════════════ */}
-          {activeTab === "hero" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-black text-slate-900 text-lg">Slide Banner Hero Carousel (Top-Right)</h3>
-                  <p className="text-xs text-slate-500 font-medium">Urutan gambar sliding interaktif di hero section landing page.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOpenAddSlide}
-                  className="btn-primary-emerald py-2 px-4 text-xs flex items-center gap-1.5"
-                >
-                  <Plus size={16} />
-                  <span>Tambah Slide Baru</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {content.heroSlides?.map((slide, idx) => (
-                  <div key={slide.id || idx} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between">
-                    <div className="relative h-44 w-full bg-slate-900">
-                      <img
-                        src={slide.image}
-                        alt={slide.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
-                      />
-                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase">
-                        Slide #{idx + 1}: {slide.badge}
-                      </span>
-                    </div>
-
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <h4 className="font-extrabold text-slate-900 text-sm line-clamp-2">{slide.title}</h4>
-                        <p className="text-xs text-slate-500 font-semibold flex items-center gap-1">
-                          <MapPin size={12} /> {slide.location}
-                        </p>
-                        <div className="text-xs text-emerald-700 font-bold pt-1">
-                          📊 {slide.metric} • ✨ {slide.highlight}
-                        </div>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditSlide(idx)}
-                          className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                          title="Edit Slide"
-                        >
-                          <Edit size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfig({ tab: "slide", index: idx, title: slide.title })}
-                          className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                          title="Hapus Slide"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ TAB 3: PROGRAM AKSI (CAMPAIGNS) ════════════════════ */}
-          {activeTab === "campaign" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-black text-slate-900 text-lg">Program Aksi &amp; Inisiatif Berseka (BenihBaik Style)</h3>
-                  <p className="text-xs text-slate-500 font-medium">Program kerja KKN dan inisiatif pengumpulan sampah warga dengan progress target.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOpenAddCampaign}
-                  className="btn-primary-emerald py-2 px-4 text-xs flex items-center gap-1.5"
-                >
-                  <Plus size={16} />
-                  <span>Tambah Program Aksi</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {content.actionCampaigns?.map((camp, idx) => {
-                  const progress = Math.min(Math.round((camp.currentAmount / camp.targetAmount) * 100), 100);
-                  return (
-                    <div key={camp.id || idx} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between">
-                      <div className="relative h-44 w-full bg-slate-900">
-                        <img
-                          src={camp.imageUrl}
-                          alt={camp.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
-                        />
-                        <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${camp.categoryColor}`}>
-                          {camp.categoryLabel}
-                        </span>
-                        <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 text-white text-[11px] font-bold">
-                          {progress}% tercapai
-                        </span>
-                      </div>
-
-                      <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                        <div className="space-y-1">
-                          <span className="text-[11px] font-bold text-slate-400 block truncate">Inisiator: {camp.initiator}</span>
-                          <h4 className="font-extrabold text-slate-900 text-sm line-clamp-2">{camp.title}</h4>
-                          <p className="text-xs text-slate-500 font-semibold">{camp.location}</p>
-                          <p className="text-xs text-slate-600 line-clamp-2">{camp.description}</p>
-                        </div>
-
-                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                          <div className="text-xs font-black text-[#005841]">
-                            {camp.currentAmount} / {camp.targetAmount} {camp.unit}
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditCampaign(idx)}
-                              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                              title="Edit Program"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setDeleteConfig({ tab: "campaign", index: idx, title: camp.title })}
-                              className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                              title="Hapus Program"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ TAB 4: BERITA & CERITA LAPANGAN ════════════════════ */}
-          {activeTab === "news" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-black text-slate-900 text-lg">Artikel Berita &amp; Cerita Lapangan KKN</h3>
-                  <p className="text-xs text-slate-500 font-medium">Publikasikan dokumentasi kegiatan, inovasi, dan kisah inspiratif.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOpenAddNews}
-                  className="btn-primary-emerald py-2 px-4 text-xs flex items-center gap-1.5"
-                >
-                  <Plus size={16} />
-                  <span>Tulis Berita Baru</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {content.newsItems?.map((news, idx) => (
-                  <div key={news.id || idx} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between">
-                    <div className="relative h-44 w-full bg-slate-900">
-                      <img
-                        src={news.imageUrl}
-                        alt={news.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
-                      />
-                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase">
-                        {news.category}
-                      </span>
-                    </div>
-
-                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                      <div className="space-y-1">
-                        <div className="text-[11px] text-slate-400 font-semibold">{news.date} • {news.readTime}</div>
-                        <h4 className="font-extrabold text-slate-900 text-sm line-clamp-2">{news.title}</h4>
-                        <p className="text-xs text-slate-500 line-clamp-2">{news.summary}</p>
-                      </div>
-
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-400">Oleh: {news.author}</span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditNews(idx)}
-                            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                            title="Edit Berita"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfig({ tab: "news", index: idx, title: news.title })}
-                            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                            title="Hapus Berita"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ════════════════════ TAB 5: TICKER & FAQ ════════════════════ */}
-          {activeTab === "ticker_faq" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column: FAQ List */}
-              <div className="lg:col-span-8 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-black text-slate-900 text-lg">Pertanyaan &amp; Jawaban (FAQ)</h3>
-                    <p className="text-xs text-slate-500 font-medium">Daftar FAQ yang tampil di accordion landing page publik.</p>
-                  </div>
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={handleOpenAddFaq}
-                    className="btn-primary-emerald py-1.5 px-3.5 text-xs flex items-center gap-1"
+                    onClick={() => handleOpenEditModal(index)}
+                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition cursor-pointer"
+                    title="Edit Kegiatan"
                   >
-                    <Plus size={15} />
-                    <span>Tambah FAQ</span>
+                    <Edit size={14} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(index)}
+                    className="p-2 rounded-xl border border-rose-200 dark:border-rose-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                    title="Hapus dari Kurasi"
+                  >
+                    <Trash2 size={14} />
                   </button>
                 </div>
-
-                <div className="space-y-3">
-                  {content.faqItems?.map((faq, idx) => (
-                    <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm">
-                          {idx + 1}. {faq.q}
-                        </h4>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditFaq(idx)}
-                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                          >
-                            <Edit size={13} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfig({ tab: "faq", index: idx, title: faq.q })}
-                            className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-3 rounded-xl">
-                        {faq.a}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column: Live Logs Preview */}
-              <div className="lg:col-span-4 space-y-4">
-                <div>
-                  <h3 className="font-black text-slate-900 text-base">Live Activity Ticker</h3>
-                  <p className="text-xs text-slate-500 font-medium">Log aliran aktivitas penimbangan dan sedekah sampah terkini.</p>
-                </div>
-
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2.5 max-h-[500px] overflow-y-auto">
-                  {content.liveLogs?.map((log) => (
-                    <div key={log.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
-                      <div className="flex justify-between font-bold text-slate-800">
-                        <span>{log.user} ({log.rw})</span>
-                        <span className="text-[10px] text-slate-400">{log.time}</span>
-                      </div>
-                      <p className="text-slate-600 text-[11px]">{log.action}</p>
-                      <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-extrabold text-[10px]">
-                        {log.reward}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
-          )}
-        </>
+          ))}
+        </div>
       )}
 
-      {/* ───────────────── MODAL: PRODUCT ADD / EDIT ───────────────── */}
-      {modalType === "product" && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base">
-                {editingIndex !== null ? "Edit Produk Pasar Berseka" : "Tambah Produk Baru"}
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-                <X size={18} />
+      {/* ----------------- MODAL FORM TAMBAH / EDIT KEGIATAN ----------------- */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 dark:border-slate-800 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Sparkles size={16} />
+                </div>
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">
+                  {editingIndex !== null ? "Edit Sorotan Kegiatan" : "Tambah Sorotan Kegiatan Publik"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="text-slate-400 hover:text-slate-700 transition"
+              >
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Nama Produk *</label>
+            <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
+              {/* Judul Kegiatan */}
+              <div className="space-y-1.5">
+                <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                  Judul Kegiatan Publik <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
-                  value={productForm.title}
-                  onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
-                  placeholder="Contoh: Pupuk Kasgot Super (1 kg)"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none focus:border-[#005841]"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Misal: Edukasi Pemilahan Sampah Organik di RW 03"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Kategori</label>
-                  <select
-                    value={productForm.category}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      const labels: Record<string, string> = {
-                        pupuk: "Pupuk & Kompos",
-                        ecoenzyme: "Eco-Enzyme",
-                        kerajinan: "Daur Ulang Kreatif",
-                        bibit: "Bibit & Tanaman",
-                      };
-                      const colors: Record<string, string> = {
-                        pupuk: "bg-emerald-100 text-emerald-800",
-                        ecoenzyme: "bg-amber-100 text-amber-800",
-                        kerajinan: "bg-purple-100 text-purple-800",
-                        bibit: "bg-green-100 text-green-800",
-                      };
-                      setProductForm({
-                        ...productForm,
-                        category: val,
-                        categoryLabel: labels[val] || "Produk",
-                        categoryColor: colors[val] || "bg-slate-100 text-slate-800",
-                      });
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  >
-                    <option value="pupuk">Pupuk &amp; Pakan Organik</option>
-                    <option value="ecoenzyme">Eco-Enzyme Kebersihan</option>
-                    <option value="kerajinan">Daur Ulang Kreatif</option>
-                    <option value="bibit">Bibit &amp; Tanaman</option>
-                  </select>
+              {/* Tanggal & Kategori */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                    Tanggal Pelaksanaan
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
+                  />
                 </div>
 
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Inisiator / Pembuat *</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.initiator}
-                    onChange={(e) => setProductForm({ ...productForm, initiator: e.target.value })}
-                    placeholder="Contoh: KKN Kelompok 04 RW 05"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                    Kategori Kegiatan
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
+                  >
+                    {categoryOptions.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Harga Tunai (Rp) *</label>
-                  <input
-                    type="number"
-                    required
-                    min={0}
-                    value={productForm.priceIdr}
-                    onChange={(e) => setProductForm({ ...productForm, priceIdr: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
+              {/* Lokasi */}
+              <div className="space-y-1.5">
+                <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                  Lokasi Pelaksanaan (Kelurahan / RW)
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Misal: Balai RW 03, Kelurahan Lebak Gede"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
+                />
+              </div>
 
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Poin BERSEKA *</label>
-                  <input
-                    type="number"
-                    required
-                    min={0}
-                    value={productForm.pricePoints}
-                    onChange={(e) => setProductForm({ ...productForm, pricePoints: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
+              {/* Foto Dokumentasi */}
+              <div className="space-y-1.5">
+                <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                  URL Foto Dokumentasi HD
+                </label>
+                <input
+                  type="text"
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="URL Foto (misal: /image/activity-1.png atau https://...)"
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
+                />
 
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Stok &amp; Satuan</label>
-                  <div className="flex gap-1">
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={productForm.stock}
-                      onChange={(e) => setProductForm({ ...productForm, stock: Number(e.target.value) })}
-                      className="w-16 px-2 py-2 rounded-xl border border-slate-300 font-semibold"
-                    />
-                    <input
-                      type="text"
-                      value={productForm.unit}
-                      onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
-                      placeholder="Pack"
-                      className="w-full px-2 py-2 rounded-xl border border-slate-300 font-semibold"
-                    />
+                {/* Preset Image Options */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <span className="text-[11px] text-slate-400 font-bold">Preset Foto:</span>
+                  {presetImages.map((p) => (
+                    <button
+                      key={p.url}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, imageUrl: p.url })}
+                      className={`text-[10px] font-extrabold px-2.5 py-1 rounded-xl border transition cursor-pointer ${
+                        formData.imageUrl === p.url
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Deskripsi / Narasi Lengkap */}
+              <div className="space-y-1.5">
+                <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                  Narasi & Deskripsi Lengkap (Tampil di Modal Pengunjung)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Jelaskan dampak kegiatan, pihak yang terlibat, dan hasil aksi pemilahan..."
+                  className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-semibold focus:outline-emerald-500 text-xs"
+                />
+              </div>
+
+              {/* SDGs Terkait */}
+              <div className="space-y-1.5">
+                <label className="font-extrabold text-slate-700 dark:text-slate-300">
+                  Komitmen SDGs Terkait
+                </label>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {sdgOptions.map((sdg) => {
+                    const isSelected = formData.sdgTags.includes(sdg.tag);
+                    return (
+                      <button
+                        key={sdg.tag}
+                        type="button"
+                        onClick={() => toggleSdgTag(sdg.tag)}
+                        className={`text-[11px] font-bold px-3 py-1 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-500 font-extrabold"
+                            : "bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span>{sdg.tag}</span>
+                        <span>{isSelected ? "✓" : "+"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Toggle Publikasi */}
+              <div className="pt-2 flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="isPublished"
+                  checked={formData.isPublished}
+                  onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+                <label
+                  htmlFor="isPublished"
+                  className="font-bold text-slate-800 dark:text-slate-200 cursor-pointer"
+                >
+                  Tampilkan langsung pada Landing Page Publik
+                </label>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer hover:bg-slate-100"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-2xl bg-[#035941] hover:bg-[#024633] text-white font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Save size={15} />
+                  <span>{saving ? "Menyimpan..." : "Simpan Kegiatan"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL IMPOR DARI PROKER & LOGBOOK KKN RIIL ----------------- */}
+      {showCandidateModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl border border-slate-100 dark:border-slate-800 my-8 max-h-[88vh] flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+                    <Download size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-base">
+                      Tarik dari Data Mahasiswa KKN (Riil)
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Pilih program kerja atau logbook mahasiswa KKN dari database untuk dijadikan sorotan Landing Page.
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Enhanced Image Upload Picker */}
-              <ImageUploadPicker
-                label="Foto Produk Pasar Berseka"
-                value={productForm.imageUrl}
-                onChange={(newUrl) => setProductForm({ ...productForm, imageUrl: newUrl })}
-                helperText="Unggah foto produk dari HP/laptop (PNG/JPG/WebP, otomatis dikompresi)"
-              />
-
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Deskripsi Produk</label>
-                <textarea
-                  rows={2}
-                  value={productForm.description}
-                  onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                  placeholder="Jelaskan kualitas dan kegunaan produk..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setModalType(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 cursor-pointer"
+                  onClick={() => setShowCandidateModal(false)}
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition text-lg"
                 >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-emerald py-2 px-5 text-xs"
-                >
-                  Simpan ke Draft
+                  ✕
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* ───────────────── MODAL: SLIDE ADD / EDIT ───────────────── */}
-      {modalType === "slide" && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base">
-                {editingIndex !== null ? "Edit Slide Carousel Hero" : "Tambah Slide Baru"}
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-                <X size={18} />
-              </button>
+              {/* Tabs Switcher */}
+              <div className="flex items-center gap-2 pt-4 pb-2">
+                <button
+                  type="button"
+                  onClick={() => setCandidateTab("proker")}
+                  className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-2 transition cursor-pointer ${
+                    candidateTab === "proker"
+                      ? "bg-[#035941] text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                  }`}
+                >
+                  <BookOpen size={14} />
+                  <span>Program Kerja Mahasiswa ({prokerCandidates.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCandidateTab("logbook")}
+                  className={`px-4 py-2 rounded-xl font-extrabold text-xs flex items-center gap-2 transition cursor-pointer ${
+                    candidateTab === "logbook"
+                      ? "bg-[#035941] text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                  }`}
+                >
+                  <Layers size={14} />
+                  <span>Logbook Lapangan ({logbookCandidates.length})</span>
+                </button>
+              </div>
+
+              <div className="py-2 space-y-3 overflow-y-auto max-h-[48vh] pr-1">
+                {loadingCandidates ? (
+                  <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                    <RefreshCw size={24} className="animate-spin text-emerald-600" />
+                    <span className="text-xs">Memuat data riil dari database...</span>
+                  </div>
+                ) : candidateTab === "proker" ? (
+                  prokerCandidates.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 text-xs font-semibold">
+                      Belum ada data Program Kerja Mahasiswa KKN di database.
+                    </div>
+                  ) : (
+                    prokerCandidates.map((proker) => (
+                      <div
+                        key={proker.id}
+                        className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-emerald-500 transition"
+                      >
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                              {proker.kelompokNama || "Kelompok KKN"}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/40">
+                              {proker.kategori || "Program Kerja"}
+                            </span>
+                            {proker.kelurahan && (
+                              <span className="text-[11px] text-slate-400 font-semibold flex items-center gap-1">
+                                <MapPin size={11} />
+                                Kel. {proker.kelurahan}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug">
+                            {(proker.deskripsi || "").replace(/\*\*/g, "")}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleImportProker(proker)}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shrink-0 cursor-pointer shadow-xs"
+                        >
+                          Impor Proker →
+                        </button>
+                      </div>
+                    ))
+                  )
+                ) : logbookCandidates.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400 text-xs font-semibold">
+                    Belum ada logbook KKN lapangan di database.
+                  </div>
+                ) : (
+                  logbookCandidates.map((log) => (
+                    <div
+                      key={log.id}
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-emerald-500 transition"
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {log.fotoBuktiUrl ? (
+                          <img
+                            src={log.fotoBuktiUrl}
+                            alt="Bukti"
+                            className="w-14 h-14 rounded-xl object-cover shrink-0 border border-slate-200"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/image/activity-1.png";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                            <ImageIcon size={18} className="text-slate-400" />
+                          </div>
+                        )}
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
+                              {log.kelompokNama || "KKN"}
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-semibold">
+                              {log.tanggalKegiatan ? new Date(log.tanggalKegiatan).toLocaleDateString("id-ID") : "-"}
+                            </span>
+                          </div>
+                          <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200 line-clamp-1">
+                            {log.tempat ? `Kegiatan di ${log.tempat}` : log.prokerDeskripsi ? log.prokerDeskripsi.replace(/\*\*/g, "") : log.deskripsi}
+                          </p>
+                          <p className="text-[11px] text-slate-500 line-clamp-1">
+                            {log.deskripsi}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleImportLogbook(log)}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shrink-0 cursor-pointer shadow-xs"
+                      >
+                        Impor Logbook →
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            <form onSubmit={handleSaveSlide} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Judul Utama Slide *</label>
-                <input
-                  type="text"
-                  required
-                  value={slideForm.title}
-                  onChange={(e) => setSlideForm({ ...slideForm, title: e.target.value })}
-                  placeholder="Contoh: Aksi Pemilahan Sampah Mandiri KKN Tematik"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Label Tag Badge *</label>
-                  <input
-                    type="text"
-                    required
-                    value={slideForm.badge}
-                    onChange={(e) => setSlideForm({ ...slideForm, badge: e.target.value })}
-                    placeholder="Contoh: Gerakan Kolaboratif"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Lokasi Kegiatan</label>
-                  <input
-                    type="text"
-                    value={slideForm.location}
-                    onChange={(e) => setSlideForm({ ...slideForm, location: e.target.value })}
-                    placeholder="Contoh: Kec. Bojongsoang"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Metrik Angka</label>
-                  <input
-                    type="text"
-                    value={slideForm.metric}
-                    onChange={(e) => setSlideForm({ ...slideForm, metric: e.target.value })}
-                    placeholder="Contoh: 340+ KK Terbina"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Highlight Keunggulan</label>
-                  <input
-                    type="text"
-                    value={slideForm.highlight}
-                    onChange={(e) => setSlideForm({ ...slideForm, highlight: e.target.value })}
-                    placeholder="Contoh: 100% Berbasis QR Code"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Enhanced Image Upload Picker */}
-              <ImageUploadPicker
-                label="Foto Banner Slide Hero"
-                value={slideForm.image}
-                onChange={(newUrl) => setSlideForm({ ...slideForm, image: newUrl })}
-                helperText="Rekomendasi rasio landscape 16:9 atau 4:3 (Maks. 10MB)"
-              />
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setModalType(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-emerald py-2 px-5 text-xs"
-                >
-                  Simpan ke Draft
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ───────────────── MODAL: CAMPAIGN ADD / EDIT ───────────────── */}
-      {modalType === "campaign" && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base">
-                {editingIndex !== null ? "Edit Program Aksi" : "Tambah Program Aksi Baru"}
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-                <X size={18} />
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCandidateModal(false)}
+                className="px-5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold text-xs cursor-pointer hover:bg-slate-200"
+              >
+                Tutup
               </button>
             </div>
-
-            <form onSubmit={handleSaveCampaign} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Judul Program Aksi *</label>
-                <input
-                  type="text"
-                  required
-                  value={campaignForm.title}
-                  onChange={(e) => setCampaignForm({ ...campaignForm, title: e.target.value })}
-                  placeholder="Contoh: Inisiatif Biokonversi Maggot BSF RW 05"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Kategori</label>
-                  <select
-                    value={campaignForm.category}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      const labels: Record<string, string> = {
-                        organic: "Organik & Maggot",
-                        recycle: "Bank Sampah",
-                        kkn: "Inisiatif KKN",
-                        education: "Edukasi Warga",
-                      };
-                      const colors: Record<string, string> = {
-                        organic: "bg-emerald-100 text-emerald-800 border-emerald-200",
-                        recycle: "bg-blue-100 text-blue-800 border-blue-200",
-                        kkn: "bg-purple-100 text-purple-800 border-purple-200",
-                        education: "bg-amber-100 text-amber-800 border-amber-200",
-                      };
-                      setCampaignForm({
-                        ...campaignForm,
-                        category: val,
-                        categoryLabel: labels[val] || "Program",
-                        categoryColor: colors[val] || "bg-slate-100 text-slate-800",
-                      });
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  >
-                    <option value="organic">Organik &amp; Maggot</option>
-                    <option value="recycle">Bank Sampah &amp; Daur Ulang</option>
-                    <option value="kkn">Inisiatif KKN Mahasiswa</option>
-                    <option value="education">Edukasi &amp; Sosialisasi</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Inisiator *</label>
-                  <input
-                    type="text"
-                    required
-                    value={campaignForm.initiator}
-                    onChange={(e) => setCampaignForm({ ...campaignForm, initiator: e.target.value })}
-                    placeholder="Contoh: Kelompok 04 KKN UNIKOM"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Terkumpul</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={campaignForm.currentAmount}
-                    onChange={(e) => setCampaignForm({ ...campaignForm, currentAmount: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Target *</label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={campaignForm.targetAmount}
-                    onChange={(e) => setCampaignForm({ ...campaignForm, targetAmount: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                  />
-                </div>
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Satuan</label>
-                  <input
-                    type="text"
-                    value={campaignForm.unit}
-                    onChange={(e) => setCampaignForm({ ...campaignForm, unit: e.target.value })}
-                    placeholder="kg"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                  />
-                </div>
-              </div>
-
-              {/* Enhanced Image Upload Picker */}
-              <ImageUploadPicker
-                label="Foto Dokumentasi Program Aksi"
-                value={campaignForm.imageUrl}
-                onChange={(newUrl) => setCampaignForm({ ...campaignForm, imageUrl: newUrl })}
-                helperText="Unggah foto kegiatan pengumpulan sampah dari perangkat"
-              />
-
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Capaian / Highlight Nyata</label>
-                <input
-                  type="text"
-                  value={campaignForm.impactHighlight}
-                  onChange={(e) => setCampaignForm({ ...campaignForm, impactHighlight: e.target.value })}
-                  placeholder="Contoh: Menghasilkan 80kg pupuk kasgot untuk petani lokal."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Deskripsi Singkat</label>
-                <textarea
-                  rows={2}
-                  value={campaignForm.description}
-                  onChange={(e) => setCampaignForm({ ...campaignForm, description: e.target.value })}
-                  placeholder="Rangkum tujuan aksi..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setModalType(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-emerald py-2 px-5 text-xs"
-                >
-                  Simpan ke Draft
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
 
-      {/* ───────────────── MODAL: NEWS ADD / EDIT ───────────────── */}
-      {modalType === "news" && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base">
-                {editingIndex !== null ? "Edit Artikel Berita" : "Tulis Berita Baru"}
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-                <X size={18} />
-              </button>
-            </div>
+      {/* Modern BERSEKA Confirmation Modal for Deleting Curated Activity */}
+      <ConfirmModal
+        isOpen={deleteTargetIndex !== null}
+        onClose={() => setDeleteTargetIndex(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isActionLoading}
+        title="Hapus Kegiatan Kurasi"
+        message={`Apakah Anda yakin ingin menghapus kegiatan "${
+          deleteTargetIndex !== null && activities[deleteTargetIndex] ? activities[deleteTargetIndex].title : ""
+        }" dari daftar kurasi landing page?`}
+        confirmText="Ya, Hapus Kegiatan"
+        cancelText="Batal"
+        type="danger"
+      />
 
-            <form onSubmit={handleSaveNews} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Judul Berita *</label>
-                <input
-                  type="text"
-                  required
-                  value={newsForm.title}
-                  onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })}
-                  placeholder="Judul artikel berita..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Kategori</label>
-                  <input
-                    type="text"
-                    value={newsForm.category}
-                    onChange={(e) => setNewsForm({ ...newsForm, category: e.target.value })}
-                    placeholder="Inovasi & KKN"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-extrabold text-slate-700 mb-1">Penulis / Humas</label>
-                  <input
-                    type="text"
-                    value={newsForm.author}
-                    onChange={(e) => setNewsForm({ ...newsForm, author: e.target.value })}
-                    placeholder="Tim Humas KKN UNIKOM"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Enhanced Image Upload Picker */}
-              <ImageUploadPicker
-                label="Foto Cover Berita"
-                value={newsForm.imageUrl}
-                onChange={(newUrl) => setNewsForm({ ...newsForm, imageUrl: newUrl })}
-                helperText="Unggah foto cover artikel berita dari perangkat"
-              />
-
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Ringkasan (Snippet) *</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={newsForm.summary}
-                  onChange={(e) => setNewsForm({ ...newsForm, summary: e.target.value })}
-                  placeholder="Ringkasan singkat yang muncul di kartu berita..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Isi Lengkap Artikel *</label>
-                <textarea
-                  rows={5}
-                  required
-                  value={newsForm.content}
-                  onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })}
-                  placeholder="Tuliskan isi berita lengkap..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setModalType(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-emerald py-2 px-5 text-xs"
-                >
-                  Simpan ke Draft
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ───────────────── MODAL: FAQ ADD / EDIT ───────────────── */}
-      {modalType === "faq" && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-black text-slate-900 text-base">
-                {editingIndex !== null ? "Edit Pertanyaan FAQ" : "Tambah Pertanyaan FAQ"}
-              </h3>
-              <button onClick={() => setModalType(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveFaq} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Pertanyaan (Question) *</label>
-                <input
-                  type="text"
-                  required
-                  value={faqForm.q}
-                  onChange={(e) => setFaqForm({ ...faqForm, q: e.target.value })}
-                  placeholder="Contoh: Bagaimana cara mendapatkan poin?"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Jawaban (Answer) *</label>
-                <textarea
-                  rows={4}
-                  required
-                  value={faqForm.a}
-                  onChange={(e) => setFaqForm({ ...faqForm, a: e.target.value })}
-                  placeholder="Jelaskan jawaban secara ramah dan informatif..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setModalType(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-emerald py-2 px-5 text-xs"
-                >
-                  Simpan ke Draft
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ───────────────── CONFIRM DELETE MODAL ───────────────── */}
-      {deleteConfig && (
-        <ConfirmModal
-          isOpen={true}
-          title="Konfirmasi Hapus Item"
-          message={`Apakah Anda yakin ingin menghapus "${deleteConfig.title}" dari daftar? Perubahan akan disimpan saat Anda menekan tombol Simpan Semua Perubahan.`}
-          confirmText="Ya, Hapus dari Draft"
-          cancelText="Batal"
-          type="danger"
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setDeleteConfig(null)}
-        />
-      )}
-
-      {/* ───────────────── CONFIRM RESET MODAL ───────────────── */}
-      {showResetModal && (
-        <ConfirmModal
-          isOpen={true}
-          title="Reset ke Pengaturan Awal"
-          message="Seluruh konfigurasi Landing Page kustom akan dikembalikan ke data default standar resmi BERSEKA. Apakah Anda ingin melanjutkan?"
-          confirmText="Ya, Reset ke Standar"
-          cancelText="Batal"
-          type="warning"
-          onConfirm={handleResetToDefaults}
-          onCancel={() => setShowResetModal(false)}
-        />
-      )}
+      {/* Modern BERSEKA Confirmation Modal for Resetting to Real Defaults */}
+      <ConfirmModal
+        isOpen={showResetConfirmModal}
+        onClose={() => setShowResetConfirmModal(false)}
+        onConfirm={handleConfirmResetToRealProkerDefaults}
+        isLoading={isActionLoading}
+        title="Muat Ulang Kurasi Proker Riil"
+        message="Apakah Anda yakin ingin memuat otomatis daftar kurasi kegiatan terbaru dari data Program Kerja & Kegiatan Mahasiswa KKN riil? Data kurasi saat ini akan digantikan dengan template default kegiatan riil."
+        confirmText="Ya, Muat Ulang"
+        cancelText="Batal"
+        type="warning"
+      />
     </div>
   );
 };

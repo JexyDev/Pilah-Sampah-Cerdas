@@ -203,8 +203,35 @@ export class UserRepository {
         where: { OR: [{ fromUserId: id }, { toUserId: id }] },
       });
 
-      // 2. Clear optional foreign key references on other models
-      await tx.bin.updateMany({ where: { userId: id }, data: { userId: null } });
+      // 2. Clear optional foreign key references on other models & reset orphan bins
+      const userBins = await tx.bin.findMany({
+        where: { userId: id },
+        include: { binOwnerships: true },
+      });
+
+      for (const b of userBins) {
+        const otherOwners = b.binOwnerships.filter((bo: any) => bo.userId !== id);
+        if (otherOwners.length === 0) {
+          await tx.bin.update({
+            where: { id: b.id },
+            data: {
+              userId: null,
+              status: "PRINTED",
+              currentVolumeLiter: 0,
+              latitude: null,
+              longitude: null,
+            },
+          });
+        } else {
+          await tx.bin.update({
+            where: { id: b.id },
+            data: {
+              userId: otherOwners[0].userId,
+            },
+          });
+        }
+      }
+
       await tx.bin.updateMany({
         where: { registeredByStudentId: id },
         data: { registeredByStudentId: null },

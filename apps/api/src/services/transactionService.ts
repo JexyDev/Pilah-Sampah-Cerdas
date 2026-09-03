@@ -23,6 +23,7 @@ export class TransactionService {
           },
           bin: {
             include: {
+              category: true,
               rw: {
                 include: {
                   kelurahan: true,
@@ -70,6 +71,7 @@ export class TransactionService {
       include: {
         bin: {
           include: {
+            category: true,
             rw: {
               include: {
                 kelurahan: true,
@@ -99,6 +101,7 @@ export class TransactionService {
         },
         bin: {
           include: {
+            category: true,
             rw: {
               include: {
                 kelurahan: true,
@@ -178,7 +181,7 @@ export class TransactionService {
           warga: log.petugas?.name || "Petugas Residu",
           phone: log.petugas?.phone || "-",
           rw: log.rw?.name || `RW ${finalRwId}`,
-          kelurahan: log.rw?.kelurahan?.name || "Coblong",
+          kelurahan: log.rw?.kelurahan?.name || "-",
           jenis: "Residu",
           berat: Number(log.berat),
           poin: 0,

@@ -22,22 +22,29 @@ vi.mock("../lib/prisma.js", () => {
         delete: vi.fn(),
       },
       kelompokKkn: {
-        findUnique: vi.fn(),
-        findMany: vi.fn(),
+        findUnique: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      studentKkn: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      rw: {
+        findFirst: vi.fn().mockResolvedValue(null),
       },
       schedule: {
-        updateMany: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       kknSchedule: {
-        updateMany: vi.fn(),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       facility: {
-        findFirst: vi.fn(),
-        update: vi.fn(),
-        create: vi.fn(),
+        findFirst: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue({}),
+        create: vi.fn().mockResolvedValue({}),
       },
       auditLog: {
-        create: vi.fn(),
+        create: vi.fn().mockResolvedValue({}),
       },
     },
   };
@@ -46,6 +53,9 @@ vi.mock("../lib/prisma.js", () => {
 describe("poskoKknService - Radius & Dual Photo Properties (QC Unit Test)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.schedule.updateMany as any).mockResolvedValue({ count: 1 });
+    (prisma.facility.findFirst as any).mockResolvedValue(null);
+    (prisma.poskoKkn.findUnique as any).mockResolvedValue(null);
   });
 
   describe("upsertPosko", () => {

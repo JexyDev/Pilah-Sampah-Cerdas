@@ -192,7 +192,7 @@ export const AktivitasMonitoring: React.FC = () => {
               : "Wilayah Binaan KKN"
             : isLurah
               ? `Kelurahan ${user?.kelurahan || "Cipaganti"}`
-              : "Kecamatan Coblong"
+              : (user?.wilayah || "Semua Wilayah")
         }
         title="Pemantauan & Rekapitulasi"
         description={
@@ -200,7 +200,7 @@ export const AktivitasMonitoring: React.FC = () => {
             ? "Monitoring analitik volume sampah terpilah warga wilayah binaan KKN, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
             : isLurah
               ? `Monitoring analitik volume sampah terpilah warga Kelurahan ${user?.kelurahan || "Cipaganti"}, riwayat log fisik, dan skor kepatuhan lingkungan terpadu.`
-              : "Monitoring analitik volume sampah terpilah warga Coblong, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
+              : "Monitoring analitik volume sampah terpilah warga, riwayat log fisik, dan skor kepatuhan lingkungan terpadu."
         }
         actions={
           <div className="flex flex-wrap items-center gap-2.5">
@@ -565,8 +565,8 @@ export const AktivitasMonitoring: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
                 {paginatedTransactions.map((t) => {
-                  const isOrganik = t.tipe?.toLowerCase().includes("organik");
                   const isAnorganik = t.tipe?.toLowerCase().includes("anorganik");
+                  const isOrganik = t.tipe?.toLowerCase().includes("organik") && !isAnorganik;
 
                   return (
                     <tr key={t.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-all">

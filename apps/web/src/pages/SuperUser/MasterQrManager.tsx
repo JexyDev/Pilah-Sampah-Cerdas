@@ -5,7 +5,7 @@ import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw, Pencil, X } from "lucide-react";
 import { printQrStickers } from "../../utils/printQrStickers";
 import { exportToXlsx } from "../../utils/exportXlsx";
 
@@ -56,6 +56,49 @@ export const MasterQrManager: React.FC = () => {
   const [rtRwId, setRtRwId] = useState<string>("");
   const [categories, setCategories] = useState<any[]>([]);
   const [rtRwAreas, setRtRwAreas] = useState<any[]>([]);
+
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editingBin, setEditingBin] = useState<BinQr | null>(null);
+  const [editCategoryId, setEditCategoryId] = useState<string>("");
+  const [editRtRwId, setEditRtRwId] = useState<string>("");
+  const [editStatus, setEditStatus] = useState<string>("");
+  const [editMaxCapacity, setEditMaxCapacity] = useState<number>(25);
+  const [submittingEdit, setSubmittingEdit] = useState<boolean>(false);
+
+  const handleOpenEditModal = (bin: BinQr) => {
+    setEditingBin(bin);
+    setEditCategoryId(bin.category?.id || "");
+    setEditRtRwId((bin.rtRw as any)?.id ? String((bin.rtRw as any).id) : "");
+    setEditStatus(bin.status || "PRINTED");
+    setEditMaxCapacity((bin as any).maxCapacityLiter || 25);
+    setShowEditModal(true);
+  };
+
+  const handleExecuteEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBin) return;
+    try {
+      setSubmittingEdit(true);
+      const res = await api.put(`/bins/${editingBin.id}`, {
+        categoryId: editCategoryId || undefined,
+        rtRwId: editRtRwId || undefined,
+        status: editStatus || undefined,
+        maxCapacityLiter: editMaxCapacity,
+      });
+      if (res.data?.success || res.status === 200) {
+        toast.success(`Data QR Code ${editingBin.qrCode} berhasil diperbarui!`);
+        setShowEditModal(false);
+        setEditingBin(null);
+        fetchQrData();
+      }
+    } catch (error: any) {
+      console.error("Gagal memperbarui QR Code:", error);
+      toast.error(error.response?.data?.message || "Gagal memperbarui data QR");
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
 
   // Replacement modal states
   const [showReplaceModal, setShowReplaceModal] = useState<boolean>(false);
@@ -531,6 +574,15 @@ export const MasterQrManager: React.FC = () => {
                                 <span className="hidden xl:inline">Cetak Poster</span>
                               </button>
 
+                              <button
+                                onClick={() => handleOpenEditModal(q)}
+                                title="Ubah Data / Kategori / Wilayah QR"
+                                className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-[#009966] hover:text-white dark:hover:bg-[#009966] rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Pencil size={14} />
+                                <span className="hidden xl:inline">Edit</span>
+                              </button>
+
                               {(isBroken || isInactive) && (
                                 <button
                                    onClick={() => handleReactivate(q.id)}
@@ -553,16 +605,18 @@ export const MasterQrManager: React.FC = () => {
                                  </button>
                               )}
 
-                              {q.user && (
-                                <button
-                                  onClick={() => setResetOwnershipModal({ id: q.id, qrCode: q.qrCode })}
-                                  title="Reset Kepemilikan (Lepas dari Warga)"
-                                  className="p-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-lg text-xs font-bold transition-all border border-amber-200 dark:border-amber-800 cursor-pointer inline-flex items-center gap-1"
-                                >
-                                  <RotateCcw size={14} className="text-amber-600 dark:text-amber-400" />
-                                  <span className="hidden sm:inline">Reset</span>
-                                </button>
-                              )}
+                              <button
+                                onClick={() => setResetOwnershipModal({ id: q.id, qrCode: q.qrCode })}
+                                title="Reset Kepemilikan & Status ke PRINTED (Belum Terikat)"
+                                className={`p-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer inline-flex items-center gap-1 ${
+                                  q.user || q.status !== "PRINTED"
+                                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/50 border-amber-200 dark:border-amber-800"
+                                    : "bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+                                }`}
+                              >
+                                <RotateCcw size={14} className={q.user || q.status !== "PRINTED" ? "text-amber-600 dark:text-amber-400" : "text-slate-400"} />
+                                <span className="hidden sm:inline">Reset</span>
+                              </button>
 
                               <button
                                 onClick={() => handleDeleteBin(q.id, q.qrCode)}
@@ -813,6 +867,117 @@ export const MasterQrManager: React.FC = () => {
                 className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
               >
                 Generate Batch
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Bin Modal */}
+      {showEditModal && editingBin && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
+          <form onSubmit={handleExecuteEdit} className="bg-white dark:bg-slate-900 max-w-md w-full rounded-2xl shadow-xl overflow-hidden flex flex-col border border-slate-100 dark:border-slate-800">
+            <div className="px-6 py-4 bg-[#009966] text-white flex justify-between items-center">
+              <h3 className="font-bold text-base flex items-center gap-2">
+                <Pencil size={18} />
+                Ubah Data Tempat Sampah
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="text-white/80 hover:text-white cursor-pointer text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-sm text-slate-700 dark:text-slate-300">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Kode QR</label>
+                <input
+                  type="text"
+                  value={editingBin.qrCode}
+                  disabled
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono font-bold cursor-not-allowed"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Kategori Jenis Tempat Sampah</label>
+                <select
+                  value={editCategoryId}
+                  onChange={(e) => setEditCategoryId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                  required
+                >
+                  <option value="" className="dark:bg-slate-800">-- Pilih Kategori --</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id} className="dark:bg-slate-800">
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Wilayah RT / RW</label>
+                <select
+                  value={editRtRwId}
+                  onChange={(e) => setEditRtRwId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="" className="dark:bg-slate-800">Umum (Tanpa Wilayah Spesifik)</option>
+                  {rtRwAreas.map((item) => (
+                    <option key={item.id} value={item.id} className="dark:bg-slate-800">
+                      {item.name} ({item.kelurahan?.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Kapasitas Maksimum (Liter)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={editMaxCapacity}
+                  onChange={(e) => setEditMaxCapacity(parseFloat(e.target.value) || 25)}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Status Tempat Sampah</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="PRINTED" className="dark:bg-slate-800">PRINTED (Belum Dipakai)</option>
+                  <option value="ACTIVE_BOUND" className="dark:bg-slate-800">ACTIVE_BOUND (Aktif Terikat)</option>
+                  <option value="ASSIGNED_TO_PIC" className="dark:bg-slate-800">ASSIGNED_TO_PIC (Mahasiswa KKN)</option>
+                  <option value="INACTIVE" className="dark:bg-slate-800">INACTIVE (Tidak Aktif)</option>
+                  <option value="BROKEN" className="dark:bg-slate-800">BROKEN (Rusak Fisik)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={submittingEdit}
+                className="px-5 py-2 bg-[#009966] hover:bg-[#008055] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {submittingEdit ? "Menyimpan..." : "Simpan Perubahan"}
               </button>
             </div>
           </form>

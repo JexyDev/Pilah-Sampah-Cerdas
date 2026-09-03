@@ -119,7 +119,7 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
               Halo, {user?.name?.split(" ")[0] || "Mahasiswa"} 👋
             </h2>
             <p className="text-xs text-emerald-100/90 font-medium">
-              {user?.wilayah || "Kecamatan Coblong"} • Posko KKN
+              {user?.wilayah || user?.kelurahan || "Wilayah Dampingan"} • Posko KKN
             </p>
           </div>
 

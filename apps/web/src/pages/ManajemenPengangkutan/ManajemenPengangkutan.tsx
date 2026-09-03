@@ -440,7 +440,7 @@ export const ManajemenPengangkutan: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
+    <div className="space-y-4 sm:space-y-6 max-w-7xl mx-auto text-slate-800 dark:text-slate-100 font-sans">
       {/* Clean Enterprise Page Header */}
       <PageHeader
         icon={Truck}
@@ -461,48 +461,48 @@ export const ManajemenPengangkutan: React.FC = () => {
       />
 
       {/* KPI Metric Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Tasks Card */}
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-emerald-300 dark:hover:border-emerald-600 transition-all">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-800/40 group-hover:scale-105 transition-transform">
-            <Truck className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-3.5 group hover:border-emerald-300 dark:hover:border-emerald-600 transition-all min-w-0">
+          <div className="p-2.5 sm:p-3 bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 rounded-xl shrink-0 border border-emerald-100 dark:border-emerald-800/40 group-hover:scale-105 transition-transform">
+            <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Total Penugasan</p>
-            <p className="text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5">{totalTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tugas</span></p>
+          <div className="min-w-0 w-full">
+            <p className="text-[10px] sm:text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider truncate">Total Penugasan</p>
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 mt-0.5 truncate">{totalTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Tugas</span></p>
           </div>
         </div>
 
         {/* Pending Card */}
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-amber-300 dark:hover:border-amber-600 transition-all">
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 border border-amber-100 dark:border-amber-800/40 group-hover:scale-105 transition-transform">
-            <Clock className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-3.5 group hover:border-amber-300 dark:hover:border-amber-600 transition-all min-w-0">
+          <div className="p-2.5 sm:p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 border border-amber-100 dark:border-amber-800/40 group-hover:scale-105 transition-transform">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Pending Penjemputan</p>
-            <p className="text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5">{pendingTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Antrean</span></p>
+          <div className="min-w-0 w-full">
+            <p className="text-[10px] sm:text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider truncate">Pending Penjemputan</p>
+            <p className="text-base sm:text-lg font-black text-amber-700 dark:text-amber-400 mt-0.5 truncate">{pendingTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Antrean</span></p>
           </div>
         </div>
 
         {/* Claimed / On Progress Card */}
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-blue-300 dark:hover:border-blue-600 transition-all">
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-xl shrink-0 border border-blue-100 dark:border-blue-800/40 group-hover:scale-105 transition-transform">
-            <UserCheck className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-3.5 group hover:border-blue-300 dark:hover:border-blue-600 transition-all min-w-0">
+          <div className="p-2.5 sm:p-3 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-xl shrink-0 border border-blue-100 dark:border-blue-800/40 group-hover:scale-105 transition-transform">
+            <UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Diklaim Petugas</p>
-            <p className="text-lg font-black text-blue-700 dark:text-blue-400 mt-0.5">{claimedTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Proses</span></p>
+          <div className="min-w-0 w-full">
+            <p className="text-[10px] sm:text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider truncate">Diklaim Petugas</p>
+            <p className="text-base sm:text-lg font-black text-blue-700 dark:text-blue-400 mt-0.5 truncate">{claimedTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Proses</span></p>
           </div>
         </div>
 
         {/* Completed Card */}
-        <div className="bg-white dark:bg-slate-900 p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3.5 group hover:border-purple-300 dark:hover:border-purple-600 transition-all">
-          <div className="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-xl shrink-0 border border-purple-100 dark:border-purple-800/40 group-hover:scale-105 transition-transform">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="bg-white dark:bg-slate-900 p-3 sm:p-4.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-3.5 group hover:border-purple-300 dark:hover:border-purple-600 transition-all min-w-0">
+          <div className="p-2.5 sm:p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-xl shrink-0 border border-purple-100 dark:border-purple-800/40 group-hover:scale-105 transition-transform">
+            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Pengangkutan Selesai</p>
-            <p className="text-lg font-black text-purple-700 dark:text-purple-400 mt-0.5">{completedTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Selesai</span></p>
+          <div className="min-w-0 w-full">
+            <p className="text-[10px] sm:text-[10.5px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider truncate">Pengangkutan Selesai</p>
+            <p className="text-base sm:text-lg font-black text-purple-700 dark:text-purple-400 mt-0.5 truncate">{completedTasksCount} <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Selesai</span></p>
           </div>
         </div>
       </div>

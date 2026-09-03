@@ -167,6 +167,7 @@ export const LaporanPresensiPage: React.FC = () => {
     return "ALL";
   });
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("ALL");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS">("TODAY");
@@ -602,6 +603,7 @@ export const LaporanPresensiPage: React.FC = () => {
   const handleResetFilter = () => {
     setSelectedKelompok("ALL");
     setSelectedStatus("ALL");
+    setSelectedKelurahan("ALL");
     setDatePreset("TODAY");
     const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
     const todayStr = nowWib.toISOString().slice(0, 10);
@@ -619,6 +621,14 @@ export const LaporanPresensiPage: React.FC = () => {
   // Filtered student aggregates based on search query with natural roster sorting
   const filteredStudentAggregates = useMemo(() => {
     let list = studentAggregates;
+    // Filter berdasarkan kelurahan
+    if (selectedKelurahan !== "ALL") {
+      list = list.filter(
+        (s) =>
+          s.kelompok?.kelurahan &&
+          s.kelompok.kelurahan.toLowerCase() === selectedKelurahan.toLowerCase()
+      );
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
@@ -636,7 +646,7 @@ export const LaporanPresensiPage: React.FC = () => {
       getName: (s) => s.namaMahasiswa,
       getNim: (s) => s.nim,
     });
-  }, [studentAggregates, searchQuery]);
+  }, [studentAggregates, searchQuery, selectedKelurahan]);
 
   // Quick Action: View detailed log for specific student
   const handleViewStudentDetails = (studentName: string) => {
@@ -645,6 +655,15 @@ export const LaporanPresensiPage: React.FC = () => {
     setPage(1);
     toast.success(`Menampilkan log presensi harian untuk: ${studentName}`);
   };
+
+  // Daftar kelurahan unik dari groups untuk filter dropdown
+  const kelurahanOptions = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g: any) => {
+      if (g.kelurahan) set.add(g.kelurahan);
+    });
+    return Array.from(set).sort();
+  }, [groups]);
 
   // Gating status: Ekspor hanya aktif jika tanggal awal DAN tanggal akhir telah diisi
   const isExportDisabled = !startDate || !endDate;
@@ -1109,8 +1128,8 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Kelompok KKN (3 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-3">
+          {/* 2. Kelompok KKN (2 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 truncate">
               Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan)</span>}
             </label>
@@ -1128,7 +1147,35 @@ export const LaporanPresensiPage: React.FC = () => {
             </select>
           </div>
 
-          {/* 3. Dari Tanggal (2 cols) */}
+          {/* 3. Filter Kelurahan (2 cols) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <MapPin size={11} className="text-emerald-600" />
+              Kelurahan
+              {selectedKelurahan !== "ALL" && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  Aktif
+                </span>
+              )}
+            </label>
+            <select
+              value={selectedKelurahan}
+              onChange={(e) => {
+                setSelectedKelurahan(e.target.value);
+                setPage(1);
+              }}
+              className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 focus:bg-white focus:border-emerald-500 outline-none transition font-medium shadow-2xs cursor-pointer truncate"
+            >
+              <option value="ALL">📍 Semua Kelurahan</option>
+              {kelurahanOptions.map((kel) => (
+                <option key={kel} value={kel}>
+                  Kel. {kel}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Dari Tanggal (2 cols) */}
           <div className="col-span-1 sm:col-span-1 lg:col-span-2">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               Dari Tanggal
@@ -1145,10 +1192,10 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* 4. Sampai Tanggal (2 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          {/* 5. Sampai Tanggal (1 col) */}
+          <div className="col-span-1 sm:col-span-1 lg:col-span-1">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-              Sampai Tanggal
+              Sampai
             </label>
             <input
               type="date"
@@ -1162,7 +1209,7 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* 5. Actions: Reset & Ekspor (2 cols) */}
+          {/* 6. Actions: Reset & Ekspor (2 cols) */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex items-end gap-2">
             <button
               type="button"
@@ -1192,42 +1239,44 @@ export const LaporanPresensiPage: React.FC = () => {
         {/* Table Toolbar & View Switcher */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-slate-50/70 dark:bg-slate-800/50">
           {/* Dual Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-900/80 p-1 rounded-xl">
-            <button
-              type="button"
-              onClick={() => setActiveTab("REKAP_MAHASISWA")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTab === "REKAP_MAHASISWA"
-                  ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              <BarChart3 size={14} />
-              <span>Rekapitulasi Akumulasi Mahasiswa</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
-                activeTab === "REKAP_MAHASISWA" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-300 dark:bg-slate-800 text-slate-600"
-              }`}>
-                {filteredStudentAggregates.length} Mahasiswa
-              </span>
-            </button>
+          <div className="w-full md:w-auto overflow-x-auto scrollbar-none -mx-1 px-1">
+            <div className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-900/80 p-1 rounded-xl min-w-max">
+              <button
+                type="button"
+                onClick={() => setActiveTab("REKAP_MAHASISWA")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${
+                  activeTab === "REKAP_MAHASISWA"
+                    ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                <BarChart3 size={14} className="shrink-0" />
+                <span>Rekapitulasi Akumulasi Mahasiswa</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold shrink-0 ${
+                  activeTab === "REKAP_MAHASISWA" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-300 dark:bg-slate-800 text-slate-600"
+                }`}>
+                  {filteredStudentAggregates.length} Mahasiswa
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("LOG_DETAIL")}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTab === "LOG_DETAIL"
-                  ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-              }`}
-            >
-              <ListFilter size={14} />
-              <span>Log Presensi Detail</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
-                activeTab === "LOG_DETAIL" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-300 dark:bg-slate-800 text-slate-600"
-              }`}>
-                {totalCount} Sesi
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("LOG_DETAIL")}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${
+                  activeTab === "LOG_DETAIL"
+                    ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+              >
+                <ListFilter size={14} className="shrink-0" />
+                <span>Log Presensi Detail</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold shrink-0 ${
+                  activeTab === "LOG_DETAIL" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-300 dark:bg-slate-800 text-slate-600"
+                }`}>
+                  {totalCount} Sesi
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Print Action Button */}
@@ -2223,7 +2272,7 @@ export const LaporanPresensiPage: React.FC = () => {
                           <div>
                             <span className="text-[10px] font-bold text-slate-400 block">Rasio Sesi</span>
                             <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                              {item.rasioKehadiran ?? 0}% ({item.durasiMenit}/{item.targetMinMenit || 240}m)
+                              {Math.min(100, Math.max(0, item.rasioKehadiran ?? 0))}% ({item.durasiMenit}/{item.targetMinMenit || 240}m)
                             </span>
                           </div>
                         </div>

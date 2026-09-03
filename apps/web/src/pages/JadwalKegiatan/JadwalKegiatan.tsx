@@ -1459,9 +1459,9 @@ const JadwalKegiatan: React.FC = () => {
             {/* Calendar Section */}
             <div className="flex-1 min-h-[400px] lg:min-h-0 flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-outline-variant/50 overflow-hidden">
               {/* Calendar Header */}
-              <div className="p-5 border-b border-outline-variant/30 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-[20px] font-bold text-on-surface">
+              <div className="p-3.5 sm:p-5 border-b border-outline-variant/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
+                <div className="flex items-center justify-between w-full sm:w-auto gap-2 sm:gap-4">
+                  <h2 className="text-base sm:text-[20px] font-bold text-on-surface">
                     {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </h2>
                   <div className="flex items-center gap-1">
@@ -1469,11 +1469,11 @@ const JadwalKegiatan: React.FC = () => {
                       onClick={prevMonth}
                       className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
                     >
-                      <ChevronLeft />
+                      <ChevronLeft size={18} />
                     </button>
                     <button
                       onClick={goToToday}
-                      className="text-[12px] font-bold px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
+                      className="text-[11px] sm:text-[12px] font-bold px-2.5 sm:px-3 py-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
                     >
                       Hari Ini
                     </button>
@@ -1481,13 +1481,13 @@ const JadwalKegiatan: React.FC = () => {
                       onClick={nextMonth}
                       className="p-1 rounded hover:bg-surface-container-low text-on-surface-variant transition-colors cursor-pointer"
                     >
-                      <ChevronRight />
+                      <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
                 {canManageSchedules && (
                   <button
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
+                    className="w-full sm:w-auto justify-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 transition-colors active:scale-95 transform shadow-sm cursor-pointer"
                     onClick={() => setIsModalOpen(true)}
                   >
                     <Plus size={14} />
@@ -1496,129 +1496,142 @@ const JadwalKegiatan: React.FC = () => {
                 )}
               </div>
 
-          {/* Calendar Grid */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Days Header */}
-            <div className="grid grid-cols-7 border-b border-outline-variant/30 shrink-0 bg-surface-container-lowest">
-              {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map((d, i) => (
-                <div
-                  key={d}
-                  className={`py-2 text-center text-[11px] font-bold ${i >= 5 ? "text-red-500" : "text-on-surface-variant"} uppercase tracking-wider`}
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
+              {/* Calendar Grid with Mobile Scroll Safety */}
+              <div className="flex-1 flex flex-col overflow-x-auto scrollbar-thin">
+                <div className="min-w-[580px] sm:min-w-0 flex-1 flex flex-col">
+                  {/* Days Header */}
+                  <div className="grid grid-cols-7 border-b border-outline-variant/30 shrink-0 bg-surface-container-lowest">
+                    {[
+                      { full: "Senin", short: "Sen" },
+                      { full: "Selasa", short: "Sel" },
+                      { full: "Rabu", short: "Rab" },
+                      { full: "Kamis", short: "Kam" },
+                      { full: "Jumat", short: "Jum" },
+                      { full: "Sabtu", short: "Sab" },
+                      { full: "Minggu", short: "Min" },
+                    ].map((d, i) => (
+                      <div
+                        key={d.full}
+                        className={`py-2 text-center text-[11px] font-bold ${i >= 5 ? "text-red-500" : "text-on-surface-variant"} uppercase tracking-wider`}
+                      >
+                        <span className="hidden sm:inline">{d.full}</span>
+                        <span className="sm:hidden">{d.short}</span>
+                      </div>
+                    ))}
+                  </div>
 
-            {/* Days Grid */}
-            <div className="flex-1 grid grid-cols-7 grid-rows-6 bg-outline-variant/30 gap-[1px]">
-              {days.map((day, i) => {
-                const daySchedules = getSchedulesForDay(day.date);
-                const isToday = getDateKey(new Date()) === getDateKey(day.date);
-                const isSelected = getDateKey(selectedDate) === getDateKey(day.date);
+                  {/* Days Grid */}
+                  <div className="flex-1 grid grid-cols-7 grid-rows-6 bg-outline-variant/30 gap-[1px]">
+                    {days.map((day, i) => {
+                      const daySchedules = getSchedulesForDay(day.date);
+                      const isToday = getDateKey(new Date()) === getDateKey(day.date);
+                      const isSelected = getDateKey(selectedDate) === getDateKey(day.date);
 
-                // Deduplicate schedules for cell pills display
-                const groupedCellSchedules = daySchedules.reduce((acc: any[], curr: any) => {
-                  const titleKey = (curr.title || "(tanpa judul)").trim();
-                  const catKey = (curr.category || "Lainnya").trim();
-                  const existing = acc.find(
-                    (item) => (item.title || "").trim() === titleKey && (item.category || "").trim() === catKey
-                  );
-                  if (existing) {
-                    existing.count += 1;
-                  } else {
-                    acc.push({ ...curr, title: titleKey, category: catKey, count: 1 });
-                  }
-                  return acc;
-                }, []);
+                      // Deduplicate schedules for cell pills display
+                      const groupedCellSchedules = daySchedules.reduce((acc: any[], curr: any) => {
+                        const titleKey = (curr.title || "(tanpa judul)").trim();
+                        const catKey = (curr.category || "Lainnya").trim();
+                        const existing = acc.find(
+                          (item) => (item.title || "").trim() === titleKey && (item.category || "").trim() === catKey
+                        );
+                        if (existing) {
+                          existing.count += 1;
+                        } else {
+                          acc.push({ ...curr, title: titleKey, category: catKey, count: 1 });
+                        }
+                        return acc;
+                      }, []);
 
-                const maxPills = 2;
-                const visibleSchedules = groupedCellSchedules.slice(0, maxPills);
-                const hiddenCount = groupedCellSchedules.reduce((sum, item, idx) => idx >= maxPills ? sum + item.count : sum, 0);
+                      const maxPills = 2;
+                      const visibleSchedules = groupedCellSchedules.slice(0, maxPills);
+                      const hiddenCount = groupedCellSchedules.reduce((sum, item, idx) => idx >= maxPills ? sum + item.count : sum, 0);
 
-                return (
-                  <div
-                    key={i}
-                    onClick={() => {
-                      setSelectedDate(day.date);
-                      if (!day.isCurrentMonth) {
-                        setCurrentDate(new Date(day.date.getFullYear(), day.date.getMonth(), 1));
-                      }
-                    }}
-                    className={`bg-white dark:bg-slate-900 p-2 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30 transition-all cursor-pointer group flex flex-col justify-between min-h-[90px] border border-transparent rounded-lg ${
-                      !day.isCurrentMonth ? "opacity-40" : ""
-                    } ${
-                      isSelected
-                        ? "ring-2 ring-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/60 font-bold shadow-sm z-10"
-                        : isToday
-                        ? "bg-blue-50/40 dark:bg-blue-950/40 border-blue-400 dark:border-blue-700 font-bold relative"
-                        : ""
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        {isToday ? (
-                          <span className="text-[10px] font-extrabold bg-blue-600 text-white px-1.5 py-0.2 rounded-full">
-                            Hari Ini
-                          </span>
-                        ) : (
-                          <span></span>
-                        )}
-                        <span
-                          className={`text-right text-[12px] font-bold ${
-                            isToday
-                              ? "text-blue-700 dark:text-blue-300 font-black"
-                              : i % 7 >= 5
-                              ? "text-red-500 dark:text-red-400"
-                              : "text-slate-800 dark:text-slate-200"
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            setSelectedDate(day.date);
+                            if (!day.isCurrentMonth) {
+                              setCurrentDate(new Date(day.date.getFullYear(), day.date.getMonth(), 1));
+                            }
+                          }}
+                          className={`bg-white dark:bg-slate-900 p-2 hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30 transition-all cursor-pointer group flex flex-col justify-between min-h-[90px] border border-transparent rounded-lg ${
+                            !day.isCurrentMonth ? "opacity-40" : ""
+                          } ${
+                            isSelected
+                              ? "ring-2 ring-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/60 font-bold shadow-sm z-10"
+                              : isToday
+                              ? "bg-blue-50/40 dark:bg-blue-950/40 border-blue-400 dark:border-blue-700 font-bold relative"
+                              : ""
                           }`}
                         >
-                          {day.day}
-                        </span>
-                      </div>
-
-                      {/* Clean Aggregated Activity Pills */}
-                      <div className="flex flex-col gap-1">
-                        {visibleSchedules.map((s, idx) => {
-                          let colorCls = "bg-blue-50 dark:bg-sky-950/60 border-blue-200 dark:border-sky-800 text-blue-800 dark:text-sky-300";
-                          const titleLower = s.title.toLowerCase();
-                          const catLower = s.category.toLowerCase();
-                          if (catLower.includes("pengangkutan") || titleLower.includes("pengangkutan"))
-                            colorCls = "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300";
-                          else if (catLower.includes("sosialisasi") || titleLower.includes("sosialisasi"))
-                            colorCls = "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300";
-                          else if (catLower.includes("rapat") || titleLower.includes("rapat"))
-                            colorCls = "bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300";
-
-                          return (
-                            <div
-                              key={idx}
-                              className={`border text-[10px] font-bold px-2 py-0.5 rounded-md truncate w-full shadow-2xs transition-transform flex items-center justify-between gap-1 ${colorCls}`}
-                              title={`${s.title} (${s.count} kegiatan)`}
-                            >
-                              <span className="truncate">{s.title}</span>
-                              {s.count > 1 && (
-                                <span className="bg-white/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">
-                                  {s.count}x
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              {isToday ? (
+                                <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-extrabold flex items-center justify-center shadow-xs">
+                                  {day.day}
+                                </span>
+                              ) : (
+                                <span
+                                  className={`text-[12px] font-bold ${
+                                    i % 7 >= 5
+                                      ? "text-red-500 dark:text-red-400"
+                                      : "text-slate-800 dark:text-slate-200"
+                                  }`}
+                                >
+                                  {day.day}
+                                </span>
+                              )}
+                              {isToday && (
+                                <span className="hidden sm:inline-block text-[9px] font-extrabold text-blue-600 bg-blue-100 dark:bg-blue-950/80 px-1 py-0.2 rounded">
+                                  Hari Ini
                                 </span>
                               )}
                             </div>
-                          );
-                        })}
 
-                        {hiddenCount > 0 && (
-                          <div className="text-[9px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md text-center truncate">
-                            +{hiddenCount} kegiatan lagi
+                            {/* Clean Aggregated Activity Pills */}
+                            <div className="flex flex-col gap-1">
+                              {visibleSchedules.map((s, idx) => {
+                                let colorCls = "bg-blue-50 dark:bg-sky-950/60 border-blue-200 dark:border-sky-800 text-blue-800 dark:text-sky-300";
+                                const titleLower = s.title.toLowerCase();
+                                const catLower = s.category.toLowerCase();
+                                if (catLower.includes("pengangkutan") || titleLower.includes("pengangkutan"))
+                                  colorCls = "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300";
+                                else if (catLower.includes("sosialisasi") || titleLower.includes("sosialisasi"))
+                                  colorCls = "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300";
+                                else if (catLower.includes("rapat") || titleLower.includes("rapat"))
+                                  colorCls = "bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300";
+
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`border text-[10px] font-bold px-1.5 py-0.5 rounded-md truncate w-full shadow-2xs transition-transform flex items-center justify-between gap-1 ${colorCls}`}
+                                    title={`${s.title} (${s.count} kegiatan)`}
+                                  >
+                                    <span className="truncate">{s.title}</span>
+                                    {s.count > 1 && (
+                                      <span className="bg-white/80 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">
+                                        {s.count}x
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+
+                              {hiddenCount > 0 && (
+                                <div className="text-[9px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-1.5 py-0.5 rounded-md text-center truncate">
+                                  +{hiddenCount} lagi
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
         {/* Right Sidebar: Details */}
         <aside className="w-full lg:w-[340px] max-h-[50vh] lg:max-h-none bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-outline-variant/50 flex flex-col shrink-0 overflow-hidden transition-all">

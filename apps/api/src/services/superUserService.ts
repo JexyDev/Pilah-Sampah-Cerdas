@@ -253,6 +253,469 @@ export class SuperUserService {
   }
 
   /**
+   * Export Printable 1:1 BERSEKA QR Code Posters HTML for PDF Download/Printing
+   */
+  async exportQrPdfHtml(filters?: {
+    search?: string;
+    status?: string;
+    batchId?: string;
+    binIds?: string[];
+  }): Promise<string> {
+    const where: any = {};
+    if (filters?.status) where.status = filters.status;
+    if (filters?.batchId) where.qrBatchId = filters.batchId;
+    if (filters?.binIds && filters.binIds.length > 0) {
+      where.id = { in: filters.binIds };
+    }
+    if (filters?.search) {
+      where.qrCode = { contains: filters.search, mode: "insensitive" };
+    }
+
+    const bins = await prisma.bin.findMany({
+      where,
+      include: {
+        rw: { include: { kelurahan: true } },
+        qrBatch: true,
+        user: true,
+        category: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const cardsHtml = bins
+      .map((item, index) => {
+        const catName = item.category?.name?.toUpperCase() || "";
+        const isAnorganik =
+          catName.includes("ANORGANIK") ||
+          catName.includes("NON_ORGANIC") ||
+          catName.includes("ANORG") ||
+          catName.includes("AGN") ||
+          item.qrCode.toUpperCase().includes("-AGN-");
+
+        const themeClass = isAnorganik ? "theme-anorganik" : "theme-organik";
+        const catTitle = isAnorganik ? "ANORGANIK" : "ORGANIK";
+        const bgImageSrc = isAnorganik
+          ? "/image/qr_template_anorganik.png"
+          : "/image/qr_template_organik.png";
+
+        const formattedSerialCode = item.qrCode;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=0&data=${encodeURIComponent(
+          item.qrCode
+        )}`;
+
+        return `
+        <div class="poster-card ${themeClass}" id="poster-card-${index}" data-serial="${formattedSerialCode}" data-category="${catTitle}">
+          <img 
+            src="${bgImageSrc}" 
+            alt="BERSEKA Template ${catTitle}" 
+            class="poster-bg"
+            crossorigin="anonymous"
+          />
+          <div class="qr-overlay">
+            <img 
+              src="${qrUrl}" 
+              alt="QR Code ${formattedSerialCode}" 
+              class="qr-code-img"
+              crossorigin="anonymous"
+            />
+          </div>
+          <div class="pill-overlay ${isAnorganik ? "pill-anorganik" : "pill-organik"}">
+            ${formattedSerialCode}
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Poster QR Code Resmi BERSEKA (10 x 15 cm)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+  <style id="page-style">
+    @page {
+      size: 100mm 150mm portrait;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #000000;
+      background: #0f172a;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .no-print {
+      background: #1e293b;
+      color: #ffffff;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      gap: 16px;
+    }
+
+    .no-print .info-title {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 0.3px;
+    }
+
+    .no-print .info-desc {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .select-layout {
+      background: #334155;
+      color: #ffffff;
+      border: 1px solid #475569;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .btn-action {
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-print {
+      background: #059669;
+      color: white;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.4);
+    }
+
+    .btn-print:hover {
+      background: #047857;
+      transform: translateY(-1px);
+    }
+
+    .btn-download {
+      background: #2563eb;
+      color: white;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-download:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .print-canvas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      padding: 24px;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .poster-card {
+      width: 100mm;
+      height: 150mm;
+      min-width: 100mm;
+      min-height: 150mm;
+      max-width: 100mm;
+      max-height: 150mm;
+      position: relative;
+      background: #ffffff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .poster-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      display: block;
+      z-index: 1;
+    }
+
+    .qr-overlay {
+      position: absolute;
+      left: 9.37%;
+      top: 66.2%;
+      width: 35.43%;
+      height: 23.63%;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      padding: 1.5%;
+      box-sizing: border-box;
+    }
+
+    .qr-code-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      display: block;
+    }
+
+    .pill-overlay {
+      position: absolute;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace, sans-serif;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0.6px;
+      white-space: nowrap;
+      line-height: 1;
+      box-sizing: border-box;
+    }
+
+    .pill-organik {
+      left: 54.61%;
+      top: 89.45%;
+      width: 38.21%;
+      height: 2.93%;
+      color: #ffffff;
+      font-size: 8.5pt;
+    }
+
+    .pill-anorganik {
+      left: 53.44%;
+      top: 91.3%;
+      width: 37.48%;
+      height: 2.34%;
+      color: #000000;
+      font-size: 8.2pt;
+    }
+
+    body.layout-a4-grid .print-canvas {
+      padding: 10mm;
+      gap: 10mm;
+    }
+
+    body.layout-a4-grid .poster-card {
+      width: 90mm;
+      height: 135mm;
+      min-width: 90mm;
+      min-height: 135mm;
+      max-width: 90mm;
+      max-height: 135mm;
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: #ffffff !important;
+      }
+      .print-canvas {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+      }
+      .poster-card {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        width: 100mm !important;
+        height: 150mm !important;
+        min-width: 100mm !important;
+        min-height: 150mm !important;
+        max-width: 100mm !important;
+        max-height: 150mm !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <div>
+      <div class="info-title">
+        📄 Poster Resmi QR Code BERSEKA (10 x 15 cm)
+      </div>
+      <div class="info-desc">
+        Desain Grafis Resmi Organik (Hijau) & Anorganik (Kuning) 100% 1:1 High Fidelity. Total: ${bins.length} QR Code.
+      </div>
+    </div>
+
+    <div class="controls-group">
+      <select class="select-layout" id="layout-select" onchange="changeLayout(this.value)">
+        <option value="sticker">Format Stiker 10 x 15 cm (Standar)</option>
+        <option value="a4">Format Kertas A4 (Grid)</option>
+      </select>
+
+      <button class="btn-action btn-download" onclick="downloadAllPng()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Unduh PNG (HD)
+      </button>
+
+      <button class="btn-action btn-print" onclick="window.print()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Cetak / Simpan PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="print-canvas">
+    ${cardsHtml}
+  </div>
+
+  <script>
+    function changeLayout(layout) {
+      const styleEl = document.getElementById('page-style');
+      if (layout === 'a4') {
+        document.body.classList.add('layout-a4-grid');
+        styleEl.innerHTML = styleEl.innerHTML.replace(
+          /@page\\s*{[\\s\\S]*?}/,
+          '@page { size: A4 portrait; margin: 10mm; }'
+        );
+      } else {
+        document.body.classList.remove('layout-a4-grid');
+        styleEl.innerHTML = styleEl.innerHTML.replace(
+          /@page\\s*{[\\s\\S]*?}/,
+          '@page { size: 100mm 150mm portrait; margin: 0; }'
+        );
+      }
+    }
+
+    async function downloadAllPng() {
+      const cards = document.querySelectorAll('.poster-card');
+      if (cards.length === 0) return;
+
+      for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const serial = card.getAttribute('data-serial') || ('QR_' + (i + 1));
+        const category = card.getAttribute('data-category') || 'BERSEKA';
+        const bgImg = card.querySelector('.poster-bg');
+        const qrImg = card.querySelector('.qr-code-img');
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 1366;
+        canvas.height = 2048;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) continue;
+
+        if (bgImg.complete && bgImg.naturalWidth > 0) {
+          ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        } else {
+          await new Promise(r => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); r(); };
+            img.onerror = () => r();
+            img.src = bgImg.src;
+          });
+        }
+
+        await new Promise(r => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(128, 1356, 484, 484);
+            ctx.drawImage(img, 138, 1366, 464, 464);
+            r();
+          };
+          img.onerror = () => r();
+          img.src = qrImg.src;
+        });
+
+        const isAnorg = category.includes('ANORGANIK');
+        ctx.font = '900 30px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        if (isAnorg) {
+          ctx.fillStyle = '#000000';
+          ctx.fillText(serial, 985, 1895);
+        } else {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(serial, 1007, 1862);
+        }
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'POSTER_' + category + '_' + serial + '.png';
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        if (cards.length > 1) {
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+    }
+
+    window.onload = function() {
+      setTimeout(function() {
+        window.print();
+      }, 600);
+    };
+  </script>
+</body>
+</html>`;
+  }
+
+  /**
    * Generate a batch of QR Codes
    */
   async generateQrBatch(

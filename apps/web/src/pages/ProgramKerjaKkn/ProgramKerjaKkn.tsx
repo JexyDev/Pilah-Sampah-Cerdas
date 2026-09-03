@@ -1034,7 +1034,7 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* Toolbar Filter */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 flex-1 max-w-5xl">
             {/* Filter 1: Kelompok */}
             <div>
               <span className="text-[10.5px] font-bold text-slate-500 block mb-1">Kelompok</span>
@@ -1210,234 +1210,226 @@ export const ProgramKerjaKkn: React.FC = () => {
             }}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
-              <thead>
-                <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
-                  <th className="py-3.5 px-3 w-12 text-center">No</th>
-                  <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
-                  {isDeveloper && <th className="py-3.5 px-3 min-w-[170px] text-left">Kelompok & Wilayah</th>}
-                  {isDeveloper && <th className="py-3.5 px-3 min-w-[190px] text-left">Pengisi Data / Mahasiswa</th>}
-                  <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
-                  <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
-                  <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
-                  <th className="py-3.5 px-4 min-w-[240px]">Deskripsi Kegiatan</th>
-                  <th className="py-3.5 px-3 w-40">Waktu Pelaksanaan</th>
-                  <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
-                  <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
-                  <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
-                  <th className="py-3.5 px-3 w-28 text-center">Bukti</th>
-                  {canModifyProker && <th className="py-3.5 px-4 w-48 text-center">Aksi / Tindakan</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
-                {paginatedProkers.map((p, idx) => {
-                  const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
-                  const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
-                  const timestampInfo = formatIndonesianTimestamp(p.createdAt);
+          <>
+            {/* Desktop Table View (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                    <th className="py-3.5 px-3 w-12 text-center">No</th>
+                    <th className="py-3.5 px-3 w-36 text-center">Waktu Dibuat</th>
+                    {isDeveloper && <th className="py-3.5 px-3 min-w-[170px] text-left">Kelompok & Wilayah</th>}
+                    {isDeveloper && <th className="py-3.5 px-3 min-w-[190px] text-left">Pengisi Data / Mahasiswa</th>}
+                    <th className="py-3.5 px-3 w-28 text-center">Kategori</th>
+                    <th className="py-3.5 px-3 w-24 text-center">Sumber</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Judul Program</th>
+                    <th className="py-3.5 px-4 min-w-[240px] max-w-xs">Deskripsi Kegiatan</th>
+                    <th className="py-3.5 px-3 w-40">Waktu Pelaksanaan</th>
+                    <th className="py-3.5 px-3 w-32 font-bold">Biaya</th>
+                    <th className="py-3.5 px-3 w-36 text-center">Status Usulan</th>
+                    <th className="py-3.5 px-3 w-36 text-center">Status Pelaksanaan</th>
+                    <th className="py-3.5 px-3 w-28 text-center">Bukti</th>
+                    {canModifyProker && <th className="py-3.5 px-4 w-48 text-center">Aksi / Tindakan</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
+                  {paginatedProkers.map((p, idx) => {
+                    const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
+                    const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
+                    const normalizedP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
+                    const timestampInfo = formatIndonesianTimestamp(p.createdAt);
 
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3.5 px-3 text-center font-bold text-slate-400">
-                        {(currentPage - 1) * itemsPerPage + idx + 1}
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <div className="inline-flex flex-col items-center justify-center">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
-                            <Calendar size={11} className="text-slate-400 shrink-0" />
-                            {timestampInfo.date}
-                          </span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 flex items-center gap-1">
-                            <Clock size={10} className="text-slate-400 shrink-0" />
-                            {timestampInfo.time}
-                          </span>
-                        </div>
-                      </td>
-                      {isDeveloper && (
-                        <td className="py-3.5 px-3">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                              {p.kelompokName || "Kelompok KKN"}
+                    return (
+                      <tr key={p.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="py-3.5 px-3 text-center font-bold text-slate-400">
+                          {(currentPage - 1) * itemsPerPage + idx + 1}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <div className="inline-flex flex-col items-center justify-center">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1">
+                              <Calendar size={11} className="text-slate-400 shrink-0" />
+                              {timestampInfo.date}
                             </span>
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                              {p.kelurahan ? `Kel. ${p.kelurahan}` : "-"}
-                              {p.cakupanRw && Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0
-                                ? ` • RW ${p.cakupanRw.join(", ")}`
-                                : ""}
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                              <Clock size={10} className="text-slate-400 shrink-0" />
+                              {timestampInfo.time}
                             </span>
-                            {p.dplName && (
-                              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1 mt-0.5">
-                                <GraduationCap size={11} className="shrink-0 text-indigo-500" />
-                                <span>DPL: {p.dplName}</span>
-                              </span>
-                            )}
                           </div>
                         </td>
-                      )}
-                      {isDeveloper && (
-                        <td className="py-3.5 px-3">
-                          <div className="flex flex-col gap-1">
-                            {p.penginput ? (
-                              <div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
-                                    {p.penginput.nama}
-                                  </span>
-                                  {p.penginput.isKetua && (
-                                    <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded text-[9px] font-bold">
-                                      Ketua Kelompok
+                        {isDeveloper && (
+                          <td className="py-3.5 px-3">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                {p.kelompokName || "Kelompok KKN"}
+                              </span>
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                {p.kelurahan ? `Kel. ${p.kelurahan}` : "-"}
+                                {p.cakupanRw && Array.isArray(p.cakupanRw) && p.cakupanRw.length > 0
+                                  ? ` • RW ${p.cakupanRw.join(", ")}`
+                                  : ""}
+                              </span>
+                              {p.dplName && (
+                                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1 mt-0.5">
+                                  <GraduationCap size={11} className="shrink-0 text-indigo-500" />
+                                  <span>DPL: {p.dplName}</span>
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        {isDeveloper && (
+                          <td className="py-3.5 px-3">
+                            <div className="flex flex-col gap-1">
+                              {p.penginput ? (
+                                <div>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
+                                      {p.penginput.nama}
                                     </span>
-                                  )}
-                                  {p.penginput.role === "DPL" && (
-                                    <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 rounded text-[9px] font-bold">
-                                      DPL
-                                    </span>
+                                    {p.penginput.isKetua && (
+                                      <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded text-[9px] font-bold">
+                                        Ketua Kelompok
+                                      </span>
+                                    )}
+                                    {p.penginput.role === "DPL" && (
+                                      <span className="px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300 rounded text-[9px] font-bold">
+                                        DPL
+                                      </span>
+                                    )}
+                                  </div>
+                                  {p.penginput.nim && (
+                                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                      NIM: {p.penginput.nim} {p.penginput.prodi ? `• ${p.penginput.prodi}` : ""}
+                                    </p>
                                   )}
                                 </div>
-                                {p.penginput.nim && (
-                                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                                    NIM: {p.penginput.nim} {p.penginput.prodi ? `• ${p.penginput.prodi}` : ""}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-500 font-medium">
-                                {p.sumber === "DPL" ? "DPL" : "Mahasiswa"}
-                              </span>
-                            )}
+                              ) : (
+                                <span className="text-xs text-slate-500 font-medium">
+                                  {p.sumber === "DPL" ? "DPL" : "Mahasiswa"}
+                                </span>
+                              )}
 
-                            {p.mahasiswaList && p.mahasiswaList.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setRosterModal({
-                                    isOpen: true,
-                                    kelompokName: p.kelompokName,
-                                    kelurahan: p.kelurahan,
-                                    cakupanRw: p.cakupanRw,
-                                    dplName: p.dplName,
-                                    mahasiswa: p.mahasiswaList || [],
-                                    search: "",
-                                  })
-                                }
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/50 text-[10px] font-semibold transition-all cursor-pointer w-fit mt-0.5 active:scale-95 shadow-2xs"
-                                title="Buka daftar lengkap mahasiswa dalam kelompok ini"
-                              >
-                                <Users size={11} />
-                                <span>{p.mahasiswaList.length} Mahasiswa Kelompok</span>
-                              </button>
-                            )}
-                          </div>
+                              {p.mahasiswaList && p.mahasiswaList.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setRosterModal({
+                                      isOpen: true,
+                                      kelompokName: p.kelompokName,
+                                      kelurahan: p.kelurahan,
+                                      cakupanRw: p.cakupanRw,
+                                      dplName: p.dplName,
+                                      mahasiswa: p.mahasiswaList || [],
+                                      search: "",
+                                    })
+                                  }
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/50 text-[10px] font-semibold transition-all cursor-pointer w-fit mt-0.5 active:scale-95 shadow-2xs"
+                                  title="Buka daftar lengkap mahasiswa dalam kelompok ini"
+                                >
+                                  <Users size={11} />
+                                  <span>{p.mahasiswaList.length} Mahasiswa Kelompok</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                        <td className="py-3.5 px-3 text-center">
+                          {renderKategoriBadge(p.kategori)}
                         </td>
-                      )}
-                      <td className="py-3.5 px-3 text-center">
-                        {renderKategoriBadge(p.kategori)}
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        {renderSumberBadge(p.sumber)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="text-slate-900 dark:text-slate-100 font-bold">
-                          {p.judul || "-"}
-                        </p>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="text-slate-900 dark:text-slate-100 leading-relaxed font-normal">
-                          {p.deskripsi}
-                        </p>
-                      </td>
-                      <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
-                        {formatWaktuPelaksanaanDisplay(p.waktuPelaksanaan)}
-                      </td>
-                      <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-slate-100">
-                        Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        {renderStatusUsulanBadge(p.statusUsulan, p.status, p.catatanDpl)}
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        {renderStatusPelaksanaanBadge(p.statusPelaksanaan, p.status)}
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <a
-                          href={driveUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all font-bold text-xs shadow-2xs cursor-pointer active:scale-95"
-                          title="Buka Folder Bukti Google Drive"
-                        >
-                          <GoogleDriveIcon />
-                          <span>Bukti</span>
-                        </a>
-                      </td>
-                      {canModifyProker && (
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-2 flex-wrap">
-                            {/* Quick Details Inspection */}
-                            <button
-                              onClick={() => setDetailModal({ isOpen: true, proker: p })}
-                              title="Lihat Detail Program Kerja & Pengusul"
-                              className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                            >
-                              <Eye size={13} />
-                            </button>
+                        <td className="py-3.5 px-3 text-center">
+                          {renderSumberBadge(p.sumber)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <p className="text-slate-900 dark:text-slate-100 font-bold line-clamp-2" title={p.judul || "-"}>
+                            {p.judul || "-"}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-4 max-w-xs">
+                          <p className="text-slate-900 dark:text-slate-100 leading-relaxed font-normal line-clamp-3" title={p.deskripsi}>
+                            {p.deskripsi}
+                          </p>
+                        </td>
+                        <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 font-medium">
+                          {formatWaktuPelaksanaanDisplay(p.waktuPelaksanaan)}
+                        </td>
+                        <td className="py-3.5 px-3 font-bold text-slate-900 dark:text-slate-100">
+                          Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          {renderStatusUsulanBadge(p.statusUsulan, p.status, p.catatanDpl)}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          {renderStatusPelaksanaanBadge(p.statusPelaksanaan, p.status)}
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <a
+                            href={driveUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all font-bold text-xs shadow-2xs cursor-pointer active:scale-95"
+                            title="Buka Folder Bukti Google Drive"
+                          >
+                            <GoogleDriveIcon />
+                            <span>Bukti</span>
+                          </a>
+                        </td>
+                        {canModifyProker && (
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2 flex-wrap">
+                              {/* Quick Details Inspection */}
+                              <button
+                                onClick={() => setDetailModal({ isOpen: true, proker: p })}
+                                title="Lihat Detail Program Kerja & Pengusul"
+                                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              >
+                                <Eye size={13} />
+                              </button>
 
-                            {/* Decision Actions when Menunggu Persetujuan */}
-                            {normalizedU === "BELUM_DISETUJUI" && (
-                              <div className="flex items-center gap-1.5">
+                              {/* Decision Actions when Menunggu Persetujuan */}
+                              {normalizedU === "BELUM_DISETUJUI" && (
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => handleApproveProker(p)}
+                                    title="Setujui (ACC) Program Kerja"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-95"
+                                  >
+                                    <Check size={13} strokeWidth={3} />
+                                    <span>Setujui</span>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setRejectModal({
+                                        isOpen: true,
+                                        id: p.id,
+                                        deskripsi: p.deskripsi,
+                                        catatanDpl: "",
+                                        isSubmitting: false,
+                                      })
+                                    }
+                                    title="Tolak Program Kerja dengan Catatan"
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
+                                  >
+                                    <X size={13} strokeWidth={3} />
+                                    <span>Tolak</span>
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Decision Action when Ditolak -> quick re-approve */}
+                              {normalizedU === "DITOLAK" && (
                                 <button
                                   onClick={() => handleApproveProker(p)}
-                                  title="Setujui (ACC) Program Kerja"
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-95"
+                                  title="Ubah Keputusan jadi Disetujui (ACC)"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
                                 >
                                   <Check size={13} strokeWidth={3} />
                                   <span>Setujui</span>
                                 </button>
-                                <button
-                                  onClick={() =>
-                                    setRejectModal({
-                                      isOpen: true,
-                                      id: p.id,
-                                      deskripsi: p.deskripsi,
-                                      catatanDpl: "",
-                                      isSubmitting: false,
-                                    })
-                                  }
-                                  title="Tolak Program Kerja dengan Catatan"
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
-                                >
-                                  <X size={13} strokeWidth={3} />
-                                  <span>Tolak</span>
-                                </button>
-                              </div>
-                            )}
+                              )}
 
-                            {/* Decision Action when Ditolak or Kadaluarsa -> quick re-approve */}
-                            {(normalizedU === "DITOLAK" || normalizedU === "KADALUARSA") && (
-                              <button
-                                onClick={() => handleApproveProker(p)}
-                                title="Ubah Keputusan jadi Disetujui (ACC Ulang)"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs transition-all cursor-pointer active:scale-95"
-                              >
-                                <Check size={13} strokeWidth={3} />
-                                <span>Setujui</span>
-                              </button>
-                            )}
-
-                            {/* Decision Action when Disetujui -> option to start execution or reject */}
-                            {normalizedU === "DISETUJUI" && (
-                              <div className="flex items-center gap-1">
-                                {normalizedP === "BELUM_MULAI" && (
-                                  <button
-                                    onClick={() => handleStartProker(p)}
-                                    title="Mulai Pelaksanaan Program Kerja (Ubah status jadi Sedang Berjalan)"
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all cursor-pointer shadow-2xs active:scale-95"
-                                  >
-                                    <Play size={12} fill="currentColor" />
-                                    <span>Mulai</span>
-                                  </button>
-                                )}
+                              {/* Decision Action when Disetujui -> option to reject only if not yet SELESAI */}
+                              {normalizedU === "DISETUJUI" && normalizedP !== "SELESAI" && (
                                 <button
                                   onClick={() =>
                                     setRejectModal({
@@ -1454,41 +1446,241 @@ export const ProgramKerjaKkn: React.FC = () => {
                                   <X size={13} />
                                   <span>Tolak</span>
                                 </button>
-                              </div>
-                            )}
+                              )}
 
-                            {/* Standard Edit & Delete */}
-                            <div className="flex items-center gap-1 ml-1 pl-1 border-l border-slate-200 dark:border-slate-800">
+                              {/* Standard Edit & Delete */}
+                              <div className="flex items-center gap-1 ml-1 pl-1 border-l border-slate-200 dark:border-slate-800">
+                                <button
+                                  onClick={() => handleOpenEditModal(p)}
+                                  title="Edit Detail Program Kerja"
+                                  className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setDeleteModal({
+                                      isOpen: true,
+                                      id: p.id,
+                                      deskripsi: p.deskripsi,
+                                    })
+                                  }
+                                  title="Hapus Program Kerja"
+                                  className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (< md) */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {paginatedProkers.map((p, idx) => {
+                const driveUrl = p.linkGoogleDrive || "https://drive.google.com";
+                const normalizedU = normalizeStatusUsulan(p.statusUsulan, p.status);
+                const normalizedP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
+                const timestampInfo = formatIndonesianTimestamp(p.createdAt);
+                const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;
+
+                return (
+                  <div
+                    key={p.id}
+                    className="p-4 space-y-3.5 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                  >
+                    {/* Top Row: No, Badges, Timestamp */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
+                          #{rowNumber}
+                        </span>
+                        {renderKategoriBadge(p.kategori)}
+                        {renderSumberBadge(p.sumber)}
+                      </div>
+                      <div className="flex flex-col items-end text-[10px] text-slate-400 dark:text-slate-500 font-medium shrink-0">
+                        <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                          <Calendar size={10} className="text-slate-400" />
+                          {timestampInfo.date}
+                        </span>
+                        <span className="flex items-center gap-1 font-mono">
+                          <Clock size={9} className="text-slate-400" />
+                          {timestampInfo.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Developer Info: Kelompok & Penginput */}
+                    {isDeveloper && (
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 truncate">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                            {p.kelompokName || "Kelompok KKN"}
+                          </span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 shrink-0">
+                            {p.kelurahan ? `Kel. ${p.kelurahan}` : "-"}
+                          </span>
+                        </div>
+                        {p.dplName && (
+                          <div className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-1">
+                            <GraduationCap size={11} className="shrink-0" />
+                            <span>DPL: {p.dplName}</span>
+                          </div>
+                        )}
+                        {p.penginput && (
+                          <div className="text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                            <span>Pengusul: <strong className="text-slate-800 dark:text-slate-200">{p.penginput.nama}</strong></span>
+                            {p.penginput.nim && <span className="font-mono text-[10px] text-slate-400">({p.penginput.nim})</span>}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Judul & Deskripsi */}
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug">
+                        {p.judul || "-"}
+                      </h4>
+                      <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed line-clamp-3" title={p.deskripsi}>
+                        {p.deskripsi}
+                      </p>
+                    </div>
+
+                    {/* Info Grid: Waktu & Biaya */}
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 block font-medium">Waktu Pelaksanaan</span>
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs mt-0.5 block truncate" title={p.waktuPelaksanaan || "-"}>
+                          {formatWaktuPelaksanaanDisplay(p.waktuPelaksanaan)}
+                        </span>
+                      </div>
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-400 block font-medium">Estimasi Biaya</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-xs mt-0.5 block">
+                          Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status Badges & Bukti */}
+                    <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {renderStatusUsulanBadge(p.statusUsulan, p.status, p.catatanDpl)}
+                        {renderStatusPelaksanaanBadge(p.statusPelaksanaan, p.status)}
+                      </div>
+                      <a
+                        href={driveUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <GoogleDriveIcon />
+                        <span>Bukti</span>
+                      </a>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+                      <button
+                        onClick={() => setDetailModal({ isOpen: true, proker: p })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        <Eye size={13} />
+                        <span>Detail</span>
+                      </button>
+
+                      {canModifyProker && (
+                        <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+                          {normalizedU === "BELUM_DISETUJUI" && (
+                            <>
                               <button
-                                onClick={() => handleOpenEditModal(p)}
-                                title="Edit Detail Program Kerja"
-                                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                onClick={() => handleApproveProker(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition-all active:scale-95 cursor-pointer"
                               >
-                                <Pencil size={13} />
+                                <Check size={13} strokeWidth={3} />
+                                <span>Setujui</span>
                               </button>
                               <button
                                 onClick={() =>
-                                  setDeleteModal({
+                                  setRejectModal({
                                     isOpen: true,
                                     id: p.id,
                                     deskripsi: p.deskripsi,
+                                    catatanDpl: "",
+                                    isSubmitting: false,
                                   })
                                 }
-                                title="Hapus Program Kerja"
-                                className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 font-bold text-xs transition-all active:scale-95 cursor-pointer"
                               >
-                                <Trash2 size={13} />
+                                <X size={13} strokeWidth={3} />
+                                <span>Tolak</span>
                               </button>
-                            </div>
-                          </div>
-                        </td>
+                            </>
+                          )}
+
+                          {normalizedU === "DITOLAK" && (
+                            <button
+                              onClick={() => handleApproveProker(p)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                            >
+                              <Check size={13} strokeWidth={3} />
+                              <span>Setujui</span>
+                            </button>
+                          )}
+
+                          {normalizedU === "DISETUJUI" && normalizedP !== "SELESAI" && (
+                            <button
+                              onClick={() =>
+                                setRejectModal({
+                                  isOpen: true,
+                                  id: p.id,
+                                  deskripsi: p.deskripsi,
+                                  catatanDpl: p.catatanDpl || "",
+                                  isSubmitting: false,
+                                })
+                              }
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-600 dark:text-slate-400 hover:text-rose-600 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                            >
+                              <X size={13} />
+                              <span>Tolak</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleOpenEditModal(p)}
+                            className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setDeleteModal({
+                                isOpen: true,
+                                id: p.id,
+                                deskripsi: p.deskripsi,
+                              })
+                            }
+                            className="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                            title="Hapus"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
         {filteredProkers.length > 0 && (
           <Pagination
@@ -1527,7 +1719,7 @@ export const ProgramKerjaKkn: React.FC = () => {
                 </label>
                 {isDpl && kelompokList.length <= 1 ? (
                   <div className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-100 font-bold flex items-center justify-between">
-                    <span>{kelompokList[0]?.name || "Kelompok Binaan"} ({kelompokList[0]?.kelurahan ? `Kel. ${kelompokList[0]?.kelurahan}` : "Coblong"})</span>
+                    <span>{kelompokList[0]?.name || "Kelompok Binaan"} ({kelompokList[0]?.kelurahan ? `Kel. ${kelompokList[0]?.kelurahan}` : "Wilayah Binaan"})</span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/50">
                       Otomatis
                     </span>

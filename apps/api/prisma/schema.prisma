@@ -1014,13 +1014,19 @@ model Schedule {
   longitude   Decimal?             @db.Decimal(11, 8)
   polygon     Json?
   radius      Int?                 @default(500)
-  kelompokId  String?              @map("id_kelompok")
-  isActive    Boolean              @default(true) @map("is_aktif")
-  kelompok    KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
-  attendances ActivityAttendance[]
+  kelompokId     String?              @map("id_kelompok")
+  isActive       Boolean              @default(true) @map("is_aktif")
+  // === SKIP KEGIATAN ===
+  // Menyimpan status kegiatan: 'AKTIF' (default) atau 'TIDAK_ADA_KEGIATAN'
+  statusKegiatan String               @default("AKTIF") @map("status_kegiatan")
+  // Menyimpan detail skip: { keteranganSkip, skippedBy, skippedAt, skippedByRole }
+  detailSkip     Json?                @map("detail_skip")
+  kelompok       KelompokKkn?         @relation(fields: [kelompokId], references: [id], onDelete: Cascade)
+  attendances    ActivityAttendance[]
 
   @@map("jadwal")
 }
+
 
 model TimelineKkn {
   id                String       @id @default(uuid())

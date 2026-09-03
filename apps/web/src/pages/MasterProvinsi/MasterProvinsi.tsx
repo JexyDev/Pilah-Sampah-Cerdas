@@ -33,7 +33,7 @@ export interface ProvinsiData {
 
 const MasterProvinsi: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = user?.peran === "PETUGAS_RESIDU" || user?.peran === "MAHASISWA_KKN";
+  const isReadOnly = !["DEVELOPER", "SUPER_USER"].includes(user?.peran || "");
 
   const [provinsiList, setProvinsiList] = useState<ProvinsiData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,15 +73,11 @@ const MasterProvinsi: React.FC = () => {
         status: "Aktif",
       }));
 
-      // Default fallback Jawa Barat if database empty
-      setProvinsiList(
-        list.length > 0
-          ? list
-          : [{ id: "1", nama: "Jawa Barat", kodeIso: "ID-JB", ibuKota: "Bandung", status: "Aktif" }]
-      );
+      setProvinsiList(list);
     } catch (err: any) {
       console.error("Gagal memuat data provinsi dari backend:", err);
       setError("Gagal memuat data provinsi dari server real-time.");
+      setProvinsiList([]);
     } finally {
       setLoading(false);
     }

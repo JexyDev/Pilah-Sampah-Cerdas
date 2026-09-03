@@ -524,6 +524,20 @@ router.put(
 
 /**
  * @swagger
+ * /api/v1/kkn/zona-map-unified:
+ *   get:
+ *     summary: Mendapatkan seluruh data peta zona KKN terpadu (SSOT)
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat data zona KKN terpadu
+ */
+router.get("/zona-map-unified", authMiddleware, kknController.getUnifiedZones);
+
+/**
+ * @swagger
  * /api/v1/kkn/posko:
  *   get:
  *     summary: Mendapatkan seluruh daftar Posko KKN di seluruh kelurahan
@@ -540,6 +554,7 @@ router.post(
   "/posko",
   authMiddleware,
   roleMiddleware([
+    "MAHASISWA_KKN",
     "DEVELOPER",
     "SUPER_USER",
     "ADMIN_DLH",
@@ -556,6 +571,7 @@ router.put(
   "/posko/:id",
   authMiddleware,
   roleMiddleware([
+    "MAHASISWA_KKN",
     "DEVELOPER",
     "SUPER_USER",
     "ADMIN_DLH",
@@ -629,10 +645,24 @@ router.post(
 );
 
 router.post(
+  "/kegiatan/:id/skip",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.skipKegiatan
+);
+
+router.post(
   "/kegiatan/:id/jeda",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
   kknAttendanceController.jedaKegiatan
+);
+
+router.post(
+  "/kegiatan/:id/lanjut",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.lanjutKegiatan
 );
 
 router.post(
@@ -651,12 +681,7 @@ router.post(
   kknAttendanceController.absenAlias
 );
 
-router.post(
-  "/out-of-zone-violation",
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.recordOutOfZoneViolation
-);
+// [Q4 REMOVED] /out-of-zone-violation endpoint dihapus (LOSS MODE)
 
 router.get(
   "/kegiatan/:id/presensi-history",
@@ -1055,7 +1080,7 @@ router.post(
   ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
-  safeUploadSingleImage("fotoBukti"),
+  uploadPemanfaatanImage,
   kknController.createLeaveRequest
 );
 

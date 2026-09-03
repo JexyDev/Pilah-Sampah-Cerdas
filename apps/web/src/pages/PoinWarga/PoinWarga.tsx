@@ -10,6 +10,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
 const PoinWarga: React.FC = () => {
   const [leaders, setLeaders] = useState<any[]>([]);
@@ -214,12 +215,10 @@ const PoinWarga: React.FC = () => {
                   >
                     <div className="relative mb-2">
                       <img
-                        src={l.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
+                        src={getProfilePhotoUrl(l.fotoProfil, l.nama)}
                         alt={l.nama}
                         className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-slate-800 shadow-sm"
-                        onError={(e: any) => {
-                          e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
-                        }}
+                        onError={(e: any) => handleAvatarError(e, l.nama)}
                       />
                       <span className="absolute -bottom-1 -right-1 text-base">{mc.medal}</span>
                     </div>
@@ -263,12 +262,10 @@ const PoinWarga: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <div className="relative shrink-0">
                         <img
-                          src={leader.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
+                          src={getProfilePhotoUrl(leader.fotoProfil, leader.nama)}
                           alt={leader.nama}
                           className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-800"
-                          onError={(e: any) => {
-                            e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
-                          }}
+                          onError={(e: any) => handleAvatarError(e, leader.nama)}
                         />
                         {leader.rank <= 3 ? (
                           <span className="absolute -top-1 -right-1 text-xs">{mc.medal}</span>
@@ -340,12 +337,10 @@ const PoinWarga: React.FC = () => {
               {/* Header profil */}
               <div className="flex items-center gap-3">
                 <img
-                  src={selectedUser.fotoProfil || "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80"}
+                  src={getProfilePhotoUrl(selectedUser.fotoProfil, selectedUser.nama)}
                   alt={selectedUser.nama}
                   className="w-12 h-12 rounded-full object-cover border-2 border-primary/30 shadow-sm"
-                  onError={(e: any) => {
-                    e.target.src = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=256&h=256&q=80";
-                  }}
+                  onError={(e: any) => handleAvatarError(e, selectedUser.nama)}
                 />
                 <div>
                   <p className="font-bold text-on-surface text-[16px]">{selectedUser.nama}</p>

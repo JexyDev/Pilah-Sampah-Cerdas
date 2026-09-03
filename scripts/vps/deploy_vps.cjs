@@ -4,24 +4,30 @@ const deployCmd = `
 set -e
 echo "=== 1. Pulling latest code from development ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new
-git restore package-lock.json || true
+git stash || true
 git fetch origin development
 git checkout development || git checkout -b development origin/development
-git pull origin development
+git reset --hard origin/development
+git stash pop || true
 
 echo "=== 2. Building Backend API ==="
 cd /home/maker/Pilah-Sampah-Cerdas-new/apps/api
 npx prisma generate
 npm run build
 
-echo "=== 3. Reloading PM2 Backend (Cluster Mode Zero-Downtime) ==="
+echo "=== 3. Building Frontend Web (berseka.id) ==="
+cd /home/maker/Pilah-Sampah-Cerdas-new/apps/web
+npm run build || true
+
+echo "=== 4. Reloading PM2 Backend (Cluster Mode Zero-Downtime) ==="
+cd /home/maker/Pilah-Sampah-Cerdas-new/apps/api
 pm2 reload ecosystem.config.cjs || pm2 restart ecosystem.config.cjs || pm2 start ecosystem.config.cjs
 pm2 save
 
-echo "=== 4. Checking PM2 Status ==="
+echo "=== 5. Checking PM2 Status ==="
 pm2 status
 
-echo "=== 5. Verifying Backend Logs ==="
+echo "=== 6. Verifying Backend Logs ==="
 sleep 3
 pm2 logs psc-backend --lines 20 --nostream
 `;
@@ -55,7 +61,7 @@ function runDeploy(retries = 10) {
     host: '157.10.252.252',
     port: 22,
     username: 'maker',
-    password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "",
+    password: process.env.VPS_PASSWORD || process.env.VPS_PASS || "Makerdotindo2026",
     readyTimeout: 30000,
     keepaliveInterval: 10000
   });

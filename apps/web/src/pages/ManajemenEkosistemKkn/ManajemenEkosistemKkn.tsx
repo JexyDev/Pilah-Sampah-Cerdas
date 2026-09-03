@@ -21,7 +21,10 @@ import {
   UserMinus,
   Eye,
   ExternalLink,
-  Phone
+  Phone,
+  CheckCircle2,
+  AlertCircle,
+  Award
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
@@ -297,6 +300,29 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     return filteredDplList.slice(start, start + dplRowsPerPage);
   }, [filteredDplList, dplPage]);
 
+  // Summary KPI Metrics
+  const totalKelompok = kelompokList.length;
+  const kelompokWithLeader = useMemo(() => {
+    return kelompokList.filter((k) =>
+      k?.students && Array.isArray(k.students) && k.students.some((s: any) => s.isKetua)
+    ).length;
+  }, [kelompokList]);
+  const kelompokWithoutLeader = totalKelompok - kelompokWithLeader;
+
+  const totalDpl = dplList.length;
+  const kelompokWithDpl = useMemo(() => {
+    return kelompokList.filter(
+      (k) => !!k.dplId || !!k.dpl || (k.dplNamaMentah && k.dplNamaMentah.trim() !== "")
+    ).length;
+  }, [kelompokList]);
+  const kelompokWithoutDpl = totalKelompok - kelompokWithDpl;
+  const totalStudentsCount = useMemo(() => {
+    return kelompokList.reduce(
+      (acc, k) => acc + (Array.isArray(k.students) ? k.students.length : 0),
+      0
+    );
+  }, [kelompokList]);
+
   // Kelompok Submit Handlers
   const handleOpenDetailKelompok = (k: any) => {
     setSelectedDetailKelompok(k);
@@ -470,9 +496,100 @@ export const ManajemenEkosistemKkn: React.FC = () => {
         </div>
       </div>
 
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Card 1: Kelompok KKN */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-teal-600 dark:text-teal-400 tracking-wider">
+              Kelompok KKN
+            </span>
+            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 rounded-xl">
+              <GraduationCap size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalKelompok}</h3>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Kelompok yang telah memiliki ketua">
+                <CheckCircle2 size={13} /> {kelompokWithLeader} Ada Ketua
+              </span>
+              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki ketua">
+                <AlertCircle size={13} /> {kelompokWithoutLeader} Tanpa Ketua
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: DPL Terdaftar */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider">
+              DPL Terdaftar
+            </span>
+            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
+              <Award size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalDpl}</h3>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1" title="Kelompok KKN yang terhubung 1-to-1 dengan DPL">
+                <CheckCircle2 size={13} /> {kelompokWithDpl} Terhubung (1-to-1)
+              </span>
+              {kelompokWithoutDpl > 0 ? (
+                <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki DPL">
+                  <AlertCircle size={13} /> {kelompokWithoutDpl} Tanpa DPL
+                </span>
+              ) : (
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Seluruh kelompok telah terhubung 1-to-1 dengan DPL">
+                  <CheckCircle2 size={13} /> 100% Terhubung
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Total Mahasiswa KKN */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">
+              Mahasiswa KKN
+            </span>
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
+              <Users size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalStudentsCount}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              Terdistribusi di {totalKelompok} Kelompok KKN
+            </p>
+          </div>
+        </div>
+
+        {/* Card 4: Universitas Mitra */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
+              Universitas Mitra
+            </span>
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
+              <BookOpen size={20} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{uniList.length}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0] || "UNIKOM"}>
+              {uniList[0] || "UNIKOM"}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      <div className="border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-none -mx-1 px-1">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max pb-0.5" aria-label="Tabs">
           {(isDpl
             ? [{ id: "kelompok", label: `Kelompok Saya (${kelompokList.length})`, icon: GraduationCap }]
             : [
@@ -490,10 +607,10 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                   activeTab === tab.id
                     ? "border-emerald-600 text-emerald-700"
                     : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
-                } whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm flex items-center gap-2 cursor-pointer transition-colors`}
+                } whitespace-nowrap py-3.5 sm:py-4 px-1 border-b-2 font-bold text-xs sm:text-sm flex items-center gap-2 cursor-pointer transition-colors`}
               >
-                <Icon size={16} />
-                {tab.label}
+                <Icon size={16} className="shrink-0" />
+                <span>{tab.label}</span>
               </button>
             );
           })}
@@ -501,12 +618,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-xs">
         {activeTab === "kelompok" && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Filter & Search Bar */}
-            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 flex-1">
                 {/* Search Input */}
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
@@ -515,7 +632,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     placeholder="Cari kelompok, DPL, ketua, kelurahan..."
                     value={searchKelompok}
                     onChange={(e) => setSearchKelompok(e.target.value)}
-                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white"
+                    className="pl-10 pr-4 py-2.5 w-full border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50/50 dark:bg-slate-800/50 hover:bg-white"
                   />
                   {searchKelompok && (
                     <button
@@ -535,7 +652,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       value={filterKelurahan}
                       onChange={(e) => setFilterKelurahan(e.target.value)}
                       aria-label="Filter Kelurahan"
-                      className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
+                      className="px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer w-full sm:w-auto"
                     >
                       <option value="ALL">Semua Kelurahan</option>
                       {kelurahanOptions.map((kel) => (
@@ -549,7 +666,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               {/* Action Buttons & Rows per page */}
-              <div className="flex items-center gap-3 justify-between sm:justify-end">
+              <div className="flex flex-wrap items-center gap-3 justify-between sm:justify-end">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
                   <span>Tampilkan:</span>
                   <select
@@ -569,7 +686,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 {!isReadOnly && (
                   <button
                     onClick={handleOpenAddKelompok}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                   >
                     <Plus size={18} />
                     Tambah Kelompok

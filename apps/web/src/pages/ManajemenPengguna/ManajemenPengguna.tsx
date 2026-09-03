@@ -1,4 +1,4 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin } from "lucide-react";
 /**
  * Project: BERSEKA
  * Developed by: PT Makerindo
@@ -40,12 +40,28 @@ const cleanKelurahanName = (raw: string | undefined | null) => {
     .replace(/^urahan\s*/i, "")
     .replace(/^Kelurahan\s*/i, "")
     .trim();
+
+  // If the raw text is actually a full address or too long, extract canonical kelurahan or return "-"
+  if (clean.includes(",") || clean.split(/\s+/).length > 3) {
+    const known = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+    for (const k of known) {
+      if (clean.toLowerCase().includes(k.toLowerCase())) return `Kel. ${k}`;
+    }
+    return "-";
+  }
+
   return clean ? `Kel. ${clean}` : "-";
 };
 
 const detectKelurahanName = (u: any): string => {
-  if (u?.kelurahan && u.kelurahan !== "-") {
-    return cleanKelurahanName(u.kelurahan);
+  if (u?.kelurahan && u.kelurahan !== "-" && u.kelurahan.trim() !== "") {
+    const cleaned = cleanKelurahanName(u.kelurahan);
+    if (cleaned !== "-") return cleaned;
+  }
+
+  const rwKelName = u?.rw?.kelurahan?.name || u?.studentProfile?.assignedRw?.kelurahan?.name || u?.studentProfile?.kelompok?.kelurahan;
+  if (rwKelName && rwKelName !== "-") {
+    return cleanKelurahanName(rwKelName);
   }
 
   const combinedText = `${u?.name || ""} ${u?.address || ""} ${u?.wilayah || ""} ${u?.rw || ""}`.toLowerCase();
@@ -66,40 +82,36 @@ const detectKelurahanName = (u: any): string => {
     }
   }
 
-  const fallback = cleanKelurahanName(u?.address);
-  return fallback !== "-" ? fallback : "Kel. Sadang Serang";
+  return "-";
 };
 
 const getCleanKelName = (raw: string | undefined | null) => {
-  if (!raw || raw === "-" || raw === "Kel. -") return "Cipaganti";
+  if (!raw || raw === "-" || raw === "Kel. -") return "";
   let clean = String(raw)
     .replace(/^Kel\.\s*/i, "")
     .replace(/^urahan\s*/i, "")
     .replace(/^Kelurahan\s*/i, "")
     .trim();
-  return clean && clean !== "-" ? clean : "Cipaganti";
+  return clean && clean !== "-" ? clean : "";
 };
 
-const formatKecamatanName = (raw: string | undefined | null): string => {
-  if (!raw || raw === "-" || raw.trim() === "") return "-";
-  let clean = String(raw).trim();
-  clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
-  if (!clean || clean === "-") return "-";
-  return `Kecamatan ${clean}`;
+const formatKecamatanName = (raw: string | undefined | null, u?: any): string => {
+  if (raw && raw !== "-" && raw.trim() !== "") {
+    let clean = String(raw).trim();
+    clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
+    if (clean && clean !== "-") return `Kecamatan ${clean}`;
+  }
+  const relKec = u?.rw?.kelurahan?.kecamatan?.name || u?.studentProfile?.kelompok?.kecamatan;
+  if (relKec && relKec !== "-") {
+    let cleanRel = String(relKec).replace(/^Kecamatan\s*/i, "").trim();
+    return `Kecamatan ${cleanRel}`;
+  }
+  return "-";
 };
 
 const getCleanKabupatenName = (raw: string | undefined | null): string => {
   if (!raw || raw === "-" || raw.trim() === "") return "-";
   return String(raw).trim();
-};
-
-const KELURAHAN_RW_MAP: Record<string, string[]> = {
-  Cipaganti: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07"],
-  Dago: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13"],
-  "Lebak Gede": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13"],
-  "Lebak Siliwangi": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06"],
-  "Sadang Serang": ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13", "RW 14", "RW 15", "RW 16", "RW 17", "RW 18", "RW 19", "RW 20", "RW 21"],
-  Sekeloa: ["RW 01", "RW 02", "RW 03", "RW 04", "RW 05", "RW 06", "RW 07", "RW 08", "RW 09", "RW 10", "RW 11", "RW 12", "RW 13", "RW 14", "RW 15", "RW 16"],
 };
 
 
@@ -123,7 +135,7 @@ const normalizeRoleFromUrl = (param: string | null): string => {
 
 const ManajemenPengguna: React.FC = () => {
   const { user, updateUser: updateStoreUser } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
   const [searchParams] = useSearchParams();
 
   const allowedRoleTabs = useMemo(() => {
@@ -281,6 +293,10 @@ const ManajemenPengguna: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // Kelurahan Filter State
+  const [selectedKelurahanFilter, setSelectedKelurahanFilter] = useState<string>("Semua");
+  const [isKelurahanDropdownOpen, setIsKelurahanDropdownOpen] = useState(false);
+
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
@@ -342,19 +358,11 @@ const ManajemenPengguna: React.FC = () => {
       }
     }
 
-    if (uniqueList.length > 0) {
-      return uniqueList.sort((a: any, b: any) => {
-        const numA = parseInt(a.cleanName.replace(/\D/g, "") || "0", 10);
-        const numB = parseInt(b.cleanName.replace(/\D/g, "") || "0", 10);
-        return numA - numB;
-      });
-    }
-
-    return Array.from({ length: 15 }, (_, i) => ({
-      id: (i + 1).toString(),
-      name: `RW ${(i + 1).toString().padStart(2, "0")}`,
-      cleanName: `RW ${(i + 1).toString().padStart(2, "0")}`
-    }));
+    return uniqueList.sort((a: any, b: any) => {
+      const numA = parseInt(a.cleanName.replace(/\D/g, "") || "0", 10);
+      const numB = parseInt(b.cleanName.replace(/\D/g, "") || "0", 10);
+      return numA - numB;
+    });
   }, [areasList, modalKelurahan]);
 
   // Helper to normalize kecamatan name (e.g. "Kecamatan Coblong" <-> "Coblong")
@@ -365,11 +373,11 @@ const ManajemenPengguna: React.FC = () => {
 
   // Dynamically filter Kota / Kabupaten by selected Provinsi
   const filteredKabupatenList = useMemo(() => {
-    if (!formData.provinsi || provinsiList.length === 0) return [];
+    if (!formData.provinsi || provinsiList.length === 0) return kabupatenList;
     const selectedProv = provinsiList.find(
       (p: any) => (p.name || p.nama || "").toLowerCase() === formData.provinsi.toLowerCase()
     );
-    if (!selectedProv) return [];
+    if (!selectedProv) return kabupatenList;
     return kabupatenList.filter((kb: any) => {
       const pId = kb.provinsiId || kb.provinsi?.id;
       const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
@@ -379,33 +387,19 @@ const ManajemenPengguna: React.FC = () => {
 
   // Dynamically filter Kecamatan by selected Kota / Kabupaten
   const filteredKecamatanList = useMemo(() => {
-    const defaultList = kecamatanList && kecamatanList.length > 0
-      ? kecamatanList
-      : [{ id: 6, name: "Kecamatan Coblong" }];
-    if (!formData.kabupaten) return defaultList;
+    if (!formData.kabupaten) return kecamatanList;
     const kabClean = formData.kabupaten.toLowerCase();
-    const filtered = defaultList.filter((kc: any) => {
+    const filtered = kecamatanList.filter((kc: any) => {
       const kId = kc.kabupatenId || kc.kabupaten?.id;
       const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
-      return kName === kabClean || kName.includes(kabClean) || kabClean.includes(kName) || (kId && Number(kId) === 1);
+      return kName === kabClean || kName.includes(kabClean) || kabClean.includes(kName);
     });
-    return filtered.length > 0 ? filtered : defaultList;
+    return filtered.length > 0 ? filtered : kecamatanList;
   }, [kabupatenList, kecamatanList, formData.kabupaten]);
 
-  // Dynamically filter Kelurahan by selected Kecamatan (STRICT FK ID SCOPE WITH ROBUST FALLBACKS)
+  // Dynamically filter Kelurahan by selected Kecamatan
   const filteredKelurahanList = useMemo(() => {
-    const baseKelList = kelurahanList && kelurahanList.length > 0
-      ? kelurahanList
-      : [
-          { id: 1, name: "Cipaganti", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 2, name: "Dago", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 3, name: "Lebak Gede", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 4, name: "Lebak Siliwangi", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 5, name: "Sadang Serang", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } },
-          { id: 6, name: "Sekeloa", kecamatanId: 1, kecamatan: { name: "Kecamatan Coblong" } }
-        ];
-
-    if (!formData.kecamatan) return baseKelList;
+    if (!formData.kecamatan) return kelurahanList;
     const curKecRaw = formData.kecamatan;
     const curKecNorm = normalizeKecamatan(curKecRaw);
 
@@ -414,7 +408,7 @@ const ManajemenPengguna: React.FC = () => {
       return kNameNorm === curKecNorm || (kc.name || kc.nama || "").toLowerCase() === curKecRaw.toLowerCase();
     });
 
-    const filtered = baseKelList.filter((kl: any) => {
+    const filtered = kelurahanList.filter((kl: any) => {
       if (selectedKec) {
         const kecId = kl.kecamatanId || kl.kecamatan?.id;
         if (kecId && Number(kecId) === Number(selectedKec.id)) return true;
@@ -424,8 +418,22 @@ const ManajemenPengguna: React.FC = () => {
       return false;
     });
 
-    return filtered.length > 0 ? filtered : baseKelList;
+    return filtered.length > 0 ? filtered : kelurahanList;
   }, [kecamatanList, kelurahanList, formData.kecamatan]);
+
+  // Dynamic Kelurahan filter options for the table filter bar
+  const kelurahanFilterOptions = useMemo(() => {
+    const opts = [{ value: "Semua", label: "Semua Kelurahan" }];
+    if (Array.isArray(kelurahanList) && kelurahanList.length > 0) {
+      kelurahanList.forEach((k: any) => {
+        const name = (k.name || k.nama || "").trim();
+        if (name && !opts.some((o) => o.value.toLowerCase() === name.toLowerCase())) {
+          opts.push({ value: name, label: `Kel. ${name}` });
+        }
+      });
+    }
+    return opts;
+  }, [kelurahanList]);
 
   const handleProvinsiSelect = (newProv: string) => {
     const selectedProvObj = provinsiList.find(
@@ -533,7 +541,7 @@ const ManajemenPengguna: React.FC = () => {
   };
 
   const getRwListForKelurahan = (rawKel?: string) => {
-    if (!rawKel || rawKel === "-") return KELURAHAN_RW_MAP["Dago"];
+    if (!rawKel || rawKel === "-") return areasList.map((a: any) => a.name);
     const clean = String(rawKel)
       .replace(/^Kel\.?\s*/i, "")
       .replace(/^Kelurahan\s*/i, "")
@@ -552,14 +560,7 @@ const ManajemenPengguna: React.FC = () => {
         return numA - numB;
       });
 
-    if (matchedRws.length > 0) return matchedRws;
-
-    for (const [key, rws] of Object.entries(KELURAHAN_RW_MAP)) {
-      if (clean.includes(key.toLowerCase()) || key.toLowerCase().includes(clean)) {
-        return rws;
-      }
-    }
-    return KELURAHAN_RW_MAP["Dago"];
+    return matchedRws.length > 0 ? matchedRws : areasList.map((a: any) => a.name);
   };
 
   const handleOpenAddModal = () => {
@@ -574,7 +575,8 @@ const ManajemenPengguna: React.FC = () => {
 
     setModalType("add");
     const defaultRole = selectedRole !== "Semua" ? selectedRole : "WARGA";
-    setModalKelurahan("Cipaganti");
+    const initialKel = kelurahanList[0]?.name || kelurahanList[0]?.nama || "";
+    setModalKelurahan(initialKel);
     setFormData({
       name: "",
       address: "",
@@ -585,20 +587,20 @@ const ManajemenPengguna: React.FC = () => {
       status: "Aktif",
       rtRwId: "",
       nim: "",
-      nip: ["DPL", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(defaultRole) ? "" : "",
-      prodi: defaultRole === "DPL" ? "Manajemen" : "Teknik Informatika",
-      jabatan: defaultRole === "PEMIMPIN" ? "Rektor" : defaultRole === "PANITIA_TASKFORCE" ? "Anggota Task Force" : "",
+      nip: "",
+      prodi: "",
+      jabatan: "",
       selectedRws: [],
       dplKelompokIds: [],
-      institusi: ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(defaultRole) ? "Universitas Komputer Indonesia" : "",
+      institusi: "",
       jenjangPendidikan: "S1",
       jumlahAnggotaKeluarga: "",
       programStudi: "",
       fotoProfil: "",
-      provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat",
-      kabupaten: kabupatenList[0]?.name || "Kota Bandung",
-      wilayah: defaultRole === "ADMIN_DLH" ? "Kota Bandung" : "",
-      kecamatan: kecamatanList[0]?.name || "Kecamatan Terdaftar",
+      provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "",
+      kabupaten: kabupatenList[0]?.name || kabupatenList[0]?.nama || "",
+      wilayah: "",
+      kecamatan: kecamatanList[0]?.name || kecamatanList[0]?.nama || "",
       petugasResiduId: "",
       dplId: "",
     });
@@ -620,7 +622,7 @@ const ManajemenPengguna: React.FC = () => {
     setModalType("edit");
     setSelectedUser(u);
     let matchedAreaId = u.rtRwId ? String(u.rtRwId) : u.rwId ? String(u.rwId) : u.studentProfile?.assignedRwId ? String(u.studentProfile?.assignedRwId) : "";
-    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "Cipaganti";
+    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "";
     if (!matchedAreaId && u.rw && areasList.length > 0) {
       const cleanTargetKel = getCleanKelName(foundKelurahan).toLowerCase();
       const found = areasList.find((a: any) => {
@@ -721,6 +723,17 @@ const ManajemenPengguna: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isSelfAccount = modalType === "edit" && user && selectedUser && (
+      selectedUser.id === user.id ||
+      selectedUser.id === (user as any).userId ||
+      (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+    );
+
+    if (isSelfAccount && (formData.status === "Nonaktif" || formData.status === "INACTIVE" || formData.status === "NONAKTIF")) {
+      showToast.error("Anda tidak dapat menonaktifkan akun Anda sendiri saat sedang login demi mencegah risiko tak sengaja terkunci dari sistem (lockout).");
+      return;
+    }
 
     // Password validation check
     if (!isPasswordValid) {
@@ -868,9 +881,22 @@ const ManajemenPengguna: React.FC = () => {
     setUserToDelete(null);
   };
 
+  // Kelurahan filtered users
+  const filteredUsers = useMemo(() => {
+    if (selectedKelurahanFilter === "Semua") return users;
+    const target = selectedKelurahanFilter.toLowerCase().trim();
+    return users.filter((u: any) => {
+      const kel = detectKelurahanName(u).toLowerCase();
+      const rawKel = (u.kelurahan || "").toLowerCase();
+      const addr = (u.address || "").toLowerCase();
+      const wil = (u.wilayah || "").toLowerCase();
+      return kel.includes(target) || rawKel.includes(target) || addr.includes(target) || wil.includes(target);
+    });
+  }, [users, selectedKelurahanFilter]);
+
   // Pagination calculation
-  const totalPages = Math.ceil(users.length / rowsPerPage) || 1;
-  const paginatedUsers = users.slice(
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage) || 1;
+  const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -1175,7 +1201,7 @@ const ManajemenPengguna: React.FC = () => {
               Total Pengguna
             </p>
             <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
-              {users.length}
+              {filteredUsers.length}
             </h3>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
@@ -1189,7 +1215,7 @@ const ManajemenPengguna: React.FC = () => {
               Status Aktif
             </p>
             <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-              {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
+              {filteredUsers.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
             </h3>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
@@ -1221,56 +1247,111 @@ const ManajemenPengguna: React.FC = () => {
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari nama, No. HP..."
+              placeholder="Cari nama, No. HP, NIP, institusi, wilayah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
 
-          {/* Status Akun Filter Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
-            >
-              <span className={`w-2 h-2 rounded-full ${
-                selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
-              }`} />
-              <span>{selectedStatus === "Semua" ? "Semua Status" : selectedStatus}</span>
-              <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
+          {/* Action Filters: Kelurahan & Status */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+            {/* Filter Kelurahan (6 Kelurahan di Coblong) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsKelurahanDropdownOpen(!isKelurahanDropdownOpen);
+                  setIsStatusDropdownOpen(false);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  selectedKelurahanFilter !== "Semua"
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                }`}
+              >
+                <MapPin size={13} className={selectedKelurahanFilter !== "Semua" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+                <span>{selectedKelurahanFilter === "Semua" ? "Semua Kelurahan" : `Kel. ${selectedKelurahanFilter}`}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isKelurahanDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
 
-            {isStatusDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                  {[
-                    { value: "Semua", label: "Semua Status", color: "bg-slate-400" },
-                    { value: "Aktif", label: "Aktif", color: "bg-emerald-500" },
-                    { value: "Nonaktif", label: "Nonaktif", color: "bg-rose-500" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        setSelectedStatus(opt.value);
-                        setIsStatusDropdownOpen(false);
-                      }}
-                      className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
-                        selectedStatus === opt.value
-                          ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
-                          : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                      }`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${opt.color}`} />
-                      <span>{opt.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+              {isKelurahanDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsKelurahanDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {kelurahanFilterOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedKelurahanFilter(opt.value);
+                          setIsKelurahanDropdownOpen(false);
+                          setCurrentPage(1);
+                        }}
+                        className={`flex items-center justify-between w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
+                          selectedKelurahanFilter === opt.value
+                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400 font-black"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {selectedKelurahanFilter === opt.value && (
+                          <CheckCircle size={13} className="text-[#009966] dark:text-emerald-400 shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Status Akun Filter Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStatusDropdownOpen(!isStatusDropdownOpen);
+                  setIsKelurahanDropdownOpen(false);
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
+              >
+                <span className={`w-2 h-2 rounded-full ${
+                  selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
+                }`} />
+                <span>{selectedStatus === "Semua" ? "Semua Status" : selectedStatus}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isStatusDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {[
+                      { value: "Semua", label: "Semua Status", color: "bg-slate-400" },
+                      { value: "Aktif", label: "Aktif", color: "bg-emerald-500" },
+                      { value: "Nonaktif", label: "Nonaktif", color: "bg-rose-500" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStatus(opt.value);
+                          setIsStatusDropdownOpen(false);
+                        }}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
+                          selectedStatus === opt.value
+                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${opt.color}`} />
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1592,7 +1673,7 @@ const ManajemenPengguna: React.FC = () => {
                         <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
                         <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
                           <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
-                            {formatKecamatanName(u.kecamatan)}
+                            {formatKecamatanName(u.kecamatan, u)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
@@ -1605,7 +1686,7 @@ const ManajemenPengguna: React.FC = () => {
                             {formatCleanRw(u.rw)}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 max-w-[240px] break-words whitespace-normal leading-relaxed">{u.address || "-"}</td>
                         <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-100">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
                       </>
                     )}
@@ -2627,7 +2708,11 @@ const ManajemenPengguna: React.FC = () => {
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Status Akun</label>
                       {(() => {
-                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (selectedUser.id === user.id || (selectedUser.phone && user.phone && selectedUser.phone === user.phone));
+                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (
+                          selectedUser.id === user.id ||
+                          selectedUser.id === (user as any).userId ||
+                          (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+                        );
                         return (
                           <>
                             <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">

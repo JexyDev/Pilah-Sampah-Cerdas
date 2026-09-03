@@ -226,6 +226,7 @@ export const dplController = {
       const {
         kelompokId,
         nomor,
+        judul,
         deskripsi,
         kategori,
         sumber,
@@ -236,16 +237,17 @@ export const dplController = {
         statusUsulan,
         statusPelaksanaan,
       } = req.body;
-      if (!kelompokId || !deskripsi) {
+      if (!deskripsi && !judul) {
         res
           .status(400)
-          .json({ error: "BAD_REQUEST", message: "kelompokId dan deskripsi wajib diisi" });
+          .json({ error: "BAD_REQUEST", message: "Judul atau deskripsi program kerja wajib diisi" });
         return;
       }
       const data = await dplService.createProgramKerja(dplUserId, userRole, {
         kelompokId,
         nomor: nomor ? Number(nomor) : undefined,
-        deskripsi,
+        judul,
+        deskripsi: deskripsi || judul || "",
         kategori,
         sumber,
         waktuPelaksanaan,
@@ -276,6 +278,7 @@ export const dplController = {
       const userRole = (req.user as any)?.role;
       const {
         nomor,
+        judul,
         deskripsi,
         kategori,
         sumber,
@@ -289,6 +292,7 @@ export const dplController = {
       } = req.body;
       const data = await dplService.updateProgramKerja(id, dplUserId, userRole, {
         nomor: nomor !== undefined ? Number(nomor) : undefined,
+        judul,
         deskripsi,
         kategori,
         sumber,
@@ -357,6 +361,13 @@ export const dplController = {
           error: "FORBIDDEN_SCOPE",
           message: "Akses ditolak: Data ini bukan milik kelompok binaan Anda",
         });
+        return;
+      }
+      if (
+        error.message?.includes("tidak dapat ditolak") ||
+        error.message?.includes("tidak ditemukan")
+      ) {
+        res.status(400).json({ error: "BAD_REQUEST", message: error.message });
         return;
       }
       res.status(500).json({ error: "INTERNAL_SERVER_ERROR", message: error.message });

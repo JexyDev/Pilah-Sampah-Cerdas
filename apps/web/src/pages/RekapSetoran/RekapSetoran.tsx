@@ -82,7 +82,7 @@ export default function RekapSetoran() {
       // 1. Filter Kategori
       if (filterKategori !== "ALL") {
         const catUpper = (d.jenis || "").toUpperCase();
-        if (filterKategori === "ORGANIC" && !catUpper.includes("ORGANIK") && !catUpper.includes("ORGANIC")) return false;
+        if (filterKategori === "ORGANIC" && (!catUpper.includes("ORGANIK") || catUpper.includes("ANORGANIK") || catUpper.includes("NON"))) return false;
         if (filterKategori === "NON_ORGANIC" && !catUpper.includes("ANORGANIK") && !catUpper.includes("NON_ORGANIC") && !catUpper.includes("NON-ORGANIC")) return false;
         if (filterKategori === "RESIDU" && !catUpper.includes("RESIDU")) return false;
       }
@@ -205,7 +205,7 @@ export default function RekapSetoran() {
       d.warga || "-",
       d.phone || "-",
       formatRukunWarga(d.rw || d.rtRw),
-      d.kelurahan || "Coblong",
+      d.kelurahan || "-",
       d.jenis || "Organik",
       Number(d.berat || 0),
       Math.round(d.poin || 0),
@@ -252,6 +252,13 @@ export default function RekapSetoran() {
 
   const renderCategoryBadge = (cat?: string) => {
     const jenisUpper = (cat || "").toUpperCase();
+    if (jenisUpper.includes("ANORGANIK") || jenisUpper.includes("NON_ORGANIC") || jenisUpper.includes("NON-ORGANIC")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
+          <Layers size={13} /> Anorganik
+        </span>
+      );
+    }
     if (jenisUpper.includes("ORGANIK") || jenisUpper.includes("ORGANIC")) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/50 shadow-2xs">
@@ -259,9 +266,16 @@ export default function RekapSetoran() {
         </span>
       );
     }
+    if (jenisUpper.includes("RESIDU")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-rose-100/90 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700/50 shadow-2xs">
+          <Trash2 size={13} /> Residu
+        </span>
+      );
+    }
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/50 shadow-2xs">
-        <Layers size={13} /> Anorganik
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-slate-100/90 dark:bg-slate-950/60 text-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700/50 shadow-2xs">
+        {cat || "Unknown"}
       </span>
     );
   };
@@ -272,7 +286,7 @@ export default function RekapSetoran() {
       <PageHeader
         icon={Receipt}
         category="Audit Transaksi Pemilahan"
-        scope="Kecamatan Coblong"
+        scope={user?.wilayah || "Semua Wilayah"}
         title="Pemantauan & Rekapitulasi"
         description="Laporan pemantauan dan rekapitulasi transaksi penyetoran sampah terpilah warga di tingkat Rukun Warga secara terpadu dan akuntabel."
       />
@@ -460,7 +474,7 @@ export default function RekapSetoran() {
 
                       {/* Warga */}
                       <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 align-middle">
-                        {item.warga || "Warga Coblong"}
+                        {item.warga || "Warga"}
                         {item.phone && (
                           <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
                             {item.phone}
@@ -601,13 +615,13 @@ export default function RekapSetoran() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">{selectedDeposit.warga || "Warga Coblong"}</h4>
+                  <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-xs sm:text-sm truncate">{selectedDeposit.warga || "Warga"}</h4>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="inline-block bg-[#eef5ff] dark:bg-blue-950/60 text-[#2b6cb0] dark:text-blue-300 font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#c3dafe] dark:border-blue-800/50">
                       {formatRukunWarga(selectedDeposit.rw || selectedDeposit.rtRw)}
                     </span>
                     <span className="inline-block bg-[#e8f8f0] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-[#b8ebd0] dark:border-emerald-800/50">
-                      Kel. {selectedDeposit.kelurahan || "Coblong"}
+                      {selectedDeposit.kelurahan ? `Kel. ${selectedDeposit.kelurahan}` : "Wilayah Binaan"}
                     </span>
                     {selectedDeposit.phone && (
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1">

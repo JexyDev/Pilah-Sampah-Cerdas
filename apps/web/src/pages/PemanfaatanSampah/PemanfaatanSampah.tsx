@@ -28,7 +28,9 @@ import {
   User,
   ZoomIn,
   Eye,
-  Building2
+  Building2,
+  Users,
+  Globe
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -50,6 +52,7 @@ export interface FacilityItem {
   longitude: number | string;
   foto?: string;
   createdAt: string;
+  kelompokId?: string;
   rw?: {
     id: number;
     name: string;
@@ -59,6 +62,11 @@ export interface FacilityItem {
     name: string;
     phone?: string;
   };
+}
+
+export interface KelompokItem {
+  id: string;
+  name: string;
 }
 
 // Helper cek apakah string adalah UUID
@@ -212,6 +220,11 @@ export const PemanfaatanSampah: React.FC = () => {
   // Filter & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedJenis, setSelectedJenis] = useState("ALL");
+  const [selectedRwId, setSelectedRwId] = useState("ALL");
+  const [selectedKelompokId, setSelectedKelompokId] = useState("ALL");
+
+  // Kelompok list for filter dropdown
+  const [kelompokList, setKelompokList] = useState<KelompokItem[]>([]);
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
@@ -240,9 +253,32 @@ export const PemanfaatanSampah: React.FC = () => {
     }
   };
 
+  const fetchKelompok = async () => {
+    try {
+      const res = await api.get("/kelompok");
+      setKelompokList(res.data.data || res.data || []);
+    } catch {
+      // Kelompok list optional, silent fail
+    }
+  };
+
   useEffect(() => {
     fetchItems();
+    fetchKelompok();
   }, []);
+
+  // Derive unique RW list from loaded facility items
+  const rwOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    items.forEach((item) => {
+      if (item.rw?.id && item.rw?.name) {
+        map.set(item.rw.id, item.rw.name);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.id - b.id);
+  }, [items]);
 
   // Metrik Penghitungan Fasilitas Persampahan
   const metrics = useMemo(() => {
@@ -290,14 +326,20 @@ export const PemanfaatanSampah: React.FC = () => {
         matchJenis = item.jenis === selectedJenis;
       }
 
-      return matchSearch && matchJenis;
+      const matchRw =
+        selectedRwId === "ALL" || String(item.rw?.id) === selectedRwId;
+
+      const matchKelompok =
+        selectedKelompokId === "ALL" || item.kelompokId === selectedKelompokId;
+
+      return matchSearch && matchJenis && matchRw && matchKelompok;
     });
-  }, [items, searchQuery, selectedJenis]);
+  }, [items, searchQuery, selectedJenis, selectedRwId, selectedKelompokId]);
 
   // Reset pagination on search / filter
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedJenis, itemsPerPage]);
+  }, [searchQuery, selectedJenis, selectedRwId, selectedKelompokId, itemsPerPage]);
 
   // Pagination logic
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
@@ -334,7 +376,7 @@ export const PemanfaatanSampah: React.FC = () => {
     <div className="pb-24 lg:pb-8">
       <PageHeader
         title="Fasilitas Pengelolaan Sampah"
-        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, POC, TPS) di Kecamatan Coblong."
+        description="Pemetaan dan direktori inventaris fasilitas fisik pengolahan sampah serta inovasi daur ulang warga (Bank Sampah, Buruan Sae, Loseda, Bata Terawang, Rumah Maggot, POC, TPS) di seluruh wilayah binaan."
         icon={Sprout}
       />
 
@@ -524,7 +566,7 @@ export const PemanfaatanSampah: React.FC = () => {
                   Peta Sebaran Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Wilayah Kecamatan Coblong, Kota Bandung ({filteredItems.length} titik aktif)
+                  Cakupan Wilayah Binaan ({filteredItems.length} titik aktif)
                 </p>
               </div>
             </div>
@@ -709,13 +751,14 @@ export const PemanfaatanSampah: React.FC = () => {
                   Daftar Inventaris Fasilitas Pengelolaan Sampah
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Menampilkan {filteredItems.length} fasilitas terdata di Kecamatan Coblong
+                  Menampilkan {filteredItems.length} fasilitas terdata di wilayah operasional
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto">
-              <div className="relative min-w-[240px] flex-1">
+            <div className="flex flex-col gap-2.5 w-full md:w-auto">
+              {/* Baris 1: Search */}
+              <div className="relative w-full min-w-[240px]">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input
                   type="text"
@@ -735,21 +778,81 @@ export const PemanfaatanSampah: React.FC = () => {
                 )}
               </div>
 
-              <select
-                value={selectedJenis}
-                onChange={(e) => setSelectedJenis(e.target.value)}
-                className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
-              >
-                <option value="ALL">Semua Jenis Fasilitas</option>
-                <option value="bank_sampah">Bank Sampah</option>
-                <option value="organik_group">Inovasi Organik (Loseda, Maggot, Bata, POC)</option>
-                <option value="buruan_sae">Buruan Sae</option>
-                <option value="loseda">Loseda</option>
-                <option value="bata_terawang">Bata Terawang</option>
-                <option value="rumah_maggot">Rumah Maggot</option>
-                <option value="poc">POC (Pupuk Organik Cair)</option>
-                <option value="tps">TPS (Tempat Penampungan Sementara)</option>
-              </select>
+              {/* Baris 2: Filter Dropdowns */}
+              <div className="flex flex-wrap gap-2">
+                {/* Filter Jenis */}
+                <div className="relative flex items-center">
+                  <Boxes size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                  <select
+                    value={selectedJenis}
+                    onChange={(e) => { setSelectedJenis(e.target.value); setCurrentPage(1); }}
+                    className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                  >
+                    <option value="ALL">Semua Jenis</option>
+                    <option value="bank_sampah">Bank Sampah</option>
+                    <option value="organik_group">Inovasi Organik</option>
+                    <option value="buruan_sae">Buruan Sae</option>
+                    <option value="loseda">Loseda</option>
+                    <option value="bata_terawang">Bata Terawang</option>
+                    <option value="rumah_maggot">Rumah Maggot</option>
+                    <option value="poc">POC</option>
+                    <option value="tps">TPS</option>
+                  </select>
+                </div>
+
+                {/* Filter Wilayah (RW) */}
+                <div className="relative flex items-center">
+                  <Globe size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                  <select
+                    value={selectedRwId}
+                    onChange={(e) => { setSelectedRwId(e.target.value); setCurrentPage(1); }}
+                    className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                  >
+                    <option value="ALL">Semua Wilayah</option>
+                    {rwOptions.map((rw) => (
+                      <option key={rw.id} value={String(rw.id)}>
+                        {rw.name.startsWith("RW") || rw.name.startsWith("Kel.") ? rw.name : `RW ${rw.name}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filter Kelompok KKN */}
+                {kelompokList.length > 0 && (
+                  <div className="relative flex items-center">
+                    <Users size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                    <select
+                      value={selectedKelompokId}
+                      onChange={(e) => { setSelectedKelompokId(e.target.value); setCurrentPage(1); }}
+                      className="pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                    >
+                      <option value="ALL">Semua Kelompok</option>
+                      {kelompokList.map((kel) => (
+                        <option key={kel.id} value={kel.id}>
+                          {kel.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Tombol Reset Filter (tampil jika ada filter aktif) */}
+                {(selectedJenis !== "ALL" || selectedRwId !== "ALL" || selectedKelompokId !== "ALL") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedJenis("ALL");
+                      setSelectedRwId("ALL");
+                      setSelectedKelompokId("ALL");
+                      setCurrentPage(1);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition cursor-pointer"
+                  >
+                    <X size={13} />
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -909,7 +1012,7 @@ export const PemanfaatanSampah: React.FC = () => {
                             <div className="flex items-center gap-1.5">
                               <MapPin size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Coblong"}
+                                {item.rw?.name ? (item.rw.name.startsWith("RW") || item.rw.name.startsWith("Kel.") ? item.rw.name : `RW ${item.rw.name}`) : "Wilayah Binaan"}
                               </span>
                             </div>
 

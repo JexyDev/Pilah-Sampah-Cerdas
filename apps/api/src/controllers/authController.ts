@@ -140,6 +140,29 @@ export class AuthController {
       // 2. Call Service
       const result = await authService.login(phone, password);
 
+      // Enforce strict iOS Safari for MAHASISWA_KKN role
+      const userRole = result.user?.role || "";
+      if (userRole === "MAHASISWA_KKN") {
+        const ua = (req.headers["user-agent"] || "").toString();
+        const isBypass = req.headers["x-dev-bypass-ios-gate"] === "true";
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        const isCriOS = /CriOS/i.test(ua);
+        const isFxiOS = /FxiOS/i.test(ua);
+        const isEdgiOS = /EdgiOS/i.test(ua);
+        const isOperaIOS = /OPT|OPiOS/i.test(ua);
+        const isSafariCore = /Safari/i.test(ua) && /Version\//i.test(ua);
+        const isSafari = isSafariCore && !isCriOS && !isFxiOS && !isEdgiOS && !isOperaIOS;
+
+        if (!isBypass && (!isIOS || !isSafari || /Android/i.test(ua))) {
+          res.status(403).json({
+            success: false,
+            code: "MAHASISWA_MUST_USE_IOS_SAFARI",
+            message: "Akses Mahasiswa KKN hanya diizinkan melalui perangkat Apple iPhone dengan peramban resmi Safari.",
+          });
+          return;
+        }
+      }
+
       // 3. Clear rate limit attempts on success
       const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
       clearLoginAttempts(ip, phone);
@@ -806,6 +829,8 @@ export class AuthController {
         rwId,
         rw: rwName,
         kelurahan,
+        kecamatan,
+        kota,
         latitude,
         longitude,
         nama: _nama,
@@ -814,6 +839,7 @@ export class AuthController {
       } = parsed.data;
       void _nama;
       void _noWa;
+      void kecamatan;
 
       // Resolve rwId from string if needed
       let resolvedRwId = rwId;
@@ -843,8 +869,10 @@ export class AuthController {
         } catch {}
       }
 
+      const finalKabupaten = userData.kabupaten || kota || undefined;
+
       const result = await authService.registerWarga(
-        { ...userData, rwId: resolvedRwId },
+        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId },
         householdData,
         qrCode || undefined,
         wargaSubtype,
@@ -894,8 +922,13 @@ export class AuthController {
         assignedRwId,
         kelurahan,
         rw: rwName,
+        kecamatan,
+        kota,
         ...userData
       } = parsed.data;
+      void kecamatan;
+      const finalKabupaten = userData.kabupaten || kota || undefined;
+
       const kknData = {
         nim,
         jurusan,
@@ -906,7 +939,10 @@ export class AuthController {
         assignedRwId,
       };
 
-      const result = await authService.registerKkn(userData, kknData);
+      const result = await authService.registerKkn(
+        { ...userData, kabupaten: finalKabupaten },
+        kknData
+      );
       res.status(201).json({
         success: true,
         message:
@@ -937,7 +973,10 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { noWa, assignedZone, rw: rwName, kelurahan, ...userData } = parsed.data;
+      const { noWa, assignedZone, rw: rwName, kelurahan, kecamatan, kota, ...userData } =
+        parsed.data;
+      void kecamatan;
+      const finalKabupaten = userData.kabupaten || kota || undefined;
 
       let resolvedRwId: number | undefined;
       if (rwName || kelurahan) {
@@ -951,7 +990,7 @@ export class AuthController {
       };
 
       const result = await authService.registerPetugasResidu(
-        { ...userData, rwId: resolvedRwId },
+        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId },
         petugasData
       );
       res.status(201).json({ success: true, data: { id: result.user.id, name: result.user.name } });

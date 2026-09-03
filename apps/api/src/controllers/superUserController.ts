@@ -107,6 +107,27 @@ export class SuperUserController {
     }
   }
 
+  async exportQrPdf(req: Request, res: Response): Promise<void> {
+    try {
+      const { search, status, batchId, ids } = req.query;
+      const binIds = ids ? (ids as string).split(",") : undefined;
+      const html = await superUserService.exportQrPdfHtml({
+        search: search as string,
+        status: status as string,
+        batchId: batchId as string,
+        binIds,
+      });
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.status(200).send(html);
+    } catch (error: any) {
+      console.error("[superUserController] exportQrPdf error:", error);
+      res
+        .status(500)
+        .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
+    }
+  }
+
   async generateQrBatch(req: Request, res: Response): Promise<void> {
     try {
       const { batchCode, totalQr, categoryId, rtRwId } = req.body;

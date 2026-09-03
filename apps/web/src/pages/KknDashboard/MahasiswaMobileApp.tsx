@@ -56,7 +56,7 @@ export const MahasiswaMobileApp: React.FC = () => {
                 />
               );
             case "proker":
-              return <MahasiswaProkerMobile />;
+              return <MahasiswaProkerMobile onProkerCreated={fetchProkerList} />;
             case "profil":
               return <MahasiswaProfilMobile />;
             default:

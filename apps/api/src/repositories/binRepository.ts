@@ -11,7 +11,38 @@ export class BinRepository {
       where: { qrCode },
       include: {
         category: true,
-        binOwnerships: true,
+        binOwnerships: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                address: true,
+                households: {
+                  select: {
+                    id: true,
+                    address: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            address: true,
+            households: {
+              select: {
+                id: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -43,6 +74,24 @@ export class BinRepository {
               select: {
                 id: true,
                 address: true,
+              },
+            },
+          },
+        },
+        binOwnerships: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                address: true,
+                households: {
+                  select: {
+                    id: true,
+                    address: true,
+                  },
+                },
               },
             },
           },
@@ -160,12 +209,48 @@ export class BinRepository {
   /**
    * Find bin by ID
    */
-  async findById(id: string): Promise<(Bin & { rtRw?: any; user?: any }) | null> {
+  async findById(id: string): Promise<any> {
     return prisma.bin.findUnique({
       where: { id },
       include: {
-        rw: true,
-        user: true,
+        category: true,
+        rw: {
+          include: {
+            kelurahan: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            address: true,
+            households: {
+              select: {
+                id: true,
+                address: true,
+              },
+            },
+          },
+        },
+        binOwnerships: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                address: true,
+                households: {
+                  select: {
+                    id: true,
+                    address: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -330,7 +415,7 @@ export class BinRepository {
       const anorganikPercent = 100 - organikPercent;
       const isOrg = isOrgRaw;
 
-      tx.user
+      prisma.user
         .findUnique({
           where: { id: userId },
           include: { rw: { include: { kelurahan: true } } },

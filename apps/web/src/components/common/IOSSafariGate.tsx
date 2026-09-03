@@ -1,28 +1,27 @@
-﻿/**
+/**
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Strict iOS Safari Validation Gate Component for Mahasiswa Mobile Web
+ * iOS Safari Security Gate Component
+ * Ensures Mahasiswa KKN access the dedicated mobile experience from genuine Apple iPhone/iPad Safari.
  */
 
 import React, { useState, useEffect } from "react";
 import {
   Smartphone,
   Compass,
-  ShieldAlert,
   CheckCircle2,
   XCircle,
+  ShieldAlert,
   Copy,
   Check,
   RefreshCw,
   LogOut,
-  AlertTriangle,
-  ExternalLink,
-  ChevronRight,
   Code2,
 } from "lucide-react";
-import { checkIsIOSSafari, type DeviceValidationResult } from "../../utils/deviceValidation";
+import { checkIsIOSSafari } from "../../utils/deviceValidation";
+import type { DeviceValidationResult } from "../../utils/deviceValidation";
 import { useAuthStore } from "../../store/useAuthStore";
 import showToast from "../../utils/showToast";
 import { useNavigate } from "react-router-dom";
@@ -34,85 +33,57 @@ interface IOSSafariGateProps {
 export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-
   const [validation, setValidation] = useState<DeviceValidationResult>(checkIsIOSSafari());
   const [copied, setCopied] = useState(false);
-  const [devBypass, setDevBypass] = useState<boolean>(() => {
-    return localStorage.getItem("BERSEKA_DEV_BYPASS_IOS_GATE") === "true";
-  });
 
-  // Re-verify on mount or orientation / visibility change
   useEffect(() => {
-    const handleCheck = () => {
-      setValidation(checkIsIOSSafari());
-    };
-    handleCheck();
-    window.addEventListener("resize", handleCheck);
-    return () => window.removeEventListener("resize", handleCheck);
+    setValidation(checkIsIOSSafari());
   }, []);
 
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
+  // Developer / Admin role bypass check
+  const isDevOrAdmin =
+    user?.peran === "SUPER_ADMIN" ||
+    user?.peran === "ADMIN" ||
+    user?.role === "SUPER_ADMIN" ||
+    user?.role === "ADMIN";
+
+  const handleCopyLink = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      showToast.success("Tautan berhasil disalin! Buka di aplikasi Safari pada iPhone Anda.");
-      setTimeout(() => setCopied(false), 3000);
-    } catch {
-      showToast.info("Salin tautan manual dari address bar browser Anda.");
+      showToast.success("Tautan disalin! Buka di peramban Safari.");
+      setTimeout(() => setCopied(false), 2500);
     }
   };
 
   const handleLogout = () => {
     logout();
-    showToast.success("Berhasil keluar.");
+    showToast.success("Berhasil keluar dari akun.");
     navigate("/login");
   };
 
   const toggleDevBypass = () => {
-    const nextVal = !devBypass;
-    setDevBypass(nextVal);
-    if (nextVal) {
-      localStorage.setItem("BERSEKA_DEV_BYPASS_IOS_GATE", "true");
-      showToast.warning("Bypass Mode Pengembang Aktif: Validasi iOS Safari dilewati sementara.");
-    } else {
+    const current = localStorage.getItem("BERSEKA_DEV_BYPASS_IOS_GATE") === "true";
+    if (current) {
       localStorage.removeItem("BERSEKA_DEV_BYPASS_IOS_GATE");
       showToast.info("Bypass dinonaktifkan.");
+    } else {
+      localStorage.setItem("BERSEKA_DEV_BYPASS_IOS_GATE", "true");
+      showToast.success("Bypass Pengembang Diaktifkan.");
     }
+    setValidation(checkIsIOSSafari());
   };
 
-  const isDevOrAdmin =
-    import.meta.env.DEV ||
-    user?.peran === "SUPER_USER" ||
-    user?.peran === "DEVELOPER" ||
-    user?.peran === "ADMIN_DLH";
-
-  // If valid OR developer bypass is active, render children
-  if (validation.isValid || (isDevOrAdmin && devBypass)) {
-    return (
-      <>
-        {isDevOrAdmin && devBypass && !validation.isValid && (
-          <div className="bg-amber-500 text-slate-950 px-3 py-1 text-[11px] font-mono font-bold flex items-center justify-between z-50 sticky top-0 shadow-xs">
-            <span className="flex items-center gap-1.5 truncate">
-              ⚠️ <span>DEV BYPASS: Validasi iOS Safari Non-Aktif</span>
-            </span>
-            <button
-              onClick={toggleDevBypass}
-              className="underline cursor-pointer hover:text-white shrink-0 ml-2"
-            >
-              Aktifkan Gate
-            </button>
-          </div>
-        )}
-        {children}
-      </>
-    );
+  // If environment is valid, render children directly
+  if (validation.isValid) {
+    return <>{children}</>;
   }
 
-  // Render strict blocking gate
+  // Otherwise, render the security and compatibility gate
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-6 font-sans selection:bg-rose-500 selection:text-white">
-      {/* Background Ambience Effect */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-100 flex flex-col justify-between p-4 font-sans relative overflow-hidden selection:bg-emerald-500 selection:text-white">
+      {/* Background Decorative Glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-rose-600/15 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl" />
       </div>
@@ -150,7 +121,7 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
           </h1>
           <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
             Modul Mobile Web Mahasiswa KKN memerlukan lingkungan resmi{" "}
-            <span className="text-white font-bold">Apple iOS & Safari WebKit</span> untuk verifikasi GPS Geofencing
+            <span className="text-white font-bold">Apple iOS &amp; Safari WebKit</span> untuk verifikasi GPS Geofencing
             dan kamera presensi nyata.
           </p>
         </div>
@@ -213,7 +184,7 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
             )}
             {validation.reason === "IN_APP_BROWSER" && (
               <p className="text-amber-300/90 leading-snug">
-                ⚠️ Anda membuka tautan dari peramban dalam aplikasi (Instagram / Line / WA). Tekan tombol menu titik tiga (•••) lalu pilih <span className="font-bold text-white">"Buka di Safari"</span>.
+                ⚠️ Anda membuka tautan dari peramban dalam aplikasi (Instagram / Line / WA). Tekan tombol menu titik tiga (•••) lalu pilih <span className="font-bold text-white">&quot;Buka di Safari&quot;</span>.
               </p>
             )}
             {validation.reason === "NOT_SAFARI" && (
@@ -277,3 +248,4 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
 };
 
 export default IOSSafariGate;
+

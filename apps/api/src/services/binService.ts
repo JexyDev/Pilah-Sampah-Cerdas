@@ -13,6 +13,7 @@ import { configService } from "./configService.js";
 import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
+import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
@@ -490,12 +491,26 @@ export class BinService {
         totalVolumeLiter += vol;
         totalPointsAwarded += calculatedPoints;
 
+        const sortingStatus = evaluateSortingStatus(
+          confScale,
+          undefined,
+          targetBin.category?.name,
+          targetBin.category
+        );
+
         results.push({
           wasteLogId: result.setoranOtomatis.id,
+          id: result.setoranOtomatis.id,
           category: targetBin.category?.name || "Umum",
           weightKg,
           volumeLiter: vol,
           pointsAwarded: calculatedPoints,
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
         });
       }
 
@@ -655,12 +670,26 @@ export class BinService {
         .catch((e) => console.error("FCM Error:", e));
     }
 
+    const sortingStatus = evaluateSortingStatus(
+      confScale,
+      undefined,
+      isOrganic ? "organik" : "anorganik",
+      bin.category
+    );
+
     return {
       wasteLogId: result.setoranOtomatis.id,
+      id: result.setoranOtomatis.id,
       weightKg,
       volumeLiter: estimatedVolume,
       pointsAwarded: calculatedPoints,
       newBinVolume: newVolume,
+      ai_confidence: sortingStatus.ai_confidence,
+      aiConfidence: sortingStatus.aiConfidence,
+      discrepancy_status: sortingStatus.discrepancy_status,
+      discrepancyStatus: sortingStatus.discrepancyStatus,
+      is_correct: sortingStatus.is_correct,
+      isCorrect: sortingStatus.isCorrect,
     };
   }
 

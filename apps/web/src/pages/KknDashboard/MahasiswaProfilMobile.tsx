@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   User,
   LogOut,
@@ -102,21 +103,25 @@ export const MahasiswaProfilMobile: React.FC = () => {
       formData.append("endDate", tanggalSelesai);
       if (fotoFile) {
         formData.append("fotoBukti", fotoFile);
-        formData.append("evidence", fotoFile);
       }
 
-      await api.post("/kkn/pengajuan-izin", formData, {
+      const res = await api.post("/kkn/pengajuan-izin", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      showToast.success("Pengajuan izin berhasil dikirim ke DPL!");
-      setShowIzinModal(false);
-      setAlasan("");
-      setFotoFile(null);
-      setFotoPreview(null);
-      fetchRiwayatIzin();
+      if (res.data?.success || res.status === 200 || res.status === 201) {
+        showToast.success(res.data?.message || "Pengajuan izin berhasil dikirim ke DPL!");
+        setShowIzinModal(false);
+        setAlasan("");
+        setFotoFile(null);
+        setFotoPreview(null);
+        fetchRiwayatIzin();
+      }
     } catch (err: any) {
-      showToast.error(err.response?.data?.message || "Gagal mengajukan izin");
+      console.error("Gagal mengajukan izin:", err);
+      showToast.error(
+        err.response?.data?.message || err.message || "Gagal mengajukan izin. Silakan coba lagi."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -156,7 +161,7 @@ export const MahasiswaProfilMobile: React.FC = () => {
         <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 space-y-2 text-xs">
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Wilayah KKN:</span>
-            <span className="font-bold text-slate-800 dark:text-slate-200">{user?.wilayah || "Coblong"}</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">{user?.wilayah || user?.kelurahan || "Wilayah Dampingan"}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-400">No. Telepon:</span>
@@ -224,161 +229,188 @@ export const MahasiswaProfilMobile: React.FC = () => {
       </div>
 
       {/* 4. Modal Pengajuan Izin */}
-      {showIzinModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60">
-              <h3 className="text-sm font-black text-slate-900 dark:text-white">Formulir Izin / Sakit</h3>
-              <button
-                onClick={() => setShowIzinModal(false)}
-                className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      {showIzinModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* Click outside backdrop */}
+            <div className="absolute inset-0" onClick={() => setShowIzinModal(false)} />
 
-            <form onSubmit={handleSubmitIzin} className="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Kategori</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setTipeIzin("IZIN")}
-                    className={`py-2 rounded-xl font-bold transition cursor-pointer border ${
-                      tipeIzin === "IZIN"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-500"
-                        : "bg-slate-50 text-slate-600 border-slate-200"
-                    }`}
-                  >
-                    Izin Keperluan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTipeIzin("SAKIT")}
-                    className={`py-2 rounded-xl font-bold transition cursor-pointer border ${
-                      tipeIzin === "SAKIT"
-                        ? "bg-rose-50 text-rose-700 border-rose-500"
-                        : "bg-slate-50 text-slate-600 border-slate-200"
-                    }`}
-                  >
-                    Sakit (Surat Dokter)
-                  </button>
-                </div>
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white">Formulir Izin / Sakit</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowIzinModal(false)}
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <form id="form-izin-sakit" onSubmit={handleSubmitIzin} className="p-4 space-y-4 overflow-y-auto overscroll-contain flex-1 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Mulai</label>
-                  <input
-                    type="date"
-                    value={tanggalMulai}
-                    onChange={(e) => setTanggalMulai(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Selesai</label>
-                  <input
-                    type="date"
-                    value={tanggalSelesai}
-                    onChange={(e) => setTanggalSelesai(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Alasan Keterangan *</label>
-                <textarea
-                  value={alasan}
-                  onChange={(e) => setAlasan(e.target.value)}
-                  rows={3}
-                  placeholder="Tuliskan keterangan lengkap alasan izin/sakit..."
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Foto Surat Keterangan / Bukti</label>
-                  <span className="text-[9px] text-slate-400">Kamera atau Galeri</span>
-                </div>
-
-                {/* Input khusus Kamera Langsung */}
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="hidden"
-                  onChange={handlePhotoChange}
-                />
-
-                {/* Input khusus Galeri / File */}
-                <input
-                  ref={galleryInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoChange}
-                />
-
-                {fotoPreview ? (
-                  <div className="relative rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 max-h-36 shadow-sm">
-                    <img src={fotoPreview} alt="Bukti" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFotoFile(null);
-                        setFotoPreview(null);
-                        if (cameraInputRef.current) cameraInputRef.current.value = "";
-                        if (galleryInputRef.current) galleryInputRef.current.value = "";
-                      }}
-                      className="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition shadow-sm cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                    <div className="absolute bottom-2 left-2 right-2 py-1 px-2 bg-slate-900/80 backdrop-blur-sm rounded-lg text-[9px] text-white flex items-center justify-between">
-                      <span className="truncate max-w-[120px]">{fotoFile?.name || "Bukti Terlampir"}</span>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => cameraInputRef.current?.click()} className="underline text-emerald-300">Kamera</button>
-                        <button type="button" onClick={() => galleryInputRef.current?.click()} className="underline text-teal-300">Galeri</button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Kategori</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="py-3 px-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:border-emerald-500 transition cursor-pointer"
+                      onClick={() => setTipeIzin("IZIN")}
+                      className={`py-2.5 rounded-xl font-bold transition cursor-pointer border flex items-center justify-center gap-1.5 ${
+                        tipeIzin === "IZIN"
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-500 shadow-xs"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                      }`}
                     >
-                      <Camera size={16} className="text-emerald-600" />
-                      <span className="text-[11px] font-bold">Kamera</span>
+                      <span>Izin Keperluan</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="py-3 px-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:border-emerald-500 transition cursor-pointer"
+                      onClick={() => setTipeIzin("SAKIT")}
+                      className={`py-2.5 rounded-xl font-bold transition cursor-pointer border flex items-center justify-center gap-1.5 ${
+                        tipeIzin === "SAKIT"
+                          ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-500 shadow-xs"
+                          : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                      }`}
                     >
-                      <ImageIcon size={16} className="text-teal-600" />
-                      <span className="text-[11px] font-bold">Pilih Galeri</span>
+                      <span>Sakit (Surat Dokter)</span>
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting || !alasan.trim()}
-                className="w-full py-3 bg-[#035941] text-white rounded-xl font-bold uppercase tracking-wider disabled:opacity-50"
-              >
-                {isSubmitting ? "Mengirim..." : "Kirim Pengajuan Izin"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Mulai</label>
+                    <input
+                      type="date"
+                      value={tanggalMulai}
+                      onChange={(e) => setTanggalMulai(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Selesai</label>
+                    <input
+                      type="date"
+                      value={tanggalSelesai}
+                      onChange={(e) => setTanggalSelesai(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Alasan Keterangan *</label>
+                  <textarea
+                    value={alasan}
+                    onChange={(e) => setAlasan(e.target.value)}
+                    rows={3}
+                    placeholder="Tuliskan keterangan lengkap alasan izin/sakit..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Foto Surat Keterangan / Bukti</label>
+                    <span className="text-[9px] text-slate-400">Kamera atau Galeri</span>
+                  </div>
+
+                  {/* Input khusus Kamera Langsung */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+
+                  {/* Input khusus Galeri / File */}
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+
+                  {fotoPreview ? (
+                    <div className="relative rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-700 max-h-36 shadow-sm">
+                      <img src={fotoPreview} alt="Bukti" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFotoFile(null);
+                          setFotoPreview(null);
+                          if (cameraInputRef.current) cameraInputRef.current.value = "";
+                          if (galleryInputRef.current) galleryInputRef.current.value = "";
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-slate-900/80 hover:bg-rose-600 text-white rounded-full transition shadow-sm cursor-pointer"
+                      >
+                        <X size={14} />
+                      </button>
+                      <div className="absolute bottom-2 left-2 right-2 py-1 px-2 bg-slate-900/80 backdrop-blur-sm rounded-lg text-[9px] text-white flex items-center justify-between">
+                        <span className="truncate max-w-[120px]">{fotoFile?.name || "Bukti Terlampir"}</span>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => cameraInputRef.current?.click()} className="underline text-emerald-300">Kamera</button>
+                          <button type="button" onClick={() => galleryInputRef.current?.click()} className="underline text-teal-300">Galeri</button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="py-3 px-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:border-emerald-500 transition cursor-pointer"
+                      >
+                        <Camera size={16} className="text-emerald-600" />
+                        <span className="text-[11px] font-bold">Kamera</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="py-3 px-2 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center gap-1.5 text-slate-600 dark:text-slate-300 hover:border-emerald-500 transition cursor-pointer"
+                      >
+                        <ImageIcon size={16} className="text-teal-600" />
+                        <span className="text-[11px] font-bold">Pilih Galeri</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </form>
+
+              {/* Modal Action Footer - Sticky & Always Visible with iOS Home Indicator padding */}
+              <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 grid grid-cols-2 gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowIzinModal(false)}
+                  className="py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition cursor-pointer text-xs flex items-center justify-center"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  form="form-izin-sakit"
+                  disabled={isSubmitting || !alasan.trim()}
+                  className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" />
+                      <span>Mengirim...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={15} />
+                      <span>Kirim Pengajuan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

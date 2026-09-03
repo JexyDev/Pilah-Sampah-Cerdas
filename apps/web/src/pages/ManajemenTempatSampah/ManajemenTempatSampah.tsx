@@ -1,4 +1,4 @@
-import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, Layers, User, Box } from "lucide-react";
+import { Loader2, Check, X, Trash2, Map, Plus, Search, AlertTriangle, Pencil, Tags, QrCode, CheckCircle, XCircle, ChevronDown, ChevronUp, Phone, ShieldCheck, Download, Maximize2, Minimize2, Layers, User, Box, RotateCcw } from "lucide-react";
 
 /**
  * Project: BERSEKA
@@ -94,7 +94,7 @@ const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
 
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const isReadOnly = ["CAMAT", "LURAH", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
 
   type TabType = "kodefikasi" | "monitoring" | "kategori" | "batch_qr";
@@ -412,6 +412,8 @@ const ManajemenTempatSampah: React.FC = () => {
   const [binToDelete, setBinToDelete] = useState<string | null>(null);
   const [rejectBinKode, setRejectBinKode] = useState<string | null>(null);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [resetOwnershipModal, setResetOwnershipModal] = useState<{ id: string; qrCode: string; wargaName?: string } | null>(null);
+  const [isResettingOwnership, setIsResettingOwnership] = useState(false);
 
   // Kategori Add Modal Trigger Signal
   const [openKategoriAddSignal, setOpenKategoriAddSignal] = useState(0);
@@ -634,6 +636,26 @@ const ManajemenTempatSampah: React.FC = () => {
       toast.error(error.response?.data?.message || "Gagal menolak aktivasi");
     } finally {
       setIsRejecting(false);
+    }
+  };
+
+  const handleConfirmResetOwnership = async () => {
+    if (!resetOwnershipModal) return;
+    try {
+      setIsResettingOwnership(true);
+      const targetId = resetOwnershipModal.id || resetOwnershipModal.qrCode;
+      const res = await api.post(`/bins/${targetId}/reset-ownership`);
+      if (res.data?.success || res.data?.status === "success") {
+        toast.success(`Kepemilikan Tempat Sampah ${resetOwnershipModal.qrCode} berhasil di-reset ke status PRINTED (Belum Terikat)`);
+        setResetOwnershipModal(null);
+        fetchBins();
+        fetchHouseholds();
+      }
+    } catch (error: any) {
+      console.error("Gagal mereset kepemilikan tempat sampah:", error);
+      toast.error(error.response?.data?.message || "Gagal mereset kepemilikan tempat sampah");
+    } finally {
+      setIsResettingOwnership(false);
     }
   };
 
@@ -1721,14 +1743,8 @@ const ManajemenTempatSampah: React.FC = () => {
 
                     {/* 7. DIVERIFIKASI PADA */}
                     <td className="py-3 px-4 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap">
-                      {bin.verifiedAt ? (
-                        bin.verifiedAt === "Belum Diaktivasi" ? (
-                          <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
-                        ) : (
-                          <span>{bin.verifiedAt}</span>
-                        )
-                      ) : bin.realStatus === "ACTIVE_BOUND" || bin.userId ? (
-                        "17 Agustus 2026, 09.00"
+                      {bin.verifiedAt && bin.verifiedAt !== "Belum Diaktivasi" ? (
+                        <span>{bin.verifiedAt}</span>
                       ) : (
                         <span className="text-slate-400 font-medium italic">Belum Diaktivasi</span>
                       )}
@@ -1755,6 +1771,19 @@ const ManajemenTempatSampah: React.FC = () => {
                             title="Ubah Data"
                           >
                             <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setResetOwnershipModal({
+                                id: bin.id || bin.kode,
+                                qrCode: bin.kode || bin.qrCode,
+                                wargaName: bin.wargaName || bin.user?.name,
+                              })
+                            }
+                            className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 transition-all flex items-center justify-center cursor-pointer"
+                            title="Reset Kepemilikan (Kembalikan ke Belum Terikat / PRINTED)"
+                          >
+                            <RotateCcw size={14} />
                           </button>
                           <button
                             onClick={() => openLogModal(bin)}
@@ -2191,6 +2220,18 @@ const ManajemenTempatSampah: React.FC = () => {
         message={`Apakah Anda yakin ingin menolak aktivasi untuk tempat sampah ${rejectBinKode || ""}? Akun warga terkait akan dibersihkan.`}
         confirmText="Ya, Tolak Aktivasi"
         type="danger"
+      />
+
+      {/* Confirmation Modal Reset Kepemilikan Tempat Sampah */}
+      <ConfirmModal
+        isOpen={Boolean(resetOwnershipModal)}
+        onClose={() => setResetOwnershipModal(null)}
+        onConfirm={handleConfirmResetOwnership}
+        isLoading={isResettingOwnership}
+        title="Reset Kepemilikan Tempat Sampah"
+        message={`Apakah Anda yakin ingin melepas kepemilikan Warga dari Tempat Sampah ${resetOwnershipModal?.qrCode || ""}${resetOwnershipModal?.wargaName ? ` (${resetOwnershipModal.wargaName})` : ""}? Status tempat sampah akan di-reset kembali menjadi PRINTED (Belum Terikat).`}
+        confirmText="Ya, Reset Kepemilikan"
+        type="warning"
       />
     </div>
   );

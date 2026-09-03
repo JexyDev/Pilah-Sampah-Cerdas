@@ -1272,7 +1272,7 @@ export const dplService = {
         const totalHours = Math.floor(totalMinutes / 60);
         const remainingMinutes = totalMinutes % 60;
         const targetHours = configTargets.targetTotalJam || 200;
-        const progressPercentage = Math.round((totalMinutes / (targetHours * 60 || 1)) * 100);
+        const progressPercentage = Math.min(100, Math.round((totalMinutes / (targetHours * 60 || 1)) * 100));
 
         const points = await prisma.pointHistory.aggregate({
           where: { userId: st.userId },
@@ -1290,6 +1290,7 @@ export const dplService = {
           fakultas: st.fakultas || "-",
           fotoProfil: st.user?.fotoProfil || null,
           isKetua: Boolean(st.isKetua),
+          kelompokId: st.kelompokId || st.kelompok?.id || null,
           kelompokName: st.kelompok?.name || "-",
           assessmentScore: finalCalculatedScore,
           baseAssessmentScore: baseScore,
@@ -2429,6 +2430,7 @@ export const dplService = {
     data: {
       kelompokId: string;
       nomor?: number;
+      judul?: string;
       deskripsi: string;
       kategori?: string;
       sumber?: string;
@@ -2503,8 +2505,8 @@ export const dplService = {
     }
 
     let combinedDeskripsi = (data.deskripsi || "").trim();
-    if ((data as any).judul && (data as any).judul.trim()) {
-      const cleanJ = (data as any).judul.trim().replace(/\*\*/g, "");
+    if (data.judul && data.judul.trim()) {
+      const cleanJ = data.judul.trim().replace(/\*\*/g, "");
       const cleanD = combinedDeskripsi.replace(/^\*\*.*?\*\*(?:\r?\n+)?/, "").trim();
       combinedDeskripsi = cleanD ? `**${cleanJ}**\n\n${cleanD}` : `**${cleanJ}**`;
     }
@@ -2542,6 +2544,7 @@ export const dplService = {
     role: any,
     data: {
       nomor?: number;
+      judul?: string;
       deskripsi?: string;
       kategori?: string;
       sumber?: string;
@@ -2728,6 +2731,14 @@ export const dplService = {
     if (normalizedStatus === "TIDAK_DISETUJUI") normalizedStatus = "DITOLAK";
     if (normalizedStatus === "SEDANG_DILAKSANAKAN") normalizedStatus = "SEDANG_BERJALAN";
 
+    const currentPelaksanaan =
+      (prokerExisting as any).statusPelaksanaan ||
+      (prokerExisting.status === "SELESAI" ? "SELESAI" : "BELUM_MULAI");
+
+    if (normalizedStatus === "DITOLAK" && currentPelaksanaan === "SELESAI") {
+      throw new Error("Program kerja yang sudah selesai tidak dapat ditolak.");
+    }
+
     let statusUsulan = "BELUM_DISETUJUI";
     if (
       normalizedStatus === "DITERIMA" ||
@@ -2743,6 +2754,7 @@ export const dplService = {
       statusPelaksanaan || (prokerExisting as any).statusPelaksanaan || "BELUM_MULAI";
     if (normalizedStatus === "SELESAI") newStatusPelaksanaan = "SELESAI";
     else if (normalizedStatus === "SEDANG_BERJALAN") newStatusPelaksanaan = "SEDANG_BERJALAN";
+    else if (normalizedStatus === "DITOLAK") newStatusPelaksanaan = "BELUM_MULAI";
 
     const updatePayload: any = {
       status: normalizedStatus,
@@ -2752,6 +2764,14 @@ export const dplService = {
       reviewedById: dplUserId,
       reviewedAt: new Date(),
     };
+
+    if (normalizedStatus === "DITOLAK") {
+      updatePayload.skorPenilaian = null;
+      updatePayload.statusPenilaian = "BELUM_DINILAI";
+      updatePayload.evaluasiDpl = null;
+      updatePayload.aspekPenilaian = null;
+      updatePayload.predikat = null;
+    }
 
     const proker = await prisma.programKerjaKkn.update({
       where: { id },

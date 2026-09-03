@@ -63,13 +63,14 @@ export class AuthRepository {
 
       const phoneArray = Array.from(candidatePhones);
 
-      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, atau NIP dosen
+      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, NIP dosen, atau Email
       const user = (await prisma.user.findFirst({
         where: {
           OR: [
             { phone: { in: phoneArray } },
-            { studentProfile: { nim: { in: [raw, digitsOnly, cleaned] } } },
-            { nip: { in: [raw, digitsOnly, cleaned] } },
+            { studentProfile: { nim: { in: [raw, digitsOnly, cleaned].filter(Boolean) } } },
+            { nip: { in: [raw, digitsOnly, cleaned].filter(Boolean) } },
+            ...(raw.includes("@") ? [{ email: { equals: raw, mode: "insensitive" as const } }] : []),
           ],
         },
         include: {
@@ -507,11 +508,30 @@ export class AuthRepository {
       const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
-          ...userData,
+          name: userData.name,
+          password: userData.password,
+          phone: formattedPhone,
+          address: userData.address || null,
           fotoProfil:
             userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
-          phone: formattedPhone,
+          rwId: userData.rwId !== undefined && userData.rwId !== null ? Number(userData.rwId) : null,
+          rtId: userData.rtId !== undefined && userData.rtId !== null ? Number(userData.rtId) : null,
+          email: userData.email || null,
+          provinsi: userData.provinsi || null,
+          kabupaten: userData.kabupaten || userData.kota || null,
+          jumlahAnggotaKeluarga:
+            userData.jumlahAnggotaKeluarga !== undefined && userData.jumlahAnggotaKeluarga !== null
+              ? Number(userData.jumlahAnggotaKeluarga)
+              : null,
+          defaultPetugasId: userData.defaultPetugasId || null,
+          nip: userData.nip || null,
+          institusi: userData.institusi || null,
+          jabatan: userData.jabatan || null,
+          programStudi: userData.programStudi || null,
+          jenjangPendidikan: userData.jenjangPendidikan || null,
+          mustChangePassword: userData.mustChangePassword ?? false,
           roleId: role.id,
+          status: userData.status || "Aktif",
           wargaSubtype: wargaSubtype || "UTAMA",
         },
       });
@@ -578,13 +598,25 @@ export class AuthRepository {
       const role = await tx.role.findUnique({ where: { name: "MAHASISWA_KKN" } });
       if (!role) throw new Error("ROLE_NOT_FOUND");
 
+      const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
-          ...userData,
+          name: userData.name,
+          password: userData.password,
+          phone: formattedPhone,
+          address: userData.address || null,
           fotoProfil:
             userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          rwId: userData.rwId !== undefined && userData.rwId !== null ? Number(userData.rwId) : null,
+          rtId: userData.rtId !== undefined && userData.rtId !== null ? Number(userData.rtId) : null,
+          email: userData.email || null,
+          provinsi: userData.provinsi || null,
+          kabupaten: userData.kabupaten || userData.kota || null,
+          programStudi: userData.programStudi || userData.jurusan || null,
+          jenjangPendidikan: userData.jenjangPendidikan || null,
+          institusi: userData.institusi || userData.fakultas || null,
           roleId: role.id,
-          status: "Aktif",
+          status: userData.status || "Aktif",
         },
       });
 
@@ -608,13 +640,22 @@ export class AuthRepository {
       const role = await tx.role.findUnique({ where: { name: "PETUGAS_RESIDU" } });
       if (!role) throw new Error("ROLE_NOT_FOUND");
 
+      const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
-          ...userData,
+          name: userData.name,
+          password: userData.password,
+          phone: formattedPhone,
+          address: userData.address || null,
           fotoProfil:
             userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          rwId: userData.rwId !== undefined && userData.rwId !== null ? Number(userData.rwId) : null,
+          rtId: userData.rtId !== undefined && userData.rtId !== null ? Number(userData.rtId) : null,
+          email: userData.email || null,
+          provinsi: userData.provinsi || null,
+          kabupaten: userData.kabupaten || userData.kota || null,
           roleId: role.id,
-          status: "Pending",
+          status: userData.status || "Pending",
         },
       });
 
@@ -676,8 +717,35 @@ export class AuthRepository {
    * Create staff/general user
    */
   async createUser(data: any): Promise<User> {
+    const formattedPhone = formatPhoneNumber(data.phone);
     return prisma.user.create({
-      data,
+      data: {
+        name: data.name,
+        password: data.password,
+        phone: formattedPhone,
+        address: data.address || null,
+        fotoProfil:
+          data.fotoProfil && data.fotoProfil.trim() !== "" ? data.fotoProfil : null,
+        rwId: data.rwId !== undefined && data.rwId !== null ? Number(data.rwId) : null,
+        rtId: data.rtId !== undefined && data.rtId !== null ? Number(data.rtId) : null,
+        email: data.email || null,
+        nip: data.nip || null,
+        institusi: data.institusi || null,
+        jabatan: data.jabatan || null,
+        programStudi: data.programStudi || null,
+        jenjangPendidikan: data.jenjangPendidikan || null,
+        provinsi: data.provinsi || null,
+        kabupaten: data.kabupaten || data.kota || null,
+        jumlahAnggotaKeluarga:
+          data.jumlahAnggotaKeluarga !== undefined && data.jumlahAnggotaKeluarga !== null
+            ? Number(data.jumlahAnggotaKeluarga)
+            : null,
+        defaultPetugasId: data.defaultPetugasId || null,
+        mustChangePassword: data.mustChangePassword ?? false,
+        roleId: data.roleId,
+        status: data.status || "Aktif",
+        wargaSubtype: data.wargaSubtype || null,
+      },
     });
   }
 }

@@ -62,7 +62,7 @@ export class PoskoKknController {
 
       // MAHASISWA_KKN: auto-resolve kelompok dari data student
       if (peran === "MAHASISWA_KKN" && !targetKelompokId) {
-        const student = await prisma.studentKkn.findUnique({
+        const student = await prisma.studentKkn.findFirst({
           where: { userId },
           select: { kelompokId: true, isKetua: true },
         });
@@ -70,13 +70,6 @@ export class PoskoKknController {
           res
             .status(400)
             .json({ success: false, message: "Mahasiswa belum terdaftar dalam kelompok KKN" });
-          return;
-        }
-        if (!student.isKetua) {
-          res.status(403).json({
-            success: false,
-            message: "Hanya Ketua Kelompok yang dapat mendaftarkan Posko KKN",
-          });
           return;
         }
         targetKelompokId = student.kelompokId;
@@ -118,6 +111,35 @@ export class PoskoKknController {
         .json({ success: true, message: "Posko KKN berhasil disimpan", data: resData });
     } catch (err: any) {
       res.status(500).json({ success: false, message: err.message || "Gagal menyimpan posko" });
+    }
+  }
+
+  /** GET /posko-kkn/unified-zones — Unified Map Service (Single Source of Truth) */
+  async getUnifiedZones(req: Request, res: Response): Promise<void> {
+    try {
+      const user = (req as any).user;
+      const kelompokId = req.query.kelompokId as string | undefined;
+      const kelurahan = req.query.kelurahan as string | undefined;
+
+      const data = await poskoKknService.getUnifiedZones({
+        kelompokId,
+        kelurahan,
+        userId: user?.userId,
+        role: user?.role,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Data peta zona KKN terpadu berhasil dimuat",
+        totalGroups: data.length,
+        data,
+      });
+    } catch (err: any) {
+      console.error("[PoskoKknController.getUnifiedZones] error:", err);
+      res.status(500).json({
+        success: false,
+        message: err.message || "Gagal mengambil data peta zona KKN terpadu",
+      });
     }
   }
 

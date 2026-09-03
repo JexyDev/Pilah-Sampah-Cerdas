@@ -71,7 +71,7 @@ const formatKecName = (raw: string) => {
 
 const MasterKelurahan: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = user?.peran === "PETUGAS_RESIDU" || user?.peran === "MAHASISWA_KKN";
+  const isReadOnly = !["DEVELOPER", "SUPER_USER"].includes(user?.peran || "");
 
   const [kelurahanList, setKelurahanList] = useState<KelurahanItem[]>([]);
   const [kecamatanList, setKecamatanList] = useState<KecamatanData[]>([]);
