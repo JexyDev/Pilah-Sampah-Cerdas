@@ -775,12 +775,24 @@ export const kknAttendanceController = {
     }
   },
 
-  recordOutOfZoneViolation: async (req: Request, res: Response): Promise<void> => { (feat(api): lanjutKegiatan dengan geofence + checkout wajib di zona)
+  recordOutOfZoneViolation: async (req: Request, res: Response): Promise<void> => {
     try {
       const studentUserId = (req as any).user?.userId || (req as any).user?.id;
       const { id } = req.params;
+      const { latitude, longitude } = req.body;
 
-      const result = await kknAttendanceService.lanjutKegiatan(studentUserId, id);
+      if (latitude === undefined || longitude === undefined) {
+        res.status(400).json({
+          success: false,
+          message: "Koordinat latitude dan longitude wajib dikirim untuk validasi zona.",
+        });
+        return;
+      }
+
+      const result = await kknAttendanceService.lanjutKegiatan(studentUserId, id, {
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+      });
 
       res.status(200).json(result);
     } catch (error: any) {

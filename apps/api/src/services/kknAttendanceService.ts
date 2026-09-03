@@ -394,10 +394,9 @@ export function calculateTotalJedaMinutes(att: {
   ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
-D
   const sessionEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : Date.now();
   const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
-  return Math.max(0, Math.floor(pauseMs / 60000)); (fix(api): durasi jeda freeze saat pause + update pesan luar zona)
+  return Math.max(0, Math.floor(pauseMs / 60000));
 }
 
 /**
@@ -747,7 +746,7 @@ export class KknAttendanceService {
               : {}),
           },
         });
-D
+
         if (todaySch) {
           currentScheduleId = todaySch.id;
           attendanceStatus = "BELUM_MULAI";
@@ -4217,17 +4216,11 @@ D
         nim: student?.nim,
       })
       .catch((err) => console.warn("[Audit] Pelanggaran zona log error:", err));
- (feat(api): lanjutKegiatan dengan geofence + checkout wajib di zona)
+
     return {
       success: true,
-      message: "Kegiatan dijeda. Timer berhenti.",
-      data: {
-        id: updated.id,
-        status: "TERJEDA",
-        actualInZoneMinutes: frozenMins,
-        actualInZoneSeconds: frozenSecs,
-        jedaAt: new Date().toISOString(),
-      },
+      message: "Pelanggaran zona tercatat. Poin dipotong.",
+      pointsDeducted: penaltyPoints,
     };
   }
 
