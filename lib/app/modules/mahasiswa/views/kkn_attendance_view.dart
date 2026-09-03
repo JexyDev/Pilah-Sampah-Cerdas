@@ -2156,7 +2156,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             height: 52,
             child: ElevatedButton.icon(
               onPressed:
-                  (state.isEligibleForAttendance && !isSuccess && !isAlpa)
+                  (state.isEligibleForAttendance && !isSuccess && !isAlpa && durasiMenit >= targetMenit)
                   ? () async {
                       await _showAbsenDialog(state, notifier);
                     }
@@ -2213,6 +2213,12 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                   : 'Presensi baru dapat dilakukan setelah durasi kehadiran mencapai minimum $targetMenit menit.',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
+            ),
+          if (state.isEligibleForAttendance && !isSuccess && !isAlpa && durasiMenit < targetMenit)
+            Text(
+              'Tombol Presensi Pulang aktif setelah durasi mencapai $targetMenit menit. (Saat ini: $durasiMenit menit)',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, color: Colors.orange),
             ),
           const SizedBox(height: 16),
           if (!isSuccess && !isAlpa && (state.activeActivity?['statusKehadiran']?.toString().toUpperCase() == 'TERJEDA' || state.activeActivity?['attendanceStatus']?.toString().toUpperCase() == 'TERJEDA'))
