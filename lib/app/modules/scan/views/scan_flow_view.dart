@@ -382,91 +382,98 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                   });
                 },
               ),
-              if (!_photoTaken) ...[
-                // Overlay background transparan
-                ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.5),
-                    BlendMode.srcOut,
-                  ),
+              if (!_photoTaken)
+                IgnorePointer(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          backgroundBlendMode: BlendMode.dstOut,
+                      // Overlay background transparan
+                      ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withValues(alpha: 0.5),
+                          BlendMode.srcOut,
+                        ),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black,
+                                backgroundBlendMode: BlendMode.dstOut,
+                              ),
+                            ),
+                            Center(
+                              child: Container(
+                                width: 280,
+                                height: 280,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      // Bingkai Border Putih solid
                       Center(
                         child: Container(
                           width: 280,
                           height: 280,
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            border: Border.all(color: Colors.white, width: 2),
                             borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      // Teks Panduan Atas
+                      Positioned(
+                        top: 40,
+                        left: 20,
+                        right: 20,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'Posisikan Objek Sampah di Dalam Bingkai\n(Jarak Optimal: 15 – 30 cm)',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      // Teks Tips Bawah
+                      Positioned(
+                        bottom: 120, // Dinaikkan agar tidak menutupi tombol kamera
+                        left: 30,
+                        right: 30,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.lightbulb_outline_rounded, color: Colors.amber, size: 16),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Tips: Pastikan pencahayaan cukup & bebas jam tangan/alas keramik.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.white, fontSize: 11),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Bingkai Border Putih Putus-putus atau solid
-                Center(
-                  child: Container(
-                    width: 280,
-                    height: 280,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                // Teks Panduan (Atas dan Bawah bingkai)
-                Positioned(
-                  top: 50,
-                  left: 20,
-                  right: 20,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Posisikan Objek Sampah di Dalam Bingkai\n(Jarak Optimal: 15 – 30 cm)',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 30,
-                  left: 30,
-                  right: 30,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black45,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.lightbulb_outline_rounded, color: Colors.amber, size: 16),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Tips: Pastikan pencahayaan cukup & bebas jam tangan/alas keramik.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontSize: 11),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         ),
