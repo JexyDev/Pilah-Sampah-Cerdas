@@ -152,7 +152,12 @@ export class KknController {
       });
     } catch (error: any) {
       console.error("[KknController] activateByScan error:", error);
-      res.status(400).json({ success: false, message: error.message });
+      let errorMsg = error.message || "Gagal mengaktivasi tempat sampah warga.";
+      if (errorMsg === "BIN_NOT_FOUND" || errorMsg.startsWith("BIN_NOT_FOUND:")) {
+        errorMsg =
+          "QR Code atau Tempat Sampah tidak terdaftar di sistem. Pastikan QR Code yang Anda scan benar.";
+      }
+      res.status(400).json({ success: false, message: errorMsg });
     }
   }
 

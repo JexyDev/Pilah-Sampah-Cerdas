@@ -14,7 +14,7 @@ function sanitizeString(str?: string | null): string {
     .trim();
 }
 
-function calculateNilaiEkonomi(
+export function calculateNilaiEkonomi(
   program: string,
   teknologi: string,
   hasil: number,
@@ -43,7 +43,7 @@ function calculateNilaiEkonomi(
   return Math.round(h * 2500); // Rp 2.500 / Kg default kompos
 }
 
-function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string): string {
+export function normalizeJenisOlahan(rawTeknologi?: string, rawProgram?: string): string {
   const t = (rawTeknologi || "").toLowerCase();
   const p = (rawProgram || "").toLowerCase();
   const combined = `${t} ${p}`;

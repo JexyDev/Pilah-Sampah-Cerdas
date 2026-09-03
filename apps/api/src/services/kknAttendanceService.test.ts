@@ -66,6 +66,7 @@ vi.mock("../lib/prisma.js", () => {
         create: vi.fn(),
         update: vi.fn(),
         upsert: vi.fn(),
+        count: vi.fn(),
       },
       poskoKkn: {
         findUnique: vi.fn(),
@@ -75,6 +76,10 @@ vi.mock("../lib/prisma.js", () => {
         findMany: vi.fn().mockResolvedValue([]),
         findUnique: vi.fn(),
         findFirst: vi.fn(),
+      },
+      facility: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn(),
       },
       pointHistory: {
         findFirst: vi.fn(),
@@ -129,7 +134,12 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.setSystemTime(new Date("2026-09-03T04:00:00.000Z")); // 11:00 WIB
     service = new KknAttendanceService();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe("parseScheduleTimeString & parseScheduleTimeRange helpers", () => {
@@ -589,6 +599,43 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.data.status).toBe("HADIR_TIDAK_MEMENUHI");
       expect(result.data.statusDisplay).toBe("Hadir & Tidak Memenuhi");
       expect(result.data.isMemenuhiDurasi).toBe(false);
+    });
+
+    it("should guarantee status HADIR_MEMENUHI and min duration when isAutoCheckout is true", async () => {
+      vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue({
+        id: "att-rec-auto",
+        studentId,
+        scheduleId,
+        status: "BERLANGSUNG",
+        attendedAt: new Date(Date.now() - 30 * 60 * 1000), // only 30 mins
+        checkOutAt: null,
+      } as any);
+
+      (prisma.activityAttendance.update as any).mockImplementation(async ({ data }: any) => {
+        return {
+          id: "att-rec-auto",
+          studentId,
+          scheduleId,
+          status: data.status,
+          actualInZoneMinutes: data.actualInZoneMinutes,
+          attendedAt: new Date(Date.now() - 30 * 60 * 1000),
+          checkOutAt: new Date(),
+          schedule: { id: scheduleId, title: "Kegiatan Posko KKN" },
+          student: { id: studentId, name: "Mahasiswa KKN", studentProfile: { nim: "130121001" } },
+        } as any;
+      });
+
+      const result = await service.checkOutAttendance({
+        studentId,
+        scheduleId,
+        isAutoCheckout: true,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data.status).toBe("HADIR_MEMENUHI");
+      expect(result.data.statusDisplay).toBe("Hadir & Memenuhi");
+      expect(result.data.isMemenuhiDurasi).toBe(true);
+      expect(result.data.actualInZoneMinutes).toBeGreaterThanOrEqual(240);
     });
   });
 
@@ -1228,6 +1275,41 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
 
       expect(checkOutSpy).not.toHaveBeenCalled();
     });
+
+    it("should auto-checkout session with isAutoCheckout true when schedule is from yesterday (isPastDate)", async () => {
+      const checkOutSpy = vi.spyOn(service, "checkOutAttendance").mockResolvedValue({} as any);
+
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      (prisma.activityAttendance.findMany as any) = vi.fn().mockResolvedValue([
+        {
+          id: "att-past-date",
+          studentId: "student-past",
+          scheduleId: "sched-past",
+          status: "BERLANGSUNG",
+          attendedAt: yesterday,
+          schedule: {
+            id: "sched-past",
+            title: "Kegiatan Kemarin",
+            time: "08:00 - 16:00",
+            date: yesterday,
+          },
+          student: {
+            name: "Mahasiswa Terbengkalai",
+          },
+        },
+      ]);
+
+      await service.autoCheckOutEndedSchedules();
+
+      expect(checkOutSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          studentId: "student-past",
+          scheduleId: "sched-past",
+          isAutoCheckout: true,
+        })
+      );
+    });
   });
 
   describe("calculateTotalJedaMinutes & formatDurasiMenitIndo", () => {
@@ -1480,4 +1562,59 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
       expect(result.totalBypassed).toBe(1);
     });
   });
+
+  describe("getLaporanPresensi - Percentage Capping", () => {
+    it("should cap rasioKehadiran at 100% even when actual minutes exceed target duration (e.g. 480 mins vs 240 mins target)", async () => {
+      const studentId = "student-cap-1";
+      vi.mocked(prisma.activityAttendance.count).mockResolvedValueOnce(1);
+      vi.mocked(prisma.activityAttendance.findMany).mockResolvedValueOnce([
+        {
+          id: "att-cap-1",
+          studentId,
+          scheduleId: "sch-1",
+          status: "HADIR_MEMENUHI",
+          actualInZoneMinutes: 480, // 8 hours (double standard 4 hours target)
+          attendedAt: new Date("2026-09-02T08:00:00+07:00"),
+          checkOutAt: new Date("2026-09-02T16:00:00+07:00"),
+          jedaLogs: [],
+          schedule: {
+            id: "sch-1",
+            title: "Kegiatan Posko 1",
+            date: new Date("2026-09-02"),
+            time: "08:00 - 16:00",
+            kelompok: { id: "kel-1", name: "Kelompok 1", kelurahan: "Dago" },
+          },
+          student: {
+            id: studentId,
+            name: "Mahasiswa Rajin",
+            studentProfile: {
+              nim: "12345678",
+              jurusan: "Teknik Informatika",
+              isKetua: false,
+              kelompok: {
+                id: "kel-1",
+                name: "Kelompok 1",
+                kelurahan: "Dago",
+                dpl: { id: "dpl-1", name: "DPL 1" },
+              },
+            },
+          },
+        } as any,
+      ]);
+      vi.mocked(prisma.activityAttendance.findMany).mockResolvedValueOnce([]);
+
+      const report = await service.getLaporanPresensi({
+        kelompokId: "kel-1",
+        startDate: "2026-09-02",
+        endDate: "2026-09-02",
+      });
+
+      expect(report.items).toHaveLength(1);
+      expect(report.items[0].durasiAktualMenit).toBe(480);
+      expect(report.items[0].targetMinMenit).toBe(60);
+      // Rasio Kehadiran MUST be capped at 100.0% instead of 800.0%
+      expect(report.items[0].rasioKehadiran).toBe(100);
+    });
+  });
 });
+

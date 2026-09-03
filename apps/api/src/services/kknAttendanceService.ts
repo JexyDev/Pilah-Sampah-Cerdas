@@ -1814,8 +1814,10 @@ export class KknAttendanceService {
     deskripsiKegiatan?: string;
     fotoUrl?: string;
     totalDurasiDalamZonaMenit?: number;
+    isAutoCheckout?: boolean;
+    checkOutTime?: Date;
   }) {
-    const { studentId, scheduleId, latitude, longitude, deskripsiKegiatan, fotoUrl } = params;
+    const { studentId, scheduleId, latitude, longitude, deskripsiKegiatan, fotoUrl, isAutoCheckout } = params;
 
     const nowForCheckout = new Date();
     const nowWibCheckout = new Date(nowForCheckout.getTime() + 7 * 60 * 60 * 1000);
@@ -1830,7 +1832,7 @@ export class KknAttendanceService {
         ...(scheduleId ? { scheduleId } : {}),
         attendedAt: { gte: startOfDay },
         checkOutAt: null,
-        status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA"] },
+        status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA", "DI_ZONA", "DALAM_RADIUS"] },
       },
       orderBy: { attendedAt: "desc" },
     });
@@ -1843,7 +1845,7 @@ export class KknAttendanceService {
           ...(scheduleId ? { scheduleId } : {}),
           attendedAt: undefined, // prisma will not filter on this field
           checkOutAt: null,
-          status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA"] },
+          status: { in: ["BERLANGSUNG", "HADIR", "TERJEDA", "DI_ZONA", "DALAM_RADIUS"] },
         },
         orderBy: { id: "desc" },
       });
@@ -1865,7 +1867,7 @@ export class KknAttendanceService {
       throw new Error("ATTENDANCE_NOT_FOUND: Belum ada data check-in hari ini untuk di-checkout.");
     }
 
-    const checkOutTime = new Date();
+    const checkOutTime = params.checkOutTime || new Date();
     // Bug #8 fix: guard attendedAt null agar tidak kalkulasi dari epoch (1970)
     const attendedTime = attendance.attendedAt ? new Date(attendance.attendedAt) : checkOutTime;
     const rawDurationMinutes = Math.max(
@@ -1934,6 +1936,15 @@ export class KknAttendanceService {
     if (schedule) {
       durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
     }
+
+    // Kebijakan Batas Maksimal 18:00 WIB:
+    // Jika diselesaikan otomatis oleh sistem (isAutoCheckout), mahasiswa yang telah hadir
+    // dipastikan berstatus HADIR_MEMENUHI (Hadir) dengan durasi minimal memenuhi target kerja.
+    if (isAutoCheckout) {
+      const minTarget = durasiWajibMenit > 0 ? durasiWajibMenit : 240;
+      actualInZoneMins = Math.max(actualInZoneMins, minTarget, 240);
+    }
+
     const isMemenuhi =
       durasiWajibMenit > 0 ? actualInZoneMins >= durasiWajibMenit : actualInZoneMins >= 240;
     const checkoutFinalStatus = isMemenuhi ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
@@ -4278,42 +4289,48 @@ export class KknAttendanceService {
           }
         }
 
-        // Kebijakan Fleksibilitas Jam Pulang (Tidak Terpatok 16:00):
-        // Jam pulang tidak diputus otomatis di jam 16:00. Mahasiswa dapat beraktivitas fleksibel.
-        // Auto-checkout hanya mengeksekusi sesi yang tersangkut dari hari sebelumnya (isPastDate)
-        // atau saat pergantian hari di penghujung malam (>= 23:50 WIB).
-        const isEndOfDayCutoff = currentMins >= 23 * 60 + 50;
+        // Kebijakan Fleksibilitas Jam Pulang (Hold s.d. 18:00 WIB):
+        // Jam pulang tidak diputus di jam 16:00 (di-hold agar mahasiswa fleksibel berkegiatan di lapangan).
+        // Begitu mencapai batas maksimal sore jam 18:00 WIB (1080 menit) atau endMins (jika jadwal selesai setelah 18:00),
+        // atau sesi tersangkut dari hari sebelumnya (isPastDate), sistem menyelesaikan presensi secara otomatis
+        // dengan status HADIR (HADIR_MEMENUHI).
+        const eveningCutoffMins = Math.max(18 * 60, endMins);
+        const isEveningCutoff = currentMins >= eveningCutoffMins;
 
-        if (isPastDate || isEndOfDayCutoff) {
+        if (isPastDate || isEveningCutoff) {
           console.log(
-            `[AutoCheckout] Melakukan checkout otomatis pergantian hari untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
+            `[AutoCheckout] Melakukan checkout otomatis batas jam 18:00 (Hadir) untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
           );
 
           await this.checkOutAttendance({
             studentId: att.studentId,
             scheduleId: att.scheduleId,
+            deskripsiKegiatan:
+              att.deskripsiKegiatan ||
+              "Diselesaikan otomatis oleh sistem (Batas maksimal 18:00 WIB)",
+            isAutoCheckout: true,
           });
 
           // Notifikasi Database
-          await prisma.notification
-            .create({
+          try {
+            await prisma.notification?.create?.({
               data: {
                 userId: att.studentId,
-                title: "Kegiatan Selesai ✅",
-                message: `Kegiatan ${att.schedule.title} telah usai. Sistem telah mencatat jam kepulangan Anda secara otomatis.`,
+                title: "Kegiatan Selesai Otomatis (Hadir) ✅",
+                message: `Kegiatan ${att.schedule.title} telah mencapai batas jam 18:00 WIB. Sistem telah mencatat presensi Anda secara otomatis dengan status Hadir.`,
               },
-            })
-            .catch(() => {});
+            });
+          } catch {}
 
           // Notifikasi Push FCM
-          if (att.student.fcmToken) {
-            await notificationIntegrationService
-              .sendPushNotification(
+          if (att.student?.fcmToken) {
+            try {
+              await notificationIntegrationService?.sendPushNotification?.(
                 att.student.fcmToken,
-                "Kegiatan Selesai ✅",
-                `Kegiatan ${att.schedule.title} usai. Checkout berhasil otomatis.`
-              )
-              .catch(() => {});
+                "Kegiatan Selesai Otomatis (Hadir) ✅",
+                `Kegiatan ${att.schedule.title} selesai otomatis pada jam 18:00 WIB. Status kehadiran Anda tercatat Hadir.`
+              );
+            } catch {}
           }
         }
       }

@@ -43,18 +43,52 @@ export class FacilityController {
           include: { kelompok: true, assignedRw: true },
         });
         kelompokId = student?.kelompokId ?? undefined;
+        const kelurahanName = student?.kelompok?.kelurahan;
+
+        // Jika targetRwId terisi (misal angka 8), pastikan di-resolve ke record RW di Kelurahan mahasiswa
+        if (targetRwId && kelurahanName) {
+          const rwMatch = await prisma.rw.findFirst({
+            where: {
+              kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } },
+              OR: [
+                { id: targetRwId },
+                { name: { contains: String(targetRwId).padStart(2, "0") } },
+                { name: { contains: `RW ${targetRwId}` } },
+                { name: { contains: `RW ${String(targetRwId).padStart(2, "0")}` } },
+              ],
+            },
+          });
+          if (rwMatch) {
+            targetRwId = rwMatch.id;
+          }
+        }
 
         if (!targetRwId) {
           if (student?.assignedRwId) {
             targetRwId = student.assignedRwId;
-          } else if (student?.kelompok?.cakupanRw) {
-            try {
-              const parsed =
-                typeof student.kelompok.cakupanRw === "string"
-                  ? JSON.parse(student.kelompok.cakupanRw)
-                  : student.kelompok.cakupanRw;
-              if (Array.isArray(parsed) && parsed.length > 0) targetRwId = Number(parsed[0]);
-            } catch (_) {}
+          } else if (kelurahanName) {
+            let firstRwNum: string | number | undefined;
+            if (student?.kelompok?.cakupanRw) {
+              try {
+                const parsed =
+                  typeof student.kelompok.cakupanRw === "string"
+                    ? JSON.parse(student.kelompok.cakupanRw)
+                    : student.kelompok.cakupanRw;
+                if (Array.isArray(parsed) && parsed.length > 0) firstRwNum = parsed[0];
+              } catch (_) {}
+            }
+            if (firstRwNum) {
+              const rwMatch = await prisma.rw.findFirst({
+                where: {
+                  kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } },
+                  OR: [
+                    { name: { contains: String(firstRwNum).padStart(2, "0") } },
+                    { name: { contains: `RW ${firstRwNum}` } },
+                  ],
+                },
+              });
+              if (rwMatch) targetRwId = rwMatch.id;
+            }
           }
         }
       }

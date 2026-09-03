@@ -79,6 +79,11 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 const handleForceLogout = () => {
+  const token = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
+  if (token?.startsWith("dev_mock_token_")) {
+    return; // Don't force logout in local dev mock session
+  }
+
   localStorage.removeItem("psc_access_token");
   localStorage.removeItem("psc_refresh_token");
   localStorage.removeItem("psc_user");
@@ -99,6 +104,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+    const currentToken = localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
+
+    if (currentToken?.startsWith("dev_mock_token_")) {
+      return Promise.reject(error);
+    }
 
     // Check if error is 401 and request hasn't been retried yet
     const isAuthUrl =
@@ -110,7 +120,7 @@ api.interceptors.response.use(
       const refreshToken =
         localStorage.getItem("psc_refresh_token") ?? sessionStorage.getItem("psc_refresh_token");
 
-      if (!refreshToken) {
+      if (!refreshToken || refreshToken.startsWith("dev_mock_")) {
         handleForceLogout();
         return Promise.reject(error);
       }

@@ -2149,6 +2149,25 @@ export const dplService = {
     const groupIds = groups.map((g) => g.id);
     const groupMap = new Map(groups.map((g) => [g.id, g]));
 
+    // Enforce H+5 Soft-Expiry Rule: If approved > 5 days ago and still BELUM_MULAI, soft-cancel
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+    await prisma.programKerjaKkn
+      .updateMany({
+        where: {
+          kelompokId: { in: groupIds },
+          statusUsulan: "DISETUJUI",
+          statusPelaksanaan: "BELUM_MULAI",
+          updatedAt: { lt: fiveDaysAgo },
+        },
+        data: {
+          statusUsulan: "KADALUARSA_OTOMATIS",
+          status: "DITOLAK",
+          catatanDpl:
+            "Dibatalkan otomatis oleh sistem (H+5): Program kerja tidak dimulai dalam 5 hari setelah disetujui.",
+        },
+      })
+      .catch(() => {});
+
     const prokerWhere: any = {
       kelompokId: { in: groupIds },
     };
