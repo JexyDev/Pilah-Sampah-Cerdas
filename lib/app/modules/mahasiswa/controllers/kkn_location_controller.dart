@@ -492,6 +492,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
         isTracking: false, // Reset agar startTracking() tidak skip
         clearError: true,
         attendanceTime: response['attendedAt']?.toString(),
+        isEligibleForAttendance: true,
         // Simpan posko yang dipilih / dicocokkan ke state
         selectedPoskoId: effectivePosko?['id']?.toString(),
         selectedPoskoName: effectivePosko?['nama']?.toString(),
@@ -731,6 +732,7 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       state = state.copyWith(
         activeActivity: updatedActivity,
         inZoneDurationSeconds: _backendDurationMinutes,
+        isEligibleForAttendance: true,
       );
 
       // Restart GPS tracking
@@ -772,7 +774,10 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
       updatedActivity['attendanceStatus'] = attendanceStatus;
       updatedActivity['statusKehadiran'] = attendanceStatus;
 
-      state = state.copyWith(activeActivity: updatedActivity);
+      state = state.copyWith(
+        activeActivity: updatedActivity,
+        isEligibleForAttendance: attendanceStatus == 'BERLANGSUNG',
+      );
 
       // Update notifikasi berdasarkan status
       if (attendanceStatus == 'TERJEDA') {
