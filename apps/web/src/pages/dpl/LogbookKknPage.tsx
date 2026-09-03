@@ -33,6 +33,12 @@ import {
   CheckSquare,
   Square,
   Trash2,
+  Target,
+  Building2,
+  MapPin,
+  ExternalLink,
+  FileText,
+  Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -124,6 +130,224 @@ const resolveHasilOutput = (item: LogbookMahasiswaItem): string => {
   const kat = resolveKategori(item);
   if (kat !== "Aktivitas KKN") return `Kegiatan ${kat} telah dilaksanakan`;
   return "Kegiatan kelompok terlaksana sesuai target program kerja";
+};
+
+/**
+ * Helper untuk mengurai Program Kerja menjadi judul tebal, deskripsi, kategori, status & link
+ */
+interface ParsedProkerInfo {
+  title: string;
+  description: string;
+  kategori: string;
+  statusPelaksanaan: string;
+  linkGoogleDrive?: string | null;
+}
+
+const parseProkerInfo = (item: LogbookMahasiswaItem): ParsedProkerInfo => {
+  const rawDesc = item.programKerja?.deskripsi || item.programKerjaDeskripsi || "";
+  const kategori = item.programKerja?.kategori || item.programKerjaKategori || resolveKategori(item);
+  const statusPelaksanaan =
+    item.programKerja?.statusPelaksanaan ||
+    item.programKerja?.status ||
+    "SEDANG_BERLANGSUNG";
+  const linkGoogleDrive = item.programKerja?.linkGoogleDrive || null;
+
+  if (!rawDesc || !rawDesc.trim()) {
+    return {
+      title: `Program ${kategori} Berseka`,
+      description: `Program kerja ${kategori.toLowerCase()} kelompok mahasiswa KKN di wilayah ${item.kelurahan || "binaan"}.`,
+      kategori,
+      statusPelaksanaan,
+      linkGoogleDrive,
+    };
+  }
+
+  // 1. Cek pola **Judul Program**: Deskripsi... atau **Judul Program** - Deskripsi...
+  const boldPrefixMatch = rawDesc.match(/^\s*\*\*([^*]+)\*\*(?:\s*[:\-–—]\s*|\s*\n\s*|\s+)([\s\S]*)$/);
+  if (boldPrefixMatch) {
+    const title = boldPrefixMatch[1].trim();
+    const description = boldPrefixMatch[2].trim();
+    return {
+      title,
+      description: description || `Program kegiatan ${title} untuk mendukung kebersihan dan kesehatan lingkungan.`,
+      kategori,
+      statusPelaksanaan,
+      linkGoogleDrive,
+    };
+  }
+
+  // 2. Cek apakah seluruh string berada di dalam **...**
+  const fullBoldMatch = rawDesc.match(/^\s*\*\*([^*]+)\*\*\s*$/);
+  if (fullBoldMatch) {
+    return {
+      title: fullBoldMatch[1].trim(),
+      description: `Program kerja ${kategori} kelompok mahasiswa KKN.`,
+      kategori,
+      statusPelaksanaan,
+      linkGoogleDrive,
+    };
+  }
+
+  // 3. Cek pemisah "Judul : Deskripsi" atau "Judul - Deskripsi"
+  const separatorMatch = rawDesc.match(/^([^:\n\-–—]{3,50})[:\-–—]\s+([\s\S]+)$/);
+  if (separatorMatch) {
+    return {
+      title: separatorMatch[1].trim().replace(/^\*+|\*+$/g, ""),
+      description: separatorMatch[2].trim(),
+      kategori,
+      statusPelaksanaan,
+      linkGoogleDrive,
+    };
+  }
+
+  // 4. Jika teks pendek (< 60 karakter) dan tidak ada baris baru, anggap judul
+  if (rawDesc.length <= 60 && !rawDesc.includes("\n")) {
+    return {
+      title: rawDesc.replace(/\*\*/g, "").trim(),
+      description: `Program kerja ${kategori} kelompok mahasiswa KKN.`,
+      kategori,
+      statusPelaksanaan,
+      linkGoogleDrive,
+    };
+  }
+
+  // 5. Fallback teks panjang
+  return {
+    title: `Program ${kategori} Berseka`,
+    description: rawDesc.replace(/\*\*/g, "").trim(),
+    kategori,
+    statusPelaksanaan,
+    linkGoogleDrive,
+  };
+};
+
+/**
+ * Helper untuk merender teks dengan format markdown sederhana (**bold**)
+ */
+const renderFormattedText = (text: string) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+          return (
+            <strong key={i} className="font-bold text-slate-900 dark:text-slate-100">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return part;
+      })}
+    </>
+  );
+};
+
+/**
+ * Helper untuk mengurai data fasilitas kebersihan terkait
+ */
+const resolveFasilitasDetails = (item: LogbookMahasiswaItem) => {
+  const fObj = item.fasilitas;
+  const fNama =
+    fObj?.nama ||
+    item.fasilitasNama ||
+    (item.fasilitasId ? `Fasilitas #${item.fasilitasId.slice(0, 8)}` : null);
+
+  if (!fNama && !fObj && !item.fasilitasId) return null;
+
+  const jenisRaw = (fObj?.jenis || "").toUpperCase();
+  let jenisLabel = "Fasilitas Kebersihan";
+  let jenisBadgeClass =
+    "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border-teal-200 dark:border-teal-800";
+
+  if (jenisRaw.includes("BANK_SAMPAH") || jenisRaw.includes("BANK SAMPAH")) {
+    jenisLabel = "Bank Sampah";
+    jenisBadgeClass =
+      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+  } else if (jenisRaw.includes("TPS3R") || jenisRaw.includes("TPS 3R")) {
+    jenisLabel = "TPS3R";
+    jenisBadgeClass =
+      "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800";
+  } else if (jenisRaw.includes("MAGGOT") || jenisRaw.includes("RUMAH_MAGGOT")) {
+    jenisLabel = "Rumah Maggot";
+    jenisBadgeClass =
+      "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800";
+  } else if (jenisRaw.includes("KOMPOS") || jenisRaw.includes("KOMPOSTER") || jenisRaw.includes("LOSEDA")) {
+    jenisLabel = "Komposter / Loseda";
+    jenisBadgeClass =
+      "bg-lime-50 text-lime-700 dark:bg-lime-950/60 dark:text-lime-300 border-lime-200 dark:border-lime-800";
+  } else if (fObj?.jenis) {
+    jenisLabel = fObj.jenis.replace(/_/g, " ");
+  }
+
+  return {
+    nama: fNama || "Fasilitas Kebersihan",
+    jenis: jenisLabel,
+    jenisBadgeClass,
+    alamat: fObj?.alamat || null,
+    latitude: fObj?.latitude || null,
+    longitude: fObj?.longitude || null,
+  };
+};
+
+/**
+ * Render Badge Kategori Program Kerja dengan warna tematik
+ */
+const renderProkerCategoryBadge = (kategori: string) => {
+  const kat = (kategori || "").toLowerCase();
+  let badgeClass =
+    "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+  if (kat.includes("pengolahan") || kat.includes("organik") || kat.includes("maggot")) {
+    badgeClass =
+      "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800";
+  } else if (kat.includes("pemanfaatan") || kat.includes("anorganik")) {
+    badgeClass =
+      "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800";
+  } else if (kat.includes("sosialisasi") || kat.includes("edukasi") || kat.includes("penyuluhan")) {
+    badgeClass =
+      "bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 border-sky-200 dark:border-sky-800";
+  } else if (kat.includes("tata kelola") || kat.includes("pendataan") || kat.includes("survei")) {
+    badgeClass =
+      "bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800";
+  } else if (kat.includes("fasilitas") || kat.includes("infrastruktur")) {
+    badgeClass =
+      "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border-teal-200 dark:border-teal-800";
+  }
+
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}`}>
+      {kategori}
+    </span>
+  );
+};
+
+/**
+ * Render Badge Status Pelaksanaan Program Kerja
+ */
+const renderProkerStatusBadge = (status: string) => {
+  const st = (status || "").toUpperCase();
+  if (st === "SELESAI" || st === "COMPLETED" || st === "TERLAKSANA") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+        <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+        Selesai
+      </span>
+    );
+  }
+  if (st === "BELUM_MULAI" || st === "USULAN" || st === "RENCANA") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-750 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <Clock className="w-3 h-3 text-slate-500" />
+        Direncanakan
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+      <Clock className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+      Sedang Berlangsung
+    </span>
+  );
 };
 
 export const LogbookKknPage: React.FC = () => {
@@ -472,7 +696,8 @@ export const LogbookKknPage: React.FC = () => {
 
   // Export XLSX (Mendukung Ekspor Data Terfilter atau Ekspor Data Terpilih)
   const handleExportXlsx = (customItems?: LogbookMahasiswaItem[], labelPrefix?: string) => {
-    if (!startDateFilter || !endDateFilter) {
+    const isCustom = Boolean(customItems && customItems.length > 0);
+    if (!isCustom && (!startDateFilter || !endDateFilter)) {
       toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
       return;
     }
@@ -491,24 +716,35 @@ export const LogbookKknPage: React.FC = () => {
       "NIM",
       "Kategori",
       "Tempat / Lokasi",
+      "Program Kerja Terkait",
+      "Fasilitas Kebersihan",
       "Uraian Aktivitas",
       "Status",
       "Catatan Validasi DPL",
     ];
-    const rows = itemsToExport.map((item, index) => [
-      index + 1,
-      item.tanggalKegiatan || "-",
-      item.waktuMulai || "-",
-      item.waktuSelesai || "-",
-      item.kelompokNama || "-",
-      item.penulisNama || "-",
-      item.penulisNim || "-",
-      resolveKategori(item),
-      item.tempat || "-",
-      item.deskripsi || "-",
-      item.statusApproval || "-",
-      item.catatanDpl || "-",
-    ]);
+    const rows = itemsToExport.map((item, index) => {
+      const pInfo = parseProkerInfo(item);
+      const fInfo = resolveFasilitasDetails(item);
+      const prokerDisplay = pInfo.title ? `${pInfo.title}: ${pInfo.description}` : "-";
+      const fasilitasDisplay = fInfo ? `${fInfo.nama} (${fInfo.jenis})` : "-";
+
+      return [
+        index + 1,
+        item.tanggalKegiatan || "-",
+        item.waktuMulai || "-",
+        item.waktuSelesai || "-",
+        item.kelompokNama || "-",
+        item.penulisNama || "-",
+        item.penulisNim || "-",
+        resolveKategori(item),
+        item.tempat || "-",
+        prokerDisplay,
+        fasilitasDisplay,
+        item.deskripsi || "-",
+        item.statusApproval || "-",
+        item.catatanDpl || "-",
+      ];
+    });
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws["!cols"] = [
@@ -521,6 +757,8 @@ export const LogbookKknPage: React.FC = () => {
       { wch: 15 },
       { wch: 20 },
       { wch: 25 },
+      { wch: 35 },
+      { wch: 25 },
       { wch: 45 },
       { wch: 22 },
       { wch: 30 },
@@ -528,7 +766,11 @@ export const LogbookKknPage: React.FC = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Rekap_Logbook");
     const filenamePrefix = labelPrefix ? `Rekap_Logbook_${labelPrefix}` : "Rekap_Logbook_Mahasiswa";
-    XLSX.writeFile(wb, `${filenamePrefix}_${startDateFilter}_sd_${endDateFilter}.xlsx`);
+    const dateSuffix =
+      startDateFilter && endDateFilter
+        ? `${startDateFilter}_sd_${endDateFilter}`
+        : new Date().toISOString().split("T")[0];
+    XLSX.writeFile(wb, `${filenamePrefix}_${dateSuffix}.xlsx`);
     toast.success(`Data logbook (${itemsToExport.length} data) berhasil diekspor ke XLSX!`);
   };
 
@@ -887,11 +1129,11 @@ export const LogbookKknPage: React.FC = () => {
                     {/* Tombol Ekspor Khusus Baris Terpilih */}
                     <button
                       type="button"
-                      onClick={() => handleExportCsv(selectedLogbooks, `${selectedIds.length}_Aktivitas`)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 rounded-lg font-semibold text-xs transition cursor-pointer shadow-2xs"
-                      title={`Ekspor ${selectedIds.length} data aktivitas terpilih ke format CSV`}
+                      onClick={() => handleExportXlsx(selectedLogbooks, `${selectedIds.length}_Aktivitas`)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 rounded-lg font-semibold text-xs transition cursor-pointer shadow-2xs"
+                      title={`Ekspor ${selectedIds.length} data aktivitas terpilih ke format XLSX`}
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>Ekspor Terpilih ({selectedIds.length})</span>
                     </button>
 
@@ -1201,287 +1443,384 @@ export const LogbookKknPage: React.FC = () => {
       {/* ─────────────────────────────────────────────
           4. POPUP MODAL: DETAIL AKTIVITAS MAHASISWA & VALIDASI DPL
           ───────────────────────────────────────────── */}
-      {isDetailModalOpen && selectedItemDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
-            
-            {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {resolveKategori(selectedItemDetail)}
-                  </span>
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-[10px] font-medium text-slate-600 dark:text-slate-300">
-                    <Smartphone className="w-3 h-3 text-slate-500" />
-                    <span>Aplikasi Mobile</span>
-                  </div>
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  {selectedItemDetail.kelompokNama}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsDetailModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {isDetailModalOpen && selectedItemDetail && (() => {
+        const prokerInfo = parseProkerInfo(selectedItemDetail);
+        const fasilitasInfo = resolveFasilitasDetails(selectedItemDetail);
 
-            {/* Grid 2 Kolom Ringkasan */}
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-750">
-              <div>
-                <span className="text-slate-400 block text-[11px]">Pengisi Data</span>
-                <span className="font-bold text-slate-800 dark:text-slate-100">
-                  {selectedItemDetail.penulisNama}
-                  {selectedItemDetail.penulisNim && (
-                    <span className="font-normal text-slate-400 font-mono ml-1">
-                      ({selectedItemDetail.penulisNim})
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
+              
+              {/* Modal Header */}
+              <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      {resolveKategori(selectedItemDetail)}
                     </span>
-                  )}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[11px]">Tanggal & Waktu</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {formatDateFull(selectedItemDetail.tanggalKegiatan)} ({selectedItemDetail.waktuLengkap})
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[11px]">Durasi (Satuan Jam)</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {formatDuration(selectedItemDetail.waktuMulai, selectedItemDetail.waktuSelesai).long}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[11px]">Lokasi & Presensi</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedItemDetail.tempat}</span>
-                  <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    GPS Valid
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Program Kerja */}
-            <div className="space-y-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Program Kerja Terkait:</span>
-              <p className="text-slate-600 dark:text-slate-300 bg-emerald-50/40 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/60 p-2.5 rounded-xl">
-                {selectedItemDetail.programKerjaDeskripsi || `Program ${resolveKategori(selectedItemDetail)} Berseka`}
-              </p>
-            </div>
-
-            {/* Uraian Aktivitas */}
-            <div className="space-y-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Uraian Aktivitas Kelompok:</span>
-              <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-750 leading-relaxed">
-                {selectedItemDetail.deskripsi}
-              </p>
-            </div>
-
-            {/* Anggota Tim Kelompok */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  Anggota Tim Kelompok ({selectedItemDetail.anggotaKelompok?.length || 0} Mahasiswa):
-                </span>
-                <span className="text-[10px] text-slate-400">
-                  Aktivitas Tim Terdaftar
-                </span>
-              </div>
-              {selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 items-center">
-                  {selectedItemDetail.anggotaKelompok.map((st) => {
-                    const isPenulis = Boolean(
-                      (st.userId && st.userId === selectedItemDetail.penulisId) ||
-                      (st.id && st.id === selectedItemDetail.penulisId)
-                    );
-                    return (
-                      <span
-                        key={st.id}
-                        title={
-                          st.name +
-                          (st.isKetua ? " (Ketua Kelompok)" : "") +
-                          (isPenulis ? " (Pengisi Data)" : "")
-                        }
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          isPenulis
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300"
-                            : st.isKetua
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300"
-                            : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200"
-                        }`}
-                      >
-                        <span>{st.name}</span>
-                        {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua Kelompok)</span>}
-                        {isPenulis && !st.isKetua && (
-                          <span className="text-[10px] text-emerald-700 font-bold">(Pengisi Data)</span>
-                        )}
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                      <Smartphone className="w-3 h-3 text-slate-500" />
+                      <span>Aplikasi Mobile</span>
+                    </div>
+                    {selectedItemDetail.pekanKe && (
+                      <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-full text-[10px] font-semibold border border-blue-200 dark:border-blue-800">
+                        Pekan #{selectedItemDetail.pekanKe}
                       </span>
-                    );
-                  })}
+                    )}
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    {selectedItemDetail.kelompokNama}
+                  </h3>
                 </div>
-              ) : (
-                <p className="text-slate-500 italic">Diisi oleh {selectedItemDetail.penulisNama}</p>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDetailModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-            {/* Capaian Kegiatan */}
-            <div className="space-y-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Capaian Kegiatan:</span>
-              <p className="text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-750 font-medium">
-                {resolveHasilOutput(selectedItemDetail)}
-              </p>
-            </div>
-
-            {/* Dokumentasi Kegiatan (Multi-Foto Gallery) */}
-            {(() => {
-              const rawPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
-                ? (selectedItemDetail as any).attachmentUrls
-                : selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== ""
-                ? selectedItemDetail.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)
-                : [];
-              const allPhotos = Array.from(new Set(rawPhotos.map((u) => (typeof u === "string" ? u.trim() : u)).filter(Boolean)));
-
-              if (allPhotos.length === 0) return null;
-
-              return (
-                <div className="space-y-1.5">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    Dokumentasi Kegiatan ({allPhotos.length} foto):
+              {/* Grid 2 Kolom Ringkasan */}
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-750">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Pengisi Data</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">
+                    {selectedItemDetail.penulisNama}
+                    {selectedItemDetail.penulisNim && (
+                      <span className="font-normal text-slate-400 font-mono ml-1">
+                        ({selectedItemDetail.penulisNim})
+                      </span>
+                    )}
                   </span>
-                  <div className={`grid gap-2.5 ${allPhotos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
-                    {allPhotos.map((photoUrl, pIdx) => (
-                      <div
-                        key={pIdx}
-                        className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-52 bg-slate-900 flex items-center justify-center min-h-[120px] group"
-                      >
-                        <img
-                          src={resolveImageUrl(photoUrl)}
-                          alt={`Dokumentasi Kegiatan ${pIdx + 1}`}
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                            const parent = (e.target as HTMLElement).parentElement;
-                            if (parent) {
-                              const fallback = document.createElement("div");
-                              fallback.className = "text-slate-400 text-xs italic p-4 text-center";
-                              fallback.innerText = "Foto tidak dapat dimuat.";
-                              parent.appendChild(fallback);
-                            }
-                          }}
-                          className="w-full h-full object-contain max-h-52 group-hover:scale-105 transition duration-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreviewPhotoUrl(resolveImageUrl(photoUrl));
-                            setPreviewTitle(`Dokumentasi #${pIdx + 1}: ${selectedItemDetail.tempat}`);
-                          }}
-                          className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
-                        >
-                          <Eye className="w-3 h-3" /> Perbesar
-                        </button>
-                      </div>
-                    ))}
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Tanggal & Waktu</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {formatDateFull(selectedItemDetail.tanggalKegiatan)} ({selectedItemDetail.waktuLengkap})
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Durasi (Satuan Jam)</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {formatDuration(selectedItemDetail.waktuMulai, selectedItemDetail.waktuSelesai).long}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Lokasi & Presensi</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedItemDetail.tempat}</span>
+                    <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      GPS Valid
+                    </span>
                   </div>
                 </div>
-              );
-            })()}
+              </div>
 
-            {/* Catatan Sebelumnya */}
-            {(selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl) && (
-              <div className="space-y-1">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">
-                  {selectedItemDetail.catatanKetua ? "Catatan Ketua Kelompok:" : "Catatan Evaluasi DPL:"}
-                </span>
-                <p className="italic text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                  "{selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl}"
+              {/* Card 1: Program Kerja Terkait (Card & Badge Terstruktur) */}
+              <div className="bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl p-4 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-emerald-100/80 dark:border-emerald-900/40">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <Target className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-xs text-emerald-950 dark:text-emerald-200">
+                      Program Kerja Terkait
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {renderProkerCategoryBadge(prokerInfo.kategori)}
+                    {renderProkerStatusBadge(prokerInfo.statusPelaksanaan)}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    {prokerInfo.title}
+                  </h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {renderFormattedText(prokerInfo.description)}
+                  </p>
+                </div>
+
+                {prokerInfo.linkGoogleDrive && (
+                  <div className="pt-1">
+                    <a
+                      href={prokerInfo.linkGoogleDrive}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Buka Dokumen Pendukung Program Kerja</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Card 2: Fasilitas Kebersihan Terkait (Kondisional jika ada fasilitas) */}
+              {fasilitasInfo && (
+                <div className="bg-teal-50/40 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900/50 rounded-2xl p-4 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-teal-100/80 dark:border-teal-900/40">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
+                        <Building2 className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-bold text-xs text-teal-950 dark:text-teal-200">
+                        Fasilitas Kebersihan Terkait
+                      </span>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${fasilitasInfo.jenisBadgeClass}`}>
+                      {fasilitasInfo.jenis}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                      {fasilitasInfo.nama}
+                    </div>
+                    {fasilitasInfo.alamat && (
+                      <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                        <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0 mt-0.5" />
+                        <span>{fasilitasInfo.alamat}</span>
+                      </div>
+                    )}
+                    {fasilitasInfo.latitude && fasilitasInfo.longitude && (
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <span className="text-[11px] font-mono text-slate-400">
+                          GPS: {fasilitasInfo.latitude.toFixed(6)}, {fasilitasInfo.longitude.toFixed(6)}
+                        </span>
+                        <a
+                          href={`https://www.google.com/maps?q=${fasilitasInfo.latitude},${fasilitasInfo.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300 hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Buka Google Maps</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Card 3: Uraian Aktivitas Logbook */}
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-750 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-200/70 dark:border-slate-700/60">
+                  <div className="w-6 h-6 rounded-lg bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                    <FileText className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                    Uraian Aktivitas Kelompok
+                  </span>
+                </div>
+                <p className="text-slate-700 dark:text-slate-200 whitespace-pre-wrap leading-relaxed">
+                  {renderFormattedText(selectedItemDetail.deskripsi)}
                 </p>
               </div>
-            )}
 
-            {/* Section Catatan dan Validasi DPL / Mode Pimpinan View-Only */}
-            {isPimpinan ? (
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
-                  <span className="font-semibold">Mode Pemimpin: View-Only (Hanya Memantau Data Supervisi & Logbook)</span>
-                  <button
-                    type="button"
-                    onClick={() => setIsDetailModalOpen(false)}
-                    className="py-1.5 px-3 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-100 rounded-lg text-xs font-bold transition cursor-pointer"
-                  >
-                    Tutup
-                  </button>
+              {/* Anggota Tim Kelompok */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    Anggota Tim Kelompok ({selectedItemDetail.anggotaKelompok?.length || 0} Mahasiswa):
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Aktivitas Tim Terdaftar
+                  </span>
                 </div>
+                {selectedItemDetail.anggotaKelompok && selectedItemDetail.anggotaKelompok.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {selectedItemDetail.anggotaKelompok.map((st) => {
+                      const isPenulis = Boolean(
+                        (st.userId && st.userId === selectedItemDetail.penulisId) ||
+                        (st.id && st.id === selectedItemDetail.penulisId)
+                      );
+                      return (
+                        <span
+                          key={st.id}
+                          title={
+                            st.name +
+                            (st.isKetua ? " (Ketua Kelompok)" : "") +
+                            (isPenulis ? " (Pengisi Data)" : "")
+                          }
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            isPenulis
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300"
+                              : st.isKetua
+                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300"
+                              : "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200"
+                          }`}
+                        >
+                          <span>{st.name}</span>
+                          {st.isKetua && <span className="text-[10px] text-amber-700 font-bold">(Ketua Kelompok)</span>}
+                          {isPenulis && !st.isKetua && (
+                            <span className="text-[10px] text-emerald-700 font-bold">(Pengisi Data)</span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-slate-500 italic">Diisi oleh {selectedItemDetail.penulisNama}</p>
+                )}
               </div>
-            ) : (
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
-                <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                  Catatan & Validasi DPL
-                </h4>
 
-                <textarea
-                  rows={2}
-                  value={validationCatatan}
-                  onChange={(e) => setValidationCatatan(e.target.value)}
-                  placeholder="Tambahkan catatan masukan, evaluasi, atau rekomendasi perbaikan untuk kelompok..."
-                  className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
-                />
+              {/* Capaian Kegiatan */}
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Capaian Kegiatan:</span>
+                <p className="text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-750 font-medium">
+                  {resolveHasilOutput(selectedItemDetail)}
+                </p>
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenDeleteModal(selectedItemDetail)}
-                    className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50/60 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                    title="Hapus logbook aktivitas ini (Validasi 2 Langkah)"
-                  >
-                    <Trash2 size={14} className="w-3.5 h-3.5 shrink-0" />
-                    <span>Hapus Logbook</span>
-                  </button>
+              {/* Dokumentasi Kegiatan (Multi-Foto Gallery) */}
+              {(() => {
+                const rawPhotos: string[] = Array.isArray((selectedItemDetail as any).attachmentUrls) && (selectedItemDetail as any).attachmentUrls.length > 0
+                  ? (selectedItemDetail as any).attachmentUrls
+                  : selectedItemDetail.fotoBuktiUrl && selectedItemDetail.fotoBuktiUrl.trim() !== ""
+                  ? selectedItemDetail.fotoBuktiUrl.split(/[,;]/).map((u) => u.trim()).filter(Boolean)
+                  : [];
+                const allPhotos = Array.from(new Set(rawPhotos.map((u) => (typeof u === "string" ? u.trim() : u)).filter(Boolean)));
 
-                  <div className="flex items-center gap-2.5">
+                if (allPhotos.length === 0) return null;
+
+                return (
+                  <div className="space-y-1.5">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      Dokumentasi Kegiatan ({allPhotos.length} foto):
+                    </span>
+                    <div className={`grid gap-2.5 ${allPhotos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1"}`}>
+                      {allPhotos.map((photoUrl, pIdx) => (
+                        <div
+                          key={pIdx}
+                          className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 max-h-52 bg-slate-900 flex items-center justify-center min-h-[120px] group"
+                        >
+                          <img
+                            src={resolveImageUrl(photoUrl)}
+                            alt={`Dokumentasi Kegiatan ${pIdx + 1}`}
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                              const parent = (e.target as HTMLElement).parentElement;
+                              if (parent) {
+                                const fallback = document.createElement("div");
+                                fallback.className = "text-slate-400 text-xs italic p-4 text-center";
+                                fallback.innerText = "Foto tidak dapat dimuat.";
+                                parent.appendChild(fallback);
+                              }
+                            }}
+                            className="w-full h-full object-contain max-h-52 group-hover:scale-105 transition duration-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewPhotoUrl(resolveImageUrl(photoUrl));
+                              setPreviewTitle(`Dokumentasi #${pIdx + 1}: ${selectedItemDetail.tempat}`);
+                            }}
+                            className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
+                          >
+                            <Eye className="w-3 h-3" /> Perbesar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Catatan Sebelumnya */}
+              {(selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl) && (
+                <div className="space-y-1">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {selectedItemDetail.catatanKetua ? "Catatan Ketua Kelompok:" : "Catatan Evaluasi DPL:"}
+                  </span>
+                  <p className="italic text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                    "{selectedItemDetail.catatanKetua || selectedItemDetail.catatanDpl}"
+                  </p>
+                </div>
+              )}
+
+              {/* Section Catatan dan Validasi DPL / Mode Pimpinan View-Only */}
+              {isPimpinan ? (
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
+                    <span className="font-semibold">Mode Pemimpin: View-Only (Hanya Memantau Data Supervisi & Logbook)</span>
                     <button
                       type="button"
                       onClick={() => setIsDetailModalOpen(false)}
-                      className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
+                      className="py-1.5 px-3 bg-amber-100 dark:bg-amber-900/60 hover:bg-amber-200 text-amber-900 dark:text-amber-100 rounded-lg text-xs font-bold transition cursor-pointer"
                     >
                       Tutup
                     </button>
-
-                    <button
-                      type="button"
-                      disabled={isSubmittingQuickVerif}
-                      onClick={() => handleVerifikasiDpl("REVISI")}
-                      className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                    >
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                      Minta Perbaikan
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={isSubmittingQuickVerif}
-                      onClick={() => handleVerifikasiDpl("APPROVE")}
-                      className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                    >
-                      {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Setujui Kegiatan
-                    </button>
                   </div>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
+                  <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                    Catatan & Validasi DPL
+                  </h4>
+
+                  <textarea
+                    rows={2}
+                    value={validationCatatan}
+                    onChange={(e) => setValidationCatatan(e.target.value)}
+                    placeholder="Tambahkan catatan masukan, evaluasi, atau rekomendasi perbaikan untuk kelompok..."
+                    className="w-full p-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                  />
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenDeleteModal(selectedItemDetail)}
+                      className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-800 bg-rose-50/60 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      title="Hapus logbook aktivitas ini (Validasi 2 Langkah)"
+                    >
+                      <Trash2 size={14} className="w-3.5 h-3.5 shrink-0" />
+                      <span>Hapus Logbook</span>
+                    </button>
+
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsDetailModalOpen(false)}
+                        className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs transition-all cursor-pointer"
+                      >
+                        Tutup
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isSubmittingQuickVerif}
+                        onClick={() => handleVerifikasiDpl("REVISI")}
+                        className="py-2.5 px-4 rounded-xl border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                        Minta Perbaikan
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={isSubmittingQuickVerif}
+                        onClick={() => handleVerifikasiDpl("APPROVE")}
+                        className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      >
+                        {isSubmittingQuickVerif && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Setujui Kegiatan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ─────────────────────────────────────────────
           5. MODAL: KONFIRMASI VALIDASI SEMUA / SERENTAK DPL
