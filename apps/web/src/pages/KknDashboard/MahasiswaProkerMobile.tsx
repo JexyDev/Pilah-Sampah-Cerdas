@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Target,
   PlusCircle,
@@ -495,294 +496,307 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       )}
 
       {/* 3. MODAL: TAMBAH USULAN PROGRAM KERJA */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-200">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
-              <div className="space-y-0.5">
-                <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <Target size={18} className="text-emerald-600" />
-                  Usulkan Program Kerja KKN
-                </h3>
-                <p className="text-[10px] text-slate-500">Ajukan program kerja kelompok ke DPL</p>
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      {isCreateModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* Click outside backdrop */}
+            <div className="absolute inset-0" onClick={() => setIsCreateModalOpen(false)} />
 
-            {/* Modal Form Body */}
-            <form onSubmit={handleCreateProker} className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] space-y-3.5 overflow-y-auto flex-1 text-xs">
-              {/* Judul Proker */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Judul Program Kerja *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formJudul}
-                  onChange={(e) => setFormJudul(e.target.value)}
-                  placeholder="Contoh: Edukasi Pemilahan Sampah &amp; Pembangunan Loseda"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Kategori */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Kategori Kegiatan *
-                </label>
-                <select
-                  value={formKategori}
-                  onChange={(e) => setFormKategori(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                >
-                  {KATEGORI_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Deskripsi & Target */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Deskripsi &amp; Sasaran Program *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={formDeskripsi}
-                  onChange={(e) => setFormDeskripsi(e.target.value)}
-                  placeholder="Jelaskan tujuan kegiatan, target sasaran RW/warga, dan output capaian yang diharapkan..."
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Waktu Pelaksanaan */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Rencana Waktu / Jadwal Pelaksanaan
-                </label>
-                <input
-                  type="text"
-                  value={formWaktu}
-                  onChange={(e) => setFormWaktu(e.target.value)}
-                  placeholder="Contoh: Minggu 2 - 4 (15 Sept - 5 Okt 2026)"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Kebutuhan Biaya */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Estimasi Kebutuhan Biaya (Rp)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="10000"
-                  value={formBiaya}
-                  onChange={(e) => setFormBiaya(e.target.value)}
-                  placeholder="Contoh: 150000"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Tautan Dokumen / Google Drive */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Tautan Proposal / Google Drive (Opsional)
-                </label>
-                <input
-                  type="url"
-                  value={formLinkDrive}
-                  onChange={(e) => setFormLinkDrive(e.target.value)}
-                  placeholder="https://drive.google.com/..."
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="pt-2 grid grid-cols-2 gap-2">
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
+              {/* Modal Header */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <Target size={18} className="text-emerald-600" />
+                    Usulkan Program Kerja KKN
+                  </h3>
+                  <p className="text-[10px] text-slate-500">Ajukan program kerja kelompok ke DPL</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold transition cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Modal Form Body */}
+              <form id="form-create-proker" onSubmit={handleCreateProker} className="p-4 space-y-3.5 overflow-y-auto overscroll-contain flex-1 text-xs">
+                {/* Judul Proker */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Judul Program Kerja *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formJudul}
+                    onChange={(e) => setFormJudul(e.target.value)}
+                    placeholder="Contoh: Edukasi Pemilahan Sampah & Pembangunan Loseda"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Kategori */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Kategori Kegiatan *
+                  </label>
+                  <select
+                    value={formKategori}
+                    onChange={(e) => setFormKategori(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                  >
+                    {KATEGORI_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Deskripsi & Target */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Deskripsi & Sasaran Program *
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={formDeskripsi}
+                    onChange={(e) => setFormDeskripsi(e.target.value)}
+                    placeholder="Jelaskan tujuan kegiatan, target sasaran RW/warga, dan output capaian yang diharapkan..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Waktu Pelaksanaan */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Rencana Waktu / Jadwal Pelaksanaan
+                  </label>
+                  <input
+                    type="text"
+                    value={formWaktu}
+                    onChange={(e) => setFormWaktu(e.target.value)}
+                    placeholder="Contoh: Minggu 2 - 4 (15 Sept - 5 Okt 2026)"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Kebutuhan Biaya */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Estimasi Kebutuhan Biaya (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10000"
+                    value={formBiaya}
+                    onChange={(e) => setFormBiaya(e.target.value)}
+                    placeholder="Contoh: 150000"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Tautan Dokumen / Google Drive */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Tautan Proposal / Google Drive (Opsional)
+                  </label>
+                  <input
+                    type="url"
+                    value={formLinkDrive}
+                    onChange={(e) => setFormLinkDrive(e.target.value)}
+                    placeholder="https://drive.google.com/..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </form>
+
+              {/* Modal Action Footer - Sticky & Always Visible */}
+              <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 grid grid-cols-2 gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition cursor-pointer text-xs flex items-center justify-center"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
+                  form="form-create-proker"
                   disabled={isSubmitting || !formJudul.trim() || !formDeskripsi.trim()}
-                  className="py-3 px-4 rounded-xl bg-[#035941] hover:bg-emerald-700 text-white font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                  className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" />
+                      <Loader2 size={15} className="animate-spin" />
                       <span>Menyimpan...</span>
                     </>
                   ) : (
                     <>
-                      <Send size={14} />
+                      <Send size={15} />
                       <span>Kirim Usulan</span>
                     </>
                   )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* 4. MODAL: DETAIL & EVALUASI PROGRAM KERJA */}
-      {selectedProker && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-200">
-            {/* Detail Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80 dark:bg-slate-800/60 shrink-0">
-              <div className="space-y-1 min-w-0 pr-2">
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  {selectedProker.kategori || "Program Kerja"}
-                </span>
-                <h3 className="text-sm font-black text-slate-900 dark:text-white leading-snug">
-                  {selectedProker.judul || selectedProker.deskripsi?.slice(0, 50)}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedProker(null)}
-                className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer shrink-0"
-              >
-                <X size={16} />
-              </button>
-            </div>
+      {selectedProker &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            {/* Click outside backdrop */}
+            <div className="absolute inset-0" onClick={() => setSelectedProker(null)} />
 
-            {/* Detail Body */}
-            <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] space-y-4 overflow-y-auto flex-1 text-xs">
-              {/* Status Grid */}
-              <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Status Usulan</p>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-200">
-                    {selectedProker.statusUsulan === "DISETUJUI" ||
-                    selectedProker.status === "DITERIMA" ||
-                    selectedProker.status === "DISETUJUI"
-                      ? "✅ Disetujui DPL"
-                      : selectedProker.statusUsulan === "DITOLAK"
-                      ? "❌ Ditolak"
-                      : "⏳ Menunggu Validasi"}
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
+              {/* Detail Header */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50 dark:bg-slate-800/80 shrink-0">
+                <div className="space-y-1 min-w-0 pr-2">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    {selectedProker.kategori || "Program Kerja"}
+                  </span>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white leading-snug">
+                    {selectedProker.judul || selectedProker.deskripsi?.slice(0, 50)}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedProker(null)}
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer shrink-0"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Detail Body */}
+              <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] space-y-4 overflow-y-auto overscroll-contain flex-1 text-xs">
+                {/* Status Grid */}
+                <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Status Usulan</p>
+                    <p className="font-extrabold text-slate-800 dark:text-slate-200">
+                      {selectedProker.statusUsulan === "DISETUJUI" ||
+                      selectedProker.status === "DITERIMA" ||
+                      selectedProker.status === "DISETUJUI"
+                        ? "✅ Disetujui DPL"
+                        : selectedProker.statusUsulan === "DITOLAK"
+                        ? "❌ Ditolak"
+                        : "⏳ Menunggu Validasi"}
+                    </p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Pelaksanaan</p>
+                    <p className="font-extrabold text-slate-800 dark:text-slate-200">
+                      {selectedProker.statusPelaksanaan === "SELESAI"
+                        ? "🏆 Selesai"
+                        : selectedProker.statusPelaksanaan === "SEDANG_BERJALAN"
+                        ? "⚡ Sedang Berjalan"
+                        : "🕒 Belum Mulai"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Full Description */}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Rincian Deskripsi & Target
                   </p>
-                </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">Pelaksanaan</p>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-200">
-                    {selectedProker.statusPelaksanaan === "SELESAI"
-                      ? "🏆 Selesai"
-                      : selectedProker.statusPelaksanaan === "SEDANG_BERJALAN"
-                      ? "⚡ Sedang Berjalan"
-                      : "🕒 Belum Mulai"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Full Description */}
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Rincian Deskripsi &amp; Target
-                </p>
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-xs leading-relaxed whitespace-pre-wrap">
-                  {selectedProker.deskripsi}
-                </div>
-              </div>
-
-              {/* Info Details */}
-              <div className="space-y-2 text-xs">
-                {selectedProker.waktuPelaksanaan && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
-                    <span className="text-slate-400 font-medium">Jadwal Pelaksanaan:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      {selectedProker.waktuPelaksanaan}
-                    </span>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-xs leading-relaxed whitespace-pre-wrap">
+                    {selectedProker.deskripsi}
                   </div>
-                )}
+                </div>
 
-                {Boolean(selectedProker.kebutuhanBiaya && Number(selectedProker.kebutuhanBiaya) > 0) && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
-                    <span className="text-slate-400 font-medium">Estimasi Biaya:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                      {formatRupiah(selectedProker.kebutuhanBiaya)}
-                    </span>
-                  </div>
-                )}
-
-                {selectedProker.linkGoogleDrive && (
-                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
-                    <span className="text-slate-400 font-medium">Dokumen Pendukung:</span>
-                    <a
-                      href={selectedProker.linkGoogleDrive}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
-                    >
-                      <span>Buka Google Drive</span>
-                      <ExternalLink size={12} />
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Evaluasi / Feedback DPL */}
-              {(selectedProker.catatanDpl ||
-                selectedProker.evaluasiDpl ||
-                selectedProker.skorPenilaian) && (
-                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                      <Award size={14} className="text-amber-600" />
-                      Evaluasi &amp; Nilai DPL
-                    </span>
-                    {selectedProker.skorPenilaian && (
-                      <span className="px-2 py-0.5 rounded-lg bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-200 font-black">
-                        Skor: {selectedProker.skorPenilaian}
+                {/* Info Details */}
+                <div className="space-y-2 text-xs">
+                  {selectedProker.waktuPelaksanaan && (
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
+                      <span className="text-slate-400 font-medium">Jadwal Pelaksanaan:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        {selectedProker.waktuPelaksanaan}
                       </span>
-                    )}
-                  </div>
-                  <p className="text-amber-800 dark:text-amber-300 leading-relaxed">
-                    {selectedProker.evaluasiDpl || selectedProker.catatanDpl}
-                  </p>
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {/* Action Buttons: Delete (if not yet approved) */}
-              {selectedProker.statusUsulan !== "DISETUJUI" &&
-                selectedProker.status !== "DITERIMA" &&
-                selectedProker.status !== "DISETUJUI" && (
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteProker(selectedProker.id)}
-                      disabled={isDeleting}
-                      className="w-full py-2.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200 dark:border-rose-900"
-                    >
-                      {isDeleting ? (
-                        <Loader2 size={13} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={13} />
+                  {Boolean(selectedProker.kebutuhanBiaya && Number(selectedProker.kebutuhanBiaya) > 0) && (
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50">
+                      <span className="text-slate-400 font-medium">Estimasi Biaya:</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        {formatRupiah(selectedProker.kebutuhanBiaya)}
+                      </span>
+                    </div>
+                  )}
+
+                  {selectedProker.linkGoogleDrive && (
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Dokumen Pendukung:</span>
+                      <a
+                        href={selectedProker.linkGoogleDrive}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span>Buka Google Drive</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Evaluasi / Feedback DPL */}
+                {(selectedProker.catatanDpl ||
+                  selectedProker.evaluasiDpl ||
+                  selectedProker.skorPenilaian) && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                        <Award size={14} className="text-amber-600" />
+                        Evaluasi & Nilai DPL
+                      </span>
+                      {selectedProker.skorPenilaian && (
+                        <span className="px-2 py-0.5 rounded-lg bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-200 font-black">
+                          Skor: {selectedProker.skorPenilaian}
+                        </span>
                       )}
-                      <span>Hapus Usulan Program Kerja</span>
-                    </button>
+                    </div>
+                    <p className="text-amber-800 dark:text-amber-300 leading-relaxed">
+                      {selectedProker.evaluasiDpl || selectedProker.catatanDpl}
+                    </p>
                   </div>
                 )}
+
+                {/* Action Buttons: Delete (if not yet approved) */}
+                {selectedProker.statusUsulan !== "DISETUJUI" &&
+                  selectedProker.status !== "DITERIMA" &&
+                  selectedProker.status !== "DISETUJUI" && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProker(selectedProker.id)}
+                        disabled={isDeleting}
+                        className="w-full py-3 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200 dark:border-rose-900"
+                      >
+                        {isDeleting ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
+                        <span>Hapus Usulan Program Kerja</span>
+                      </button>
+                    </div>
+                  )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
