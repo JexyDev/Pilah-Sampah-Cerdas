@@ -164,6 +164,24 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
     }
   }
 
+  void updateAiDetectedType(WasteType newType) {
+    if (state.aiResult != null) {
+      final old = state.aiResult!;
+      final updated = AiDetectionEntity(
+        detectedType: newType,
+        volumeEstimate: old.volumeEstimate,
+        isBlurry: old.isBlurry,
+        weightKg: old.weightKg,
+        confidence: old.confidence,
+        organicPercentage: old.organicPercentage,
+        estimatedPoints: old.estimatedPoints,
+        requestId: old.requestId,
+        evidencePhotoUrl: old.evidencePhotoUrl,
+      );
+      state = state.copyWith(aiResult: updated);
+    }
+  }
+
   void reset() => state = const ScanFlowState();
   void clearError() => state = state.copyWith(clearError: true);
   void goToStep(int step) => state = state.copyWith(currentStep: step);

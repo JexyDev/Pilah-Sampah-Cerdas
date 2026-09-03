@@ -223,6 +223,7 @@ class ApiWasteLogRepository implements WasteLogRepository {
                     (json['confidenceAi'] as num?)?.toDouble() ?? 
                     (json['aiConfidence'] as num?)?.toDouble() ?? 
                     (json['ai_confidence'] as num?)?.toDouble() ?? 0.0,
+      isCorrect: json['is_correct'] ?? json['isCorrect'] ?? false,
     );
   }
 

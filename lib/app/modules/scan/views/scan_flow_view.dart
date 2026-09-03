@@ -370,14 +370,104 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
           ),
         ),
         Expanded(
-          child: InlineCameraWidget(
-            onImageCaptured: (path, sizeKB) {
-              setState(() {
-                _capturedImagePath = path;
-                _compressedKB = sizeKB;
-                _photoTaken = true;
-              });
-            },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              InlineCameraWidget(
+                onImageCaptured: (path, sizeKB) {
+                  setState(() {
+                    _capturedImagePath = path;
+                    _compressedKB = sizeKB;
+                    _photoTaken = true;
+                  });
+                },
+              ),
+              if (!_photoTaken) ...[
+                // Overlay background transparan
+                ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: 0.5),
+                    BlendMode.srcOut,
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          backgroundBlendMode: BlendMode.dstOut,
+                        ),
+                      ),
+                      Center(
+                        child: Container(
+                          width: 280,
+                          height: 280,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Bingkai Border Putih Putus-putus atau solid
+                Center(
+                  child: Container(
+                    width: 280,
+                    height: 280,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white, width: 2),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+                // Teks Panduan (Atas dan Bawah bingkai)
+                Positioned(
+                  top: 50,
+                  left: 20,
+                  right: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Posisikan Objek Sampah di Dalam Bingkai\n(Jarak Optimal: 15 – 30 cm)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 30,
+                  left: 30,
+                  right: 30,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.lightbulb_outline_rounded, color: Colors.amber, size: 16),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Tips: Pastikan pencahayaan cukup & bebas jam tangan/alas keramik.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         Container(
@@ -403,7 +493,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               Text(
                 _photoTaken
                     ? 'Foto berhasil diambil (${_compressedKB.toStringAsFixed(0)} KB).\nTap "Deteksi Sampah" untuk analisis AI.'
-                    : 'Ambil foto sampah langsung dari kamera\natau pilih dari galeri.',
+                    : 'Ambil foto sampah langsung dari kamera dari jarak dekat (tidak boleh terlalu jauh)\natau pilih dari galeri.',
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -658,8 +748,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Arahkan kamera ke QR Code pada tempat sampah dari jarak dekat '
-                '(pastikan tidak terlalu jauh) untuk memverifikasi lokasi pembuangan Anda.',
+                'Arahkan kamera ke QR Code pada tempat sampah '
+                'untuk memverifikasi lokasi pembuangan Anda.',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -1532,26 +1622,54 @@ class _AiSuccessSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // State sudah di step 2 dari provider
-              },
-              icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
-              label: const Text(
-                'LANJUT SCAN SAMPAH',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          const Text(
+            'Apakah hasil deteksi AI ini sudah sesuai?',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    // Koreksi Kategori
+                    final newType = isOrganic ? WasteType.nonOrganic : WasteType.organic;
+                    ref.read(scanFlowProvider.notifier).updateAiDetectedType(newType);
+                    Navigator.of(context).pop();
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Kategori dikoreksi manual menjadi ${newType.displayName}. Silakan lanjut scan tempat sampah.'),
+                        backgroundColor: AppColors.primaryGreen,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.primaryGreen),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Koreksi Kategori', style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // State sudah di step 2 dari provider
+                  },
+                  icon: const Icon(Icons.check_rounded, size: 18, color: Colors.white),
+                  label: const Text('Sesuai', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: AppColors.primaryGreen,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
