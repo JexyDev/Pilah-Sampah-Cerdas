@@ -658,8 +658,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Arahkan kamera ke QR Code pada tempat sampah '
-                'untuk memverifikasi lokasi pembuangan Anda.',
+                'Arahkan kamera ke QR Code pada tempat sampah dari jarak dekat '
+                '(pastikan tidak terlalu jauh) untuk memverifikasi lokasi pembuangan Anda.',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -1542,7 +1542,7 @@ class _AiSuccessSheet extends StatelessWidget {
               },
               icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
               label: const Text(
-                'LANJUT SCAN TEMPAT SAMPAH',
+                'LANJUT SCAN SAMPAH',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
