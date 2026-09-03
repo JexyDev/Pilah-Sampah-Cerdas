@@ -34,7 +34,6 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Download,
-  Sparkles,
   TrendingUp,
   Award,
   Users,
@@ -697,7 +696,7 @@ export const LandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const sections = ["#about", "#program", "#pasar", "#berita", "#kalkulator", "#testimoni"];
+    const sections = ["#program", "#pasar", "#berita", "#kalkulator", "#testimoni"];
     const handleScroll = () => {
       const scrollY = window.scrollY;
       if (scrollY < 150) {
@@ -794,25 +793,27 @@ export const LandingPage: React.FC = () => {
 
   // ── Pasar Berseka Filtered Products (Buah, Sayuran, Telur, Daging) ───────────
   const filteredMarketProducts = useMemo(() => {
-    return marketProducts.filter((prod) => {
-      if (activeMarketCategory === "all") return true;
-      if (activeMarketCategory === "sayuran_buah") {
-        return (
-          prod.category === "sayuran" ||
-          prod.category === "buah" ||
-          prod.category === "bibit" ||
-          prod.categoryLabel.toLowerCase().includes("sayur") ||
-          prod.categoryLabel.toLowerCase().includes("buah")
-        );
-      }
-      if (activeMarketCategory === "telur") {
-        return prod.category === "telur" || prod.categoryLabel.toLowerCase().includes("telur");
-      }
-      if (activeMarketCategory === "daging") {
-        return prod.category === "daging" || prod.categoryLabel.toLowerCase().includes("daging");
-      }
-      return prod.category === activeMarketCategory;
-    });
+    return marketProducts
+      .filter((prod) => {
+        if (activeMarketCategory === "all") return true;
+        if (activeMarketCategory === "sayuran_buah") {
+          return (
+            prod.category === "sayuran" ||
+            prod.category === "buah" ||
+            prod.category === "bibit" ||
+            prod.categoryLabel.toLowerCase().includes("sayur") ||
+            prod.categoryLabel.toLowerCase().includes("buah")
+          );
+        }
+        if (activeMarketCategory === "telur") {
+          return prod.category === "telur" || prod.categoryLabel.toLowerCase().includes("telur");
+        }
+        if (activeMarketCategory === "daging") {
+          return prod.category === "daging" || prod.categoryLabel.toLowerCase().includes("daging");
+        }
+        return prod.category === activeMarketCategory;
+      })
+      .slice(0, 6);
   }, [activeMarketCategory, marketProducts]);
 
   // ── Filtered News (Max 2 articles, 3-Day Retention Filter + Fallback Option A) ─
@@ -915,7 +916,7 @@ export const LandingPage: React.FC = () => {
               Berita
             </button>
             <button onClick={() => scrollToSection("#kalkulator")} className={`nav-link-item ${activeSection === "#kalkulator" ? "active" : ""}`}>
-              Kalkulator BERSEKA
+              Kalkulator Berseka
             </button>
             <button onClick={() => scrollToSection("#testimoni")} className={`nav-link-item ${activeSection === "#testimoni" ? "active" : ""}`}>
               Kisah Warga
@@ -935,7 +936,7 @@ export const LandingPage: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setShowApkModal(true)}
+                onClick={() => navigate("/download")}
                 className="btn-secondary-white py-2 px-3.5 text-xs"
               >
                 <Smartphone size={16} className="text-emerald-700" />
@@ -975,9 +976,6 @@ export const LandingPage: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-white/98 border-t border-slate-200 px-6 py-5 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-200">
             <div className="flex flex-col gap-3 font-bold text-sm text-slate-700">
-              <button onClick={() => scrollToSection("#about")} className="text-left py-2 hover:text-[#005841]">
-                Tentang Kami
-              </button>
               <button onClick={() => scrollToSection("#program")} className="text-left py-2 hover:text-[#005841]">
                 Program Aksi &amp; Inisiatif
               </button>
@@ -985,10 +983,10 @@ export const LandingPage: React.FC = () => {
                 Pasar Berseka (Produk KKN)
               </button>
               <button onClick={() => scrollToSection("#berita")} className="text-left py-2 hover:text-[#005841]">
-                Berita &amp; Cerita Aksi
+                Berita
               </button>
               <button onClick={() => scrollToSection("#kalkulator")} className="text-left py-2 hover:text-[#005841]">
-                Kalkulator BERSEKA
+                Kalkulator Berseka
               </button>
               <button onClick={() => scrollToSection("#testimoni")} className="text-left py-2 hover:text-[#005841]">
                 Kisah Warga
@@ -1006,16 +1004,14 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setShowApkModal(true);
-                }}
+              <Link
+                to="/download"
+                onClick={() => setIsMobileMenuOpen(false)}
                 className="btn-secondary-white w-full justify-center py-2.5 text-xs"
               >
                 <Smartphone size={16} />
                 <span>Unduh Aplikasi Mobile (APK)</span>
-              </button>
+              </Link>
               <Link
                 to={isAuthenticated ? "/dashboard" : "/login"}
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -1032,20 +1028,9 @@ export const LandingPage: React.FC = () => {
       {/* ───────────────── 2. HERO IMPACT SECTION (With Dynamic Carousel) ───────────────── */}
       <section className="relative pt-8 pb-16 lg:py-20 overflow-hidden">
         <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             {/* Left Content */}
-            <div className="lg:col-span-7 space-y-6 text-left">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="hero-badge-pill">
-                  <Sparkles size={15} className="text-[#58a621]" />
-                  <span>Ekosistem Pengelolaan Sampah Terintegrasi</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-full text-xs font-bold">
-                  <ShieldCheck size={14} className="text-blue-600" />
-                  <span>100% Transparan &amp; Terbina UNIKOM</span>
-                </span>
-              </div>
-
+            <div className="lg:col-span-5 space-y-6 text-left">
               <div className="space-y-1">
                 <span className="text-xs sm:text-sm font-black text-[#005841] tracking-widest uppercase block">
                   BERSIH, SEHAT, KAMPUNG ASRI
@@ -1055,7 +1040,7 @@ export const LandingPage: React.FC = () => {
                 </h1>
               </div>
 
-              <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-2xl">
+              <p className="text-sm sm:text-base text-slate-600 font-medium leading-relaxed max-w-xl">
                 Mengangkat kearifan lokal Sunda <em>&ldquo;Berseka&rdquo;</em> yang bermakna hidup bersih, apik, dan tertata rapi, platform <strong>BERSEKA</strong> mengintegrasikan pemilahan sampah dari sumber rumah tangga, verifikasi kode QR fisik tempat sampah, audit klasifikasi berbasis kecerdasan buatan (AI), serta pengangkutan residu secara terstruktur di wilayah Kecamatan Coblong.
               </p>
 
@@ -1095,10 +1080,10 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Card / Interactive 3-Image Carousel */}
-            <div className="lg:col-span-5 relative">
+            {/* Right Card / Interactive Wider Image Carousel */}
+            <div className="lg:col-span-7 relative">
               <div
-                className="hero-carousel-container h-84 sm:h-96 w-full"
+                className="hero-carousel-container h-96 sm:h-[420px] lg:h-[450px] w-full"
                 onMouseEnter={() => setIsCarouselHovered(true)}
                 onMouseLeave={() => setIsCarouselHovered(false)}
               >
@@ -1231,31 +1216,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ───────────────── 3. LIVE TRANSPARENCY STREAM TICKER ───────────────── */}
-      <section className="bg-[#005841] text-white py-3.5 border-y border-emerald-800/80 overflow-hidden">
-        <div className="container-custom flex items-center gap-4">
-          <div className="live-stream-badge shrink-0 bg-rose-500/20 text-rose-200 border-rose-400/30">
-            <span className="live-pulse-dot bg-rose-400" />
-            <span className="uppercase tracking-wider font-extrabold text-[11px]">Aktivitas Terkini</span>
-          </div>
-
-          <div className="overflow-x-auto no-scrollbar flex items-center gap-6 whitespace-nowrap text-xs font-medium">
-            {liveStreamLogs.map((item) => (
-              <div key={item.id} className="inline-flex items-center gap-2 text-slate-200 shrink-0">
-                <span className="font-bold text-white">{item.user} ({item.rw})</span>
-                <span className="text-emerald-300">•</span>
-                <span className="text-emerald-100">{item.action}</span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-800 text-emerald-300 font-extrabold text-[10px]">
-                  {item.reward}
-                </span>
-                <span className="text-slate-400 text-[10px]">({item.time})</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ───────────────── 4. FEATURED ACTION CAMPAIGNS (BenihBaik Grid) ───────────────── */}
+      {/* ───────────────── 3. FEATURED ACTION CAMPAIGNS (BenihBaik Grid) ───────────────── */}
       <section id="program" className="py-16 sm:py-20 bg-[#f7faf7]/60">
         <div className="container-custom">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 text-left">
@@ -1297,7 +1258,6 @@ export const LandingPage: React.FC = () => {
                   onClick={() => setActiveCategory(catName === "Semua" ? "all" : catName)}
                   className={`category-tab-btn ${isActive ? "active" : ""}`}
                 >
-                  <Sparkles size={14} />
                   <span>{catName}</span>
                 </button>
               );
@@ -1427,42 +1387,36 @@ export const LandingPage: React.FC = () => {
               onClick={() => setActiveMarketCategory("all")}
               className={`category-tab-btn ${activeMarketCategory === "all" ? "active" : ""}`}
             >
-              <Sparkles size={15} />
               <span>Semua Produk ({marketProducts.length})</span>
             </button>
             <button
               onClick={() => setActiveMarketCategory("sayuran_buah")}
               className={`category-tab-btn ${activeMarketCategory === "sayuran_buah" ? "active" : ""}`}
             >
-              <Leaf size={15} />
               <span>Buah &amp; Sayuran</span>
             </button>
             <button
               onClick={() => setActiveMarketCategory("telur")}
               className={`category-tab-btn ${activeMarketCategory === "telur" ? "active" : ""}`}
             >
-              <Tag size={15} />
               <span>Telur Segar</span>
             </button>
             <button
               onClick={() => setActiveMarketCategory("daging")}
               className={`category-tab-btn ${activeMarketCategory === "daging" ? "active" : ""}`}
             >
-              <ShoppingBag size={15} />
               <span>Daging Segar</span>
             </button>
             <button
               onClick={() => setActiveMarketCategory("pupuk")}
               className={`category-tab-btn ${activeMarketCategory === "pupuk" ? "active" : ""}`}
             >
-              <Recycle size={15} />
               <span>Pupuk &amp; Pakan Maggot</span>
             </button>
             <button
               onClick={() => setActiveMarketCategory("ecoenzyme")}
               className={`category-tab-btn ${activeMarketCategory === "ecoenzyme" ? "active" : ""}`}
             >
-              <Flame size={15} />
               <span>Eco-Enzyme &amp; Kerajinan</span>
             </button>
           </div>
@@ -1561,7 +1515,7 @@ export const LandingPage: React.FC = () => {
                 <span>Kabar Terkini &amp; Dokumentasi</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                Berita &amp; Cerita Lapangan KKN BERSEKA
+                Berita
               </h2>
               <p className="text-sm text-slate-600 font-medium">
                 Simak catatan aksi nyata mahasiswa dan masyarakat dalam inovasi pemilahan sampah dan konservasi lingkungan.
@@ -1626,11 +1580,11 @@ export const LandingPage: React.FC = () => {
           <div className="max-w-4xl mx-auto calculator-card text-left">
             <div className="text-center space-y-2 mb-8">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-[#005841] rounded-full text-xs font-extrabold uppercase tracking-wider">
-                <Sparkles size={14} />
-                <span>Kalkulator BERSEKA</span>
+                <Leaf size={14} />
+                <span>Kalkulator Berseka</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-                Kalkulator BERSEKA: Dampak &amp; Nilai Sampah Anda
+                Kalkulator Berseka: Dampak &amp; Nilai Sampah Anda
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-xl mx-auto">
                 Hitung langsung kontribusi pemilahan sampah rumah tangga Anda terhadap pengurangan emisi karbon dan estimasi poin berkah BERSEKA.
@@ -1750,7 +1704,7 @@ export const LandingPage: React.FC = () => {
               {/* Tangible Equivalent Banner */}
               <div className="p-4 rounded-2xl bg-slate-900 text-white flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0">
-                  <Sparkles size={20} />
+                  <Leaf size={20} />
                 </div>
                 <div className="text-xs sm:text-sm font-semibold text-slate-200">
                   <strong className="text-emerald-300 font-bold">Dampak Konkret:</strong> {calculatorResult.conversionText}
@@ -1767,80 +1721,12 @@ export const LandingPage: React.FC = () => {
 
               <div className="pt-2 text-center">
                 <button
-                  onClick={() => setShowApkModal(true)}
+                  onClick={() => navigate("/download")}
                   className="btn-primary-emerald py-3 px-8 text-sm"
                 >
                   <Smartphone size={16} />
                   <span>Mulai Pilah &amp; Setor Melalui Aplikasi</span>
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ───────────────── 8. ABOUT BERSEKA ───────────────── */}
-      <section id="about" className="py-16 sm:py-20 bg-[#f7faf7]">
-        <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-6 space-y-6 text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-[#005841] rounded-full text-xs font-extrabold uppercase tracking-wider">
-                <Building2 size={14} />
-                <span>Mengenal BERSEKA</span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 leading-tight">
-                Bersih, Sehat, Kampung Asri:{" "}
-                <span className="text-[#005841]">Sistem Sirkular Sampah Cerdas</span>
-              </h2>
-
-              <p className="text-sm text-slate-600 font-medium leading-relaxed">
-                BERSEKA adalah platform digital resmi yang dikembangkan oleh civitas akademika <strong>Universitas Komputer Indonesia (UNIKOM)</strong> untuk mendukung program Kuliah Kerja Nyata (KKN) Tematik Pengelolaan Persampahan di Jawa Barat.
-              </p>
-
-              <div className="space-y-3.5">
-                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#005841] flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 text-sm">Pemberdayaan Rumah Tangga Mandiri</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Warga memilah sampah sejak dari dapur, dipindai menggunakan AI, dan dicatat transparan.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#0468bf] flex items-center justify-center shrink-0 mt-0.5">
-                    <GraduationCap size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 text-sm">Inkubasi Aksi Mahasiswa KKN</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Pendampingan digitalisasi logbook, monitoring wilayah, dan program kerja berbasis data lapangan.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
-                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                    <Recycle size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-slate-900 text-sm">Integrasi Pasar Berseka &amp; Bank Sampah</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">Penjualan produk olahan KKN dan penukaran poin reward warga berbasis circular economy.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-6 relative">
-              <div className="rounded-3xl overflow-hidden border-2 border-white shadow-xl">
-                <img
-                  src="/image/landingpage.webp"
-                  alt="Tentang BERSEKA"
-                  className="w-full h-auto object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/image/activity-2.webp";
-                  }}
-                />
               </div>
             </div>
           </div>
@@ -1924,12 +1810,12 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ───────────────── 10. SDG GLOBAL ALIGNMENT ───────────────── */}
+      {/* ───────────────── 8. SDG GLOBAL ALIGNMENT ───────────────── */}
       <section className="py-16 sm:py-20 bg-[#f7faf7]">
         <div className="container-custom">
           <div className="text-center space-y-2 mb-12 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-[#005841] rounded-full text-xs font-extrabold uppercase tracking-wider">
-              <Sparkles size={14} />
+              <Leaf size={14} />
               <span>Komitmen Keberlanjutan PBB</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
@@ -1941,34 +1827,64 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 text-left">
-            <div className="sdg-card border-emerald-200">
-              <span className="px-2.5 py-1 rounded bg-[#4C9F38] text-white text-[10px] font-black uppercase">SDG #3</span>
-              <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3">Kehidupan Sehat &amp; Sejahtera</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">Mencegah timbulan lalat dan penyakit berbasis lingkungan.</p>
+            <div className="sdg-card border-emerald-200 flex flex-col justify-between group hover:shadow-lg transition-all">
+              <div>
+                <img
+                  src="/image/sdg/SDG-3.svg"
+                  alt="SDG 3 Kehidupan Sehat dan Sejahtera"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
+                />
+                <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3.5">Kehidupan Sehat &amp; Sejahtera</h4>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Mencegah timbulan lalat dan penyakit berbasis lingkungan.</p>
+              </div>
             </div>
 
-            <div className="sdg-card border-amber-200">
-              <span className="px-2.5 py-1 rounded bg-[#F99D26] text-white text-[10px] font-black uppercase">SDG #11</span>
-              <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3">Kota &amp; Kawasan Berkelanjutan</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">Mewujudkan permukiman warga yang bersih, tertata, dan asri.</p>
+            <div className="sdg-card border-amber-200 flex flex-col justify-between group hover:shadow-lg transition-all">
+              <div>
+                <img
+                  src="/image/sdg/SDG-11.svg"
+                  alt="SDG 11 Kota dan Kawasan Berkelanjutan"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
+                />
+                <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3.5">Kota &amp; Kawasan Berkelanjutan</h4>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Mewujudkan permukiman warga yang bersih, tertata, dan asri.</p>
+              </div>
             </div>
 
-            <div className="sdg-card border-orange-200">
-              <span className="px-2.5 py-1 rounded bg-[#CF8D2A] text-white text-[10px] font-black uppercase">SDG #12</span>
-              <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3">Konsumsi &amp; Produksi Bertanggung Jawab</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">Mengedukasi sirkulasi daur ulang dan pengurangan sampah dari sumber.</p>
+            <div className="sdg-card border-orange-200 flex flex-col justify-between group hover:shadow-lg transition-all">
+              <div>
+                <img
+                  src="/image/sdg/SDG-12.svg"
+                  alt="SDG 12 Konsumsi dan Produksi Bertanggung Jawab"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
+                />
+                <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3.5">Konsumsi &amp; Produksi Bertanggung Jawab</h4>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Mengedukasi sirkulasi daur ulang dan pengurangan sampah dari sumber.</p>
+              </div>
             </div>
 
-            <div className="sdg-card border-green-200">
-              <span className="px-2.5 py-1 rounded bg-[#3F7E44] text-white text-[10px] font-black uppercase">SDG #13</span>
-              <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3">Penanganan Perubahan Iklim</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">Menekan pelepasan emisi gas metana dari dekomposisi anaerobik TPA.</p>
+            <div className="sdg-card border-green-200 flex flex-col justify-between group hover:shadow-lg transition-all">
+              <div>
+                <img
+                  src="/image/sdg/SDG-13.svg"
+                  alt="SDG 13 Penanganan Perubahan Iklim"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
+                />
+                <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3.5">Penanganan Perubahan Iklim</h4>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Menekan pelepasan emisi gas metana dari dekomposisi anaerobik TPA.</p>
+              </div>
             </div>
 
-            <div className="sdg-card border-lime-200">
-              <span className="px-2.5 py-1 rounded bg-[#56C02B] text-white text-[10px] font-black uppercase">SDG #15</span>
-              <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3">Ekosistem Daratan Lestari</h4>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">Melindungi kualitas kesuburan tanah melalui penggunaan pupuk organik.</p>
+            <div className="sdg-card border-lime-200 flex flex-col justify-between group hover:shadow-lg transition-all">
+              <div>
+                <img
+                  src="/image/sdg/SDG-15.svg"
+                  alt="SDG 15 Ekosistem Daratan Lestari"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
+                />
+                <h4 className="font-black text-slate-900 text-xs sm:text-sm mt-3.5">Ekosistem Daratan Lestari</h4>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">Melindungi kualitas kesuburan tanah melalui penggunaan pupuk organik.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -2005,7 +1921,7 @@ export const LandingPage: React.FC = () => {
                   </Link>
 
                   <button
-                    onClick={() => setShowApkModal(true)}
+                    onClick={() => navigate("/download")}
                     className="py-3 px-5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-sm backdrop-blur-md transition flex items-center gap-2 cursor-pointer border border-white/20"
                   >
                     <QrCode size={18} />
@@ -2098,11 +2014,10 @@ export const LandingPage: React.FC = () => {
             <div className="md:col-span-3 space-y-3">
               <h4 className="text-xs font-black text-white uppercase tracking-wider">Navigasi Utama</h4>
               <ul className="space-y-2 text-xs">
-                <li><button onClick={() => scrollToSection("#about")} className="footer-link">Tentang BERSEKA</button></li>
                 <li><button onClick={() => scrollToSection("#program")} className="footer-link">Program Aksi Warga</button></li>
                 <li><button onClick={() => scrollToSection("#pasar")} className="footer-link">Pasar Berseka (Produk KKN)</button></li>
-                <li><button onClick={() => scrollToSection("#berita")} className="footer-link">Berita &amp; Cerita Lapangan</button></li>
-                <li><button onClick={() => scrollToSection("#kalkulator")} className="footer-link">Kalkulator BERSEKA</button></li>
+                <li><button onClick={() => scrollToSection("#berita")} className="footer-link">Berita</button></li>
+                <li><button onClick={() => scrollToSection("#kalkulator")} className="footer-link">Kalkulator Berseka</button></li>
                 <li><button onClick={() => scrollToSection("#faq")} className="footer-link">Pusat Bantuan &amp; FAQ</button></li>
               </ul>
             </div>
@@ -2131,7 +2046,7 @@ export const LandingPage: React.FC = () => {
         <div className="relative flex items-center justify-center">
           <span className="absolute -inset-1.5 rounded-full bg-[#005841]/30 animate-ping opacity-75 pointer-events-none" />
           <button
-            onClick={() => setShowApkModal(true)}
+            onClick={() => navigate("/download")}
             className="relative w-13 h-13 bg-[#005841] hover:bg-[#004332] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#005841]/50 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/90 cursor-pointer shrink-0"
             aria-label="Unduh Aplikasi Mobile BERSEKA"
           >
@@ -2424,7 +2339,7 @@ export const LandingPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setSelectedCampaign(null);
-                  setShowApkModal(true);
+                  navigate("/download");
                 }}
                 className="btn-primary-emerald py-2.5 px-5 text-xs"
               >

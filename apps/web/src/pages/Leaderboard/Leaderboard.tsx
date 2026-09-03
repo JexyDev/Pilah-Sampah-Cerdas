@@ -735,6 +735,7 @@ const Leaderboard: React.FC = () => {
                       </div>
                     </div>
                   );
+                })}
               </div>
             </div>
           )}

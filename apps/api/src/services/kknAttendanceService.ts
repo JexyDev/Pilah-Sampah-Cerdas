@@ -751,7 +751,6 @@ export class KknAttendanceService {
         if (todaySch) {
           currentScheduleId = todaySch.id;
           attendanceStatus = "BELUM_MULAI";
->>>>>>> fb44b4250792fd3dc33201c2764a7d45b8c07be2
         }
       }
     }
@@ -5060,7 +5059,7 @@ export class KknAttendanceService {
 
     // 5.1. Update status_kegiatan dan detail_skip pada model Schedule
     try {
-      await prisma.schedule.update({
+      await (prisma.schedule as any).update({
         where: { id: schedule.id },
         data: {
           statusKegiatan: "TIDAK_ADA_KEGIATAN",
