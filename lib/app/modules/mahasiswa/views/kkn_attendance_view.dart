@@ -2004,7 +2004,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        (state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
+                        (state.isInsideRadius && state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
                             ? (isAlpa || isDisabled ? 'Sesi Dibatalkan' : 'Peringatan Zona KKN')
                             : (state.isInsideRadius
                                 ? 'Kamu berada di dalam radius lokasi'
@@ -2021,7 +2021,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        (state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
+                        (state.isInsideRadius && state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
                             ? state.zoneResetWarning!
                             : (state.isInsideRadius
                                 ? 'Sinyal GPS stabil dan lokasi terdeteksi.'
@@ -2220,7 +2220,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: () async {
+                onPressed: state.isInsideRadius ? () async {
                   final isSuccess = await notifier.lanjutKegiatan();
                   if (mounted) {
                     if (isSuccess) {
@@ -2239,18 +2239,18 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       );
                     }
                   }
-                },
+                } : null,
                 icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
-                label: const Text(
-                  'Lanjutkan Sesi',
-                  style: TextStyle(
+                label: Text(
+                  state.isInsideRadius ? 'Lanjutkan Sesi' : 'Masuk Zona untuk Lanjut',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Colors.white,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber.shade700,
+                  backgroundColor: state.isInsideRadius ? Colors.amber.shade700 : Colors.grey[400],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
