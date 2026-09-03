@@ -56,7 +56,8 @@ export const KknWargaMonitoring: React.FC = () => {
                   const totalKg = Number(w.totalKg ?? (w.recentLogs?.reduce((acc: number, l: any) => acc + (l.weightKg || l.beratKg || 0), 0) || 0)).toFixed(2);
                   const totalPoin = Number(w.totalPoin ?? (Number(totalKg) * 10)).toLocaleString("id-ID");
                   const category = w.category || (i % 2 === 0 ? "Organik" : "Anorganik");
-                  const isOrganik = (category || "").toLowerCase().includes("organik");
+                  const isAnorganik = (category || "").toLowerCase().includes("anorganik") || (category || "").toLowerCase().includes("non");
+                  const isOrganik = (category || "").toLowerCase().includes("organik") && !isAnorganik;
 
                   return (
                     <tr key={w.id || i} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">

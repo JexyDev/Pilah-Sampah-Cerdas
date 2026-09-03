@@ -415,7 +415,7 @@ export class BinRepository {
       const anorganikPercent = 100 - organikPercent;
       const isOrg = isOrgRaw;
 
-      tx.user
+      prisma.user
         .findUnique({
           where: { id: userId },
           include: { rw: { include: { kelurahan: true } } },

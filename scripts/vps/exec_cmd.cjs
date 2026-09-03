@@ -11,6 +11,7 @@ function runSSH(retries = 3) {
       stream.on('close', (code, signal) => {
         console.log(`Command closed with code: ${code}`);
         conn.end();
+        process.exit(code || 0);
       }).on('data', (data) => {
         process.stdout.write(data);
       }).stderr.on('data', (data) => {
@@ -34,4 +35,3 @@ function runSSH(retries = 3) {
 }
 
 runSSH();
-
