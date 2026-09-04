@@ -22,7 +22,6 @@ import {
   UserCheck,
   Briefcase,
   HelpCircle,
-  Clock,
   BookOpen,
   Layers,
   FileCheck,
@@ -290,18 +289,6 @@ const Informasi: React.FC = () => {
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                       Pantau rekapitulasi presensi harian, logbook kegiatan mahasiswa, dan perkembangan realisasi program kerja kelompok dampingan secara berkala untuk bahan evaluasi KKN.
-                    </p>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
-                        <Clock size={20} />
-                      </div>
-                      <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100">4. Ekspor Laporan Akademik</h3>
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                      Gunakan tombol <strong>Ekspor CSV</strong> dengan memilih periode waktu untuk mengunduh rekap nilai dan logbook mahasiswa guna keperluan pelaporan resmi ke LPPM UNIKOM.
                     </p>
                   </div>
                 </div>
