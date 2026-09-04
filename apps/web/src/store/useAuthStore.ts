@@ -26,6 +26,7 @@ export type UserRole =
   | "DOSEN_PENDAMPING_LAPANGAN"
   | "MPL"
   | "PIMPINAN"
+  | "PEMIMPIN"
   | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
 
@@ -180,6 +181,25 @@ const getInitialUser = (): User | null => {
     const stored = getStoredItem("psc_user");
     if (!stored) return null;
     const user = JSON.parse(stored);
+    if (!user) return null;
+
+    let modified = false;
+
+    if (user.peran) {
+      const norm = normalizeRole(user.peran);
+      if (user.peran !== norm) {
+        user.peran = norm;
+        modified = true;
+      }
+    }
+    if (user.role && typeof user.role === "string") {
+      const normRole = normalizeRole(user.role);
+      if (user.role !== normRole) {
+        user.role = normRole;
+        modified = true;
+      }
+    }
+
     if (user && WEB_DISABLED_ROLES.includes(user.peran)) {
       clearAllStoredItems();
       return null;
@@ -199,15 +219,23 @@ const getInitialUser = (): User | null => {
         user.wilayah === "Dinas Lingkungan Hidup" ||
         user.wilayah === "PT Makerindo" ||
         user.peran === "PIMPINAN" ||
+        user.peran === "PEMIMPIN" ||
         user.peran === "SUPER_USER" ||
         user.peran === "ADMIN_DLH" ||
         user.peran === "DEVELOPER" ||
         !user.wilayah)
     ) {
-      user.wilayah = "Semua Wilayah";
+      if (user.wilayah !== "Semua Wilayah") {
+        user.wilayah = "Semua Wilayah";
+        modified = true;
+      }
+    }
+
+    if (modified) {
       const storage = getActiveStorage();
       storage.setItem("psc_user", JSON.stringify(user));
     }
+
     return user;
   } catch {
     return null;

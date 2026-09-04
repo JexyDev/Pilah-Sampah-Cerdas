@@ -35,7 +35,7 @@ import { sortKelompokList } from "../../utils/sortUtils";
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PIMPINAN"].includes(currentUser?.peran || "");
 
   const [activeTab, setActiveTab] = useState("kelompok");
 

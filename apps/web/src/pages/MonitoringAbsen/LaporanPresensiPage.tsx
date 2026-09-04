@@ -131,7 +131,7 @@ export interface LaporanSummary {
 export const LaporanPresensiPage: React.FC = () => {
   const { user } = useAuthStore();
   const rawRole = user?.role;
-  const roleName = String(typeof rawRole === "object" ? (rawRole as any)?.name : rawRole || "").toUpperCase();
+  const roleName = String(typeof rawRole === "object" ? (rawRole as any)?.name : (rawRole || user?.peran || "")).toUpperCase();
   const isDpl = roleName === "DPL" || roleName === "DOSEN_PEMBIMBING";
   const isDeveloper = roleName === "DEVELOPER" || roleName === "SUPER_USER";
 

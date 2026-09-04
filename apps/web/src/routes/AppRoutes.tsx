@@ -153,7 +153,19 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement; allowedRoles?: Us
   if (
     allowedRoles &&
     user.peran !== "DEVELOPER" &&
-    !allowedRoles.includes(user.peran)
+    !allowedRoles.includes(user.peran) &&
+    !(
+      (user.peran === "PEMIMPIN" || user.peran === "PIMPINAN") &&
+      (allowedRoles.includes("PIMPINAN") || (allowedRoles as any).includes("PEMIMPIN"))
+    ) &&
+    !(
+      (user.peran === "DOSEN_PEMBIMBING" || user.peran === "DPL") &&
+      (allowedRoles.includes("DPL") || (allowedRoles as any).includes("DOSEN_PEMBIMBING"))
+    ) &&
+    !(
+      (user.peran === "PANITIA_TASKFORCE" || user.peran === "TASK_FORCE") &&
+      (allowedRoles.includes("TASK_FORCE") || (allowedRoles as any).includes("PANITIA_TASKFORCE"))
+    )
   ) {
     // Redirect role yang tidak diizinkan kembali ke dashboard
     return <Navigate to="/dasbor" replace />;

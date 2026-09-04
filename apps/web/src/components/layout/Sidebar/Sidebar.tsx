@@ -590,7 +590,8 @@ const SectionHeader: React.FC<{ label: string }> = ({ label }) => (
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
-  const userRole = (((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase()) as UserRole;
+  const rawRole = ((user?.peran || (user as any)?.role || "WARGA") as string).toUpperCase();
+  const userRole = (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(rawRole) ? "PIMPINAN" : rawRole) as UserRole;
   const isDpl = userRole === "DPL" || userRole === "DOSEN_PEMBIMBING";
 
   // Live real-time clock state
@@ -644,12 +645,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "TASK_FORCE",
     "PANITIA_TASKFORCE",
     "PIMPINAN",
+    "PEMIMPIN",
     "WARGA",
   ];
 
   const hasAccess = (allowed?: UserRole[]) => {
     if (!allowed) return true;
     if (userRole === "DEVELOPER") return true;
+    if (userRole === "PIMPINAN" || (userRole as string) === "PEMIMPIN") {
+      return allowed.includes("PIMPINAN") || (allowed as any).includes("PEMIMPIN");
+    }
     return allowed.includes(userRole);
   };
 
@@ -658,7 +663,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     items: Array<{ to: string; label: string; allowed?: UserRole[] }>
   ) => {
     if (groupLabel === "Wilayah" || groupLabel === "Data Wilayah") {
-      if (userRole === "DEVELOPER" || userRole === "SUPER_USER" || userRole === "ADMIN_DLH") {
+      if (
+        userRole === "DEVELOPER" ||
+        userRole === "SUPER_USER" ||
+        userRole === "ADMIN_DLH" ||
+        userRole === "PIMPINAN" ||
+        (userRole as string) === "PEMIMPIN"
+      ) {
         return items;
       }
       return [];
@@ -1180,7 +1191,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           children: [
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
             { to: "/pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
+            { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
             { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
@@ -1193,7 +1204,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Wilayah",
           icon: MapPin,
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"] as UserRole[],
           children: [
             { to: "/wilayah/provinsi", label: "Provinsi" },
             { to: "/wilayah/kota-kabupaten", label: "Kota / Kabupaten" },
@@ -1215,7 +1226,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           to: "/peraturan",
           icon: Bot,
           label: "Peraturan",
-          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
+          allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"] as UserRole[],
         },
         {
           to: "/kelola-poin",
@@ -1330,7 +1341,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {/* Centered Icons Navigation List */}
             <nav className="flex-1 overflow-y-auto w-full px-2 py-2 space-y-1 flex flex-col items-center scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
               {menuSections.map((sec, idx) => {
-                const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
+                const visibleItems = sec.items.filter((item) => {
+                  if (!hasAccess(item.allowed)) return false;
+                  if (item.type === "group") {
+                    const kids = getFilteredGroupChildren(item.label, (item as any).children);
+                    return kids.length > 0;
+                  }
+                  return true;
+                });
                 if (visibleItems.length === 0) return null;
                 return (
                   <React.Fragment key={sec.header}>
@@ -1403,7 +1421,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {/* Scrollable Navigation Sections */}
             <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
               {menuSections.map((sec) => {
-                const visibleItems = sec.items.filter((item) => hasAccess(item.allowed));
+                const visibleItems = sec.items.filter((item) => {
+                  if (!hasAccess(item.allowed)) return false;
+                  if (item.type === "group") {
+                    const kids = getFilteredGroupChildren(item.label, (item as any).children);
+                    return kids.length > 0;
+                  }
+                  return true;
+                });
                 if (visibleItems.length === 0) return null;
                 return (
                   <div key={sec.header} className="space-y-0.5">
