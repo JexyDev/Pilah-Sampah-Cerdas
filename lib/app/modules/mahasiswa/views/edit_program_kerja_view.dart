@@ -31,11 +31,12 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
   Map<String, dynamic>? _prokerData;
 
   static const _kategoriList = [
-    {'value': 'PEMILAHAN', 'label': 'Pemilahan Sampah'},
-    {'value': 'PENGANGKUTAN', 'label': 'Pengangkutan Sampah'},
-    {'value': 'PENGOLAHAN', 'label': 'Pengolahan Sampah'},
-    {'value': 'PEMANFAATAN', 'label': 'Pemanfaatan Sampah'},
-    {'value': 'EDUKASI', 'label': 'Edukasi & Sosialisasi'},
+    {'value': 'Pemilahan', 'label': 'Pemilahan'},
+    {'value': 'Pengangkutan', 'label': 'Pengangkutan'},
+    {'value': 'Pengolahan', 'label': 'Pengolahan'},
+    {'value': 'Pemanfaatan', 'label': 'Pemanfaatan'},
+    {'value': 'Edukasi & Sosialisasi', 'label': 'Edukasi & Sosialisasi'},
+    {'value': 'Lainnya', 'label': 'Lainnya'},
   ];
 
   @override
@@ -75,10 +76,25 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
     _deskripsiCtrl.text = data['deskripsi']?.toString() ?? '';
     _anggaranCtrl.text = data['rencanaAnggaran']?.toString() ?? data['kebutuhanBiaya']?.toString() ?? '';
     _linkDriveCtrl.text = data['linkGoogleDrive']?.toString() ?? '';
-    _kategori = data['kategori']?.toString().toUpperCase();
-    // Validate kategori against list
-    final valid = _kategoriList.map((k) => k['value']!).toSet();
-    if (_kategori != null && !valid.contains(_kategori)) _kategori = null;
+    
+    // Flexible matching for category (handles both title case and uppercase codes)
+    final rawKat = data['kategori']?.toString() ?? '';
+    final rawLower = rawKat.toLowerCase();
+    if (rawLower.contains('pemilahan') || rawLower.contains('pilah')) {
+      _kategori = 'Pemilahan';
+    } else if (rawLower.contains('pengangkutan') || rawLower.contains('angkut')) {
+      _kategori = 'Pengangkutan';
+    } else if (rawLower.contains('pengolahan') || rawLower.contains('olah')) {
+      _kategori = 'Pengolahan';
+    } else if (rawLower.contains('pemanfaatan') || rawLower.contains('manfaat')) {
+      _kategori = 'Pemanfaatan';
+    } else if (rawLower.contains('edukasi') || rawLower.contains('sosialisasi')) {
+      _kategori = 'Edukasi & Sosialisasi';
+    } else if (rawLower.isNotEmpty) {
+      _kategori = 'Lainnya';
+    } else {
+      _kategori = 'Lainnya';
+    }
 
     final waktu = data['waktuPelaksanaan']?.toString() ?? data['targetTanggal']?.toString() ?? '';
     if (waktu.contains(' s/d ')) {

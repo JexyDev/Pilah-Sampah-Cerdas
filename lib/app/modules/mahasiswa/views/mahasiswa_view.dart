@@ -883,42 +883,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                   AppColors.primaryBlueLight,
                   AppColors.primaryBlue,
                 ],
-                onTap: () {
-                  // Show bottom sheet to choose between Add or History
-                  showModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                    ),
-                    builder: (context) => SafeArea(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListTile(
-                              leading: const Icon(Icons.list_alt_rounded, color: AppColors.primaryBlue),
-                              title: const Text('Data Program Kerja'),
-                              subtitle: const Text('Lihat & ajukan usulan proker', style: TextStyle(fontSize: 11)),
-                              onTap: () {
-                                Navigator.pop(context);
-                                Navigator.pushNamed(context, AppRoutes.dataProker);
-                              },
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.recycling_rounded, color: AppColors.primaryGreen),
-                              title: const Text('Data Pemanfaatan & Hasil'),
-                              subtitle: const Text('Riwayat & catat pemanfaatan', style: TextStyle(fontSize: 11)),
-                              onTap: () {
-                                Navigator.pop(context);
-                                Navigator.pushNamed(context, AppRoutes.riwayatPemanfaatan);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                },
+                onTap: () => Navigator.pushNamed(context, AppRoutes.dataProker),
               ),
             ),
             const SizedBox(width: 12),

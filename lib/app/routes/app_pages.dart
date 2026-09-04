@@ -55,6 +55,7 @@ import '../modules/mahasiswa/views/data_logbook_harian_view.dart';
 import '../modules/mahasiswa/views/edit_logbook_kkn_view.dart';
 import '../modules/mahasiswa/views/data_proker_view.dart';
 import '../modules/mahasiswa/views/edit_program_kerja_view.dart';
+import '../modules/mahasiswa/views/proker_detail_view.dart';
 import '../modules/mahasiswa/views/riwayat_pemanfaatan_view.dart';
 
 /// Peta route terpusat untuk MaterialApp.
@@ -89,7 +90,13 @@ class AppPages {
       case AppRoutes.riwayatPemanfaatan:
         return _buildRoute(const RiwayatPemanfaatanView(), settings);
       case AppRoutes.logbookPemanfaatan:
-        return _buildRoute(const LogbookPemanfaatanView(), settings);
+        final logbookArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          LogbookPemanfaatanView(
+            initialProkerId: logbookArgs?['prokerId'] as String?,
+          ),
+          settings,
+        );
       case AppRoutes.catatPanen:
         return _buildRoute(const CatatPanenView(), settings);
       case AppRoutes.scan:
@@ -200,6 +207,13 @@ class AppPages {
       case AppRoutes.editProgramKerja:
         final editArgs = settings.arguments as Map<String, dynamic>;
         return _buildRoute(EditProgramKerjaView(prokerId: editArgs['id'] as String), settings);
+
+      case AppRoutes.prokerDetail:
+        final detailArgs = settings.arguments as Map<String, dynamic>;
+        return _buildRoute(
+          ProkerDetailView(prokerId: detailArgs['id'] as String),
+          settings,
+        );
 
       default:
         return _buildRoute(const _NotFoundScreen(), settings);

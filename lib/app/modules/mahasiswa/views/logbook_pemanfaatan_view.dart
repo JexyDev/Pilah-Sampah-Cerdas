@@ -17,7 +17,8 @@ final fasilitasWargaListProvider = FutureProvider.autoDispose<List<Map<String, d
 });
 
 class LogbookPemanfaatanView extends ConsumerStatefulWidget {
-  const LogbookPemanfaatanView({super.key});
+  final String? initialProkerId;
+  const LogbookPemanfaatanView({super.key, this.initialProkerId});
 
   @override
   ConsumerState<LogbookPemanfaatanView> createState() => _LogbookPemanfaatanViewState();
@@ -147,6 +148,14 @@ class _LogbookPemanfaatanViewState extends ConsumerState<LogbookPemanfaatanView>
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialProkerId != null) {
+      _selectedProkerId = widget.initialProkerId;
     }
   }
 

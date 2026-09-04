@@ -79,6 +79,12 @@ class BinEntity extends Equatable {
   /// Volume sisa dalam liter.
   double get remainingVolumeL => maxCapacityL - currentVolumeL;
 
+  /// Estimasi berat saat ini dalam Kg (konversi kasar).
+  double get currentWeightKg => currentVolumeL * 0.3;
+
+  /// Estimasi kapasitas maksimal dalam Kg (konversi kasar).
+  double get maxWeightKg => maxCapacityL * 0.3;
+
   /// Status kapasitas tempat sampah sesuai threshold srs.md FR-04.
   BinStatus get status {
     if (capacityPercent >= AppConfig.binCriticalThresholdPercent) {

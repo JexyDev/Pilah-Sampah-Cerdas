@@ -13,6 +13,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../data/models/group_zone_models.dart';
+import '../../../data/models/mahasiswa_kkn_models.dart';
+import '../../../data/models/user_entity.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -563,8 +565,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             }
           }
 
-          final durasiMenit = state.inZoneDurationSeconds ~/ 60;
-          final durasiDetik = state.inZoneDurationSeconds % 60;
+          final durasiMenit = state.inZoneDurationSeconds;
           final waktu = DateTime.now().toLocal().toString().substring(0, 16);
 
           return SingleChildScrollView(
@@ -621,7 +622,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       const SizedBox(height: 6),
                       _buildInfoRow(
                         'Durasi di Zona',
-                        '$durasiMenit mnt $durasiDetik dtk',
+                                '$durasiMenit menit',
                       ),
                     ],
                   ),
@@ -1012,7 +1013,38 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     List<CircleMarker> circleMarkers = [];
     List<Marker> poskoMarkers = [];
     
-    if (mapState.groupZone != null && mapState.groupZone!.poskoList.isNotEmpty) {
+    final rawValidZones = locationState.activeActivity?['validZones'];
+    if (rawValidZones != null && rawValidZones is List && rawValidZones.isNotEmpty) {
+      for (final z in rawValidZones) {
+        final Map zMap = z is Map ? z : {};
+        final lat = (zMap['latitude'] as num?)?.toDouble() ?? 0.0;
+        final lng = (zMap['longitude'] as num?)?.toDouble() ?? 0.0;
+        final radius = (zMap['radius'] as num?)?.toDouble() ?? 100.0;
+        if (lat == 0.0 || lng == 0.0) continue;
+        final point = LatLng(lat, lng);
+
+        circleMarkers.add(CircleMarker(
+          point: point,
+          radius: radius,
+          useRadiusInMeter: true,
+          color: AppColors.primaryGreen.withValues(alpha: 0.2),
+          borderColor: AppColors.primaryGreen,
+          borderStrokeWidth: 2,
+        ));
+
+        poskoMarkers.add(Marker(
+          point: point,
+          width: 40,
+          height: 40,
+          child: const Icon(
+            Icons.home_work_rounded,
+            color: AppColors.primaryGreen,
+            size: 32,
+          ),
+        ));
+      }
+    } else if (mapState.groupZone != null && mapState.groupZone!.poskoList.isNotEmpty) {
+
       for (final posko in mapState.groupZone!.poskoList) {
         final point = LatLng(posko.latitude, posko.longitude);
         
@@ -1298,10 +1330,58 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 ],
               ),
             ),
-          ...state.kegiatanList.map((kegiatan) {
-            return KegiatanKknCard(
-              kegiatan: kegiatan,
-              onMulai: (id) async {
+          ...(() {
+            final authUser = ref.watch(authProvider).user;
+            final kelompokState = ref.watch(kelompokKknProvider);
+            final isDpl = authUser?.role == UserRole.dpl;
+            bool isKetua = false;
+            if (authUser != null && kelompokState.kelompok != null) {
+              final me = kelompokState.kelompok!.members.firstWhere(
+                (m) => m.userId == authUser.id || m.nim == authUser.nim,
+                orElse: () => const KelompokMemberData(
+                  userId: '',
+                  nim: '',
+                  name: '',
+                  jurusan: '',
+                  fakultas: '',
+                  individualPoints: 0,
+                  isLeader: false,
+                  statusPenugasanRw: '',
+                ),
+              );
+              isKetua = me.isLeader;
+            }
+            final isLeaderOrDpl = isDpl || isKetua;
+
+            return state.kegiatanList.map((kegiatan) {
+              return KegiatanKknCard(
+                kegiatan: kegiatan,
+                isLeaderOrDpl: isLeaderOrDpl,
+                onSkip: (id, alasan) async {
+                  final error = await ref
+                      .read(kknLocationProvider.notifier)
+                      .skipKegiatan(id, alasan: alasan);
+                  if (mounted) {
+                    if (error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(error),
+                          backgroundColor: AppColors.dangerRed,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Kegiatan berhasil ditandai sebagai Tidak Ada Kegiatan.',
+                          ),
+                          backgroundColor: AppColors.primaryGreen,
+                        ),
+                      );
+                    }
+                  }
+                },
+                onMulai: (id) async {
                 final statusAktifSekarang =
                     (kegiatan['statusKehadiran'] ??
                             kegiatan['attendanceStatus'] ??
@@ -1349,7 +1429,19 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
 
                 if (!isResuming) {
                   final mapState = ref.read(kknMapProvider);
-                  final poskoList = mapState.groupZone?.poskoList ?? [];
+                  List<PoskoItem> poskoList = List.from(mapState.groupZone?.poskoList ?? []);
+                  if (poskoList.isEmpty) {
+                    final currentKegiatan = state.kegiatanList.firstWhere(
+                      (k) => k['id']?.toString() == id || k['scheduleId']?.toString() == id,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    final rawPoskoList = currentKegiatan['poskoList'] as List<dynamic>?;
+                    if (rawPoskoList != null && rawPoskoList.isNotEmpty) {
+                      poskoList = rawPoskoList
+                          .map((e) => PoskoItem.fromJson(Map<String, dynamic>.from(e as Map)))
+                          .toList();
+                    }
+                  }
 
                   if (poskoList.isNotEmpty) {
                     if (!mounted) return;
@@ -1404,7 +1496,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 }
               },
             );
-          }),
+          }).toList();
+        })(),
         ],
       );
     }
@@ -1414,10 +1507,8 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     final lng = pos?.longitude.toStringAsFixed(5) ?? '-';
     final isGpsActive = state.isTracking;
 
-    final durasiMenit = state.inZoneDurationSeconds ~/ 60;
-    final durasiDetik = state.inZoneDurationSeconds % 60;
+    final durasiMenit = state.inZoneDurationSeconds;
     final targetMenit = state.targetDurationMinutes;
-    final remainingMenit = targetMenit - durasiMenit;
 
     final bool isDisabled =
         state.zoneResetWarning != null &&
@@ -1499,37 +1590,6 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (state.outOfZoneSeconds > 0)
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: AppColors.dangerRed.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.dangerRed.withValues(alpha: 0.5),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppColors.dangerRed,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Anda berada di luar Area! Toleransi sisa: ${300 - state.outOfZoneSeconds} detik sebelum sesi dibatalkan.',
-                    style: const TextStyle(
-                      color: AppColors.dangerRed,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
                   ),
                 ),
               ],
@@ -1981,11 +2041,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        (state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
+                        (state.isInsideRadius && state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
                             ? (isAlpa || isDisabled ? 'Sesi Dibatalkan' : 'Peringatan Zona KKN')
                             : (state.isInsideRadius
                                 ? 'Kamu berada di dalam radius lokasi'
-                                : 'Kamu berada di luar radius lokasi'),
+                                : 'Anda berada di luar zona KKN'),
                         style: TextStyle(
                           color: state.isInsideRadius && state.zoneResetWarning == null
                               ? AppColors.primaryGreen
@@ -1998,11 +2058,11 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        (state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
+                        (state.isInsideRadius && state.zoneResetWarning != null && state.zoneResetWarning!.isNotEmpty)
                             ? state.zoneResetWarning!
                             : (state.isInsideRadius
                                 ? 'Sinyal GPS stabil dan lokasi terdeteksi.'
-                                : 'Pergerakan absensi dihentikan sementara.'),
+                                : 'Jika sedang tidak melakukan aktivitas KKN, harap jeda kegiatan.'),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -2061,7 +2121,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '$durasiMenit mnt $durasiDetik dtk',
+                        '$durasiMenit menit',
                                 style: const TextStyle(
                                   color: Colors.orange,
                                   fontWeight: FontWeight.bold,
@@ -2115,9 +2175,9 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 Text(
                   isSuccess
                       ? 'Waktu terpenuhi! Presensi Anda resmi terdaftar.'
-                      : (remainingMenit > 0
-                            ? 'Waktu tersisa: $remainingMenit menit lagi sebelum tombol absen terbuka.'
-                            : 'Waktu terpenuhi! Tombol absen sudah terbuka.'),
+                      : (durasiMenit >= targetMenit
+                            ? 'Waktu terpenuhi! Tombol absen sudah terbuka.'
+                            : 'Durasi terkumpul: $durasiMenit menit dari $targetMenit menit target.'),
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -2133,7 +2193,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             height: 52,
             child: ElevatedButton.icon(
               onPressed:
-                  (state.isEligibleForAttendance && !isSuccess && !isAlpa)
+                  (state.isEligibleForAttendance && !isSuccess && !isAlpa && durasiMenit >= targetMenit)
                   ? () async {
                       await _showAbsenDialog(state, notifier);
                     }
@@ -2191,43 +2251,49 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 11, color: AppColors.dangerRed),
             ),
+          if (state.isEligibleForAttendance && !isSuccess && !isAlpa && durasiMenit < targetMenit)
+            Text(
+              'Tombol Presensi Pulang aktif setelah durasi mencapai $targetMenit menit. (Saat ini: $durasiMenit menit)',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, color: Colors.orange),
+            ),
           const SizedBox(height: 16),
           if (!isSuccess && !isAlpa && (state.activeActivity?['statusKehadiran']?.toString().toUpperCase() == 'TERJEDA' || state.activeActivity?['attendanceStatus']?.toString().toUpperCase() == 'TERJEDA'))
             SizedBox(
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await notifier.mulaiKegiatan(state.activeActivity!['id'].toString());
+                onPressed: state.isInsideRadius ? () async {
+                  final isSuccess = await notifier.lanjutKegiatan();
                   if (mounted) {
-                    if (result == null) {
+                    if (isSuccess) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Sesi berhasil dilanjutkan.'),
                           backgroundColor: AppColors.primaryGreen,
                         ),
                       );
-                    } else if (result != 'CONFLICT') {
+                    } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result),
+                        const SnackBar(
+                          content: Text('Gagal melanjutkan sesi.'),
                           backgroundColor: AppColors.dangerRed,
                         ),
                       );
                     }
                   }
-                },
+                } : null,
                 icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
-                label: const Text(
-                  'Lanjutkan Sesi',
-                  style: TextStyle(
+                label: Text(
+                  state.isInsideRadius ? 'Lanjutkan Sesi' : 'Masuk Zona untuk Lanjut',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                     color: Colors.white,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber.shade700,
+                  backgroundColor: state.isInsideRadius ? Colors.amber.shade700 : Colors.grey[400],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -2304,11 +2370,15 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
 class KegiatanKknCard extends StatelessWidget {
   final Map<String, dynamic> kegiatan;
   final Function(String) onMulai;
+  final Function(String, String?)? onSkip;
+  final bool isLeaderOrDpl;
 
   const KegiatanKknCard({
     super.key,
     required this.kegiatan,
     required this.onMulai,
+    this.onSkip,
+    this.isLeaderOrDpl = false,
   });
 
   @override
@@ -2320,6 +2390,7 @@ class KegiatanKknCard extends StatelessWidget {
         .toUpperCase();
     final bool canStart =
         isAktif &&
+        statusKehadiran != 'TIDAK_ADA_KEGIATAN' &&
         (statusKehadiran == null ||
             statusKehadiran == 'BERLANGSUNG' ||
             statusKehadiran == 'DI_ZONA' ||
@@ -2331,6 +2402,7 @@ class KegiatanKknCard extends StatelessWidget {
     final lokasi = kegiatan['lokasi'] != null
         ? (kegiatan['lokasi']['alamat'] ?? kegiatan['lokasi']['address'] ?? '-')
         : '-';
+    final String? keteranganSkip = kegiatan['keteranganSkip']?.toString();
 
     String statusText;
     Color badgeColor;
@@ -2388,6 +2460,11 @@ class KegiatanKknCard extends StatelessWidget {
       badgeColor = Colors.amber.withValues(alpha: 0.1);
       textColor = Colors.amber.shade800;
       buttonText = 'Izin / Sakit';
+    } else if (statusKehadiran == 'TIDAK_ADA_KEGIATAN') {
+      statusText = '⚪ TIDAK ADA KEGIATAN';
+      badgeColor = Colors.grey.shade200;
+      textColor = Colors.grey.shade800;
+      buttonText = 'Tidak Ada Kegiatan';
     } else if (statusKehadiran == 'ALPA' ||
         statusKehadiran == 'TANPA_KETERANGAN') {
       statusText = '⚠️ TANPA KETERANGAN';
@@ -2404,6 +2481,17 @@ class KegiatanKknCard extends StatelessWidget {
           ? 'Mulai Kegiatan (Presensi Masuk)'
           : 'Mendatang (Belum Masuk Waktu)';
     }
+
+    final bool canLeaderSkip = isLeaderOrDpl &&
+        onSkip != null &&
+        statusKehadiran != 'TIDAK_ADA_KEGIATAN' &&
+        statusKehadiran != 'BERLANGSUNG' &&
+        statusKehadiran != 'TERJEDA' &&
+        statusKehadiran != 'HADIR_MEMENUHI' &&
+        statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
+        statusKehadiran != 'HADIR' &&
+        statusKehadiran != 'SELESAI' &&
+        statusKehadiran != 'SELESAI_TELAT';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2458,6 +2546,10 @@ class KegiatanKknCard extends StatelessWidget {
             _buildPopupRow('Waktu', '$jamMulai - $jamSelesai'),
             const SizedBox(height: 4),
             _buildPopupRow('Durasi Wajib', '$durasiWajib menit'),
+            if (keteranganSkip != null && keteranganSkip.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              _buildPopupRow('Keterangan', keteranganSkip),
+            ],
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -2466,7 +2558,8 @@ class KegiatanKknCard extends StatelessWidget {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      if (statusKehadiran == 'HADIR' ||
+                      if (statusKehadiran == 'TIDAK_ADA_KEGIATAN' ||
+                          statusKehadiran == 'HADIR' ||
                           statusKehadiran == 'HADIR_MEMENUHI' ||
                           statusKehadiran == 'HADIR_TIDAK_MEMENUHI' ||
                           statusKehadiran == 'SELESAI' ||
@@ -2485,6 +2578,7 @@ class KegiatanKknCard extends StatelessWidget {
                       backgroundColor: statusKehadiran == 'TERJEDA'
                           ? Colors.amber.shade700
                           : (canStart &&
+                                  statusKehadiran != 'TIDAK_ADA_KEGIATAN' &&
                                   statusKehadiran != 'HADIR' &&
                                   statusKehadiran != 'HADIR_MEMENUHI' &&
                                   statusKehadiran != 'HADIR_TIDAK_MEMENUHI' &&
@@ -2507,30 +2601,57 @@ class KegiatanKknCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Bug #13 fix: tampilkan alasan tombol disabled agar user tidak bingung
+                  // Tampilkan alasan tombol disabled agar user tidak bingung
                   if (!canStart) ...[
                     const SizedBox(height: 6),
                     Text(
-                      statusKehadiran == 'HADIR' ||
-                              statusKehadiran == 'HADIR_MEMENUHI' ||
-                              statusKehadiran == 'SELESAI'
-                          ? 'Anda sudah tercatat hadir pada kegiatan ini.'
-                          : statusKehadiran == 'HADIR_TIDAK_MEMENUHI' ||
-                                statusKehadiran == 'SELESAI_TELAT'
-                          ? 'Sesi berakhir (durasi kurang dari target).'
-                          : (statusKehadiran == 'ALPA' ||
-                                statusKehadiran == 'TANPA_KETERANGAN')
-                          ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
-                          : statusKehadiran == 'IZIN' ||
-                                statusKehadiran == 'SAKIT'
-                          ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
-                          : !isAktif
-                          ? 'Kegiatan belum dimulai sesuai jadwal.'
-                          : 'Tombol tidak tersedia saat ini.',
+                      statusKehadiran == 'TIDAK_ADA_KEGIATAN'
+                          ? (keteranganSkip != null && keteranganSkip.isNotEmpty
+                              ? 'Tidak ada kegiatan: $keteranganSkip'
+                              : 'Kegiatan ini ditandai Tidak Ada Kegiatan oleh DPL / Ketua.')
+                          : statusKehadiran == 'HADIR' ||
+                                  statusKehadiran == 'HADIR_MEMENUHI' ||
+                                  statusKehadiran == 'SELESAI'
+                              ? 'Anda sudah tercatat hadir pada kegiatan ini.'
+                              : statusKehadiran == 'HADIR_TIDAK_MEMENUHI' ||
+                                    statusKehadiran == 'SELESAI_TELAT'
+                              ? 'Sesi berakhir (durasi kurang dari target).'
+                              : (statusKehadiran == 'ALPA' ||
+                                    statusKehadiran == 'TANPA_KETERANGAN')
+                              ? 'Waktu kegiatan telah berakhir. Status: Tanpa Keterangan.'
+                              : statusKehadiran == 'IZIN' ||
+                                    statusKehadiran == 'SAKIT'
+                              ? 'Anda memiliki pengajuan $statusKehadiran yang aktif.'
+                              : !isAktif
+                              ? 'Kegiatan belum dimulai sesuai jadwal.'
+                              : 'Tombol tidak tersedia saat ini.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                  if (canLeaderSkip) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _showSkipConfirmationDialog(context),
+                      icon: Icon(Icons.event_busy_rounded, size: 16, color: Colors.grey.shade700),
+                      label: Text(
+                        'Tandai: Tidak Ada Kegiatan',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey.shade800,
+                        side: BorderSide(color: Colors.grey.shade400),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ],
@@ -2539,6 +2660,74 @@ class KegiatanKknCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showSkipConfirmationDialog(BuildContext context) {
+    final TextEditingController alasanController = TextEditingController(
+      text: 'Tidak ada kegiatan pada hari ini',
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.event_busy_rounded, color: Colors.orange),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Tandai Tidak Ada Kegiatan?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Seluruh anggota kelompok pada jadwal ini akan mendapatkan status "Tidak Ada Kegiatan" dan tidak diwajibkan hadir.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: alasanController,
+              decoration: const InputDecoration(
+                labelText: 'Alasan / Keterangan (Opsional)',
+                hintText: 'Cth: Hari libur kegiatan posko',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              final scheduleId = kegiatan['id']?.toString() ??
+                  kegiatan['scheduleId']?.toString() ??
+                  '';
+              if (scheduleId.isNotEmpty && onSkip != null) {
+                onSkip!(scheduleId, alasanController.text.trim());
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ya, Tandai'),
+          ),
+        ],
       ),
     );
   }

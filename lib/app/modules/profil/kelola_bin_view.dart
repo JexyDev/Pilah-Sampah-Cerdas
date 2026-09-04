@@ -146,7 +146,7 @@ class _BinCardLarge extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Kapasitas Maksimal: ${bin.maxCapacityL} kg',
+                      'Kapasitas Maksimal: ${bin.maxWeightKg} kg',
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12,
@@ -203,7 +203,7 @@ class _BinCardLarge extends StatelessWidget {
           Text(
             bin.isResetPending
                 ? 'Pengajuan pengosongan sedang diproses'
-                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentVolumeL.toStringAsFixed(1)} kg / ${bin.maxCapacityL.toStringAsFixed(0)} kg',
+                : '${(bin.capacityPercent * 100).toStringAsFixed(0)}% terisi — ${bin.currentWeightKg.toStringAsFixed(1)} kg / ${bin.maxWeightKg.toStringAsFixed(0)} kg',
             style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
           ),
         ],

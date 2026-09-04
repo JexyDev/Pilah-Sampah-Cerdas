@@ -69,10 +69,10 @@ class KknDashboardData extends Equatable {
     return KknDashboardData(
       nim: student['nim']?.toString() ?? mhs['nim']?.toString() ?? user['nim']?.toString() ?? json['nim']?.toString() ?? '',
       jurusan: student['jurusan']?.toString() ?? mhs['jurusan']?.toString() ?? student['programStudi']?.toString() ?? user['programStudi']?.toString() ?? json['jurusan']?.toString() ?? '',
-      totalRegisteredBins: totalBins.toInt(),
-      assignmentLimit: limit.toInt(),
-      remainingQuota: quota.toInt(),
-      progressPercentage: progress.toDouble(),
+      totalRegisteredBins: totalBins?.toInt() ?? 0,
+      assignmentLimit: limit?.toInt() ?? 0,
+      remainingQuota: quota?.toInt() ?? 0,
+      progressPercentage: progress?.toDouble() ?? 0.0,
       contributionPoints: pointVal?.toInt() ?? 0,
     );
   }

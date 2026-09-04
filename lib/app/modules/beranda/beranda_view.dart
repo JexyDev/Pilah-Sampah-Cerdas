@@ -851,7 +851,7 @@ class _BerandaViewState extends ConsumerState<BerandaView> {
                   ),
                   SizedBox(width: 12),
                   Text(
-                    'Scan Tempat Sampah',
+                    'Scan Sampah',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

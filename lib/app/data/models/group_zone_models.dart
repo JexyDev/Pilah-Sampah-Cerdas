@@ -136,3 +136,39 @@ class SmartZoneStatus {
     );
   }
 }
+
+/// Model untuk item zona valid dari backend (Multi-Geofence Update KKN 2026)
+class ValidZoneItem {
+  final String id;
+  final String nama;
+  final double latitude;
+  final double longitude;
+  final double radius;
+
+  ValidZoneItem({
+    required this.id,
+    required this.nama,
+    required this.latitude,
+    required this.longitude,
+    required this.radius,
+  });
+
+  factory ValidZoneItem.fromJson(Map<String, dynamic> json) {
+    return ValidZoneItem(
+      id: (json['id'] ?? '').toString(),
+      nama: (json['nama'] ?? json['name'] ?? 'Posko KKN').toString(),
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      radius: (json['radius'] as num?)?.toDouble() ?? 100.0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'nama': nama,
+        'latitude': latitude,
+        'longitude': longitude,
+        'radius': radius,
+      };
+}
+
