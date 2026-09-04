@@ -589,6 +589,8 @@ const MonitoringAbsen: React.FC = () => {
     "ALL" | "ACTIVE" | "COMPLETED" | "IZIN_SAKIT" | "NOT_ATTENDED"
   >("ALL");
   const [studentSearch, setStudentSearch] = useState<string>("");
+  const [startDateFilter, setStartDateFilter] = useState<string>("");
+  const [endDateFilter, setEndDateFilter] = useState<string>("");
   const [displayMode] = useState<"table" | "cards">("table");
   const [showMap, setShowMap] = useState<boolean>(true);
 
@@ -990,6 +992,24 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
       );
     }
+    if (startDateFilter) {
+      const start = new Date(startDateFilter);
+      start.setHours(0, 0, 0, 0);
+      list = list.filter((s) => {
+        if (!s.date) return false;
+        const d = new Date(s.date);
+        return d >= start;
+      });
+    }
+    if (endDateFilter) {
+      const end = new Date(endDateFilter);
+      end.setHours(23, 59, 59, 999);
+      list = list.filter((s) => {
+        if (!s.date) return false;
+        const d = new Date(s.date);
+        return d <= end;
+      });
+    }
     // Urutkan jadwal terbaru (hari ini) di paling atas
     const sorted = [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     // Deduplikasi fallback berdasarkan kelompokId + tanggal kegiatan WIB
@@ -1004,7 +1024,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       }
     }
     return deduplicated;
-  }, [schedules, selectedKelompokId]);
+  }, [schedules, selectedKelompokId, startDateFilter, endDateFilter]);
 
   const isAllTodayMode = !selectedKelompokId && selectedScheduleId === "ALL_TODAY";
 
@@ -1736,6 +1756,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       if (attendanceFilterTab === "IZIN_SAKIT" && !isIzinSakit) return false;
       if (attendanceFilterTab === "NOT_ATTENDED" && (isHadir || isIzinSakit)) return false;
 
+      if (startDateFilter) {
+        const rawDate = rec.attendedAt || (rec as any).date;
+        if (rawDate) {
+          const recDateStr = new Date(new Date(rawDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          if (recDateStr < startDateFilter) return false;
+        }
+      }
+      if (endDateFilter) {
+        const rawDate = rec.attendedAt || (rec as any).date;
+        if (rawDate) {
+          const recDateStr = new Date(new Date(rawDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          if (recDateStr > endDateFilter) return false;
+        }
+      }
+
       if (studentSearch.trim()) {
         const q = studentSearch.toLowerCase();
         const name = (rec.student?.name || "").toLowerCase();
@@ -1803,7 +1838,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const nameB = b.student?.name || "";
       return nameA.localeCompare(nameB, "id", { sensitivity: "base" });
     });
-  }, [attendance, attendanceFilterTab, studentSearch]);
+  }, [attendance, attendanceFilterTab, studentSearch, startDateFilter, endDateFilter]);
 
   // Paginated Attendance for Table & Card views
   const totalPages = Math.max(1, Math.ceil(filteredAttendance.length / pageSize));
@@ -1811,6 +1846,100 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const start = (currentPage - 1) * pageSize;
     return filteredAttendance.slice(start, start + pageSize);
   }, [filteredAttendance, currentPage, pageSize]);
+
+  // Date Filter Handlers
+  const handleStartDateChange = (val: string) => {
+    setStartDateFilter(val);
+    if (val && endDateFilter && val > endDateFilter) {
+      setEndDateFilter(val);
+    }
+  };
+
+  const handleEndDateChange = (val: string) => {
+    setEndDateFilter(val);
+  };
+
+  const handleResetDateFilter = () => {
+    setStartDateFilter("");
+    setEndDateFilter("");
+    if (!selectedKelompokId && !isDpl) {
+      setSelectedScheduleId("ALL_TODAY");
+      fetchAttendanceAndLocations("ALL_TODAY", "");
+    } else {
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const todaySched = schedules.find((s) => {
+        if (!s.date) return false;
+        const sWib = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return sWib === nowWib && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
+      });
+      const targetId = todaySched?.id || (schedules.find(s => !selectedKelompokId || s.kelompokId === selectedKelompokId)?.id || "");
+      setSelectedScheduleId(targetId);
+      fetchAttendanceAndLocations(targetId, selectedKelompokId);
+    }
+    toast.success("Filter tanggal berhasil dihapus");
+  };
+
+  // Export XLSX langsung dari data tabel presensi terfilter
+  const handleExportFilteredAttendanceXLSX = () => {
+    if (filteredAttendance.length === 0) {
+      toast.error("Tidak ada data presensi untuk diekspor pada filter ini.");
+      return;
+    }
+    const headers = [
+      "No",
+      "NIM",
+      "Nama Mahasiswa",
+      "Kelompok",
+      "Status Presensi",
+      "Jam Masuk (JM)",
+      "Jam Pulang (JP)",
+      "Durasi Jeda (Menit)",
+      "Durasi Aktual (Menit)",
+      "Target Min (Jam)",
+      "Status Pemenuhan",
+    ];
+    const rows = filteredAttendance.map((rec, idx) => {
+      const recAny = rec as any;
+      const durMins = recAny.actualInZoneMinutes || calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const isFinished = Boolean(rec.completedAt) || String(rec.status || "").toUpperCase().includes("HADIR_MEMENUHI");
+      const isAttended = Boolean(rec.attendedAt);
+      const isTargetMet = durMins >= scheduleTargetHours * 60;
+      const jedaMins = recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0;
+      return [
+        idx + 1,
+        rec.student?.studentProfile?.nim || "-",
+        rec.student?.name || "-",
+        rec.student?.studentProfile?.kelompok?.name || rec.kelompokName || "-",
+        rec.status || "-",
+        rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-",
+        rec.completedAt ? formatTimeDot(rec.completedAt) : "-",
+        jedaMins,
+        durMins,
+        scheduleTargetHours,
+        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-",
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 18 },
+      { wch: 28 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 22 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Presensi");
+    const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
+    XLSX.writeFile(wb, `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Data presensi (${filteredAttendance.length} baris) berhasil diekspor ke XLSX`);
+  };
 
   // Active student markers with smart clustering (Anti-Numpuk)
   const activeStudentMarkers = useMemo(() => {
@@ -3426,6 +3555,51 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
 
+          {/* Date Range Filter Controls */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+              <Calendar size={13} className="text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400">Dari:</span>
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => handleStartDateChange(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
+              <Calendar size={13} className="text-emerald-600 shrink-0" />
+              <span className="text-[10px] font-bold text-slate-400">Sampai:</span>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => handleEndDateChange(e.target.value)}
+                className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
+              />
+            </div>
+            {(startDateFilter || endDateFilter) && (
+              <button
+                type="button"
+                onClick={handleResetDateFilter}
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-xs font-semibold cursor-pointer transition shadow-2xs"
+                title="Hapus / Reset Filter Tanggal"
+              >
+                <X size={14} />
+              </button>
+            )}
+
+            {/* Standar 1 Tombol Ekspor XLSX */}
+            <button
+              type="button"
+              onClick={handleExportFilteredAttendanceXLSX}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              title="Ekspor data presensi terfilter ke XLSX"
+            >
+              <FileSpreadsheet size={13} />
+              <span>Ekspor XLSX</span>
+            </button>
+          </div>
+
           {/* Filter Status Dropdown + Tombol Tambah Manual */}
           <div className="flex items-center gap-2 flex-wrap">
             {!isDpl && (
@@ -3459,39 +3633,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
         </div>
-
-        {/* Info Banner when viewing Roster mode or ALL_TODAY overview mode */}
-        {!activeSchedule && (
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                {selectedScheduleId === "ALL_TODAY" ? <Sparkles size={20} className="text-emerald-600" /> : <Users size={20} />}
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 dark:text-slate-100">
-                  {selectedScheduleId === "ALL_TODAY"
-                    ? "Monitoring Agregat Seluruh Wilayah KKN (32 Kelompok)"
-                    : `Daftar Roster Mahasiswa KKN ${selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Wilayah Binaan)"}`}
-                </h4>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-                  {selectedScheduleId === "ALL_TODAY"
-                    ? "Menampilkan rekapitulasi seluruh mahasiswa aktif dari 32 posko KKN. Mahasiswa yang sedang live beraktivitas di lapangan otomatis diprioritaskan di baris teratas."
-                    : "Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, progres aktual / target jam kerja, dan pin live GPS."}
-                </p>
-              </div>
-            </div>
-            {canManageSchedules && (
-              <button
-                type="button"
-                onClick={handleOpenAddModal}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-              >
-                <Plus size={14} />
-                <span>Buat Kegiatan Baru</span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Data List Display */}
         {filteredAttendance.length > 0 ? (
