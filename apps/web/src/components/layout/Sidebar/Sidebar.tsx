@@ -1395,17 +1395,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 <img
                   src="/app-logo.png"
                   alt="BERSEKA Logo"
-                  className="h-10 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
+                  className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
                 />
-                <div className="flex flex-col justify-center text-left min-w-0">
-                  {/* ponytail: static header layout; abstract to brand config if dynamic multi-tenant text is required */}
-                  <h1 className="text-[19px] font-black tracking-wide text-[#035941] dark:text-emerald-400 uppercase leading-none mb-1 truncate transition-opacity group-hover:opacity-90">
-                    BERSEKA
-                  </h1>
-                  <p className="text-[10px] font-bold text-[#58A621] dark:text-emerald-500 tracking-tight leading-tight truncate">
-                    Bersih, Sehat, Kampung Asri
-                  </p>
-                </div>
               </Link>
               {/* Mobile Close Button */}
               <button
