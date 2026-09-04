@@ -7,7 +7,7 @@ import '../../data/providers/repository_providers.dart';
 
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../../core/values/app_colors.dart';
 import '../../routes/app_routes.dart';
 import '../auth/controllers/auth_controller.dart';
@@ -39,13 +39,10 @@ class _SplashViewState extends ConsumerState<SplashView>
   }
 
   late AnimationController _titleController;
-  late AnimationController _taglineController;
   late AnimationController _dotsController;
 
   late Animation<double> _titleFade;
   late Animation<Offset> _titleSlide;
-  late Animation<double> _taglineFade;
-  late Animation<Offset> _taglineSlide;
   late Animation<double> _dotsFade;
 
   @override
@@ -55,11 +52,6 @@ class _SplashViewState extends ConsumerState<SplashView>
     _titleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
-    );
-
-    _taglineController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 450),
     );
 
     _dotsController = AnimationController(
@@ -76,17 +68,6 @@ class _SplashViewState extends ConsumerState<SplashView>
           CurvedAnimation(parent: _titleController, curve: Curves.easeOutCubic),
         );
 
-    _taglineFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _taglineController, curve: Curves.easeOut),
-    );
-    _taglineSlide = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: _taglineController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
     _dotsFade = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -98,9 +79,6 @@ class _SplashViewState extends ConsumerState<SplashView>
   Future<void> _startAnimations() async {
     await Future.delayed(const Duration(milliseconds: 150));
     if (mounted) _titleController.forward();
-
-    await Future.delayed(const Duration(milliseconds: 200));
-    if (mounted) _taglineController.forward();
 
     await Future.delayed(const Duration(milliseconds: 150));
     if (mounted) _dotsController.forward();
@@ -188,7 +166,7 @@ class _SplashViewState extends ConsumerState<SplashView>
   @override
   void dispose() {
     _titleController.dispose();
-    _taglineController.dispose();
+
     _dotsController.dispose();
     super.dispose();
   }
@@ -247,44 +225,9 @@ class _SplashViewState extends ConsumerState<SplashView>
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Image.asset(
-                              'assets/app-logo.png', // The circle icon requested
+                              'assets/logo/BersekaNew-logo-text-bg-transparent.png', // Logo text
                               height: 100,
                               fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Text BERSEKA
-                      SlideTransition(
-                        position: _titleSlide,
-                        child: FadeTransition(
-                          opacity: _titleFade,
-                          child: Text(
-                            'BERSEKA',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 34,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF005841), // Dark Green dari desain
-                              letterSpacing: 1.2,
-                              height: 1.1,
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Tagline (Sesuai Icon)
-                      SlideTransition(
-                        position: _taglineSlide,
-                        child: FadeTransition(
-                          opacity: _taglineFade,
-                          child: Text(
-                            'Bersih, Sehat, Kampung Asri',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF5CA432), // Light Green dari desain
-                              letterSpacing: 0.5,
                             ),
                           ),
                         ),

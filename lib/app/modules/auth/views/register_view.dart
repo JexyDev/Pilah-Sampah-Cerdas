@@ -678,20 +678,10 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                             clipBehavior: Clip.antiAlias,
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
-                              child: Image.asset(AppAssets.logo, fit: BoxFit.contain),
+                              child: Image.asset(AppAssets.icon, fit: BoxFit.contain),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Berseka',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryGreen,
-                              letterSpacing: -0.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+
                           const SizedBox(height: 4),
                           const Text(
                             'Pendaftaran Akun Baru',

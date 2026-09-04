@@ -343,17 +343,7 @@ class _ForgotPasswordViewState
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Berseka',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primaryGreen,
-                              letterSpacing: -0.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+
                           const SizedBox(height: 4),
                           const Text(
                             'Atur Ulang Kata Sandi',
