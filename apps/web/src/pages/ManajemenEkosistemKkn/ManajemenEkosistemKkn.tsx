@@ -1484,6 +1484,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               {/* Form Tambah/Alokasikan Mahasiswa ke Kelompok (Admin Only) */}
+              {!isReadOnly && (
                 <div className="border border-teal-100 dark:border-teal-800/50 bg-teal-50/40 dark:bg-teal-950/20 rounded-2xl p-4 space-y-3 overflow-hidden max-w-full">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
