@@ -583,6 +583,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
                   user.peran === "DEVELOPER" ? "DEVELOPER" :
                   user.peran === "MAHASISWA_KKN" ? "MAHASISWA" :
                   user.peran === "PANITIA_TASKFORCE" ? "TASK FORCE" :
+                  (user.peran === "PEMIMPIN" || user.peran === "PIMPINAN") ? "PIMPINAN" :
                   user.peran.replace("_", " ")
                 ) : "ADMIN"}
               </span>

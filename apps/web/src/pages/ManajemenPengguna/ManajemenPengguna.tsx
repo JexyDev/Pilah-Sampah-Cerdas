@@ -26,6 +26,7 @@ const ROLE_LABEL_MAP: Record<string, string> = {
   LURAH: "Lurah",
   RW: "Rukun Warga",
   PEMIMPIN: "Pimpinan",
+  PIMPINAN: "Pimpinan",
   PANITIA_TASKFORCE: "Task Force",
   DPL: "Dosen Pendamping Lapangan",
   PETUGAS_RESIDU: "Petugas Pemilah",

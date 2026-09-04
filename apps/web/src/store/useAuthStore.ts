@@ -26,6 +26,7 @@ export type UserRole =
   | "DOSEN_PENDAMPING_LAPANGAN"
   | "MPL"
   | "PEMIMPIN"
+  | "PIMPINAN"
   | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
 

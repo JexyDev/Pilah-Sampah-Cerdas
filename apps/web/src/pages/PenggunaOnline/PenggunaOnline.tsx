@@ -592,7 +592,7 @@ export const PenggunaOnline: React.FC = () => {
                             userItem.role
                           )}`}
                         >
-                          {userItem.role}
+                          {userItem.role === "PEMIMPIN" ? "PIMPINAN" : userItem.role}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
