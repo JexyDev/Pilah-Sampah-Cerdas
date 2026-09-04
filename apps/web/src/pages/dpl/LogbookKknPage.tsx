@@ -74,6 +74,19 @@ const formatDateFull = (dateStr: string): string => {
   }
 };
 
+// Helper Format Tanggal + Jam Menit — untuk kolom "Waktu Diinput" (createdAt)
+const formatDateTime = (dateStr: string): { date: string; time: string } => {
+  if (!dateStr) return { date: "-", time: "" };
+  try {
+    const d = new Date(dateStr);
+    const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return { date, time };
+  } catch {
+    return { date: dateStr, time: "" };
+  }
+};
+
 // Helper Durasi Waktu dengan Satuan 'Jam'
 const formatDuration = (waktuMulai?: string | null, waktuSelesai?: string | null): { short: string; long: string } => {
   if (!waktuMulai || waktuMulai === "-") return { short: "2 jam", long: "Durasi 2 jam" };
@@ -752,7 +765,9 @@ export const LogbookKknPage: React.FC = () => {
     }
     const headers = [
       "No",
-      "Tanggal",
+      "Tanggal Kegiatan",
+      "Tgl Diinput",
+      "Jam Diinput",
       "Waktu Mulai",
       "Waktu Selesai",
       "Kelompok",
@@ -771,10 +786,13 @@ export const LogbookKknPage: React.FC = () => {
       const fInfo = resolveFasilitasDetails(item);
       const prokerDisplay = pInfo.title ? `${pInfo.title}: ${pInfo.description}` : "-";
       const fasilitasDisplay = fInfo ? `${fInfo.nama} (${fInfo.jenis})` : "-";
+      const inputDt = formatDateTime(item.createdAt);
 
       return [
         index + 1,
         item.tanggalKegiatan || "-",
+        inputDt.date,
+        inputDt.time ? `${inputDt.time} WIB` : "-",
         item.waktuMulai || "-",
         item.waktuSelesai || "-",
         item.kelompokNama || "-",
@@ -793,7 +811,9 @@ export const LogbookKknPage: React.FC = () => {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws["!cols"] = [
       { wch: 6 },
-      { wch: 15 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 14 },
       { wch: 12 },
       { wch: 12 },
       { wch: 18 },
@@ -1227,7 +1247,7 @@ export const LogbookKknPage: React.FC = () => {
                         className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                       />
                     </th>
-                    <th className="p-3.5 whitespace-nowrap">Tanggal & Waktu</th>
+                    <th className="p-3.5 whitespace-nowrap">Tgl Kegiatan &amp; Tgl Diinput</th>
                     <th className="p-3.5 whitespace-nowrap">Kelompok</th>
                     <th className="p-3.5 whitespace-nowrap">Pengisi Data</th>
                     <th className="p-3.5 whitespace-nowrap">Kategori</th>
@@ -1288,13 +1308,29 @@ export const LogbookKknPage: React.FC = () => {
                               className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                             />
                           </td>
-                          {/* 1. Tanggal & Waktu */}
+                          {/* 1. Tgl Kegiatan & Tgl Diinput */}
                           <td className="p-3.5 align-top whitespace-nowrap">
+                            {/* Tanggal Kegiatan — diisi mahasiswa, bisa backdate */}
                             <div className="font-bold text-slate-800 dark:text-slate-200">
                               {formatDateShort(item.tanggalKegiatan)}
                             </div>
                             <div className="text-[11px] text-slate-500 mt-0.5">
                               {item.waktuLengkap}
+                            </div>
+                            {/* Divider */}
+                            <div className="my-1.5 border-t border-dashed border-slate-200 dark:border-slate-700" />
+                            {/* Waktu Diinput — createdAt, server timestamp */}
+                            <div className="flex items-center gap-1">
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                              <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
+                                Diinput
+                              </span>
+                            </div>
+                            <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 mt-0.5">
+                              {formatDateTime(item.createdAt).date}
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {formatDateTime(item.createdAt).time} WIB
                             </div>
                           </td>
 
