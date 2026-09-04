@@ -846,6 +846,11 @@ export class KknAttendanceService {
         setoranOtomatis: {
           orderBy: { createdAt: "desc" },
           take: 10,
+          include: {
+            bin: {
+              include: { category: true },
+            },
+          },
         },
       },
     });
@@ -900,7 +905,7 @@ export class KknAttendanceService {
             log.confidenceAi,
             log.discrepancy_status || log.discrepancyStatus,
             log.hasilKlasifikasiAi,
-            primaryBin?.category
+            log.bin?.category || primaryBin?.category
           );
           return {
             ...log,
