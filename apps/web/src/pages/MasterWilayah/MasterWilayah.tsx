@@ -22,7 +22,7 @@ const TAB_LABEL_MAP: Record<string, string> = {
 
 const MasterWilayah: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PEMIMPIN", "PIMPINAN"].includes(user?.peran || "");
 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "kecamatan";

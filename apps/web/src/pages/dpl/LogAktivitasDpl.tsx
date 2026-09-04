@@ -61,6 +61,8 @@ const getInitials = (name: string): string => {
 
 export const LogAktivitasDpl: React.FC = () => {
   const { user } = useAuthStore();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
 
   // State Data
   const [logs, setLogs] = useState<DplActivityLogItem[]>([]);
@@ -486,15 +488,21 @@ export const LogAktivitasDpl: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Action Button: Catat Kegiatan DPL */}
-          <button
-            type="button"
-            onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Catat Kegiatan DPL</span>
-          </button>
+          {/* Action Button: Catat Kegiatan DPL or View-Only Badge */}
+          {isPimpinan ? (
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+              Mode Pimpinan: View-Only
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Catat Kegiatan DPL</span>
+            </button>
+          )}
 
           {/* User Profile Pill */}
           <div className="flex items-center gap-2.5 bg-white border border-slate-200 rounded-full py-1 pl-1 pr-3 shadow-xs">
@@ -761,24 +769,28 @@ export const LogAktivitasDpl: React.FC = () => {
                           <Eye className="w-3.5 h-3.5" />
                           <span>Detil</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEditClick(item)}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                          title="Edit kegiatan"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePromptDeleteLog(item.id, item.uraianKegiatan)}
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                          title="Hapus kegiatan"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Hapus</span>
-                        </button>
+                        {!isPimpinan && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(item)}
+                              className="px-2.5 py-1.5 rounded-lg bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                              title="Edit kegiatan"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handlePromptDeleteLog(item.id, item.uraianKegiatan)}
+                              className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 hover:border-rose-300 text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                              title="Hapus kegiatan"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Hapus</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
