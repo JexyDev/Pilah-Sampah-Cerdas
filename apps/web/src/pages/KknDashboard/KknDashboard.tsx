@@ -143,6 +143,7 @@ const KknDashboardContent: React.FC = () => {
     user?.peran === "DPL" ||
     user?.peran === "DOSEN_PEMBIMBING" ||
     user?.peran === "PEMIMPIN" ||
+    user?.peran === "PIMPINAN" ||
     user?.peran === "PANITIA_TASKFORCE";
 
   const [escalatedLeaves, setEscalatedLeaves] = useState<any[]>([]);

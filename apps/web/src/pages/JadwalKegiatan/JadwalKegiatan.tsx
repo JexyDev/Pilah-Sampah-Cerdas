@@ -146,6 +146,7 @@ const JadwalKegiatan: React.FC = () => {
       "SUPER_USER",
       "ADMIN_DLH",
       "PEMIMPIN",
+      "PIMPINAN",
       "PANITIA_TASKFORCE",
       "DEVELOPER",
       "RW",

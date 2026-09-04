@@ -34,6 +34,7 @@ import {
   Pencil,
   Navigation,
   Check,
+  ChevronDown,
 } from "lucide-react";
 import api from "../../utils/api";
 import showToast from "../../utils/showToast";
@@ -82,12 +83,36 @@ interface PoskoItem {
 }
 
 const KATEGORI_OPTIONS = [
-  { value: "TATA_KELOLA", label: "🏛️ Tata Kelola & Koordinasi" },
-  { value: "EDUKASI", label: "📢 Edukasi & Sosialisasi Warga" },
-  { value: "ORGANIK", label: "🌱 Pengolahan Sampah Organik (Loseda/Maggot)" },
-  { value: "ANORGANIK", label: "♻️ Pengelolaan Anorganik & Bank Sampah" },
-  { value: "FASILITAS", label: "🛠️ Infrastruktur & Fasilitas Lingkungan" },
-  { value: "LAINNYA", label: "📌 Program Pendukung Lainnya" },
+  {
+    value: "Pemilahan",
+    label: "Pemilahan",
+    desc: "Edukasi dan implementasi pemilahan sampah dari sumbernya.",
+  },
+  {
+    value: "Pengangkutan",
+    label: "Pengangkutan",
+    desc: "Sistem dan jadwal pengangkutan sampah warga ke TPS.",
+  },
+  {
+    value: "Pengolahan",
+    label: "Pengolahan",
+    desc: "Pengolahan sampah organik dan anorganik menjadi produk.",
+  },
+  {
+    value: "Pemanfaatan",
+    label: "Pemanfaatan",
+    desc: "Pemanfaatan hasil olahan sampah untuk kebutuhan warga.",
+  },
+  {
+    value: "Edukasi & Sosialisasi",
+    label: "Edukasi & Sosialisasi",
+    desc: "Penyuluhan kesadaran lingkungan kepada warga sekitar.",
+  },
+  {
+    value: "Lainnya",
+    label: "Lainnya",
+    desc: "Kategori program kerja KKN lainnya di luar daftar di atas.",
+  },
 ];
 
 export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> = ({
@@ -102,14 +127,19 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   // Modal State: Create / Edit Proker
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isKategoriPickerOpen, setIsKategoriPickerOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmittingProker, setIsSubmittingProker] = useState(false);
   const [formJudul, setFormJudul] = useState("");
-  const [formKategori, setFormKategori] = useState("TATA_KELOLA");
+  const [formKategori, setFormKategori] = useState("Pemilahan");
   const [formDeskripsi, setFormDeskripsi] = useState("");
-  const [formWaktu, setFormWaktu] = useState("");
+  const [formStartDate, setFormStartDate] = useState("");
+  const [formEndDate, setFormEndDate] = useState("");
   const [formBiaya, setFormBiaya] = useState("");
   const [formLinkDrive, setFormLinkDrive] = useState("");
+  const [formAttachmentFile, setFormAttachmentFile] = useState<File | null>(null);
 
   // Modal State: Detail Proker
   const [selectedProker, setSelectedProker] = useState<ProkerItem | null>(null);
@@ -137,7 +167,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
     try {
       setIsLoading(true);
       const [prokerRes, poskoMeRes, poskoAreasRes] = await Promise.allSettled([
-        api.get("/dpl/program-kerja"),
+        api.get("/kkn/program-kerja"),
         api.get("/posko-kkn/me/all-zones"),
         api.get("/areas/posko"),
       ]);
@@ -181,16 +211,62 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
   // ─────────────────────────────────────────────────────────────
 
   const handleOpenCreateProkerModal = () => {
+    setFormMode("create");
+    setEditingId(null);
     setFormJudul("");
-    setFormKategori("TATA_KELOLA");
+    setFormKategori("Pemilahan");
     setFormDeskripsi("");
-    setFormWaktu("");
+    setFormStartDate("");
+    setFormEndDate("");
     setFormBiaya("");
     setFormLinkDrive("");
-    setIsCreateModalOpen(true);
+    setFormAttachmentFile(null);
+    setIsFormModalOpen(true);
   };
 
-  const handleCreateProker = async (e: React.FormEvent) => {
+  const handleOpenEditProkerModal = (proker: ProkerItem) => {
+    setFormMode("edit");
+    setEditingId(proker.id);
+
+    let title = proker.judul || "";
+    let desc = proker.deskripsi || "";
+    if (!title && desc.startsWith("**")) {
+      const match = desc.match(/^\*\*(.*?)\*\*(?:\r?\n+)?([\s\S]*)$/);
+      if (match) {
+        title = match[1];
+        desc = match[2];
+      }
+    }
+
+    setFormJudul(title || desc);
+    setFormDeskripsi(desc);
+    setFormKategori(proker.kategori || "Pemilahan");
+
+    if (proker.waktuPelaksanaan) {
+      const parts = proker.waktuPelaksanaan.split(/\s+(?:s\/d|-)\s+/i);
+      if (parts.length >= 2) {
+        setFormStartDate(parts[0].trim());
+        setFormEndDate(parts[1].trim());
+      } else {
+        setFormStartDate(proker.waktuPelaksanaan.trim());
+        setFormEndDate(proker.waktuPelaksanaan.trim());
+      }
+    } else {
+      setFormStartDate("");
+      setFormEndDate("");
+    }
+
+    setFormBiaya(
+      proker.kebutuhanBiaya && Number(proker.kebutuhanBiaya) > 0
+        ? String(proker.kebutuhanBiaya)
+        : ""
+    );
+    setFormLinkDrive(proker.linkGoogleDrive || "");
+    setFormAttachmentFile(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleSubmitProker = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formJudul.trim()) {
@@ -203,31 +279,57 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       return;
     }
 
+    let waktuPelaksanaan = "";
+    if (formStartDate) {
+      waktuPelaksanaan =
+        formEndDate && formEndDate !== formStartDate
+          ? `${formStartDate} s/d ${formEndDate}`
+          : formStartDate;
+    }
+
     setIsSubmittingProker(true);
     try {
-      const payload = {
-        judul: formJudul.trim(),
-        deskripsi: formDeskripsi.trim(),
-        kategori: formKategori,
-        sumber: "MAHASISWA",
-        waktuPelaksanaan: formWaktu.trim() || undefined,
-        kebutuhanBiaya: formBiaya ? Number(formBiaya) : 0,
-        linkGoogleDrive: formLinkDrive.trim() || undefined,
-        statusUsulan: "BELUM_DISETUJUI",
-        statusPelaksanaan: "BELUM_MULAI",
-      };
-
-      const res = await api.post("/dpl/program-kerja", payload);
-      if (res.data?.success || res.status === 200 || res.status === 201) {
-        showToast.success("Usulan program kerja berhasil diajukan ke DPL!");
-        setIsCreateModalOpen(false);
-        fetchData();
-        if (onProkerCreated) onProkerCreated();
+      const formData = new FormData();
+      formData.append("judul", formJudul.trim());
+      formData.append("deskripsi", formDeskripsi.trim());
+      formData.append("kategori", formKategori);
+      formData.append("sumber", "MAHASISWA");
+      if (waktuPelaksanaan) {
+        formData.append("waktuPelaksanaan", waktuPelaksanaan);
+        formData.append("targetTanggal", waktuPelaksanaan);
       }
+      if (formBiaya) {
+        formData.append("rencanaAnggaran", formBiaya);
+        formData.append("kebutuhanBiaya", formBiaya);
+      }
+      if (formLinkDrive.trim()) {
+        formData.append("linkGoogleDrive", formLinkDrive.trim());
+        formData.append("urlGoogleDrive", formLinkDrive.trim());
+      }
+      if (formAttachmentFile) {
+        formData.append("filePdf", formAttachmentFile);
+      }
+
+      if (formMode === "edit" && editingId) {
+        formData.append("statusUsulan", "BELUM_DISETUJUI");
+        formData.append("status", "BELUM_DISETUJUI");
+        await api.put(`/kkn/program-kerja/${editingId}`, formData);
+        showToast.success("Program kerja berhasil diperbarui dan diajukan ulang!");
+      } else {
+        formData.append("statusUsulan", "BELUM_DISETUJUI");
+        formData.append("statusPelaksanaan", "BELUM_MULAI");
+        await api.post("/kkn/program-kerja", formData);
+        showToast.success("Usulan program kerja berhasil diajukan ke DPL!");
+      }
+
+      setIsFormModalOpen(false);
+      setSelectedProker(null);
+      fetchData();
+      if (onProkerCreated) onProkerCreated();
     } catch (err: any) {
-      console.error("Gagal mengusulkan proker", err);
+      console.error("Gagal menyimpan proker", err);
       showToast.error(
-        err.response?.data?.message || "Gagal mengusulkan program kerja. Coba lagi."
+        err.response?.data?.message || "Gagal menyimpan program kerja. Coba lagi."
       );
     } finally {
       setIsSubmittingProker(false);
@@ -241,7 +343,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
 
     setIsDeletingProker(true);
     try {
-      await api.delete(`/dpl/program-kerja/${id}`);
+      await api.delete(`/kkn/program-kerja/${id}`);
       showToast.success("Program kerja berhasil dihapus");
       setSelectedProker(null);
       fetchData();
@@ -300,7 +402,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
         const lng = pos.coords.longitude.toFixed(6);
         setPoskoFormLat(lat);
         setPoskoFormLng(lng);
-        showToast.success(`📍 Lokasi GPS terdeteksi: ${lat}, ${lng}`);
+        showToast.success(`Lokasi GPS terdeteksi: ${lat}, ${lng}`);
       },
       (err) => {
         setIsDetectingGps(false);
@@ -382,6 +484,40 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
     }).format(val);
   };
 
+  // Helper cek apakah proker bisa diedit / direvisi
+  const canEditProker = (p: ProkerItem) => {
+    const u = (p.statusUsulan || "").toUpperCase();
+    const l = (p.status || "").toUpperCase();
+    return (
+      u === "BELUM_DISETUJUI" ||
+      u === "PERLU_REVISI_DPL" ||
+      u === "DITOLAK" ||
+      u === "TIDAK_DISETUJUI" ||
+      (u === "" && (l === "BELUM_DISETUJUI" || l === "DITOLAK" || l === "TIDAK_DISETUJUI"))
+    );
+  };
+
+  // Helper badge warna kategori resmi
+  const getKategoriStyle = (kat?: string) => {
+    const k = (kat || "").toLowerCase();
+    if (k.includes("pemilahan") || k.includes("pilah")) {
+      return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300";
+    }
+    if (k.includes("pengangkutan") || k.includes("angkut")) {
+      return "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border-blue-300";
+    }
+    if (k.includes("pengolahan") || k.includes("olah")) {
+      return "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300";
+    }
+    if (k.includes("pemanfaatan") || k.includes("manfaat")) {
+      return "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300";
+    }
+    if (k.includes("edukasi") || k.includes("sosialisasi")) {
+      return "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300";
+    }
+    return "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-300";
+  };
+
   // Filter list berdasarkan tab status
   const filteredProkerList = prokerList.filter((item) => {
     if (statusFilter === "ALL") return true;
@@ -389,6 +525,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
     const pelaks = (item.statusPelaksanaan || "").toUpperCase();
 
     if (statusFilter === "DISETUJUI") return usulan === "DISETUJUI" || usulan === "DITERIMA";
+    if (statusFilter === "REVISI") return usulan === "PERLU_REVISI_DPL";
     if (statusFilter === "DIUSULKAN") return usulan === "BELUM_DISETUJUI" || usulan === "DIUSULKAN";
     if (statusFilter === "BERJALAN") return pelaks === "SEDANG_BERJALAN" || pelaks === "BERLANGSUNG";
     if (statusFilter === "SELESAI") return pelaks === "SELESAI";
@@ -470,7 +607,8 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
             {[
               { id: "ALL", label: `Semua (${prokerList.length})` },
               { id: "DISETUJUI", label: "Disetujui DPL" },
-              { id: "DIUSULKAN", label: "Diusulkan" },
+              { id: "REVISI", label: "Perlu Revisi" },
+              { id: "DIUSULKAN", label: "Menunggu" },
               { id: "BERJALAN", label: "Sedang Berjalan" },
               { id: "SELESAI", label: "Selesai" },
               { id: "DITOLAK", label: "Ditolak" },
@@ -532,6 +670,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 proker.statusUsulan === "DISETUJUI" ||
                 proker.status === "DITERIMA" ||
                 proker.status === "DISETUJUI";
+              const isRevision = proker.statusUsulan === "PERLU_REVISI_DPL";
               const isRejected =
                 proker.statusUsulan === "DITOLAK" ||
                 proker.status === "DITOLAK" ||
@@ -553,45 +692,75 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                 }
               }
 
+              const canEdit = canEditProker(proker);
+
               return (
                 <div
                   key={proker.id || index}
                   onClick={() => setSelectedProker(proker)}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 rounded-3xl p-4 shadow-2xs space-y-3 transition-all cursor-pointer group active:scale-[0.99]"
+                  className={`bg-white dark:bg-slate-900 border ${
+                    isRevision
+                      ? "border-orange-300 dark:border-orange-800/80 shadow-xs shadow-orange-900/10"
+                      : "border-slate-200/80 dark:border-slate-800 hover:border-emerald-500/60 dark:hover:border-emerald-500/60 shadow-2xs"
+                  } rounded-3xl p-4 space-y-3 transition-all cursor-pointer group active:scale-[0.99]`}
                 >
                   {/* Top Badges */}
                   <div className="flex items-start justify-between gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${getKategoriStyle(
+                        proker.kategori
+                      )}`}
+                    >
                       {proker.kategori || "Program Kerja"}
                     </span>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {/* Status Pelaksanaan Badge */}
                       {isCompleted ? (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300">
-                          ✓ Selesai
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 flex items-center gap-1">
+                          <CheckCircle2 size={10} />
+                          <span>Selesai</span>
                         </span>
                       ) : isOngoing ? (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 animate-pulse">
-                          ⚡ Berjalan
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 animate-pulse flex items-center gap-1">
+                          <Clock size={10} />
+                          <span>Berjalan</span>
                         </span>
                       ) : null}
 
                       {/* Status Usulan Badge */}
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase flex items-center gap-1 ${
                           isApproved
                             ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : isRevision
+                            ? "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300"
                             : isRejected
                             ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
                             : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                         }`}
                       >
-                        {isApproved
-                          ? "Disetujui DPL"
-                          : isRejected
-                          ? "Ditolak"
-                          : "Diusulkan"}
+                        {isApproved ? (
+                          <>
+                            <Check size={10} />
+                            <span>Disetujui DPL</span>
+                          </>
+                        ) : isRevision ? (
+                          <>
+                            <AlertCircle size={10} />
+                            <span>Perlu Revisi</span>
+                          </>
+                        ) : isRejected ? (
+                          <>
+                            <X size={10} />
+                            <span>Ditolak</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock size={10} />
+                            <span>Menunggu</span>
+                          </>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -606,7 +775,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                     </p>
                   </div>
 
-                  {/* Meta Chips */}
+                  {/* Meta Chips & Action */}
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400 font-medium">
                     <div className="flex items-center gap-3">
                       {proker.waktuPelaksanaan && (
@@ -622,18 +791,59 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       )}
                     </div>
 
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
-                      <span>Detail</span>
-                      <ChevronRight size={12} />
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditProkerModal(proker);
+                          }}
+                          className={`px-2.5 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1 transition ${
+                            isRevision
+                              ? "bg-orange-100 hover:bg-orange-200 text-orange-800 dark:bg-orange-950 dark:text-orange-300"
+                              : isRejected
+                              ? "bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                              : "bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          }`}
+                        >
+                          <Pencil size={10} />
+                          <span>
+                            {isRevision
+                              ? "Revisi Sekarang"
+                              : isRejected
+                              ? "Ajukan Ulang"
+                              : "Edit"}
+                          </span>
+                        </button>
+                      )}
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                        <span>Detail</span>
+                        <ChevronRight size={12} />
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Evaluasi DPL Note if Present */}
+                  {/* Catatan / Evaluasi DPL Note if Present */}
                   {(proker.catatanDpl || proker.evaluasiDpl) && (
-                    <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-[10.5px] text-amber-800 dark:text-amber-300 space-y-0.5">
+                    <div
+                      className={`p-2.5 rounded-2xl ${
+                        isRevision
+                          ? "bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-orange-800 dark:text-orange-300"
+                          : isRejected
+                          ? "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300"
+                          : "bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-amber-800 dark:text-amber-300"
+                      } text-[10.5px] space-y-0.5`}
+                    >
                       <div className="flex items-center gap-1 font-bold">
-                        <Award size={12} className="text-amber-600" />
-                        <span>Catatan DPL:</span>
+                        <Award size={12} className={isRevision ? "text-orange-600" : isRejected ? "text-rose-600" : "text-amber-600"} />
+                        <span>
+                          {isRevision
+                            ? "Catatan Revisi DPL:"
+                            : isRejected
+                            ? "Alasan Penolakan DPL:"
+                            : "Catatan DPL:"}
+                        </span>
                       </div>
                       <p className="leading-snug">{proker.catatanDpl || proker.evaluasiDpl}</p>
                     </div>
@@ -760,26 +970,34 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
       )}
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 3. MODAL: TAMBAH USULAN PROGRAM KERJA                         */}
+      {/* 3. MODAL: TAMBAH / EDIT USULAN PROGRAM KERJA                  */}
       {/* ───────────────────────────────────────────────────────────── */}
-      {isCreateModalOpen &&
+      {isFormModalOpen &&
         createPortal(
           <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div className="absolute inset-0" onClick={() => setIsCreateModalOpen(false)} />
+            <div className="absolute inset-0" onClick={() => setIsFormModalOpen(false)} />
 
             <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10">
               {/* Header */}
               <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 shrink-0">
                 <div className="space-y-0.5">
                   <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                    <Target size={18} className="text-emerald-600" />
-                    Usulkan Program Kerja KKN
+                    {formMode === "edit" ? (
+                      <Pencil size={18} className="text-emerald-600" />
+                    ) : (
+                      <Target size={18} className="text-emerald-600" />
+                    )}
+                    {formMode === "edit" ? "Edit / Revisi Program Kerja" : "Usulkan Program Kerja KKN"}
                   </h3>
-                  <p className="text-[10px] text-slate-500">Ajukan program kerja kelompok ke DPL</p>
+                  <p className="text-[10px] text-slate-500">
+                    {formMode === "edit"
+                      ? "Perbaiki data program kerja dan ajukan ulang ke DPL"
+                      : "Ajukan program kerja kelompok ke DPL"}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
+                  onClick={() => setIsFormModalOpen(false)}
                   className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-300 transition cursor-pointer"
                 >
                   <X size={16} />
@@ -787,7 +1005,7 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
               </div>
 
               {/* Form Body */}
-              <form id="form-create-proker" onSubmit={handleCreateProker} className="p-4 space-y-3.5 overflow-y-auto overscroll-contain flex-1 text-xs">
+              <form id="form-proker" onSubmit={handleSubmitProker} className="p-4 space-y-3.5 overflow-y-auto overscroll-contain flex-1 text-xs">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Judul Program Kerja *
@@ -806,17 +1024,14 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                     Kategori Kegiatan *
                   </label>
-                  <select
-                    value={formKategori}
-                    onChange={(e) => setFormKategori(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                  <button
+                    type="button"
+                    onClick={() => setIsKategoriPickerOpen(true)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 flex items-center justify-between font-medium cursor-pointer hover:border-emerald-500 transition text-left"
                   >
-                    {KATEGORI_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    <span>{formKategori || "Pilih Kategori Kegiatan"}</span>
+                    <ChevronDown size={16} className="text-slate-400" />
+                  </button>
                 </div>
 
                 <div className="space-y-1">
@@ -833,17 +1048,32 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                    Rencana Waktu / Jadwal Pelaksanaan
-                  </label>
-                  <input
-                    type="text"
-                    value={formWaktu}
-                    onChange={(e) => setFormWaktu(e.target.value)}
-                    placeholder="Contoh: Minggu 2 - 4 (15 Sept - 5 Okt 2026)"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                      <Calendar size={11} className="text-emerald-600" />
+                      <span>Tgl Mulai</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formStartDate}
+                      onChange={(e) => setFormStartDate(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                      <Calendar size={11} className="text-emerald-600" />
+                      <span>Tgl Selesai</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formEndDate}
+                      onChange={(e) => setFormEndDate(e.target.value)}
+                      min={formStartDate || undefined}
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -873,20 +1103,41 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Upload Berkas PDF / Dokumen (Opsional)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*,application/pdf"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setFormAttachmentFile(e.target.files[0]);
+                      }
+                    }}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl p-2 text-xs text-slate-800 dark:text-slate-100 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 dark:file:bg-emerald-950 dark:file:text-emerald-300 cursor-pointer"
+                  />
+                  {formAttachmentFile && (
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      File dipilih: {formAttachmentFile.name} ({(formAttachmentFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  )}
+                </div>
               </form>
 
               {/* Action Footer */}
               <div className="p-4 pb-[calc(env(safe-area-inset-bottom,16px)+16px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 grid grid-cols-2 gap-3 shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
+                  onClick={() => setIsFormModalOpen(false)}
                   className="py-3.5 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition cursor-pointer text-xs flex items-center justify-center"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  form="form-create-proker"
+                  form="form-proker"
                   disabled={isSubmittingProker || !formJudul.trim() || !formDeskripsi.trim()}
                   className="py-3.5 bg-[#035941] hover:bg-emerald-700 text-white rounded-2xl font-black uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50 text-xs active:scale-95"
                 >
@@ -895,12 +1146,108 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       <Loader2 size={15} className="animate-spin" />
                       <span>Menyimpan...</span>
                     </>
+                  ) : formMode === "edit" ? (
+                    <>
+                      <Send size={15} />
+                      <span>Simpan & Ajukan Ulang</span>
+                    </>
                   ) : (
                     <>
                       <Send size={15} />
                       <span>Kirim Usulan</span>
                     </>
                   )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* 3b. BOTTOM SHEET: PILIH KATEGORI (IDENTIK DENGAN ANDROID)     */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      {isKategoriPickerOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[100000] bg-slate-950/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="absolute inset-0" onClick={() => setIsKategoriPickerOpen(false)} />
+
+            <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[80vh] flex flex-col animate-in slide-in-from-bottom duration-200 z-10 overflow-hidden">
+              {/* Drag bar indicator */}
+              <div className="pt-3 pb-1 flex justify-center shrink-0">
+                <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full" />
+              </div>
+
+              {/* Header */}
+              <div className="p-4 pt-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    Pilih Kategori Program Kerja
+                  </h3>
+                  <p className="text-[10px] text-slate-500">
+                    Pilih pilar kegiatan yang sesuai dengan program kerja Anda
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsKategoriPickerOpen(false)}
+                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Option List (Exact Android Layout without Emojis) */}
+              <div className="p-3 space-y-1.5 overflow-y-auto overscroll-contain flex-1">
+                {KATEGORI_OPTIONS.map((opt) => {
+                  const isSelected = formKategori === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setFormKategori(opt.value);
+                        setIsKategoriPickerOpen(false);
+                      }}
+                      className={`w-full p-3.5 rounded-2xl flex items-center justify-between text-left transition cursor-pointer border ${
+                        isSelected
+                          ? "bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-500/60 text-emerald-950 dark:text-emerald-200 shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-200"
+                      }`}
+                    >
+                      <div className="space-y-0.5 min-w-0 pr-3">
+                        <p
+                          className={`text-xs ${
+                            isSelected
+                              ? "font-black text-emerald-700 dark:text-emerald-400"
+                              : "font-bold text-slate-800 dark:text-slate-200"
+                          }`}
+                        >
+                          {opt.label}
+                        </p>
+                        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-snug">
+                          {opt.desc}
+                        </p>
+                      </div>
+                      {isSelected ? (
+                        <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <Check size={13} strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border border-slate-300 dark:border-slate-700 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="p-3 pb-[calc(env(safe-area-inset-bottom,12px)+12px)] border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsKategoriPickerOpen(false)}
+                  className="w-full py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold transition text-xs cursor-pointer"
+                >
+                  Tutup
                 </button>
               </div>
             </div>
@@ -946,20 +1293,26 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       {selectedProker.statusUsulan === "DISETUJUI" ||
                       selectedProker.status === "DITERIMA" ||
                       selectedProker.status === "DISETUJUI"
-                        ? "✅ Disetujui DPL"
-                        : selectedProker.statusUsulan === "DITOLAK"
-                        ? "❌ Ditolak"
-                        : "⏳ Menunggu Validasi"}
+                        ? "Disetujui DPL"
+                        : selectedProker.statusUsulan === "PERLU_REVISI_DPL" ||
+                          selectedProker.status === "REVISI"
+                        ? "Perlu Revisi DPL"
+                        : selectedProker.statusUsulan === "DITOLAK" ||
+                          selectedProker.status === "DITOLAK" ||
+                          selectedProker.statusUsulan === "TIDAK_DISETUJUI"
+                        ? "Ditolak DPL"
+                        : "Menunggu Validasi"}
                     </p>
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-[10px] text-slate-400 font-bold uppercase">Pelaksanaan</p>
                     <p className="font-extrabold text-slate-800 dark:text-slate-200">
                       {selectedProker.statusPelaksanaan === "SELESAI"
-                        ? "🏆 Selesai"
-                        : selectedProker.statusPelaksanaan === "SEDANG_BERJALAN"
-                        ? "⚡ Sedang Berjalan"
-                        : "🕒 Belum Mulai"}
+                        ? "Selesai"
+                        : selectedProker.statusPelaksanaan === "SEDANG_BERJALAN" ||
+                          selectedProker.statusPelaksanaan === "BERLANGSUNG"
+                        ? "Sedang Berjalan"
+                        : "Belum Mulai"}
                     </p>
                   </div>
                 </div>
@@ -1008,6 +1361,22 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                       </a>
                     </div>
                   )}
+
+                  {selectedProker.filePdf && (
+                    <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                      <span className="text-slate-400 font-medium">Berkas PDF:</span>
+                      <a
+                        href={selectedProker.filePdf.startsWith("http") ? selectedProker.filePdf : `/uploads/${selectedProker.filePdf}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                      >
+                        <FileText size={12} />
+                        <span>Lihat Dokumen</span>
+                        <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* Evaluasi / Feedback DPL */}
@@ -1032,16 +1401,43 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                   </div>
                 )}
 
-                {/* Action Buttons: Delete (if not yet approved) */}
-                {selectedProker.statusUsulan !== "DISETUJUI" &&
-                  selectedProker.status !== "DITERIMA" &&
-                  selectedProker.status !== "DISETUJUI" && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                {/* Action Buttons: Edit / Revisi & Delete */}
+                <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  {canEditProker(selectedProker) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = selectedProker;
+                        setSelectedProker(null);
+                        handleOpenEditProkerModal(target);
+                      }}
+                      className={`w-full py-3 px-3 rounded-2xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95 ${
+                        selectedProker.statusUsulan === "PERLU_REVISI_DPL" || selectedProker.status === "REVISI"
+                          ? "bg-orange-500 hover:bg-orange-600 text-white"
+                          : selectedProker.statusUsulan === "DITOLAK" || selectedProker.status === "DITOLAK"
+                          ? "bg-rose-600 hover:bg-rose-700 text-white"
+                          : "bg-[#035941] hover:bg-emerald-700 text-white"
+                      }`}
+                    >
+                      <Pencil size={14} />
+                      <span>
+                        {selectedProker.statusUsulan === "PERLU_REVISI_DPL" || selectedProker.status === "REVISI"
+                          ? "Revisi Program Kerja Sekarang"
+                          : selectedProker.statusUsulan === "DITOLAK" || selectedProker.status === "DITOLAK"
+                          ? "Perbaiki & Ajukan Ulang"
+                          : "Edit Usulan Program Kerja"}
+                      </span>
+                    </button>
+                  )}
+
+                  {selectedProker.statusUsulan !== "DISETUJUI" &&
+                    selectedProker.status !== "DITERIMA" &&
+                    selectedProker.status !== "DISETUJUI" && (
                       <button
                         type="button"
                         onClick={() => handleDeleteProker(selectedProker.id)}
                         disabled={isDeletingProker}
-                        className="w-full py-3 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200 dark:border-rose-900"
+                        className="w-full py-2.5 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer border border-rose-200 dark:border-rose-900"
                       >
                         {isDeletingProker ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -1050,8 +1446,8 @@ export const MahasiswaProkerMobile: React.FC<{ onProkerCreated?: () => void }> =
                         )}
                         <span>Hapus Usulan Program Kerja</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                </div>
               </div>
             </div>
           </div>,

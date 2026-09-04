@@ -1,8 +1,6 @@
 /**
- * Project: BERSEKA
- * Developed by: PT Makerindo
- * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
+ * Project: BERSEKA (Bersih, Sehat, Kampung Asri)
+ * Copyright (c) 2026 BERSEKA. All rights reserved.
  */
 
 import React, { useState, useEffect } from "react";
@@ -35,6 +33,7 @@ import {
   Smile,
   BarChart3,
   ClipboardCheck,
+  Leaf,
 } from "lucide-react";
 import { APP_CONFIG } from "../../config/appConfig";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -730,7 +729,7 @@ const Informasi: React.FC = () => {
         </>
       )}
 
-      {/* ---------------- 5. PROFIL TIM PENGEMBANG & VERSI APLIKASI (ALL ROLES) ---------------- */}
+      {/* ---------------- 5. PROFIL PLATFORM BERSEKA & VERSI APLIKASI (ALL ROLES) ---------------- */}
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-3">
@@ -738,33 +737,33 @@ const Informasi: React.FC = () => {
             <Sparkles size={16} />
           </div>
           <div>
-            <h2 className="text-base font-black text-slate-800 dark:text-slate-100">Profil Tim Pengembang &amp; Informasi Versi</h2>
-            <p className="text-[11px] text-slate-400 font-medium">Dikembangkan oleh PT Makerindo dalam program PKL mahasiswa berprestasi</p>
+            <h2 className="text-base font-black text-slate-800 dark:text-slate-100">Tentang Aplikasi &amp; Informasi Versi</h2>
+            <p className="text-[11px] text-slate-400 font-medium">Platform Manajemen Pemilahan Sampah Cerdas &bull; BERSEKA Eco-Tech</p>
           </div>
         </div>
 
-        {/* Developer Profile Card */}
+        {/* BERSEKA Platform Profile Card */}
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900 rounded-3xl border border-emerald-200/80 dark:border-slate-800 p-6 shadow-xs">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
-            {/* Company Identity */}
+            {/* BERSEKA Identity */}
             <div className="flex items-center gap-4 md:w-56 shrink-0">
               <div className="w-14 h-14 rounded-2xl bg-[#009966] text-white flex items-center justify-center font-black text-xl shadow-md shadow-emerald-700/20 shrink-0">
-                M
+                <Leaf size={28} />
               </div>
               <div>
-                <h3 className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight">PT Makerindo</h3>
-                <p className="text-[11px] font-semibold text-[#009966]">Software House &amp; Digital Innovator</p>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Bandung, Jawa Barat</p>
+                <h3 className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight">BERSEKA</h3>
+                <p className="text-[11px] font-semibold text-[#009966]">Bersih, Sehat, Kampung Asri</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Kota Bandung, Jawa Barat</p>
               </div>
             </div>
 
-            {/* Company Description */}
+            {/* Platform Description */}
             <div className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed border-t md:border-t-0 md:border-l border-emerald-200/80 dark:border-slate-800 pt-4 md:pt-0 md:pl-6 space-y-2">
               <p>
-                <strong className="text-slate-800 dark:text-slate-100">PT Makerindo</strong> adalah perusahaan teknologi berbasis di Bandung yang berfokus pada pengembangan solusi digital inovatif untuk sektor pemerintahan, lingkungan hidup, dan pemberdayaan masyarakat.
+                <strong className="text-slate-800 dark:text-slate-100">BERSEKA (Bersih, Sehat, Kampung Asri)</strong> adalah platform teknologi pintar yang dirancang untuk mendukung tata kelola pemilahan dan pengelolaan sampah terpadu di tingkat masyarakat perkotaan.
               </p>
               <p>
-                Sistem BERSEKA dikembangkan sebagai bagian dari program <strong className="text-slate-700 dark:text-slate-300">Praktik Kerja Lapangan (PKL)</strong> mahasiswa berprestasi di PT Makerindo, menggabungkan teknologi AI machine vision, geofencing GPS, dan gamifikasi poin untuk mendorong kebiasaan pemilahan sampah masyarakat urban.
+                Platform ini mengintegrasikan kecerdasan buatan (AI Vision) untuk identifikasi jenis sampah, validasi lokasi penugasan berbasis geofencing GPS, dan gamifikasi insentif poin guna menciptakan ekosistem lingkungan yang berkelanjutan, transparan, dan partisipatif.
               </p>
             </div>
           </div>
@@ -858,7 +857,7 @@ const Informasi: React.FC = () => {
                 <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
                   BERSEKA v{APP_CONFIG.version}
                 </h3>
-                <p className="text-[11px] text-slate-400 font-semibold">{APP_CONFIG.tagline} &bull; Build 2026 &bull; PT Makerindo</p>
+                <p className="text-[11px] text-slate-400 font-semibold">{APP_CONFIG.tagline} &bull; Build 2026</p>
               </div>
             </div>
 
@@ -883,7 +882,7 @@ const Informasi: React.FC = () => {
 
           <div className="px-5 pb-4">
             <p className="text-[11px] text-slate-400 font-medium">
-              &copy; 2026 PT Makerindo. Seluruh hak cipta dilindungi undang-undang. Sistem ini dikembangkan eksklusif untuk program KKN Tematik Pemilahan Sampah UNIKOM &mdash; Dinas Lingkungan Hidup Kota Bandung.
+              &copy; 2026 BERSEKA. Seluruh hak cipta dilindungi undang-undang. Sistem ini dikembangkan untuk program KKN Tematik Pemilahan Sampah UNIKOM &mdash; Dinas Lingkungan Hidup Kota Bandung.
             </p>
           </div>
         </div>

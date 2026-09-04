@@ -2298,6 +2298,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     "SUPER_USER",
     "ADMIN_DLH",
     "PEMIMPIN",
+    "PIMPINAN",
     "PANITIA_TASKFORCE",
     "DEVELOPER",
   ].includes(userRole);

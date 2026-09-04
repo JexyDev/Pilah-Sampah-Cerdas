@@ -1567,7 +1567,14 @@ const Dashboard: React.FC = () => {
     if (isLurahRole) {
       return userKelurahan ? (userKelurahan.startsWith("Kel.") ? userKelurahan : `Kel. ${userKelurahan}`) : "Kel. Cipaganti";
     }
-    if (user?.wilayah && user.wilayah !== "PT Makerindo" && user.wilayah !== "Sistem Pusat" && user.wilayah !== "Dinas Lingkungan Hidup") {
+    if (
+      user?.wilayah &&
+      user.wilayah !== "PT Makerindo" &&
+      user.wilayah !== "Sistem Pusat" &&
+      user.wilayah !== "Sistem Terpusat" &&
+      user.wilayah !== "Wilayah Operasional" &&
+      user.wilayah !== "Dinas Lingkungan Hidup"
+    ) {
       return user.wilayah;
     }
     return "Semua Wilayah";
@@ -1645,8 +1652,7 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
-      user?.peran === "PANITIA_TASKFORCE" ||
-      user?.peran === "PEMIMPIN"
+      user?.peran === "PANITIA_TASKFORCE"
     ) {
       setLoading(false);
       return;
@@ -1826,8 +1832,7 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (
     user?.peran === "DPL" ||
-    user?.peran === "DOSEN_PEMBIMBING" ||
-    user?.peran === "PEMIMPIN"
+    user?.peran === "DOSEN_PEMBIMBING"
   ) {
     return <DplDashboardPage />;
   }

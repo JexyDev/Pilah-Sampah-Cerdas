@@ -114,6 +114,8 @@ const getWilayahByRole = (role: string, kelurahan?: string, kecamatan?: string, 
     case "DEVELOPER":
     case "SUPER_USER":
     case "ADMIN_DLH":
+    case "PIMPINAN":
+    case "PEMIMPIN":
       return "Sistem Terpusat";
     case "CAMAT":
       return "Tingkat Kecamatan";
@@ -192,8 +194,14 @@ const getInitialUser = (): User | null => {
     if (
       user &&
       (user.wilayah === "Sistem Pusat" ||
+        user.wilayah === "Sistem Terpusat" ||
+        user.wilayah === "Wilayah Operasional" ||
         user.wilayah === "Dinas Lingkungan Hidup" ||
         user.wilayah === "PT Makerindo" ||
+        user.peran === "PIMPINAN" ||
+        user.peran === "SUPER_USER" ||
+        user.peran === "ADMIN_DLH" ||
+        user.peran === "DEVELOPER" ||
         !user.wilayah)
     ) {
       user.wilayah = "Semua Wilayah";
@@ -269,13 +277,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         peran: normalizedRole,
         role: backendUser.role,
         wilayah:
-          backendUser.wilayah ||
-          getWilayahByRole(
-            normalizedRole,
-            backendUser.kelurahan,
-            backendUser.kecamatan,
-            backendUser.rw
-          ),
+          ["PIMPINAN", "DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(normalizedRole)
+            ? "Semua Wilayah"
+            : backendUser.wilayah ||
+              getWilayahByRole(
+                normalizedRole,
+                backendUser.kelurahan,
+                backendUser.kecamatan,
+                backendUser.rw
+              ),
         kelurahan: backendUser.kelurahan,
         kecamatan: backendUser.kecamatan || "",
         rw: backendUser.rw,

@@ -47,7 +47,7 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
   const [tempat, setTempat] = useState(user?.wilayah || "Wilayah KKN");
   const [deskripsi, setDeskripsi] = useState("");
   const [selectedProkerId, setSelectedProkerId] = useState("");
-  const [tipeAktivitas, setTipeAktivitas] = useState<"INDIVIDU" | "KELOMPOK">("KELOMPOK");
+  const [tipeAktivitas] = useState<"INDIVIDU">("INDIVIDU");
 
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -140,35 +140,6 @@ export const MahasiswaLogbookFormModal: React.FC<MahasiswaLogbookFormModalProps>
 
         {/* Scrollable Form Body */}
         <form id="form-logbook-modal" onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto overscroll-contain flex-1 text-xs">
-          {/* Tipe Aktivitas (Kelompok vs Individu) */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipe Aktivitas</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setTipeAktivitas("KELOMPOK")}
-                className={`py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer border ${
-                  tipeAktivitas === "KELOMPOK"
-                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-500"
-                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                👥 Bersama Kelompok
-              </button>
-              <button
-                type="button"
-                onClick={() => setTipeAktivitas("INDIVIDU")}
-                className={`py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer border ${
-                  tipeAktivitas === "INDIVIDU"
-                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-500"
-                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                }`}
-              >
-                👤 Mandiri / Individu
-              </button>
-            </div>
-          </div>
-
           {/* Tanggal & Waktu */}
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-1 space-y-1">

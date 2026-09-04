@@ -94,7 +94,7 @@ const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
 
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["CAMAT", "LURAH", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const isReadOnly = ["CAMAT", "LURAH", "PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
 
   type TabType = "kodefikasi" | "monitoring" | "kategori" | "batch_qr";
