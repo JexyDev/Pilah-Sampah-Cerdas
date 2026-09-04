@@ -140,7 +140,7 @@ export class ConfigService {
 
       // Rule 6: Geofence Buffer & Auto-Attendance
       attendanceGeofenceBufferMeters: parseInt(
-        map["attendance_geofence_buffer_meters"] || "15",
+        map["attendance_geofence_buffer_meters"] || "100",
         10
       ),
       attendanceGeofenceInvalidationHours: parseInt(
@@ -257,7 +257,7 @@ export class ConfigService {
       },
       {
         key: "attendance_geofence_buffer_meters",
-        value: String(data.attendanceGeofenceBufferMeters ?? 15),
+        value: String(data.attendanceGeofenceBufferMeters ?? 100),
       },
       {
         key: "attendance_geofence_invalidation_hours",

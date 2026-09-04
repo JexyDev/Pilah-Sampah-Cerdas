@@ -1485,7 +1485,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
               {/* Form Tambah/Alokasikan Mahasiswa ke Kelompok (Admin Only) */}
               {!isReadOnly && (
-                <div className="border border-teal-100 dark:border-teal-800/50 bg-teal-50/40 dark:bg-teal-950/20 rounded-2xl p-4 space-y-3">
+                <div className="border border-teal-100 dark:border-teal-800/50 bg-teal-50/40 dark:bg-teal-950/20 rounded-2xl p-4 space-y-3 overflow-hidden max-w-full">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <UserPlus size={15} className="text-teal-600 dark:text-teal-400" />
@@ -1510,11 +1510,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                       />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
                       <select
                         value={studentToAssignId}
                         onChange={(e) => setStudentToAssignId(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-teal-200/80 dark:border-teal-800/60 rounded-xl text-xs font-medium bg-white dark:bg-slate-900 focus:outline-none focus:border-teal-500"
+                        className="flex-1 min-w-0 w-full px-3 py-2 border border-teal-200/80 dark:border-teal-800/60 rounded-xl text-xs font-medium bg-white dark:bg-slate-900 focus:outline-none focus:border-teal-500 truncate shadow-2xs"
                       >
                         <option value="">-- Pilih Mahasiswa untuk Dialokasikan --</option>
                         {allStudentsList
@@ -1540,7 +1540,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                         type="button"
                         disabled={!studentToAssignId || submittingMemberAction}
                         onClick={() => handleAddStudentToGroup(studentToAssignId, selectedDetailKelompok.id)}
-                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+                        className="w-full sm:w-auto shrink-0 px-4 py-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
                       >
                         {submittingMemberAction ? <Loader2 className="animate-spin" size={14} /> : <UserPlus size={14} />}
                         <span>+ Tambah Mahasiswa</span>

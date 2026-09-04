@@ -1265,8 +1265,13 @@ export const LandingPage: React.FC = () => {
                   (e.target as HTMLImageElement).src = "/image/activity-1.webp";
                 }}
               />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider">
-                {selectedProgram.categoryLabel || "Program BERSEKA"}
+              <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-sm">
+                BERSEKA (Bersih, Sehat, Kampung Asri) adalah platform cerdas pengelolaan sampah terintegrasi berbasis partisipasi warga dan civitas akademika Universitas Komputer Indonesia.
+              </p>
+              <div className="text-xs text-slate-500 font-semibold space-y-1">
+                <p>📍 Jl. Dipati Ukur No. 112-116, Coblong, Kota Bandung</p>
+                <p>📧 admin@berseka.id <span className="text-[11px] text-slate-400 font-normal">(Cadangan: admin.berseka@gmail.com)</span></p>
+                <p>📷 Instagram: <a href="https://instagram.com/berseka.id" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">@berseka.id</a></p>
               </div>
             </div>
             <div className="p-6 space-y-4">
@@ -1476,14 +1481,36 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowCalculatorModal(false)}
-                  className="landing-btn landing-btn-primary landing-btn-sm"
+              {/* Kontak WhatsApp & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a
+                  href="https://wa.me/6285715516065"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-3.5 bg-green-50 hover:bg-green-100/80 border border-green-200 rounded-2xl flex items-center gap-3 text-green-900 transition cursor-pointer"
                 >
-                  Selesai Menghitung
-                </button>
+                  <div className="w-9 h-9 rounded-xl bg-green-600 text-white flex items-center justify-center shrink-0">
+                    <Smartphone size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-green-700 font-bold block uppercase tracking-wider">WhatsApp Hotline</span>
+                    <span className="text-xs font-black text-green-950">+62 857-1551-6065</span>
+                  </div>
+                </a>
+
+                <a
+                  href="mailto:admin@berseka.id"
+                  className="p-3.5 bg-blue-50 hover:bg-blue-100/80 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 transition cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-[#0468bf] text-white flex items-center justify-center shrink-0">
+                    <Newspaper size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-blue-700 font-bold block uppercase tracking-wider">Email Resmi</span>
+                    <span className="text-xs font-black text-blue-950">admin@berseka.id</span>
+                    <span className="text-[10px] text-slate-500 block font-normal">Cadangan: admin.berseka@gmail.com</span>
+                  </div>
+                </a>
               </div>
             </div>
           </div>

@@ -630,7 +630,7 @@ const DownloadPage: React.FC = () => {
               </li>
               <li className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-base text-sky-400 shrink-0">mail</span>
-                <a href="mailto:cdc@unikom.ac.id" className="hover:text-white transition">cdc@unikom.ac.id</a>
+                <a href="mailto:admin@berseka.id" className="hover:text-white transition">admin@berseka.id</a>
               </li>
               <li className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-base text-green-400 shrink-0">chat</span>
