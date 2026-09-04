@@ -981,7 +981,7 @@ export class KknAttendanceService {
 
     // Load geofence buffer from Rule Engine config (replaces hardcoded 15m)
     const ruleConfigs = await configService.getRuleEngineConfigs();
-    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
 
     const nowForPing3 = new Date();
     const nowWibPing3 = new Date(nowForPing3.getTime() + 7 * 60 * 60 * 1000);
@@ -1468,7 +1468,7 @@ export class KknAttendanceService {
       const polygonCoords = actLoc.polygon as any;
 
       const ruleConfigs = await configService.getRuleEngineConfigs();
-      const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+      const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
       const effectiveRadius = scheduleRadius + bufferMeters;
 
       if (polygonCoords && Array.isArray(polygonCoords) && polygonCoords.length >= 3) {
@@ -1813,7 +1813,7 @@ export class KknAttendanceService {
         include: { kelompok: true },
       });
       const coConfigs = await configService.getRuleEngineConfigs();
-      const coBuffer = (coConfigs as any).attendanceGeofenceBufferMeters ?? 25;
+      const coBuffer = (coConfigs as any).attendanceGeofenceBufferMeters ?? 100;
       const coKelompokId = coStudent?.kelompokId;
       const coGroupPoskos = coKelompokId ? await getGroupPoskoList(coKelompokId) : [];
       const coGeofence = coSchedule ? await buildGeofence(coSchedule) : null;
@@ -1909,7 +1909,7 @@ export class KknAttendanceService {
     });
 
     const checkoutRuleConfigs = await configService.getRuleEngineConfigs();
-    const checkoutBufferMeters = (checkoutRuleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+    const checkoutBufferMeters = (checkoutRuleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
 
     let logsCalculatedMins = 0;
     if (schedule && todayLogsForCheckout.length >= 2) {
@@ -2353,7 +2353,7 @@ export class KknAttendanceService {
     // Load geofence buffer from Rule Engine config
     const attendanceListRuleConfigs = await configService.getRuleEngineConfigs();
     const attendanceListBufferMeters =
-      (attendanceListRuleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+      (attendanceListRuleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
 
     const locations = await this.getActiveStudentsLocations(dplUserId);
     const locMap = new Map(locations.map((l) => [l.studentId, l]));
@@ -3531,7 +3531,7 @@ export class KknAttendanceService {
 
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam radius zona kegiatan / posko KKN saat memulai presensi
     const ruleConfigs = await configService.getRuleEngineConfigs();
-    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 25;
+    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
 
     const kelompokIdToCheck = schedule.kelompokId || student.kelompokId;
     const groupPoskos = kelompokIdToCheck ? await getGroupPoskoList(kelompokIdToCheck) : [];
@@ -3916,7 +3916,7 @@ export class KknAttendanceService {
         : null,
       poskoList: groupPoskos,
       totalPosko: groupPoskos.length,
-      geofenceBufferMeters: (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15,
+      geofenceBufferMeters: (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 100,
       invalidationHours: (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2,
       serverTimestamp: new Date().toISOString(),
       attendanceId: attendance.id,
@@ -4098,7 +4098,7 @@ export class KknAttendanceService {
 
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam zona untuk melanjutkan sesi
     const ruleConfigs = await configService.getRuleEngineConfigs();
-    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 25;
+    const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
 
     const student = await prisma.studentKkn.findUnique({
       where: { userId: studentUserId },

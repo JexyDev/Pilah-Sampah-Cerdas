@@ -30,6 +30,8 @@ import {
   Radio,
   BookOpen,
   X,
+  Shield,
+  Sliders,
 } from "lucide-react";
 
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -1177,17 +1179,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN", "RW"] as UserRole[],
           children: [
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
-            { to: "/pengguna?role=su", label: "Admin", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
+            { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
             { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PEMIMPIN"] as UserRole[] },
             { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PEMIMPIN"] as UserRole[] },
-            // { to: "/pengguna?role=dlh", label: "Dinas Lingkungan Hidup", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            // { to: "/pengguna?role=camat", label: "Camat", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            // { to: "/pengguna?role=lurah", label: "Lurah", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
-            // { to: "/pengguna?role=rw", label: "Rukun Warga", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
           ],
         },
         {
@@ -1219,28 +1218,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[],
         },
         {
-          to: "/histori-sistem",
-          icon: FileText,
-          label: "Histori Sistem",
-          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
-        },
-        {
-          to: "/kurasi-landing",
-          icon: Globe,
-          label: "Kelola Landing Page",
-          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
-        },
-        {
           to: "/kelola-poin",
           icon: Coins,
           label: "Kelola Poin Pengguna",
           allowed: ["DEVELOPER"] as UserRole[],
-        },
-        {
-          to: "/pengguna-daring",
-          icon: UserIcon,
-          label: "Pengguna Daring",
-          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
         {
           to: "/developer/kelola-logbook",
@@ -1253,6 +1234,41 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: Radio,
           label: "Inspeksi Zona KKN",
           allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE"] as UserRole[],
+        },
+      ],
+    },
+    {
+      header: "SISTEM & HAK AKSES",
+      items: [
+        {
+          to: "/hak-akses",
+          icon: Shield,
+          label: "Hak Akses & Role",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/konfigurasi-sistem",
+          icon: Sliders,
+          label: "Konfigurasi Sistem",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/histori-sistem",
+          icon: FileText,
+          label: "Histori Sistem (Audit)",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/kurasi-landing",
+          icon: Globe,
+          label: "Kelola Landing Page",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+        {
+          to: "/pengguna-daring",
+          icon: UserIcon,
+          label: "Pengguna Daring",
+          allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
         },
       ],
     },

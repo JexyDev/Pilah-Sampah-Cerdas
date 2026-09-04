@@ -1300,8 +1300,8 @@ const JadwalKegiatan: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
+              <div className="overflow-x-auto scrollbar-thin">
+                <table className="w-full min-w-[1300px] text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                   <thead>
                     <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase tracking-wider font-bold">
                       <th className="py-3.5 px-4 w-12 text-center">No</th>
@@ -1313,7 +1313,11 @@ const JadwalKegiatan: React.FC = () => {
                       <th className="py-3.5 px-4 min-w-[220px]">Output / Target</th>
                       <th className="py-3.5 px-4 w-36 text-center">URL Google Drive</th>
                       <th className="py-3.5 px-4 w-36 text-center">Status</th>
-                      {canManageTimeline && <th className="py-3.5 px-4 w-20 text-center">Aksi</th>}
+                      {canManageTimeline && (
+                        <th className="py-3.5 px-4 w-24 text-center sticky right-0 z-20 bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-800 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]">
+                          Aksi
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium">
@@ -1419,7 +1423,13 @@ const JadwalKegiatan: React.FC = () => {
                           )}
                         </td>
                         {canManageTimeline && (
-                          <td className="py-3.5 px-4 text-center">
+                          <td
+                            className={`py-3.5 px-4 text-center sticky right-0 z-10 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] transition-colors ${
+                              item.statusPelaksanaan === "SEDANG_BERJALAN"
+                                ? "bg-emerald-50/95 dark:bg-emerald-950/90"
+                                : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800"
+                            }`}
+                          >
                             <div className="flex items-center justify-center gap-1.5 opacity-90 group-hover:opacity-100 transition">
                               <button
                                 onClick={() => {

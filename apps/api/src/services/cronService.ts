@@ -566,7 +566,7 @@ export class CronService {
       const { configService } = await import("./configService.js");
       const ruleConfigs = await configService.getRuleEngineConfigs();
       const invalidationHours = (ruleConfigs as any).attendanceGeofenceInvalidationHours ?? 2;
-      const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 15;
+      const bufferMeters = (ruleConfigs as any).attendanceGeofenceBufferMeters ?? 100;
       const cutoffTime = new Date(Date.now() - invalidationHours * 60 * 60 * 1000);
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
