@@ -765,7 +765,8 @@ export const KelolaLogbookPage: React.FC = () => {
                 <th className="py-3 px-4 w-12 text-center">No</th>
                 <th className="py-3 px-4">Mahasiswa & NIM</th>
                 <th className="py-3 px-4">Kelompok & Wilayah</th>
-                <th className="py-3 px-4">Tgl Kegiatan &amp; Tgl Diinput</th>
+                <th className="py-3 px-4">Tgl Kegiatan</th>
+                <th className="py-3 px-4">Tgl Diinput</th>
                 <th className="py-3 px-4">Aktivitas & Tempat</th>
                 <th className="py-3 px-4 text-center">Bukti Foto</th>
                 <th className="py-3 px-4">Status</th>
@@ -775,14 +776,14 @@ export const KelolaLogbookPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-slate-500">
+                  <td colSpan={9} className="py-16 text-center text-slate-500">
                     <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#035941]" />
                     <p className="font-semibold text-xs">Memuat data logbook...</p>
                   </td>
                 </tr>
               ) : paginatedLogbooks.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-slate-400">
+                  <td colSpan={9} className="py-16 text-center text-slate-400">
                     <BookOpen size={36} className="mx-auto mb-2 opacity-30" />
                     <p className="font-bold text-xs text-slate-600 dark:text-slate-400">Tidak ada data logbook</p>
                     <p className="text-[11px] text-slate-400 mt-0.5">Silakan sesuaikan filter atau kata kunci pencarian.</p>
@@ -829,7 +830,6 @@ export const KelolaLogbookPage: React.FC = () => {
 
                       <td className="py-3 px-4">
                         <div className="flex flex-col space-y-0.5">
-                          {/* Tanggal Kegiatan — diisi mahasiswa, bisa backdate */}
                           <span className="font-bold text-slate-800 dark:text-slate-200">
                             {item.tanggalKegiatan}
                           </span>
@@ -839,16 +839,13 @@ export const KelolaLogbookPage: React.FC = () => {
                           <span className="inline-block w-fit px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             Pekan {item.pekanKe}
                           </span>
-                          {/* Divider */}
-                          <div className="pt-1 border-t border-dashed border-slate-200 dark:border-slate-700 mt-0.5" />
-                          {/* Waktu Diinput — createdAt, server timestamp */}
-                          <div className="flex items-center gap-1 pt-0.5">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
-                            <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
-                              Diinput
-                            </span>
-                          </div>
-                          <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                        </div>
+                      </td>
+
+                      {/* Tgl Diinput — createdAt server timestamp */}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col space-y-0.5">
+                          <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px]">
                             {formatDateTime(item.createdAt).date}
                           </span>
                           <span className="text-[11px] text-slate-400">
