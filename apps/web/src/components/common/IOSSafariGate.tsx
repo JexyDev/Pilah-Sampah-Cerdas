@@ -240,7 +240,7 @@ export const IOSSafariGate: React.FC<IOSSafariGateProps> = ({ children }) => {
       {/* Bottom Footer Note */}
       <div className="relative z-10 max-w-md mx-auto w-full text-center pb-2">
         <p className="text-[10px] text-slate-400 font-mono">
-          BERSEKA Intelligent Waste &amp; KKN Field Ecosystem © 2026 PT Makerindo
+          BERSEKA Intelligent Waste &amp; KKN Field Ecosystem &copy; 2026 BERSEKA
         </p>
       </div>
     </div>
