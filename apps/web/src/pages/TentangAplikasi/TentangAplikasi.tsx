@@ -729,9 +729,169 @@ const Informasi: React.FC = () => {
           )}
         </>
       )}
+
+      {/* ---------------- 5. PROFIL TIM PENGEMBANG & VERSI APLIKASI (ALL ROLES) ---------------- */}
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 border-b border-slate-200/80 dark:border-slate-800 pb-3">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-[#009966] flex items-center justify-center font-bold shrink-0">
+            <Sparkles size={16} />
+          </div>
+          <div>
+            <h2 className="text-base font-black text-slate-800 dark:text-slate-100">Profil Tim Pengembang &amp; Informasi Versi</h2>
+            <p className="text-[11px] text-slate-400 font-medium">Dikembangkan oleh PT Makerindo dalam program PKL mahasiswa berprestasi</p>
+          </div>
+        </div>
+
+        {/* Developer Profile Card */}
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-slate-900 dark:to-slate-900 rounded-3xl border border-emerald-200/80 dark:border-slate-800 p-6 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-start gap-6">
+            {/* Company Identity */}
+            <div className="flex items-center gap-4 md:w-56 shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-[#009966] text-white flex items-center justify-center font-black text-xl shadow-md shadow-emerald-700/20 shrink-0">
+                M
+              </div>
+              <div>
+                <h3 className="font-black text-base text-slate-900 dark:text-slate-100 leading-tight">PT Makerindo</h3>
+                <p className="text-[11px] font-semibold text-[#009966]">Software House &amp; Digital Innovator</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">Bandung, Jawa Barat</p>
+              </div>
+            </div>
+
+            {/* Company Description */}
+            <div className="flex-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed border-t md:border-t-0 md:border-l border-emerald-200/80 dark:border-slate-800 pt-4 md:pt-0 md:pl-6 space-y-2">
+              <p>
+                <strong className="text-slate-800 dark:text-slate-100">PT Makerindo</strong> adalah perusahaan teknologi berbasis di Bandung yang berfokus pada pengembangan solusi digital inovatif untuk sektor pemerintahan, lingkungan hidup, dan pemberdayaan masyarakat.
+              </p>
+              <p>
+                Sistem BERSEKA dikembangkan sebagai bagian dari program <strong className="text-slate-700 dark:text-slate-300">Praktik Kerja Lapangan (PKL)</strong> mahasiswa berprestasi di PT Makerindo, menggabungkan teknologi AI machine vision, geofencing GPS, dan gamifikasi poin untuk mendorong kebiasaan pemilahan sampah masyarakat urban.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Role Descriptions Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          {[
+            {
+              label: "Super Admin",
+              icon: ShieldCheck,
+              color: "bg-rose-50 text-rose-700 border-rose-200",
+              desc: "Akses penuh ke seluruh sistem: manajemen master data, konfigurasi rule engine AI, audit log, approval diskrepansi, dan pengaturan parameter operasional.",
+            },
+            {
+              label: "Pimpinan (Lurah / Camat)",
+              icon: Building,
+              color: "bg-purple-50 text-purple-700 border-purple-200",
+              desc: "Monitoring eksekutif wilayah: pemantauan spasial real-time, indeks kepatuhan median warga per RW, dan evaluasi eskalasi layanan pengangkutan.",
+            },
+            {
+              label: "Dosen Pendamping Lapangan (DPL)",
+              icon: GraduationCap,
+              color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+              desc: "Verifikasi logbook presensi harian mahasiswa, validasi pengajuan izin/sakit, dan pengisian nilai akhir program KKN sesuai periode akademik.",
+            },
+            {
+              label: "Panitia Taskforce KKN",
+              icon: Briefcase,
+              color: "bg-teal-50 text-teal-700 border-teal-200",
+              desc: "Koordinasi satgas KKN lintas kelurahan, alokasi kelompok dampingan DPL, impor data survei baseline/endline, dan eskalasi izin darurat mahasiswa.",
+            },
+            {
+              label: "Mahasiswa KKN",
+              icon: UserCheck,
+              color: "bg-sky-50 text-sky-700 border-sky-200",
+              desc: "Presensi harian berbasis GPS geofencing, pendampingan aktivasi QR Code tempat sampah warga, pengisian instrumen survei lapangan.",
+            },
+            {
+              label: "Warga",
+              icon: Smile,
+              color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+              desc: "Pemilahan sampah organik & anorganik, penyetoran melalui scan QR Code, tabungan poin reward lingkungan, dan eksplorasi katalog daur ulang.",
+            },
+            {
+              label: "Rukun Warga (RW)",
+              icon: Building2,
+              color: "bg-green-50 text-green-700 border-green-200",
+              desc: "Persetujuan pendaftaran tempat sampah warga, pemantauan kepatuhan pemilahan per RT, validasi fasilitas pengolahan, dan apresiasi inovasi daur ulang.",
+            },
+            {
+              label: "Lurah (Operasional)",
+              icon: Building,
+              color: "bg-violet-50 text-violet-700 border-violet-200",
+              desc: "Pemantauan peta wilayah kelurahan, evaluasi indeks kepatuhan warga berbasis statistik median, dan monitoring eskalasi layanan pengangkutan sampah.",
+            },
+            {
+              label: "Petugas Residu",
+              icon: Truck,
+              color: "bg-amber-50 text-amber-700 border-amber-200",
+              desc: "Klaim tugas pengangkutan harian (06:00–08:00 & 16:00–18:00), rute penjemputan berdasarkan QR aktif, dan pencatatan timbangan fisik industri.",
+            },
+          ].map((item, idx) => {
+            const ItemIcon = item.icon;
+            return (
+              <div
+                key={idx}
+                className={`p-4 rounded-2xl border shadow-xs flex flex-col gap-2 hover:shadow-md transition-shadow ${item.color}`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-white/70 flex items-center justify-center shrink-0 shadow-xs">
+                    <ItemIcon size={16} />
+                  </div>
+                  <h4 className="font-black text-xs leading-tight">{item.label}</h4>
+                </div>
+                <p className="text-[11px] leading-relaxed opacity-80">{item.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Version Info Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+          <div className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0 font-bold">
+                <Info size={22} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block">Informasi Versi Aplikasi</span>
+                <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
+                  BERSEKA v{APP_CONFIG.version}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-semibold">{APP_CONFIG.tagline} &bull; Build 2026 &bull; PT Makerindo</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 text-[11px]">
+              <div className="bg-emerald-50 border border-emerald-200/80 px-3 py-2 rounded-xl text-center min-w-[80px]">
+                <span className="text-[10px] font-black uppercase text-emerald-600 block">Status</span>
+                <span className="font-black text-emerald-800 flex items-center justify-center gap-1 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                  Stabil
+                </span>
+              </div>
+              <div className="bg-sky-50 border border-sky-200/80 px-3 py-2 rounded-xl text-center min-w-[80px]">
+                <span className="text-[10px] font-black uppercase text-sky-600 block">Platform</span>
+                <span className="font-black text-sky-800">Web + Mobile</span>
+              </div>
+              <div className="bg-amber-50 border border-amber-200/80 px-3 py-2 rounded-xl text-center min-w-[80px]">
+                <span className="text-[10px] font-black uppercase text-amber-600 block">Lisensi</span>
+                <span className="font-black text-amber-800">Proprietary</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-5 pb-4">
+            <p className="text-[11px] text-slate-400 font-medium">
+              &copy; 2026 PT Makerindo. Seluruh hak cipta dilindungi undang-undang. Sistem ini dikembangkan eksklusif untuk program KKN Tematik Pemilahan Sampah UNIKOM &mdash; Dinas Lingkungan Hidup Kota Bandung.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
+
 
 export default Informasi;
 

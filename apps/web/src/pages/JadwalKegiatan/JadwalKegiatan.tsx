@@ -570,6 +570,7 @@ const JadwalKegiatan: React.FC = () => {
     radius: 100,
     polygon: [] as [number, number][],
     kelompokId: "",
+    effectiveMonth: "", // QC-36: Advance Scheduling — bulan berlaku area kerja polygon
   });
 
   const safeFormatTime = (dateStr: string | null | undefined) => {
@@ -648,7 +649,7 @@ const JadwalKegiatan: React.FC = () => {
 
       setIsModalOpen(false);
       fetchSchedules();
-      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 200, polygon: [], kelompokId: "" });
+      setFormData({ title: "", date: "", time: "", category: "Pengangkutan", location: "", latitude: "", longitude: "", radius: 200, polygon: [], kelompokId: "", effectiveMonth: "" });
       setTimeStart("08:00");
       setTimeEnd("16:00");
       setEditId(null);
@@ -706,6 +707,7 @@ const JadwalKegiatan: React.FC = () => {
       radius: schedule.radius || 200,
       polygon: schedule.polygon || (schedule.latitude && schedule.longitude ? [[Number(schedule.latitude), Number(schedule.longitude)]] : []),
       kelompokId: schedule.kelompokId || "",
+      effectiveMonth: schedule.effectiveMonth || "", // QC-36: Isi dari data existing
     });
     // Parse existing time range "HH:MM - HH:MM" back into separate fields
     if (schedule.time) {
@@ -1969,6 +1971,7 @@ const JadwalKegiatan: React.FC = () => {
                       longitude: "",
                       radius: 100,
                       polygon: [],
+                      effectiveMonth: "", // QC-36
                     });
                     setGeofenceMode("CIRCLE");
                   }}
