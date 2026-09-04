@@ -444,6 +444,7 @@ export const systemService = {
       });
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
+        const lastModified = parsed.lastModified || (config.updatedAt ? new Date(config.updatedAt).getTime() : Date.now());
         return {
           heroSlides: Array.isArray(parsed.heroSlides) ? parsed.heroSlides : defaults.heroSlides,
           marketProducts: Array.isArray(parsed.marketProducts) ? parsed.marketProducts : defaults.marketProducts,
@@ -451,19 +452,27 @@ export const systemService = {
           newsItems: Array.isArray(parsed.newsItems) ? parsed.newsItems : defaults.newsItems,
           liveLogs: Array.isArray(parsed.liveLogs) ? parsed.liveLogs : defaults.liveLogs,
           faqItems: Array.isArray(parsed.faqItems) ? parsed.faqItems : defaults.faqItems,
+          lastModified,
         };
       }
     } catch (err) {
       console.warn("[systemService] Failed parsing landing_cms_content:", err);
     }
-    return defaults;
+    return {
+      ...defaults,
+      lastModified: 0,
+    };
   },
 
   /**
    * Save dynamic landing page CMS content (Super User & Developer)
    */
   saveLandingContent: async (content: any, updatedBy: string = "Super User") => {
-    const jsonStr = JSON.stringify(content);
+    const payload = {
+      ...content,
+      lastModified: content.lastModified || Date.now(),
+    };
+    const jsonStr = JSON.stringify(payload);
     await prisma.systemConfig.upsert({
       where: { key: "landing_cms_content" },
       update: {
@@ -478,14 +487,17 @@ export const systemService = {
         updatedBy,
       },
     });
-    return content;
+    return payload;
   },
 
   /**
    * Reset dynamic landing page CMS content to default
    */
   resetLandingContent: async (updatedBy: string = "Super User") => {
-    const defaults = systemService.getDefaultLandingContent();
+    const defaults = {
+      ...systemService.getDefaultLandingContent(),
+      lastModified: Date.now(),
+    };
     const jsonStr = JSON.stringify(defaults);
     await prisma.systemConfig.upsert({
       where: { key: "landing_cms_content" },

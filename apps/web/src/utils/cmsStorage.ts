@@ -486,11 +486,31 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+export const CMS_BROADCAST_CHANNEL_NAME = "berseka_cms_channel";
+
+// Helper to broadcast changes across all browser tabs and components
+function broadcastCmsUpdate(payload: StoredPayload): void {
+  if (typeof window === "undefined") return;
+  try {
+    if ("BroadcastChannel" in window) {
+      const channel = new BroadcastChannel(CMS_BROADCAST_CHANNEL_NAME);
+      channel.postMessage(payload);
+      channel.close();
+    }
+  } catch (e) {
+    console.warn("[cmsStorage] BroadcastChannel error:", e);
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent("berseka_cms_updated", { detail: payload }));
+  } catch (e) {}
+}
+
 // ── Save CMS Content ─────────────────────────────────────────────────────────
 export async function saveCmsContent(content: LandingContentPayload): Promise<void> {
   const payload: StoredPayload = {
-    data: content,
-    lastModified: Date.now(),
+    data: sanitizeCmsPayload(content),
+    lastModified: content.lastModified || Date.now(),
   };
 
   // 1. Save to IndexedDB (virtually unlimited quota for high-res images)
@@ -515,21 +535,19 @@ export async function saveCmsContent(content: LandingContentPayload): Promise<vo
   }
 
   // 3. Broadcast update to all open tabs / windows
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("berseka_cms_updated", { detail: payload }));
-    window.dispatchEvent(new Event("storage"));
-  }
+  broadcastCmsUpdate(payload);
 }
 
 // ── Load CMS Content ─────────────────────────────────────────────────────────
-// Helper to merge missing default products into existing client cache
-function mergeWithDefaults(data: LandingContentPayload): LandingContentPayload {
-  const existingIds = new Set((data.marketProducts || []).map((p) => p.id));
-  const missing = DEFAULT_CMS_CONTENT.marketProducts.filter((p) => !existingIds.has(p.id));
+export function sanitizeCmsPayload(data: Partial<LandingContentPayload>): LandingContentPayload {
+  if (!data || typeof data !== "object") return DEFAULT_CMS_CONTENT;
   return {
-    ...DEFAULT_CMS_CONTENT,
-    ...data,
-    marketProducts: [...(data.marketProducts || []), ...missing],
+    heroSlides: Array.isArray(data.heroSlides) ? data.heroSlides : DEFAULT_CMS_CONTENT.heroSlides,
+    marketProducts: Array.isArray(data.marketProducts) ? data.marketProducts : DEFAULT_CMS_CONTENT.marketProducts,
+    actionCampaigns: Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns,
+    newsItems: Array.isArray(data.newsItems) ? data.newsItems : DEFAULT_CMS_CONTENT.newsItems,
+    liveLogs: Array.isArray(data.liveLogs) ? data.liveLogs : DEFAULT_CMS_CONTENT.liveLogs,
+    faqItems: Array.isArray(data.faqItems) ? data.faqItems : DEFAULT_CMS_CONTENT.faqItems,
   };
 }
 
@@ -545,10 +563,11 @@ export async function loadCmsContent(): Promise<StoredPayload> {
       req.onerror = () => reject(req.error);
     });
 
-    if (stored && stored.data && Array.isArray(stored.data.marketProducts)) {
+    if (stored && stored.data) {
       return {
         ...stored,
-        data: mergeWithDefaults(stored.data),
+        data: sanitizeCmsPayload(stored.data),
+        lastModified: stored.lastModified || 0,
       };
     }
   } catch (err) {
@@ -563,11 +582,15 @@ export async function loadCmsContent(): Promise<StoredPayload> {
       if (parsed?.data) {
         return {
           ...parsed,
-          data: mergeWithDefaults(parsed.data),
+          data: sanitizeCmsPayload(parsed.data),
+          lastModified: parsed.lastModified || 0,
         };
       }
-      if (parsed?.marketProducts) {
-        return { data: mergeWithDefaults(parsed), lastModified: Date.now() };
+      if (parsed?.marketProducts || parsed?.newsItems || parsed?.heroSlides) {
+        return {
+          data: sanitizeCmsPayload(parsed),
+          lastModified: Date.now(),
+        };
       }
     }
   } catch (err) {
@@ -598,8 +621,10 @@ export async function resetCmsContent(): Promise<void> {
     localStorage.removeItem(LS_FALLBACK_KEY);
   } catch (e) {}
 
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("berseka_cms_updated", { detail: { data: DEFAULT_CMS_CONTENT, lastModified: 0 } }));
-    window.dispatchEvent(new Event("storage"));
-  }
+  const resetPayload: StoredPayload = {
+    data: DEFAULT_CMS_CONTENT,
+    lastModified: Date.now(),
+  };
+
+  broadcastCmsUpdate(resetPayload);
 }
