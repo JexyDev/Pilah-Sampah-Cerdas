@@ -8,6 +8,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { binService } from "./binService.js";
 import { binRepository } from "../repositories/binRepository.js";
+import { getScopingFilters } from "../utils/rbacScoping.js";
+
+// Mock rbacScoping
+vi.mock("../utils/rbacScoping.js", () => {
+  return {
+    getScopingFilters: vi.fn().mockResolvedValue({}),
+  };
+});
 
 // Mock the qrGenerator
 vi.mock("../utils/qrGenerator.js", () => {
@@ -66,6 +74,51 @@ describe("BinService", () => {
 
       expect(binRepository.findAll).toHaveBeenCalled();
       expect(result).toEqual(mockBins);
+    });
+
+    it("should strictly scope PRINTED bins for scoped users without global bypass", async () => {
+      const mockScopingFilter = {
+        OR: [
+          { rwId: 5 },
+          { rw: { kelurahan: { name: { equals: "Dago", mode: "insensitive" } } } },
+        ],
+      };
+      vi.mocked(getScopingFilters).mockResolvedValue({
+        binFilter: mockScopingFilter,
+      } as any);
+
+      const currentUser = { userId: "mhs-1", role: "MAHASISWA_KKN" };
+      await binService.getAllBins(currentUser, { status: "PRINTED" });
+
+      expect(binRepository.findAll).toHaveBeenCalledWith({
+        AND: [mockScopingFilter, { status: "PRINTED" }],
+      });
+    });
+
+    it("should strictly scope all bins without OR bypass when status is not specified or ALL", async () => {
+      const mockScopingFilter = {
+        OR: [
+          { rwId: 5 },
+          { rw: { kelurahan: { name: { equals: "Dago", mode: "insensitive" } } } },
+        ],
+      };
+      vi.mocked(getScopingFilters).mockResolvedValue({
+        binFilter: mockScopingFilter,
+      } as any);
+
+      const currentUser = { userId: "mhs-1", role: "MAHASISWA_KKN" };
+      await binService.getAllBins(currentUser);
+
+      expect(binRepository.findAll).toHaveBeenCalledWith(mockScopingFilter);
+    });
+
+    it("should allow non-scoped users (e.g. SUPER_USER) to query PRINTED bins without scoping filter", async () => {
+      vi.mocked(getScopingFilters).mockResolvedValue({});
+
+      const currentUser = { userId: "admin-1", role: "SUPER_USER" };
+      await binService.getAllBins(currentUser, { status: "PRINTED" });
+
+      expect(binRepository.findAll).toHaveBeenCalledWith({ status: "PRINTED" });
     });
   });
 

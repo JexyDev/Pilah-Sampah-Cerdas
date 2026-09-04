@@ -767,6 +767,14 @@ export class SuperUserService {
       const codeTag = getCategoryCodeTag(catName);
       const dateStr = formatCurrentDateDDMMYY();
 
+      let kelurahanId: string | null = null;
+      if (rwId) {
+        const rwRecord = await tx.rw.findUnique({ where: { id: rwId } });
+        if (rwRecord?.kelurahanId) {
+          kelurahanId = rwRecord.kelurahanId;
+        }
+      }
+
       // Cari sequence global tertinggi di seluruh sistem basis data
       const maxSeq = await getGlobalHighestSequence(tx);
       let currentSeq = maxSeq + 1;
@@ -784,6 +792,7 @@ export class SuperUserService {
           qrCode,
           categoryId: (categoryId || null) as any,
           rwId: (rwId || null) as any,
+          kelurahanId: (kelurahanId || null) as any,
           status: "PRINTED" as any,
           qrBatchId: batch.id,
         });

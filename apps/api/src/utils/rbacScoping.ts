@@ -303,10 +303,7 @@ export async function getScopingFilters(user: {
           ],
         },
         binFilter: {
-          OR: [
-            { rwId: student.assignedRwId },
-            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
-          ],
+          rwId: student.assignedRwId,
         },
         householdFilter: {
           OR: [

@@ -180,6 +180,11 @@ export const MasterQrManager: React.FC = () => {
       return;
     }
 
+    if (!rtRwId) {
+      toast.error("Wilayah RT/RW penerima wajib dipilih agar kuota QR terisolasi untuk Mahasiswa KKN di RW tersebut");
+      return;
+    }
+
     try {
       const res = await api.post("/super-user/bins/generate-qr", {
         totalQr,
@@ -839,19 +844,25 @@ export const MasterQrManager: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Wilayah RT / RW Penerima</label>
+                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                  Wilayah RT / RW Penerima <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={rtRwId}
                   onChange={(e) => setRtRwId(e.target.value)}
+                  required
                   className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
                 >
-                  <option value="" className="dark:bg-slate-800">Umum (Tanpa Wilayah Spesifik)</option>
+                  <option value="" className="dark:bg-slate-800">-- Pilih Wilayah RT / RW Penerima (Wajib) --</option>
                   {rtRwAreas.map((item) => (
                     <option key={item.id} value={item.id} className="dark:bg-slate-800">
                       {item.name} ({item.kelurahan?.name})
                     </option>
                   ))}
                 </select>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Wajib memilih RW agar 10 QR otomatis terisolasi untuk Mahasiswa KKN di RW tersebut.
+                </p>
               </div>
             </div>
             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex gap-2 justify-end">
