@@ -18,7 +18,6 @@ import {
   Phone,
   Mail,
   MapPin,
-  Leaf,
   Recycle,
   ShoppingBag,
   Users,
@@ -332,15 +331,11 @@ export const LandingPage: React.FC = () => {
       >
         <div className="landing-container landing-header-inner">
           <a href="#" className="landing-brand" aria-label="BERSEKA.ID — Beranda">
-            <div className="landing-brand-mark" aria-hidden="true">
-              <span>
-                <Leaf size={18} />
-              </span>
-            </div>
-            <div>
-              <div className="landing-brand-name">BERSEKA.ID</div>
-              <div className="landing-brand-tag">Bersih, Sehat, Kampung Asri</div>
-            </div>
+            <img
+              src="/image/logo-berseka-baru.jpeg"
+              alt="BERSEKA.ID"
+              className="landing-brand-logo"
+            />
           </a>
 
           {/* Desktop & Mobile Navigation Links */}
@@ -1070,15 +1065,11 @@ export const LandingPage: React.FC = () => {
           <div className="landing-footer-grid">
             <div className="landing-footer-about">
               <a href="#" className="landing-brand" aria-label="BERSEKA.ID">
-                <div className="landing-brand-mark" aria-hidden="true">
-                  <span>
-                    <Leaf size={18} />
-                  </span>
-                </div>
-                <div>
-                  <div className="landing-brand-name">BERSEKA.ID</div>
-                  <div className="landing-brand-tag">Bersih, Sehat, Kampung Asri</div>
-                </div>
+                <img
+                  src="/image/logo-berseka-baru.jpeg"
+                  alt="BERSEKA.ID"
+                  className="landing-brand-logo"
+                />
               </a>
               <p>
                 Platform pengelolaan sampah terpadu berbasis teknologi dan kolaborasi multi-pihak

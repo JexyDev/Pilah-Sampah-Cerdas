@@ -256,45 +256,28 @@
 }
 
 .landing-brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.landing-brand-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: conic-gradient(from 220deg, var(--green-500), var(--green-700), #8fc4a1, var(--green-500));
-  color: #fff;
-  flex-shrink: 0;
+.landing-brand:hover {
+  opacity: 0.92;
 }
 
-.landing-brand-mark span {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #fff;
-  display: grid;
-  place-items: center;
-  color: var(--green-700);
+.landing-brand-logo {
+  height: 42px;
+  width: auto;
+  max-width: 175px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  display: block;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.landing-brand-name {
-  font-weight: 800;
-  font-size: 1.15rem;
-  letter-spacing: 0.02em;
-  color: var(--green-800);
-  line-height: 1;
-}
-
-.landing-brand-tag {
-  font-size: 0.66rem;
-  color: var(--muted);
-  margin-top: 3px;
-  font-weight: 500;
+.landing-brand:hover .landing-brand-logo {
+  transform: scale(1.03);
 }
 
 .landing-nav {
