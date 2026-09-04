@@ -455,6 +455,15 @@ export const KurasiLandingPage: React.FC = () => {
   const [loadingSources, setLoadingSources] = useState<boolean>(false);
   const [importSearchTerm, setImportSearchTerm] = useState<string>("");
 
+  const getSafeImageUrl = (url?: string | null, fallback = "/image/activity-1.webp"): string => {
+    if (!url || typeof url !== "string" || !url.trim()) return fallback;
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/") || trimmed.startsWith("data:")) {
+      return trimmed;
+    }
+    return `/${trimmed}`;
+  };
+
   const fetchImportSources = async () => {
     setLoadingSources(true);
     try {
@@ -464,10 +473,12 @@ export const KurasiLandingPage: React.FC = () => {
       ]);
       
       if (logbooksRes.status === "fulfilled" && logbooksRes.value.data?.success) {
-        setLogbookSources(logbooksRes.value.data.data || []);
+        const rawData = logbooksRes.value.data.data;
+        setLogbookSources(Array.isArray(rawData) ? rawData : []);
       }
       if (prokersRes.status === "fulfilled" && prokersRes.value.data?.success) {
-        setProkerSources(prokersRes.value.data.data || []);
+        const rawData = prokersRes.value.data.data;
+        setProkerSources(Array.isArray(rawData) ? rawData : []);
       }
     } catch (err) {
       console.error("Failed to fetch logbook/proker sources:", err);
@@ -510,7 +521,7 @@ export const KurasiLandingPage: React.FC = () => {
         date: dateStr,
         readTime: "3 min baca",
         location: item.kelurahan ? `Kel. ${item.kelurahan}, Bojongsoang` : (item.tempat || "Kecamatan Bojongsoang"),
-        imageUrl: item.fotoBuktiUrl || "/image/activity-1.webp",
+        imageUrl: getSafeImageUrl(item.fotoBuktiUrl, "/image/activity-1.webp"),
         summary: summaryText,
         content: `${item.deskripsi || ""}\n\nLokasi: ${item.tempat || "-"}\nKelompok: ${item.kelompokNama || "-"}\nPenulis: ${item.penulisNama || "-"}`,
         author: item.penulisNama ? `${item.penulisNama} (${item.kelompokNama || "KKN"})` : (item.kelompokNama || "Tim KKN UNIKOM"),
@@ -2088,7 +2099,7 @@ export const KurasiLandingPage: React.FC = () => {
                             {item.fotoBuktiUrl && (
                               <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-800 border border-slate-200">
                                 <img
-                                  src={item.fotoBuktiUrl}
+                                  src={getSafeImageUrl(item.fotoBuktiUrl)}
                                   alt="Foto Bukti Logbook"
                                   className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                                   onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
