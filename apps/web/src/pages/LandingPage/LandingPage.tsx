@@ -1451,21 +1451,36 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Estimation Summary */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                  <div className="text-[11px] font-bold text-emerald-800">Estimasi Poin</div>
-                  <div className="text-lg font-black text-emerald-700 mt-0.5">+{calculatedPoints}</div>
-                  <div className="text-[10px] text-emerald-600">Poin BERSEKA</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex sm:flex-col items-center sm:items-center justify-between sm:justify-center text-left sm:text-center">
+                  <div>
+                    <div className="text-[11px] font-bold text-emerald-800">Estimasi Poin</div>
+                    <div className="text-[10px] text-emerald-600 sm:hidden">Poin BERSEKA</div>
+                  </div>
+                  <div className="text-right sm:text-center">
+                    <div className="text-base sm:text-lg font-black text-emerald-700">+{calculatedPoints}</div>
+                    <div className="text-[10px] text-emerald-600 hidden sm:block">Poin BERSEKA</div>
+                  </div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-center">
-                  <div className="text-[11px] font-bold text-blue-800">Nilai Konversi</div>
-                  <div className="text-lg font-black text-blue-700 mt-0.5">Rp{calculatedCashIdr.toLocaleString("id-ID")}</div>
-                  <div className="text-[10px] text-blue-600">Sembako/Kebutuhan</div>
+                <div className="p-3 sm:p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex sm:flex-col items-center sm:items-center justify-between sm:justify-center text-left sm:text-center">
+                  <div>
+                    <div className="text-[11px] font-bold text-blue-800">Nilai Konversi</div>
+                    <div className="text-[10px] text-blue-600 sm:hidden">Sembako / Kebutuhan</div>
+                  </div>
+                  <div className="text-right sm:text-center">
+                    <div className="text-base sm:text-lg font-black text-blue-700">Rp{calculatedCashIdr.toLocaleString("id-ID")}</div>
+                    <div className="text-[10px] text-blue-600 hidden sm:block">Sembako/Kebutuhan</div>
+                  </div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-center">
-                  <div className="text-[11px] font-bold text-teal-800">Reduksi Emisi</div>
-                  <div className="text-lg font-black text-teal-700 mt-0.5">{calculatedCo2} kg</div>
-                  <div className="text-[10px] text-teal-600">CO₂e Tercegah</div>
+                <div className="p-3 sm:p-3.5 rounded-xl bg-teal-50 border border-teal-200 flex sm:flex-col items-center sm:items-center justify-between sm:justify-center text-left sm:text-center">
+                  <div>
+                    <div className="text-[11px] font-bold text-teal-800">Reduksi Emisi</div>
+                    <div className="text-[10px] text-teal-600 sm:hidden">CO₂e Tercegah</div>
+                  </div>
+                  <div className="text-right sm:text-center">
+                    <div className="text-base sm:text-lg font-black text-teal-700">{calculatedCo2} kg</div>
+                    <div className="text-[10px] text-teal-600 hidden sm:block">CO₂e Tercegah</div>
+                  </div>
                 </div>
               </div>
 
