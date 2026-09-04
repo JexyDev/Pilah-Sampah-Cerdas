@@ -15,6 +15,10 @@ import 'package:latlong2/latlong.dart';
 import '../../../data/models/group_zone_models.dart';
 import '../../../data/models/mahasiswa_kkn_models.dart';
 import '../../../data/models/user_entity.dart';
+import '../../../core/gps_calibration/state/gps_calibration_notifier.dart';
+import '../../../core/gps_calibration/state/gps_calibration_state.dart';
+import 'widgets/gps_calibration_panel.dart';
+import 'widgets/map_controls.dart';
 
 class KknAttendanceView extends ConsumerStatefulWidget {
   const KknAttendanceView({super.key});
@@ -27,8 +31,10 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
     with WidgetsBindingObserver {
   final TextEditingController _rtRwCtrl = TextEditingController();
   final TextEditingController _kodeZonaCtrl = TextEditingController(text: '');
+  final MapController _mapController = MapController();
   String _selectedKelurahan = '';
   bool _showDetail = false;
+  bool _showGpsPanel = false;
 
   @override
   void initState() {
@@ -116,6 +122,7 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
             },
           ),
           actions: [
+            // Tombol Diagnostik Sinyal GPS dipindah ke bawah map
             IconButton(
               icon: const Icon(
                 Icons.refresh_rounded,
@@ -154,6 +161,62 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (!_showDetail) _buildMapSection(),
+                  if (!_showDetail)
+                    Consumer(
+                      builder: (ctx, r, _) {
+                        final isRunning =
+                            r.watch(gpsCalibrationProvider).isRunning;
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 12.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                setState(() => _showGpsPanel = !_showGpsPanel);
+                              },
+                              icon: isRunning
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: AppColors.primaryGreen,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.gps_fixed,
+                                      color: AppColors.primaryGreen,
+                                    ),
+                              label: const Text(
+                                'Kalibrasi GPS',
+                                style: TextStyle(
+                                  color: AppColors.primaryGreen,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.primaryGreen,
+                                elevation: 0,
+                                side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  // Panel diagnostik GPS inline — tampil hanya jika diaktifkan
+                  if (!_showDetail && _showGpsPanel)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12.0),
+                      child: GpsCalibrationPanel(),
+                    ),
                   if (!_showDetail) const SizedBox(height: 16),
                   _buildAttendanceDetail(locationState, locationNotifier),
                 ],
@@ -999,14 +1062,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
       );
     }
 
-    // Kumpulkan Polygon Points
+    // Kumpulkan Polygon Points (HANYA jika backend secara eksplisit mendeklarasikan tipeArea == 'POLYGON')
     List<LatLng> polygonPoints = [];
-    if (mapState.groupZone?.autoZone.isActive == true && mapState.groupZone?.autoZone.polygon != null) {
-      polygonPoints = mapState.groupZone!.autoZone.polygon!;
-    } else if (wilayah.tipeArea == 'POLYGON' && wilayah.polygonKoordinat != null) {
-      polygonPoints = wilayah.polygonKoordinat!
-          .map((c) => LatLng(c['lat']!, c['lng']!))
-          .toList();
+    if (wilayah.tipeArea == 'POLYGON') {
+      if (wilayah.polygonKoordinat != null && wilayah.polygonKoordinat!.isNotEmpty) {
+        polygonPoints = wilayah.polygonKoordinat!
+            .map((c) => LatLng(c['lat']!, c['lng']!))
+            .toList();
+      } else if (mapState.groupZone?.autoZone.isActive == true &&
+          mapState.groupZone?.autoZone.polygon != null) {
+        polygonPoints = mapState.groupZone!.autoZone.polygon!;
+      }
     }
 
     // Kumpulkan Posko List
@@ -1170,14 +1236,17 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
           borderRadius: BorderRadius.circular(16),
           child: SizedBox(
             height: 250,
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: center,
-                initialZoom: 15.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
-              ),
+            child: Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: center,
+                    initialZoom: 15.0,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all, // mengizinkan rotasi untuk FR-18
+                    ),
+                  ),
               children: [
                 TileLayer(
                   urlTemplate:
@@ -1232,6 +1301,31 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                         ),
                       ),
                   ],
+                ), // close MarkerLayer
+              ], // close children
+            ), // close FlutterMap
+                // Overlay Kontrol Peta (Kompas & Lokasi Saya) - FR-18 & FR-19
+                Consumer(
+                  builder: (ctx, ref, _) {
+                    final calibStatus = ref.watch(gpsCalibrationProvider).status;
+                    final isGpsBad = calibStatus == GpsCalibrationStatus.guide;
+                    
+                    return MapControls(
+                      mapController: _mapController,
+                      isGpsBad: isGpsBad,
+                      onRecenter: () async {
+                        // Re-center kamera ke posisi terbaru
+                        await ref.read(kknLocationProvider.notifier).forceLocationUpdate(context);
+                        final position = ref.read(kknLocationProvider).currentPosition;
+                        if (position != null) {
+                          _mapController.move(
+                            LatLng(position.latitude, position.longitude),
+                            _mapController.camera.zoom,
+                          );
+                        }
+                      },
+                    );
+                  },
                 ),
               ],
             ),
