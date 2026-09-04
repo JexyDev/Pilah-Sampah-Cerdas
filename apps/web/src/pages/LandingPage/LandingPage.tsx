@@ -84,29 +84,46 @@ export const LandingPage: React.FC = () => {
   const [calcPlasticKg, setCalcPlasticKg] = useState<number>(8);
   const [calcOilLiters, setCalcOilLiters] = useState<number>(3);
 
-  // ── Load Dynamic CMS Content ─────────────────────────────────────────────────
+  // ── Load Dynamic CMS Content (IndexedDB + API Hybrid) ─────────────────────────
   useEffect(() => {
     let isMounted = true;
+
     const fetchContent = async () => {
+      // 1. Instant load from local cache (IndexedDB/LocalStorage)
       try {
-        const data = await loadCmsContent();
-        if (isMounted && data) {
-          setCmsContent(data);
+        const localStored = await loadCmsContent();
+        if (isMounted && localStored?.data) {
+          setCmsContent(localStored.data);
         }
       } catch (err) {
-        console.warn("[LandingPage] Failed to fetch CMS content:", err);
+        console.warn("[LandingPage] Failed to fetch local CMS content:", err);
       } finally {
         if (isMounted) setLoadingCms(false);
       }
+
+      // 2. Fetch latest server-curated configuration
+      try {
+        const res = await api.get("/system/landing-content");
+        if (isMounted && res.data?.success && res.data?.data) {
+          const serverData = res.data.data;
+          setCmsContent(serverData);
+          await saveCmsContent(serverData);
+        }
+      } catch (err) {
+        console.info("[LandingPage] Operating with cached/offline CMS content.");
+      }
     };
+
     fetchContent();
 
     // Listen to real-time custom CMS update events from admin tab
     const handleCmsUpdate = (e: any) => {
-      if (e.detail) {
-        setCmsContent(e.detail);
+      const detail = e?.detail?.data || e?.detail;
+      if (detail && typeof detail === "object") {
+        setCmsContent(detail);
       }
     };
+
     window.addEventListener("berseka_cms_updated", handleCmsUpdate);
     return () => {
       isMounted = false;
@@ -114,30 +131,29 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
-  const slides: HeroSlideItem[] =
-    cmsContent.heroSlides && cmsContent.heroSlides.length > 0
-      ? cmsContent.heroSlides
-      : DEFAULT_CMS_CONTENT.heroSlides;
+  const rawSlides = cmsContent?.heroSlides && cmsContent.heroSlides.length > 0
+    ? cmsContent.heroSlides
+    : DEFAULT_CMS_CONTENT.heroSlides;
+  const slides: HeroSlideItem[] = rawSlides.filter((s) => s.isPublished !== false);
 
-  const products: MarketProductItem[] =
-    cmsContent.marketProducts && cmsContent.marketProducts.length > 0
-      ? cmsContent.marketProducts
-      : DEFAULT_CMS_CONTENT.marketProducts;
+  const rawProducts = cmsContent?.marketProducts && cmsContent.marketProducts.length > 0
+    ? cmsContent.marketProducts
+    : DEFAULT_CMS_CONTENT.marketProducts;
+  const products: MarketProductItem[] = rawProducts.filter((p) => p.isPublished !== false);
 
-  const programs: ActionCampaignItem[] =
-    cmsContent.actionCampaigns && cmsContent.actionCampaigns.length > 0
-      ? cmsContent.actionCampaigns
-      : DEFAULT_CMS_CONTENT.actionCampaigns;
+  const rawPrograms = cmsContent?.actionCampaigns && cmsContent.actionCampaigns.length > 0
+    ? cmsContent.actionCampaigns
+    : DEFAULT_CMS_CONTENT.actionCampaigns;
+  const programs: ActionCampaignItem[] = rawPrograms.filter((p) => p.isPublished !== false);
 
-  const newsList: NewsArticleItem[] =
-    cmsContent.newsItems && cmsContent.newsItems.length > 0
-      ? cmsContent.newsItems
-      : DEFAULT_CMS_CONTENT.newsItems;
+  const rawNews = cmsContent?.newsItems && cmsContent.newsItems.length > 0
+    ? cmsContent.newsItems
+    : DEFAULT_CMS_CONTENT.newsItems;
+  const newsList: NewsArticleItem[] = rawNews.filter((n) => n.isPublished !== false);
 
-  const faqList: FaqItem[] =
-    cmsContent.faqItems && cmsContent.faqItems.length > 0
-      ? cmsContent.faqItems
-      : DEFAULT_CMS_CONTENT.faqItems;
+  const faqList: FaqItem[] = cmsContent?.faqItems && cmsContent.faqItems.length > 0
+    ? cmsContent.faqItems
+    : DEFAULT_CMS_CONTENT.faqItems;
 
   // ── Hero Carousel Controls ───────────────────────────────────────────────────
   const goToSlide = useCallback((index: number) => {
@@ -484,15 +500,13 @@ export const LandingPage: React.FC = () => {
                 <a href="#program" className="landing-btn landing-btn-primary">
                   Jelajahi Program
                 </a>
-                <a
-                  href="/apk/app-release.apk"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/download"
                   className="landing-btn landing-btn-outline"
                 >
                   <ArrowRight size={16} />
                   Download Aplikasi
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -725,15 +739,6 @@ export const LandingPage: React.FC = () => {
           <div className="landing-container">
             <div className="landing-section-head">
               <h2 className="landing-section-title">Pasar BERSEKA</h2>
-              <a
-                href="https://pasar.berseka.id"
-                className="landing-btn landing-btn-outline landing-btn-sm"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span>Kunjungi pasar.berseka.id</span>
-                <ExternalLink size={14} strokeWidth={2.2} />
-              </a>
             </div>
             <div className="landing-grid-3">
               {products.slice(0, 3).map((prod) => (
@@ -1077,7 +1082,7 @@ export const LandingPage: React.FC = () => {
               </p>
               <div className="landing-social">
                 <a
-                  href="https://instagram.com"
+                  href="https://www.instagram.com/officialberseka.id?igsi=MTU3b2pxdDc1cTNiYQ=="
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
@@ -1087,43 +1092,13 @@ export const LandingPage: React.FC = () => {
                   </svg>
                 </a>
                 <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8Z" />
-                  </svg>
-                </a>
-                <a
-                  href="https://youtube.com"
+                  href="https://www.youtube.com/channel/UC63-06Rpun65aeNgxw6lg3A"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="YouTube"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="5" width="20" height="14" rx="4" /><path d="m10 9 5 3-5 3z" fill="currentColor" />
-                  </svg>
-                </a>
-                <a
-                  href="https://tiktok.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="TikTok"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5" /><path d="M14 3c.5 3 2.5 5 5.5 5.5" />
-                  </svg>
-                </a>
-                <a
-                  href="https://linkedin.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="3" /><path d="M8 10v7M8 7v.5M12 17v-4a2 2 0 0 1 4 0v4" />
                   </svg>
                 </a>
               </div>
@@ -1271,7 +1246,7 @@ export const LandingPage: React.FC = () => {
               <div className="text-xs text-slate-500 font-semibold space-y-1">
                 <p>📍 Jl. Dipati Ukur No. 112-116, Coblong, Kota Bandung</p>
                 <p>📧 admin@berseka.id <span className="text-[11px] text-slate-400 font-normal">(Cadangan: admin.berseka@gmail.com)</span></p>
-                <p>📷 Instagram: <a href="https://instagram.com/berseka.id" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">@berseka.id</a></p>
+                <p>📷 Instagram: <a href="https://www.instagram.com/officialberseka.id?igsi=MTU3b2pxdDc1cTNiYQ==" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">@officialberseka.id</a></p>
               </div>
             </div>
             <div className="p-6 space-y-4">
@@ -1362,16 +1337,7 @@ export const LandingPage: React.FC = () => {
                   </ul>
                 </div>
               )}
-              <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
-                <a
-                  href="https://pasar.berseka.id"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="landing-btn landing-btn-outline landing-btn-sm"
-                >
-                  <span>Buka di Pasar Berseka</span>
-                  <ExternalLink size={14} />
-                </a>
+              <div className="pt-4 flex items-center justify-end border-t border-slate-100 gap-3">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1490,7 +1456,7 @@ export const LandingPage: React.FC = () => {
                   className="p-3.5 bg-green-50 hover:bg-green-100/80 border border-green-200 rounded-2xl flex items-center gap-3 text-green-900 transition cursor-pointer"
                 >
                   <div className="w-9 h-9 rounded-xl bg-green-600 text-white flex items-center justify-center shrink-0">
-                    <Smartphone size={18} />
+                    <Phone size={18} />
                   </div>
                   <div>
                     <span className="text-[10px] text-green-700 font-bold block uppercase tracking-wider">WhatsApp Hotline</span>
@@ -1503,7 +1469,7 @@ export const LandingPage: React.FC = () => {
                   className="p-3.5 bg-blue-50 hover:bg-blue-100/80 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 transition cursor-pointer"
                 >
                   <div className="w-9 h-9 rounded-xl bg-[#0468bf] text-white flex items-center justify-center shrink-0">
-                    <Newspaper size={18} />
+                    <Mail size={18} />
                   </div>
                   <div>
                     <span className="text-[10px] text-blue-700 font-bold block uppercase tracking-wider">Email Resmi</span>
