@@ -475,10 +475,10 @@ export class SuperUserService {
 
     .qr-overlay {
       position: absolute;
-      left: 9.37%;
-      top: 66.2%;
-      width: 35.43%;
-      height: 23.63%;
+      left: 10.69%;
+      top: 69.82%;
+      width: 33.68%;
+      height: 22.46%;
       z-index: 10;
       display: flex;
       align-items: center;
@@ -670,8 +670,8 @@ export class SuperUserService {
           img.crossOrigin = 'anonymous';
           img.onload = () => {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(128, 1356, 484, 484);
-            ctx.drawImage(img, 138, 1366, 464, 464);
+            ctx.fillRect(146, 1430, 460, 460);
+            ctx.drawImage(img, 156, 1440, 440, 440);
             r();
           };
           img.onerror = () => r();
@@ -767,6 +767,14 @@ export class SuperUserService {
       const codeTag = getCategoryCodeTag(catName);
       const dateStr = formatCurrentDateDDMMYY();
 
+      let kelurahanId: string | null = null;
+      if (rwId) {
+        const rwRecord = await tx.rw.findUnique({ where: { id: rwId } });
+        if (rwRecord?.kelurahanId) {
+          kelurahanId = rwRecord.kelurahanId;
+        }
+      }
+
       // Cari sequence global tertinggi di seluruh sistem basis data
       const maxSeq = await getGlobalHighestSequence(tx);
       let currentSeq = maxSeq + 1;
@@ -784,6 +792,7 @@ export class SuperUserService {
           qrCode,
           categoryId: (categoryId || null) as any,
           rwId: (rwId || null) as any,
+          kelurahanId: (kelurahanId || null) as any,
           status: "PRINTED" as any,
           qrBatchId: batch.id,
         });

@@ -305,7 +305,7 @@ const Pengaturan: React.FC = () => {
             <div className="space-y-2 text-xs">
               <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Tingkat Akses / Role</span>
-                <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role}</p>
+                <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role === "PEMIMPIN" || profileData.role === "PIMPINAN" ? "PIMPINAN" : profileData.role}</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
                 <span className="text-[10px] font-black uppercase text-slate-400 block">Wilayah Tugas</span>
@@ -459,7 +459,7 @@ const Pengaturan: React.FC = () => {
 
                         <div className="space-y-1.5">
                           <label className="block text-xs font-black">Peran / Hak Akses</label>
-                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-extrabold uppercase cursor-not-allowed" value={profileData.role} />
+                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-extrabold uppercase cursor-not-allowed" value={profileData.role === "PEMIMPIN" || profileData.role === "PIMPINAN" ? "PIMPINAN" : profileData.role} />
                         </div>
 
                         {profileData.role === "WARGA" && (

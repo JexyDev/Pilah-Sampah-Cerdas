@@ -159,6 +159,7 @@ const Login: React.FC = () => {
         RT: "Pengurus RT",
         DPL: "Dosen Pendamping Lapangan (DPL)",
         PEMIMPIN: "Pimpinan",
+        PIMPINAN: "Pimpinan",
         PANITIA_TASKFORCE: "Task Force",
         MAHASISWA_KKN: "Mahasiswa KKN",
       };

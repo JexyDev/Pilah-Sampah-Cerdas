@@ -58,6 +58,7 @@ const ROLE_COLORS: Record<string, string> = {
   MAHASISWA_KKN: "bg-indigo-100 text-indigo-800 border-indigo-200",
   DPL: "bg-violet-100 text-violet-800 border-violet-200",
   PEMIMPIN: "bg-orange-100 text-orange-800 border-orange-200",
+  PIMPINAN: "bg-orange-100 text-orange-800 border-orange-200",
   PANITIA_TASKFORCE: "bg-yellow-100 text-yellow-800 border-yellow-200",
   PETUGAS_RESIDU: "bg-red-100 text-red-800 border-red-200",
   WARGA: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700",
@@ -220,7 +221,7 @@ const RolePermissionPage: React.FC = () => {
                   : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
               }`}
             >
-              <span className="truncate">{role.roleName}</span>
+              <span className="truncate">{role.roleName === "PEMIMPIN" ? "PIMPINAN" : role.roleName}</span>
               {dirty.has(role.roleId) && (
                 <span className="shrink-0 w-2 h-2 bg-amber-400 rounded-full" title="Ada perubahan belum disimpan" />
               )}
@@ -240,7 +241,7 @@ const RolePermissionPage: React.FC = () => {
                       ROLE_COLORS[selectedRole.roleName] ?? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700"
                     }`}
                   >
-                    {selectedRole.roleName}
+                    {selectedRole.roleName === "PEMIMPIN" ? "PIMPINAN" : selectedRole.roleName}
                   </span>
                   {dirty.has(selectedRole.roleId) && (
                     <span className="text-xs text-amber-600 font-medium">● Ada perubahan belum disimpan</span>

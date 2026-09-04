@@ -83,16 +83,17 @@ export class BinService {
 
       if (hasScoping) {
         if (reqStatus === "PRINTED") {
-          whereClause = { status: "PRINTED" };
+          // Hapus bypass global, paksa filter sesuai wilayah RW/Kelurahan
+          whereClause = {
+            AND: [scoping.binFilter, { status: "PRINTED" }],
+          };
         } else if (reqStatus && reqStatus !== "ALL") {
           whereClause = {
             AND: [scoping.binFilter, { status: reqStatus }],
           };
         } else {
-          // Bypass scoping to also return unassigned PRINTED bins
-          whereClause = {
-            OR: [scoping.binFilter, { status: "PRINTED" }],
-          };
+          // Hapus bypass OR. Semua request wajib ter-filter wilayahnya
+          whereClause = scoping.binFilter;
         }
       } else {
         // Non-scoped user (SUPER_USER, DEVELOPER, etc.)
