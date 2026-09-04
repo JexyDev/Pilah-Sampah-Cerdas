@@ -877,7 +877,7 @@ export class KknService {
       rwId?: number;
       rw?: string;
       search?: string;
-    }
+    } = {}
   ) {
     const caller = await prisma.user.findUnique({
       where: { id: kknUserId },
@@ -892,11 +892,11 @@ export class KknService {
       caller?.role?.name === "PEMIMPIN" ||
       caller?.role?.name === "PANITIA_TASKFORCE";
 
-    let targetRwId: number | undefined = filters.rwId;
+    let targetRwId: number | undefined = filters?.rwId;
     let targetKelurahan: string | undefined = undefined;
 
     if (
-      filters.kelurahan &&
+      filters?.kelurahan &&
       filters.kelurahan !== "ALL" &&
       filters.kelurahan !== "Semua Kelurahan" &&
       filters.kelurahan !== "Semua"
@@ -985,13 +985,13 @@ export class KknService {
       }
     }
 
-    if (filters.status === "UNACTIVATED") {
+    if (filters?.status === "UNACTIVATED") {
       where.binOwnerships = { none: {} };
-    } else if (filters.status === "ACTIVATED") {
+    } else if (filters?.status === "ACTIVATED") {
       where.binOwnerships = { some: { bin: { status: "ACTIVE_BOUND" } } };
     }
 
-    if (filters.search && filters.search.trim()) {
+    if (filters?.search && filters.search.trim()) {
       const s = filters.search.trim();
       const searchCondition = [
         { name: { contains: s, mode: "insensitive" as const } },
