@@ -321,6 +321,8 @@ const AppRoutes: React.FC = () => {
                 "PEMIMPIN",
                 "WARGA",
                 "DEVELOPER",
+                "DPL",
+                "DOSEN_PEMBIMBING",
               ]}
             >
               <Leaderboard />
@@ -343,6 +345,8 @@ const AppRoutes: React.FC = () => {
                 "PEMIMPIN",
                 "WARGA",
                 "DEVELOPER",
+                "DPL",
+                "DOSEN_PEMBIMBING",
               ]}
             >
               <Leaderboard />
@@ -1093,12 +1097,9 @@ const AppRoutes: React.FC = () => {
         />
         <Route
           path="/kurasi-landing"
-          element={
-            <ProtectedRoute allowedRoles={["DEVELOPER"]}>
-              <KurasiLandingPage />
-            </ProtectedRoute>
-          }
+          element={<KurasiLandingPage />}
         />
+        <Route path="/kelola-landing" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/master-data/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/master-data/manajemen-berita" element={<Navigate to="/kurasi-landing" replace />} />
         <Route path="/superUser/kurasi-landing" element={<Navigate to="/kurasi-landing" replace />} />

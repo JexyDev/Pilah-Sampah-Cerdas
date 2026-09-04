@@ -294,13 +294,46 @@ export async function getScopingFilters(user: {
       include: { kelompok: true },
     });
     if (student && student.assignedRwId) {
+      const kel = student.kelompok?.kelurahan;
       return {
-        userFilter: { rwId: student.assignedRwId },
-        binFilter: { rwId: student.assignedRwId },
-        householdFilter: { rwId: student.assignedRwId },
-        wasteLogFilter: { bin: { rwId: student.assignedRwId } },
-        pemanfaatanFilter: { rwId: student.assignedRwId },
-        facilityFilter: { rwId: student.assignedRwId },
+        userFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        binFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        householdFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        wasteLogFilter: {
+          OR: [
+            { bin: { rwId: student.assignedRwId } },
+            ...(kel ? [{ bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } }] : []),
+          ],
+        },
+        pemanfaatanFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        facilityFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            { registeredByUserId: user.userId },
+          ],
+        },
         kelompokKknFilter: { id: student.kelompokId },
         studentKknFilter: { assignedRwId: student.assignedRwId },
       };
@@ -324,7 +357,13 @@ export async function getScopingFilters(user: {
           ],
         },
         pemanfaatanFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
-        facilityFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+        facilityFilter: {
+          OR: [
+            { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            { registeredByUserId: user.userId },
+          ],
+        },
         kelompokKknFilter: { kelurahan: { equals: kel, mode: "insensitive" } },
         studentKknFilter: { kelompok: { kelurahan: { equals: kel, mode: "insensitive" } } },
       };

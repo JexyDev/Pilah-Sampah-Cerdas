@@ -84,19 +84,32 @@ export class LogbookService {
   }
 
   /**
-   * Helper menghitung pekan ke- (1, 2, 3, 4) berdasarkan tanggal kegiatan atau tanggal mulai kelompok
+   * Helper menghitung pekan ke- (1, 2, 3, 4) berdasarkan tanggal kegiatan atau tanggal acuan KKN.
+   * Kalender resmi KKN Tematik UNIKOM 2026:
+   * - Pekan 1: 12 - 20 Agustus 2026 (termasuk kegiatan pembekalan pra-KKN)
+   * - Pekan 2: 21 - 27 Agustus 2026
+   * - Pekan 3: 28 Agustus - 03 September 2026
+   * - Pekan 4: 04 September 2026 dan seterusnya
    */
-  calculatePekanKe(tanggalKegiatan: Date, startDateRef?: Date | null): number {
-    if (!startDateRef) {
-      // Default: hitung berdasarkan tanggal 1-7, 8-14, 15-21, 22-31 dalam bulan berjalan
-      const day = tanggalKegiatan.getDate();
-      if (day <= 7) return 1;
-      if (day <= 14) return 2;
-      if (day <= 21) return 3;
-      return 4;
-    }
-    const diffTime = tanggalKegiatan.getTime() - new Date(startDateRef).getTime();
-    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+  calculatePekanKe(tanggalKegiatan: Date | string, startDateRef?: Date | string | null): number {
+    const actDate = new Date(tanggalKegiatan);
+    if (isNaN(actDate.getTime())) return 1;
+
+    // Acuan awal KKN: gunakan startDateRef mahasiswa jika valid, atau default 14 Agustus 2026
+    const baseStart = startDateRef ? new Date(startDateRef) : new Date("2026-08-14T00:00:00.000Z");
+
+    // Normalisasi ke perbandingan hari kalender murni (YYYY-MM-DD)
+    const actDayStr = actDate.toISOString().slice(0, 10);
+    const startDayStr = baseStart.toISOString().slice(0, 10);
+
+    const actMidnight = new Date(`${actDayStr}T00:00:00.000Z`).getTime();
+    const startMidnight = new Date(`${startDayStr}T00:00:00.000Z`).getTime();
+
+    const diffDays = Math.floor((actMidnight - startMidnight) / (1000 * 60 * 60 * 24));
+
+    // Jika kegiatan sebelum atau pada tanggal mulai KKN (pembekalan kampus dsb), tetap Pekan 1
+    if (diffDays <= 0) return 1;
+
     const week = Math.floor(diffDays / 7) + 1;
     return Math.min(4, Math.max(1, week));
   }
@@ -872,10 +885,12 @@ export class LogbookService {
       }
     }
 
+    let activityDate = existing.tanggalKegiatan;
     if (payload.tanggalKegiatan) {
       const actDate = new Date(payload.tanggalKegiatan);
       if (!isNaN(actDate.getTime())) {
         updateData.tanggalKegiatan = actDate;
+        activityDate = actDate;
       }
     }
     if (payload.waktuMulai !== undefined) updateData.waktuMulai = payload.waktuMulai || null;
@@ -893,7 +908,23 @@ export class LogbookService {
       updateData.attachmentUrls = payload.attachmentUrls;
     }
     if (payload.tipeAktivitas) updateData.tipeAktivitas = payload.tipeAktivitas;
-    if (payload.pekanKe !== undefined) updateData.pekanKe = Number(payload.pekanKe);
+
+    // Otomatis sinkronkan pekanKe berdasarkan tanggal kegiatan (activityDate) jika tidak di-override spesifik
+    if (
+      payload.pekanKe !== undefined &&
+      payload.pekanKe !== null &&
+      !isNaN(Number(payload.pekanKe)) &&
+      Number(payload.pekanKe) >= 1 &&
+      Number(payload.pekanKe) <= 4
+    ) {
+      updateData.pekanKe = Number(payload.pekanKe);
+    } else {
+      const studentProfile = await prisma.studentKkn.findUnique({
+        where: { userId: existing.penulisId },
+        select: { startDate: true },
+      });
+      updateData.pekanKe = this.calculatePekanKe(activityDate, studentProfile?.startDate);
+    }
     if (payload.statusApproval) {
       updateData.statusApproval = payload.statusApproval;
       if (payload.statusApproval === StatusLogbookKkn.DISETUJUI_DPL) {

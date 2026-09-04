@@ -497,12 +497,12 @@ export const ManajemenEkosistemKkn: React.FC = () => {
       </div>
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div className={isDpl ? "grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"}>
         {/* Card 1: Kelompok KKN */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-extrabold text-teal-600 dark:text-teal-400 tracking-wider">
-              Kelompok KKN
+              {isDpl ? "Kelompok Dampingan" : "Kelompok KKN"}
             </span>
             <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 rounded-xl">
               <GraduationCap size={20} />
@@ -521,40 +521,42 @@ export const ManajemenEkosistemKkn: React.FC = () => {
           </div>
         </div>
 
-        {/* Card 2: DPL Terdaftar */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider">
-              DPL Terdaftar
-            </span>
-            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
-              <Award size={20} />
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalDpl}</h3>
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1" title="Kelompok KKN yang terhubung 1-to-1 dengan DPL">
-                <CheckCircle2 size={13} /> {kelompokWithDpl} Terhubung (1-to-1)
+        {/* Card 2: DPL Terdaftar (Khusus Non-DPL) */}
+        {!isDpl && (
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase font-extrabold text-indigo-600 dark:text-indigo-400 tracking-wider">
+                DPL Terdaftar
               </span>
-              {kelompokWithoutDpl > 0 ? (
-                <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki DPL">
-                  <AlertCircle size={13} /> {kelompokWithoutDpl} Tanpa DPL
+              <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                <Award size={20} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalDpl}</h3>
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-bold mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-indigo-600 dark:text-indigo-400 flex items-center gap-1" title="Kelompok KKN yang terhubung 1-to-1 dengan DPL">
+                  <CheckCircle2 size={13} /> {kelompokWithDpl} Terhubung (1-to-1)
                 </span>
-              ) : (
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Seluruh kelompok telah terhubung 1-to-1 dengan DPL">
-                  <CheckCircle2 size={13} /> 100% Terhubung
-                </span>
-              )}
+                {kelompokWithoutDpl > 0 ? (
+                  <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Kelompok yang belum memiliki DPL">
+                    <AlertCircle size={13} /> {kelompokWithoutDpl} Tanpa DPL
+                  </span>
+                ) : (
+                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1" title="Seluruh kelompok telah terhubung 1-to-1 dengan DPL">
+                    <CheckCircle2 size={13} /> 100% Terhubung
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Card 3: Total Mahasiswa KKN */}
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase font-extrabold text-emerald-600 dark:text-emerald-400 tracking-wider">
-              Mahasiswa KKN
+              {isDpl ? "Mahasiswa Dampingan" : "Mahasiswa KKN"}
             </span>
             <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <Users size={20} />
@@ -563,28 +565,30 @@ export const ManajemenEkosistemKkn: React.FC = () => {
           <div className="mt-4">
             <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{totalStudentsCount}</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              Terdistribusi di {totalKelompok} Kelompok KKN
+              {isDpl ? `Terdistribusi di ${totalKelompok} Kelompok Dampingan` : `Terdistribusi di ${totalKelompok} Kelompok KKN`}
             </p>
           </div>
         </div>
 
-        {/* Card 4: Universitas Mitra */}
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
-              Universitas Mitra
-            </span>
-            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
-              <BookOpen size={20} />
+        {/* Card 4: Universitas Mitra (Khusus Non-DPL) */}
+        {!isDpl && (
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col justify-between hover:shadow-md transition">
+            <div className="flex items-center justify-between">
+              <span className="text-xs uppercase font-extrabold text-amber-600 dark:text-amber-400 tracking-wider">
+                Universitas Mitra
+              </span>
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl">
+                <BookOpen size={20} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{uniList.length}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0] || "UNIKOM"}>
+                {uniList[0] || "UNIKOM"}
+              </p>
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{uniList.length}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 truncate" title={uniList[0] || "UNIKOM"}>
-              {uniList[0] || "UNIKOM"}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -925,7 +929,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                 <Search className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Cari DPL, NIP, no HP, email..."
+                  placeholder="Cari DPL, NIP, no HP..."
                   value={searchDpl}
                   onChange={(e) => {
                     setSearchDpl(e.target.value);
@@ -980,8 +984,7 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                           </span>
                         </div>
                         {dp.nip && <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">NIP: {dp.nip}</p>}
-                        <p className="text-xs text-slate-500 mt-1">{dp.email || "Email tidak tersedia"}</p>
-                        <p className="text-xs text-slate-500 font-mono mt-0.5">{dp.phone || "No HP tidak tersedia"}</p>
+                        <p className="text-xs text-slate-500 font-mono mt-1">{dp.phone || "No HP tidak tersedia"}</p>
                       </div>
                       <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
                         <span>Universitas Mitra</span>
@@ -1065,8 +1068,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
       {/* Kelompok Modal */}
       {isKelompokModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-slate-800">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsKelompokModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {kelompokModalType === "add" ? "Tambah Kelompok KKN" : "Edit Kelompok KKN"}
@@ -1192,8 +1195,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
       {/* DPL Modal */}
       {isDplModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-slate-800">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsDplModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Registrasi DPL Baru</h3>
               <button onClick={() => setIsDplModalOpen(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
@@ -1284,8 +1287,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
       {/* DPL Modal: Tunjuk Ketua Kelompok */}
       {isLeaderModalOpen && selectedLeaderKelompok && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-[70] animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-up">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-[70] animate-fade-in" onClick={() => setIsLeaderModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-scale-up">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-amber-50/50">
               <div className="flex items-center gap-2">
                 <Crown className="text-amber-600" size={20} />
@@ -1384,8 +1387,8 @@ export const ManajemenEkosistemKkn: React.FC = () => {
 
       {/* Detail & Anggota Kelompok Modal (Unified Complete Modal) */}
       {isDetailModalOpen && selectedDetailKelompok && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setIsDetailModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden animate-scale-up border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start bg-slate-50/80 dark:bg-slate-800/80">
               <div>
                 <div className="flex items-center gap-2">

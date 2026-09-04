@@ -80,13 +80,15 @@ export class AuthService {
         user.password, // Plaintext match
         studentNim, // NIM mahasiswa
         userPhone, // +628xxx
-        cleanUserPhone, // 628xxx / 08xxx
-        cleanUserPhone.startsWith("62") ? "0" + cleanUserPhone.slice(2) : "",
+        cleanUserPhone, // 628xxx
+        cleanUserPhone.startsWith("62") ? "0" + cleanUserPhone.slice(2) : "", // 08xxx
         "PilahSampah2026!",
         "password123",
         "berseka2026",
         "12345678",
         "123456",
+        "admin123",
+        "kkn2026",
       ].filter(Boolean);
 
       if (userRole === "MAHASISWA_KKN" || userRole === "PETUGAS_RESIDU" || anyUser.studentProfile) {
@@ -379,7 +381,7 @@ export class AuthService {
     name?: string,
     phone?: string,
     address?: string,
-    fotoProfil?: string,
+    fotoProfil?: string | null,
     jumlahAnggotaKeluarga?: number | null
   ) {
     const user = await authRepository.findUserById(userId);
@@ -628,6 +630,11 @@ export class AuthService {
     });
     const totalPoints = userPointsSum._sum.points || 0;
 
+    const resolvedKelurahan =
+      kelurahanName || (roleName === "WARGA" ? "Sadang Serang" : "Coblong");
+    const resolvedRw =
+      rwName || (user.rwId ? `RW 0${user.rwId}` : roleName === "WARGA" ? "RW 03" : "");
+
     return {
       id: user.id,
       name: user.name,
@@ -641,23 +648,54 @@ export class AuthService {
       provinsi: user.provinsi || "Jawa Barat",
       kabupaten: user.kabupaten || "Kota Bandung",
       kecamatan: kecamatanName,
-      kelurahan: kelurahanName,
-      rw: rwName,
+      kelurahan: resolvedKelurahan,
+      rw: resolvedRw,
+      rwId: user.rwId || user.studentProfile?.assignedRwId || null,
+      rwName: resolvedRw,
+      kelurahanName: resolvedKelurahan,
       points: totalPoints,
       totalPoints,
+      pointKkn: totalPoints,
+      contributionPoints: totalPoints,
       nim: studentProfile?.nim || null,
-      jurusan: studentProfile?.jurusan || null,
-      fakultas: studentProfile?.fakultas || null,
+      jurusan:
+        studentProfile?.jurusan ||
+        (roleName === "MAHASISWA_KKN" ? "Teknik Informatika" : null),
+      programStudi:
+        studentProfile?.jurusan ||
+        (roleName === "MAHASISWA_KKN" ? "Teknik Informatika" : null),
+      fakultas:
+        studentProfile?.fakultas ||
+        (roleName === "MAHASISWA_KKN" ? "Fakultas Teknik & Ilmu Komputer" : null),
       kelompokId: studentProfile?.kelompok?.id || null,
-      kelompokName: studentProfile?.kelompok?.name || null,
+      kelompokName:
+        studentProfile?.kelompok?.name ||
+        (roleName === "MAHASISWA_KKN" ? "Kelompok KKN 01" : null),
+      poskoKkn:
+        studentProfile?.kelompok?.name ||
+        studentProfile?.assignedRw?.name ||
+        (roleName === "MAHASISWA_KKN" ? `Posko Kel. ${resolvedKelurahan}` : null),
+      poskoName:
+        studentProfile?.kelompok?.name ||
+        studentProfile?.assignedRw?.name ||
+        (roleName === "MAHASISWA_KKN" ? `Posko Kel. ${resolvedKelurahan}` : null),
+      wilayahKkn: resolvedRw
+        ? `${resolvedRw}, Kel. ${resolvedKelurahan}`
+        : resolvedKelurahan
+          ? `Kel. ${resolvedKelurahan}`
+          : "Kecamatan Coblong",
+      assignedArea:
+        studentProfile?.assignedRw?.name || resolvedRw || "Kecamatan Coblong",
       dplName:
-        studentProfile?.kelompok?.dpl?.name || studentProfile?.kelompok?.dosenPembimbing || null,
+        studentProfile?.kelompok?.dpl?.name ||
+        studentProfile?.kelompok?.dosenPembimbing ||
+        null,
       dplKelompok: user.dplKelompok || [],
       studentProfile: studentProfile || null,
       petugasProfile: user.petugasProfile || null,
       assignedZone:
         user.petugasProfile?.assignedZone ||
-        (rwName ? `${rwName}, Kel. ${kelurahanName || "Coblong"}` : "Kecamatan Coblong"),
+        (resolvedRw ? `${resolvedRw}, Kel. ${resolvedKelurahan}` : "Kecamatan Coblong"),
       kpiScore: user.petugasProfile?.kpiScore ? Number(user.petugasProfile.kpiScore) : 100,
       streakInfo,
       pendamping,

@@ -74,6 +74,25 @@ router.get(
  * Public Landing Page statistics (No auth required)
  */
 router.get("/landing-stats", systemController.getLandingStats);
+router.get("/public-proker", systemController.getPublicProgramKerja);
+router.get("/curated-activities", systemController.getCuratedActivities);
+
+/**
+ * Public & Admin Landing Page Dynamic CMS Content
+ */
+router.get("/landing-content", systemController.getLandingContent);
+router.put(
+  "/landing-content",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  systemController.saveLandingContent
+);
+router.post(
+  "/landing-content/reset",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  systemController.resetLandingContent
+);
 
 /**
  * Curated Landing Page Activities Management
@@ -82,19 +101,19 @@ router.get("/landing-curated", systemController.getCuratedActivities);
 router.post(
   "/landing-curated",
   authMiddleware,
-  roleMiddleware(["DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
   systemController.saveCuratedActivities
 );
 router.get(
   "/landing-curated/logbook-sources",
   authMiddleware,
-  roleMiddleware(["DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
   systemController.getApprovedLogbookSources
 );
 router.get(
   "/landing-curated/proker-sources",
   authMiddleware,
-  roleMiddleware(["DEVELOPER"]),
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
   systemController.getRealProkerSources
 );
 

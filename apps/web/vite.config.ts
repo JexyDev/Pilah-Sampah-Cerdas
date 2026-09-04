@@ -13,15 +13,15 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://api:3000',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://api:3000',
         changeOrigin: true,
       },
       '/downloads': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_PROXY_TARGET || 'http://api:3000',
         changeOrigin: true,
       },
     },

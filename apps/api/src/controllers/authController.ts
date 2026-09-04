@@ -140,29 +140,6 @@ export class AuthController {
       // 2. Call Service
       const result = await authService.login(phone, password);
 
-      // Enforce strict iOS Safari for MAHASISWA_KKN role
-      const userRole = result.user?.role || "";
-      if (userRole === "MAHASISWA_KKN") {
-        const ua = (req.headers["user-agent"] || "").toString();
-        const isBypass = req.headers["x-dev-bypass-ios-gate"] === "true";
-        const isIOS = /iPhone|iPad|iPod/i.test(ua);
-        const isCriOS = /CriOS/i.test(ua);
-        const isFxiOS = /FxiOS/i.test(ua);
-        const isEdgiOS = /EdgiOS/i.test(ua);
-        const isOperaIOS = /OPT|OPiOS/i.test(ua);
-        const isSafariCore = /Safari/i.test(ua) && /Version\//i.test(ua);
-        const isSafari = isSafariCore && !isCriOS && !isFxiOS && !isEdgiOS && !isOperaIOS;
-
-        if (!isBypass && (!isIOS || !isSafari || /Android/i.test(ua))) {
-          res.status(403).json({
-            success: false,
-            code: "MAHASISWA_MUST_USE_IOS_SAFARI",
-            message: "Akses Mahasiswa KKN hanya diizinkan melalui perangkat Apple iPhone dengan peramban resmi Safari.",
-          });
-          return;
-        }
-      }
-
       // 3. Clear rate limit attempts on success
       const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
       clearLoginAttempts(ip, phone);
@@ -323,7 +300,12 @@ export class AuthController {
       const rawName = req.body.name ?? req.body.nama;
       const rawPhone = req.body.phone ?? req.body.noWa ?? req.body.noTelepon;
       const rawAddress = req.body.address ?? req.body.alamat;
-      const rawFoto = req.body.fotoProfil ?? req.body.foto;
+      const rawFoto =
+        req.body.fotoProfil !== undefined
+          ? req.body.fotoProfil
+          : req.body.foto !== undefined
+            ? req.body.foto
+            : undefined;
       const rawFamilySize = req.body.familySize ?? req.body.jumlahAnggotaKeluarga;
 
       let familySizeNum: number | undefined = undefined;
@@ -360,12 +342,23 @@ export class AuthController {
         }
       }
 
+      const isDeleteFoto =
+        req.body.deleteFoto === true ||
+        req.body.hapusFoto === true ||
+        rawFoto === null ||
+        rawFoto === "";
+      const finalFoto = isDeleteFoto
+        ? null
+        : rawFoto !== undefined
+          ? String(rawFoto)
+          : undefined;
+
       const updatedUser = await authService.updateProfile(
         userId,
         rawName ? String(rawName).trim() : undefined,
         rawPhone ? normalizePhone(String(rawPhone)) : undefined,
         rawAddress ? String(rawAddress).trim() : undefined,
-        rawFoto ? String(rawFoto) : undefined,
+        finalFoto,
         familySizeNum
       );
 
@@ -606,6 +599,39 @@ export class AuthController {
         res
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengunggah foto profil" });
+      }
+    }
+  }
+
+  /**
+   * Handle Profile Picture Deletion
+   * DELETE /api/v1/auth/avatar or DELETE /api/v1/auth/profile/photo
+   */
+  async deleteAvatar(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId || (req as any).user?.id;
+      if (!userId) {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
+        return;
+      }
+
+      await authService.updateProfile(userId, undefined, undefined, undefined, null);
+
+      res.status(200).json({
+        success: true,
+        message: "Foto profil berhasil dihapus",
+        data: {
+          fotoProfil: null,
+        },
+      });
+    } catch (error: any) {
+      if (error.message === "USER_NOT_FOUND") {
+        res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
+      } else {
+        res.status(500).json({
+          error: "INTERNAL_SERVER_ERROR",
+          message: error.message || "Gagal menghapus foto profil",
+        });
       }
     }
   }

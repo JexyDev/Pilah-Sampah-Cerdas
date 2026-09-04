@@ -1515,8 +1515,8 @@ export const LogbookKknPage: React.FC = () => {
         const fasilitasInfo = resolveFasilitasDetails(selectedItemDetail);
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" onClick={() => setIsDetailModalOpen(false)}>
+            <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
               
               {/* Modal Header */}
               <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -1893,8 +1893,8 @@ export const LogbookKknPage: React.FC = () => {
           5. MODAL: KONFIRMASI VALIDASI SEMUA / SERENTAK DPL
           ───────────────────────────────────────────── */}
       {isBatchModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" onClick={() => setIsBatchModalOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto text-xs text-slate-700 dark:text-slate-300">
             
             {/* Header Modal */}
             <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -2011,8 +2011,8 @@ export const LogbookKknPage: React.FC = () => {
           5B. MODAL: KONFIRMASI HAPUS LOGBOOK (VALIDASI 2 LANGKAH)
           ───────────────────────────────────────────── */}
       {showDeleteModal && deleteTargetItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in zoom-in-95 duration-150 text-xs text-slate-700 dark:text-slate-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150" onClick={() => setShowDeleteModal(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-4 animate-in zoom-in-95 duration-150 text-xs text-slate-700 dark:text-slate-300">
             
             {/* Header Modal */}
             <div className="flex items-start gap-3">
@@ -2137,8 +2137,8 @@ export const LogbookKknPage: React.FC = () => {
           6. MODAL: PREVIEW FOTO LIGHTBOX
           ───────────────────────────────────────────── */}
       {previewPhotoUrl && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={closePreview}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-150">
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate pr-4">
                 {previewTitle || "Foto Dokumentasi Bukti Kegiatan"}
@@ -2168,8 +2168,8 @@ export const LogbookKknPage: React.FC = () => {
           7. MODAL: KONFIGURASI TOLERANSI BACKDATE (DEVELOPER)
           ───────────────────────────────────────────── */}
       {showConfigModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowConfigModal(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
                 <Settings className="w-5 h-5 text-slate-600" />
@@ -2231,8 +2231,8 @@ export const LogbookKknPage: React.FC = () => {
           8. MODAL: UPDATE STATUS PENGERJAAN PROGRAM KERJA (DPL)
           ───────────────────────────────────────────── */}
       {statusPelaksanaanTarget && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setStatusPelaksanaanTarget(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-150">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-3">
               <h3 className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 text-sm">
                 <ListChecks className="w-5 h-5 text-indigo-600" />

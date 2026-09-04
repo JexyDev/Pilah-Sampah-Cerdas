@@ -400,7 +400,7 @@ export class AuthRepository {
       name?: string;
       phone?: string;
       address?: string;
-      fotoProfil?: string;
+      fotoProfil?: string | null;
       jumlahAnggotaKeluarga?: number | null;
     }
   ): Promise<User> {
