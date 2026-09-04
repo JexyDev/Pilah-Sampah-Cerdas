@@ -264,18 +264,20 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
         (msg != null && (msg.contains('BIN_ALREADY_USED') || msg.contains('ALREADY_ACTIVATED')))) {
       return 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.';
     }
+    
+    if (code == 'HOUSEHOLDS_NOT_FOUND' || 
+        code == 'HOUSEHOLD_REQUIRED' || 
+        (msg != null && (msg.contains('HOUSEHOLDS_NOT_FOUND') || msg.contains('HOUSEHOLD_REQUIRED')))) {
+      return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap hubungi Admin/Mahasiswa untuk pendaftaran rumah Anda terlebih dahulu.';
+    }
+
     switch (code) {
-      case 'ALREADY_ACTIVATED':
-        return 'QR Tempat Sampah ini sudah diaktivasi oleh warga lain.';
       case 'BIN_NOT_FOUND':
         return 'QR Code tempat sampah tidak terdaftar di sistem.';
       case 'BIN_CATEGORY_DUPLICATE':
         return msg ?? 'Kategori tempat sampah sudah terdaftar untuk warga ini.';
-      case 'HOUSEHOLDS_NOT_FOUND':
-      case 'HOUSEHOLD_REQUIRED':
-        return 'Akun Anda belum memiliki Rumah Tangga terdaftar. Harap hubungi Mahasiswa Pendamping/Admin untuk pendaftaran rumah Anda terlebih dahulu.';
       default:
-        if (msg != null && msg.isNotEmpty && !msg.startsWith('BIN_ALREADY_USED')) {
+        if (msg != null && msg.isNotEmpty) {
           return msg;
         }
         return 'Terjadi kesalahan. Silakan coba lagi.';

@@ -34,7 +34,11 @@ class NetworkExceptionHelper {
               default:
                 // Fallback ke pesan dari backend jika bukan kode yang dikenal
                 if (responseData['message'] != null) {
-                  return responseData['message'].toString();
+                  final msg = responseData['message'].toString();
+                  if (RegExp(r'^[A-Z_]+$').hasMatch(msg)) {
+                    return 'Terjadi kesalahan tidak terduga. Silakan coba lagi.';
+                  }
+                  return msg;
                 }
             }
           }

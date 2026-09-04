@@ -40,7 +40,7 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
     _controller = MobileScannerController(
       facing: CameraFacing.back,
       autoStart: true,
-      detectionSpeed: DetectionSpeed.noDuplicates,
+      detectionSpeed: DetectionSpeed.normal,
       returnImage: false,
     );
   }
@@ -60,8 +60,11 @@ class QrScannerWidgetState extends State<QrScannerWidget> {
       // Panggil callback
       final success = await widget.onQrDetected(code);
       if (mounted && !success) {
-        _isProcessing = false;
-        resetScanner();
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (mounted) {
+          _isProcessing = false;
+          resetScanner();
+        }
       }
     }
   }
