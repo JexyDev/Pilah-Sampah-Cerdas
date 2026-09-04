@@ -475,10 +475,10 @@ export class SuperUserService {
 
     .qr-overlay {
       position: absolute;
-      left: 9.37%;
-      top: 66.2%;
-      width: 35.43%;
-      height: 23.63%;
+      left: 10.69%;
+      top: 69.82%;
+      width: 33.68%;
+      height: 22.46%;
       z-index: 10;
       display: flex;
       align-items: center;
@@ -670,8 +670,8 @@ export class SuperUserService {
           img.crossOrigin = 'anonymous';
           img.onload = () => {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(128, 1356, 484, 484);
-            ctx.drawImage(img, 138, 1366, 464, 464);
+            ctx.fillRect(146, 1430, 460, 460);
+            ctx.drawImage(img, 156, 1440, 440, 440);
             r();
           };
           img.onerror = () => r();
