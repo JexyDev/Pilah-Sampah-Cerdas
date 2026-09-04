@@ -1451,36 +1451,32 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Estimation Summary */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div className="p-3 sm:p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex sm:flex-col items-center sm:items-center justify-between sm:justify-center text-left sm:text-center">
-                  <div>
-                    <div className="text-[11px] font-bold text-emerald-800">Estimasi Poin</div>
-                    <div className="text-[10px] text-emerald-600 sm:hidden">Poin BERSEKA</div>
-                  </div>
-                  <div className="text-right sm:text-center">
-                    <div className="text-base sm:text-lg font-black text-emerald-700">+{calculatedPoints}</div>
-                    <div className="text-[10px] text-emerald-600 hidden sm:block">Poin BERSEKA</div>
-                  </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div
+                  className="p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-emerald-50 border border-emerald-200/80 flex flex-col items-center justify-center text-center min-w-0 overflow-hidden shadow-2xs"
+                  title={`+${calculatedPoints.toLocaleString("id-ID")} Poin BERSEKA`}
+                >
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-800 truncate w-full block">Estimasi Poin</span>
+                  <span className="text-xs sm:text-base lg:text-lg font-black text-emerald-700 my-0.5 sm:my-1 truncate w-full block tracking-tight">+{calculatedPoints.toLocaleString("id-ID")}</span>
+                  <span className="text-[9px] sm:text-[11px] text-emerald-600 font-medium truncate w-full block">Poin BERSEKA</span>
                 </div>
-                <div className="p-3 sm:p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex sm:flex-col items-center sm:items-center justify-between sm:justify-center text-left sm:text-center">
-                  <div>
-                    <div className="text-[11px] font-bold text-blue-800">Nilai Konversi</div>
-                    <div className="text-[10px] text-blue-600 sm:hidden">Sembako / Kebutuhan</div>
-                  </div>
-                  <div className="text-right sm:text-center">
-                    <div className="text-base sm:text-lg font-black text-blue-700">Rp{calculatedCashIdr.toLocaleString("id-ID")}</div>
-                    <div className="text-[10px] text-blue-600 hidden sm:block">Sembako/Kebutuhan</div>
-                  </div>
+
+                <div
+                  className="p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-blue-50 border border-blue-200/80 flex flex-col items-center justify-center text-center min-w-0 overflow-hidden shadow-2xs"
+                  title={`Rp${calculatedCashIdr.toLocaleString("id-ID")} (Sembako / Kebutuhan)`}
+                >
+                  <span className="text-[10px] sm:text-xs font-bold text-blue-800 truncate w-full block">Nilai Konversi</span>
+                  <span className="text-xs sm:text-base lg:text-lg font-black text-blue-700 my-0.5 sm:my-1 truncate w-full block tracking-tight">Rp{calculatedCashIdr.toLocaleString("id-ID")}</span>
+                  <span className="text-[9px] sm:text-[11px] text-blue-600 font-medium truncate w-full block">Sembako/Tunai</span>
                 </div>
-                <div className="p-3 sm:p-3.5 rounded-xl bg-teal-50 border border-teal-200 flex sm:flex-col items-center sm:items-center justify-between sm:justify-center text-left sm:text-center">
-                  <div>
-                    <div className="text-[11px] font-bold text-teal-800">Reduksi Emisi</div>
-                    <div className="text-[10px] text-teal-600 sm:hidden">CO₂e Tercegah</div>
-                  </div>
-                  <div className="text-right sm:text-center">
-                    <div className="text-base sm:text-lg font-black text-teal-700">{calculatedCo2} kg</div>
-                    <div className="text-[10px] text-teal-600 hidden sm:block">CO₂e Tercegah</div>
-                  </div>
+
+                <div
+                  className="p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-teal-50 border border-teal-200/80 flex flex-col items-center justify-center text-center min-w-0 overflow-hidden shadow-2xs"
+                  title={`${calculatedCo2} kg CO₂e Tercegah`}
+                >
+                  <span className="text-[10px] sm:text-xs font-bold text-teal-800 truncate w-full block">Reduksi Emisi</span>
+                  <span className="text-xs sm:text-base lg:text-lg font-black text-teal-700 my-0.5 sm:my-1 truncate w-full block tracking-tight">{calculatedCo2} kg</span>
+                  <span className="text-[9px] sm:text-[11px] text-teal-600 font-medium truncate w-full block">CO₂e Tercegah</span>
                 </div>
               </div>
 
