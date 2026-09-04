@@ -445,6 +445,28 @@ export const LandingPage: React.FC = () => {
                   </button>
                 </div>
               </li>
+              <li className="landing-nav-auth-mobile">
+                {isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNavOpen(false);
+                      navigate("/dashboard");
+                    }}
+                    className="landing-btn landing-btn-primary w-full text-center justify-center"
+                  >
+                    Dasbor Saya
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setIsNavOpen(false)}
+                    className="landing-btn landing-btn-primary w-full text-center justify-center"
+                  >
+                    Masuk
+                  </Link>
+                )}
+              </li>
             </ul>
           </nav>
 
@@ -454,14 +476,14 @@ export const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate("/dashboard")}
-                className="landing-btn landing-btn-primary landing-btn-sm landing-btn-auth-desktop"
+                className="landing-btn landing-btn-primary landing-btn-sm"
               >
                 Dasbor Saya
               </button>
             ) : (
               <Link
                 to="/login"
-                className="landing-btn landing-btn-outline landing-btn-sm landing-btn-auth-desktop"
+                className="landing-btn landing-btn-outline landing-btn-sm"
               >
                 Masuk
               </Link>
