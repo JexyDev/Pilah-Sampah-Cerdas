@@ -34,7 +34,7 @@ interface InactiveBin {
 
 export const MasterQrManager: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const isReadOnly = ["PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [qrs, setQrs] = useState<BinQr[]>([]);
   const [inactiveBins, setInactiveBins] = useState<InactiveBin[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

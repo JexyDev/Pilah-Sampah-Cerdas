@@ -378,7 +378,7 @@ const ManajemenMahasiswa: React.FC = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedMahasiswas = filteredMahasiswas.slice(startIndex, startIndex + rowsPerPage);
 
-  const allowedRoles = ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "DPL"];
+  const allowedRoles = ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "ADMIN_DLH", "CAMAT", "LURAH", "PEMIMPIN", "PIMPINAN", "DPL"];
   if (!allowedRoles.includes(user?.peran || "")) {
     return (
       <div className="p-8 text-center text-rose-600 font-bold bg-white dark:bg-slate-900 rounded-2xl m-6 border border-rose-200">
