@@ -1424,7 +1424,7 @@ const JadwalKegiatan: React.FC = () => {
                         </td>
                         {canManageTimeline && (
                           <td
-                            className={`py-3.5 px-4 text-center sticky right-0 z-10 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] transition-colors ${
+                            className={`py-3.5 px-4 text-center whitespace-nowrap sticky right-0 z-10 border-l border-slate-200/70 dark:border-slate-800 shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] transition-colors ${
                               item.statusPelaksanaan === "SEDANG_BERJALAN"
                                 ? "bg-emerald-50/95 dark:bg-emerald-950/90"
                                 : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800"

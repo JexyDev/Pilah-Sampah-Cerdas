@@ -35,8 +35,10 @@ import showToast from "../../utils/showToast";
 import * as XLSX from "xlsx";
 import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 import PageHeader from "../../components/common/PageHeader";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export default function RekapSetoran() {
+  const { user } = useAuthStore();
   const [deposits, setDeposits] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -279,6 +281,12 @@ export default function RekapSetoran() {
       </span>
     );
   };
+
+  if (!user) return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="w-8 h-8 border-2 border-emerald-600/20 border-t-emerald-600 rounded-full animate-spin" />
+    </div>
+  );
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">

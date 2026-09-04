@@ -131,17 +131,17 @@ const Monitoring: React.FC = () => {
   const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
   const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
   const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
+  // QC-17b: Default basemap Satelit untuk semua role (termasuk Pimpinan, Taskforce, dll.)
   const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
-    return isMapSU ? "google_satellite" : "cartodb";
+    return "google_satellite"; // Default Satelit untuk semua role
   });
   const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
   const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
 
-  // Sync default satellite for SU on user load
+  // QC-17b: Sync default satellite untuk semua role saat user load
   useEffect(() => {
-    if (user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER") {
-      setMapTileProvider("google_satellite");
-    }
+    // Semua role default ke satellite; SU/Developer dijamin tetap satellite
+    setMapTileProvider("google_satellite");
   }, [user?.peran]);
 
   // Pagination for Table
