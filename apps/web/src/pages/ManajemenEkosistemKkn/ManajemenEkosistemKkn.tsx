@@ -1147,6 +1147,11 @@ export const ManajemenEkosistemKkn: React.FC = () => {
                     className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono text-xs"
                   />
                 </div>
+                {kelompokForm.linkGoogleDrive && !/^https:\/\/drive\.google\.com\//.test(kelompokForm.linkGoogleDrive) && (
+                  <p className="text-[11px] text-red-500 mt-1 font-semibold">
+                    ⚠ URL harus diawali dengan https://drive.google.com/
+                  </p>
+                )}
                 <p className="text-[11px] text-slate-400 mt-1">
                   Folder Google Drive disiapkan oleh Super User / Admin untuk monitoring laporan dan portofolio KKN.
                 </p>

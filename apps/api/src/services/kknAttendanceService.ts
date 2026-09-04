@@ -86,13 +86,15 @@ async function buildGeofence(
   }
 
   // 3. Fallback: Default sistem dari Rule Engine / Config
+  // QC-07: Fallback default ke koordinat Kampus UNIKOM jika kelompok belum punya mapping area kerja
   const configLatStr = await configService.getConfig("default_activity_latitude");
   const configLngStr = await configService.getConfig("default_activity_longitude");
   const configRadiusStr = await configService.getConfig("default_activity_radius");
 
-  const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
-  const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
+  // Koordinat default: Kampus UNIKOM, Jl. Dipati Ukur No.112–116, Bandung
+  const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8681;
+  const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.5886;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200; // 200m radius kampus Unikom
 
   return {
     latitude: defaultLat,
@@ -844,6 +846,11 @@ export class KknAttendanceService {
         setoranOtomatis: {
           orderBy: { createdAt: "desc" },
           take: 10,
+          include: {
+            bin: {
+              include: { category: true },
+            },
+          },
         },
       },
     });
@@ -898,7 +905,7 @@ export class KknAttendanceService {
             log.confidenceAi,
             log.discrepancy_status || log.discrepancyStatus,
             log.hasilKlasifikasiAi,
-            primaryBin?.category
+            log.bin?.category || primaryBin?.category
           );
           return {
             ...log,

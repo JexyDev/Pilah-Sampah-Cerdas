@@ -90,6 +90,7 @@ export const kelompokService = {
     dplId?: string;
     kelurahan?: string;
     cakupanRw?: any;
+    linkGoogleDrive?: string;
   }) => {
     let dplNamaMentah: string | null = null;
     if (data.dplId) {
@@ -107,18 +108,20 @@ export const kelompokService = {
         dplNamaMentah,
         kelurahan: data.kelurahan || null,
         cakupanRw: data.cakupanRw || null,
+        linkGoogleDrive: data.linkGoogleDrive || null,
       },
     });
   },
 
   updateKelompok: async (
     id: string,
-    data: { name?: string; dplId?: string | null; kelurahan?: string | null; cakupanRw?: any }
+    data: { name?: string; dplId?: string | null; kelurahan?: string | null; cakupanRw?: any; linkGoogleDrive?: string | null }
   ) => {
     const updatePayload: any = {
       name: data.name,
       kelurahan: data.kelurahan,
       cakupanRw: data.cakupanRw,
+      ...(data.linkGoogleDrive !== undefined ? { linkGoogleDrive: data.linkGoogleDrive || null } : {}),
     };
 
     if (data.dplId !== undefined) {

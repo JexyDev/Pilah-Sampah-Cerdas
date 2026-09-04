@@ -362,7 +362,7 @@ const CollapsedClockButton: React.FC<{ dateStr: string; timeStr: string }> = ({ 
             style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
             className="fixed bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap z-[999999] border border-slate-700/60 pointer-events-none animate-in fade-in slide-in-from-left-2 duration-150"
           >
-            {dateStr ? `${dateStr} • ${timeStr}` : timeStr || "Jam Sistem"}
+            {dateStr ? `${dateStr} â€¢ ${timeStr}` : timeStr || "Jam Sistem"}
           </div>
         </Portal>
       )}
@@ -643,7 +643,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
     "MPL",
     "TASK_FORCE",
     "PANITIA_TASKFORCE",
-    "PEMIMPIN",
+    "PIMPINAN",
     "WARGA",
   ];
 
@@ -697,7 +697,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "DPL",
             "DOSEN_PEMBIMBING",
             "PANITIA_TASKFORCE",
-            "PEMIMPIN",
+            "PIMPINAN",
             "MAHASISWA_KKN",
             "CAMAT",
             "LURAH",
@@ -715,7 +715,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -728,7 +728,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -741,7 +741,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "MAHASISWA_KKN",
                 "CAMAT",
                 "LURAH",
@@ -759,7 +759,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "MAHASISWA_KKN",
               ] as UserRole[],
             },
@@ -776,7 +776,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "DPL",
             "DOSEN_PEMBIMBING",
             "PANITIA_TASKFORCE",
-            "PEMIMPIN",
+            "PIMPINAN",
             "MAHASISWA_KKN",
             "CAMAT",
             "LURAH",
@@ -794,7 +794,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "CAMAT",
                 "LURAH",
                 "RW",
@@ -809,7 +809,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -822,7 +822,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
           ],
@@ -841,7 +841,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "RW",
             "SUPER_USER",
             "PANITIA_TASKFORCE",
-            "PEMIMPIN",
+            "PIMPINAN",
           ] as UserRole[],
           children: [
             {
@@ -857,7 +857,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -869,7 +869,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -881,7 +881,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DOSEN_PEMBIMBING",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -897,7 +897,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
           ],
@@ -923,7 +923,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DPL",
                 "DOSEN_PEMBIMBING",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "LURAH",
                 "CAMAT",
                 "RW",
@@ -939,7 +939,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "DEVELOPER",
             "SUPER_USER",
             "PANITIA_TASKFORCE",
-            "PEMIMPIN",
+            "PIMPINAN",
             "ADMIN_DLH",
             "CAMAT",
             "LURAH",
@@ -952,7 +952,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DEVELOPER",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -965,7 +965,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DEVELOPER",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -978,7 +978,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "DEVELOPER",
                 "SUPER_USER",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "ADMIN_DLH",
                 "CAMAT",
                 "LURAH",
@@ -987,7 +987,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             {
               to: "/hasil-survei/data-survei",
               label: "Data Survei",
-              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[],
+              allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[],
             },
           ],
         },
@@ -1009,7 +1009,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "RW",
             "PETUGAS_RESIDU",
             "PANITIA_TASKFORCE",
-            "PEMIMPIN",
+            "PIMPINAN",
           ] as UserRole[],
         },
         {
@@ -1025,7 +1025,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "RW",
             "PETUGAS_RESIDU",
             "WARGA",
-            "PEMIMPIN",
+            "PIMPINAN",
             "PANITIA_TASKFORCE",
             "MAHASISWA_KKN",
           ] as UserRole[],
@@ -1041,7 +1041,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PETUGAS_RESIDU",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
               ] as UserRole[],
@@ -1058,7 +1058,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "PETUGAS_RESIDU",
                 "WARGA",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
               ] as UserRole[],
@@ -1080,7 +1080,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "WARGA",
             "MAHASISWA_KKN",
             "PANITIA_TASKFORCE",
-            "PEMIMPIN",
+            "PIMPINAN",
           ] as UserRole[],
           children: [
             {
@@ -1095,7 +1095,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "PETUGAS_RESIDU",
                 "WARGA",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "PANITIA_TASKFORCE",
                 "MAHASISWA_KKN",
               ] as UserRole[],
@@ -1111,7 +1111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "LURAH",
                 "RW",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "PETUGAS_RESIDU",
               ] as UserRole[],
             },
@@ -1127,7 +1127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "RW",
                 "PETUGAS_RESIDU",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
               ] as UserRole[],
             },
             {
@@ -1143,7 +1143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 "PETUGAS_RESIDU",
                 "MAHASISWA_KKN",
                 "PANITIA_TASKFORCE",
-                "PEMIMPIN",
+                "PIMPINAN",
                 "WARGA",
               ] as UserRole[],
             },
@@ -1162,7 +1162,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
             "RW",
             "PETUGAS_RESIDU",
             "WARGA",
-            "PEMIMPIN",
+            "PIMPINAN",
             "PANITIA_TASKFORCE",
             "MAHASISWA_KKN",
           ] as UserRole[],
@@ -1176,17 +1176,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           type: "group",
           label: "Pengguna",
           icon: Users,
-          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN", "RW"] as UserRole[],
+          allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN", "RW"] as UserRole[],
           children: [
             { to: "/pengguna?role=developer", label: "Developer", allowed: ["DEVELOPER"] as UserRole[] },
             { to: "/pengguna?role=su", label: "Super User", allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[] },
             { to: "/pengguna?role=dlh", label: "Admin DLH", allowed: ["DEVELOPER", "SUPER_USER", "ADMIN_DLH"] as UserRole[] },
-            { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PEMIMPIN"] as UserRole[] },
-            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PEMIMPIN"] as UserRole[] },
+            { to: "/pengguna?role=pimpinan", label: "Pimpinan", allowed: ["DEVELOPER", "SUPER_USER", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=taskforce", label: "Task Force", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=dpl", label: "Dosen Pendamping Lapangan", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=mahasiswa", label: "Mahasiswa", allowed: ["DEVELOPER", "SUPER_USER", "PANITIA_TASKFORCE", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=warga", label: "Warga", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
+            { to: "/pengguna?role=petugas-pemilah", label: "Petugas Pemilah", allowed: ["DEVELOPER", "SUPER_USER", "RW", "PIMPINAN"] as UserRole[] },
           ],
         },
         {
@@ -1269,6 +1269,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
           icon: UserIcon,
           label: "Pengguna Daring",
           allowed: ["DEVELOPER", "SUPER_USER"] as UserRole[],
+        },
+      ],
+    },
+    {
+      header: "INFORMASI",
+      items: [
+        {
+          to: "/panduan",
+          icon: BookOpen,
+          label: "Panduan",
+          allowed: ALL_ROLES,
+        },
+        {
+          to: "/informasi",
+          icon: Sparkles,
+          label: "Tentang Aplikasi",
+          allowed: ALL_ROLES,
         },
       ],
     },
@@ -1457,3 +1474,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
 };
 
 export default Sidebar;
+

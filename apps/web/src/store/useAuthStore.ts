@@ -25,7 +25,6 @@ export type UserRole =
   | "DOSEN_PENDAMPING"
   | "DOSEN_PENDAMPING_LAPANGAN"
   | "MPL"
-  | "PEMIMPIN"
   | "PIMPINAN"
   | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
@@ -75,7 +74,7 @@ const normalizeRole = (role: string): UserRole => {
   if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
   if (["DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN", "DPL"].includes(role)) return "DPL";
   if (["MPL", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(role)) return "MPL";
-  if (["PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PEMIMPIN";
+  if (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PIMPINAN";
   if (["TASKFORCE", "Panitia", "TASK_FORCE", "Panitia/Taskforce", "PANITIA_TASKFORCE"].includes(role)) return "TASK_FORCE";
   return role as UserRole;
 };

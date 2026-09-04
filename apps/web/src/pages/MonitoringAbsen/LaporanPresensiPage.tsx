@@ -1095,9 +1095,9 @@ export const LaporanPresensiPage: React.FC = () => {
         </div>
 
         {/* Filter Inputs Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
-          {/* 1. Search (3 cols) */}
-          <div className="col-span-1 sm:col-span-2 lg:col-span-3">
+        <div className="flex flex-wrap gap-3 items-end">
+          {/* 1. Search */}
+          <div className="flex-[2] min-w-[180px]">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               Pencarian Mahasiswa / NIM
             </label>
@@ -1128,8 +1128,8 @@ export const LaporanPresensiPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Kelompok KKN (2 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          {/* 2. Kelompok KKN */}
+          <div className="flex-1 min-w-[150px]">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 truncate">
               Kelompok KKN {isDpl && <span className="text-emerald-600 font-semibold">(Binaan)</span>}
             </label>
@@ -1147,8 +1147,8 @@ export const LaporanPresensiPage: React.FC = () => {
             </select>
           </div>
 
-          {/* 3. Filter Kelurahan (2 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          {/* 3. Filter Kelurahan */}
+          <div className="flex-1 min-w-[140px]">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1">
               <MapPin size={11} className="text-emerald-600" />
               Kelurahan
@@ -1175,8 +1175,8 @@ export const LaporanPresensiPage: React.FC = () => {
             </select>
           </div>
 
-          {/* 4. Dari Tanggal (2 cols) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          {/* 4. Dari Tanggal */}
+          <div className="flex-1 min-w-[140px]">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               Dari Tanggal
             </label>
@@ -1192,10 +1192,10 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* 5. Sampai Tanggal (1 col) */}
-          <div className="col-span-1 sm:col-span-1 lg:col-span-1">
+          {/* 5. Sampai Tanggal */}
+          <div className="flex-1 min-w-[140px]">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
-              Sampai
+              Sampai Tanggal
             </label>
             <input
               type="date"
@@ -1209,8 +1209,8 @@ export const LaporanPresensiPage: React.FC = () => {
             />
           </div>
 
-          {/* 6. Actions: Reset & Ekspor (2 cols) */}
-          <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex items-end gap-2">
+          {/* 6. Actions: Reset & Ekspor */}
+          <div className="flex items-end gap-2 shrink-0">
             <button
               type="button"
               onClick={handleResetFilter}
