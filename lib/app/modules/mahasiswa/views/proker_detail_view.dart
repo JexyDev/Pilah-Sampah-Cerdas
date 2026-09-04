@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/values/app_config.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Provider
@@ -140,21 +141,39 @@ class ProkerDetailView extends ConsumerWidget {
         data: (data) {
           final pl = (data['statusPelaksanaan'] ?? '').toString().toUpperCase();
           if (pl != 'SEDANG_BERJALAN' && pl != 'SEDANG_DILAKSANAKAN') return null;
-          return FloatingActionButton.extended(
-            heroTag: 'fab_catat_pemanfaatan',
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Catat Pemanfaatan', style: TextStyle(fontWeight: FontWeight.bold)),
-            onPressed: () async {
-              await Navigator.pushNamed(
-                context,
-                AppRoutes.logbookPemanfaatan,
-                arguments: {'prokerId': prokerId},
-              );
-              ref.invalidate(prokerDetailProvider(prokerId));
-            },
-          );
+          return Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'fab_catat_hasil',
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.eco_rounded),
+                  label: const Text('Catat Hasil', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, AppRoutes.catatPanen);
+                    ref.invalidate(prokerDetailProvider(prokerId));
+                  },
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  heroTag: 'fab_catat_pemanfaatan',
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Catat Pemanfaatan', style: TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: () async {
+                    await Navigator.pushNamed(
+                      context,
+                      AppRoutes.logbookPemanfaatan,
+                      arguments: {'prokerId': prokerId},
+                    );
+                    ref.invalidate(prokerDetailProvider(prokerId));
+                  },
+                ),
+              ],
+            );
         },
       ),
     );
@@ -497,12 +516,12 @@ class ProkerDetailView extends ConsumerWidget {
               style: TextStyle(
                   fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         ),
-        ...entries.map((e) => _buildEntriCard(e as Map<String, dynamic>)),
+        ...entries.map((e) => _buildEntriCard(context, e as Map<String, dynamic>)),
       ],
     );
   }
 
-  Widget _buildEntriCard(Map<String, dynamic> entry) {
+  Widget _buildEntriCard(BuildContext context, Map<String, dynamic> entry) {
     final tek = entry['teknologi']?.toString() ?? '-';
     final bahan = entry['bahanBaku']?.toString() ?? '-';
     final inputKg = (entry['beratInputKg'] ?? entry['volumeBahanBaku']) as num?;
@@ -570,7 +589,7 @@ class ProkerDetailView extends ConsumerWidget {
                       border: Border.all(color: statusColor.withValues(alpha: 0.4)),
                     ),
                     child: Text(
-                      isPanen ? 'Sudah Panen' : 'Dalam Proses',
+                      isPanen ? 'Hasil Tercatat' : 'Dalam Proses',
                       style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -603,33 +622,45 @@ class ProkerDetailView extends ConsumerWidget {
               if (rwName != null)
                 _buildMetricItem(Icons.location_on_rounded, 'RW', rwName,
                     AppColors.primaryBlue),
-            ],
-          ),
-          // Foto thumbnail jika ada
-          if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                fotoUrl,
-                height: 100,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 60,
-                  color: AppColors.backgroundCanvas,
-                  child: const Center(
-                    child: Icon(Icons.broken_image_rounded,
-                        color: AppColors.textSecondary),
+              ],
+            ),
+            // Foto thumbnail jika ada
+            if (fotoUrl != null && fotoUrl.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) => Dialog(
+                    backgroundColor: Colors.transparent,
+                    insetPadding: const EdgeInsets.all(16),
+                    child: InteractiveViewer(
+                      child: Image.network(AppConfig.getImageUrl(fotoUrl), fit: BoxFit.contain),
+                    ),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    AppConfig.getImageUrl(fotoUrl),
+                    height: 100,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 60,
+                      color: AppColors.backgroundCanvas,
+                      child: const Center(
+                        child: Icon(Icons.broken_image_rounded,
+                            color: AppColors.textSecondary),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    }
 
   Widget _buildMetricItem(IconData icon, String label, String value, Color color) {
     return Row(
@@ -681,3 +712,12 @@ class ProkerDetailView extends ConsumerWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+

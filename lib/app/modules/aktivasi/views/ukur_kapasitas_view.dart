@@ -63,7 +63,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
 
     double parseCapacity(String mode, String standardSize, TextEditingController p, TextEditingController l, TextEditingController t) {
       if (mode == 'Standar') {
-        return double.tryParse(standardSize.replaceAll(' KG', '').replaceAll(' Kg', '')) ?? 25.0;
+        final kg = double.tryParse(standardSize.replaceAll(' KG', '').replaceAll(' Kg', '')) ?? 25.0;
+        return kg / 0.3; // Convert Kg ke Liter (karena entitas Bin akan * 0.3 untuk kembali jadi Kg)
       }
       final double pp = double.tryParse(p.text) ?? 0.0;
       final double ll = double.tryParse(l.text) ?? 0.0;
@@ -423,3 +424,5 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     );
   }
 }
+
+

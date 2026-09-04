@@ -78,6 +78,7 @@ dependencies:
   url_launcher: ^6.3.2
   open_filex: ^4.7.0
   file_picker: ^11.0.3
+  geocoding: ^5.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

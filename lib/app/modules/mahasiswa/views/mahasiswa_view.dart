@@ -217,7 +217,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final fotoUrl = user?.fotoProfil;
 
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 270,
       pinned: true,
       backgroundColor: Colors.white,
       foregroundColor: AppColors.textPrimary,
@@ -411,16 +411,43 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
                                   const Icon(Icons.location_on, size: 12, color: AppColors.dangerRed),
                                   const SizedBox(width: 4),
                                   Expanded(
-                                    child: Text(
-                                      (ref.watch(kknLocationProvider).currentPosition != null || ref.watch(locationPingControllerProvider).lastLatitude != null)
-                                          ? 'Lokasi Anda saat ini: ${(ref.watch(kknLocationProvider).currentPosition?.latitude ?? ref.watch(locationPingControllerProvider).lastLatitude!).toStringAsFixed(5)}, ${(ref.watch(kknLocationProvider).currentPosition?.longitude ?? ref.watch(locationPingControllerProvider).lastLongitude!).toStringAsFixed(5)}'
-                                          : 'Lokasi Anda saat ini: Menunggu GPS...' ,
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            ref.watch(kknLocationProvider).isFetchingAddress
+                                                ? 'Mencari alamat...'
+                                                : (ref.watch(kknLocationProvider).currentAddress ??
+                                                    ((ref.watch(kknLocationProvider).currentPosition != null ||
+                                                            ref.watch(locationPingControllerProvider).lastLatitude != null)
+                                                        ? '${(ref.watch(kknLocationProvider).currentPosition?.latitude ?? ref.watch(locationPingControllerProvider).lastLatitude!).toStringAsFixed(5)}, ${(ref.watch(kknLocationProvider).currentPosition?.longitude ?? ref.watch(locationPingControllerProvider).lastLongitude!).toStringAsFixed(5)}'
+                                                        : 'Menunggu GPS...')),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                        ),
+                                        if (!ref.watch(kknLocationProvider).isFetchingAddress &&
+                                            (ref.watch(kknLocationProvider).currentPosition != null ||
+                                                ref.watch(locationPingControllerProvider).lastLatitude != null))
+                                          GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: () {
+                                              final lat = ref.read(kknLocationProvider).currentPosition?.latitude ??
+                                                  ref.read(locationPingControllerProvider).lastLatitude!;
+                                              final lng = ref.read(kknLocationProvider).currentPosition?.longitude ??
+                                                  ref.read(locationPingControllerProvider).lastLongitude!;
+                                              ref.read(kknLocationProvider.notifier).fetchAddress(lat, lng);
+                                            },
+                                            child: const Padding(
+                                              padding: EdgeInsets.only(left: 20, right: 8, top: 8, bottom: 8),
+                                              child: Icon(Icons.refresh_rounded, size: 18, color: AppColors.primaryBlue),
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -1740,3 +1767,5 @@ class _WargaCard extends StatelessWidget {
     );
   }
 }
+
+

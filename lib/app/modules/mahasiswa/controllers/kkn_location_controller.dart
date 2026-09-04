@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:geocoding/geocoding.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +26,8 @@ import '../../../core/utils/geofence_zone_engine.dart';
 class KknLocationState {
 
   final Position? currentPosition;
+  final String? currentAddress;
+  final bool isFetchingAddress;
   final bool isTracking;
   final String? error;
   final bool isInsideRadius;
@@ -60,6 +63,12 @@ class KknLocationState {
 
   KknLocationState({
     this.currentPosition,
+    this.currentAddress,
+    this.isFetchingAddress = false,
+
+
+
+
     this.isTracking = false,
     this.error,
     this.isInsideRadius = false,
@@ -102,6 +111,8 @@ class KknLocationState {
 
   KknLocationState copyWith({
     Position? currentPosition,
+    String? currentAddress,
+    bool? isFetchingAddress,
     bool? isTracking,
     String? error,
     bool? isInsideRadius,
@@ -135,6 +146,12 @@ class KknLocationState {
   }) {
     return KknLocationState(
       currentPosition: currentPosition ?? this.currentPosition,
+
+
+      currentAddress: currentAddress ?? this.currentAddress,
+      isFetchingAddress: isFetchingAddress ?? this.isFetchingAddress,
+
+
       isTracking: isTracking ?? this.isTracking,
       error: clearError ? null : (error ?? this.error),
       isInsideRadius: isInsideRadius ?? this.isInsideRadius,
@@ -190,6 +207,53 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
   int _backendDurationMinutes = 0;
   bool _backgroundServiceStarted = false;
 
+  Future<void> fetchAddress(double fallbackLat, double fallbackLng) async {
+    state = state.copyWith(isFetchingAddress: true);
+    try {
+      double targetLat = fallbackLat;
+      double targetLng = fallbackLng;
+      try {
+        final freshPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.best,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        targetLat = freshPos.latitude;
+        targetLng = freshPos.longitude;
+        state = state.copyWith(currentPosition: freshPos);
+      } catch (_) {
+        // Fallback to the provided coordinates if fresh fetch times out
+      }
+
+      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(targetLat, targetLng);
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+                        String address = '';
+        if (p.street != null && p.street!.isNotEmpty) {
+          address = p.street!;
+          // Clean up country dynamically using p.country instead of hardcoding
+          if (p.country != null && p.country!.isNotEmpty) {
+            address = address.replaceAll(', ${p.country!}', '').trim();
+            if (address.endsWith(',')) {
+              address = address.substring(0, address.length - 1);
+            }
+          }
+        } else {
+          List<String> parts = [];
+          if (p.subLocality != null && p.subLocality!.isNotEmpty) parts.add(p.subLocality!);
+          if (p.locality != null && p.locality!.isNotEmpty) parts.add(p.locality!);
+          address = parts.join(', ');
+        }
+        if (address.isEmpty) address = 'Lokasi tidak diketahui';
+        state = state.copyWith(currentAddress: address, isFetchingAddress: false);
+      } else {
+        state = state.copyWith(currentAddress: 'Lokasi tidak ditemukan', isFetchingAddress: false);
+      }
+    } catch (e) {
+      state = state.copyWith(currentAddress: 'Gagal memuat alamat', isFetchingAddress: false);
+    }
+  }
   String get _currentUserId {
     try {
       return ref.read(authProvider).user?.id ?? 'unknown';
@@ -1798,3 +1862,8 @@ final kknLocationProvider =
     StateNotifierProvider<KknLocationNotifier, KknLocationState>((ref) {
       return KknLocationNotifier(ref);
     });
+
+
+
+
+
