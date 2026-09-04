@@ -53,7 +53,6 @@ import {
   Layers,
   GraduationCap,
   Sparkles,
-  Zap,
   Globe,
   Maximize2,
   Minimize2,
@@ -997,6 +996,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const start = new Date(startDateFilter);
       start.setHours(0, 0, 0, 0);
       list = list.filter((s) => {
+        if (!s.date) return false;
         const d = new Date(s.date);
         return d >= start;
       });
@@ -1005,6 +1005,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const end = new Date(endDateFilter);
       end.setHours(23, 59, 59, 999);
       list = list.filter((s) => {
+        if (!s.date) return false;
         const d = new Date(s.date);
         return d <= end;
       });
@@ -1707,106 +1708,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     );
   };
 
-  // Export XLSX langsung dari data tabel yang tersaring (Filtered Table Export)
-  const handleExportFilteredAttendanceXLSX = () => {
-    if (!startDateFilter || !endDateFilter) {
-      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
-      return;
-    }
-
-    if (!filteredAttendance || filteredAttendance.length === 0) {
-      toast.error("Tidak ada data presensi yang sesuai dengan filter untuk diekspor.");
-      return;
-    }
-
-    const headers = [
-      "No",
-      "Nama Mahasiswa",
-      "NIM",
-      "Kelompok",
-      "Jadwal Kegiatan",
-      "Status Presensi",
-      "Waktu Masuk",
-      "Waktu Pulang",
-      "Durasi Jeda (Menit)",
-      "Durasi Bersih (Menit)",
-      "Target (Jam)",
-      "Pemenuhan Target",
-    ];
-
-    const rows = filteredAttendance.map((rec, index) => {
-      const isAttended = Boolean(rec.attendedAt);
-      const isCompleted = Boolean(rec.completedAt);
-      const statusUpper = String(rec.status || "").toUpperCase();
-      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
-      const recAny = rec as any;
-      const isLeaveOrAlpha = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN") || statusUpper.includes("ALPA") || statusUpper.includes("ALPHA") || !isAttended;
-      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
-      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-      const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
-      const jedaMins = isLeaveOrAlpha ? 0 : (recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0);
-
-      let statusStr = "Belum Absen";
-      if (statusUpper.includes("SAKIT")) {
-        statusStr = "Sakit (Disetujui)";
-      } else if (statusUpper.includes("IZIN")) {
-        statusStr = "Izin (Disetujui)";
-      } else if (statusUpper.includes("ALPA") || statusUpper.includes("ALPHA")) {
-        statusStr = "Alpa";
-      } else if (isAttended && !isFinished) {
-        const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
-        statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
-      } else if (isFinished) {
-        const isMemenuhi = rec.isMemenuhiDurasi !== undefined
-          ? (Boolean(rec.isMemenuhiDurasi) && durationMins > 0)
-          : (statusUpper === "HADIR_MEMENUHI" ? true : statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI_TELAT" ? false : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0));
-        statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
-      }
-
-      const kelompokName = groups.find((g) => g.id === (recAny.groupId || rec.student?.groupId || selectedKelompokId))?.name || (selectedKelompokId ? groups.find((g) => g.id === selectedKelompokId)?.name : "-");
-      const kegiatanTitle = activeSchedule?.title || (visibleSchedules.length === 0 ? "Roster Mahasiswa KKN" : "-");
-      const isTargetMet = isFinished ? (statusUpper === "HADIR_MEMENUHI" || Boolean(rec.isMemenuhiDurasi)) : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0);
-
-      return [
-        index + 1,
-        rec.student?.name || "",
-        rec.student?.studentProfile?.nim || "-",
-        kelompokName || "-",
-        kegiatanTitle || "-",
-        statusStr,
-        rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
-        rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
-        jedaMins,
-        durationMins,
-        scheduleTargetHours,
-        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? (isTargetMet ? "Memenuhi Target (Aktif)" : "Sedang Berlangsung") : "-",
-      ];
-    });
-
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws["!cols"] = [
-      { wch: 6 },
-      { wch: 28 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 25 },
-      { wch: 25 },
-      { wch: 22 },
-      { wch: 22 },
-      { wch: 18 },
-      { wch: 18 },
-      { wch: 14 },
-      { wch: 25 },
-    ];
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Presensi");
-    const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
-    XLSX.writeFile(wb, `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast.success(
-      `Data presensi (${filteredAttendance.length} baris) berhasil diekspor ke XLSX`
-    );
-  };
-
   // Fly Map to Mahasiswa Location & smooth scroll to Map Section
   const handleFocusMahasiswaMap = (rec: AttendanceRecord) => {
     const liveLoc = studentLocations.find(l => l.studentId === rec.student.id || l.student?.id === rec.student.id);
@@ -1854,6 +1755,21 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       if (attendanceFilterTab === "COMPLETED" && (!isFinished || isIzinSakit)) return false;
       if (attendanceFilterTab === "IZIN_SAKIT" && !isIzinSakit) return false;
       if (attendanceFilterTab === "NOT_ATTENDED" && (isHadir || isIzinSakit)) return false;
+
+      if (startDateFilter) {
+        const rawDate = rec.attendedAt || (rec as any).date;
+        if (rawDate) {
+          const recDateStr = new Date(new Date(rawDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          if (recDateStr < startDateFilter) return false;
+        }
+      }
+      if (endDateFilter) {
+        const rawDate = rec.attendedAt || (rec as any).date;
+        if (rawDate) {
+          const recDateStr = new Date(new Date(rawDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          if (recDateStr > endDateFilter) return false;
+        }
+      }
 
       if (studentSearch.trim()) {
         const q = studentSearch.toLowerCase();
@@ -1922,7 +1838,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       const nameB = b.student?.name || "";
       return nameA.localeCompare(nameB, "id", { sensitivity: "base" });
     });
-  }, [attendance, attendanceFilterTab, studentSearch]);
+  }, [attendance, attendanceFilterTab, studentSearch, startDateFilter, endDateFilter]);
 
   // Paginated Attendance for Table & Card views
   const totalPages = Math.max(1, Math.ceil(filteredAttendance.length / pageSize));
@@ -1930,6 +1846,100 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     const start = (currentPage - 1) * pageSize;
     return filteredAttendance.slice(start, start + pageSize);
   }, [filteredAttendance, currentPage, pageSize]);
+
+  // Date Filter Handlers
+  const handleStartDateChange = (val: string) => {
+    setStartDateFilter(val);
+    if (val && endDateFilter && val > endDateFilter) {
+      setEndDateFilter(val);
+    }
+  };
+
+  const handleEndDateChange = (val: string) => {
+    setEndDateFilter(val);
+  };
+
+  const handleResetDateFilter = () => {
+    setStartDateFilter("");
+    setEndDateFilter("");
+    if (!selectedKelompokId && !isDpl) {
+      setSelectedScheduleId("ALL_TODAY");
+      fetchAttendanceAndLocations("ALL_TODAY", "");
+    } else {
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const todaySched = schedules.find((s) => {
+        if (!s.date) return false;
+        const sWib = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return sWib === nowWib && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
+      });
+      const targetId = todaySched?.id || (schedules.find(s => !selectedKelompokId || s.kelompokId === selectedKelompokId)?.id || "");
+      setSelectedScheduleId(targetId);
+      fetchAttendanceAndLocations(targetId, selectedKelompokId);
+    }
+    toast.success("Filter tanggal berhasil dihapus");
+  };
+
+  // Export XLSX langsung dari data tabel presensi terfilter
+  const handleExportFilteredAttendanceXLSX = () => {
+    if (filteredAttendance.length === 0) {
+      toast.error("Tidak ada data presensi untuk diekspor pada filter ini.");
+      return;
+    }
+    const headers = [
+      "No",
+      "NIM",
+      "Nama Mahasiswa",
+      "Kelompok",
+      "Status Presensi",
+      "Jam Masuk (JM)",
+      "Jam Pulang (JP)",
+      "Durasi Jeda (Menit)",
+      "Durasi Aktual (Menit)",
+      "Target Min (Jam)",
+      "Status Pemenuhan",
+    ];
+    const rows = filteredAttendance.map((rec, idx) => {
+      const recAny = rec as any;
+      const durMins = recAny.actualInZoneMinutes || calculateDurationMinutes(rec.attendedAt, rec.completedAt);
+      const isFinished = Boolean(rec.completedAt) || String(rec.status || "").toUpperCase().includes("HADIR_MEMENUHI");
+      const isAttended = Boolean(rec.attendedAt);
+      const isTargetMet = durMins >= scheduleTargetHours * 60;
+      const jedaMins = recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0;
+      return [
+        idx + 1,
+        rec.student?.studentProfile?.nim || "-",
+        rec.student?.name || "-",
+        rec.student?.studentProfile?.kelompok?.name || rec.kelompokName || "-",
+        rec.status || "-",
+        rec.attendedAt ? formatTimeDot(rec.attendedAt) : "-",
+        rec.completedAt ? formatTimeDot(rec.completedAt) : "-",
+        jedaMins,
+        durMins,
+        scheduleTargetHours,
+        isFinished ? (isTargetMet ? "Memenuhi Target" : "Kurang Jam") : isAttended ? "Sedang Berlangsung" : "-",
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 6 },
+      { wch: 18 },
+      { wch: 28 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 18 },
+      { wch: 22 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap_Presensi");
+    const scheduleNameClean = (activeSchedule?.title || "Presensi_KKN").replace(/[^a-zA-Z0-9_-]/g, "_");
+    XLSX.writeFile(wb, `Rekap_Presensi_${scheduleNameClean}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`Data presensi (${filteredAttendance.length} baris) berhasil diekspor ke XLSX`);
+  };
 
   // Active student markers with smart clustering (Anti-Numpuk)
   const activeStudentMarkers = useMemo(() => {
@@ -2689,63 +2699,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         </div>
       </div>
 
-      {/* Quick Group Switcher Pill Bar (Eksklusif Role Developer / Super User / Admin) */}
-      {!isDpl && groups.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 shadow-xs space-y-2">
-          <div className="flex items-center justify-between gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-black">
-              <Zap size={14} className="text-amber-500 fill-amber-400" />
-              <span>Pilih Cepat Kelompok (Developer Quick Switcher)</span>
-              {selectedKelompokId && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  Aktif: {groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"}
-                </span>
-              )}
-            </div>
-            <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
-              Pilihan tersimpan otomatis di browser & real-time sync aktif
-            </span>
-          </div>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            <button
-              type="button"
-              onClick={() => handleSelectKelompok("")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                selectedKelompokId === ""
-                  ? "bg-emerald-600 text-white shadow-xs scale-100 ring-2 ring-emerald-400/50"
-                  : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700"
-              }`}
-            >
-              <Users size={13} />
-              <span>Semua Wilayah ({groups.length} Kelompok)</span>
-            </button>
-            {groups.map((g, idx) => {
-              const isSelected = selectedKelompokId === g.id;
-              const shortName = g.name || `Kelompok ${idx + 1}`;
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => handleSelectKelompok(g.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                    isSelected
-                      ? "bg-emerald-600 text-white shadow-xs font-black ring-2 ring-emerald-400/50"
-                      : "bg-slate-50 hover:bg-emerald-50 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-300"
-                  }`}
-                  title={`${g.name} - ${g.kelurahan || "Wilayah KKN"}`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isSelected ? "bg-white" : "bg-emerald-500"
-                    }`}
-                  />
-                  <span>{shortName}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Hero Banner: Info Kegiatan Terpilih & Switcher Kegiatan */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-6">
@@ -3602,7 +3555,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
 
-          {/* Date Range Filter Controls (Notulensi Item 12: Filter Tanggal) */}
+          {/* Date Range Filter Controls */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs shadow-2xs">
               <Calendar size={13} className="text-emerald-600 shrink-0" />
@@ -3610,7 +3563,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <input
                 type="date"
                 value={startDateFilter}
-                onChange={(e) => setStartDateFilter(e.target.value)}
+                onChange={(e) => handleStartDateChange(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
               />
             </div>
@@ -3620,21 +3573,18 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               <input
                 type="date"
                 value={endDateFilter}
-                onChange={(e) => setEndDateFilter(e.target.value)}
+                onChange={(e) => handleEndDateChange(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
               />
             </div>
             {(startDateFilter || endDateFilter) && (
               <button
                 type="button"
-                onClick={() => {
-                  setStartDateFilter("");
-                  setEndDateFilter("");
-                }}
-                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
-                title="Reset Filter Tanggal"
+                onClick={handleResetDateFilter}
+                className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-xs font-semibold cursor-pointer transition shadow-2xs"
+                title="Hapus / Reset Filter Tanggal"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             )}
 
@@ -3642,9 +3592,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             <button
               type="button"
               onClick={handleExportFilteredAttendanceXLSX}
-              disabled={!startDateFilter || !endDateFilter}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
-              title={(!startDateFilter || !endDateFilter) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data presensi terfilter ke XLSX"}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+              title="Ekspor data presensi terfilter ke XLSX"
             >
               <FileSpreadsheet size={13} />
               <span>Ekspor XLSX</span>
@@ -3684,39 +3633,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
         </div>
-
-        {/* Info Banner when viewing Roster mode or ALL_TODAY overview mode */}
-        {!activeSchedule && (
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                {selectedScheduleId === "ALL_TODAY" ? <Sparkles size={20} className="text-emerald-600" /> : <Users size={20} />}
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 dark:text-slate-100">
-                  {selectedScheduleId === "ALL_TODAY"
-                    ? "Monitoring Agregat Seluruh Wilayah KKN (32 Kelompok)"
-                    : `Daftar Roster Mahasiswa KKN ${selectedKelompokId ? `(${groups.find((g) => g.id === selectedKelompokId)?.name || "Kelompok Terpilih"})` : "(Seluruh Wilayah Binaan)"}`}
-                </h4>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-                  {selectedScheduleId === "ALL_TODAY"
-                    ? "Menampilkan rekapitulasi seluruh mahasiswa aktif dari 32 posko KKN. Mahasiswa yang sedang live beraktivitas di lapangan otomatis diprioritaskan di baris teratas."
-                    : "Belum ada jadwal kegiatan aktif pada filter ini. Menampilkan rekapitulasi data mahasiswa terdaftar, progres aktual / target jam kerja, dan pin live GPS."}
-                </p>
-              </div>
-            </div>
-            {canManageSchedules && (
-              <button
-                type="button"
-                onClick={handleOpenAddModal}
-                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-              >
-                <Plus size={14} />
-                <span>Buat Kegiatan Baru</span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Data List Display */}
         {filteredAttendance.length > 0 ? (

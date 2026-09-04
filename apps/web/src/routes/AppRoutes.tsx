@@ -77,6 +77,8 @@ const MasterKegiatanSampahPage = React.lazy(() => import("../pages/MasterData/Ma
 const LogbookKknPage = React.lazy(() => import("../pages/dpl/LogbookKknPage"));
 const LogAktivitasDpl = React.lazy(() => import("../pages/dpl/LogAktivitasDpl"));
 const KurasiLandingPage = React.lazy(() => import("../pages/SuperUser/KurasiLandingPage"));
+const RolePermissionPage = React.lazy(() => import("../pages/SuperUser/RolePermissionPage"));
+const ManageConfigs = React.lazy(() => import("../pages/SuperUser/ManageConfigs").then(m => ({ default: m.ManageConfigs })));
 const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/KelolaPoinPengguna"));
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
@@ -1084,9 +1086,26 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/superUser/configs"
-          element={<Navigate to="/peraturan" replace />}
+          path="/hak-akses"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
+              <RolePermissionPage />
+            </ProtectedRoute>
+          }
         />
+        <Route path="/superUser/hak-akses" element={<Navigate to="/hak-akses" replace />} />
+        <Route path="/role-permission" element={<Navigate to="/hak-akses" replace />} />
+
+        <Route
+          path="/konfigurasi-sistem"
+          element={
+            <ProtectedRoute allowedRoles={["SUPER_USER", "DEVELOPER"]}>
+              <ManageConfigs />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/superUser/configs" element={<Navigate to="/konfigurasi-sistem" replace />} />
+        <Route path="/master-data/konfigurasi-sistem" element={<Navigate to="/konfigurasi-sistem" replace />} />
         <Route
           path="/histori-sistem"
           element={

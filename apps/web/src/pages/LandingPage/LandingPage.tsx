@@ -2091,7 +2091,8 @@ export const LandingPage: React.FC = () => {
               </p>
               <div className="text-xs text-slate-500 font-semibold space-y-1">
                 <p>📍 Jl. Dipati Ukur No. 112-116, Coblong, Kota Bandung</p>
-                <p>📧 kontak@berseka.unikom.ac.id</p>
+                <p>📧 admin@berseka.id <span className="text-[11px] text-slate-400 font-normal">(Cadangan: admin.berseka@gmail.com)</span></p>
+                <p>📷 Instagram: <a href="https://instagram.com/berseka.id" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">@berseka.id</a></p>
               </div>
             </div>
 
@@ -2508,7 +2509,7 @@ export const LandingPage: React.FC = () => {
                 </a>
 
                 <a
-                  href="mailto:cdc@unikom.ac.id"
+                  href="mailto:admin@berseka.id"
                   className="p-3.5 bg-blue-50 hover:bg-blue-100/80 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 transition cursor-pointer"
                 >
                   <div className="w-9 h-9 rounded-xl bg-[#0468bf] text-white flex items-center justify-center shrink-0">
@@ -2516,7 +2517,8 @@ export const LandingPage: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-[10px] text-blue-700 font-bold block uppercase tracking-wider">Email Resmi</span>
-                    <span className="text-xs font-black text-blue-950">cdc@unikom.ac.id</span>
+                    <span className="text-xs font-black text-blue-950">admin@berseka.id</span>
+                    <span className="text-[10px] text-slate-500 block font-normal">Cadangan: admin.berseka@gmail.com</span>
                   </div>
                 </a>
               </div>

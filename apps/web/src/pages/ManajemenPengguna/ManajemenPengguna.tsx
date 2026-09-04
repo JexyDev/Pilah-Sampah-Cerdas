@@ -20,8 +20,8 @@ import { sortKelompokList } from "../../utils/sortUtils";
 /** Pemetaan enum peran ke label bahasa Indonesia baku */
 const ROLE_LABEL_MAP: Record<string, string> = {
   DEVELOPER: "Developer",
-  SUPER_USER: "Admin",
-  ADMIN_DLH: "Dinas Lingkungan Hidup",
+  SUPER_USER: "Super User",
+  ADMIN_DLH: "Admin DLH",
   CAMAT: "Camat",
   LURAH: "Lurah",
   RW: "Rukun Warga",
