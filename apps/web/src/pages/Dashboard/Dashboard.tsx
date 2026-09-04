@@ -2009,7 +2009,7 @@ const Dashboard: React.FC = () => {
           trend={stats?.totalPoin?.trend}
           trendLabel={stats?.totalPoin?.trendLabel}
           trendUp={stats?.totalPoin?.trendUp}
-          linkTo="/monitoring-pemilahan/peringkat-warga"
+          linkTo="/peringkat?system=system1&tab=citizens"
         />
       </div>
 

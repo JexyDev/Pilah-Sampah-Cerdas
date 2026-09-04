@@ -49,13 +49,13 @@ export const kelompokController = {
 
   create: async (req: Request, res: Response): Promise<void> => {
     try {
-      const { name, dplId, kelurahan, cakupanRw } = req.body;
+      const { name, dplId, kelurahan, cakupanRw, linkGoogleDrive } = req.body;
       if (!name) {
         res.status(400).json({ error: "BAD_REQUEST", message: "Nama kelompok wajib diisi" });
         return;
       }
 
-      const result = await kelompokService.createKelompok({ name, dplId, kelurahan, cakupanRw });
+      const result = await kelompokService.createKelompok({ name, dplId, kelurahan, cakupanRw, linkGoogleDrive });
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[KelompokController] create error:", error);
@@ -72,12 +72,13 @@ export const kelompokController = {
   update: async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { name, dplId, kelurahan, cakupanRw } = req.body;
+      const { name, dplId, kelurahan, cakupanRw, linkGoogleDrive } = req.body;
       const result = await kelompokService.updateKelompok(id, {
         name,
         dplId,
         kelurahan,
         cakupanRw,
+        linkGoogleDrive,
       });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {

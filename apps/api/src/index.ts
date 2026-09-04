@@ -527,6 +527,8 @@ if (isPrimaryWorker) {
       'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "sudah_dinilai" BOOLEAN DEFAULT false;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;',
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
+      // QC-27: Link Google Drive per kelompok
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "link_google_drive" TEXT;',
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
       'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "log_jeda" JSONB;',

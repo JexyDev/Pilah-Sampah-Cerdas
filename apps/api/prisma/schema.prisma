@@ -382,6 +382,8 @@ model KelompokKkn {
   dplNamaMentah         String?                 @map("dpl_nama_mentah")
   dplId                 String?                 @map("id_dpl")
   mplId                 String?                 @map("id_mpl")
+  // QC-27: Link folder Google Drive untuk monitoring laporan dan portofolio KKN
+  linkGoogleDrive       String?                 @map("link_google_drive")
   // === SMART ZONE: Auto-generated polygon dari GPS mahasiswa aktif ===
   autoPolygon           Json?                   @map("auto_polygon")
   autoPolygonUpdatedAt  DateTime?               @map("auto_polygon_updated_at")
