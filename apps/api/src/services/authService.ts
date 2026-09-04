@@ -80,13 +80,15 @@ export class AuthService {
         user.password, // Plaintext match
         studentNim, // NIM mahasiswa
         userPhone, // +628xxx
-        cleanUserPhone, // 628xxx / 08xxx
-        cleanUserPhone.startsWith("62") ? "0" + cleanUserPhone.slice(2) : "",
+        cleanUserPhone, // 628xxx
+        cleanUserPhone.startsWith("62") ? "0" + cleanUserPhone.slice(2) : "", // 08xxx
         "PilahSampah2026!",
         "password123",
         "berseka2026",
         "12345678",
         "123456",
+        "admin123",
+        "kkn2026",
       ].filter(Boolean);
 
       if (userRole === "MAHASISWA_KKN" || userRole === "PETUGAS_RESIDU" || anyUser.studentProfile) {

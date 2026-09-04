@@ -293,47 +293,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
-      // Offline or local server unavailable (e.g. status 503 / 502 / ERR_NETWORK)
-      const isOfflineOrUnavailable =
-        !err?.response ||
-        err?.response?.status === 503 ||
-        err?.response?.status === 502 ||
-        err?.response?.status === 504 ||
-        err?.code === "ERR_NETWORK";
-
-      if (
-        isOfflineOrUnavailable &&
-        (password === "password123" ||
-          phone.includes("0811") ||
-          phone.includes("0812") ||
-          phone.includes("8111111111") ||
-          phone.includes("8120000000"))
-      ) {
-        const isDev = phone.includes("1111") || phone.includes("8111111111");
-        const isDpl = phone.includes("0010") || phone.includes("081200000010");
-        const role: UserRole = isDev ? "DEVELOPER" : isDpl ? "DPL" : "SUPER_USER";
-        const avatarConfig = getAvatarConfig(role);
-        const devUser: User = {
-          id: 1,
-          name: isDev ? "Developer / Super Admin" : isDpl ? "DPL UNIKOM Dampingan" : "Super User Taskforce DLH",
-          email: "admin@berseka.id",
-          peran: role,
-          role: role,
-          wilayah: "Sistem Terpusat (Mode Pengembang)",
-          kelurahan: "Sadang Serang",
-          kecamatan: "Coblong",
-          rw: "01",
-          avatar: isDev ? "DEV" : isDpl ? "DPL" : "SU",
-          phone: phone,
-          ...avatarConfig,
-        };
-        setStoredItem("psc_access_token", "dev_mock_token_" + Date.now(), rememberMe);
-        setStoredItem("psc_user", JSON.stringify(devUser), rememberMe);
-        set({ user: devUser, isAuthenticated: true, isLoading: false, error: null });
-        useThemeStore.getState().initTheme();
-        return true;
-      }
-
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
       set({ isLoading: false, error: code, isAuthenticated: false });
       return false;

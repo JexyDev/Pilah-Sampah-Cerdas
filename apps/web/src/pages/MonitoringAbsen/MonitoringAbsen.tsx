@@ -66,6 +66,7 @@ import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
 import { dplService, type ConfigTargets } from "../../services/dplService";
 import { wsClient } from "../../utils/websocket";
+import { ModalPresensiCrud, type AttendanceRecordForCrud } from "./ModalPresensiCrud";
 import {
   toTitleCase,
   formatPersonName,
@@ -581,6 +582,7 @@ const MonitoringAbsen: React.FC = () => {
   const [selectedScheduleId, setSelectedScheduleId] = useState<string>("");
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [studentLocations, setStudentLocations] = useState<StudentLoc[]>([]);
+  const [activeValidZones, setActiveValidZones] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Filter & Search States
@@ -638,6 +640,54 @@ const MonitoringAbsen: React.FC = () => {
   const [isDeletingSchedule, setIsDeletingSchedule] = useState(false);
   const [isSubmittingSchedule, setIsSubmittingSchedule] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // ─── State CRUD Presensi ────────────────────────────────────────────────────
+  const [isPresensiModalOpen, setIsPresensiModalOpen] = useState(false);
+  const [presensiModalMode, setPresensiModalMode] = useState<"add" | "edit">("add");
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecordForCrud | null>(null);
+  const [deleteAttendanceId, setDeleteAttendanceId] = useState<string | null>(null);
+  const [isDeletingAttendance, setIsDeletingAttendance] = useState(false);
+
+  const canCrudAttendance = isDpl || isDeveloper;
+
+  const handleOpenAddPresensi = () => {
+    setPresensiModalMode("add");
+    setEditingRecord(null);
+    setIsPresensiModalOpen(true);
+  };
+
+  const handleOpenEditPresensi = (rec: AttendanceRecordForCrud) => {
+    setPresensiModalMode("edit");
+    setEditingRecord(rec);
+    setIsPresensiModalOpen(true);
+  };
+
+  const handleConfirmDeleteAttendance = async () => {
+    if (!deleteAttendanceId) return;
+    setIsDeletingAttendance(true);
+    try {
+      await api.delete(`/kkn-attendance/${deleteAttendanceId}`);
+      toast.success("Data presensi berhasil dihapus.");
+      setDeleteAttendanceId(null);
+      // Refresh data tabel
+      fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Gagal menghapus data presensi.");
+    } finally {
+      setIsDeletingAttendance(false);
+    }
+  };
+
+  /** Daftar mahasiswa yang diekstrak dari data attendance untuk pilihan dropdown di modal add */
+  const studentsForCrud = useMemo(() => {
+    return attendance.map((rec) => ({
+      id: rec.studentId,
+      name: rec.student?.name ?? "-",
+      nim: rec.student?.studentProfile?.nim,
+      kelompokName: rec.student?.studentProfile?.kelompok?.name,
+      totalMinutes: (rec as any).totalMinutes ?? Math.round(((rec as any).totalHours ?? 0) * 60),
+    }));
+  }, [attendance]);
 
 const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   if (!schedule) {
@@ -1201,8 +1251,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         const studentList = tsRes.data?.data?.students || [];
         setAttendance(mapTimesheetToAttendance(studentList));
       } else if (scheduleId) {
-        const attRes = await api.get(`/kegiatan/${scheduleId}/absen`);
+        const [attRes, locDetailRes] = await Promise.all([
+          api.get(`/kegiatan/${scheduleId}/absen`),
+          api.get(`/kegiatan/${scheduleId}/lokasi`).catch(() => null)
+        ]);
         setAttendance(attRes.data.data || []);
+        if (locDetailRes && locDetailRes.data?.data?.validZones) {
+          setActiveValidZones(locDetailRes.data.data.validZones);
+        } else {
+          setActiveValidZones([]);
+        }
       } else {
         try {
           const tsRes = await api.get("/timesheet/summary", {
@@ -3197,40 +3255,58 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </Popup>
                     </Polygon>
                   ) : (() => {
-                    const lat = Number(activeSchedule.latitude);
-                    const lng = Number(activeSchedule.longitude);
-                    if (!isNaN(lat) && !isNaN(lng) && lat < 0 && lng > 0) {
-                      return (
-                        <>
-                          <Marker position={[lat, lng]} icon={createActivityMarkerIcon()}>
-                            <Popup>
-                              <div className="p-2 font-sans space-y-1 text-xs">
-                                <div className="font-extrabold text-emerald-800 dark:text-emerald-300">
-                                  {activeSchedule.title}
-                                </div>
-                                <div className="text-[11px] text-slate-600 dark:text-slate-400">
-                                  {activeSchedule.location || "Lokasi Kegiatan KKN"}
-                                </div>
-                                <div className="text-[10px] font-bold text-slate-500">
-                                  Radius Geofence: {activeSchedule.radius || 200} meter
-                                </div>
-                              </div>
-                            </Popup>
-                          </Marker>
-                          <Circle
-                            center={[lat, lng]}
-                            radius={Number(activeSchedule.radius || 200)}
-                            pathOptions={{
-                              color: "#059669",
-                              fillColor: "#10b981",
-                              fillOpacity: 0.25,
-                              weight: 2.5,
-                            }}
-                          />
-                        </>
-                      );
-                    }
-                    return null;
+                    const zonesToRender = activeValidZones && activeValidZones.length > 0 
+                      ? activeValidZones 
+                      : [
+                          {
+                            id: activeSchedule.id,
+                            nama: activeSchedule.title,
+                            latitude: activeSchedule.latitude,
+                            longitude: activeSchedule.longitude,
+                            radius: activeSchedule.radius || 200,
+                          }
+                        ];
+
+                    return (
+                      <>
+                        {zonesToRender.map((zone, idx) => {
+                          const lat = Number(zone.latitude);
+                          const lng = Number(zone.longitude);
+                          if (!isNaN(lat) && !isNaN(lng) && lat < 0 && lng > 0) {
+                            return (
+                              <React.Fragment key={zone.id || idx}>
+                                <Marker position={[lat, lng]} icon={createActivityMarkerIcon()}>
+                                  <Popup>
+                                    <div className="p-2 font-sans space-y-1 text-xs">
+                                      <div className="font-extrabold text-emerald-800 dark:text-emerald-300">
+                                        {zone.nama || activeSchedule.title}
+                                      </div>
+                                      <div className="text-[11px] text-slate-600 dark:text-slate-400">
+                                        {activeSchedule.location || "Lokasi Kegiatan KKN"}
+                                      </div>
+                                      <div className="text-[10px] font-bold text-slate-500">
+                                        Radius Geofence: {zone.radius || 200} meter
+                                      </div>
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                                <Circle
+                                  center={[lat, lng]}
+                                  radius={Number(zone.radius || 200)}
+                                  pathOptions={{
+                                    color: "#059669",
+                                    fillColor: "#10b981",
+                                    fillOpacity: 0.25,
+                                    weight: 2.5,
+                                  }}
+                                />
+                              </React.Fragment>
+                            );
+                          }
+                          return null;
+                        })}
+                      </>
+                    );
                   })()}
                 </>
               ) : selectedKelompokId ? (
@@ -3575,66 +3651,36 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             </button>
           </div>
 
-          {/* Filter Status Chips */}
-          <div className="w-full xl:w-auto overflow-x-auto scrollbar-none -mx-1 px-1">
+          {/* Filter Status Dropdown + Tombol Tambah Manual */}
+          <div className="flex items-center gap-2 flex-wrap">
             {!isDpl && (
-              <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-bold text-slate-600 dark:text-slate-400 min-w-max">
-                <button
-                  type="button"
-                  onClick={() => setAttendanceFilterTab("ALL")}
-                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
-                    attendanceFilterTab === "ALL"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
-                      : "hover:text-slate-900"
-                  }`}
+              <div className="relative flex items-center">
+                <select
+                  value={attendanceFilterTab}
+                  onChange={(e) => setAttendanceFilterTab(e.target.value as typeof attendanceFilterTab)}
+                  className="appearance-none pl-3 pr-8 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition cursor-pointer shadow-2xs"
                 >
-                  Semua ({attendanceStats.total})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAttendanceFilterTab("ACTIVE")}
-                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
-                    attendanceFilterTab === "ACTIVE"
-                      ? "bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-400 shadow-xs font-black"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  🟢 Lapangan ({attendanceStats.active})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAttendanceFilterTab("COMPLETED")}
-                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
-                    attendanceFilterTab === "COMPLETED"
-                      ? "bg-white dark:bg-slate-800 text-teal-800 dark:text-teal-400 shadow-xs font-black"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  ✨ Selesai ({attendanceStats.completed})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAttendanceFilterTab("IZIN_SAKIT")}
-                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
-                    attendanceFilterTab === "IZIN_SAKIT"
-                      ? "bg-white dark:bg-slate-800 text-blue-800 dark:text-blue-400 shadow-xs font-black"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  📋 Izin / Sakit ({attendanceStats.izinSakit || 0})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAttendanceFilterTab("NOT_ATTENDED")}
-                  className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap cursor-pointer ${
-                    attendanceFilterTab === "NOT_ATTENDED"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs font-black"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  ⚪ Belum ({attendanceStats.notAttended})
-                </button>
+                  <option value="ALL">Semua ({attendanceStats.total})</option>
+                  <option value="ACTIVE">🟢 Lapangan ({attendanceStats.active})</option>
+                  <option value="COMPLETED">✨ Selesai ({attendanceStats.completed})</option>
+                  <option value="IZIN_SAKIT">📋 Izin / Sakit ({attendanceStats.izinSakit || 0})</option>
+                  <option value="NOT_ATTENDED">⚪ Belum ({attendanceStats.notAttended})</option>
+                </select>
+                <ChevronDown size={12} className="pointer-events-none absolute right-2.5 text-slate-400" />
               </div>
+            )}
+            {/* Tombol Tambah Manual — tepat di samping dropdown */}
+            {/* TODO: HIDE SEMENTARA */}
+            {false && canCrudAttendance && activeSchedule && (
+              <button
+                type="button"
+                onClick={handleOpenAddPresensi}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs cursor-pointer shrink-0"
+                title="Tambahkan presensi manual untuk mahasiswa yang belum tercatat"
+              >
+                <Plus size={13} />
+                <span>Tambah Manual</span>
+              </button>
             )}
           </div>
         </div>
@@ -4286,7 +4332,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
 
                             {/* 10. AKSI */}
                             <td className="py-3.5 px-4 text-center">
-                              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              <div className="flex items-center justify-center gap-1.5 flex-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => handleFocusMahasiswaMap(rec)}
@@ -4310,6 +4356,27 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                                 >
                                   <ExternalLink size={12} />
                                 </button>
+                                {/* Tombol Edit & Hapus — hanya DPL/Admin */}
+                                {canCrudAttendance && rec.id && !rec.id.startsWith("TS_") && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEditPresensi(rec as unknown as AttendanceRecordForCrud)}
+                                      className="p-1.5 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-600 dark:text-blue-300 rounded-xl border border-blue-200 dark:border-blue-800 transition cursor-pointer"
+                                      title="Edit data presensi ini"
+                                    >
+                                      <Pencil size={12} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setDeleteAttendanceId(rec.id)}
+                                      className="p-1.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-300 rounded-xl border border-rose-200 dark:border-rose-800 transition cursor-pointer"
+                                      title="Hapus data presensi ini"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -5797,6 +5864,63 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                 className="px-5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal CRUD Presensi ───────────────────────────────────────────────── */}
+      {isPresensiModalOpen && (
+        <ModalPresensiCrud
+          mode={presensiModalMode}
+          existingRecord={editingRecord}
+          scheduleId={activeSchedule?.id}
+          scheduleDate={activeSchedule?.date ? new Date(new Date(activeSchedule.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10) : undefined}
+          students={studentsForCrud}
+          targetTotalJam={Number(configTargets.targetTotalJam) || 200}
+          targetHarianJam={scheduleTargetHours}
+          onClose={() => setIsPresensiModalOpen(false)}
+          onSuccess={() => fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId)}
+        />
+      )}
+
+      {/* ── Konfirmasi Hapus Presensi ─────────────────────────────────────────── */}
+      {deleteAttendanceId && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setDeleteAttendanceId(null); }}
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center shrink-0">
+                <Trash2 size={18} className="text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-900 dark:text-slate-50 text-sm">Hapus Data Presensi?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Tindakan ini tidak dapat dibatalkan.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeleteAttendanceId(null)}
+                disabled={isDeletingAttendance}
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteAttendance}
+                disabled={isDeletingAttendance}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              >
+                {isDeletingAttendance ? (
+                  <><Loader2 size={13} className="animate-spin" /><span>Menghapus...</span></>
+                ) : (
+                  <><Trash2 size={13} /><span>Ya, Hapus</span></>
+                )}
               </button>
             </div>
           </div>

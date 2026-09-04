@@ -433,43 +433,6 @@ const Login: React.FC = () => {
                   <><LogIn size={18} /><span>Masuk</span></>
                 )}
               </button>
-
-              {/* Demo / Seeder Quick-Fill Helper */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                  <span>Akun Bawaan Seeder:</span>
-                  <span className="text-emerald-700 font-extrabold font-mono text-[10px]">Pass: password123</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIdentifier("08111111111");
-                      setPassword("password123");
-                      setIdentifierError("");
-                      setPasswordError("");
-                    }}
-                    className="p-2 text-left rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer"
-                  >
-                    <div className="text-[11px] font-black text-[#005841]">👑 Super Admin</div>
-                    <div className="text-[10px] text-slate-600 font-semibold font-mono">08111111111</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIdentifier("081200000010");
-                      setPassword("password123");
-                      setIdentifierError("");
-                      setPasswordError("");
-                    }}
-                    className="p-2 text-left rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer"
-                  >
-                    <div className="text-[11px] font-black text-[#0468bf]">🎓 DPL UNIKOM</div>
-                    <div className="text-[10px] text-slate-600 font-semibold font-mono">081200000010</div>
-                  </button>
-                </div>
-              </div>
             </form>
           </div>
 

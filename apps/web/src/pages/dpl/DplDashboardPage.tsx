@@ -1488,7 +1488,7 @@ export const DplDashboardPage: React.FC = () => {
       </div>
 
       {/* Quick Action Navigation Cards (Pintu Akses Operasional) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <Link
           to="/manajemen-ekosistem-kkn"
           className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
@@ -1511,21 +1511,6 @@ export const DplDashboardPage: React.FC = () => {
               <ClipboardCheck size={20} />
             </div>
             <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
-          </div>
-          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
-        </Link>
-
-        <Link
-          to="/monitoring-kegiatan/pengajuan-izin"
-          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-purple-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 rounded-xl group-hover:bg-purple-600 group-hover:text-white transition shrink-0">
-              <FileCheck size={20} />
-            </div>
-            <div className="min-w-0">
-              <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">Ajukan Absensi</h4>
-            </div>
           </div>
           <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
         </Link>

@@ -52,6 +52,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://psc_user:psc_password@postgres:5432/psc_db
       - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
       - JWT_SECRET=ganti_ini_dengan_string_random_minimal_32_karakter
       - JWT_EXPIRES_IN=24h
       - PORT=3000
