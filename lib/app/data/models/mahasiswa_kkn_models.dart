@@ -699,6 +699,7 @@ class KelompokKknData extends Equatable {
     required this.poskoLocation,
     required this.totalGroupPoints,
     required this.members,
+    this.linkGoogleDrive,
   });
 
   final String groupId;
@@ -709,6 +710,9 @@ class KelompokKknData extends Equatable {
   final String poskoLocation;
   final int totalGroupPoints;
   final List<KelompokMemberData> members;
+
+  /// Link Google Drive folder kelompok, null jika belum diset Admin.
+  final String? linkGoogleDrive;
 
   /// Penjumlahan Poin Kelompok (Fallback Client-Side Sum)
   int get calculatedTotalPoints {
@@ -766,6 +770,12 @@ class KelompokKknData extends Equatable {
       phone = rawPhone.toString();
     }
 
+    // Parse link Google Drive — support camelCase, snake_case, dan alias backend
+    final rawDrive = json['linkGoogleDrive']?.toString() ??
+        json['urlGoogleDrive']?.toString() ??
+        json['link_google_drive']?.toString();
+    final driveUrl = (rawDrive != null && rawDrive.trim().isNotEmpty) ? rawDrive.trim() : null;
+
     return KelompokKknData(
       groupId: json['groupId']?.toString() ?? json['id']?.toString() ?? '',
       groupName: json['groupName']?.toString() ?? json['namaKelompok']?.toString() ?? json['nama']?.toString() ?? '-',
@@ -775,11 +785,12 @@ class KelompokKknData extends Equatable {
       poskoLocation: json['poskoLocation']?.toString() ?? json['lokasiPosko']?.toString() ?? json['kelurahan']?.toString() ?? '-',
       totalGroupPoints: (json['totalGroupPoints'] as num?)?.toInt() ?? (json['totalPoints'] as num?)?.toInt() ?? 0,
       members: membersList,
+      linkGoogleDrive: driveUrl,
     );
   }
 
   @override
-  List<Object?> get props => [groupId, groupName, totalGroupPoints, members, dosenPembimbing, dplNip, dplPhone];
+  List<Object?> get props => [groupId, groupName, totalGroupPoints, members, dosenPembimbing, dplNip, dplPhone, linkGoogleDrive];
 }
 
 /// ─────────────────────────────────────────────────────────────────────────────

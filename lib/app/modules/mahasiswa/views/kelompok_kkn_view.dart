@@ -272,6 +272,10 @@ class KelompokKknView extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
 
+                // Card Google Drive Kelompok
+                _buildGoogleDriveCard(context, kelompokData.linkGoogleDrive),
+                const SizedBox(height: 16),
+
                 // Card Total Poin Kelompok (Akumulasi)
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -776,6 +780,124 @@ class KelompokKknView extends ConsumerWidget {
                   ),
                 ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoogleDriveCard(BuildContext context, String? driveUrl) {
+    final bool hasUrl = driveUrl != null && driveUrl.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasUrl
+              ? const Color(0xFF1A73E8).withValues(alpha: 0.25)
+              : AppColors.border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: hasUrl
+                      ? const Color(0xFF4285F4).withValues(alpha: 0.12)
+                      : AppColors.backgroundCanvas,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.folder_shared_rounded,
+                  color: hasUrl ? const Color(0xFF1A73E8) : AppColors.textSecondary,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'GOOGLE DRIVE KELOMPOK',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hasUrl ? 'Folder Portofolio & Laporan KKN' : 'Belum ada link drive',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: hasUrl ? AppColors.textPrimary : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Penyimpanan terpusat dokumen, foto kegiatan, & portofolio tim.',
+                      style: TextStyle(fontSize: 11, color: Colors.black45),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: hasUrl
+                  ? () async {
+                      final uri = Uri.parse(driveUrl);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Tidak dapat membuka tautan Google Drive.'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  : null,
+              icon: const Icon(Icons.open_in_new_rounded, size: 16),
+              label: Text(
+                hasUrl ? 'Buka Google Drive' : 'Link Belum Disiapkan Admin',
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A73E8),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: AppColors.backgroundCanvas,
+                disabledForegroundColor: AppColors.textSecondary,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
           ),
         ],

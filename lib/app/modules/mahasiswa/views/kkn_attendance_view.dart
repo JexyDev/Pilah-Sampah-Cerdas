@@ -119,15 +119,21 @@ class _KknAttendanceViewState extends ConsumerState<KknAttendanceView>
                 Icons.refresh_rounded,
                 color: AppColors.textPrimary,
               ),
-              tooltip: 'Perbarui Lokasi GPS',
+              tooltip: 'Perbarui Semua Data',
               onPressed: () async {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Memperbarui koordinat GPS & wilayah...'),
-                    duration: Duration(seconds: 1),
+                    content: Text('Memperbarui data kegiatan, kelompok & lokasi...'),
+                    duration: Duration(seconds: 2),
                   ),
                 );
-                await locationNotifier.forceLocationUpdate(context);
+                await Future.wait([
+                  locationNotifier.checkActiveSchedule(),
+                  locationNotifier.fetchKegiatanAktif(),
+                  locationNotifier.forceLocationUpdate(context),
+                  ref.read(kelompokKknProvider.notifier).fetchKelompok(),
+                  ref.read(kknMapProvider.notifier).fetchWilayahKelompok(),
+                ]);
               },
             ),
           ],
