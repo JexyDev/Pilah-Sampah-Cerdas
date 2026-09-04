@@ -1018,6 +1018,8 @@ model Schedule {
   radius      Int?                 @default(500)
   kelompokId     String?              @map("id_kelompok")
   isActive       Boolean              @default(true) @map("is_aktif")
+  // QC-36: Advance scheduling — bulan efektif polygon area kerja (format: YYYY-MM)
+  effectiveMonth String?              @map("effective_month")
   // === SKIP KEGIATAN ===
   // Menyimpan status kegiatan: 'AKTIF' (default) atau 'TIDAK_ADA_KEGIATAN'
   statusKegiatan String               @default("AKTIF") @map("status_kegiatan")

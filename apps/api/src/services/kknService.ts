@@ -41,41 +41,54 @@ export function normalizeProkerKategori(kategori?: string | null): string {
 }
 
 export function isAnorganikBin(
-  bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null
+  bin?: { category?: { name?: string | null; type?: string | null } | null; binType?: string | null; qrCode?: string | null } | null
 ): boolean {
   if (!bin) return false;
-  const cat = (bin.category?.name || "").toUpperCase();
+  const cat = (bin.category?.name || bin.category?.type || (bin as any).binType || "").toUpperCase();
+  if (
+    cat.includes("NON_ORGANIC") ||
+    cat.includes("ANORGANIK") ||
+    cat.includes("NON_ORGANIK") ||
+    cat.includes("NON ORGANIK") ||
+    cat.includes("INORGANIC")
+  ) {
+    return true;
+  }
   const qr = (bin.qrCode || "").toLowerCase();
-  return (
-    cat === "NON_ORGANIC" ||
-    cat === "ANORGANIK" ||
-    cat === "NON_ORGANIK" ||
+  if (
     qr.includes("anorganik") ||
     qr.includes("non_organic") ||
-    qr.includes("anorg") ||
-    qr.includes("ano") ||
-    qr.includes("agn") ||
-    qr.includes("ang") ||
-    qr.includes("non") ||
-    qr.includes("2")
-  );
+    qr.includes("nonorganik") ||
+    qr.includes("non-organik") ||
+    qr.includes("anorg")
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function isOrganikBin(
-  bin?: { category?: { name?: string | null } | null; qrCode?: string | null } | null
+  bin?: { category?: { name?: string | null; type?: string | null } | null; binType?: string | null; qrCode?: string | null } | null
 ): boolean {
   if (!bin) return false;
   if (isAnorganikBin(bin)) return false;
-  const cat = (bin.category?.name || "").toUpperCase();
+  const cat = (bin.category?.name || bin.category?.type || (bin as any).binType || "").toUpperCase();
+  if (
+    cat.includes("ORGANIC") ||
+    cat.includes("ORGANIK")
+  ) {
+    return true;
+  }
   const qr = (bin.qrCode || "").toLowerCase();
-  return (
-    cat === "ORGANIC" ||
-    cat === "ORGANIK" ||
+  if (
     qr.includes("organik") ||
-    qr.includes("org") ||
-    qr.includes("ogn") ||
-    qr.includes("1")
-  );
+    qr.includes("organic") ||
+    /(?:^|[^a-z0-9])org(?:$|[^a-z0-9])/i.test(qr) ||
+    qr.startsWith("org")
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function checkClassificationMatch(

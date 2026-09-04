@@ -629,6 +629,16 @@ const JadwalKegiatan: React.FC = () => {
         calcLng = Number((sumLng / formData.polygon.length).toFixed(7));
       }
 
+      // QC-36: Validasi effectiveMonth — jika diisi, harus minimal bulan saat ini
+      if (formData.effectiveMonth) {
+        const now = new Date();
+        const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        if (formData.effectiveMonth < currentYM) {
+          toast.error("Bulan berlaku area kerja tidak boleh lebih awal dari bulan saat ini!");
+          return;
+        }
+      }
+
       const payload = {
         ...formData,
         date: formattedIsoDate,
@@ -637,6 +647,7 @@ const JadwalKegiatan: React.FC = () => {
         longitude: calcLng,
         radius: formData.radius !== "" ? parseInt(String(formData.radius), 10) : 200,
         polygon: !isCircle && formData.polygon.length >= 3 ? formData.polygon : null,
+        effectiveMonth: formData.effectiveMonth || null, // QC-36: TODO — Backend migration needed: tambahkan field effective_month String? @map("effective_month") ke model Schedule di schema.prisma
       };
 
       if (editId) {
@@ -2400,6 +2411,30 @@ const JadwalKegiatan: React.FC = () => {
                         placeholder="Contoh: Balai Pertemuan RW 04 Kelurahan Dago"
                       />
                     </div>
+
+                    {/* QC-36: Advance Scheduling — Berlaku Bulan (hanya untuk mode Polygon Area Kerja) */}
+                    {geofenceMode === "POLYGON" && (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                          Berlaku Bulan — Area Kerja Polygon
+                          <span className="text-[10px] font-semibold text-slate-400 normal-case">(Opsional)</span>
+                        </label>
+                        <input
+                          type="month"
+                          value={formData.effectiveMonth}
+                          min={(() => {
+                            const now = new Date();
+                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+                          })()}
+                          onChange={(e) => setFormData({ ...formData, effectiveMonth: e.target.value })}
+                          className="px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-emerald-600 w-full text-xs font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900"
+                        />
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          Format: YYYY-MM. Tentukan bulan mulai berlakunya batas area kerja polygon ini. Minimal bulan saat ini.
+                          {/* TODO: Backend migration needed — tambahkan field <code>effective_month String? @map("effective_month")</code> ke model Schedule di prisma/schema.prisma lalu jalankan prisma migrate */}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
