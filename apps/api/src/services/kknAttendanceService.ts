@@ -5098,7 +5098,7 @@ export class KknAttendanceService {
 
     // 5.1. Update status_kegiatan dan detail_skip pada model Schedule
     try {
-      await prisma.schedule.update({
+      await (prisma.schedule as any).update({
         where: { id: schedule.id },
         data: {
           statusKegiatan: "TIDAK_ADA_KEGIATAN",
