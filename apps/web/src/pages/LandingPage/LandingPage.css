@@ -290,6 +290,10 @@
   position: relative;
 }
 
+.landing-nav-auth-mobile {
+  display: none;
+}
+
 .landing-nav a,
 .landing-nav button {
   display: inline-flex;
@@ -1249,8 +1253,11 @@
   .landing-nav-toggle {
     display: grid;
   }
-  .landing-header-actions .landing-btn-auth-desktop {
-    display: none;
+  .landing-nav-auth-mobile {
+    display: block;
+    padding-top: 10px;
+    margin-top: 6px;
+    border-top: 1px solid var(--line);
   }
   .landing-grid-3 {
     grid-template-columns: 1fr 1fr;
