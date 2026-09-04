@@ -1247,7 +1247,8 @@ export const LogbookKknPage: React.FC = () => {
                         className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                       />
                     </th>
-                    <th className="p-3.5 whitespace-nowrap">Tgl Kegiatan &amp; Tgl Diinput</th>
+                    <th className="p-3.5 whitespace-nowrap">Tgl Kegiatan</th>
+                    <th className="p-3.5 whitespace-nowrap">Tgl Diinput</th>
                     <th className="p-3.5 whitespace-nowrap">Kelompok</th>
                     <th className="p-3.5 whitespace-nowrap">Pengisi Data</th>
                     <th className="p-3.5 whitespace-nowrap">Kategori</th>
@@ -1264,7 +1265,7 @@ export const LogbookKknPage: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-750">
                   {loading ? (
                     <tr>
-                      <td colSpan={13} className="p-12 text-center text-slate-500">
+                      <td colSpan={14} className="p-12 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="w-5 h-5 animate-spin text-emerald-500" />
                           <span>Memuat rekap aktivitas kelompok mahasiswa...</span>
@@ -1273,7 +1274,7 @@ export const LogbookKknPage: React.FC = () => {
                     </tr>
                   ) : paginatedLogbooks.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="p-12 text-center text-slate-500">
+                      <td colSpan={14} className="p-12 text-center text-slate-500">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <BookOpen className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">Tidak ada data aktivitas</p>
@@ -1308,25 +1309,19 @@ export const LogbookKknPage: React.FC = () => {
                               className="w-3.5 h-3.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer accent-emerald-600"
                             />
                           </td>
-                          {/* 1. Tgl Kegiatan & Tgl Diinput */}
+                          {/* 1. Tgl Kegiatan */}
                           <td className="p-3.5 align-top whitespace-nowrap">
-                            {/* Tanggal Kegiatan — diisi mahasiswa, bisa backdate */}
                             <div className="font-bold text-slate-800 dark:text-slate-200">
                               {formatDateShort(item.tanggalKegiatan)}
                             </div>
                             <div className="text-[11px] text-slate-500 mt-0.5">
                               {item.waktuLengkap}
                             </div>
-                            {/* Divider */}
-                            <div className="my-1.5 border-t border-dashed border-slate-200 dark:border-slate-700" />
-                            {/* Waktu Diinput — createdAt, server timestamp */}
-                            <div className="flex items-center gap-1">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
-                              <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wide">
-                                Diinput
-                              </span>
-                            </div>
-                            <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 mt-0.5">
+                          </td>
+
+                          {/* 1b. Tgl Diinput — createdAt server timestamp */}
+                          <td className="p-3.5 align-top whitespace-nowrap">
+                            <div className="font-medium text-slate-700 dark:text-slate-300 text-[11px]">
                               {formatDateTime(item.createdAt).date}
                             </div>
                             <div className="text-[11px] text-slate-400">
