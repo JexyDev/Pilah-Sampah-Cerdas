@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   MapContainer,
@@ -339,24 +339,30 @@ const DualGeofencePickerModalMap: React.FC<{
   radius: number;
 }> = ({ mode, points, onChange, radius }) => {
   const map = useMap();
+  const hasCenteredRef = useRef(false);
 
   useEffect(() => {
     map.invalidateSize();
-    if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
+    if (
+      !hasCenteredRef.current &&
+      points &&
+      points.length > 0 &&
+      points[0] &&
+      !isNaN(points[0][0]) &&
+      !isNaN(points[0][1])
+    ) {
       map.setView(points[0], map.getZoom() || 15);
+      hasCenteredRef.current = true;
     }
     const t1 = setTimeout(() => {
       map.invalidateSize();
-      if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
-        map.setView(points[0], map.getZoom() || 15);
-      }
     }, 150);
     const t2 = setTimeout(() => map.invalidateSize(), 350);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [mode, map, points]);
+  }, [mode, map]);
 
   useMapEvents({
     click(e) {
@@ -372,10 +378,23 @@ const DualGeofencePickerModalMap: React.FC<{
     <>
       {mode === "CIRCLE" && points.length >= 1 && (
         <>
-          <Marker position={points[0]} />
+          <Marker
+            position={points[0]}
+            draggable={true}
+            eventHandlers={{
+              dragend(e) {
+                const marker = e.target;
+                if (marker) {
+                  const pos = marker.getLatLng();
+                  onChange([[pos.lat, pos.lng]]);
+                }
+              },
+            }}
+          />
           <Circle
             center={points[0]}
             radius={radius}
+            interactive={false}
             pathOptions={{
               color: "#059669",
               fillColor: "#10b981",
@@ -399,6 +418,7 @@ const DualGeofencePickerModalMap: React.FC<{
           {points.length >= 3 && (
             <Polygon
               positions={points}
+              interactive={false}
               pathOptions={{
                 color: "#10b981",
                 fillColor: "#10b981",
@@ -411,6 +431,31 @@ const DualGeofencePickerModalMap: React.FC<{
       )}
     </>
   );
+};
+
+const toDateInputString = (dateInput?: string | Date | null): string => {
+  if (!dateInput) return "";
+  if (typeof dateInput === "string") {
+    const trimmed = dateInput.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (isNaN(d.getTime())) return "";
+
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(d);
+  } catch {
+    const wibDate = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    return wibDate.toISOString().slice(0, 10);
+  }
 };
 
 const parseTimeString = (timeStr?: string) => {
@@ -549,7 +594,7 @@ const MonitoringAbsen: React.FC = () => {
       setMapCenter([-6.8906, 107.6150]);
       setMapZoom(13.5);
     } else if (id) {
-      // Cari jadwal kelompok ini hari ini
+      // Cari jadwal kelompok ini hari ini (WIB)
       const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
       const todayWibStr = nowWib.toISOString().slice(0, 10);
       const kelScheds = schedules.filter((s) => s.kelompokId === id);
@@ -557,7 +602,7 @@ const MonitoringAbsen: React.FC = () => {
         if (!s.date) return false;
         const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         return sWibStr === todayWibStr;
-      }) || kelScheds[0];
+      }) || (userRole === "DEVELOPER" ? kelScheds[0] : undefined);
       if (todaySched) {
         setSelectedScheduleId(todaySched.id);
         const center = getCenterFromSchedule(todaySched);
@@ -981,6 +1026,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
       );
     }
+    // Untuk role selain DEVELOPER: Halaman Presensi strictly hanya untuk HARI BERJALAN (hari ini WIB)
+    if (userRole !== "DEVELOPER") {
+      const todayWibStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      list = list.filter((s) => {
+        if (!s.date) return false;
+        const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return sWibStr === todayWibStr;
+      });
+    }
     // Urutkan jadwal terbaru (hari ini) di paling atas
     const sorted = [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     // Deduplikasi fallback berdasarkan kelompokId + tanggal kegiatan WIB
@@ -995,7 +1049,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       }
     }
     return deduplicated;
-  }, [schedules, selectedKelompokId]);
+  }, [schedules, selectedKelompokId, userRole]);
 
   const isAllTodayMode = !selectedKelompokId && selectedScheduleId === "ALL_TODAY";
 
@@ -1003,6 +1057,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     if (isAllTodayMode) return null;
     return visibleSchedules.find((s) => s.id === selectedScheduleId);
   }, [visibleSchedules, selectedScheduleId, isAllTodayMode]);
+
+  const isWeekendActive = useMemo(() => {
+    const targetDate = activeSchedule?.date
+      ? new Date(activeSchedule.date)
+      : new Date();
+    const wib = new Date(targetDate.getTime() + 7 * 60 * 60 * 1000);
+    const day = wib.getUTCDay();
+    return day === 0 || day === 6;
+  }, [activeSchedule]);
 
   const scheduleTargetHours = useMemo(() => {
     // 1. Relasi Konfigurasi Target Minimal Durasi Harian dari Database / Rule Engine Developer (SSOT)
@@ -1131,7 +1194,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             return sWib === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
           });
 
-          const defaultSched = todaySched || sorted.find((s: any) => !selectedKelompokId || s.kelompokId === selectedKelompokId) || sorted[0];
+          const defaultSched =
+            todaySched ||
+            (userRole === "DEVELOPER"
+              ? sorted.find((s: any) => !selectedKelompokId || s.kelompokId === selectedKelompokId) || sorted[0]
+              : undefined);
           if (defaultSched) {
             const initialCenter = getCenterFromSchedule(defaultSched);
             setMapCenter(initialCenter);
@@ -1305,7 +1372,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             if (!s.date) return false;
             const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
             return sWibStr === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
-          }) || visibleSchedules[0];
+          }) || (userRole === "DEVELOPER" ? visibleSchedules[0] : undefined);
           return todaySched?.id || "";
         }
 
@@ -1334,12 +1401,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         });
 
         if (todaySched) return todaySched.id;
-        return visibleSchedules[0]?.id || "";
+        // Role selain DEVELOPER tidak boleh fallback ke jadwal hari kemarin/lampau
+        if (userRole === "DEVELOPER") {
+          return visibleSchedules[0]?.id || "";
+        }
+        return "";
       });
     } else {
       setSelectedScheduleId(!selectedKelompokId && !isDpl ? "ALL_TODAY" : "");
     }
-  }, [selectedKelompokId, visibleSchedules, isDpl]);
+  }, [selectedKelompokId, visibleSchedules, isDpl, userRole]);
 
   useEffect(() => {
     fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
@@ -1990,12 +2061,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       errors.category = "Nama kategori kustom wajib diisi";
     }
 
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const todayStr = toDateInputString(new Date());
 
     if (!startDate) {
       errors.startDate = "Tanggal mulai pelaksanaan wajib diisi";
-    } else if (startDate < todayStr) {
+    } else if (modalMode === "add" && startDate < todayStr) {
       errors.startDate = "Tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)";
     }
 
@@ -2049,7 +2119,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   };
 
   const handleOpenAddModal = () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = toDateInputString(new Date());
     setModalMode("add");
     setModalStep(1);
     setGeofenceMode("CIRCLE");
@@ -2096,11 +2166,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setModalMode("edit");
     setModalStep(1);
     setFormErrors({});
-    const dateStr = schedule.date
-      ? schedule.date.split("T")[0]
-      : new Date().toISOString().split("T")[0];
+    const dateStr = toDateInputString(schedule.date) || toDateInputString(new Date());
     setStartDate(dateStr);
-    setEndDate(schedule.endDate ? schedule.endDate.split("T")[0] : dateStr);
+    setEndDate(schedule.endDate ? toDateInputString(schedule.endDate) : dateStr);
     const parsedTime = parseTimeString(schedule.time);
     setStartTime(parsedTime.start);
     setEndTime(parsedTime.end);
@@ -2301,6 +2369,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     "PIMPINAN",
     "PANITIA_TASKFORCE",
     "DEVELOPER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
   ].includes(userRole);
 
   const isSuperUserOrDev = ["SUPER_USER", "DEVELOPER"].includes(userRole);
@@ -2555,75 +2625,77 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </button>
             )}
 
-            <div className="relative min-w-[280px]">
-              <select
-                value={selectedScheduleId}
-                onChange={(e) => {
-                  const newSchedId = e.target.value;
-                  setSelectedScheduleId(newSchedId);
-                  if (newSchedId === "ALL_TODAY") {
-                    setSelectedKelompokId("");
-                    if (typeof window !== "undefined") {
-                      try {
-                        localStorage.setItem("berseka_dev_selected_kelompok", "");
-                      } catch {}
-                    }
-                    setMapCenter([-6.8906, 107.6150]);
-                    setMapZoom(13.5);
-                  } else {
-                    const sched = schedules.find((s) => s.id === newSchedId);
-                    if (sched && sched.kelompokId) {
-                      setSelectedKelompokId(sched.kelompokId);
+            {userRole === "DEVELOPER" && (
+              <div className="relative min-w-[280px]">
+                <select
+                  value={selectedScheduleId}
+                  onChange={(e) => {
+                    const newSchedId = e.target.value;
+                    setSelectedScheduleId(newSchedId);
+                    if (newSchedId === "ALL_TODAY") {
+                      setSelectedKelompokId("");
                       if (typeof window !== "undefined") {
                         try {
-                          localStorage.setItem("berseka_dev_selected_kelompok", sched.kelompokId);
+                          localStorage.setItem("berseka_dev_selected_kelompok", "");
                         } catch {}
                       }
-                      const center = getCenterFromSchedule(sched);
-                      setMapCenter(center);
-                      setMapZoom(15);
+                      setMapCenter([-6.8906, 107.6150]);
+                      setMapZoom(13.5);
+                    } else {
+                      const sched = schedules.find((s) => s.id === newSchedId);
+                      if (sched && sched.kelompokId) {
+                        setSelectedKelompokId(sched.kelompokId);
+                        if (typeof window !== "undefined") {
+                          try {
+                            localStorage.setItem("berseka_dev_selected_kelompok", sched.kelompokId);
+                          } catch {}
+                        }
+                        const center = getCenterFromSchedule(sched);
+                        setMapCenter(center);
+                        setMapZoom(15);
+                      }
                     }
-                  }
-                }}
-                className="w-full h-11 pl-3.5 pr-8 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
-              >
-                {!selectedKelompokId && !isDpl ? (
-                  <>
-                    <option value="ALL_TODAY">
-                      🌟 Semua Kegiatan Hari Ini (Global View Seluruh Kelompok)
-                    </option>
-                    {Object.entries(
-                      visibleSchedules.reduce((acc: Record<string, ScheduleActivity[]>, s) => {
-                        const groupKey = s.kelompok?.name
-                          ? `${s.kelompok.name} (${s.kelompok.kelurahan || "Wilayah KKN"})`
-                          : "Jadwal Bersama / Umum";
-                        if (!acc[groupKey]) acc[groupKey] = [];
-                        acc[groupKey].push(s);
-                        return acc;
-                      }, {})
-                    ).map(([groupLabel, groupScheds]) => (
-                      <optgroup key={groupLabel} label={groupLabel}>
-                        {groupScheds.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </>
-                ) : visibleSchedules.length === 0 ? (
-                  <option value="">Belum ada jadwal {selectedKelompokId ? "pada kelompok ini" : ""}</option>
-                ) : (
-                  visibleSchedules.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.kelompok ? `[${s.kelompok.name}] ` : "[Bersama] "}
-                      {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
-                    </option>
-                  ))
-                )}
-              </select>
-              <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
+                  }}
+                  className="w-full h-11 pl-3.5 pr-8 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
+                >
+                  {!selectedKelompokId && !isDpl ? (
+                    <>
+                      <option value="ALL_TODAY">
+                        🌟 Semua Kegiatan Hari Ini (Global View Seluruh Kelompok)
+                      </option>
+                      {Object.entries(
+                        visibleSchedules.reduce((acc: Record<string, ScheduleActivity[]>, s) => {
+                          const groupKey = s.kelompok?.name
+                            ? `${s.kelompok.name} (${s.kelompok.kelurahan || "Wilayah KKN"})`
+                            : "Jadwal Bersama / Umum";
+                          if (!acc[groupKey]) acc[groupKey] = [];
+                          acc[groupKey].push(s);
+                          return acc;
+                        }, {})
+                      ).map(([groupLabel, groupScheds]) => (
+                        <optgroup key={groupLabel} label={groupLabel}>
+                          {groupScheds.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </>
+                  ) : visibleSchedules.length === 0 ? (
+                    <option value="">Belum ada jadwal {selectedKelompokId ? "pada kelompok ini" : ""}</option>
+                  ) : (
+                    visibleSchedules.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.kelompok ? `[${s.kelompok.name}] ` : "[Bersama] "}
+                        {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
+                      </option>
+                    ))
+                  )}
+                </select>
+                <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            )}
 
             {activeSchedule && (
               <div className="flex items-center gap-1.5">
@@ -2668,6 +2740,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
         </div>
+
+        {isWeekendActive && (
+          <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs font-medium flex items-center gap-3 shadow-2xs">
+            <span className="text-lg leading-none shrink-0">ℹ️</span>
+            <div className="flex-1 leading-relaxed">
+              <span className="font-bold">Jadwal Fleksibel Akhir Pekan (Sabtu / Minggu):</span> Presensi hari ini bersifat fleksibel. Mahasiswa yang tidak hadir <strong>tidak dikenakan status Alpa</strong> ataupun pengurangan poin. Mahasiswa yang hadir tetap tercatat presensinya dan durasi jamnya dihitung ke akumulasi kegiatan.
+            </div>
+          </div>
+        )}
 
         {/* 2-Column Cards: Informasi Waktu Kerja & Target Kegiatan Lapangan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -4574,7 +4655,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </label>
                       <input
                         type="date"
-                        min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
+                        min={modalMode === "add" ? toDateInputString(new Date()) : undefined}
                         value={startDate}
                         onChange={(e) => {
                           setStartDate(e.target.value);
@@ -4591,7 +4672,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <input
                         type="date"
                         value={endDate}
-                        min={startDate || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
+                        min={startDate || (modalMode === "add" ? toDateInputString(new Date()) : undefined)}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                       />
@@ -4699,24 +4780,30 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     const mapModalCenter = selectedPos.length > 0 ? selectedPos[0] : modalLocInfo.centroid;
 
                     return (
-                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-0 shadow-inner">
-                        <MapContainer
-                          key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
-                          center={mapModalCenter}
-                          zoom={15}
-                          maxZoom={20}
-                          minZoom={11}
-                          style={{ height: "100%", width: "100%" }}
-                        >
-                          <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
-                          <DualGeofencePickerModalMap
-                            mode={geofenceMode}
-                            points={selectedPos || []}
-                            onChange={(pts) => setSelectedPos(pts)}
-                            radius={Number(formData.radius) || 200}
-                          />
-                        </MapContainer>
-                      </div>
+                      <>
+                        <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-0 shadow-inner">
+                          <MapContainer
+                            key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
+                            center={mapModalCenter}
+                            zoom={15}
+                            maxZoom={20}
+                            minZoom={11}
+                            style={{ height: "100%", width: "100%" }}
+                          >
+                            <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
+                            <DualGeofencePickerModalMap
+                              mode={geofenceMode}
+                              points={selectedPos || []}
+                              onChange={(pts) => setSelectedPos(pts)}
+                              radius={Number(formData.radius) || 200}
+                            />
+                          </MapContainer>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                          <MapPin size={13} className="text-emerald-600 shrink-0" />
+                          <span>Klik di peta atau <strong>geser (drag) pin</strong> untuk memindahkan titik pusat zona presensi.</span>
+                        </p>
+                      </>
                     );
                   })()}
 

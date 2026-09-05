@@ -169,6 +169,7 @@ export function isDplSuperUser(role: any): boolean {
     "ADMIN_LPPM",
     "LPPM",
     "PEMIMPIN",
+    "PIMPINAN",
     "PANITIA_TASKFORCE",
     "PANITIA",
   ].some((s) => r.includes(s));
@@ -612,6 +613,7 @@ export async function getKelompokWhere(dplUserId: string, role?: any) {
     "ADMIN",
     "PANITIA_TASKFORCE",
     "PEMIMPIN",
+    "PIMPINAN",
   ].some((r) => normalizedRole.includes(r));
 
   if (isAdmin) {
@@ -1138,6 +1140,15 @@ export const dplService = {
                 institusi: grp.dpl.institusi,
                 programStudi: grp.dpl.programStudi,
                 phone: grp.dpl.phone,
+              }
+            : grp.dplNamaMentah
+            ? {
+                id: "",
+                name: grp.dplNamaMentah,
+                nip: null,
+                institusi: null,
+                programStudi: null,
+                phone: null,
               }
             : null,
           studentCount,
@@ -1723,6 +1734,7 @@ export const dplService = {
       "ADMIN",
       "PANITIA_TASKFORCE",
       "PEMIMPIN",
+      "PIMPINAN",
     ].some((r) => normalizedRole.includes(r));
 
     const groups = await prisma.kelompokKkn.findMany({

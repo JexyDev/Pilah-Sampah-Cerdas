@@ -188,6 +188,12 @@ app.use("/downloads", (req, res, next) => {
   next();
 });
 
+// Statically serve /image folder (public assets like QR templates) with multi-directory fallback
+app.use("/image", express.static(path.resolve(process.cwd(), "apps/web/public/image"), staticCacheOptions));
+app.use("/image", express.static(path.resolve(process.cwd(), "../web/public/image"), staticCacheOptions));
+app.use("/image", express.static(path.resolve(__dirname, "../../web/public/image"), staticCacheOptions));
+app.use("/image", express.static(path.resolve(__dirname, "../../../apps/web/public/image"), staticCacheOptions));
+
 // In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
 app.get("/api/app-version", (req, res) => systemController.getAppVersion(req, res));
@@ -530,6 +536,8 @@ if (isPrimaryWorker) {
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
       // QC-27: Link Google Drive per kelompok
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "link_google_drive" TEXT;',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "qr_diunduh_pada" TIMESTAMP(3);',
+      'ALTER TABLE "tempat_sampah" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       // QC-36: Advance scheduling — bulan efektif polygon area kerja
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "effective_month" TEXT;',

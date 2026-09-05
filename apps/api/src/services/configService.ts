@@ -161,7 +161,10 @@ export class ConfigService {
    */
   async isDateKknHoliday(targetDate: Date): Promise<{ isHoliday: boolean; reason?: string }> {
     const configs = await this.getRuleEngineConfigs();
-    const targetDateStr = targetDate.toISOString().slice(0, 10);
+    // Konversi targetDate secara presisi ke zona waktu Indonesia Barat (WIB / UTC+7)
+    const targetWib = new Date(targetDate.getTime() + 7 * 60 * 60 * 1000);
+    const targetDateStr = targetWib.toISOString().slice(0, 10);
+    const day = targetWib.getUTCDay(); // 0: Minggu, 6: Sabtu
 
     // 1. Check if prior to KKN start date
     if (configs.kknStartDate && targetDateStr < configs.kknStartDate) {
@@ -175,7 +178,6 @@ export class ConfigService {
 
     // 3. Check weekend (0: Sunday, 6: Saturday)
     if (configs.kknAutoHolidayWeekends) {
-      const day = targetDate.getDay();
       if (day === 0) return { isHoliday: true, reason: "Hari Minggu (Libur Akhir Pekan)" };
       if (day === 6) return { isHoliday: true, reason: "Hari Sabtu (Libur Akhir Pekan)" };
     }

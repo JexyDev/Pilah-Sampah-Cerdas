@@ -176,79 +176,79 @@ export const systemService = {
     marketProducts: [
       {
         id: "prod-01",
-        title: "Pupuk Organik Kasgot Super (1 kg)",
-        category: "pupuk",
-        categoryLabel: "Pupuk & Kompos",
+        title: "Telur Ayam BERSEKA",
+        category: "pangan",
+        categoryLabel: "Pangan Lokal",
         categoryColor: "bg-emerald-100 text-emerald-800",
-        initiator: "KKN Kelompok 04 RW 05",
-        priceIdr: 15000,
-        pricePoints: 150,
-        stock: 85,
-        unit: "Pack (1 kg)",
+        initiator: "Kandang Sehat Warga Coblong",
+        priceIdr: 25000,
+        pricePoints: 200,
+        stock: 60,
+        unit: "Kemasan 10 butir",
         rating: 4.9,
-        soldCount: 120,
-        imageUrl: "/image/activity-2.webp",
-        description: "Pupuk bekas maggot (Kasgot) murni kaya unsur hara makro dan mikro, sangat efektif menyuburkan tanaman hias, sayur, dan buah pekarangan rumah.",
-        benefits: ["100% Organik tanpa bahan kimia sintetis", "Mempercepat pertumbuhan akar dan daun", "Menjaga kelembapan struktur tanah"],
+        soldCount: 140,
+        imageUrl: "/image/products/telur-ayam-berseka.webp",
+        description: "Telur ayam sehat dan segar hasil peternakan warga Coblong. Diberi pakan alami bernutrisi tinggi dan suplemen maggot BSF untuk menjaga kualitas dan kesegaran telur.",
+        benefits: ["Dari peternakan ayam sehat warga binaan Coblong", "Kemasan karton ramah lingkungan isi 10 butir", "Dipanen segar setiap hari dan kaya nutrisi alami"],
         isPublished: true,
       },
       {
         id: "prod-02",
-        title: "Cairan Eco-Enzyme Fermentasi Kulit Buah (500 ml)",
-        category: "ecoenzyme",
-        categoryLabel: "Eco-Enzyme",
-        categoryColor: "bg-amber-100 text-amber-800",
-        initiator: "KKN Kelompok 12 RW 02",
-        priceIdr: 20000,
-        pricePoints: 200,
+        title: "Sayuran Segar Buruan SAE",
+        category: "buruan_sae",
+        categoryLabel: "Buruan SAE",
+        categoryColor: "bg-emerald-100 text-emerald-800",
+        initiator: "Buruan SAE Coblong Menanam Harapan",
+        priceIdr: 15000,
+        pricePoints: 150,
         stock: 45,
-        unit: "Botol (500 ml)",
-        rating: 4.8,
-        soldCount: 95,
-        imageUrl: "/image/activity-3.webp",
-        description: "Cairan serbaguna hasil fermentasi 90 hari sisa kulit jeruk, nanas, dan pepaya dengan molase. Berfungsi sebagai pembersih alami, desinfektan lantai, dan penghilang bau tong sampah.",
-        benefits: ["Menghilangkan bau tak sedap seketika", "Alami, aman bagi kulit dan ramah lingkungan", "Bisa digunakan sebagai pengusir hama tanaman"],
+        unit: "1 paket sayuran",
+        rating: 5.0,
+        soldCount: 185,
+        imageUrl: "/image/products/sayuran-segar-buruan-sae.webp",
+        description: "Paket sayuran hijau segar organik (pakcoy, selada, cabai, dan tomat) hasil budidaya perkebunan warga perkotaan Buruan SAE Coblong. Dipetik segar tanpa pestisida kimia.",
+        benefits: ["100% bebas pestisida kimia sintetis", "Hasil panen segar kebun perkotaan Buruan SAE Coblong", "Kombinasi sayuran daun dan bumbu dapur siap konsumsi"],
         isPublished: true,
       },
       {
         id: "prod-03",
-        title: "Paket Bibit Sayur & Media Tanam Kompos Berseka",
-        category: "bibit",
-        categoryLabel: "Bibit & Tanaman",
-        categoryColor: "bg-green-100 text-green-800",
-        initiator: "Kelompok Wanita Tani & KKN",
-        priceIdr: 25000,
-        pricePoints: 250,
-        stock: 60,
-        unit: "Paket Lengkap",
-        rating: 5.0,
-        soldCount: 80,
-        imageUrl: "/image/landingpage.webp",
-        description: "Paket berkebun mandiri di rumah berisi 3 jenis benih sayur (Cabai Rawit, Kangkung, Bayam Merah) lengkap dengan pot ramah lingkungan dan media tanam kompos.",
-        benefits: ["Benih unggul dengan daya kecambah >85%", "Dilengkapi panduan perawatan mudah untuk pemula", "Mendukung ketahanan pangan keluarga"],
+        title: "POC BERSEKA",
+        category: "pupuk",
+        categoryLabel: "Pupuk Organik",
+        categoryColor: "bg-emerald-100 text-emerald-800",
+        initiator: "Rumah Kompos & Olah Sampah Coblong",
+        priceIdr: 18000,
+        pricePoints: 180,
+        stock: 80,
+        unit: "Botol 500 ml",
+        rating: 4.9,
+        soldCount: 160,
+        imageUrl: "/image/products/poc-berseka.webp",
+        description: "Pupuk Organik Cair (POC) konsentrat hasil fermentasi sampah organik rumah tangga warga Coblong. Mengandung mikroorganisme baik untuk menyuburkan tanah dan mempercepat pertumbuhan tanaman.",
+        benefits: ["Dibuat dari 100% sampah organik terpilah warga Coblong", "Mempercepat pertumbuhan vegetatif dan generatif tanaman", "Kemasan botol 500 ml praktis dan mudah diaplikasikan"],
         isPublished: true,
       },
       {
         id: "prod-04",
-        title: "Lilin Aromaterapi Daur Ulang Minyak Jelantah",
-        category: "kerajinan",
-        categoryLabel: "Daur Ulang Kreatif",
-        categoryColor: "bg-purple-100 text-purple-800",
-        initiator: "Karang Taruna & KKN RW 04",
-        priceIdr: 18000,
-        pricePoints: 180,
+        title: "Ikan Bioflok BERSEKA",
+        category: "perikanan",
+        categoryLabel: "Perikanan",
+        categoryColor: "bg-emerald-100 text-emerald-800",
+        initiator: "Budidaya Bioflok Warga Coblong",
+        priceIdr: 35000,
+        pricePoints: 350,
         stock: 35,
-        unit: "Pcs (Glass Jar)",
-        rating: 4.9,
-        soldCount: 65,
-        imageUrl: "/image/kkn-hero-sorting.webp",
-        description: "Lilin aroma terapi wangi lavender dan kopi yang dibuat dari pemurnian minyak jelantah sisa dapur dengan arang aktif dan minyak atsiri alami.",
-        benefits: ["Mencegah pencemaran saluran got dari jelantah", "Aroma menenangkan dan mengusir nyamuk", "Kemasan toples kaca estetik"],
+        unit: "Kemasan 500 gram",
+        rating: 4.8,
+        soldCount: 95,
+        imageUrl: "/image/products/ikan-bioflok-berseka.webp",
+        description: "Ikan nila segar hasil budidaya modern dengan teknologi bioflok ramah lingkungan oleh warga Coblong. Daging padat, higienis, tidak berbau lumpur, dan kaya protein hewani.",
+        benefits: ["Sistem bioflok modern hemat air & ramah lingkungan", "Ikan segar dan higienis tanpa bau lumpur", "Dikemas rapi 500 gram siap dibersihkan dan diolah"],
         isPublished: true,
       },
       {
         id: "prod-05",
-        title: "Tas Belanja Anyaman Plastik Daur Ulang",
+        title: "Kerajinan Daur Ulang BERSEKA",
         category: "kerajinan",
         categoryLabel: "Daur Ulang Kreatif",
         categoryColor: "bg-blue-100 text-blue-800",
@@ -256,30 +256,30 @@ export const systemService = {
         priceIdr: 35000,
         pricePoints: 350,
         stock: 25,
-        unit: "Pcs",
+        unit: "1 produk",
         rating: 4.9,
-        soldCount: 40,
-        imageUrl: "/image/activity-1.webp",
-        description: "Tas belanja belanja pasar ramah lingkungan berdaya tahan tinggi yang dianyam rapi oleh ibu-ibu warga binaan dari kemasan plastik sachet bersih.",
-        benefits: ["Kuat menampung beban hingga 12 kg", "Tahan air dan mudah dibersihkan", "Menggantikan 500+ kantong plastik sekali pakai"],
+        soldCount: 75,
+        imageUrl: "/image/products/kerajinan-daur-ulang-berseka.webp",
+        description: "Tas anyaman belanja serbaguna bernilai estetika tinggi, dibuat secara teliti oleh warga binaan Coblong dari ribuan sachet dan kemasan plastik bersih yang didaur ulang.",
+        benefits: ["Dibuat dari limbah kemasan anorganik terpilah warga", "Anyaman kuat, awet, dan mampu menahan beban belanja", "Mendukung ekonomi kreatif dan zero-waste di Coblong"],
         isPublished: true,
       },
       {
         id: "prod-06",
-        title: "Maggot BSF Kering (Pakan Ikan & Burung 200g)",
-        category: "pupuk",
-        categoryLabel: "Pakan Organik",
+        title: "Maggot Kering BERSEKA",
+        category: "pakan",
+        categoryLabel: "Pakan Ternak",
         categoryColor: "bg-emerald-100 text-emerald-800",
-        initiator: "Unit Biokonversi RW 05",
+        initiator: "Unit Biokonversi BSF Coblong",
         priceIdr: 22000,
         pricePoints: 220,
         stock: 50,
-        unit: "Pack (200g)",
+        unit: "Botol 500 gram",
         rating: 5.0,
-        soldCount: 110,
-        imageUrl: "/image/activity-2.webp",
-        description: "Larva Black Soldier Fly kering oven berprotein 42% dan tinggi asam amino. Pakan suplemen terbaik untuk ikan koi, lele, burung berkicau, dan unggas.",
-        benefits: ["Protein hewani tinggi 42%", "Meningkatkan kecerahan warna sisik dan daya tahan ikan", "Tahan simpan hingga 6 bulan"],
+        soldCount: 130,
+        imageUrl: "/image/products/maggot-kering-berseka.webp",
+        description: "Pakan alami berprotein tinggi (>40%) dari larva Black Soldier Fly kering hasil pengolahan sisa makanan organik warga Coblong. Sangat baik untuk unggas, ikan hias/konsumsi, dan burung berkicau.",
+        benefits: ["Protein hewani tinggi untuk pertumbuhan optimal hewan", "Solusi nyata pengolahan sampah organik jadi pakan bernilai", "Kemasan botol toples 500 gram kedap udara dan higienis"],
         isPublished: true,
       },
     ],
@@ -660,9 +660,33 @@ export const systemService = {
   /**
    * Get real KKN logbooks with photos from database as candidates for curation
    */
-  getApprovedLogbookSources: async () => {
+  getApprovedLogbookSources: async (params?: { kelompokId?: string; kelurahan?: string; search?: string; limit?: number }) => {
     try {
       const db = prisma as any;
+      const limit = Math.min(Number(params?.limit) || 500, 1000);
+      
+      let whereClause = "WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 3";
+      const conditions: string[] = [];
+
+      if (params?.kelompokId && String(params.kelompokId).trim()) {
+        const safeKelompokId = String(params.kelompokId).trim().replace(/'/g, "''");
+        conditions.push(`l.id_kelompok = '${safeKelompokId}'`);
+      }
+
+      if (params?.kelurahan && String(params.kelurahan).trim()) {
+        const safeKelurahan = String(params.kelurahan).trim().replace(/'/g, "''");
+        conditions.push(`k.kelurahan ILIKE '%${safeKelurahan}%'`);
+      }
+
+      if (params?.search && String(params.search).trim()) {
+        const safeSearch = String(params.search).trim().replace(/'/g, "''");
+        conditions.push(`(l.deskripsi ILIKE '%${safeSearch}%' OR l.tempat ILIKE '%${safeSearch}%' OR u.nama ILIKE '%${safeSearch}%' OR k.nama ILIKE '%${safeSearch}%' OR k.kelurahan ILIKE '%${safeSearch}%')`);
+      }
+
+      if (conditions.length > 0) {
+        whereClause += " AND " + conditions.join(" AND ");
+      }
+
       const logbooks = await db.$queryRawUnsafe(`
         SELECT 
           l.id, 
@@ -671,18 +695,20 @@ export const systemService = {
           l.foto_bukti_url as "fotoBuktiUrl", 
           l.tanggal_kegiatan as "tanggalKegiatan", 
           l.status_persetujuan as "statusApproval", 
+          k.id as "kelompokId",
           k.nama as "kelompokNama", 
           k.kelurahan as kelurahan, 
           u.nama as "penulisNama", 
+          p.id as "prokerId",
           p.deskripsi as "prokerDeskripsi", 
           p.kategori as "prokerKategori"
         FROM logbook_kkn l
         LEFT JOIN kelompok_kkn k ON l.id_kelompok = k.id
         LEFT JOIN pengguna u ON l.id_penulis = u.id
         LEFT JOIN program_kerja_kkn p ON l.id_program_kerja = p.id
-        WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 5
+        ${whereClause}
         ORDER BY l.tanggal_kegiatan DESC
-        LIMIT 40
+        LIMIT ${limit}
       `);
       return logbooks || [];
     } catch (err) {
@@ -694,9 +720,35 @@ export const systemService = {
   /**
    * Get real student Program Kerja (Proker) from database as candidates for curation
    */
-  getRealProkerSources: async () => {
+  getRealProkerSources: async (params?: { kelompokId?: string; kelurahan?: string; kategori?: string; search?: string; limit?: number }) => {
     try {
       const db = prisma as any;
+      const limit = Math.min(Number(params?.limit) || 500, 1000);
+
+      const conditions: string[] = [];
+
+      if (params?.kelompokId && String(params.kelompokId).trim()) {
+        const safeKelompokId = String(params.kelompokId).trim().replace(/'/g, "''");
+        conditions.push(`p.id_kelompok = '${safeKelompokId}'`);
+      }
+
+      if (params?.kelurahan && String(params.kelurahan).trim()) {
+        const safeKelurahan = String(params.kelurahan).trim().replace(/'/g, "''");
+        conditions.push(`k.kelurahan ILIKE '%${safeKelurahan}%'`);
+      }
+
+      if (params?.kategori && String(params.kategori).trim()) {
+        const safeKategori = String(params.kategori).trim().replace(/'/g, "''");
+        conditions.push(`p.kategori ILIKE '%${safeKategori}%'`);
+      }
+
+      if (params?.search && String(params.search).trim()) {
+        const safeSearch = String(params.search).trim().replace(/'/g, "''");
+        conditions.push(`(p.deskripsi ILIKE '%${safeSearch}%' OR k.nama ILIKE '%${safeSearch}%' OR p.kategori ILIKE '%${safeSearch}%' OR k.kelurahan ILIKE '%${safeSearch}%')`);
+      }
+
+      const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+
       const prokers = await db.$queryRawUnsafe(`
         SELECT 
           p.id, 
@@ -705,13 +757,33 @@ export const systemService = {
           p.status,
           p.sumber,
           p.waktu_pelaksanaan as "waktuPelaksanaan",
+          p.kebutuhan_biaya as "kebutuhanBiaya",
+          k.id as "kelompokId",
           k.nama as "kelompokNama", 
           k.kelurahan,
-          'Coblong' as "kecamatan"
+          'Coblong' as "kecamatan",
+          (
+            SELECT l.foto_bukti_url 
+            FROM logbook_kkn l 
+            WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+              AND l.foto_bukti_url IS NOT NULL 
+              AND length(l.foto_bukti_url) > 3 
+            ORDER BY l.tanggal_kegiatan DESC 
+            LIMIT 1
+          ) as "fotoBuktiUrl",
+          (
+            SELECT l.tempat 
+            FROM logbook_kkn l 
+            WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+              AND l.tempat IS NOT NULL 
+            ORDER BY l.tanggal_kegiatan DESC 
+            LIMIT 1
+          ) as "logbookTempat"
         FROM program_kerja_kkn p
         LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
+        ${whereClause}
         ORDER BY p.dibuat_pada DESC
-        LIMIT 40
+        LIMIT ${limit}
       `);
       return prokers || [];
     } catch (err) {

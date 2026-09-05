@@ -3531,6 +3531,10 @@ export class KknService {
       const schedTime = activeSchedule.time || "08:00 - 16:00";
       const schedTitle = activeSchedule.title || "Kegiatan KKN";
 
+      const schedDate = activeSchedule?.date ? new Date(activeSchedule.date) : new Date();
+      const schedWib = new Date(schedDate.getTime() + 7 * 60 * 60 * 1000);
+      const isWeekendFlexible = schedWib.getUTCDay() === 0 || schedWib.getUTCDay() === 6;
+
       return {
         hasActiveZone: true,
         id: activeSchedule.id,
@@ -3559,7 +3563,13 @@ export class KknService {
             ? "Hadir & Memenuhi"
             : attendanceStatus === "hadir_tidak_memenuhi"
               ? "Hadir & Tidak Memenuhi"
-              : attendanceStatus,
+              : attendanceStatus === "belum_absen" && isWeekendFlexible
+                ? "Belum Absen (Akhir Pekan Fleksibel)"
+                : attendanceStatus,
+        isWeekendFlexible,
+        catatanFleksibilitas: isWeekendFlexible
+          ? "Presensi akhir pekan (Sabtu/Minggu) bersifat fleksibel. Mahasiswa yang tidak hadir tidak dikenakan sanksi/alpa."
+          : undefined,
         isMemenuhiDurasi,
         kehadiran: attendanceStatus,
         attendedAt: attendanceForActiveSchedule?.attendedAt,
@@ -5332,6 +5342,160 @@ export class KknService {
       tipeArea,
       polygonKoordinat,
       radiusMeters,
+    };
+  }
+
+  /**
+   * Get 20 QR Code allocation for Mahasiswa KKN's specific Kelompok (Strict Isolation by Kelompok ID)
+   */
+  async getMyKelompokQrCodes(userId: string, userRole: string, requestedKelompokId?: string) {
+    let kelompokId: string | null = null;
+
+    if (userRole === "MAHASISWA_KKN") {
+      const student = await prisma.studentKkn.findUnique({
+        where: { userId },
+        select: { kelompokId: true },
+      });
+      if (!student || !student.kelompokId) {
+        throw new Error("KELOMPOK_NOT_ASSIGNED");
+      }
+      kelompokId = student.kelompokId;
+    } else if (userRole === "DPL" || userRole === "DOSEN_PEMBIMBING") {
+      if (requestedKelompokId) {
+        const k = await prisma.kelompokKkn.findFirst({
+          where: { id: requestedKelompokId, dplId: userId },
+        });
+        if (!k) {
+          throw new Error("FORBIDDEN_KELOMPOK_ACCESS");
+        }
+        kelompokId = requestedKelompokId;
+      } else {
+        const dplKelompok = await prisma.kelompokKkn.findFirst({
+          where: { dplId: userId },
+        });
+        if (!dplKelompok) {
+          throw new Error("KELOMPOK_NOT_ASSIGNED");
+        }
+        kelompokId = dplKelompok.id;
+      }
+    } else if (["SUPER_USER", "ADMIN_DLH", "PANITIA_TASKFORCE", "PEMIMPIN"].includes(userRole)) {
+      if (requestedKelompokId) {
+        kelompokId = requestedKelompokId;
+      } else {
+        const firstK = await prisma.kelompokKkn.findFirst();
+        if (!firstK) throw new Error("KELOMPOK_NOT_ASSIGNED");
+        kelompokId = firstK.id;
+      }
+    } else {
+      throw new Error("UNAUTHORIZED_ROLE");
+    }
+
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: kelompokId },
+      include: {
+        dpl: { select: { id: true, name: true, phone: true } },
+        bins: {
+          include: {
+            category: true,
+            user: { select: { id: true, name: true, phone: true, address: true } },
+          },
+          orderBy: { qrCode: "asc" },
+        },
+      },
+    });
+
+    if (!kelompok) {
+      throw new Error("KELOMPOK_NOT_FOUND");
+    }
+
+    const totalBins = kelompok.bins.length;
+    const organikBins = kelompok.bins.filter((b) => isOrganikBin(b));
+    const anorganikBins = kelompok.bins.filter((b) => isAnorganikBin(b));
+
+    const availableBins = kelompok.bins.filter((b) => b.status === "PRINTED");
+    const boundBins = kelompok.bins.filter((b) => b.status === "ACTIVE_BOUND");
+
+    const items = kelompok.bins.map((b, idx) => {
+      const isAnorg = isAnorganikBin(b);
+      return {
+        id: b.id,
+        nomorUrut: idx + 1,
+        qrCode: b.qrCode,
+        jenis: isAnorg ? "ANORGANIK" : "ORGANIK",
+        kategoriNama: isAnorg ? "Tempat Sampah Anorganik" : "Tempat Sampah Organik",
+        warnaLabel: isAnorg ? "Kuning (#F59E0B)" : "Hijau (#10B981)",
+        hexColor: isAnorg ? "#F59E0B" : "#10B981",
+        status: b.status, // "PRINTED" | "ACTIVE_BOUND"
+        isAvailable: b.status === "PRINTED",
+        terikatWarga: b.user
+          ? {
+              id: b.user.id,
+              nama: b.user.name,
+              telepon: b.user.phone || "-",
+              alamat: b.user.address || "-",
+            }
+          : null,
+        tanggalAktivasi: b.status === "ACTIVE_BOUND" ? b.updatedAt : null,
+        spesifikasiStiker: {
+          ukuranCm: "10 x 15 cm",
+          lebarMm: 100,
+          tinggiMm: 150,
+          resolusiPixel: "2500 x 3808 px",
+          orientasi: "Portrait (Tegak)",
+        },
+        asetUrl: {
+          qrCodeSvg: `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&margin=0&data=${encodeURIComponent(
+            b.qrCode
+          )}`,
+          templateBackgroundUrl: isAnorg
+            ? "/image/qr_template_anorganik.png"
+            : "/image/qr_template_organik.png",
+        },
+      };
+    });
+
+    return {
+      kelompok: {
+        id: kelompok.id,
+        nama: kelompok.name,
+        kelurahan: kelompok.kelurahan || "-",
+        cakupanRw: kelompok.cakupanRw || [],
+        dpl: kelompok.dpl?.name || kelompok.dplNamaMentah || "-",
+        dplPhone: kelompok.dpl?.phone || "-",
+      },
+      kuota: {
+        targetTotal: 20,
+        totalBins,
+        organikCount: organikBins.length,
+        anorganikCount: anorganikBins.length,
+        tersediaBelumTerpakai: availableBins.length,
+        sudahTerikatWarga: boundBins.length,
+        statusKelengkapan: totalBins >= 20 ? "LENGKAP_20_QR" : "BELUM_LENGKAP",
+      },
+      exportEndpoints: {
+        exportPrintHtml: `/api/v1/kkn/my-kelompok/qr-codes/export-print`,
+      },
+      petunjukUntukPercetakan: {
+        standarUkuran: "10 x 15 cm (Toleransi potong 2mm)",
+        bahanRekomendasi:
+          "Stiker Vinyl Matte / Glossy Anti Air (Outdoor/Tahan Hujan) atau Stiker Chromo Laminasi Doff",
+        metodeCetak:
+          "Buka file exportPrintHtml di Chrome/Edge, lalu tekan Print (Ctrl+P) dengan ukuran kertas 10x15cm atau A4.",
+      },
+      items,
+    };
+  }
+
+  /**
+   * Export Printable 10x15cm HTML for Mahasiswa KKN's specific Kelompok (Strict Isolation)
+   */
+  async exportMyKelompokQrHtml(userId: string, userRole: string, requestedKelompokId?: string) {
+    const qrData = await this.getMyKelompokQrCodes(userId, userRole, requestedKelompokId);
+    const { superUserService } = await import("./superUserService.js");
+    const htmlContent = await superUserService.exportKelompokQrPdfHtml(qrData.kelompok.id);
+    return {
+      kelompokNama: qrData.kelompok.nama,
+      htmlContent,
     };
   }
 }

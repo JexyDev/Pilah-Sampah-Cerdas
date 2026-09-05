@@ -309,6 +309,7 @@ model Bin {
   currentVolumeLiter    Decimal           @default(0.0) @map("volume_sekarang_liter") @db.Decimal(5, 2)
   rwId                  Int?              @map("id_rw")
   kelurahanId           String?           @map("id_kelurahan")
+  kelompokId            String?           @map("id_kelompok")
   createdAt             DateTime          @default(now()) @map("dibuat_pada")
   updatedAt             DateTime          @updatedAt @map("diperbarui_pada")
   latitude              Decimal?          @db.Decimal(11, 8)
@@ -334,7 +335,9 @@ model Bin {
   registeredByStudent   User?             @relation("StudentRegisteredBins", fields: [registeredByStudentId], references: [id])
   user                  User?             @relation("UserBins", fields: [userId], references: [id])
   rw                    Rw?               @relation(fields: [rwId], references: [id])
+  kelompok              KelompokKkn?      @relation(fields: [kelompokId], references: [id])
 
+  @@index([kelompokId])
   @@map("tempat_sampah")
 }
 
@@ -384,6 +387,7 @@ model KelompokKkn {
   mplId                 String?                 @map("id_mpl")
   // QC-27: Link folder Google Drive untuk monitoring laporan dan portofolio KKN
   linkGoogleDrive       String?                 @map("link_google_drive")
+  qrDownloadedAt        DateTime?               @map("qr_diunduh_pada")
   // === SMART ZONE: Auto-generated polygon dari GPS mahasiswa aktif ===
   autoPolygon           Json?                   @map("auto_polygon")
   autoPolygonUpdatedAt  DateTime?               @map("auto_polygon_updated_at")
@@ -403,6 +407,7 @@ model KelompokKkn {
   logbooks              LogbookKkn[]
   dplLogbooks           LogbookDpl[]
   presensiMandiri       PresensiMandiri[]
+  bins                  Bin[]
 
   @@index([dplId])
   @@map("kelompok_kkn")

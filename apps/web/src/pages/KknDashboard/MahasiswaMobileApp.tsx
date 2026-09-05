@@ -20,6 +20,7 @@ import api from "../../utils/api";
 export const MahasiswaMobileApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"beranda" | "presensi" | "logbook" | "proker" | "profil">("beranda");
   const [isLogbookModalOpen, setIsLogbookModalOpen] = useState(false);
+  const [logbookRefreshTrigger, setLogbookRefreshTrigger] = useState(0);
   const [prokerList, setProkerList] = useState<any[]>([]);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export const MahasiswaMobileApp: React.FC = () => {
                 <MahasiswaMobileHome
                   onNavigateTab={setActiveTab}
                   onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
+                  refreshTrigger={logbookRefreshTrigger}
                 />
               );
             case "presensi":
@@ -53,6 +55,7 @@ export const MahasiswaMobileApp: React.FC = () => {
               return (
                 <MahasiswaLogbookMobile
                   onOpenCreateModal={() => setIsLogbookModalOpen(true)}
+                  refreshTrigger={logbookRefreshTrigger}
                 />
               );
             case "proker":
@@ -64,6 +67,7 @@ export const MahasiswaMobileApp: React.FC = () => {
                 <MahasiswaMobileHome
                   onNavigateTab={setActiveTab}
                   onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
+                  refreshTrigger={logbookRefreshTrigger}
                 />
               );
           }
@@ -75,7 +79,7 @@ export const MahasiswaMobileApp: React.FC = () => {
         isOpen={isLogbookModalOpen}
         onClose={() => setIsLogbookModalOpen(false)}
         onSuccess={() => {
-          // If in logbook tab, page can refresh
+          setLogbookRefreshTrigger((prev) => prev + 1);
         }}
         prokerList={prokerList}
       />

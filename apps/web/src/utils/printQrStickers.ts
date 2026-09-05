@@ -7,6 +7,7 @@
  */
 
 import toast from "react-hot-toast";
+import JSZip from "jszip";
 
 export interface QrStickerItem {
   id?: string;
@@ -231,13 +232,12 @@ export const generatePosterHtml = (
           z-index: 1;
         }
 
-        /* QR Code Overlay (Precision calibrated: Left ~10.69%, Top ~69.82%, Size ~33.68%) */
+        /* QR Code Overlay (Precision calibrated: Left 31.36%, Width 37.28%, Height 24.47%) */
         .qr-overlay {
           position: absolute;
-          left: 10.69%;
-          top: 69.82%;
-          width: 33.68%;
-          height: 22.46%;
+          left: 31.36%;
+          width: 37.28%;
+          height: 24.47%;
           z-index: 10;
           display: flex;
           align-items: center;
@@ -245,6 +245,14 @@ export const generatePosterHtml = (
           background: #ffffff;
           padding: 1.5%;
           box-sizing: border-box;
+        }
+
+        .theme-anorganik .qr-overlay {
+          top: 42.91%;
+        }
+
+        .theme-organik .qr-overlay {
+          top: 42.59%;
         }
 
         .qr-code-img {
@@ -256,7 +264,7 @@ export const generatePosterHtml = (
           display: block;
         }
 
-        /* Serial Code Text Overlay */
+        /* Serial Code Text Overlay (Precision calibrated: Left 52.00%, Width 41.12%, Height 4.41%) */
         .pill-overlay {
           position: absolute;
           z-index: 10;
@@ -270,26 +278,23 @@ export const generatePosterHtml = (
           white-space: nowrap;
           line-height: 1;
           box-sizing: border-box;
+          width: 41.12%;
+          left: 52.00%;
+          height: 4.41%;
         }
 
         /* Organik Pill Badge Position & Styling */
         .pill-organik {
-          left: 54.61%;
-          top: 89.45%;
-          width: 38.21%;
-          height: 2.93%;
+          top: 85.7%;
           color: #ffffff;
           font-size: 8.5pt;
         }
 
         /* Anorganik Pill Badge Position & Styling */
         .pill-anorganik {
-          left: 53.44%;
-          top: 91.3%;
-          width: 37.48%;
-          height: 2.34%;
+          top: 86.0%;
           color: #000000;
-          font-size: 8.2pt;
+          font-size: 8.5pt;
         }
 
         /* A4 Multi-grid mode */
@@ -412,8 +417,8 @@ export const generatePosterHtml = (
             const qrImg = card.querySelector('.qr-code-img');
 
             const canvas = document.createElement('canvas');
-            canvas.width = 1366; // High-Res 2x (683 x 2)
-            canvas.height = 2048; // High-Res 2x (1024 x 2)
+            canvas.width = 2500;
+            canvas.height = 3808;
             const ctx = canvas.getContext('2d');
             if (!ctx) continue;
 
@@ -430,15 +435,18 @@ export const generatePosterHtml = (
               });
             }
 
-            // Draw QR Code onto Canvas (bounds: x: 146, y: 1430, w: 460, h: 460)
+            const isAnorg = category.includes('ANORGANIK');
+            const qrY = isAnorg ? 1634 : 1622;
+
+            // Draw QR Code onto Canvas (bounds: x: 784, y: 1622/1634, w: 932, h: 932)
             await new Promise(r => {
               const img = new Image();
               img.crossOrigin = 'anonymous';
               img.onload = () => {
                 // White backing
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(146, 1430, 460, 460);
-                ctx.drawImage(img, 156, 1440, 440, 440);
+                ctx.fillRect(784, qrY, 932, 932);
+                ctx.drawImage(img, 784, qrY, 932, 932);
                 r();
               };
               img.onerror = () => r();
@@ -446,17 +454,16 @@ export const generatePosterHtml = (
             });
 
             // Draw Serial text on pill
-            const isAnorg = category.includes('ANORGANIK');
-            ctx.font = '900 30px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+            ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             if (isAnorg) {
               ctx.fillStyle = '#000000';
-              ctx.fillText(serial, 985, 1895);
+              ctx.fillText(serial, 1814, 3357);
             } else {
               ctx.fillStyle = '#ffffff';
-              ctx.fillText(serial, 1007, 1862);
+              ctx.fillText(serial, 1814, 3348);
             }
 
             // Trigger download
@@ -507,4 +514,188 @@ export const printQrStickers = (
   printWindow.document.open();
   printWindow.document.write(htmlContent);
   printWindow.document.close();
+};
+
+/**
+ * Download Kelompok ZIP bundle containing:
+ * - 20 HD sticker PNG files (10 Organik + 10 Anorganik) with size 2500 x 3808 px (10x15cm)
+ * - Printable HTML document for one-click printing without internet
+ * - Guidance text file
+ */
+export const downloadKelompokZip = async (
+  kelompokName: string,
+  items: QrStickerItem[],
+  onProgress?: (progressText: string) => void
+): Promise<void> => {
+  if (!items || items.length === 0) {
+    toast.error("Tidak ada QR Code pada kelompok ini.");
+    return;
+  }
+
+  const safeKelompok = kelompokName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+  const zip = new JSZip();
+
+  // Helper to load image
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = (err) => reject(err);
+      img.src = src;
+    });
+  };
+
+  // Sort items: Organik first, then Anorganik
+  const organikItems = items.filter((item) => {
+    const cat = (item.category?.name || "").toUpperCase();
+    return !cat.includes("ANORGANIK") && !cat.includes("NON_ORGANIC") && !item.qrCode.includes("-AGN-");
+  });
+  const anorganikItems = items.filter((item) => {
+    const cat = (item.category?.name || "").toUpperCase();
+    return cat.includes("ANORGANIK") || cat.includes("NON_ORGANIC") || item.qrCode.includes("-AGN-");
+  });
+
+  const sortedItems = [...organikItems, ...anorganikItems];
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const bgOrganikSrc = `${origin}/image/qr_template_organik.png`;
+  const bgAnorganikSrc = `${origin}/image/qr_template_anorganik.png`;
+
+  let bgOrganikImg: HTMLImageElement | null = null;
+  let bgAnorganikImg: HTMLImageElement | null = null;
+
+  try {
+    bgOrganikImg = await loadImage(bgOrganikSrc);
+  } catch (e) {
+    console.warn("Failed loading bgOrganikImg", e);
+  }
+
+  try {
+    bgAnorganikImg = await loadImage(bgAnorganikSrc);
+  } catch (e) {
+    console.warn("Failed loading bgAnorganikImg", e);
+  }
+
+  onProgress?.(`Menyiapkan ${sortedItems.length} stiker HD...`);
+
+  for (let i = 0; i < sortedItems.length; i++) {
+    const item = sortedItems[i];
+    const catName = (item.category?.name || "").toUpperCase();
+    const isAnorg =
+      catName.includes("ANORGANIK") ||
+      catName.includes("NON_ORGANIC") ||
+      catName.includes("AGN") ||
+      item.qrCode.includes("-AGN-");
+
+    const categoryPrefix = isAnorg ? "ANORGANIK" : "ORGANIK";
+    const orderNum = String(i + 1).padStart(2, "0");
+    const serial = item.qrCode || `BSK-${isAnorg ? "AGN" : "OGN"}-${orderNum}`;
+    const fileName = `${orderNum}_${categoryPrefix}_${serial}.png`;
+
+    onProgress?.(`Memproses stiker ${i + 1}/${sortedItems.length}: ${fileName}...`);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 2500;
+    canvas.height = 3808;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+
+    // 1. Draw background
+    const bgImg = isAnorg ? bgAnorganikImg : bgOrganikImg;
+    if (bgImg) {
+      ctx.drawImage(bgImg, 0, 0, 2500, 3808);
+    } else {
+      ctx.fillStyle = isAnorg ? "#F59E0B" : "#10B981";
+      ctx.fillRect(0, 0, 2500, 3808);
+    }
+
+    // 2. Draw QR code with white backing
+    const qrY = isAnorg ? 1634 : 1622;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&margin=0&data=${encodeURIComponent(
+      serial
+    )}`;
+
+    try {
+      const qrImg = await loadImage(qrUrl);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(784, qrY, 932, 932);
+      ctx.drawImage(qrImg, 784, qrY, 932, 932);
+    } catch (e) {
+      console.warn("Gagal memuat QR server untuk", serial, e);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(784, qrY, 932, 932);
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 40px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(serial, 784 + 466, qrY + 466);
+    }
+
+    // 3. Draw Serial Number on Pill
+    ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    if (isAnorg) {
+      ctx.fillStyle = "#000000";
+      ctx.fillText(serial, 1814, 3357);
+    } else {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(serial, 1814, 3348);
+    }
+
+    // Convert canvas to blob and add to ZIP
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png", 1.0)
+    );
+    if (blob) {
+      zip.file(fileName, blob);
+    }
+  }
+
+  // Add Printable HTML file into ZIP
+  const printHtml = generatePosterHtml(sortedItems, `Stiker QR Code BERSEKA - ${kelompokName}`);
+  zip.file(`CETAK_SEMUA_10x15CM_${safeKelompok}.html`, printHtml);
+
+  // Add Readme / Guide
+  const guideText = `======================================================================
+  PANDUAN DISTRIBUSI & PENEMPELAN STIKER TEMPAT SAMPAH BERSEKA (10x15 CM)
+  KELOMPOK: ${kelompokName}
+======================================================================
+
+Paket ZIP ini berisi 20 stiker QR Code resmi BERSEKA:
+- 10 Stiker Hijau : TEMPAT SAMPAH ORGANIK (Sisa makanan, sayur, buah, daun)
+- 10 Stiker Kuning: TEMPAT SAMPAH ANORGANIK (Botol plastik, kardus, kaleng, gelas)
+
+PETUNJUK PENCETAKAN & PENEMPELAN:
+1. Ukuran baku stiker adalah 10 x 15 cm (portrait / tegak).
+2. Cetak pada bahan stiker vinyl / stiker tahan air (waterproof) agar awet terkena air hujan dan panas matahari.
+3. Bersihkan permukaan tempat sampah sebelum menempelkan stiker agar merekat kuat.
+4. Pasang stiker Organik pada wadah hijau dan stiker Anorganik pada wadah kuning di rumah warga binaan / posko.
+5. Pastikan kode QR tidak terlipat atau tertutup agar mudah dipindai (scan) oleh warga & petugas BERSEKA.
+
+CARA CETAK SEMUA SEKALIGUS:
+- Buka file "CETAK_SEMUA_10x15CM_${safeKelompok}.html" menggunakan Google Chrome / Browser.
+- Tekan Ctrl + P (Print).
+- Pada dialog cetak, pilih ukuran kertas "10 x 15 cm" atau "A4", lalu pilih "Cetak".
+
+Salam Bersih & Berdaya,
+Tim BERSEKA
+`;
+  zip.file("PANDUAN_PENEMPELAN_STIKER.txt", guideText);
+
+  onProgress?.("Mengompresi berkas ZIP...");
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+
+  // Trigger browser download
+  const downloadUrl = URL.createObjectURL(zipBlob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `BERSEKA_QR_10x15CM_${safeKelompok}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(downloadUrl);
+
+  toast.success(`Paket ZIP QR untuk "${kelompokName}" berhasil diunduh!`);
 };
