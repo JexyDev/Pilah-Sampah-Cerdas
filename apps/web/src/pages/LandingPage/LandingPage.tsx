@@ -790,15 +790,27 @@ export const LandingPage: React.FC = () => {
         </section>
 
         {/* =========================================================
-            4. PROGRAM BERSEKA
+            4. 6 PROGRAM KKN BERSEKA
             ========================================================= */}
         <section className="landing-section" id="program">
           <div className="landing-container">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">Program BERSEKA</h2>
+            <div className="landing-section-head flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+              <div>
+                <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800 }}>
+                  6 Program <span style={{ color: "var(--green-700)" }}>KKN BERSEKA</span>
+                </h2>
+                <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginTop: "4px", maxWidth: "680px", lineHeight: "1.5" }}>
+                  Inovasi mahasiswa dan warga untuk memperkuat tata kelola sampah berbasis teknologi, lingkungan, dan ekonomi sirkular di Kecamatan Coblong.
+                </p>
+              </div>
+              <div className="hidden sm:flex flex-col items-end shrink-0">
+                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--green-900)", letterSpacing: "0.02em" }}>KKN Berdampak</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--green-700)" }}>UNIKOM 2026</span>
+                <span style={{ width: "42px", height: "2.5px", background: "var(--green-500)", borderRadius: "99px", marginTop: "4px" }}></span>
+              </div>
             </div>
             <div className="landing-grid-3">
-              {programs.slice(0, 3).map((item) => (
+              {programs.slice(0, 6).map((item) => (
                 <article key={item.id} className="landing-card">
                   <figure className="landing-media">
                     <img
@@ -834,11 +846,55 @@ export const LandingPage: React.FC = () => {
             ========================================================= */}
         <section className="landing-section" id="pasar">
           <div className="landing-container">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">Pasar BERSEKA</h2>
+            <div className="landing-section-head flex-col items-start gap-1 mb-4">
+              <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800 }}>
+                Pasar BERSEKA
+              </h2>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+                Tukar poin partisipasi menjadi produk ramah lingkungan dan karya kreatif warga.
+              </p>
             </div>
+
+            {/* Location Notice Banner */}
+            <div
+              style={{
+                background: "#eef7f2",
+                border: "1px solid #d1fae5",
+                borderRadius: "12px",
+                padding: "12px 18px",
+                marginBottom: "24px",
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+              }}
+            >
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  background: "#dcfce7",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                  color: "#0d3d24",
+                }}
+              >
+                <MapPin size={20} strokeWidth={2.2} />
+              </div>
+              <p style={{ margin: 0, fontSize: "0.86rem", color: "#2d4436", lineHeight: "1.45" }}>
+                <strong style={{ color: "#0d3d24", fontWeight: 700 }}>
+                  Lokasi penukaran: Posko KKN BERSEKA di masing-masing RW, Kecamatan Coblong, Kota Bandung.
+                </strong>
+                <br />
+                <span style={{ color: "#52735e", fontSize: "0.82rem" }}>
+                  Tunjukkan kode penukaran kepada petugas saat mengambil produk.
+                </span>
+              </p>
+            </div>
+
             <div className="landing-grid-3">
-              {products.slice(0, 3).map((prod) => (
+              {products.slice(0, 6).map((prod) => (
                 <article
                   key={prod.id}
                   className="landing-card landing-product"
@@ -1047,7 +1103,7 @@ export const LandingPage: React.FC = () => {
               </button>
             </div>
             <div className="landing-grid-3">
-              {newsList.slice(0, 3).map((news) => (
+              {newsList.slice(0, 6).map((news) => (
                 <article
                   key={news.id}
                   className="landing-card"
