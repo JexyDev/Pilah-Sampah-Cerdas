@@ -27,6 +27,7 @@ import {
   ChevronRight,
   Check,
   Loader2,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../utils/api";
@@ -36,6 +37,7 @@ import {
 } from "../../services/logbookService";
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { downloadImageFile } from "../../utils/photoUtils";
 import { PageHeader } from "../../components/common/PageHeader";
 
 interface StudentOption {
@@ -1450,12 +1452,21 @@ export const KelolaLogbookPage: React.FC = () => {
 
             <div className="p-6 space-y-3.5 max-h-[75vh] overflow-y-auto text-xs">
               {detailItem.fotoBuktiUrl && (
-                <div className="w-full h-56 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black flex items-center justify-center">
+                <div className="relative w-full h-56 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black flex items-center justify-center group">
                   <img
                     src={resolveImageUrl(detailItem.fotoBuktiUrl)}
                     alt="Dokumentasi"
                     className="max-h-full max-w-full object-contain"
                   />
+                  <button
+                    type="button"
+                    onClick={() => downloadImageFile(detailItem.fotoBuktiUrl, `logbook-${detailItem.penulisNim || "mhs"}.jpg`)}
+                    className="absolute bottom-3 right-3 px-3 py-1.5 bg-[#035941] hover:bg-[#02402e] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition cursor-pointer"
+                    title="Unduh Foto Bukti"
+                  >
+                    <Download size={14} />
+                    <span>Unduh Foto</span>
+                  </button>
                 </div>
               )}
 
