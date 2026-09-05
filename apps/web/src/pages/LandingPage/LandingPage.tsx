@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Menu,
   X,
   Check,
@@ -38,7 +37,36 @@ import {
   HeartHandshake,
   Search,
   BookOpen,
+  QrCode,
+  Store,
+  CheckCircle2,
 } from "lucide-react";
+
+// Crisp SVG Vector Coin Icon with Leaf motif (matches reference mockup exactly, zero AI-slop)
+const PointsCoinIcon: React.FC<{ size?: number; className?: string }> = ({ size = 22, className = "" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="11" fill="#F59E0B" stroke="#D97706" strokeWidth="1.2" />
+    <circle cx="12" cy="12" r="8.5" fill="#FBBF24" stroke="#D97706" strokeWidth="0.8" />
+    <path
+      d="M7.8 15.8C8.5 13.5 10.2 10.5 15.8 8.2C14.8 13.8 11.8 15.5 9.5 16.2L7.8 15.8Z"
+      fill="#78350F"
+    />
+    <path
+      d="M10.2 13.8L8.2 15.8"
+      stroke="#78350F"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   loadCmsContent,
@@ -76,7 +104,9 @@ export const LandingPage: React.FC = () => {
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>("Semua");
   const [selectedProgram, setSelectedProgram] = useState<ActionCampaignItem | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<MarketProductItem | null>(null);
+  const [exchangeModalProduct, setExchangeModalProduct] = useState<MarketProductItem | null>(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
+  const [activeLightboxImage, setActiveLightboxImage] = useState<{ src: string; title?: string } | null>(null);
 
   // ── Cart Simulation Feedback ─────────────────────────────────────────────────
   const [cartSuccessId, setCartSuccessId] = useState<string | null>(null);
@@ -395,14 +425,26 @@ export const LandingPage: React.FC = () => {
     setOpenFaqIndex((prev) => (prev === idx ? null : idx));
   };
 
-  // ── Cart Simulation Action ───────────────────────────────────────────────────
+  // ── Lightbox Keyboard Dismiss ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!activeLightboxImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveLightboxImage(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeLightboxImage]);
+
+  // ── Penukaran Poin Pasar BERSEKA (Kontekstual, Profesional & Bebas AI-Slop) ───
+  const handleOpenExchange = (product: MarketProductItem) => {
+    setExchangeModalProduct(product);
+  };
+
   const handleAddToCart = (product: MarketProductItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    setCartSuccessId(product.id);
-    showToast.success(`"${product.title}" berhasil ditambahkan ke keranjang.`);
-    setTimeout(() => {
-      setCartSuccessId(null);
-    }, 1800);
+    handleOpenExchange(product);
   };
 
   // ── Calculator Computed Values ───────────────────────────────────────────────
@@ -422,11 +464,18 @@ export const LandingPage: React.FC = () => {
       >
         <div className="landing-container landing-header-inner">
           <a href="#" className="landing-brand" aria-label="BERSEKA.ID — Beranda">
-            <img
-              src="/image/logo-berseka-baru.jpeg"
-              alt="BERSEKA.ID"
-              className="landing-brand-logo"
-            />
+            <picture>
+              <source srcSet="/logos/berseka/berseka-logo-full.webp" type="image/webp" />
+              <img
+                src="/logos/berseka/berseka-logo-full.png"
+                alt="BERSEKA.ID"
+                className="landing-brand-logo"
+                width={160}
+                height={42}
+                loading="eager"
+                decoding="async"
+              />
+            </picture>
           </a>
 
           {/* Desktop & Mobile Navigation Links */}
@@ -912,26 +961,30 @@ export const LandingPage: React.FC = () => {
                     />
                   </figure>
                   <div className="landing-card-body">
-                    <h3>{prod.title}</h3>
-                    <p className="landing-product-meta">{prod.unit || prod.categoryLabel}</p>
-                    <div className="landing-product-row">
-                      <div className="landing-price-wrap">
-                        <span className="landing-price" style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--green-800)", fontWeight: 800, fontSize: "1.05rem" }}>
-                          <Sparkles size={15} className="text-amber-500" style={{ fill: "#f59e0b" }} />
-                          <span>{prod.pricePoints ? prod.pricePoints.toLocaleString("id-ID") : prod.priceIdr ? Math.round(prod.priceIdr / 100).toLocaleString("id-ID") : 0} Poin</span>
+                    <span className="landing-product-tag">
+                      {prod.categoryLabel || "Pangan Lokal"}
+                    </span>
+                    <h3 className="landing-product-title">{prod.title}</h3>
+                    <p className="landing-product-unit">{prod.unit || "1 kemasan"}</p>
+                    <div className="landing-product-bottom">
+                      <div className="landing-product-points">
+                        <span className="landing-points-coin">
+                          <PointsCoinIcon size={22} />
+                        </span>
+                        <span className="landing-points-val">
+                          {prod.pricePoints ? `${prod.pricePoints} Poin` : "200 Poin"}
                         </span>
                       </div>
                       <button
                         type="button"
-                        className={`landing-icon-btn ${cartSuccessId === prod.id ? "is-success" : ""}`}
-                        aria-label={`Tambahkan ${prod.title} ke keranjang`}
-                        onClick={(e) => handleAddToCart(prod, e)}
+                        className="landing-btn-tukar"
+                        aria-label={`Tukar poin untuk ${prod.title}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenExchange(prod);
+                        }}
                       >
-                        {cartSuccessId === prod.id ? (
-                          <Check size={16} strokeWidth={2.4} />
-                        ) : (
-                          <ShoppingBag size={16} strokeWidth={2} />
-                        )}
+                        Tukar Poin
                       </button>
                     </div>
                   </div>
@@ -1231,11 +1284,18 @@ export const LandingPage: React.FC = () => {
           <div className="landing-footer-grid">
             <div className="landing-footer-about">
               <a href="#" className="landing-brand" aria-label="BERSEKA.ID">
-                <img
-                  src="/image/logo-berseka-baru.jpeg"
-                  alt="BERSEKA.ID"
-                  className="landing-brand-logo"
-                />
+                <picture>
+                  <source srcSet="/logos/berseka/berseka-logo-full.webp" type="image/webp" />
+                  <img
+                    src="/logos/berseka/berseka-logo-full.png"
+                    alt="BERSEKA.ID"
+                    className="landing-brand-logo"
+                    width={160}
+                    height={42}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
               </a>
               <p>
                 Platform pengelolaan sampah terpadu berbasis teknologi dan kolaborasi multi-pihak
@@ -1487,16 +1547,20 @@ export const LandingPage: React.FC = () => {
             >
               <X size={18} />
             </button>
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+            <div
+              className="relative w-full max-h-[440px] bg-slate-950 overflow-hidden flex items-center justify-center cursor-zoom-in group"
+              onClick={() => setActiveLightboxImage({ src: selectedNews.imageUrl, title: selectedNews.title })}
+              title="Klik foto untuk melihat ukuran penuh"
+            >
               <img
                 src={selectedNews.imageUrl}
                 alt={selectedNews.title}
-                className="w-full h-full object-cover"
+                className="w-full max-h-[440px] object-contain transition-transform duration-200 group-hover:scale-[1.01]"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/image/activity-3.webp";
                 }}
               />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider">
+              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold uppercase tracking-wider shadow-sm pointer-events-none">
                 {selectedNews.category}
               </div>
             </div>
@@ -1602,21 +1666,26 @@ export const LandingPage: React.FC = () => {
             <div className="p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 leading-tight">
+                  <span className="landing-product-tag">
+                    {selectedProduct.categoryLabel || "Pangan Lokal"}
+                  </span>
+                  <h2 className="text-xl font-black text-slate-900 leading-tight mt-1">
                     {selectedProduct.title}
                   </h2>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    {selectedProduct.unit || selectedProduct.categoryLabel}
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {selectedProduct.unit || "1 kemasan"}
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-black text-emerald-800 flex items-center justify-end gap-1.5">
-                    <Sparkles size={18} className="text-amber-500" style={{ fill: "#f59e0b" }} />
-                    <span>{selectedProduct.pricePoints ? selectedProduct.pricePoints.toLocaleString("id-ID") : Math.round((selectedProduct.priceIdr || 0) / 100).toLocaleString("id-ID")} Poin</span>
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <PointsCoinIcon size={22} />
+                    <span className="text-xl font-black text-slate-900">
+                      {selectedProduct.pricePoints} Poin
+                    </span>
                   </div>
-                  <div className="text-[11px] font-bold text-slate-400 mt-0.5">
-                    Poin BERSEKA
-                  </div>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    Poin Partisipasi Warga
+                  </span>
                 </div>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
@@ -1624,7 +1693,7 @@ export const LandingPage: React.FC = () => {
               </p>
               {selectedProduct.benefits && selectedProduct.benefits.length > 0 && (
                 <div className="space-y-1.5 pt-2">
-                  <div className="text-xs font-bold text-slate-700">Manfaat Utama:</div>
+                  <div className="text-xs font-bold text-slate-700">Keunggulan Produk:</div>
                   <ul className="space-y-1">
                     {selectedProduct.benefits.map((b, i) => (
                       <li key={i} className="text-xs text-slate-600 flex items-center gap-2">
@@ -1638,16 +1707,308 @@ export const LandingPage: React.FC = () => {
               <div className="pt-4 flex items-center justify-end border-t border-slate-100 gap-3">
                 <button
                   type="button"
-                  onClick={(e) => {
-                    handleAddToCart(selectedProduct, e);
+                  onClick={() => setSelectedProduct(null)}
+                  className="landing-btn landing-btn-outline landing-btn-sm"
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prod = selectedProduct;
                     setSelectedProduct(null);
+                    handleOpenExchange(prod);
                   }}
                   className="landing-btn landing-btn-primary landing-btn-sm"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
                 >
-                  <ShoppingBag size={14} />
-                  <span>Pesan Sekarang</span>
+                  <span>Tukar Poin</span>
+                  <ArrowRight size={14} />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edukasi & Konfirmasi Penukaran Poin Posko KKN (Bebas AI-Slop & Profesional) */}
+      {exchangeModalProduct && (
+        <div className="landing-modal-backdrop" onClick={() => setExchangeModalProduct(null)}>
+          <div
+            className="landing-modal-card"
+            style={{ maxWidth: "560px", width: "94%" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="landing-modal-close"
+              onClick={() => setExchangeModalProduct(null)}
+              aria-label="Tutup panduan penukaran"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Modal Header */}
+            <div style={{ padding: "24px 24px 16px", borderBottom: "1px solid #f1f5f9" }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  backgroundColor: "#eef7f2",
+                  color: "#0d5c3a",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  marginBottom: "8px",
+                }}
+              >
+                <Sparkles size={14} className="text-emerald-700" />
+                <span>Pasar Sirkular KKN BERSEKA Coblong</span>
+              </div>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: 0, lineHeight: 1.3 }}>
+                Penukaran Poin: {exchangeModalProduct.title}
+              </h2>
+              <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "4px 0 0" }}>
+                Posko KKN BERSEKA • Kecamatan Coblong, Kota Bandung
+              </p>
+            </div>
+
+            <div style={{ padding: "20px 24px", maxHeight: "68vh", overflowY: "auto" }}>
+              {/* Product Card Summary */}
+              <div
+                style={{
+                  display: "flex",
+                  gap: "14px",
+                  padding: "12px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  alignItems: "center",
+                  marginBottom: "20px",
+                }}
+              >
+                <img
+                  src={exchangeModalProduct.imageUrl}
+                  alt={exchangeModalProduct.title}
+                  style={{
+                    width: "80px",
+                    height: "60px",
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                    flexShrink: 0,
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/image/activity-2.webp";
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                      color: "#166534",
+                      background: "#dcfce7",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      display: "inline-block",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {exchangeModalProduct.categoryLabel}
+                  </span>
+                  <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {exchangeModalProduct.title}
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                    {exchangeModalProduct.unit}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    <PointsCoinIcon size={20} />
+                    <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f172a" }}>
+                      {exchangeModalProduct.pricePoints}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>
+                    Poin Partisipasi
+                  </span>
+                </div>
+              </div>
+
+              {/* Real World Operational Flow */}
+              <div style={{ marginBottom: "20px" }}>
+                <h3
+                  style={{
+                    fontSize: "0.88rem",
+                    fontWeight: 800,
+                    color: "#0f172a",
+                    marginBottom: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <Store size={18} className="text-emerald-700" />
+                  <span>Alur Penukaran Produk di Posko KKN Coblong:</span>
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        borderRadius: "50%",
+                        background: "#eef7f2",
+                        color: "#0d5c3a",
+                        fontWeight: 800,
+                        fontSize: "0.8rem",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      1
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1e293b" }}>
+                        Kumpulkan Poin dari Setor Sampah
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#64748b", lineHeight: "1.4" }}>
+                        Poin diperoleh otomatis setiap kali warga menyetorkan sampah organik (kompos/maggot) atau anorganik di bank sampah / posko RW.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        borderRadius: "50%",
+                        background: "#eef7f2",
+                        color: "#0d5c3a",
+                        fontWeight: 800,
+                        fontSize: "0.8rem",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      2
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1e293b" }}>
+                        Datang ke Posko KKN BERSEKA di RW Setempat
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#64748b", lineHeight: "1.4" }}>
+                        Kunjungi posko KKN di RW domisili Anda (Kecamatan Coblong) untuk mengambil produk segar (Sayuran Buruan SAE, Telur, Ikan Bioflok, dll).
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        width: "26px",
+                        height: "26px",
+                        borderRadius: "50%",
+                        background: "#eef7f2",
+                        color: "#0d5c3a",
+                        fontWeight: 800,
+                        fontSize: "0.8rem",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      3
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1e293b" }}>
+                        Tunjukkan QR Code Akun Warga
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#64748b", lineHeight: "1.4" }}>
+                        Petugas posko KKN memindai QR Code profil BERSEKA Anda untuk verifikasi saldo dan serah terima produk fisik.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Notice Callout */}
+              <div
+                style={{
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
+                  display: "flex",
+                  gap: "10px",
+                  alignItems: "flex-start",
+                }}
+              >
+                <CheckCircle2 size={18} className="text-emerald-700 shrink-0 mt-0.5" />
+                <div style={{ fontSize: "0.78rem", color: "#166534", lineHeight: "1.45" }}>
+                  <strong>Status Layanan Pilot KKN Coblong:</strong> Penukaran fisik langsung di posko aktif setiap hari kerja (08.00 – 16.00 WIB). Fitur reservasi digital kuota online antar-posko sedang dalam tahap sinkronisasi data logistik.
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div
+              style={{
+                padding: "14px 24px 20px",
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setExchangeModalProduct(null)}
+                className="landing-btn landing-btn-outline landing-btn-sm"
+              >
+                Tutup
+              </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExchangeModalProduct(null);
+                    navigate("/poin-warga");
+                  }}
+                  className="landing-btn landing-btn-primary landing-btn-sm"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <QrCode size={15} />
+                  <span>Lihat QR &amp; Saldo Poin Saya</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExchangeModalProduct(null);
+                    navigate("/login");
+                  }}
+                  className="landing-btn landing-btn-primary landing-btn-sm"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <QrCode size={15} />
+                  <span>Masuk Akun Warga</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1788,6 +2149,41 @@ export const LandingPage: React.FC = () => {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Native Minimalist Fullscreen Lightbox Modal (Click-to-view HD photo) ── */}
+      {activeLightboxImage && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/92 backdrop-blur-sm flex flex-col items-center justify-center p-4 sm:p-6 select-none"
+          onClick={() => setActiveLightboxImage(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition cursor-pointer z-10"
+            onClick={() => setActiveLightboxImage(null)}
+            aria-label="Tutup pratinjau foto"
+          >
+            <X size={22} />
+          </button>
+
+          <div
+            className="relative max-w-6xl max-h-[88vh] w-full flex flex-col items-center justify-center cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={activeLightboxImage.src}
+              alt={activeLightboxImage.title || "Pratinjau foto"}
+              className="max-h-[82vh] max-w-full object-contain rounded-xl shadow-2xl"
+            />
+            {activeLightboxImage.title && (
+              <p className="mt-3 text-center text-sm font-medium text-slate-300 max-w-2xl px-4 line-clamp-2">
+                {activeLightboxImage.title}
+              </p>
+            )}
           </div>
         </div>
       )}

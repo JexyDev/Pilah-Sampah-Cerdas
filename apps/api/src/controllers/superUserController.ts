@@ -360,7 +360,7 @@ export class SuperUserController {
       res.status(200).json({
         success: true,
         data,
-        message: "Paket 10 QR Code (5 Organik & 5 Anorganik) berhasil digenerate untuk kelompok ini",
+        message: "Paket 20 QR Code (10 Organik & 10 Anorganik) berhasil digenerate untuk kelompok ini",
       });
     } catch (error: any) {
       console.error("[superUserController] generateKelompokQrBundle error:", error);

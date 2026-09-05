@@ -772,7 +772,22 @@ export class KknAttendanceService {
 
         if (todaySch) {
           currentScheduleId = todaySch.id;
-          attendanceStatus = "BELUM_MULAI";
+          // Cek apakah mahasiswa sudah memiliki riwayat presensi hari ini (selesai/hadir)
+          const completedAtt = await prisma.activityAttendance.findFirst({
+            where: {
+              studentId: userId,
+              scheduleId: todaySch.id,
+            },
+            orderBy: { attendedAt: "desc" },
+          });
+
+          if (completedAtt) {
+            attendanceStatus = completedAtt.status;
+            inZoneMinutes = completedAtt.actualInZoneMinutes ?? 0;
+            activeAttendanceForSeconds = completedAtt;
+          } else {
+            attendanceStatus = "BELUM_MULAI";
+          }
         }
       }
     }

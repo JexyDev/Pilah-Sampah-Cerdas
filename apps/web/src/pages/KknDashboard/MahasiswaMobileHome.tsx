@@ -21,11 +21,13 @@ import { logbookApiService, type LogbookMahasiswaItem } from "../../services/log
 interface MahasiswaMobileHomeProps {
   onNavigateTab: (tab: "beranda" | "presensi" | "logbook" | "proker" | "profil") => void;
   onOpenLogbookModal: () => void;
+  refreshTrigger?: number;
 }
 
 export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
   onNavigateTab,
   onOpenLogbookModal,
+  refreshTrigger,
 }) => {
   const { user } = useAuthStore();
 
@@ -41,7 +43,7 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchDashboardData = async () => {
     try {

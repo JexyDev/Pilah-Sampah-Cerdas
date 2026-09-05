@@ -116,8 +116,8 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
       const img = new Image();
       img.src = event.target?.result as string;
       img.onload = () => {
-        const maxWidth = 1200;
-        const maxHeight = 1200;
+        const maxWidth = 2048;
+        const maxHeight = 2048;
         let { width, height } = img;
 
         if (width > maxWidth || height > maxHeight) {
@@ -135,8 +135,10 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL("image/webp", 0.85);
+          const compressedDataUrl = canvas.toDataURL("image/webp", 0.92);
           onChange(compressedDataUrl);
           showToast.success("Foto berhasil diunggah!");
         } else {
@@ -1905,15 +1907,23 @@ export const KurasiLandingPage: React.FC = () => {
                     onChange={(e) => {
                       const val = e.target.value as any;
                       const labels: Record<string, string> = {
-                        pupuk: "Pupuk & Kompos",
+                        pangan: "Pangan Lokal",
+                        buruan_sae: "Buruan SAE",
+                        pupuk: "Pupuk Organik",
+                        perikanan: "Perikanan",
+                        kerajinan: "Produk Kreatif",
+                        pakan: "Pakan Ternak",
                         ecoenzyme: "Eco-Enzyme",
-                        kerajinan: "Daur Ulang Kreatif",
                         bibit: "Bibit & Tanaman",
                       };
                       const colors: Record<string, string> = {
+                        pangan: "bg-emerald-100 text-emerald-800",
+                        buruan_sae: "bg-emerald-100 text-emerald-800",
                         pupuk: "bg-emerald-100 text-emerald-800",
+                        perikanan: "bg-emerald-100 text-emerald-800",
+                        kerajinan: "bg-emerald-100 text-emerald-800",
+                        pakan: "bg-emerald-100 text-emerald-800",
                         ecoenzyme: "bg-amber-100 text-amber-800",
-                        kerajinan: "bg-purple-100 text-purple-800",
                         bibit: "bg-green-100 text-green-800",
                       };
                       setProductForm({
@@ -1925,9 +1935,13 @@ export const KurasiLandingPage: React.FC = () => {
                     }}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
                   >
-                    <option value="pupuk">Pupuk &amp; Pakan Organik</option>
+                    <option value="pangan">Pangan Lokal</option>
+                    <option value="buruan_sae">Buruan SAE</option>
+                    <option value="pupuk">Pupuk Organik</option>
+                    <option value="perikanan">Perikanan</option>
+                    <option value="kerajinan">Produk Kreatif</option>
+                    <option value="pakan">Pakan Ternak</option>
                     <option value="ecoenzyme">Eco-Enzyme Kebersihan</option>
-                    <option value="kerajinan">Daur Ulang Kreatif</option>
                     <option value="bibit">Bibit &amp; Tanaman</option>
                   </select>
                 </div>

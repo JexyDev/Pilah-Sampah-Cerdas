@@ -2,7 +2,7 @@
  * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Modul Distribusi QR Kelompok KKN (Paket 10: 5 Organik + 5 Anorganik)
+ * Modul Distribusi QR Kelompok KKN (Paket 20: 10 Organik + 10 Anorganik)
  * Khusus Developer / Super User
  */
 
@@ -124,21 +124,21 @@ export const KelompokQrDistributionTab: React.FC = () => {
     return { total, siapUnduh, sudahUnduh, belumGenerate, tanpaGdrive };
   }, [data]);
 
-  // Action: Generate 10 QR Bundle
+  // Action: Generate 20 QR Bundle
   const handleGenerate10Qr = async (kelompok: KelompokDistributionItem) => {
-    if (kelompok.totalBins >= 10) {
-      toast.error(`Kelompok "${kelompok.name}" sudah memiliki kuota lengkap 10 QR Code.`);
+    if (kelompok.totalBins >= 20) {
+      toast.error(`Kelompok "${kelompok.name}" sudah memiliki kuota lengkap 20 QR Code.`);
       return;
     }
 
-    const confirmMsg = `Generate 10 QR Code (5 Organik & 5 Anorganik) untuk ${kelompok.name}?\nKode QR akan terikat eksklusif ke kelompok ini sehingga tidak dapat tertukar atau duplikat.`;
+    const confirmMsg = `Generate 20 QR Code (10 Organik & 10 Anorganik) untuk ${kelompok.name}?\nKode QR akan terikat eksklusif ke kelompok ini sehingga tidak dapat tertukar atau duplikat.`;
     if (!window.confirm(confirmMsg)) return;
 
     try {
       setGeneratingId(kelompok.id);
       const res = await api.post(`/super-user/kelompok-qr/${kelompok.id}/generate`);
       if (res.data?.success || res.status === 200) {
-        toast.success(res.data.message || `Paket 10 QR untuk ${kelompok.name} berhasil dibuat!`);
+        toast.success(res.data.message || `Paket 20 QR untuk ${kelompok.name} berhasil dibuat!`);
         fetchDistributionData();
       }
     } catch (error: any) {
@@ -175,10 +175,10 @@ export const KelompokQrDistributionTab: React.FC = () => {
     }
   };
 
-  // Action: Download ZIP (10 QR HD + Printable PDF + Panduan)
+  // Action: Download ZIP (20 QR HD + Printable PDF + Panduan)
   const handleDownloadZip = async (kelompok: KelompokDistributionItem) => {
     if (!kelompok.bins || kelompok.bins.length === 0) {
-      toast.error("Kelompok ini belum memiliki QR Code. Silakan klik 'Generate 10 QR' terlebih dahulu.");
+      toast.error("Kelompok ini belum memiliki QR Code. Silakan klik 'Generate 20 QR' terlebih dahulu.");
       return;
     }
 
@@ -245,7 +245,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
             {stats.siapUnduh}
           </p>
           <span className="text-[11px] text-amber-600/80 dark:text-amber-400/80">
-            10/10 QR Siap Dikirim
+            20/20 QR Siap Dikirim
           </span>
         </div>
 
@@ -301,10 +301,10 @@ export const KelompokQrDistributionTab: React.FC = () => {
             <div>
               <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <FolderArchive className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Distribusi Paket QR Kelompok KKN (10 Stiker: 5 Organik & 5 Anorganik)
+                Distribusi Paket QR Kelompok KKN (20 Stiker: 10 Organik & 10 Anorganik)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Alokasi terkunci anti-duplikasi: Unduh paket ZIP 10 file PNG resolusi tinggi + PDF cetak 10x15cm, lalu langsung buka Google Drive kelompok.
+                Alokasi terkunci anti-duplikasi: Unduh paket ZIP 20 file PNG resolusi tinggi + PDF cetak 10x15cm, lalu langsung buka Google Drive kelompok.
               </p>
             </div>
 
@@ -344,9 +344,9 @@ export const KelompokQrDistributionTab: React.FC = () => {
                 className="w-full text-xs bg-transparent text-slate-700 dark:text-slate-200 outline-hidden font-medium cursor-pointer"
               >
                 <option value="SEMUA">Semua Status Distribusi</option>
-                <option value="SIAP_UNDUH">Siap Diunduh (10/10 QR)</option>
+                <option value="SIAP_UNDUH">Siap Diunduh (20/20 QR)</option>
                 <option value="SUDAH_DIUNDUH">Sudah Diunduh</option>
-                <option value="BELUM_GENERATE">Belum Dibuat (0/10)</option>
+                <option value="BELUM_GENERATE">Belum Dibuat (0/20)</option>
               </select>
             </div>
 
@@ -407,7 +407,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
                   <th className="py-3 px-4 w-12 text-center">No</th>
                   <th className="py-3 px-4 min-w-[200px]">Kelompok & Wilayah</th>
                   <th className="py-3 px-4 min-w-[160px]">DPL / Pembimbing</th>
-                  <th className="py-3 px-4 min-w-[180px]">Kuota QR (5 Org + 5 Anorg)</th>
+                  <th className="py-3 px-4 min-w-[180px]">Kuota QR (10 Org + 10 Anorg)</th>
                   <th className="py-3 px-4 min-w-[150px]">Status Distribusi</th>
                   <th className="py-3 px-4 min-w-[260px]">Google Drive Kelompok</th>
                   <th className="py-3 px-4 min-w-[240px] text-right">Aksi Developer</th>
@@ -415,7 +415,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-normal text-slate-700 dark:text-slate-300">
                 {data.map((item, idx) => {
-                  const isComplete = item.totalBins >= 10;
+                  const isComplete = item.totalBins >= 20;
                   const isGenerating = generatingId === item.id;
                   const isDownloading = downloadingZipId === item.id;
                   const isEditingGdrive = editingGdriveId === item.id;
@@ -465,16 +465,16 @@ export const KelompokQrDistributionTab: React.FC = () => {
                             {isComplete ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                 <CheckCircle2 className="w-3 h-3" />
-                                10/10 Lengkap
+                                20/20 Lengkap
                               </span>
                             ) : item.totalBins > 0 ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                                 <Clock className="w-3 h-3" />
-                                {item.totalBins}/10 QR
+                                {item.totalBins}/20 QR
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">
-                                0/10 Belum Dibuat
+                                0/20 Belum Dibuat
                               </span>
                             )}
 
@@ -482,7 +482,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
                               <button
                                 onClick={() => setSelectedKelompokForModal(item)}
                                 className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-0.5 cursor-pointer"
-                                title="Lihat detail 10 QR kelompok"
+                                title="Lihat detail 20 QR kelompok"
                               >
                                 <Eye className="w-3 h-3" />
                                 Lihat
@@ -490,7 +490,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
                             )}
                           </div>
 
-                          {/* Detail Komposisi 5 Organik & 5 Anorganik */}
+                          {/* Detail Komposisi 10 Organik & 10 Anorganik */}
                           <div className="flex items-center gap-2 text-[11px]">
                             <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                               ● {item.organikCount} Organik
@@ -618,7 +618,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
                       {/* Aksi Developer */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Generate 10 QR button */}
+                          {/* Generate 20 QR button */}
                           {!isComplete ? (
                             <button
                               onClick={() => handleGenerate10Qr(item)}
@@ -626,7 +626,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition shadow-xs cursor-pointer"
                             >
                               <Sparkles className="w-3.5 h-3.5" />
-                              {isGenerating ? "Membuat..." : "Generate 10 QR"}
+                              {isGenerating ? "Membuat..." : "Generate 20 QR"}
                             </button>
                           ) : (
                             <>
@@ -635,10 +635,10 @@ export const KelompokQrDistributionTab: React.FC = () => {
                                 onClick={() => handleDownloadZip(item)}
                                 disabled={isDownloading}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition shadow-xs cursor-pointer"
-                                title="Unduh paket ZIP 10 PNG resolusi tinggi + PDF siap cetak"
+                                title="Unduh paket ZIP 20 PNG resolusi tinggi + PDF siap cetak"
                               >
                                 <Download className="w-3.5 h-3.5" />
-                                {isDownloading ? "Mengompres..." : "Unduh ZIP (10 QR)"}
+                                {isDownloading ? "Mengompres..." : "Unduh ZIP (20 QR)"}
                               </button>
 
                               {/* Cetak PDF 10x15cm */}
@@ -666,14 +666,14 @@ export const KelompokQrDistributionTab: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
             <span>
-              Standar Stiker: <b>10 x 15 cm (2500 x 3808 px)</b>. Setiap kelompok mendapatkan tepat <b>5 Organik & 5 Anorganik</b>.
+              Standar Stiker: <b>10 x 15 cm (2500 x 3808 px)</b>. Setiap kelompok mendapatkan tepat <b>10 Organik & 10 Anorganik (Total 20 QR)</b>.
             </span>
           </div>
           <div>Menampilkan {data.length} kelompok</div>
         </div>
       </div>
 
-      {/* Modal Detail 10 QR Kelompok */}
+      {/* Modal Detail 20 QR Kelompok */}
       {selectedKelompokForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-150">
@@ -682,7 +682,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                   <FolderArchive className="w-5 h-5 text-emerald-600" />
-                  Rincian 10 QR Code: {selectedKelompokForModal.name}
+                  Rincian 20 QR Code: {selectedKelompokForModal.name}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Wilayah: {selectedKelompokForModal.kelurahan || "-"} • DPL: {selectedKelompokForModal.dpl?.name || selectedKelompokForModal.dplNamaMentah || "-"}
@@ -696,7 +696,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
               </button>
             </div>
 
-            {/* Modal Body: List of 10 Stickers */}
+            {/* Modal Body: List of 20 Stickers */}
             <div className="p-5 overflow-y-auto space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {selectedKelompokForModal.bins.map((bin, i) => {
@@ -754,7 +754,7 @@ export const KelompokQrDistributionTab: React.FC = () => {
             {/* Modal Footer */}
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
               <span className="text-xs text-slate-500">
-                Total: {selectedKelompokForModal.bins.length} Stiker (5 Organik + 5 Anorganik)
+                Total: {selectedKelompokForModal.bins.length} Stiker (10 Organik + 10 Anorganik)
               </span>
 
               <div className="flex items-center gap-2">
