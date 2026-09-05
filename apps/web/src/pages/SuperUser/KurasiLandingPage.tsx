@@ -116,8 +116,8 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
       const img = new Image();
       img.src = event.target?.result as string;
       img.onload = () => {
-        const maxWidth = 1200;
-        const maxHeight = 1200;
+        const maxWidth = 2048;
+        const maxHeight = 2048;
         let { width, height } = img;
 
         if (width > maxWidth || height > maxHeight) {
@@ -135,8 +135,10 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL("image/webp", 0.85);
+          const compressedDataUrl = canvas.toDataURL("image/webp", 0.92);
           onChange(compressedDataUrl);
           showToast.success("Foto berhasil diunggah!");
         } else {

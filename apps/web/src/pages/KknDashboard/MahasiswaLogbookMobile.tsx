@@ -27,10 +27,12 @@ import showToast from "../../utils/showToast";
 
 interface MahasiswaLogbookMobileProps {
   onOpenCreateModal: () => void;
+  refreshTrigger?: number;
 }
 
 export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
   onOpenCreateModal,
+  refreshTrigger,
 }) => {
   const [logbooks, setLogbooks] = useState<LogbookMahasiswaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +41,7 @@ export const MahasiswaLogbookMobile: React.FC<MahasiswaLogbookMobileProps> = ({
 
   useEffect(() => {
     fetchLogbooks();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchLogbooks = async () => {
     try {

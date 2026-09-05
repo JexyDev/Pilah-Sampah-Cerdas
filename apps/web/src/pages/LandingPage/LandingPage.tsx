@@ -1535,18 +1535,28 @@ export const LandingPage: React.FC = () => {
             >
               <X size={18} />
             </button>
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+            <div className="relative w-full max-h-[440px] bg-slate-950 overflow-hidden flex items-center justify-center">
               <img
                 src={selectedNews.imageUrl}
                 alt={selectedNews.title}
-                className="w-full h-full object-cover"
+                className="w-full max-h-[440px] object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/image/activity-3.webp";
                 }}
               />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider">
+              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold uppercase tracking-wider shadow-sm">
                 {selectedNews.category}
               </div>
+              <a
+                href={selectedNews.imageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                title="Buka foto resolusi penuh di tab baru"
+              >
+                <span>Lihat Foto HD</span>
+                <ExternalLink size={13} />
+              </a>
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 text-xs text-slate-400 font-semibold">
