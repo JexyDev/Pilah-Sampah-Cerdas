@@ -23,9 +23,6 @@ import {
   RefreshCcw,
   Clock,
   HardDrive,
-  MapPin,
-  Layers,
-  FileText,
 } from "lucide-react";
 import ImageTigaRoleMobile from "../../assets/images/image_tiga_role_mobile.webp";
 import { useThemeStore } from "../../store/useThemeStore";
@@ -52,14 +49,6 @@ interface ReleaseInfo {
   minAndroidVersion: string;
 }
 
-interface LandingStats {
-  wargaCount: number;
-  totalSampahKg: number;
-  kelurahanCount: number;
-  totalPenjemputan: number;
-  totalPoin: number;
-}
-
 const DownloadPage: React.FC = () => {
   // Force clean light mode on Download Page unconditionally
   useEffect(() => {
@@ -79,30 +68,15 @@ const DownloadPage: React.FC = () => {
     minAndroidVersion: "Android 7.0 (Nougat)+",
   });
 
-  const [stats, setStats] = useState<LandingStats>({
-    wargaCount: 725,
-    totalSampahKg: 12.91,
-    kelurahanCount: 6,
-    totalPenjemputan: 25,
-    totalPoin: 10564,
-  });
-
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>("");
 
-  // Fetch real-time release info & landing stats from Backend API
+  // Fetch real-time release info from Backend API
   const fetchRealTimeData = async () => {
     try {
-      const [relRes, statsRes] = await Promise.all([
-        api.get("/system/latest-release").catch(() => null),
-        api.get("/system/landing-stats").catch(() => null),
-      ]);
+      const relRes = await api.get("/system/latest-release").catch(() => null);
 
       if (relRes?.data?.success && relRes.data.data) {
         setRelease(relRes.data.data);
-      }
-
-      if (statsRes?.data?.success && statsRes.data.data) {
-        setStats(statsRes.data.data);
       }
 
       setLastUpdatedTime(new Date().toLocaleTimeString("id-ID"));
@@ -315,56 +289,7 @@ const DownloadPage: React.FC = () => {
             </div>
 
           </div>
-              {/* Section 2: Real-Time System Statistics Strip - Pure White */}
-        <section className="py-12 bg-white border-b border-slate-200/80 w-full">
-          <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-2 lg:grid-cols-4 gap-6">
-
-            {/* Stat Card 1: Warga */}
-            <div className="bg-[#F2F2F2]/50 p-6 rounded-2xl border border-slate-200/50 flex flex-col items-center justify-center text-center space-y-2.5 transition hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#035941] flex items-center justify-center shadow-2xs border border-emerald-100">
-                <Users size={20} />
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-2xl sm:text-3xl font-black text-[#035941] tracking-tight">{stats.wargaCount}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Warga Terdaftar</p>
-              </div>
-            </div>
-
-            {/* Stat Card 2: Kelurahan */}
-            <div className="bg-[#F2F2F2]/50 p-6 rounded-2xl border border-slate-200/50 flex flex-col items-center justify-center text-center space-y-2.5 transition hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#58A621] flex items-center justify-center shadow-2xs border border-emerald-100">
-                <MapPin size={20} />
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-2xl sm:text-3xl font-black text-[#58A621] tracking-tight">{stats.kelurahanCount}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kelurahan Terintegrasi</p>
-              </div>
-            </div>
-
-            {/* Stat Card 3: Sampah */}
-            <div className="bg-[#F2F2F2]/50 p-6 rounded-2xl border border-slate-200/50 flex flex-col items-center justify-center text-center space-y-2.5 transition hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0468BF] flex items-center justify-center shadow-2xs border border-blue-100">
-                <Layers size={20} />
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-2xl sm:text-3xl font-black text-[#0468BF] tracking-tight">{Math.round(stats.totalSampahKg)} kg</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sampah Terdata</p>
-              </div>
-            </div>
-
-            {/* Stat Card 4: Log Transaksi */}
-            <div className="bg-[#F2F2F2]/50 p-6 rounded-2xl border border-slate-200/50 flex flex-col items-center justify-center text-center space-y-2.5 transition hover:shadow-md">
-              <div className="w-10 h-10 rounded-xl bg-slate-100 text-[#5d8d83] flex items-center justify-center shadow-2xs border border-slate-200">
-                <FileText size={20} />
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-2xl sm:text-3xl font-black text-[#5d8d83] tracking-tight">{stats.totalPenjemputan}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Log Transaksi Residu</p>
-              </div>
-            </div>
-
-          </div>
-        </section>    </section>
+        </section>
 
         {/* Section 3: 3 Mobile Roles Features Showcase - Subtle Slate Tint */}
         <section id="layanan-mobile" className="py-20 px-4 sm:px-8 bg-slate-50/60 border-b border-slate-200/60 w-full">
