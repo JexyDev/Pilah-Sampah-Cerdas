@@ -117,7 +117,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     {
       id: "slide-3",
       image: "/image/activity-1.webp",
-      badge: "Edukasi & Bank Sampah",
+      badge: "Edukasi & Sosialisasi",
       title: "Sosialisasi Digitalisasi Bank Sampah & Sedekah Anorganik",
       location: "Balai Warga RW 03, Bojongsoang",
       metric: "92% Partisipasi Warga",
@@ -479,7 +479,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     {
       id: "news-05",
       title: "Digitalisasi Bank Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
-      category: "Bank Sampah",
+      category: "Daur Ulang",
       date: "5 Mei 2026",
       readTime: "3 min baca",
       location: "Bank Sampah RW 04",

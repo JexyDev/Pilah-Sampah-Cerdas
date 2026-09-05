@@ -1294,7 +1294,7 @@ export const LandingPage: React.FC = () => {
               <h4>Program</h4>
               <ul>
                 <li><a href="#program">Pemilahan dari Rumah</a></li>
-                <li><a href="#program">Bank Sampah &amp; Pengolahan</a></li>
+                <li><a href="#program">Daur Ulang &amp; Pengolahan</a></li>
                 <li><a href="#program">Edukasi dan KKN Berdampak</a></li>
                 <li><a href="#program">Armada &amp; Pengangkutan</a></li>
                 <li><a href="#program">Monitoring &amp; Teknologi</a></li>
