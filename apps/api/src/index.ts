@@ -536,6 +536,8 @@ if (isPrimaryWorker) {
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
       // QC-27: Link Google Drive per kelompok
       'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "link_google_drive" TEXT;',
+      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "qr_diunduh_pada" TIMESTAMP(3);',
+      'ALTER TABLE "tempat_sampah" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
       // QC-36: Advance scheduling — bulan efektif polygon area kerja
       'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "effective_month" TEXT;',
