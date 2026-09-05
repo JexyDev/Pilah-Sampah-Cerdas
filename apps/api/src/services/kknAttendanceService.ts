@@ -1473,6 +1473,17 @@ export class KknAttendanceService {
     } = params;
     const isAutoAlpa = method?.toUpperCase() === "ALPA_AUTO" || method?.toUpperCase() === "ALPA";
 
+    // Safeguard Mutlak Akhir Pekan: Dilarang keras menandai ALPA pada hari Sabtu dan Minggu (Fleksibilitas KKN)
+    if (isAutoAlpa) {
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      const dayOfWeek = nowWib.getUTCDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        throw new Error(
+          "WEEKEND_AUTO_ALPHA_BLOCKED: Penandaan ALPA tidak diizinkan pada akhir pekan (Sabtu/Minggu) sesuai kebijakan fleksibilitas KKN."
+        );
+      }
+    }
+
     // 0. Validate operational hours berdasarkan jam jadwal (bukan hardcoded)
     if (!isAutoAlpa) {
       const nowMs = Date.now();
@@ -2348,6 +2359,7 @@ export class KknAttendanceService {
     const schedDate = schedule?.date ? new Date(schedule.date) : new Date();
     const schedWib = new Date(schedDate.getTime() + 7 * 60 * 60 * 1000);
     const schedWibStr = schedWib.toISOString().slice(0, 10);
+    const isWeekendSchedule = schedWib.getUTCDay() === 0 || schedWib.getUTCDay() === 6;
     const startOfDay = new Date(`${schedWibStr}T00:00:00+07:00`);
     const endOfDay = new Date(`${schedWibStr}T23:59:59.999+07:00`);
 
@@ -2571,6 +2583,7 @@ export class KknAttendanceService {
         currentStatus,
         statusDisplay,
         isMemenuhiDurasi,
+        isWeekendFlexible: isWeekendSchedule,
         actualInZoneMinutes: actualMins,
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
@@ -2805,7 +2818,13 @@ export class KknAttendanceService {
           longitude: latestLoc ? latestLoc.longitude : scheduleLoc.longitude,
           status,
           currentStatus,
-          statusDisplay: status === "LAPANGAN" ? "Lapangan" : "Belum Absen",
+          statusDisplay:
+            status === "LAPANGAN"
+              ? "Lapangan"
+              : isWeekendSchedule
+                ? "Belum Absen (Akhir Pekan Fleksibel)"
+                : "Belum Absen",
+          isWeekendFlexible: isWeekendSchedule,
           student: s,
           targetHours,
           targetDurationMinutes: durasiWajib,
@@ -3222,6 +3241,8 @@ export class KknAttendanceService {
         const schDateWib = new Date(schDateUtc.getTime() + 7 * 60 * 60 * 1000);
         schDateStr = schDateWib.toISOString().slice(0, 10);
       }
+      const schDateDay = (sch.date ? new Date(new Date(sch.date).getTime() + 7 * 60 * 60 * 1000) : nowWib).getUTCDay();
+      const isWeekendFlexible = schDateDay === 0 || schDateDay === 6;
       const isSchedDateToday = schDateStr === todayStr;
 
       // Bandingkan apakah jadwal ada di masa depan (pakai string tanggal WIB)
@@ -3334,7 +3355,9 @@ export class KknAttendanceService {
             ? "Hadir & Tidak Memenuhi"
             : statusKehadiran === "TIDAK_ADA_KEGIATAN"
               ? "Tidak Ada Kegiatan"
-              : statusKehadiran;
+              : statusKehadiran === "BELUM_ABSEN" && isWeekendFlexible
+                ? "Belum Absen (Akhir Pekan Fleksibel)"
+                : statusKehadiran;
 
       const allPoskoList: Array<{
         id: string;
@@ -3473,6 +3496,10 @@ export class KknAttendanceService {
         attendanceStatus: statusKehadiran,
         statusDisplay,
         isMemenuhiDurasi,
+        isWeekendFlexible,
+        catatanFleksibilitas: isWeekendFlexible
+          ? "Jadwal akhir pekan (Sabtu/Minggu) bersifat fleksibel. Mahasiswa yang tidak hadir tidak dikenakan sanksi/alpa."
+          : undefined,
         keteranganSkip,
         skippedBy,
         skippedAt,

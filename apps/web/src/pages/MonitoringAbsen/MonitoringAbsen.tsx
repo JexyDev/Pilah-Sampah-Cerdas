@@ -1049,6 +1049,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     return visibleSchedules.find((s) => s.id === selectedScheduleId);
   }, [visibleSchedules, selectedScheduleId, isAllTodayMode]);
 
+  const isWeekendActive = useMemo(() => {
+    const targetDate = activeSchedule?.date
+      ? new Date(activeSchedule.date)
+      : new Date();
+    const wib = new Date(targetDate.getTime() + 7 * 60 * 60 * 1000);
+    const day = wib.getUTCDay();
+    return day === 0 || day === 6;
+  }, [activeSchedule]);
+
   const scheduleTargetHours = useMemo(() => {
     // 1. Relasi Konfigurasi Target Minimal Durasi Harian dari Database / Rule Engine Developer (SSOT)
     const h = Number(configTargets.attendanceMinDurationHours || 0);
@@ -2712,6 +2721,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             )}
           </div>
         </div>
+
+        {isWeekendActive && (
+          <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs font-medium flex items-center gap-3 shadow-2xs">
+            <span className="text-lg leading-none shrink-0">ℹ️</span>
+            <div className="flex-1 leading-relaxed">
+              <span className="font-bold">Jadwal Fleksibel Akhir Pekan (Sabtu / Minggu):</span> Presensi hari ini bersifat fleksibel. Mahasiswa yang tidak hadir <strong>tidak dikenakan status Alpa</strong> ataupun pengurangan poin. Mahasiswa yang hadir tetap tercatat presensinya dan durasi jamnya dihitung ke akumulasi kegiatan.
+            </div>
+          </div>
+        )}
 
         {/* 2-Column Cards: Informasi Waktu Kerja & Target Kegiatan Lapangan */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
