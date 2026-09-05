@@ -5,7 +5,7 @@
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   MapContainer,
@@ -339,24 +339,30 @@ const DualGeofencePickerModalMap: React.FC<{
   radius: number;
 }> = ({ mode, points, onChange, radius }) => {
   const map = useMap();
+  const hasCenteredRef = useRef(false);
 
   useEffect(() => {
     map.invalidateSize();
-    if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
+    if (
+      !hasCenteredRef.current &&
+      points &&
+      points.length > 0 &&
+      points[0] &&
+      !isNaN(points[0][0]) &&
+      !isNaN(points[0][1])
+    ) {
       map.setView(points[0], map.getZoom() || 15);
+      hasCenteredRef.current = true;
     }
     const t1 = setTimeout(() => {
       map.invalidateSize();
-      if (points && points.length > 0 && points[0] && !isNaN(points[0][0]) && !isNaN(points[0][1])) {
-        map.setView(points[0], map.getZoom() || 15);
-      }
     }, 150);
     const t2 = setTimeout(() => map.invalidateSize(), 350);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [mode, map, points]);
+  }, [mode, map]);
 
   useMapEvents({
     click(e) {
@@ -372,10 +378,23 @@ const DualGeofencePickerModalMap: React.FC<{
     <>
       {mode === "CIRCLE" && points.length >= 1 && (
         <>
-          <Marker position={points[0]} />
+          <Marker
+            position={points[0]}
+            draggable={true}
+            eventHandlers={{
+              dragend(e) {
+                const marker = e.target;
+                if (marker) {
+                  const pos = marker.getLatLng();
+                  onChange([[pos.lat, pos.lng]]);
+                }
+              },
+            }}
+          />
           <Circle
             center={points[0]}
             radius={radius}
+            interactive={false}
             pathOptions={{
               color: "#059669",
               fillColor: "#10b981",
@@ -399,6 +418,7 @@ const DualGeofencePickerModalMap: React.FC<{
           {points.length >= 3 && (
             <Polygon
               positions={points}
+              interactive={false}
               pathOptions={{
                 color: "#10b981",
                 fillColor: "#10b981",
@@ -2301,6 +2321,8 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     "PIMPINAN",
     "PANITIA_TASKFORCE",
     "DEVELOPER",
+    "DPL",
+    "DOSEN_PEMBIMBING",
   ].includes(userRole);
 
   const isSuperUserOrDev = ["SUPER_USER", "DEVELOPER"].includes(userRole);
@@ -4699,24 +4721,30 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                     const mapModalCenter = selectedPos.length > 0 ? selectedPos[0] : modalLocInfo.centroid;
 
                     return (
-                      <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-0 shadow-inner">
-                        <MapContainer
-                          key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
-                          center={mapModalCenter}
-                          zoom={15}
-                          maxZoom={20}
-                          minZoom={11}
-                          style={{ height: "100%", width: "100%" }}
-                        >
-                          <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
-                          <DualGeofencePickerModalMap
-                            mode={geofenceMode}
-                            points={selectedPos || []}
-                            onChange={(pts) => setSelectedPos(pts)}
-                            radius={Number(formData.radius) || 200}
-                          />
-                        </MapContainer>
-                      </div>
+                      <>
+                        <div className="h-[280px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative z-0 shadow-inner">
+                          <MapContainer
+                            key={`modal-geofence-map-${modalMode}-${formData.id || "new"}-${geofenceMode}`}
+                            center={mapModalCenter}
+                            zoom={15}
+                            maxZoom={20}
+                            minZoom={11}
+                            style={{ height: "100%", width: "100%" }}
+                          >
+                            <ThemeTileLayer maxZoom={20} maxNativeZoom={19} />
+                            <DualGeofencePickerModalMap
+                              mode={geofenceMode}
+                              points={selectedPos || []}
+                              onChange={(pts) => setSelectedPos(pts)}
+                              radius={Number(formData.radius) || 200}
+                            />
+                          </MapContainer>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                          <MapPin size={13} className="text-emerald-600 shrink-0" />
+                          <span>Klik di peta atau <strong>geser (drag) pin</strong> untuk memindahkan titik pusat zona presensi.</span>
+                        </p>
+                      </>
                     );
                   })()}
 

@@ -31,7 +31,7 @@ import {
 import { calculateDistance } from "./kknAttendanceService.js";
 
 const DEFAULT_AUTO_POLYGON_BUFFER_M = 100;
-const DEFAULT_POSKO_RADIUS_M = 500;
+const DEFAULT_POSKO_RADIUS_M = 200;
 const ACTIVE_STUDENT_WINDOW_MIN = 30;
 const MIN_STUDENTS_FOR_HULL = 3;
 
@@ -128,15 +128,24 @@ export class SmartZoneService {
       },
     });
     for (const p of multi) {
-      result.push({
-        id: p.id,
-        nama: p.nama,
-        lat: Number(p.latitude),
-        lng: Number(p.longitude),
-        isUtama: p.isUtama,
-        radius: p.radius ?? DEFAULT_POSKO_RADIUS_M,
-        source: "POSKO_MULTI",
-      });
+      const pLat = Number(p.latitude);
+      const pLng = Number(p.longitude);
+      const isDuplicate = result.some(
+        (existing) =>
+          existing.id === p.id ||
+          calculateDistance(existing.lat, existing.lng, pLat, pLng) < 25
+      );
+      if (!isDuplicate) {
+        result.push({
+          id: p.id,
+          nama: p.nama,
+          lat: pLat,
+          lng: pLng,
+          isUtama: p.isUtama,
+          radius: p.radius ?? DEFAULT_POSKO_RADIUS_M,
+          source: "POSKO_MULTI",
+        });
+      }
     }
 
     const facilities = await prisma.facility
@@ -151,16 +160,25 @@ export class SmartZoneService {
       })
       .catch(() => []);
     for (const f of facilities) {
-      if (f.latitude && f.longitude && !result.some((existing) => existing.id === f.id)) {
-        result.push({
-          id: f.id,
-          nama: f.nama,
-          lat: Number(f.latitude),
-          lng: Number(f.longitude),
-          isUtama: false,
-          radius: DEFAULT_POSKO_RADIUS_M,
-          source: "POSKO_MULTI",
-        });
+      if (f.latitude && f.longitude) {
+        const fLat = Number(f.latitude);
+        const fLng = Number(f.longitude);
+        const isDuplicate = result.some(
+          (existing) =>
+            existing.id === f.id ||
+            calculateDistance(existing.lat, existing.lng, fLat, fLng) < 25
+        );
+        if (!isDuplicate) {
+          result.push({
+            id: f.id,
+            nama: f.nama,
+            lat: fLat,
+            lng: fLng,
+            isUtama: false,
+            radius: DEFAULT_POSKO_RADIUS_M,
+            source: "POSKO_MULTI",
+          });
+        }
       }
     }
 

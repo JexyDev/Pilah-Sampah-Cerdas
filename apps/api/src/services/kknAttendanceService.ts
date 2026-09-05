@@ -157,7 +157,7 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
       alamat: primary.alamat || "-",
       latitude: Number(primary.latitude),
       longitude: Number(primary.longitude),
-      radius: Math.max(50, Number((primary as any).radius) || 500),
+      radius: Math.max(30, Number((primary as any).radius) || 200),
       isUtama: true,
       type: "POSKO_UTAMA",
       fotoUrl: primary.fotoUrl || null,
@@ -167,35 +167,55 @@ export async function getGroupPoskoList(kelompokId: string): Promise<
   if (Array.isArray(multi)) {
     for (const m of multi) {
       if (m.latitude && m.longitude) {
-        list.push({
-          id: m.id,
-          nama: m.nama,
-          alamat: m.alamat || "-",
-          latitude: Number(m.latitude),
-          longitude: Number(m.longitude),
-          radius: Math.max(50, Number(m.radius) || 500),
-          isUtama: m.isUtama || false,
-          type: "POSKO_MULTI",
-          fotoUrl: m.fotoUrl || null,
+        const mLat = Number(m.latitude);
+        const mLng = Number(m.longitude);
+        // Cegah duplikasi jika koordinat sama persis dengan posko yang sudah ada (< 25 meter)
+        const isDuplicate = list.some((existing) => {
+          if (existing.id === m.id) return true;
+          return calculateDistance(mLat, mLng, existing.latitude, existing.longitude) < 25;
         });
+
+        if (!isDuplicate) {
+          list.push({
+            id: m.id,
+            nama: m.nama,
+            alamat: m.alamat || "-",
+            latitude: mLat,
+            longitude: mLng,
+            radius: Math.max(30, Number(m.radius) || 200),
+            isUtama: m.isUtama || false,
+            type: "POSKO_MULTI",
+            fotoUrl: m.fotoUrl || null,
+          });
+        }
       }
     }
   }
 
   if (Array.isArray(facilities)) {
     for (const f of facilities) {
-      if (f.latitude && f.longitude && !list.some((existing) => existing.id === f.id)) {
-        list.push({
-          id: f.id,
-          nama: f.nama,
-          alamat: f.alamat || "-",
-          latitude: Number(f.latitude),
-          longitude: Number(f.longitude),
-          radius: Math.max(50, Number((f as any).radius) || 500),
-          isUtama: false,
-          type: "POSKO_MULTI",
-          fotoUrl: f.foto || null,
+      if (f.latitude && f.longitude) {
+        const fLat = Number(f.latitude);
+        const fLng = Number(f.longitude);
+        // Cegah duplikasi posko dari tabel fasilitas jika sudah ada di poskoKkn atau poskoKknMulti
+        const isDuplicate = list.some((existing) => {
+          if (existing.id === f.id) return true;
+          return calculateDistance(fLat, fLng, existing.latitude, existing.longitude) < 25;
         });
+
+        if (!isDuplicate) {
+          list.push({
+            id: f.id,
+            nama: f.nama,
+            alamat: f.alamat || "-",
+            latitude: fLat,
+            longitude: fLng,
+            radius: Math.max(30, Number((f as any).radius) || 200),
+            isUtama: false,
+            type: "POSKO_MULTI",
+            fotoUrl: f.foto || null,
+          });
+        }
       }
     }
   }
@@ -1274,15 +1294,15 @@ export class KknAttendanceService {
     const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
     const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
 
-    const effectiveLat = officialPosko?.latitude
-      ? Number(officialPosko.latitude)
-      : schedule.latitude
-        ? Number(schedule.latitude)
+    const effectiveLat = schedule.latitude
+      ? Number(schedule.latitude)
+      : officialPosko?.latitude
+        ? Number(officialPosko.latitude)
         : defaultLat;
-    const effectiveLng = officialPosko?.longitude
-      ? Number(officialPosko.longitude)
-      : schedule.longitude
-        ? Number(schedule.longitude)
+    const effectiveLng = schedule.longitude
+      ? Number(schedule.longitude)
+      : officialPosko?.longitude
+        ? Number(officialPosko.longitude)
         : defaultLng;
 
     const ruleConfigs = await configService.getRuleEngineConfigs();
@@ -1343,14 +1363,41 @@ export class KknAttendanceService {
     const groupPoskos = schedule.kelompokId ? await getGroupPoskoList(schedule.kelompokId) : [];
 
     let validZones: any[] = [];
-    if (schedule.category === "POSKO_KKN" && groupPoskos.length > 0) {
+    if (groupPoskos.length > 0) {
       validZones = groupPoskos.map((p) => ({
         id: p.id,
         nama: p.nama,
         latitude: p.latitude,
         longitude: p.longitude,
         radius: p.radius,
+        isUtama: p.isUtama,
+        type: p.type,
       }));
+
+      // Jika jadwal memiliki titik lokasi khusus yang berbeda dari posko-posko yang ada (> 25m)
+      if (
+        schedule.latitude &&
+        schedule.longitude &&
+        !groupPoskos.some(
+          (gp) =>
+            calculateDistance(
+              Number(schedule.latitude),
+              Number(schedule.longitude),
+              gp.latitude,
+              gp.longitude
+            ) < 25
+        )
+      ) {
+        validZones.push({
+          id: schedule.id,
+          nama: schedule.title || schedule.location || "Lokasi Kegiatan Lapangan",
+          latitude: Number(schedule.latitude),
+          longitude: Number(schedule.longitude),
+          radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+          isUtama: false,
+          type: "KEGIATAN_LAPANGAN",
+        });
+      }
     } else {
       validZones = [
         {
@@ -1359,6 +1406,8 @@ export class KknAttendanceService {
           latitude: effectiveLat,
           longitude: effectiveLng,
           radius: schedule.radius ? Number(schedule.radius) : defaultRadius,
+          isUtama: true,
+          type: "POSKO_UTAMA",
         },
       ];
     }
@@ -3308,7 +3357,7 @@ export class KknAttendanceService {
             alamat: pk.alamat || "-",
             latitude: Number(pk.latitude),
             longitude: Number(pk.longitude),
-            radius: Math.max(50, Number(pk.radius) || 500),
+            radius: Math.max(50, Number(pk.radius) || 200),
             isUtama: true,
             type: "POSKO_UTAMA",
             fotoUrl: pk.fotoUrl || null,
@@ -3319,57 +3368,69 @@ export class KknAttendanceService {
       if (Array.isArray((sch.kelompok as any)?.poskoMulti)) {
         for (const pm of (sch.kelompok as any).poskoMulti) {
           if (pm.latitude && pm.longitude) {
-            allPoskoList.push({
-              id: pm.id,
-              nama: pm.nama,
-              alamat: pm.alamat || "-",
-              latitude: Number(pm.latitude),
-              longitude: Number(pm.longitude),
-              radius: Math.max(50, Number(pm.radius) || 500),
-              isUtama: pm.isUtama || false,
-              type: "POSKO_MULTI",
-              fotoUrl: pm.fotoUrl || null,
-            });
+            const pmLat = Number(pm.latitude);
+            const pmLng = Number(pm.longitude);
+            const isDuplicate = allPoskoList.some(
+              (item) =>
+                item.id === pm.id ||
+                calculateDistance(item.latitude, item.longitude, pmLat, pmLng) < 25
+            );
+            if (!isDuplicate) {
+              allPoskoList.push({
+                id: pm.id,
+                nama: pm.nama,
+                alamat: pm.alamat || "-",
+                latitude: pmLat,
+                longitude: pmLng,
+                radius: Math.max(50, Number(pm.radius) || 200),
+                isUtama: pm.isUtama || false,
+                type: "POSKO_MULTI",
+                fotoUrl: pm.fotoUrl || null,
+              });
+            }
           }
         }
       }
 
       const officialPosko =
         (sch.kelompok as any)?.poskoKkn || (sch.kelompok as any)?.poskoMulti?.[0];
-      const latNum = officialPosko?.latitude
-        ? Number(officialPosko.latitude)
-        : sch.latitude
+      // PRIORITASKAN KOORDINAT JADWAL MANUAL: Jika admin/pembimbing/mahasiswa sudah menentukan atau mengedit
+      // lokasi/radius kegiatan, jangan pernah timpa dengan posko utama default!
+      const latNum =
+        sch.latitude != null
           ? Number(sch.latitude)
-          : -6.8906;
-      const lngNum = officialPosko?.longitude
-        ? Number(officialPosko.longitude)
-        : sch.longitude
+          : officialPosko?.latitude
+            ? Number(officialPosko.latitude)
+            : -6.8906;
+      const lngNum =
+        sch.longitude != null
           ? Number(sch.longitude)
-          : 107.615;
-      const poskoRadiusNum = officialPosko?.radius
-        ? Math.max(50, Number(officialPosko.radius))
-        : sch.radius
+          : officialPosko?.longitude
+            ? Number(officialPosko.longitude)
+            : 107.615;
+      const poskoRadiusNum =
+        sch.radius != null
           ? Math.max(50, Number(sch.radius))
-          : 500;
-      const titleStr = officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : sch.title;
-      const locationStr = officialPosko?.nama || sch.location || "Lokasi Kegiatan KKN";
+          : officialPosko?.radius
+            ? Math.max(50, Number(officialPosko.radius))
+            : 200;
+      const titleStr = sch.title || (officialPosko?.nama ? `Kegiatan Harian ${officialPosko.nama}` : "Kegiatan Harian");
+      const locationStr = sch.location || officialPosko?.nama || "Lokasi Kegiatan KKN";
 
-      // Auto-sinkronkan koordinat jadwal jika posko baru/diupdate berbeda dengan jadwal
+      // HANYA inisialisasi koordinat jika jadwal belum memiliki latitude atau longitude sama sekali
       if (
         officialPosko &&
-        (Number(sch.latitude) !== latNum ||
-          Number(sch.longitude) !== lngNum ||
-          sch.location !== locationStr)
+        (sch.latitude == null || sch.longitude == null)
       ) {
         prisma.schedule
           .update({
             where: { id: sch.id },
             data: {
-              latitude: latNum,
-              longitude: lngNum,
-              location: locationStr,
-              title: titleStr,
-              radius: poskoRadiusNum,
+              latitude: Number(officialPosko.latitude),
+              longitude: Number(officialPosko.longitude),
+              location: officialPosko.nama || sch.location || "Lokasi Kegiatan KKN",
+              title: officialPosko.nama ? `Kegiatan Harian ${officialPosko.nama}` : sch.title,
+              radius: Math.max(50, Number(officialPosko.radius) || 200),
             },
           })
           .catch(() => {});

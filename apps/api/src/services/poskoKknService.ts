@@ -5,6 +5,7 @@
  */
 
 import { prisma } from "../lib/prisma.js";
+import { calculateDistance } from "./kknAttendanceService.js";
 
 export class PoskoKknService {
   /**
@@ -106,7 +107,7 @@ export class PoskoKknService {
       existingFacility?.statusApproval ||
       (existingPosko?.keterangan === "PENDING" || existingPosko?.keterangan === "REJECTED" ? existingPosko.keterangan : "APPROVED");
 
-    const parsedRadius = data.radius !== undefined ? Math.max(50, Number(data.radius)) : 500;
+    const parsedRadius = data.radius !== undefined ? Math.max(50, Number(data.radius)) : 200;
 
     const posko = await prisma.poskoKkn.upsert({
       where: { kelompokId },
@@ -782,8 +783,8 @@ export class PoskoKknService {
       }),
     ]);
 
-    const allPoskos = [];
-    if (primary) {
+    const allPoskos: any[] = [];
+    if (primary && primary.latitude && primary.longitude) {
       allPoskos.push({
         id: primary.id,
         nama: primary.nama,
@@ -791,7 +792,7 @@ export class PoskoKknService {
         latitude: Number(primary.latitude),
         longitude: Number(primary.longitude),
         isUtama: true,
-        radius: Number((primary as any).radius) || 500,
+        radius: Number((primary as any).radius) || 200,
         type: "POSKO_UTAMA",
         foto: primary.fotoUrl ?? null,
         fotoUrl: primary.fotoUrl ?? null,
@@ -799,28 +800,29 @@ export class PoskoKknService {
       });
     }
     for (const p of multi) {
-      allPoskos.push({
-        id: p.id,
-        nama: p.nama,
-        alamat: p.alamat,
-        latitude: Number(p.latitude),
-        longitude: Number(p.longitude),
-        isUtama: p.isUtama,
-        radius: Number(p.radius) || 500,
-        type: "POSKO_MULTI",
-        foto: p.fotoUrl ?? null,
-        fotoUrl: p.fotoUrl ?? null,
-        keterangan: p.keterangan ?? null,
-      });
-    }
-
-    // Parse auto-polygon for mobile map display
-    let autoPolygon = null;
-    if (kelompok?.autoPolygon && Array.isArray(kelompok.autoPolygon)) {
-      autoPolygon = (kelompok.autoPolygon as any[]).map((p: any) => ({
-        lat: Array.isArray(p) ? Number(p[0]) : Number(p.lat),
-        lng: Array.isArray(p) ? Number(p[1]) : Number(p.lng),
-      }));
+      if (!p.latitude || !p.longitude) continue;
+      const pLat = Number(p.latitude);
+      const pLng = Number(p.longitude);
+      const isDuplicate = allPoskos.some(
+        (existing) =>
+          existing.id === p.id ||
+          calculateDistance(existing.latitude, existing.longitude, pLat, pLng) < 25
+      );
+      if (!isDuplicate) {
+        allPoskos.push({
+          id: p.id,
+          nama: p.nama,
+          alamat: p.alamat,
+          latitude: pLat,
+          longitude: pLng,
+          isUtama: p.isUtama,
+          radius: Number(p.radius) || 200,
+          type: "POSKO_MULTI",
+          foto: p.fotoUrl ?? null,
+          fotoUrl: p.fotoUrl ?? null,
+          keterangan: p.keterangan ?? null,
+        });
+      }
     }
 
     return {
@@ -831,10 +833,10 @@ export class PoskoKknService {
       totalPosko: allPoskos.length,
       poskoList: allPoskos,
       autoZone: {
-        polygon: autoPolygon,
+        polygon: null, // Dinonaktifkan: setiap posko adalah zona bulat mandiri, bukan poligon terhubung
         updatedAt: kelompok?.autoPolygonUpdatedAt ?? null,
         studentCount: kelompok?.autoPolygonStudentCount ?? 0,
-        isActive: autoPolygon !== null && autoPolygon.length >= 3,
+        isActive: false,
       },
     };
   }
@@ -987,7 +989,7 @@ export class PoskoKknService {
           alamat: g.poskoKkn.alamat,
           latitude: Number(g.poskoKkn.latitude),
           longitude: Number(g.poskoKkn.longitude),
-          radius: Number((g.poskoKkn as any).radius) || 500,
+          radius: Number((g.poskoKkn as any).radius) || 200,
           isUtama: true,
           type: "POSKO_UTAMA",
           fotoUrl: resolvedFoto,
@@ -999,19 +1001,28 @@ export class PoskoKknService {
       if (Array.isArray(g.poskoMulti)) {
         for (const m of g.poskoMulti) {
           if (m.latitude && m.longitude) {
-            allPoskoList.push({
-              id: m.id,
-              nama: m.nama,
-              alamat: m.alamat,
-              latitude: Number(m.latitude),
-              longitude: Number(m.longitude),
-              radius: Number(m.radius) || 500,
-              isUtama: m.isUtama,
-              type: "POSKO_MULTI",
-              fotoUrl: m.fotoUrl || null,
-              keterangan: m.keterangan,
-              statusApproval: "APPROVED",
-            });
+            const mLat = Number(m.latitude);
+            const mLng = Number(m.longitude);
+            const isDuplicate = allPoskoList.some(
+              (existing) =>
+                existing.id === m.id ||
+                calculateDistance(existing.latitude, existing.longitude, mLat, mLng) < 25
+            );
+            if (!isDuplicate) {
+              allPoskoList.push({
+                id: m.id,
+                nama: m.nama,
+                alamat: m.alamat,
+                latitude: mLat,
+                longitude: mLng,
+                radius: Number(m.radius) || 200,
+                isUtama: m.isUtama,
+                type: "POSKO_MULTI",
+                fotoUrl: m.fotoUrl || null,
+                keterangan: m.keterangan,
+                statusApproval: "APPROVED",
+              });
+            }
           }
         }
       }
@@ -1021,30 +1032,24 @@ export class PoskoKknService {
       let centerLat = -6.8915; // default Coblong
       let centerLng = 107.6107;
       let geofenceSource: "POSKO_RESMI" | "JADWAL_KEGIATAN" | "ESTIMASI_KELURAHAN" | "DEFAULT_COBLONG" = "DEFAULT_COBLONG";
-      let radius = 500;
+      let radius = 200;
       let schedulePolygon: any = null;
 
-      if (primaryPosko) {
-        centerLat = primaryPosko.latitude;
-        centerLng = primaryPosko.longitude;
-        radius = primaryPosko.radius || 500;
-        geofenceSource = "POSKO_RESMI";
-      } else if (activeSchedule && activeSchedule.latitude && activeSchedule.longitude) {
+      if (activeSchedule && activeSchedule.latitude && activeSchedule.longitude) {
         centerLat = Number(activeSchedule.latitude);
         centerLng = Number(activeSchedule.longitude);
-        radius = Number(activeSchedule.radius) || 500;
+        radius = Number(activeSchedule.radius) || 200;
         geofenceSource = "JADWAL_KEGIATAN";
         if (activeSchedule.polygon) schedulePolygon = activeSchedule.polygon;
+      } else if (primaryPosko) {
+        centerLat = primaryPosko.latitude;
+        centerLng = primaryPosko.longitude;
+        radius = primaryPosko.radius || 200;
+        geofenceSource = "POSKO_RESMI";
       }
 
-      // Parse auto-polygon
+      // Parse auto-polygon (disabled: each posko is discrete circular geofence)
       let autoPolygon: Array<{ lat: number; lng: number }> | null = null;
-      if (g.autoPolygon && Array.isArray(g.autoPolygon)) {
-        autoPolygon = (g.autoPolygon as any[]).map((p: any) => ({
-          lat: Array.isArray(p) ? Number(p[0]) : Number(p.lat ?? p.latitude),
-          lng: Array.isArray(p) ? Number(p[1]) : Number(p.lng ?? p.longitude),
-        }));
-      }
 
       // Compile detailed students
       const studentsDetailed = (g.students || []).map((st) => {
