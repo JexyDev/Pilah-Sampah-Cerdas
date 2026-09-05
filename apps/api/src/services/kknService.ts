@@ -3273,9 +3273,11 @@ export class KknService {
 
         let isTimeMatch = false;
         if (endMins >= startMins) {
-          // Normal daytime schedule
+          // Normal daytime schedule (Fleksibilitas presensi mulai 05:00 s.d. 20:00 WIB)
+          const effectiveStartMins = Math.min(5 * 60, startMins);
+          const effectiveEndMins = Math.max(20 * 60, endMins);
           isTimeMatch =
-            isSchedDateToday && currentWibMinutes >= startMins && currentWibMinutes <= endMins;
+            isSchedDateToday && currentWibMinutes >= effectiveStartMins && currentWibMinutes <= effectiveEndMins;
         } else {
           // Overnight schedule (e.g. 11:00 - 08:02)
           if (isSchedDateToday) {
@@ -3442,12 +3444,12 @@ export class KknService {
     }
     const finalTargetDurationMinutes = targetDurationMinutes;
 
-    // Kebijakan Fleksibilitas Lapangan & Batas Maksimal 18:00 WIB:
-    // 1. Jadwal standar 08:00 - 16:00 di-hold sampai jam 18:00 WIB (jam 6 sore).
+    // Kebijakan Fleksibilitas Lapangan & Batas Maksimal 20:00 WIB:
+    // 1. Jadwal standar 08:00 - 16:00 di-hold sampai jam 20:00 WIB (jam 8 malam).
     // 2. Mahasiswa yang aktif berkegiatan (BERLANGSUNG, TERJEDA, dsb.) TIDAK BOLEH dicap ALPA saat lewat jam 16:00.
-    // 3. Jika sudah mencapai atau melewati batas jam 18:00 WIB (1080 menit WIB) dan mahasiswa belum checkout,
+    // 3. Jika sudah mencapai atau melewati batas jam 20:00 WIB (1200 menit WIB) dan mahasiswa belum checkout,
     //    sistem secara otomatis menyelesaikan presensi sebagai HADIR (HADIR_MEMENUHI).
-    const isPast18Wib = currentWibMinutes >= 18 * 60; // Batas maksimal jam 18:00 WIB (1080 menit)
+    const isPast20Wib = currentWibMinutes >= 20 * 60; // Batas maksimal jam 20:00 WIB (1200 menit)
     const hasUnfinishedSession =
       attendanceForActiveSchedule &&
       !attendanceForActiveSchedule.checkOutAt &&
@@ -3455,15 +3457,33 @@ export class KknService {
         String(attendanceForActiveSchedule.status || "").toUpperCase()
       );
 
-    if (isPast18Wib && hasUnfinishedSession) {
+    if (isPast20Wib && hasUnfinishedSession) {
       try {
+        const attendedDate = attendanceForActiveSchedule.attendedAt
+          ? new Date(attendanceForActiveSchedule.attendedAt)
+          : now;
+        const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
+        const cutoff20Wib = new Date(
+          Date.UTC(
+            attendedWib.getUTCFullYear(),
+            attendedWib.getUTCMonth(),
+            attendedWib.getUTCDate(),
+            13, // 20:00 WIB = 13:00 UTC
+            0,
+            0,
+            0
+          )
+        );
+        const checkoutTime = now.getTime() > cutoff20Wib.getTime() ? cutoff20Wib : now;
+
         const autoCheckoutResult = await kknAttendanceService.checkOutAttendance({
           studentId: attendanceForActiveSchedule.studentId,
           scheduleId: activeSchedule.id,
           deskripsiKegiatan:
             attendanceForActiveSchedule.deskripsiKegiatan ||
-            "Diselesaikan otomatis oleh sistem (Batas maksimal 18:00 WIB)",
+            "Diselesaikan otomatis oleh sistem (Batas maksimal 20:00 WIB)",
           isAutoCheckout: true,
+          checkOutTime: checkoutTime,
         });
 
         if (autoCheckoutResult) {
@@ -3471,13 +3491,13 @@ export class KknService {
           isMemenuhiDurasi = true;
           // Refresh local reference agar response payload konsisten
           attendanceForActiveSchedule.status = "HADIR_MEMENUHI";
-          attendanceForActiveSchedule.checkOutAt = new Date();
+          attendanceForActiveSchedule.checkOutAt = checkoutTime;
           attendanceForActiveSchedule.actualInZoneMinutes =
             autoCheckoutResult?.data?.actualInZoneMinutes ?? targetDurationMinutes;
         }
       } catch (checkoutErr) {
         console.error(
-          `[KknService.getActiveZone] Error saat auto-checkout jam 18:00 untuk ${userId}:`,
+          `[KknService.getActiveZone] Error saat auto-checkout jam 20:00 untuk ${userId}:`,
           checkoutErr
         );
       }

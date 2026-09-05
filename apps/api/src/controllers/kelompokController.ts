@@ -50,12 +50,27 @@ export const kelompokController = {
   create: async (req: Request, res: Response): Promise<void> => {
     try {
       const { name, dplId, kelurahan, cakupanRw, linkGoogleDrive } = req.body;
-      if (!name) {
+      if (!name || !String(name).trim()) {
         res.status(400).json({ error: "BAD_REQUEST", message: "Nama kelompok wajib diisi" });
         return;
       }
 
-      const result = await kelompokService.createKelompok({ name, dplId, kelurahan, cakupanRw, linkGoogleDrive });
+      let trimmedDrive = typeof linkGoogleDrive === "string" ? linkGoogleDrive.trim() : "";
+      if (!trimmedDrive) {
+        res.status(400).json({ error: "BAD_REQUEST", message: "Link Google Drive kelompok wajib diisi" });
+        return;
+      }
+      if (!/^https?:\/\//i.test(trimmedDrive)) {
+        trimmedDrive = `https://${trimmedDrive}`;
+      }
+
+      const result = await kelompokService.createKelompok({
+        name: String(name).trim(),
+        dplId,
+        kelurahan,
+        cakupanRw,
+        linkGoogleDrive: trimmedDrive,
+      });
       res.status(201).json({ success: true, data: result });
     } catch (error: any) {
       console.error("[KelompokController] create error:", error);
@@ -73,12 +88,25 @@ export const kelompokController = {
     try {
       const { id } = req.params;
       const { name, dplId, kelurahan, cakupanRw, linkGoogleDrive } = req.body;
+
+      let trimmedDrive: string | undefined = undefined;
+      if (linkGoogleDrive !== undefined) {
+        trimmedDrive = typeof linkGoogleDrive === "string" ? linkGoogleDrive.trim() : "";
+        if (!trimmedDrive) {
+          res.status(400).json({ error: "BAD_REQUEST", message: "Link Google Drive kelompok wajib diisi" });
+          return;
+        }
+        if (!/^https?:\/\//i.test(trimmedDrive)) {
+          trimmedDrive = `https://${trimmedDrive}`;
+        }
+      }
+
       const result = await kelompokService.updateKelompok(id, {
-        name,
+        name: name !== undefined ? String(name).trim() : undefined,
         dplId,
         kelurahan,
         cakupanRw,
-        linkGoogleDrive,
+        linkGoogleDrive: trimmedDrive,
       });
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {

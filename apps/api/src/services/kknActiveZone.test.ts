@@ -56,7 +56,7 @@ import { prisma } from "../lib/prisma.js";
 import { kknService } from "./kknService.js";
 import { kknAttendanceService } from "./kknAttendanceService.js";
 
-describe("kknService.getActiveZone - 16:00 Hold & 18:00 Auto-Checkout Policy", () => {
+describe("kknService.getActiveZone - 05:00 Start Window, 16:00-20:00 Hold & 20:00 Auto-Checkout Policy", () => {
   const userId = "student-user-1";
   const scheduleId = "sched-daily-1";
 
@@ -81,7 +81,7 @@ describe("kknService.getActiveZone - 16:00 Hold & 18:00 Auto-Checkout Policy", (
         id: scheduleId,
         title: "Kegiatan Harian",
         time: "08:00 - 16:00",
-        date: new Date(),
+        date: new Date("2026-09-03T00:00:00.000Z"),
         latitude: -6.89,
         longitude: 107.61,
         radius: 100,
@@ -94,9 +94,25 @@ describe("kknService.getActiveZone - 16:00 Hold & 18:00 Auto-Checkout Policy", (
     vi.mocked(prisma.studentLeaveRequest.findFirst).mockResolvedValue(null);
   });
 
-  it("should NOT mark student as ALPA when time is past 16:00 (e.g. 16:30 WIB) and keep BERLANGSUNG", async () => {
-    // Mock system time to 16:30 WIB (09:30 UTC)
-    const mockNow = new Date("2026-09-03T09:30:00.000Z");
+  it("should match active schedule early at 05:30 WIB even though nominal time is 08:00", async () => {
+    // Mock system time to 05:30 WIB (2026-09-02T22:30:00.000Z)
+    const mockNow = new Date("2026-09-02T22:30:00.000Z"); // 05:30 WIB on 2026-09-03
+    vi.setSystemTime(mockNow);
+
+    vi.mocked(prisma.activityAttendance.findFirst).mockResolvedValue(null);
+
+    const result = await kknService.getActiveZone(userId, -6.89, 107.61);
+
+    expect(result.hasActiveZone).toBe(true);
+    expect(result.scheduleId).toBe(scheduleId);
+    expect(result.attendanceStatus).toBe("belum_absen");
+
+    vi.useRealTimers();
+  });
+
+  it("should NOT mark student as ALPA when time is past 16:00 (e.g. 17:30 WIB or 19:30 WIB) and keep BERLANGSUNG", async () => {
+    // Mock system time to 19:30 WIB (12:30 UTC)
+    const mockNow = new Date("2026-09-03T12:30:00.000Z");
     vi.setSystemTime(mockNow);
 
     const activeAtt = {
@@ -126,9 +142,9 @@ describe("kknService.getActiveZone - 16:00 Hold & 18:00 Auto-Checkout Policy", (
     vi.useRealTimers();
   });
 
-  it("should auto-checkout session as HADIR_MEMENUHI when reaching 18:00 WIB (e.g. 18:05 WIB)", async () => {
-    // Mock system time to 18:05 WIB (11:05 UTC)
-    const mockNow = new Date("2026-09-03T11:05:00.000Z");
+  it("should auto-checkout session as HADIR_MEMENUHI when reaching 20:00 WIB (e.g. 20:05 WIB)", async () => {
+    // Mock system time to 20:05 WIB (13:05 UTC)
+    const mockNow = new Date("2026-09-03T13:05:00.000Z");
     vi.setSystemTime(mockNow);
 
     const activeAtt = {

@@ -58,7 +58,7 @@ async function repairAttendanceAlpha() {
       );
 
       const resolvedMinutes = Math.max(att.actualInZoneMinutes || 0, 240);
-      const checkoutTime = att.checkOutAt || new Date(`${todayWibStr}T18:00:00+07:00`);
+      const checkoutTime = att.checkOutAt || new Date(`${todayWibStr}T20:00:00+07:00`);
 
       await prisma.activityAttendance.update({
         where: { id: att.id },
@@ -68,7 +68,7 @@ async function repairAttendanceAlpha() {
           checkOutAt: checkoutTime,
           deskripsiKegiatan:
             (att.deskripsiKegiatan || "") +
-            " [Dipulihkan Sistem: Presensi sah, diselesaikan otomatis jam 18:00 WIB]",
+            " [Dipulihkan Sistem: Presensi sah, diselesaikan otomatis jam 20:00 WIB]",
         },
       });
 
