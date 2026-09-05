@@ -899,7 +899,7 @@ export const LandingPage: React.FC = () => {
                       alt={item.title}
                       loading="lazy"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/image/activity-1.webp";
+                        (e.target as HTMLImageElement).src = "/image/program/timbangan-digital-petugas.webp";
                       }}
                     />
                     <span className="landing-badge">{item.categoryLabel || "Program"}</span>
@@ -1640,7 +1640,7 @@ export const LandingPage: React.FC = () => {
                 alt={selectedProgram.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/image/activity-1.webp";
+                  (e.target as HTMLImageElement).src = "/image/program/timbangan-digital-petugas.webp";
                 }}
               />
             </div>
