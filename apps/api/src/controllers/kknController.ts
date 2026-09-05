@@ -1175,6 +1175,89 @@ export class KknController {
       });
     }
   }
+
+  /**
+   * GET /api/v1/kkn/my-kelompok/qr-codes
+   * Endpoint khusus Mobile App: Ambil 20 QR Code alokasi kelompok (Strict Isolation)
+   */
+  async getMyKelompokQrCodes(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId || (req.user as any)?.id;
+      const userRole = req.user?.role || "";
+      const requestedKelompokId = req.query.kelompokId as string | undefined;
+
+      if (!userId) {
+        res.status(401).json({ error: "UNAUTHORIZED", message: "Pengguna tidak terautentikasi" });
+        return;
+      }
+
+      const data = await kknService.getMyKelompokQrCodes(userId, userRole, requestedKelompokId);
+      res.status(200).json({
+        success: true,
+        message: "Data alokasi QR Code kelompok berhasil dimuat.",
+        data,
+      });
+    } catch (error: any) {
+      console.error("[KknController] getMyKelompokQrCodes error:", error);
+      if (error.message === "KELOMPOK_NOT_ASSIGNED") {
+        res.status(404).json({
+          error: "KELOMPOK_NOT_ASSIGNED",
+          message:
+            "Anda belum terdaftar dalam kelompok KKN manapun. Silakan hubungi DPL atau Panitia Taskforce.",
+        });
+        return;
+      }
+      if (error.message === "FORBIDDEN_KELOMPOK_ACCESS") {
+        res.status(403).json({
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki akses ke data QR kelompok ini.",
+        });
+        return;
+      }
+      res.status(500).json({
+        error: "INTERNAL_SERVER_ERROR",
+        message: error.message || "Gagal memuat QR Code kelompok.",
+      });
+    }
+  }
+
+  /**
+   * GET /api/v1/kkn/my-kelompok/qr-codes/export-print
+   * Endpoint khusus Percetakan: Dokumen HTML 10x15cm siap cetak / simpan PDF
+   */
+  async exportMyKelompokQrCodesPrint(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.userId || (req.user as any)?.id;
+      const userRole = req.user?.role || "";
+      const requestedKelompokId = req.query.kelompokId as string | undefined;
+
+      if (!userId) {
+        res.status(401).send("<h1>401 - Pengguna tidak terautentikasi</h1>");
+        return;
+      }
+
+      const { kelompokNama, htmlContent } = await kknService.exportMyKelompokQrHtml(
+        userId,
+        userRole,
+        requestedKelompokId
+      );
+
+      const sanitizedName = kelompokNama.replace(/[^a-zA-Z0-9_-]/g, "_");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="Stiker_BERSEKA_10x15cm_${sanitizedName}.html"`
+      );
+      res.send(htmlContent);
+    } catch (error: any) {
+      console.error("[KknController] exportMyKelompokQrCodesPrint error:", error);
+      if (error.message === "KELOMPOK_NOT_ASSIGNED") {
+        res.status(404).send("<h1>404 - Anda belum terdaftar dalam kelompok KKN manapun.</h1>");
+        return;
+      }
+      res.status(500).send("<h1>500 - Gagal menyiapkan dokumen cetak stiker kelompok.</h1>");
+    }
+  }
 }
 
 export const kknController = new KknController();

@@ -1345,4 +1345,74 @@ router.get(
   kknController.getWilayahKelompok
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/my-kelompok/qr-codes:
+ *   get:
+ *     summary: Mengambil 20 QR Code alokasi kelompok KKN mahasiswa yang sedang login (Strict by Kelompok ID)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: kelompokId
+ *         schema:
+ *           type: string
+ *         description: Khusus DPL atau Super User untuk melihat alokasi kelompok tertentu
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat daftar 20 QR kelompok
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Mahasiswa belum terdaftar dalam kelompok KKN
+ */
+router.get(
+  "/my-kelompok/qr-codes",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.getMyKelompokQrCodes
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/my-kelompok/qr-codes/export-print:
+ *   get:
+ *     summary: Export file dokumen HTML 10x15cm siap cetak / simpan PDF untuk diberikan ke tukang printer
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: kelompokId
+ *         schema:
+ *           type: string
+ *         description: Khusus DPL atau Super User
+ *     responses:
+ *       200:
+ *         description: Dokumen HTML cetak stiker 10x15cm
+ */
+router.get(
+  "/my-kelompok/qr-codes/export-print",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.exportMyKelompokQrCodesPrint
+);
+
 export default router;
