@@ -725,19 +725,6 @@
   font-size: 0.88rem;
 }
 
-.landing-badge {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  background: rgba(27, 107, 61, 0.92);
-  backdrop-filter: blur(4px);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
-}
-
 /* ───────────────── 6 Program KKN BERSEKA ───────────────── */
 .landing-program-card .landing-card-body {
   padding: 16px 20px 20px;
