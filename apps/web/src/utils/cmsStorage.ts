@@ -13,6 +13,13 @@ export interface HeroSlideItem {
   metric: string;
   highlight: string;
   isPublished?: boolean;
+  sourceType?: "proker" | "logbook" | "manual";
+  sourceId?: string | null;
+  prokerId?: string | null;
+  logbookId?: string | null;
+  kelompokId?: string | null;
+  kelompokNama?: string | null;
+  isStrictRelation?: boolean;
 }
 
 export interface MarketProductItem {
@@ -32,6 +39,13 @@ export interface MarketProductItem {
   description: string;
   benefits: string[];
   isPublished?: boolean;
+  sourceType?: "proker" | "logbook" | "manual";
+  sourceId?: string | null;
+  prokerId?: string | null;
+  logbookId?: string | null;
+  kelompokId?: string | null;
+  kelompokNama?: string | null;
+  isStrictRelation?: boolean;
 }
 
 export interface ActionCampaignItem {
@@ -52,6 +66,13 @@ export interface ActionCampaignItem {
   description: string;
   impactHighlight: string;
   isPublished?: boolean;
+  sourceType?: "proker" | "logbook" | "manual";
+  sourceId?: string | null;
+  prokerId?: string | null;
+  logbookId?: string | null;
+  kelompokId?: string | null;
+  kelompokNama?: string | null;
+  isStrictRelation?: boolean;
 }
 
 export interface NewsArticleItem {
@@ -66,6 +87,13 @@ export interface NewsArticleItem {
   content: string;
   author: string;
   isPublished?: boolean;
+  sourceType?: "proker" | "logbook" | "manual";
+  sourceId?: string | null;
+  prokerId?: string | null;
+  logbookId?: string | null;
+  kelompokId?: string | null;
+  kelompokNama?: string | null;
+  isStrictRelation?: boolean;
 }
 
 export interface LiveLogItem {

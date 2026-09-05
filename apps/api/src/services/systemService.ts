@@ -629,9 +629,11 @@ export const systemService = {
           l.foto_bukti_url as "fotoBuktiUrl", 
           l.tanggal_kegiatan as "tanggalKegiatan", 
           l.status_persetujuan as "statusApproval", 
+          k.id as "kelompokId",
           k.nama as "kelompokNama", 
           k.kelurahan as kelurahan, 
           u.nama as "penulisNama", 
+          p.id as "prokerId",
           p.deskripsi as "prokerDeskripsi", 
           p.kategori as "prokerKategori"
         FROM logbook_kkn l
@@ -640,7 +642,7 @@ export const systemService = {
         LEFT JOIN program_kerja_kkn p ON l.id_program_kerja = p.id
         WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 5
         ORDER BY l.tanggal_kegiatan DESC
-        LIMIT 40
+        LIMIT 50
       `);
       return logbooks || [];
     } catch (err) {
@@ -663,13 +665,32 @@ export const systemService = {
           p.status,
           p.sumber,
           p.waktu_pelaksanaan as "waktuPelaksanaan",
+          p.kebutuhan_biaya as "kebutuhanBiaya",
+          k.id as "kelompokId",
           k.nama as "kelompokNama", 
           k.kelurahan,
-          'Coblong' as "kecamatan"
+          'Coblong' as "kecamatan",
+          (
+            SELECT l.foto_bukti_url 
+            FROM logbook_kkn l 
+            WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+              AND l.foto_bukti_url IS NOT NULL 
+              AND length(l.foto_bukti_url) > 3 
+            ORDER BY l.tanggal_kegiatan DESC 
+            LIMIT 1
+          ) as "fotoBuktiUrl",
+          (
+            SELECT l.tempat 
+            FROM logbook_kkn l 
+            WHERE (l.id_program_kerja = p.id OR l.id_kelompok = p.id_kelompok) 
+              AND l.tempat IS NOT NULL 
+            ORDER BY l.tanggal_kegiatan DESC 
+            LIMIT 1
+          ) as "logbookTempat"
         FROM program_kerja_kkn p
         LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
         ORDER BY p.dibuat_pada DESC
-        LIMIT 40
+        LIMIT 50
       `);
       return prokers || [];
     } catch (err) {

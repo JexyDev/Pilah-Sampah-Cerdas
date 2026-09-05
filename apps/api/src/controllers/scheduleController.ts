@@ -85,14 +85,32 @@ export const scheduleController = {
       const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
       const isMahasiswa = userRole === "MAHASISWA_KKN";
 
-      if (isDpl) {
-        res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message:
-            "Role DPL hanya memiliki hak akses monitoring dan tidak dapat membuat kegiatan/agenda",
+      if (isDpl && !resolvedKelompokId) {
+        const userDpl = await prisma.user.findUnique({
+          where: { id: req.user?.userId },
+          select: { id: true, name: true },
         });
-        return;
+        const dplGroup = await prisma.kelompokKkn.findFirst({
+          where: {
+            OR: [
+              { dplId: req.user?.userId },
+              ...(userDpl?.name
+                ? [{ dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" as const } }]
+                : []),
+            ],
+          },
+          select: { id: true },
+        });
+        if (dplGroup) {
+          resolvedKelompokId = dplGroup.id;
+        } else {
+          res.status(403).json({
+            success: false,
+            error: "FORBIDDEN",
+            message: "DPL belum terhubung dengan kelompok KKN",
+          });
+          return;
+        }
       }
 
       if (req.user?.userId) {
@@ -143,12 +161,30 @@ export const scheduleController = {
       const userId = req.user?.userId || (req.user as any)?.id;
 
       if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
-        res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Role DPL hanya memiliki hak akses monitoring",
+        const schedule = await prisma.schedule.findUnique({
+          where: { id },
+          include: { kelompok: true },
         });
-        return;
+        if (!schedule) {
+          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
+          return;
+        }
+        const userDpl = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, name: true },
+        });
+        const isMentoring =
+          schedule.kelompok &&
+          (schedule.kelompok.dplId === userId ||
+            (userDpl?.name && schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
+        if (!isMentoring) {
+          res.status(403).json({
+            success: false,
+            error: "FORBIDDEN_SCOPE",
+            message: "Role DPL hanya dapat mengelola kegiatan kelompok bimbingan sendiri",
+          });
+          return;
+        }
       }
 
       if (userRole === "MAHASISWA_KKN") {
@@ -205,12 +241,30 @@ export const scheduleController = {
       const userId = req.user?.userId || (req.user as any)?.id;
 
       if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
-        res.status(403).json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Role DPL hanya memiliki hak akses monitoring",
+        const schedule = await prisma.schedule.findUnique({
+          where: { id },
+          include: { kelompok: true },
         });
-        return;
+        if (!schedule) {
+          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
+          return;
+        }
+        const userDpl = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, name: true },
+        });
+        const isMentoring =
+          schedule.kelompok &&
+          (schedule.kelompok.dplId === userId ||
+            (userDpl?.name && schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
+        if (!isMentoring) {
+          res.status(403).json({
+            success: false,
+            error: "FORBIDDEN_SCOPE",
+            message: "Role DPL hanya dapat mengelola kegiatan kelompok bimbingan sendiri",
+          });
+          return;
+        }
       }
 
       if (userRole === "MAHASISWA_KKN") {
@@ -251,7 +305,13 @@ export const scheduleController = {
         const wibNowStr = toWibDateString(now);
         const wibActivityStr = toWibDateString(parsedDate);
 
-        if (wibActivityStr < wibNowStr) {
+        const existingSchedule = await prisma.schedule.findUnique({
+          where: { id },
+          select: { date: true },
+        });
+        const existingWibStr = existingSchedule?.date ? toWibDateString(existingSchedule.date) : null;
+
+        if (wibActivityStr < wibNowStr && wibActivityStr !== existingWibStr) {
           res.status(400).json({
             success: false,
             error: "VALIDATION_ERROR",
