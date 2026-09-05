@@ -642,7 +642,6 @@ export const LandingPage: React.FC = () => {
                     </figure>
                     <div className="landing-slide-overlay" />
                     <div className="landing-slide-caption">
-                      {slide.badge && <span className="landing-slide-badge">{slide.badge}</span>}
                       <div>{slide.title}</div>
                     </div>
                   </div>
@@ -822,10 +821,6 @@ export const LandingPage: React.FC = () => {
                     />
                   </figure>
                   <div className="landing-card-body">
-                    <div className="landing-program-pill">
-                      <span className="landing-program-num">{String(idx + 1).padStart(2, "0")}</span>
-                      <span className="landing-program-tag">{item.categoryLabel || "PROGRAM KKN"}</span>
-                    </div>
                     <h3>{item.title}</h3>
                     <p>{item.description}</p>
                     <button
@@ -1135,7 +1130,6 @@ export const LandingPage: React.FC = () => {
                   </figure>
                   <div className="landing-card-body">
                     <div className="landing-news-meta">
-                      <span className="tag">{news.category}</span>
                       <time dateTime="2026-05-01">{news.date}</time>
                     </div>
                     <h3>{news.title}</h3>
@@ -1439,7 +1433,6 @@ export const LandingPage: React.FC = () => {
                       </figure>
                       <div className="landing-card-body">
                         <div className="landing-news-meta">
-                          <span className="tag">{news.category}</span>
                           <time>{news.date}</time>
                         </div>
                         <h3 className="line-clamp-2 text-sm font-black">{news.title}</h3>

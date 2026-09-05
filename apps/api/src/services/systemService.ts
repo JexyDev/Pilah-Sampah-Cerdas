@@ -166,7 +166,7 @@ export const systemService = {
         id: "slide-3",
         image: "/image/activity-1.webp",
         badge: "Edukasi & Sosialisasi",
-        title: "Sosialisasi Digitalisasi Bank Sampah & Sedekah Anorganik",
+        title: "Sosialisasi Digitalisasi Pemilahan Sampah & Sedekah Anorganik",
         location: "Balai Warga RW 03, Bojongsoang",
         metric: "92% Partisipasi Warga",
         highlight: "Konversi Sampah Jadi Sembako",
@@ -252,7 +252,7 @@ export const systemService = {
         category: "kerajinan",
         categoryLabel: "Daur Ulang Kreatif",
         categoryColor: "bg-blue-100 text-blue-800",
-        initiator: "Bank Sampah Berkah RW 01",
+        initiator: "Unit Daur Ulang Berkah RW 01",
         priceIdr: 35000,
         pricePoints: 350,
         stock: 25,
@@ -454,15 +454,15 @@ export const systemService = {
       },
       {
         id: "news-05",
-        title: "Digitalisasi Bank Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
+        title: "Digitalisasi Penimbangan Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
         category: "Daur Ulang",
         date: "5 Mei 2026",
         readTime: "3 min baca",
-        location: "Bank Sampah RW 04",
+        location: "Posko Penimbangan RW 04",
         imageUrl: "/image/activity-1.webp",
         summary: "Penerapan sistem QR Code pada setiap kantong sampah memudahkan pencatatan saldo dan percepatan penukaran sembako bulanan.",
-        content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Bank Sampah RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
-        author: "Pengelola Bank Sampah",
+        content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Posko RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
+        author: "Pengelola Lingkungan RW 04",
         isPublished: true,
       },
       {
@@ -493,7 +493,7 @@ export const systemService = {
       },
       {
         q: "Apakah produk di Pasar Berseka bisa dibeli dengan uang tunai?",
-        a: "Ya, seluruh produk hasil olahan KKN dan warga di Pasar Berseka dapat dibeli menggunakan uang tunai secara langsung di Posko KKN/Bank Sampah, ataupun ditukarkan dengan Poin BERSEKA."
+        a: "Ya, seluruh produk hasil olahan KKN dan warga di Pasar Berseka dapat dibeli menggunakan uang tunai secara langsung di Posko KKN/Mitra Warga, ataupun ditukarkan dengan Poin BERSEKA."
       },
       {
         q: "Apakah aplikasi BERSEKA berbayar untuk warga?",
@@ -505,7 +505,7 @@ export const systemService = {
       },
       {
         q: "Apa yang membedakan sampah organik dan anorganik pada sistem BERSEKA?",
-        a: "Sampah organik (sisa makanan, kulit buah, sayur) akan dialirkan untuk biokonversi maggot BSF dan komposting kasgot. Sampah anorganik (botol plastik PET, kardus, kaleng) disalurkan ke Bank Sampah untuk didaur ulang."
+        a: "Sampah organik (sisa makanan, kulit buah, sayur) akan dialirkan untuk biokonversi maggot BSF dan komposting kasgot. Sampah anorganik (botol plastik PET, kardus, kaleng) disalurkan untuk didaur ulang menjadi produk kreatif."
       }
     ]
   }),
@@ -522,13 +522,55 @@ export const systemService = {
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
         const lastModified = parsed.lastModified || (config.updatedAt ? new Date(config.updatedAt).getTime() : Date.now());
+
+        let campaigns = Array.isArray(parsed.actionCampaigns) ? parsed.actionCampaigns : defaults.actionCampaigns;
+        const hasStaleBankSampah = campaigns.some(
+          (c: any) =>
+            c.title?.includes("Bank Sampah") ||
+            c.categoryLabel?.toLowerCase().includes("bank sampah") ||
+            c.category === "recycle" ||
+            c.title?.includes("Sedekah Minyak Jelantah")
+        );
+        if (hasStaleBankSampah || campaigns.length !== 6) {
+          campaigns = defaults.actionCampaigns;
+        }
+
+        let news = Array.isArray(parsed.newsItems) ? parsed.newsItems : defaults.newsItems;
+        news = news.map((n: any) => ({
+          ...n,
+          category: n.category === "Bank Sampah" ? "Daur Ulang" : n.category,
+          title: n.title?.replace(/Bank Sampah/gi, "Penimbangan Sampah") || n.title,
+          location: n.location?.replace(/Bank Sampah/gi, "Posko Penimbangan") || n.location,
+          content: n.content?.replace(/Bank Sampah/gi, "Posko") || n.content,
+          author: n.author?.replace(/Bank Sampah/gi, "Pengelola Lingkungan") || n.author,
+        }));
+
+        let slides = Array.isArray(parsed.heroSlides) ? parsed.heroSlides : defaults.heroSlides;
+        slides = slides.map((s: any) => ({
+          ...s,
+          badge: s.badge?.replace(/Bank Sampah/gi, "Sosialisasi") || s.badge,
+          title: s.title?.replace(/Bank Sampah/gi, "Pemilahan Sampah") || s.title,
+        }));
+
+        let products = Array.isArray(parsed.marketProducts) ? parsed.marketProducts : defaults.marketProducts;
+        products = products.map((p: any) => ({
+          ...p,
+          initiator: p.initiator?.replace(/Bank Sampah/gi, "Unit Daur Ulang") || p.initiator,
+        }));
+
+        let faqs = Array.isArray(parsed.faqItems) ? parsed.faqItems : defaults.faqItems;
+        faqs = faqs.map((f: any) => ({
+          ...f,
+          a: f.a?.replace(/Bank Sampah/gi, "Posko Daur Ulang") || f.a,
+        }));
+
         return {
-          heroSlides: Array.isArray(parsed.heroSlides) ? parsed.heroSlides : defaults.heroSlides,
-          marketProducts: Array.isArray(parsed.marketProducts) ? parsed.marketProducts : defaults.marketProducts,
-          actionCampaigns: Array.isArray(parsed.actionCampaigns) ? parsed.actionCampaigns : defaults.actionCampaigns,
-          newsItems: Array.isArray(parsed.newsItems) ? parsed.newsItems : defaults.newsItems,
+          heroSlides: slides,
+          marketProducts: products,
+          actionCampaigns: campaigns,
+          newsItems: news,
           liveLogs: Array.isArray(parsed.liveLogs) ? parsed.liveLogs : defaults.liveLogs,
-          faqItems: Array.isArray(parsed.faqItems) ? parsed.faqItems : defaults.faqItems,
+          faqItems: faqs,
           lastModified,
         };
       }

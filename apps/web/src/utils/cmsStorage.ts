@@ -118,7 +118,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       id: "slide-3",
       image: "/image/activity-1.webp",
       badge: "Edukasi & Sosialisasi",
-      title: "Sosialisasi Digitalisasi Bank Sampah & Sedekah Anorganik",
+      title: "Sosialisasi Digitalisasi Pemilahan Sampah & Sedekah Anorganik",
       location: "Balai Warga RW 03, Bojongsoang",
       metric: "92% Partisipasi Warga",
       highlight: "Konversi Sampah Jadi Sembako",
@@ -204,7 +204,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       category: "kerajinan",
       categoryLabel: "Daur Ulang Kreatif",
       categoryColor: "bg-blue-100 text-blue-800",
-      initiator: "Bank Sampah Berkah RW 01",
+      initiator: "Unit Daur Ulang Berkah RW 01",
       priceIdr: 35000,
       pricePoints: 350,
       stock: 25,
@@ -478,15 +478,15 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       id: "news-05",
-      title: "Digitalisasi Bank Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
+      title: "Digitalisasi Penimbangan Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
       category: "Daur Ulang",
       date: "5 Mei 2026",
       readTime: "3 min baca",
-      location: "Bank Sampah RW 04",
+      location: "Posko Penimbangan RW 04",
       imageUrl: "/image/activity-1.webp",
       summary: "Penerapan sistem QR Code pada setiap kantong sampah memudahkan pencatatan saldo dan percepatan penukaran sembako bulanan.",
-      content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Bank Sampah RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
-      author: "Pengelola Bank Sampah",
+      content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Posko RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
+      author: "Pengelola Lingkungan RW 04",
       isPublished: true,
     },
     {
@@ -517,7 +517,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       q: "Apakah produk di Pasar Berseka bisa dibeli dengan uang tunai?",
-      a: "Ya, seluruh produk hasil olahan KKN dan warga di Pasar Berseka dapat dibeli menggunakan uang tunai secara langsung di Posko KKN/Bank Sampah, ataupun ditukarkan dengan Poin BERSEKA."
+      a: "Ya, seluruh produk hasil olahan KKN dan warga di Pasar Berseka dapat dibeli menggunakan uang tunai secara langsung di Posko KKN/Mitra Warga, ataupun ditukarkan dengan Poin BERSEKA."
     },
     {
       q: "Apakah aplikasi BERSEKA berbayar untuk warga?",
@@ -529,16 +529,16 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       q: "Apa yang membedakan sampah organik dan anorganik pada sistem BERSEKA?",
-      a: "Sampah organik (sisa makanan, kulit buah, sayur) akan dialirkan untuk biokonversi maggot BSF dan komposting kasgot. Sampah anorganik (botol plastik PET, kardus, kaleng) disalurkan ke Bank Sampah untuk didaur ulang."
+      a: "Sampah organik (sisa makanan, kulit buah, sayur) akan dialirkan untuk biokonversi maggot BSF dan komposting kasgot. Sampah anorganik (botol plastik PET, kardus, kaleng) disalurkan untuk didaur ulang menjadi produk kreatif."
     }
   ]
 };
 
 const DB_NAME = "berseka_cms_db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "landing_cms";
 const KEY = "current_content";
-const LS_FALLBACK_KEY = "berseka_landing_cms_content";
+const LS_FALLBACK_KEY = "berseka_landing_cms_content_v2";
 
 export interface StoredPayload {
   data: LandingContentPayload;
@@ -618,13 +618,60 @@ export async function saveCmsContent(content: LandingContentPayload): Promise<vo
 // ── Load CMS Content ─────────────────────────────────────────────────────────
 export function sanitizeCmsPayload(data: Partial<LandingContentPayload>): LandingContentPayload {
   if (!data || typeof data !== "object") return DEFAULT_CMS_CONTENT;
+
+  // Sanitize actionCampaigns: If stale data containing Bank Sampah or less than 6 programs exists, reset to defaults
+  let campaigns = Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns;
+  const hasStaleBankSampah = campaigns.some(
+    (c) =>
+      c.title?.includes("Bank Sampah") ||
+      c.categoryLabel?.toLowerCase().includes("bank sampah") ||
+      c.category === "recycle" ||
+      c.title?.includes("Sedekah Minyak Jelantah")
+  );
+  if (hasStaleBankSampah || campaigns.length !== 6) {
+    campaigns = DEFAULT_CMS_CONTENT.actionCampaigns;
+  }
+
+  // Clean newsItems
+  let news = Array.isArray(data.newsItems) ? data.newsItems : DEFAULT_CMS_CONTENT.newsItems;
+  news = news.map((n) => ({
+    ...n,
+    category: n.category === "Bank Sampah" ? "Daur Ulang" : n.category,
+    title: n.title?.replace(/Bank Sampah/gi, "Penimbangan Sampah") || n.title,
+    location: n.location?.replace(/Bank Sampah/gi, "Posko Penimbangan") || n.location,
+    content: n.content?.replace(/Bank Sampah/gi, "Posko") || n.content,
+    author: n.author?.replace(/Bank Sampah/gi, "Pengelola Lingkungan") || n.author,
+  }));
+
+  // Clean heroSlides
+  let slides = Array.isArray(data.heroSlides) ? data.heroSlides : DEFAULT_CMS_CONTENT.heroSlides;
+  slides = slides.map((s) => ({
+    ...s,
+    badge: s.badge?.replace(/Bank Sampah/gi, "Sosialisasi") || s.badge,
+    title: s.title?.replace(/Bank Sampah/gi, "Pemilahan Sampah") || s.title,
+  }));
+
+  // Clean marketProducts
+  let products = Array.isArray(data.marketProducts) ? data.marketProducts : DEFAULT_CMS_CONTENT.marketProducts;
+  products = products.map((p) => ({
+    ...p,
+    initiator: p.initiator?.replace(/Bank Sampah/gi, "Unit Daur Ulang") || p.initiator,
+  }));
+
+  // Clean FAQ
+  let faqs = Array.isArray(data.faqItems) ? data.faqItems : DEFAULT_CMS_CONTENT.faqItems;
+  faqs = faqs.map((f) => ({
+    ...f,
+    a: f.a?.replace(/Bank Sampah/gi, "Posko Daur Ulang") || f.a,
+  }));
+
   return {
-    heroSlides: Array.isArray(data.heroSlides) ? data.heroSlides : DEFAULT_CMS_CONTENT.heroSlides,
-    marketProducts: Array.isArray(data.marketProducts) ? data.marketProducts : DEFAULT_CMS_CONTENT.marketProducts,
-    actionCampaigns: Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns,
-    newsItems: Array.isArray(data.newsItems) ? data.newsItems : DEFAULT_CMS_CONTENT.newsItems,
+    heroSlides: slides,
+    marketProducts: products,
+    actionCampaigns: campaigns,
+    newsItems: news,
     liveLogs: Array.isArray(data.liveLogs) ? data.liveLogs : DEFAULT_CMS_CONTENT.liveLogs,
-    faqItems: Array.isArray(data.faqItems) ? data.faqItems : DEFAULT_CMS_CONTENT.faqItems,
+    faqItems: faqs,
   };
 }
 

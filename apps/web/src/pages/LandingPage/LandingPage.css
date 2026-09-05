@@ -491,20 +491,6 @@
   z-index: 2;
 }
 
-.landing-slide-badge {
-  display: inline-block;
-  background: rgba(27, 107, 61, 0.92);
-  backdrop-filter: blur(4px);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .landing-carousel-btn {
   position: absolute;
   top: 50%;
@@ -729,32 +715,6 @@
 .landing-program-card .landing-card-body {
   padding: 16px 20px 20px;
   gap: 8px;
-}
-
-.landing-program-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
-  padding: 3px 12px;
-  border-radius: 9999px;
-  width: fit-content;
-}
-
-.landing-program-num {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #15803d;
-  letter-spacing: 0.02em;
-}
-
-.landing-program-tag {
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #15803d;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .landing-program-card h3 {
