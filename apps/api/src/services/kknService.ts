@@ -3531,6 +3531,10 @@ export class KknService {
       const schedTime = activeSchedule.time || "08:00 - 16:00";
       const schedTitle = activeSchedule.title || "Kegiatan KKN";
 
+      const schedDate = activeSchedule?.date ? new Date(activeSchedule.date) : new Date();
+      const schedWib = new Date(schedDate.getTime() + 7 * 60 * 60 * 1000);
+      const isWeekendFlexible = schedWib.getUTCDay() === 0 || schedWib.getUTCDay() === 6;
+
       return {
         hasActiveZone: true,
         id: activeSchedule.id,
@@ -3559,7 +3563,13 @@ export class KknService {
             ? "Hadir & Memenuhi"
             : attendanceStatus === "hadir_tidak_memenuhi"
               ? "Hadir & Tidak Memenuhi"
-              : attendanceStatus,
+              : attendanceStatus === "belum_absen" && isWeekendFlexible
+                ? "Belum Absen (Akhir Pekan Fleksibel)"
+                : attendanceStatus,
+        isWeekendFlexible,
+        catatanFleksibilitas: isWeekendFlexible
+          ? "Presensi akhir pekan (Sabtu/Minggu) bersifat fleksibel. Mahasiswa yang tidak hadir tidak dikenakan sanksi/alpa."
+          : undefined,
         isMemenuhiDurasi,
         kehadiran: attendanceStatus,
         attendedAt: attendanceForActiveSchedule?.attendedAt,

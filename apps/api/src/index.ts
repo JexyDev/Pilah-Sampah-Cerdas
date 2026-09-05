@@ -107,7 +107,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 app.use(readOnlyGuard);
 app.use(auditMiddleware("Global"));
@@ -186,6 +187,12 @@ app.use("/downloads", (req, res, next) => {
   }
   next();
 });
+
+// Statically serve /image folder (public assets like QR templates) with multi-directory fallback
+app.use("/image", express.static(path.resolve(process.cwd(), "apps/web/public/image"), staticCacheOptions));
+app.use("/image", express.static(path.resolve(process.cwd(), "../web/public/image"), staticCacheOptions));
+app.use("/image", express.static(path.resolve(__dirname, "../../web/public/image"), staticCacheOptions));
+app.use("/image", express.static(path.resolve(__dirname, "../../../apps/web/public/image"), staticCacheOptions));
 
 // In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
 app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));

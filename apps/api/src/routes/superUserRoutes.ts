@@ -51,4 +51,11 @@ router.post(
 );
 router.get("/circular-economy", superUserController.getCircularEconomyReport);
 
+// Kelompok KKN QR Distribution Hub (Developer / Super User only)
+router.get("/kelompok-qr/distribution", superUserController.getKelompokDistributionList);
+router.post("/kelompok-qr/:kelompokId/generate", superUserController.generateKelompokQrBundle);
+router.put("/kelompok-qr/:kelompokId/gdrive", superUserController.updateKelompokGdrive);
+router.put("/kelompok-qr/:kelompokId/mark-downloaded", superUserController.markKelompokQrDownloaded);
+router.get("/kelompok-qr/:kelompokId/export-pdf", superUserController.exportKelompokQrPdfHtml);
+
 export default router;

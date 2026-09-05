@@ -1608,13 +1608,40 @@ describe("kknAttendanceService - Auto-Attendance & Duration Verification", () =>
   });
 
   describe("processWeekdayAutoAlpha", () => {
-    it("should bypass auto-alpha when date is Saturday or Sunday (Weekend)", async () => {
+    it("should bypass auto-alpha when date is Sunday (Weekend)", async () => {
       // 2026-09-06 is Sunday
       const result = await service.processWeekdayAutoAlpha("2026-09-06");
       expect(result.success).toBe(true);
       expect(result.isWeekday).toBe(false);
       expect(result.totalMarkedAlpha).toBe(0);
       expect(result.reason).toContain("Akhir pekan");
+    });
+
+    it("should bypass auto-alpha when date is Saturday (Weekend)", async () => {
+      // 2026-09-05 is Saturday
+      const result = await service.processWeekdayAutoAlpha("2026-09-05");
+      expect(result.success).toBe(true);
+      expect(result.isWeekday).toBe(false);
+      expect(result.totalMarkedAlpha).toBe(0);
+      expect(result.reason).toContain("Akhir pekan");
+    });
+
+    it("should block ALPA_AUTO on weekend (Saturday/Sunday) in recordAttendance", async () => {
+      // Simulate Saturday 10:00 WIB
+      const saturdayMs = new Date("2026-09-05T10:00:00+07:00").getTime();
+      const spy = vi.spyOn(Date, "now").mockReturnValue(saturdayMs);
+
+      await expect(
+        service.recordAttendance({
+          scheduleId: "sch-weekend",
+          studentId: "student-weekend-1",
+          latitude: -6.89,
+          longitude: 107.61,
+          method: "ALPA_AUTO",
+        })
+      ).rejects.toThrow(/WEEKEND_AUTO_ALPHA_BLOCKED/);
+
+      spy.mockRestore();
     });
 
     it("should mark student as ALPA on a weekday when there is no activity, leave, or logbook", async () => {

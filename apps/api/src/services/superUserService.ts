@@ -475,10 +475,9 @@ export class SuperUserService {
 
     .qr-overlay {
       position: absolute;
-      left: 10.69%;
-      top: 69.82%;
-      width: 33.68%;
-      height: 22.46%;
+      left: 31.36%;
+      width: 37.28%;
+      height: 24.47%;
       z-index: 10;
       display: flex;
       align-items: center;
@@ -486,6 +485,14 @@ export class SuperUserService {
       background: #ffffff;
       padding: 1.5%;
       box-sizing: border-box;
+    }
+
+    .theme-anorganik .qr-overlay {
+      top: 42.91%;
+    }
+
+    .theme-organik .qr-overlay {
+      top: 42.59%;
     }
 
     .qr-code-img {
@@ -510,24 +517,21 @@ export class SuperUserService {
       white-space: nowrap;
       line-height: 1;
       box-sizing: border-box;
+      width: 41.12%;
+      left: 52.00%;
+      height: 4.41%;
     }
 
     .pill-organik {
-      left: 54.61%;
-      top: 89.45%;
-      width: 38.21%;
-      height: 2.93%;
+      top: 85.7%;
       color: #ffffff;
       font-size: 8.5pt;
     }
 
     .pill-anorganik {
-      left: 53.44%;
-      top: 91.3%;
-      width: 37.48%;
-      height: 2.34%;
+      top: 86.0%;
       color: #000000;
-      font-size: 8.2pt;
+      font-size: 8.5pt;
     }
 
     body.layout-a4-grid .print-canvas {
@@ -648,8 +652,8 @@ export class SuperUserService {
         const qrImg = card.querySelector('.qr-code-img');
 
         const canvas = document.createElement('canvas');
-        canvas.width = 1366;
-        canvas.height = 2048;
+        canvas.width = 2500;
+        canvas.height = 3808;
         const ctx = canvas.getContext('2d');
         if (!ctx) continue;
 
@@ -665,30 +669,32 @@ export class SuperUserService {
           });
         }
 
+        const isAnorg = category.includes('ANORGANIK');
+        const qrY = isAnorg ? 1634 : 1622;
+
         await new Promise(r => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           img.onload = () => {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(146, 1430, 460, 460);
-            ctx.drawImage(img, 156, 1440, 440, 440);
+            ctx.fillRect(784, qrY, 932, 932);
+            ctx.drawImage(img, 784, qrY, 932, 932);
             r();
           };
           img.onerror = () => r();
           img.src = qrImg.src;
         });
 
-        const isAnorg = category.includes('ANORGANIK');
-        ctx.font = '900 30px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+        ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         if (isAnorg) {
           ctx.fillStyle = '#000000';
-          ctx.fillText(serial, 985, 1895);
+          ctx.fillText(serial, 1814, 3357);
         } else {
           ctx.fillStyle = '#ffffff';
-          ctx.fillText(serial, 1007, 1862);
+          ctx.fillText(serial, 1814, 3348);
         }
 
         const dataUrl = canvas.toDataURL('image/png');
@@ -1375,6 +1381,339 @@ export class SuperUserService {
       pemanfaatanDetails: pemanfaatanLogs,
       facilityProductionDetails: facilityLogs,
     };
+  }
+
+  /**
+   * Get Kelompok KKN QR Distribution List with advanced filtering
+   */
+  async getKelompokDistributionList(filters?: {
+    search?: string;
+    statusDistribusi?: string; // 'SEMUA' | 'BELUM_GENERATE' | 'SIAP_UNDUH' | 'SUDAH_DIUNDUH'
+    hasGdrive?: string; // 'ALL' | 'YES' | 'NO'
+    kelurahan?: string;
+  }) {
+    const where: any = {};
+
+    if (filters?.kelurahan && filters.kelurahan !== "SEMUA") {
+      where.kelurahan = filters.kelurahan;
+    }
+
+    if (filters?.hasGdrive === "YES") {
+      where.linkGoogleDrive = { not: null };
+    } else if (filters?.hasGdrive === "NO") {
+      where.OR = [
+        { linkGoogleDrive: null },
+        { linkGoogleDrive: "" },
+      ];
+    }
+
+    if (filters?.search && filters.search.trim() !== "") {
+      const s = filters.search.trim();
+      where.OR = [
+        { name: { contains: s, mode: "insensitive" } },
+        { kelurahan: { contains: s, mode: "insensitive" } },
+        { dplNamaMentah: { contains: s, mode: "insensitive" } },
+        { dpl: { name: { contains: s, mode: "insensitive" } } },
+        { bins: { some: { qrCode: { contains: s, mode: "insensitive" } } } },
+      ];
+    }
+
+    const kelompokList = await prisma.kelompokKkn.findMany({
+      where,
+      include: {
+        dpl: { select: { id: true, name: true, phone: true } },
+        bins: {
+          select: {
+            id: true,
+            qrCode: true,
+            status: true,
+            createdAt: true,
+            category: { select: { id: true, name: true } },
+          },
+          orderBy: { qrCode: "asc" },
+        },
+        students: {
+          select: {
+            id: true,
+            assignedRwId: true,
+            assignedRw: { select: { id: true, name: true, kelurahan: { select: { id: true, name: true } } } },
+          },
+        },
+      },
+      orderBy: { name: "asc" },
+    });
+
+    const enriched = kelompokList.map((k) => {
+      const bins = k.bins || [];
+      const totalBins = bins.length;
+      const organikBins = bins.filter((b) =>
+        (b.category?.name || "").toUpperCase().includes("ORGANIK") ||
+        (b.category?.name || "").toUpperCase().includes("ORGANIC") ||
+        b.qrCode.includes("-OGN-")
+      );
+      const anorganikBins = bins.filter((b) =>
+        (b.category?.name || "").toUpperCase().includes("ANORGANIK") ||
+        (b.category?.name || "").toUpperCase().includes("NON_ORGANIC") ||
+        b.qrCode.includes("-AGN-")
+      );
+
+      let statusDistribusi = "BELUM_GENERATE";
+      if (totalBins >= 10) {
+        statusDistribusi = k.qrDownloadedAt ? "SUDAH_DIUNDUH" : "SIAP_UNDUH";
+      } else if (totalBins > 0) {
+        statusDistribusi = "BELUM_LENGKAP";
+      }
+
+      // Sort bins: Organik first, then Anorganik
+      const sortedBins = [...organikBins, ...anorganikBins];
+
+      return {
+        id: k.id,
+        name: k.name,
+        kelurahan: k.kelurahan,
+        cakupanRw: k.cakupanRw,
+        dpl: k.dpl,
+        dplNamaMentah: k.dplNamaMentah,
+        linkGoogleDrive: k.linkGoogleDrive,
+        qrDownloadedAt: k.qrDownloadedAt,
+        totalBins,
+        organikCount: organikBins.length,
+        anorganikCount: anorganikBins.length,
+        statusDistribusi,
+        bins: sortedBins,
+      };
+    });
+
+    if (filters?.statusDistribusi && filters.statusDistribusi !== "SEMUA") {
+      return enriched.filter((k) => k.statusDistribusi === filters.statusDistribusi);
+    }
+
+    return enriched;
+  }
+
+  /**
+   * Generate exactly 10 QR Codes for a Kelompok (5 Organik + 5 Anorganik)
+   * Prevents duplication and locks quota.
+   */
+  async generateKelompokQrBundle(kelompokId: string, adminUserId: string) {
+    return prisma.$transaction(async (tx) => {
+      const kelompok = await tx.kelompokKkn.findUnique({
+        where: { id: kelompokId },
+        include: {
+          bins: {
+            include: { category: true },
+          },
+          students: {
+            include: { assignedRw: true },
+          },
+        },
+      });
+
+      if (!kelompok) {
+        throw new Error("Kelompok KKN tidak ditemukan.");
+      }
+
+      const existingBins = kelompok.bins || [];
+      const currentOrganik = existingBins.filter(
+        (b) =>
+          (b.category?.name || "").toUpperCase().includes("ORGANIK") ||
+          (b.category?.name || "").toUpperCase().includes("ORGANIC") ||
+          b.qrCode.includes("-OGN-")
+      ).length;
+      const currentAnorganik = existingBins.filter(
+        (b) =>
+          (b.category?.name || "").toUpperCase().includes("ANORGANIK") ||
+          (b.category?.name || "").toUpperCase().includes("NON_ORGANIC") ||
+          b.qrCode.includes("-AGN-")
+      ).length;
+
+      if (currentOrganik >= 5 && currentAnorganik >= 5) {
+        throw new Error(
+          `Kelompok "${kelompok.name}" sudah memiliki kuota lengkap 10 QR Code (5 Organik & 5 Anorganik).`
+        );
+      }
+
+      const neededOrganik = Math.max(0, 5 - currentOrganik);
+      const neededAnorganik = Math.max(0, 5 - currentAnorganik);
+
+      // Find waste categories
+      const allCategories = await tx.wasteCategory.findMany();
+      const catOrganik =
+        allCategories.find((c) => /organik|organic/i.test(c.name) && !/anorganik|non/i.test(c.name)) ||
+        allCategories[0];
+      const catAnorganik =
+        allCategories.find((c) => /anorganik|non_organic/i.test(c.name)) ||
+        allCategories[1] ||
+        allCategories[0];
+
+      // Determine RW and Kelurahan IDs from assigned students if available
+      let rwId: number | null = null;
+      let kelurahanId: string | null = null;
+
+      const firstStudentWithRw = kelompok.students.find((s) => s.assignedRwId);
+      if (firstStudentWithRw?.assignedRwId) {
+        rwId = firstStudentWithRw.assignedRwId;
+        kelurahanId = firstStudentWithRw.assignedRw?.kelurahanId || null;
+      }
+
+      if (!kelurahanId && kelompok.kelurahan) {
+        const kelRecord = await tx.kelurahan.findFirst({
+          where: { name: { contains: kelompok.kelurahan, mode: "insensitive" } },
+        });
+        if (kelRecord) {
+          kelurahanId = kelRecord.id;
+        }
+      }
+
+      // Create a dedicated QR batch for this distribution
+      const safeKelompokCode = kelompok.name.replace(/[^a-zA-Z0-9]/g, "-").toUpperCase();
+      const batchCode = `KLMPK-${safeKelompokCode}-${Date.now().toString().slice(-4)}`;
+      const batch = await tx.qrBatch.create({
+        data: {
+          batchCode,
+          totalQr: neededOrganik + neededAnorganik,
+          status: "PRINTED",
+        },
+      });
+
+      const dateStr = formatCurrentDateDDMMYY();
+      const maxSeq = await getGlobalHighestSequence(tx);
+      let currentSeq = maxSeq + 1;
+
+      const newBinsData: any[] = [];
+
+      // Generate Organik Bins (5 bins total target)
+      for (let i = 0; i < neededOrganik; i++) {
+        let paddedSeq = String(currentSeq).padStart(4, "0");
+        let qrCode = `BSK-OGN-${dateStr}-${paddedSeq}`;
+        while (await tx.bin.findUnique({ where: { qrCode } })) {
+          currentSeq++;
+          paddedSeq = String(currentSeq).padStart(4, "0");
+          qrCode = `BSK-OGN-${dateStr}-${paddedSeq}`;
+        }
+
+        newBinsData.push({
+          qrCode,
+          categoryId: catOrganik?.id || null,
+          kelompokId: kelompok.id,
+          rwId,
+          kelurahanId,
+          status: "PRINTED" as any,
+          qrBatchId: batch.id,
+        });
+        currentSeq++;
+      }
+
+      // Generate Anorganik Bins (5 bins total target)
+      for (let i = 0; i < neededAnorganik; i++) {
+        let paddedSeq = String(currentSeq).padStart(4, "0");
+        let qrCode = `BSK-AGN-${dateStr}-${paddedSeq}`;
+        while (await tx.bin.findUnique({ where: { qrCode } })) {
+          currentSeq++;
+          paddedSeq = String(currentSeq).padStart(4, "0");
+          qrCode = `BSK-AGN-${dateStr}-${paddedSeq}`;
+        }
+
+        newBinsData.push({
+          qrCode,
+          categoryId: catAnorganik?.id || null,
+          kelompokId: kelompok.id,
+          rwId,
+          kelurahanId,
+          status: "PRINTED" as any,
+          qrBatchId: batch.id,
+        });
+        currentSeq++;
+      }
+
+      if (newBinsData.length > 0) {
+        await tx.bin.createMany({ data: newBinsData });
+      }
+
+      await tx.auditTrail.create({
+        data: {
+          action: "GENERATE_KELOMPOK_QR_BUNDLE",
+          userId: adminUserId,
+          newValue: {
+            kelompokId: kelompok.id,
+            kelompokName: kelompok.name,
+            totalCreated: newBinsData.length,
+            organikCreated: neededOrganik,
+            anorganikCreated: neededAnorganik,
+            batchCode,
+          } as any,
+        },
+      });
+
+      // Return all bins belonging to this kelompok
+      return tx.bin.findMany({
+        where: { kelompokId: kelompok.id },
+        include: { category: true, rw: true },
+        orderBy: { qrCode: "asc" },
+      });
+    });
+  }
+
+  /**
+   * Update Link Google Drive for Kelompok KKN
+   */
+  async updateKelompokGdrive(kelompokId: string, linkGoogleDrive: string, adminUserId: string) {
+    const updated = await prisma.kelompokKkn.update({
+      where: { id: kelompokId },
+      data: { linkGoogleDrive: linkGoogleDrive ? linkGoogleDrive.trim() : null },
+    });
+
+    await prisma.auditTrail.create({
+      data: {
+        action: "UPDATE_KELOMPOK_GDRIVE",
+        userId: adminUserId,
+        newValue: { kelompokId, linkGoogleDrive } as any,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Mark Kelompok QR as Downloaded by developer
+   */
+  async markKelompokQrDownloaded(kelompokId: string, adminUserId: string) {
+    const updated = await prisma.kelompokKkn.update({
+      where: { id: kelompokId },
+      data: { qrDownloadedAt: new Date() },
+    });
+
+    await prisma.auditTrail.create({
+      data: {
+        action: "DOWNLOAD_KELOMPOK_QR_BUNDLE",
+        userId: adminUserId,
+        newValue: { kelompokId, downloadedAt: new Date() } as any,
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Export Printable 10x15cm PDF HTML for a specific Kelompok
+   */
+  async exportKelompokQrPdfHtml(kelompokId: string): Promise<string> {
+    const kelompok = await prisma.kelompokKkn.findUnique({
+      where: { id: kelompokId },
+      include: {
+        bins: {
+          select: { id: true },
+          orderBy: { qrCode: "asc" },
+        },
+      },
+    });
+
+    if (!kelompok) {
+      throw new Error("Kelompok KKN tidak ditemukan.");
+    }
+
+    const binIds = kelompok.bins.map((b) => b.id);
+    return this.exportQrPdfHtml({ binIds });
   }
 }
 
