@@ -107,6 +107,7 @@ export const LandingPage: React.FC = () => {
   const [selectedProgram, setSelectedProgram] = useState<ActionCampaignItem | null>(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
   const [activeLightboxImage, setActiveLightboxImage] = useState<{ src: string; title?: string } | null>(null);
+  const [exchangeModalProduct, setExchangeModalProduct] = useState<MarketProductItem | null>(null);
 
   // ── Cart Simulation Feedback ─────────────────────────────────────────────────
   const [cartSuccessId, setCartSuccessId] = useState<string | null>(null);
@@ -935,6 +936,8 @@ export const LandingPage: React.FC = () => {
                 <article
                   key={prod.id}
                   className="landing-card landing-product"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setExchangeModalProduct(prod)}
                 >
                   <figure className="landing-media">
                     <img
@@ -973,7 +976,10 @@ export const LandingPage: React.FC = () => {
                           cursor: "pointer",
                         }}
                         aria-label={`Tukar poin untuk ${prod.title}`}
-                        onClick={(e) => handleAddToCart(prod, e)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExchangeModalProduct(prod);
+                        }}
                       >
                         {cartSuccessId === prod.id ? (
                           <>
