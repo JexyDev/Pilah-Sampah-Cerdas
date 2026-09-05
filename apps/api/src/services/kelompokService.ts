@@ -108,7 +108,7 @@ export const kelompokService = {
         dplNamaMentah,
         kelurahan: data.kelurahan || null,
         cakupanRw: data.cakupanRw || null,
-        linkGoogleDrive: data.linkGoogleDrive || null,
+        linkGoogleDrive: data.linkGoogleDrive ? data.linkGoogleDrive.trim() : null,
       },
     });
   },
@@ -121,7 +121,7 @@ export const kelompokService = {
       name: data.name,
       kelurahan: data.kelurahan,
       cakupanRw: data.cakupanRw,
-      ...(data.linkGoogleDrive !== undefined ? { linkGoogleDrive: data.linkGoogleDrive || null } : {}),
+      ...(data.linkGoogleDrive !== undefined ? { linkGoogleDrive: data.linkGoogleDrive ? data.linkGoogleDrive.trim() : null } : {}),
     };
 
     if (data.dplId !== undefined) {
