@@ -204,7 +204,7 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final kelurahan = user?.kelurahan.isNotEmpty == true
         ? user!.kelurahan
         : '-';
-    final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
+    final rw = user?.formattedRw ?? '-';
     final jenjang = user?.jenjangPendidikan.isNotEmpty == true
         ? user!.jenjangPendidikan
         : '-';
@@ -642,14 +642,18 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     final d = state.dashboard;
 
     final user = ref.watch(authProvider).user;
-    final cleanUserRw = user?.rw.trim().replaceFirst(RegExp(r'^0+'), '') ?? '';
+    final userRwSet = RegExp(r'\d+')
+        .allMatches(user?.rw ?? '')
+        .map((m) => m.group(0)!.replaceFirst(RegExp(r'^0+'), ''))
+        .where((r) => r.isNotEmpty)
+        .toSet();
 
     // Total Warga Dampingan Mahasiswa ini (dari endpoint kknWarga)
     final myWargaList = state.wargaList.where((w) {
       if (w.role.isNotEmpty && w.role.toUpperCase() != 'WARGA') return false;
 
       final cleanWargaRw = w.rw.trim().replaceFirst(RegExp(r'^0+'), '');
-      final isMyRw = cleanUserRw.isNotEmpty && cleanWargaRw == cleanUserRw;
+      final isMyRw = userRwSet.isNotEmpty && userRwSet.contains(cleanWargaRw);
 
       // Jika backend mengirim mahasiswaId, cocokkan. Jika tidak, minimal harus satu RW dengan mahasiswa
       final isMyId = w.mahasiswaId.isNotEmpty && w.mahasiswaId == user?.id;

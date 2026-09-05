@@ -278,7 +278,7 @@ class _EditProfilMahasiswaViewState extends ConsumerState<EditProfilMahasiswaVie
     final userNim = user?.nim.isNotEmpty == true ? user!.nim : (mhsData?.nim.isNotEmpty == true ? mhsData!.nim : '-');
     final userProdi = user?.prodi.isNotEmpty == true ? user!.prodi : (user?.jurusan.isNotEmpty == true ? user!.jurusan : (mhsData?.jurusan.isNotEmpty == true ? mhsData!.jurusan : '-'));
     final kelurahan = user?.kelurahan.isNotEmpty == true ? user!.kelurahan.replaceAll(RegExp(r'^(?:Kel\.|Kelurahan|Desa)\s+', caseSensitive: false), '').trim() : '-';
-    final rw = user?.rw.isNotEmpty == true ? user!.rw : '-';
+    final rw = user?.formattedRw ?? '-';
 
     return PopScope(
       canPop: false,

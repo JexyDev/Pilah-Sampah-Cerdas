@@ -79,24 +79,40 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       String cleanRw(String val) => val.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
       String cleanKel(String val) => val.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
 
-      final targetRwClean = cleanRw(rw);
+      final targetRwNumbers = RegExp(r'\d+')
+          .allMatches(rw)
+          .map((m) => m.group(0)!.replaceFirst(RegExp(r'^0+'), ''))
+          .where((r) => r.isNotEmpty)
+          .toSet();
       final targetKelClean = cleanKel(kelurahan);
+      final rwQuery = targetRwNumbers.length == 1 ? targetRwNumbers.first : null;
 
       var data = await repo.getWargaForAktivasi(
         kecamatan: user?.kecamatan,
         kelurahan: kelurahan.isEmpty ? null : kelurahan,
-        rw: rw.isEmpty ? null : rw,
+        rw: rwQuery,
         search: search.isEmpty ? null : search,
       );
 
-      // Jika kosong, coba query dengan format RW bersih (hanya angka)
-      if (data.isEmpty && rw.isNotEmpty) {
+      // Jika kosong dan merupakan single RW, coba query fallback
+      if (data.isEmpty && targetRwNumbers.length == 1) {
         data = await repo.getWargaForAktivasi(
           kecamatan: user?.kecamatan,
           kelurahan: targetKelClean.isEmpty ? null : targetKelClean,
-          rw: targetRwClean.isEmpty ? null : targetRwClean,
+          rw: targetRwNumbers.first,
           search: search.isEmpty ? null : search,
         );
+      }
+
+      // Jika mahasiswa memiliki banyak RW dampingan, saring warga agar sesuai cakupan RW
+      if (data.isNotEmpty && targetRwNumbers.length > 1) {
+        data = data.where((e) {
+          final w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
+          final wRw = cleanRw(w.rw);
+          final wAddr = w.address.toLowerCase();
+          return targetRwNumbers.contains(wRw) ||
+              targetRwNumbers.any((trw) => wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'));
+        }).toList();
       }
 
       // Fallback: Jika backend tetap kosong atau mengembalikan data umum, lakukan filter ketat
@@ -110,7 +126,9 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
           final wKel = cleanKel(w.kelurahan);
           final wAddr = w.address.toLowerCase();
 
-          final rwMatches = targetRwClean.isEmpty || wRw == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
+          final rwMatches = targetRwNumbers.isEmpty ||
+              targetRwNumbers.contains(wRw) ||
+              targetRwNumbers.any((trw) => wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'));
           final kelMatches = targetKelClean.isEmpty || wKel.contains(targetKelClean) || targetKelClean.contains(wKel) || wAddr.contains(targetKelClean);
 
           return rwMatches && kelMatches;

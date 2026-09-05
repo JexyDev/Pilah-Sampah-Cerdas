@@ -82,7 +82,11 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
         .trim();
 
     final targetKelClean = cleanKel(userKel);
-    final targetRwClean = userRw.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
+    final targetRwNumbers = RegExp(r'\d+')
+        .allMatches(userRw)
+        .map((m) => m.group(0)!.replaceFirst(RegExp(r'^0+'), ''))
+        .where((r) => r.isNotEmpty)
+        .toSet();
 
     return allWarga.where((w) {
       if (w.role.isNotEmpty && w.role != 'WARGA') return false;
@@ -91,7 +95,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
       final wKelClean = cleanKel(w.kelurahan);
       final wAddr = w.address.toLowerCase();
 
-      final rwMatches = targetRwClean.isEmpty || wRwClean == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
+      final rwMatches = targetRwNumbers.isEmpty ||
+          targetRwNumbers.contains(wRwClean) ||
+          targetRwNumbers.any((trw) => wAddr.contains('rw $trw') || wAddr.contains('rw 0$trw'));
       final kelMatches = targetKelClean.isEmpty || wKelClean.contains(targetKelClean) || targetKelClean.contains(wKelClean) || wAddr.contains(targetKelClean);
 
       if (!rwMatches || !kelMatches) return false;

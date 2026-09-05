@@ -374,9 +374,7 @@ class _ProfilViewState extends ConsumerState<ProfilView> {
                         _InfoTile(
                           Icons.location_city_rounded,
                           user?.role == UserRole.mahasiswaKkn ? 'RW Dampingan' : 'RW',
-                          (user?.rw != null && user!.rw.isNotEmpty && user.rw != '-')
-                              ? (RegExp(r'\d+').firstMatch(user.rw)?.group(0)?.padLeft(2, '0') ?? user.rw)
-                              : '-',
+                          user?.formattedRw ?? '-',
                         ),
                         _divider(),
                         if (user?.role == UserRole.warga) ...[

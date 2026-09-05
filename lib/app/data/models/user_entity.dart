@@ -55,8 +55,15 @@ class UserEntity extends Equatable {
   final String dplName;
   final int familySize;
 
-
-
+  /// Format RW agar rapi dan mendukung multi-RW dampingan (misal: "04, 09, 10" atau "04")
+  String get formattedRw {
+    if (rw.isEmpty || rw == '-') return '-';
+    final matches = RegExp(r'\d+').allMatches(rw);
+    if (matches.isNotEmpty) {
+      return matches.map((m) => m.group(0)!.padLeft(2, '0')).join(', ');
+    }
+    return rw;
+  }
   UserEntity copyWith({
     String? id,
     String? name,
