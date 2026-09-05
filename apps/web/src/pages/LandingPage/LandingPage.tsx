@@ -40,6 +40,8 @@ import {
   QrCode,
   Store,
   CheckCircle2,
+  Smartphone,
+  Download,
 } from "lucide-react";
 
 // Crisp SVG Vector Coin Icon with Leaf motif (matches reference mockup exactly, zero AI-slop)
@@ -463,20 +465,29 @@ export const LandingPage: React.FC = () => {
         }`}
       >
         <div className="landing-container landing-header-inner">
-          <a href="#" className="landing-brand" aria-label="BERSEKA.ID — Beranda">
-            <picture>
-              <source srcSet="/logos/berseka/berseka-logo-full.webp" type="image/webp" />
-              <img
-                src="/logos/berseka/berseka-logo-full.png"
-                alt="BERSEKA.ID"
-                className="landing-brand-logo"
-                width={160}
-                height={42}
-                loading="eager"
-                decoding="async"
-              />
-            </picture>
-          </a>
+          <div className="flex items-center gap-3">
+            <a href="#" className="landing-brand" aria-label="BERSEKA.ID — Beranda">
+              <picture>
+                <source srcSet="/logos/berseka/berseka-logo-full.webp" type="image/webp" />
+                <img
+                  src="/logos/berseka/berseka-logo-full.png"
+                  alt="BERSEKA.ID"
+                  className="landing-brand-logo"
+                  width={160}
+                  height={42}
+                  loading="eager"
+                  decoding="async"
+                />
+              </picture>
+            </a>
+            <span
+              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/90 text-[#0d5c3a] text-[11px] font-extrabold tracking-tight select-none shadow-2xs"
+              title="Sistem BERSEKA dalam Tahap Percontohan KKN Tematik di Kecamatan Coblong"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Pilot Project Coblong</span>
+            </span>
+          </div>
 
           {/* Desktop & Mobile Navigation Links */}
           <nav aria-label="Navigasi utama">
@@ -569,7 +580,7 @@ export const LandingPage: React.FC = () => {
                   </button>
                 </div>
               </li>
-              <li className="landing-nav-auth-mobile">
+              <li className="landing-nav-auth-mobile space-y-2">
                 {isAuthenticated ? (
                   <button
                     type="button"
@@ -582,13 +593,23 @@ export const LandingPage: React.FC = () => {
                     Dasbor Saya
                   </button>
                 ) : (
-                  <Link
-                    to="/login"
-                    onClick={() => setIsNavOpen(false)}
-                    className="landing-btn landing-btn-primary w-full text-center justify-center"
-                  >
-                    Masuk
-                  </Link>
+                  <>
+                    <Link
+                      to="/download"
+                      onClick={() => setIsNavOpen(false)}
+                      className="landing-btn landing-btn-outline w-full text-center justify-center flex items-center gap-2"
+                    >
+                      <Smartphone size={16} />
+                      <span>Unduh Aplikasi Warga (APK)</span>
+                    </Link>
+                    <Link
+                      to="/login"
+                      onClick={() => setIsNavOpen(false)}
+                      className="landing-btn landing-btn-primary w-full text-center justify-center"
+                    >
+                      Masuk Portal Pengelola
+                    </Link>
+                  </>
                 )}
               </li>
             </ul>
@@ -605,12 +626,23 @@ export const LandingPage: React.FC = () => {
                 Dasbor Saya
               </button>
             ) : (
-              <Link
-                to="/login"
-                className="landing-btn landing-btn-outline landing-btn-sm"
-              >
-                Masuk
-              </Link>
+              <>
+                <Link
+                  to="/download"
+                  className="landing-btn landing-btn-outline landing-btn-sm hidden sm:inline-flex items-center gap-1.5"
+                  title="Unduh Aplikasi Android untuk Warga & Petugas"
+                >
+                  <Smartphone size={14} />
+                  <span>Aplikasi Warga</span>
+                </Link>
+                <Link
+                  to="/login"
+                  className="landing-btn landing-btn-primary landing-btn-sm inline-flex items-center gap-1.5"
+                  title="Portal Web Pengelola (RW, RT, DPL, & Admin)"
+                >
+                  <span>Masuk Portal</span>
+                </Link>
+              </>
             )}
 
             <button
@@ -1935,10 +1967,10 @@ export const LandingPage: React.FC = () => {
                     </div>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: "0.86rem", color: "#1e293b" }}>
-                        Tunjukkan QR Code Akun Warga
+                        Tunjukkan QR Code di Aplikasi Android BERSEKA
                       </div>
                       <div style={{ fontSize: "0.8rem", color: "#64748b", lineHeight: "1.4" }}>
-                        Petugas posko KKN memindai QR Code profil BERSEKA Anda untuk verifikasi saldo dan serah terima produk fisik.
+                        Buka aplikasi BERSEKA di ponsel Android Anda, lalu tunjukkan QR Code profil kepada petugas posko KKN untuk verifikasi saldo poin &amp; serah terima produk fisik.
                       </div>
                     </div>
                   </div>
@@ -1950,16 +1982,19 @@ export const LandingPage: React.FC = () => {
                 style={{
                   background: "#f0fdf4",
                   border: "1px solid #bbf7d0",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
+                  borderRadius: "12px",
+                  padding: "13px 15px",
                   display: "flex",
                   gap: "10px",
                   alignItems: "flex-start",
                 }}
               >
                 <CheckCircle2 size={18} className="text-emerald-700 shrink-0 mt-0.5" />
-                <div style={{ fontSize: "0.78rem", color: "#166534", lineHeight: "1.45" }}>
-                  <strong>Status Layanan Pilot KKN Coblong:</strong> Penukaran fisik langsung di posko aktif setiap hari kerja (08.00 – 16.00 WIB). Fitur reservasi digital kuota online antar-posko sedang dalam tahap sinkronisasi data logistik.
+                <div style={{ fontSize: "0.78rem", color: "#166534", lineHeight: "1.5" }}>
+                  <strong className="block text-emerald-950 font-bold mb-0.5">
+                    Layanan Pilot KKN Coblong (Tahap Pengujian &amp; Percontohan):
+                  </strong>
+                  Penukaran fisik produk saat ini dilayani langsung di Posko KKN RW setempat di Kecamatan Coblong. Akses akun Warga, pencatatan setoran, dan penukaran poin beroperasi secara terpadu melalui <strong>Aplikasi Mobile BERSEKA (Android)</strong>.
                 </div>
               </div>
             </div>
@@ -1970,45 +2005,49 @@ export const LandingPage: React.FC = () => {
                 padding: "14px 24px 20px",
                 borderTop: "1px solid #f1f5f9",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: "10px",
+                flexDirection: "column",
+                gap: "8px",
               }}
             >
-              <button
-                type="button"
-                onClick={() => setExchangeModalProduct(null)}
-                className="landing-btn landing-btn-outline landing-btn-sm"
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                }}
               >
-                Tutup
-              </button>
-              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => setExchangeModalProduct(null)}
+                  className="landing-btn landing-btn-outline landing-btn-sm"
+                >
+                  Tutup
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     setExchangeModalProduct(null);
-                    navigate("/poin-warga");
+                    navigate("/download");
                   }}
                   className="landing-btn landing-btn-primary landing-btn-sm"
                   style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
                 >
-                  <QrCode size={15} />
-                  <span>Lihat QR &amp; Saldo Poin Saya</span>
+                  <Smartphone size={15} />
+                  <span>Buka / Unduh Aplikasi Mobile (APK)</span>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExchangeModalProduct(null);
-                    navigate("/login");
-                  }}
-                  className="landing-btn landing-btn-primary landing-btn-sm"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-                >
-                  <QrCode size={15} />
-                  <span>Masuk Akun Warga</span>
-                </button>
-              )}
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.72rem",
+                  color: "#64748b",
+                  textAlign: "right",
+                  lineHeight: 1.4,
+                }}
+              >
+                *Akun Warga &amp; Petugas Pemilah beroperasi melalui Aplikasi Android BERSEKA.
+              </p>
             </div>
           </div>
         </div>
