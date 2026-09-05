@@ -238,7 +238,7 @@ export const downloadPanduanPdf = () => {
         <!-- Header -->
         <div class="header-cover">
           <div class="logo-title">
-            <img src="${window.location.origin}/app-logo.png" alt="BERSEKA Logo" style="height: 48px; object-fit: contain; margin-bottom: 4px;" />
+            <img src="${window.location.origin}/logos/berseka/berseka-logo-full.png" alt="BERSEKA Logo" style="height: 48px; object-fit: contain; margin-bottom: 4px;" />
             <p>Buku Panduan Operasional &amp; Tata Kelola Pemilahan Sampah Terintegrasi</p>
           </div>
           <div style="text-align: right;">

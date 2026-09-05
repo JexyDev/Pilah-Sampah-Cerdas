@@ -84,13 +84,31 @@ router.get("/landing-content", systemController.getLandingContent);
 router.put(
   "/landing-content",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PENGELOLA",
+    "KORLAP",
+    "ADMIN_KKN",
+    "DOSEN_PEMBIMBING",
+    "DPL",
+  ]),
   systemController.saveLandingContent
 );
 router.post(
   "/landing-content/reset",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  roleMiddleware([
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PENGELOLA",
+    "KORLAP",
+    "ADMIN_KKN",
+    "DOSEN_PEMBIMBING",
+    "DPL",
+  ]),
   systemController.resetLandingContent
 );
 

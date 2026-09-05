@@ -316,7 +316,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
       initiator: "Kelompok 04 KKN UNIKOM",
       initiatorBadge: "Terverifikasi KKN",
-      location: "Kecamatan Bojongsoang, Kab. Bandung",
+      location: "Kecamatan Coblong, Kota Bandung",
       imageUrl: "/image/activity-2.webp",
       currentAmount: 390,
       targetAmount: 500,
@@ -335,7 +335,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       categoryColor: "bg-blue-100 text-blue-800 border-blue-200",
       initiator: "Pengurus RW 03 & Kader Lingkungan",
       initiatorBadge: "Mitra Warga",
-      location: "Desa Bojongsoang, Kab. Bandung",
+      location: "Kecamatan Coblong, Kota Bandung",
       imageUrl: "/image/activity-1.webp",
       currentAmount: 820,
       targetAmount: 1000,
@@ -354,7 +354,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       categoryColor: "bg-purple-100 text-purple-800 border-purple-200",
       initiator: "Tim Mahasiswa KKN Tematik 2026",
       initiatorBadge: "UNIKOM Official",
-      location: "Posko KKN RW 02, Bojongsoang",
+      location: "Posko KKN RW 02, Coblong",
       imageUrl: "/image/activity-3.webp",
       currentAmount: 245,
       targetAmount: 300,
@@ -373,7 +373,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       categoryColor: "bg-blue-100 text-blue-800 border-blue-200",
       initiator: "TP-PKK & Karang Taruna RW 04",
       initiatorBadge: "Komunitas",
-      location: "Kecamatan Bojongsoang",
+      location: "Kecamatan Coblong, Kota Bandung",
       imageUrl: "/image/kkn-hero-sorting.webp",
       currentAmount: 145,
       targetAmount: 200,
@@ -384,18 +384,56 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       impactHighlight: "Menyelamatkan 1.500 liter air tanah dari pencemaran minyak.",
       isPublished: true,
     },
+    {
+      id: "camp-05",
+      title: "Digitalisasi Penimbangan Sampah QR Code & IoT Sensor Lingkungan",
+      category: "tech",
+      categoryLabel: "Teknologi & IoT",
+      categoryColor: "bg-cyan-100 text-cyan-800 border-cyan-200",
+      initiator: "Divisi IoT Mahasiswa KKN UNIKOM",
+      initiatorBadge: "Inovasi IoT",
+      location: "Kecamatan Coblong, Kota Bandung",
+      imageUrl: "/image/landingpage.webp",
+      currentAmount: 180,
+      targetAmount: 200,
+      unit: "Titik RW",
+      daysRemaining: 20,
+      participantsCount: 95,
+      description: "Implementasi timbangan digital berbasis IoT terintegrasi QR code untuk pencatatan otomatis setor sampah warga langsung ke dashboard BERSEKA.",
+      impactHighlight: "Mengurangi 90% waktu pencatatan manual di posko bank sampah.",
+      isPublished: true,
+    },
+    {
+      id: "camp-06",
+      title: "Edukasi Pemilahan Sampah Dini & Workshop Komposting Kasgot Warga",
+      category: "edukasi",
+      categoryLabel: "Edukasi Lingkungan",
+      categoryColor: "bg-amber-100 text-amber-800 border-amber-200",
+      initiator: "Kelompok 08 KKN Tematik",
+      initiatorBadge: "Edukasi Warga",
+      location: "Balai Warga RW 06, Coblong",
+      imageUrl: "/image/activity-1.webp",
+      currentAmount: 320,
+      targetAmount: 400,
+      unit: "Peserta KK",
+      daysRemaining: 10,
+      participantsCount: 140,
+      description: "Sosialisasi door-to-door metode pemilahan 3 wadah (Organik, Anorganik, Residu) dan pembagian komposter ember tumpuk gratis bagi warga.",
+      impactHighlight: "Meningkatkan kepatuhan pemilahan rumah tangga hingga 88%.",
+      isPublished: true,
+    },
   ],
   newsItems: [
     {
       id: "news-01",
-      title: "UNIKOM dan Warga Bojongsoang Resmikan Rumah Kompos Terpadu Berbasis IoT",
+      title: "UNIKOM dan Warga Resmikan Rumah Kompos Terpadu Berbasis IoT",
       category: "Inovasi & KKN",
       date: "28 Mei 2026",
       readTime: "4 min baca",
-      location: "Kecamatan Bojongsoang",
+      location: "Kecamatan Coblong, Kota Bandung",
       imageUrl: "/image/activity-2.webp",
       summary: "Kolaborasi civitas akademika UNIKOM bersama aparat desa mewujudkan fasilitas biokonversi sampah organik berkapasitas 500kg per hari.",
-      content: "Universitas Komputer Indonesia (UNIKOM) bersama warga Desa Bojongsoang meresmikan Rumah Kompos Terpadu yang dilengkapi sistem monitoring digital BERSEKA. Melalui teknologi ini, suhu fermentasi kompos dan bobot timbulan sampah tercatat secara otomatis ke server cloud.\n\nKetua KKN Tematik menyampaikan bahwa fasilitas ini mampu mengolah hingga 500 kg sisa makanan per minggu, mencegah sampah membusuk di saluran drainase perumahan.",
+      content: "Universitas Komputer Indonesia (UNIKOM) bersama warga meresmikan Rumah Kompos Terpadu yang dilengkapi sistem monitoring digital BERSEKA. Melalui teknologi ini, suhu fermentasi kompos dan bobot timbulan sampah tercatat secara otomatis ke server cloud.\n\nKetua KKN Tematik menyampaikan bahwa fasilitas ini mampu mengolah hingga 500 kg sisa makanan per minggu, mencegah sampah membusuk di saluran drainase perumahan.",
       author: "Tim Humas KKN UNIKOM",
       isPublished: true,
     },
@@ -405,7 +443,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       category: "Dampak Warga",
       date: "22 Mei 2026",
       readTime: "3 min baca",
-      location: "RW 03 Bojongsoang",
+      location: "RW 03 Coblong",
       imageUrl: "/image/activity-1.webp",
       summary: "Sistem reward poin BERSEKA yang dapat ditukar kebutuhan sembako sukses mendorong kepatuhan pemilahan mandiri hingga 92%.",
       content: "Penerapan skema insentif sembako dan bibit tanaman pada program BERSEKA berhasil meningkatkan kepatuhan pemilahan sampah warga dari 34% menjadi 92% dalam kurun waktu 2 bulan.\n\nKader PKK setempat mengungkapkan bahwa antusiasme warga sangat tinggi karena sampah anorganik yang sebelumnya dibuang sia-sia kini memiliki nilai tukar yang pasti dan terdata secara digital.",
@@ -423,6 +461,45 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       summary: "Edukasi pemanfaatan kulit buah sisa dapur menjadi cairan multifungsi pembersih dan pupuk cair ramah lingkungan.",
       content: "Mahasiswa KKN menggelar pelatihan pembuatan cairan eco-enzyme bagi anggota Kelompok Wanita Tani (KWT). Limbah kulit buah jeruk, nanas, dan pepaya difermentasikan bersama molase selama 3 bulan untuk menghasilkan enzim pembersih alami.\n\nProduk ini kini menjadi salah satu komoditas unggulan di Pasar Berseka dan dibagikan secara berkala kepada warga sekitar.",
       author: "Fasilitator KKN Tematik",
+      isPublished: true,
+    },
+    {
+      id: "news-04",
+      title: "Panen Perdana Kasgot Organik Binaan KKN Hasilkan 120 Kg Pupuk Berkualitas",
+      category: "Ekonomi Sirkular",
+      date: "10 Mei 2026",
+      readTime: "4 min baca",
+      location: "Rumah Maggot RW 05",
+      imageUrl: "/image/activity-2.webp",
+      summary: "Hasil biokonversi maggot BSF berhasil dipanen dan langsung didistribusikan untuk kebun ketahanan pangan dan dijual di Pasar Berseka.",
+      content: "Unit budidaya maggot binaan mahasiswa KKN UNIKOM sukses melaksanakan panen perdana pupuk kasgot sebanyak 120 kg. Pupuk ini langsung dimanfaatkan oleh warga untuk menyuburkan kebun hidroponik dan tanaman cabai pekarangan.",
+      author: "Tim KKN Unit Maggot",
+      isPublished: true,
+    },
+    {
+      id: "news-05",
+      title: "Digitalisasi Bank Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
+      category: "Bank Sampah",
+      date: "5 Mei 2026",
+      readTime: "3 min baca",
+      location: "Bank Sampah RW 04",
+      imageUrl: "/image/activity-1.webp",
+      summary: "Penerapan sistem QR Code pada setiap kantong sampah memudahkan pencatatan saldo dan percepatan penukaran sembako bulanan.",
+      content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Bank Sampah RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
+      author: "Pengelola Bank Sampah",
+      isPublished: true,
+    },
+    {
+      id: "news-06",
+      title: "Aksi Bersih Saluran & Sosialisasi Pemilahan Sampah Door-to-Door",
+      category: "Aksi Lapangan",
+      date: "1 Mei 2026",
+      readTime: "4 min baca",
+      location: "Kecamatan Coblong",
+      imageUrl: "/image/kkn-hero-sorting.webp",
+      summary: "Mahasiswa KKN UNIKOM bersama Karang Taruna dan warga bergotong-royong membersihkan sedimentasi drainase dan membagikan stiker panduan pilah sampah.",
+      content: "Kegiatan gotong royong massal melibatkan lebih dari 150 warga dan mahasiswa. Selain membersihkan saluran air, tim membagikan tempat sampah pilah 2 warna dan menempelkan barcode QR di setiap rumah peserta program.",
+      author: "Koordinator Lapangan KKN",
       isPublished: true,
     },
   ],
@@ -486,11 +563,31 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+export const CMS_BROADCAST_CHANNEL_NAME = "berseka_cms_channel";
+
+// Helper to broadcast changes across all browser tabs and components
+function broadcastCmsUpdate(payload: StoredPayload): void {
+  if (typeof window === "undefined") return;
+  try {
+    if ("BroadcastChannel" in window) {
+      const channel = new BroadcastChannel(CMS_BROADCAST_CHANNEL_NAME);
+      channel.postMessage(payload);
+      channel.close();
+    }
+  } catch (e) {
+    console.warn("[cmsStorage] BroadcastChannel error:", e);
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent("berseka_cms_updated", { detail: payload }));
+  } catch (e) {}
+}
+
 // ── Save CMS Content ─────────────────────────────────────────────────────────
 export async function saveCmsContent(content: LandingContentPayload): Promise<void> {
   const payload: StoredPayload = {
-    data: content,
-    lastModified: Date.now(),
+    data: sanitizeCmsPayload(content),
+    lastModified: content.lastModified || Date.now(),
   };
 
   // 1. Save to IndexedDB (virtually unlimited quota for high-res images)
@@ -515,21 +612,19 @@ export async function saveCmsContent(content: LandingContentPayload): Promise<vo
   }
 
   // 3. Broadcast update to all open tabs / windows
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("berseka_cms_updated", { detail: payload }));
-    window.dispatchEvent(new Event("storage"));
-  }
+  broadcastCmsUpdate(payload);
 }
 
 // ── Load CMS Content ─────────────────────────────────────────────────────────
-// Helper to merge missing default products into existing client cache
-function mergeWithDefaults(data: LandingContentPayload): LandingContentPayload {
-  const existingIds = new Set((data.marketProducts || []).map((p) => p.id));
-  const missing = DEFAULT_CMS_CONTENT.marketProducts.filter((p) => !existingIds.has(p.id));
+export function sanitizeCmsPayload(data: Partial<LandingContentPayload>): LandingContentPayload {
+  if (!data || typeof data !== "object") return DEFAULT_CMS_CONTENT;
   return {
-    ...DEFAULT_CMS_CONTENT,
-    ...data,
-    marketProducts: [...(data.marketProducts || []), ...missing],
+    heroSlides: Array.isArray(data.heroSlides) ? data.heroSlides : DEFAULT_CMS_CONTENT.heroSlides,
+    marketProducts: Array.isArray(data.marketProducts) ? data.marketProducts : DEFAULT_CMS_CONTENT.marketProducts,
+    actionCampaigns: Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns,
+    newsItems: Array.isArray(data.newsItems) ? data.newsItems : DEFAULT_CMS_CONTENT.newsItems,
+    liveLogs: Array.isArray(data.liveLogs) ? data.liveLogs : DEFAULT_CMS_CONTENT.liveLogs,
+    faqItems: Array.isArray(data.faqItems) ? data.faqItems : DEFAULT_CMS_CONTENT.faqItems,
   };
 }
 
@@ -545,10 +640,11 @@ export async function loadCmsContent(): Promise<StoredPayload> {
       req.onerror = () => reject(req.error);
     });
 
-    if (stored && stored.data && Array.isArray(stored.data.marketProducts)) {
+    if (stored && stored.data) {
       return {
         ...stored,
-        data: mergeWithDefaults(stored.data),
+        data: sanitizeCmsPayload(stored.data),
+        lastModified: stored.lastModified || 0,
       };
     }
   } catch (err) {
@@ -563,11 +659,15 @@ export async function loadCmsContent(): Promise<StoredPayload> {
       if (parsed?.data) {
         return {
           ...parsed,
-          data: mergeWithDefaults(parsed.data),
+          data: sanitizeCmsPayload(parsed.data),
+          lastModified: parsed.lastModified || 0,
         };
       }
-      if (parsed?.marketProducts) {
-        return { data: mergeWithDefaults(parsed), lastModified: Date.now() };
+      if (parsed?.marketProducts || parsed?.newsItems || parsed?.heroSlides) {
+        return {
+          data: sanitizeCmsPayload(parsed),
+          lastModified: Date.now(),
+        };
       }
     }
   } catch (err) {
@@ -598,8 +698,10 @@ export async function resetCmsContent(): Promise<void> {
     localStorage.removeItem(LS_FALLBACK_KEY);
   } catch (e) {}
 
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("berseka_cms_updated", { detail: { data: DEFAULT_CMS_CONTENT, lastModified: 0 } }));
-    window.dispatchEvent(new Event("storage"));
-  }
+  const resetPayload: StoredPayload = {
+    data: DEFAULT_CMS_CONTENT,
+    lastModified: Date.now(),
+  };
+
+  broadcastCmsUpdate(resetPayload);
 }
