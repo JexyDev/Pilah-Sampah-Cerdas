@@ -594,7 +594,7 @@ const MonitoringAbsen: React.FC = () => {
       setMapCenter([-6.8906, 107.6150]);
       setMapZoom(13.5);
     } else if (id) {
-      // Cari jadwal kelompok ini hari ini
+      // Cari jadwal kelompok ini hari ini (WIB)
       const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
       const todayWibStr = nowWib.toISOString().slice(0, 10);
       const kelScheds = schedules.filter((s) => s.kelompokId === id);
@@ -602,7 +602,7 @@ const MonitoringAbsen: React.FC = () => {
         if (!s.date) return false;
         const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
         return sWibStr === todayWibStr;
-      }) || kelScheds[0];
+      }) || (userRole === "DEVELOPER" ? kelScheds[0] : undefined);
       if (todaySched) {
         setSelectedScheduleId(todaySched.id);
         const center = getCenterFromSchedule(todaySched);
@@ -1026,6 +1026,15 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         (s) => !s.kelompokId || s.kelompokId === selectedKelompokId
       );
     }
+    // Untuk role selain DEVELOPER: Halaman Presensi strictly hanya untuk HARI BERJALAN (hari ini WIB)
+    if (userRole !== "DEVELOPER") {
+      const todayWibStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      list = list.filter((s) => {
+        if (!s.date) return false;
+        const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return sWibStr === todayWibStr;
+      });
+    }
     // Urutkan jadwal terbaru (hari ini) di paling atas
     const sorted = [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     // Deduplikasi fallback berdasarkan kelompokId + tanggal kegiatan WIB
@@ -1040,7 +1049,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       }
     }
     return deduplicated;
-  }, [schedules, selectedKelompokId]);
+  }, [schedules, selectedKelompokId, userRole]);
 
   const isAllTodayMode = !selectedKelompokId && selectedScheduleId === "ALL_TODAY";
 
@@ -1185,7 +1194,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             return sWib === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
           });
 
-          const defaultSched = todaySched || sorted.find((s: any) => !selectedKelompokId || s.kelompokId === selectedKelompokId) || sorted[0];
+          const defaultSched =
+            todaySched ||
+            (userRole === "DEVELOPER"
+              ? sorted.find((s: any) => !selectedKelompokId || s.kelompokId === selectedKelompokId) || sorted[0]
+              : undefined);
           if (defaultSched) {
             const initialCenter = getCenterFromSchedule(defaultSched);
             setMapCenter(initialCenter);
@@ -1359,7 +1372,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
             if (!s.date) return false;
             const sWibStr = new Date(new Date(s.date).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
             return sWibStr === todayWibStr && (!selectedKelompokId || s.kelompokId === selectedKelompokId);
-          }) || visibleSchedules[0];
+          }) || (userRole === "DEVELOPER" ? visibleSchedules[0] : undefined);
           return todaySched?.id || "";
         }
 
@@ -1388,12 +1401,16 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         });
 
         if (todaySched) return todaySched.id;
-        return visibleSchedules[0]?.id || "";
+        // Role selain DEVELOPER tidak boleh fallback ke jadwal hari kemarin/lampau
+        if (userRole === "DEVELOPER") {
+          return visibleSchedules[0]?.id || "";
+        }
+        return "";
       });
     } else {
       setSelectedScheduleId(!selectedKelompokId && !isDpl ? "ALL_TODAY" : "");
     }
-  }, [selectedKelompokId, visibleSchedules, isDpl]);
+  }, [selectedKelompokId, visibleSchedules, isDpl, userRole]);
 
   useEffect(() => {
     fetchAttendanceAndLocations(selectedScheduleId, selectedKelompokId);
@@ -2608,75 +2625,77 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </button>
             )}
 
-            <div className="relative min-w-[280px]">
-              <select
-                value={selectedScheduleId}
-                onChange={(e) => {
-                  const newSchedId = e.target.value;
-                  setSelectedScheduleId(newSchedId);
-                  if (newSchedId === "ALL_TODAY") {
-                    setSelectedKelompokId("");
-                    if (typeof window !== "undefined") {
-                      try {
-                        localStorage.setItem("berseka_dev_selected_kelompok", "");
-                      } catch {}
-                    }
-                    setMapCenter([-6.8906, 107.6150]);
-                    setMapZoom(13.5);
-                  } else {
-                    const sched = schedules.find((s) => s.id === newSchedId);
-                    if (sched && sched.kelompokId) {
-                      setSelectedKelompokId(sched.kelompokId);
+            {userRole === "DEVELOPER" && (
+              <div className="relative min-w-[280px]">
+                <select
+                  value={selectedScheduleId}
+                  onChange={(e) => {
+                    const newSchedId = e.target.value;
+                    setSelectedScheduleId(newSchedId);
+                    if (newSchedId === "ALL_TODAY") {
+                      setSelectedKelompokId("");
                       if (typeof window !== "undefined") {
                         try {
-                          localStorage.setItem("berseka_dev_selected_kelompok", sched.kelompokId);
+                          localStorage.setItem("berseka_dev_selected_kelompok", "");
                         } catch {}
                       }
-                      const center = getCenterFromSchedule(sched);
-                      setMapCenter(center);
-                      setMapZoom(15);
+                      setMapCenter([-6.8906, 107.6150]);
+                      setMapZoom(13.5);
+                    } else {
+                      const sched = schedules.find((s) => s.id === newSchedId);
+                      if (sched && sched.kelompokId) {
+                        setSelectedKelompokId(sched.kelompokId);
+                        if (typeof window !== "undefined") {
+                          try {
+                            localStorage.setItem("berseka_dev_selected_kelompok", sched.kelompokId);
+                          } catch {}
+                        }
+                        const center = getCenterFromSchedule(sched);
+                        setMapCenter(center);
+                        setMapZoom(15);
+                      }
                     }
-                  }
-                }}
-                className="w-full h-11 pl-3.5 pr-8 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
-              >
-                {!selectedKelompokId && !isDpl ? (
-                  <>
-                    <option value="ALL_TODAY">
-                      🌟 Semua Kegiatan Hari Ini (Global View Seluruh Kelompok)
-                    </option>
-                    {Object.entries(
-                      visibleSchedules.reduce((acc: Record<string, ScheduleActivity[]>, s) => {
-                        const groupKey = s.kelompok?.name
-                          ? `${s.kelompok.name} (${s.kelompok.kelurahan || "Wilayah KKN"})`
-                          : "Jadwal Bersama / Umum";
-                        if (!acc[groupKey]) acc[groupKey] = [];
-                        acc[groupKey].push(s);
-                        return acc;
-                      }, {})
-                    ).map(([groupLabel, groupScheds]) => (
-                      <optgroup key={groupLabel} label={groupLabel}>
-                        {groupScheds.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </>
-                ) : visibleSchedules.length === 0 ? (
-                  <option value="">Belum ada jadwal {selectedKelompokId ? "pada kelompok ini" : ""}</option>
-                ) : (
-                  visibleSchedules.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.kelompok ? `[${s.kelompok.name}] ` : "[Bersama] "}
-                      {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
-                    </option>
-                  ))
-                )}
-              </select>
-              <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            </div>
+                  }}
+                  className="w-full h-11 pl-3.5 pr-8 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:border-emerald-500 focus:bg-white transition cursor-pointer appearance-none shadow-2xs"
+                >
+                  {!selectedKelompokId && !isDpl ? (
+                    <>
+                      <option value="ALL_TODAY">
+                        🌟 Semua Kegiatan Hari Ini (Global View Seluruh Kelompok)
+                      </option>
+                      {Object.entries(
+                        visibleSchedules.reduce((acc: Record<string, ScheduleActivity[]>, s) => {
+                          const groupKey = s.kelompok?.name
+                            ? `${s.kelompok.name} (${s.kelompok.kelurahan || "Wilayah KKN"})`
+                            : "Jadwal Bersama / Umum";
+                          if (!acc[groupKey]) acc[groupKey] = [];
+                          acc[groupKey].push(s);
+                          return acc;
+                        }, {})
+                      ).map(([groupLabel, groupScheds]) => (
+                        <optgroup key={groupLabel} label={groupLabel}>
+                          {groupScheds.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </>
+                  ) : visibleSchedules.length === 0 ? (
+                    <option value="">Belum ada jadwal {selectedKelompokId ? "pada kelompok ini" : ""}</option>
+                  ) : (
+                    visibleSchedules.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.kelompok ? `[${s.kelompok.name}] ` : "[Bersama] "}
+                        {s.title} ({new Date(s.date).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "short" })})
+                      </option>
+                    ))
+                  )}
+                </select>
+                <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+            )}
 
             {activeSchedule && (
               <div className="flex items-center gap-1.5">
