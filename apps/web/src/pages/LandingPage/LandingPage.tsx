@@ -4,7 +4,7 @@
  * Fully morphed to official BERSEKA design template with live Admin CMS integration.
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -35,12 +35,16 @@ import {
   Clock,
   Sparkles,
   Award,
-  HeartHandshake
+  HeartHandshake,
+  Search,
+  BookOpen,
 } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import {
   loadCmsContent,
+  saveCmsContent,
   DEFAULT_CMS_CONTENT,
+  CMS_BROADCAST_CHANNEL_NAME,
   type LandingContentPayload,
   type HeroSlideItem,
   type MarketProductItem,
@@ -67,6 +71,9 @@ export const LandingPage: React.FC = () => {
 
   // ── Modals State ─────────────────────────────────────────────────────────────
   const [selectedNews, setSelectedNews] = useState<NewsArticleItem | null>(null);
+  const [showAllNewsModal, setShowAllNewsModal] = useState<boolean>(false);
+  const [newsSearchTerm, setNewsSearchTerm] = useState<string>("");
+  const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>("Semua");
   const [selectedProgram, setSelectedProgram] = useState<ActionCampaignItem | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<MarketProductItem | null>(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
@@ -84,16 +91,19 @@ export const LandingPage: React.FC = () => {
   const [calcPlasticKg, setCalcPlasticKg] = useState<number>(8);
   const [calcOilLiters, setCalcOilLiters] = useState<number>(3);
 
-  // ── Load Dynamic CMS Content (IndexedDB + API Hybrid) ─────────────────────────
+  // ── Load Dynamic CMS Content (IndexedDB + API Hybrid + Realtime Cross-tab) ───
   useEffect(() => {
     let isMounted = true;
+    let broadcastChannel: BroadcastChannel | null = null;
 
     const fetchContent = async () => {
+      let localTimestamp = 0;
       // 1. Instant load from local cache (IndexedDB/LocalStorage)
       try {
         const localStored = await loadCmsContent();
         if (isMounted && localStored?.data) {
           setCmsContent(localStored.data);
+          localTimestamp = localStored.lastModified || 0;
         }
       } catch (err) {
         console.warn("[LandingPage] Failed to fetch local CMS content:", err);
@@ -106,8 +116,12 @@ export const LandingPage: React.FC = () => {
         const res = await api.get("/system/landing-content");
         if (isMounted && res.data?.success && res.data?.data) {
           const serverData = res.data.data;
-          setCmsContent(serverData);
-          await saveCmsContent(serverData);
+          const serverTimestamp = serverData.lastModified || 0;
+          // Only override local cache if server data is strictly newer or local was default (0)
+          if (serverTimestamp >= localTimestamp) {
+            setCmsContent(serverData);
+            await saveCmsContent(serverData);
+          }
         }
       } catch (err) {
         console.info("[LandingPage] Operating with cached/offline CMS content.");
@@ -116,18 +130,54 @@ export const LandingPage: React.FC = () => {
 
     fetchContent();
 
+    // Listen to real-time BroadcastChannel from Admin tab
+    try {
+      if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+        broadcastChannel = new BroadcastChannel(CMS_BROADCAST_CHANNEL_NAME);
+        broadcastChannel.onmessage = (event) => {
+          const detail = event?.data?.data || event?.data;
+          if (isMounted && detail && typeof detail === "object") {
+            setCmsContent(detail);
+          }
+        };
+      }
+    } catch (e) {
+      console.warn("[LandingPage] BroadcastChannel init error:", e);
+    }
+
     // Listen to real-time custom CMS update events from admin tab
     const handleCmsUpdate = (e: any) => {
       const detail = e?.detail?.data || e?.detail;
-      if (detail && typeof detail === "object") {
+      if (isMounted && detail && typeof detail === "object") {
         setCmsContent(detail);
       }
     };
 
+    // Listen to localStorage storage events across tabs
+    const handleStorageEvent = async (e: StorageEvent) => {
+      if (!isMounted) return;
+      if (e.key === "berseka_landing_cms_content" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed?.data) {
+            setCmsContent(parsed.data);
+          }
+        } catch (err) {}
+      }
+    };
+
     window.addEventListener("berseka_cms_updated", handleCmsUpdate);
+    window.addEventListener("storage", handleStorageEvent);
+
     return () => {
       isMounted = false;
+      if (broadcastChannel) {
+        try {
+          broadcastChannel.close();
+        } catch (e) {}
+      }
       window.removeEventListener("berseka_cms_updated", handleCmsUpdate);
+      window.removeEventListener("storage", handleStorageEvent);
     };
   }, []);
 
@@ -150,6 +200,31 @@ export const LandingPage: React.FC = () => {
     ? cmsContent.newsItems
     : DEFAULT_CMS_CONTENT.newsItems;
   const newsList: NewsArticleItem[] = rawNews.filter((n) => n.isPublished !== false);
+
+  const newsCategories = useMemo(() => {
+    const cats = new Set<string>(["Semua"]);
+    newsList.forEach((n) => {
+      if (n.category) cats.add(n.category);
+    });
+    return Array.from(cats);
+  }, [newsList]);
+
+  const filteredAllNews = useMemo(() => {
+    return newsList.filter((news) => {
+      const q = newsSearchTerm.trim().toLowerCase();
+      const matchesSearch =
+        q === "" ||
+        news.title.toLowerCase().includes(q) ||
+        (news.summary && news.summary.toLowerCase().includes(q)) ||
+        (news.author && news.author.toLowerCase().includes(q));
+
+      const matchesCat =
+        selectedNewsCategory === "Semua" ||
+        news.category === selectedNewsCategory;
+
+      return matchesSearch && matchesCat;
+    });
+  }, [newsList, newsSearchTerm, selectedNewsCategory]);
 
   const faqList: FaqItem[] = cmsContent?.faqItems && cmsContent.faqItems.length > 0
     ? cmsContent.faqItems
@@ -556,7 +631,7 @@ export const LandingPage: React.FC = () => {
                     aria-roledescription="slide"
                     aria-label={`${idx + 1} dari ${slides.length}`}
                   >
-                    <figure className="landing-media" data-label={slide.image}>
+                    <figure className="landing-media">
                       <img
                         src={slide.image}
                         alt={slide.title}
@@ -715,17 +790,29 @@ export const LandingPage: React.FC = () => {
         </section>
 
         {/* =========================================================
-            4. PROGRAM BERSEKA
+            4. 6 PROGRAM KKN BERSEKA
             ========================================================= */}
         <section className="landing-section" id="program">
           <div className="landing-container">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">Program BERSEKA</h2>
+            <div className="landing-section-head flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+              <div>
+                <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800 }}>
+                  6 Program <span style={{ color: "var(--green-700)" }}>KKN BERSEKA</span>
+                </h2>
+                <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginTop: "4px", maxWidth: "680px", lineHeight: "1.5" }}>
+                  Inovasi mahasiswa dan warga untuk memperkuat tata kelola sampah berbasis teknologi, lingkungan, dan ekonomi sirkular di Kecamatan Coblong.
+                </p>
+              </div>
+              <div className="hidden sm:flex flex-col items-end shrink-0">
+                <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--green-900)", letterSpacing: "0.02em" }}>KKN Berdampak</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--green-700)" }}>UNIKOM 2026</span>
+                <span style={{ width: "42px", height: "2.5px", background: "var(--green-500)", borderRadius: "99px", marginTop: "4px" }}></span>
+              </div>
             </div>
             <div className="landing-grid-3">
-              {programs.slice(0, 3).map((item) => (
+              {programs.slice(0, 6).map((item) => (
                 <article key={item.id} className="landing-card">
-                  <figure className="landing-media" data-label={item.imageUrl}>
+                  <figure className="landing-media">
                     <img
                       src={item.imageUrl}
                       alt={item.title}
@@ -759,18 +846,62 @@ export const LandingPage: React.FC = () => {
             ========================================================= */}
         <section className="landing-section" id="pasar">
           <div className="landing-container">
-            <div className="landing-section-head">
-              <h2 className="landing-section-title">Pasar BERSEKA</h2>
+            <div className="landing-section-head flex-col items-start gap-1 mb-4">
+              <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800 }}>
+                Pasar BERSEKA
+              </h2>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+                Tukar poin partisipasi menjadi produk ramah lingkungan dan karya kreatif warga.
+              </p>
             </div>
+
+            {/* Location Notice Banner */}
+            <div
+              style={{
+                background: "#eef7f2",
+                border: "1px solid #d1fae5",
+                borderRadius: "12px",
+                padding: "12px 18px",
+                marginBottom: "24px",
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+              }}
+            >
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  background: "#dcfce7",
+                  display: "grid",
+                  placeItems: "center",
+                  flexShrink: 0,
+                  color: "#0d3d24",
+                }}
+              >
+                <MapPin size={20} strokeWidth={2.2} />
+              </div>
+              <p style={{ margin: 0, fontSize: "0.86rem", color: "#2d4436", lineHeight: "1.45" }}>
+                <strong style={{ color: "#0d3d24", fontWeight: 700 }}>
+                  Lokasi penukaran: Posko KKN BERSEKA di masing-masing RW, Kecamatan Coblong, Kota Bandung.
+                </strong>
+                <br />
+                <span style={{ color: "#52735e", fontSize: "0.82rem" }}>
+                  Tunjukkan kode penukaran kepada petugas saat mengambil produk.
+                </span>
+              </p>
+            </div>
+
             <div className="landing-grid-3">
-              {products.slice(0, 3).map((prod) => (
+              {products.slice(0, 6).map((prod) => (
                 <article
                   key={prod.id}
                   className="landing-card landing-product"
                   onClick={() => setSelectedProduct(prod)}
                   style={{ cursor: "pointer" }}
                 >
-                  <figure className="landing-media" data-label={prod.imageUrl}>
+                  <figure className="landing-media">
                     <img
                       src={prod.imageUrl}
                       alt={prod.title}
@@ -958,20 +1089,28 @@ export const LandingPage: React.FC = () => {
           <div className="landing-container">
             <div className="landing-section-head">
               <h2 className="landing-section-title">Berita &amp; Cerita Lapangan</h2>
-              <a href="#berita" className="landing-link-more">
-                <span>Lihat Semua Berita</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewsSearchTerm("");
+                  setSelectedNewsCategory("Semua");
+                  setShowAllNewsModal(true);
+                }}
+                className="landing-link-more border-none bg-transparent cursor-pointer"
+              >
+                <span>Lihat Semua Berita ({newsList.length})</span>
                 <ArrowRight size={14} strokeWidth={2.2} />
-              </a>
+              </button>
             </div>
             <div className="landing-grid-3">
-              {newsList.slice(0, 3).map((news) => (
+              {newsList.slice(0, 6).map((news) => (
                 <article
                   key={news.id}
                   className="landing-card"
                   onClick={() => setSelectedNews(news)}
                   style={{ cursor: "pointer" }}
                 >
-                  <figure className="landing-media" data-label={news.imageUrl}>
+                  <figure className="landing-media">
                     <img
                       src={news.imageUrl}
                       alt={news.title}
@@ -1187,8 +1326,154 @@ export const LandingPage: React.FC = () => {
       </footer>
 
       {/* =========================================================
-          12. INTERACTIVE MODALS (NEWS, PROGRAM, PRODUCT, CALCULATOR)
+          12. INTERACTIVE MODALS (NEWS ARCHIVE, READER, PROGRAM, PRODUCT, CALCULATOR)
           ========================================================= */}
+
+      {/* ── All News Archive Explorer Modal ── */}
+      {showAllNewsModal && (
+        <div className="landing-modal-backdrop" onClick={() => setShowAllNewsModal(false)}>
+          <div className="landing-modal-card max-w-4xl w-full p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-[#005841] text-[11px] font-black uppercase tracking-wider">
+                    Arsip Berita &amp; Cerita Lapangan
+                  </span>
+                  <span className="text-xs text-slate-400 font-bold">
+                    ({filteredAllNews.length} Artikel)
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+                  Kabar &amp; Dokumentasi Kegiatan BERSEKA
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+                  Ikuti kisah pemilahan sampah, inovasi maggot, komposting kasgot, dan aksi lapangan civitas akademika UNIKOM.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="landing-modal-close"
+                onClick={() => setShowAllNewsModal(false)}
+                aria-label="Tutup arsip berita"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Search & Category Filter Toolbar */}
+            <div className="py-4 space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={newsSearchTerm}
+                    onChange={(e) => setNewsSearchTerm(e.target.value)}
+                    placeholder="Cari berita berdasarkan judul, topik, atau penulis..."
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-600 focus:outline-none text-xs font-semibold text-slate-800"
+                  />
+                  {newsSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setNewsSearchTerm("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold p-1 cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Filter Tabs */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs font-bold">
+                {newsCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedNewsCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${
+                      selectedNewsCategory === cat
+                        ? "bg-[#005841] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* News Cards Grid inside Modal */}
+            <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-4">
+              {filteredAllNews.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredAllNews.map((news) => (
+                    <article
+                      key={news.id}
+                      className="landing-card"
+                      onClick={() => setSelectedNews(news)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <figure className="landing-media">
+                        <img
+                          src={news.imageUrl}
+                          alt={news.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/image/activity-3.webp";
+                          }}
+                        />
+                      </figure>
+                      <div className="landing-card-body">
+                        <div className="landing-news-meta">
+                          <span className="tag">{news.category}</span>
+                          <time>{news.date}</time>
+                        </div>
+                        <h3 className="line-clamp-2 text-sm font-black">{news.title}</h3>
+                        <p className="line-clamp-2 text-xs text-slate-500">{news.summary}</p>
+                        <button
+                          type="button"
+                          className="landing-link-more"
+                          aria-label={`Baca berita: ${news.title}`}
+                        >
+                          <ArrowRight size={16} strokeWidth={2.2} />
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 px-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 space-y-2">
+                  <BookOpen size={32} className="mx-auto text-slate-300" />
+                  <p className="text-sm font-extrabold text-slate-700">Tidak ada artikel yang sesuai</p>
+                  <p className="text-xs text-slate-400">Coba ubah kata kunci pencarian atau pilih kategori lain.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewsSearchTerm("");
+                      setSelectedNewsCategory("Semua");
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer mt-2"
+                  >
+                    Reset Filter
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
+              <span>Menampilkan {filteredAllNews.length} dari {newsList.length} artikel</span>
+              <button
+                type="button"
+                onClick={() => setShowAllNewsModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* News Article Reader Modal */}
       {selectedNews && (
@@ -1262,14 +1547,6 @@ export const LandingPage: React.FC = () => {
                   (e.target as HTMLImageElement).src = "/image/activity-1.webp";
                 }}
               />
-              <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-sm">
-                BERSEKA (Bersih, Sehat, Kampung Asri) adalah platform cerdas pengelolaan sampah terintegrasi berbasis partisipasi warga dan civitas akademika Universitas Komputer Indonesia.
-              </p>
-              <div className="text-xs text-slate-500 font-semibold space-y-1">
-                <p>📍 Jl. Dipati Ukur No. 112-116, Coblong, Kota Bandung</p>
-                <p>📧 admin@berseka.id <span className="text-[11px] text-slate-400 font-normal">(Cadangan: admin.berseka@gmail.com)</span></p>
-                <p>📷 Instagram: <a href="https://www.instagram.com/officialberseka.id?igsi=MTU3b2pxdDc1cTNiYQ==" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">@officialberseka.id</a></p>
-              </div>
             </div>
             <div className="p-6 space-y-4">
               <h2 className="text-xl font-black text-slate-900 leading-tight">

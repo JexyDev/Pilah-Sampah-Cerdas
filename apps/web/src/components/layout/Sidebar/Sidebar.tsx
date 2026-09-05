@@ -1331,7 +1331,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="w-12 h-12 rounded-2xl bg-[#f2f8f4] dark:bg-emerald-950/60 border border-[#035941]/20 dark:border-emerald-700/30 flex items-center justify-center p-1.5 shadow-sm hover:scale-105 transition-all cursor-pointer"
               >
                 <img
-                  src="/app-logo.png"
+                  src="/logos/berseka/berseka-logo-bg-transparent.png"
                   alt="BERSEKA Logo"
                   className="w-full h-full object-contain"
                 />
@@ -1393,7 +1393,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, isCollapsed = false 
                 className="flex items-center gap-3 group cursor-pointer relative z-10 px-1 text-left min-w-0 flex-1"
               >
                 <img
-                  src="/app-logo.png"
+                  src="/logos/berseka/berseka-logo-full.png"
                   alt="BERSEKA Logo"
                   className="h-10 sm:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 shrink-0"
                 />

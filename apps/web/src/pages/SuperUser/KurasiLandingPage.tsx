@@ -557,24 +557,56 @@ export const KurasiLandingPage: React.FC = () => {
     showToast.success("Data berhasil dimuat ke editor berita! Silakan tinjau dan klik 'Simpan ke Draft'.");
   };
 
+  // ── Auto-persist helper across IndexedDB + LocalStorage + API Sync ──────────
+  const updateAndPersistContent = async (newContent: LandingContentPayload) => {
+    const payload = {
+      ...newContent,
+      lastModified: Date.now(),
+    };
+    setContent(payload);
+    setHasUnsavedChanges(true);
+    // 1. Instant local persistence & BroadcastChannel notification
+    await saveCmsContent(payload);
+    // 2. Background sync with backend API
+    try {
+      await api.put("/system/landing-content", payload);
+    } catch (e) {
+      console.info("[KurasiLandingPage] Background API sync pending manual publish.");
+    }
+  };
+
   // ── Fetch Landing Page Content (IndexedDB + API Hybrid) ─────────────────────
   const fetchLandingContent = async () => {
+    let localData = DEFAULT_CMS_CONTENT;
+    let localTimestamp = 0;
+
     // 1. Try IndexedDB & LocalStorage first for instant persistent local data
-    const localStored = await loadCmsContent();
-    if (localStored?.data) {
-      setContent(localStored.data);
+    try {
+      const localStored = await loadCmsContent();
+      if (localStored?.data) {
+        localData = localStored.data;
+        localTimestamp = localStored.lastModified || 0;
+        setContent(localData);
+      }
+    } catch (err) {
+      console.warn("[KurasiLandingPage] Local load warning:", err);
     }
 
-    // 2. Try API (if backend is reachable and newer)
+    // 2. Try API (if backend is reachable)
     try {
       const res = await api.get("/system/landing-content");
       if (res.data?.success && res.data?.data) {
         const serverData = res.data.data;
         const serverTimestamp = serverData.lastModified || 0;
         // Only override if server data is strictly newer than local modified time
-        if (serverTimestamp > (localStored.lastModified || 0)) {
+        if (serverTimestamp > localTimestamp) {
           setContent(serverData);
           await saveCmsContent(serverData);
+        } else if (localTimestamp > serverTimestamp) {
+          // If local has newer edits, push to server
+          try {
+            await api.put("/system/landing-content", localData);
+          } catch (e) {}
         }
         setHasUnsavedChanges(false);
       }
@@ -595,19 +627,25 @@ export const KurasiLandingPage: React.FC = () => {
       lastModified: Date.now(),
     };
 
-    // 1. Save to IndexedDB (unlimited quota) + LocalStorage
+    // 1. Save to IndexedDB (unlimited quota) + LocalStorage + Broadcast
     await saveCmsContent(updatedContent);
 
     // 2. Persist to API if server is online
+    let serverSuccess = false;
     try {
-      await api.put("/system/landing-content", updatedContent);
+      const res = await api.put("/system/landing-content", updatedContent);
+      if (res.data?.success) serverSuccess = true;
     } catch (err: any) {
       console.info("[KurasiLandingPage] Persisted safely in persistent browser storage.");
     }
 
     setSaving(false);
     setHasUnsavedChanges(false);
-    showToast.success("Konfigurasi Landing Page berhasil diperbarui & disimpan permanen!");
+    if (serverSuccess) {
+      showToast.success("Konfigurasi Landing Page berhasil dipublikasikan & tersinkronisasi ke server!");
+    } else {
+      showToast.success("Konfigurasi Landing Page tersimpan lokal & aktif di Landing Page.");
+    }
   };
 
   // ── Reset to Defaults ───────────────────────────────────────────────────────
@@ -673,10 +711,9 @@ export const KurasiLandingPage: React.FC = () => {
       updated.unshift(productForm);
     }
 
-    setContent({ ...content, marketProducts: updated });
-    setHasUnsavedChanges(true);
+    updateAndPersistContent({ ...content, marketProducts: updated });
     setModalType(null);
-    showToast.success(editingIndex !== null ? "Produk diperbarui di draft" : "Produk ditambahkan ke draft");
+    showToast.success(editingIndex !== null ? "Produk diperbarui di Landing Page" : "Produk ditambahkan ke Landing Page");
   };
 
   // ── Hero Slide Handlers ─────────────────────────────────────────────────────
@@ -715,10 +752,9 @@ export const KurasiLandingPage: React.FC = () => {
       updated.push(slideForm);
     }
 
-    setContent({ ...content, heroSlides: updated });
-    setHasUnsavedChanges(true);
+    updateAndPersistContent({ ...content, heroSlides: updated });
     setModalType(null);
-    showToast.success(editingIndex !== null ? "Slide diperbarui di draft" : "Slide ditambahkan ke draft");
+    showToast.success(editingIndex !== null ? "Slide diperbarui di Landing Page" : "Slide ditambahkan ke Landing Page");
   };
 
   // ── Campaign Handlers ───────────────────────────────────────────────────────
@@ -766,10 +802,9 @@ export const KurasiLandingPage: React.FC = () => {
       updated.unshift(campaignForm);
     }
 
-    setContent({ ...content, actionCampaigns: updated });
-    setHasUnsavedChanges(true);
+    updateAndPersistContent({ ...content, actionCampaigns: updated });
     setModalType(null);
-    showToast.success(editingIndex !== null ? "Program aksi diperbarui di draft" : "Program aksi ditambahkan ke draft");
+    showToast.success(editingIndex !== null ? "Program aksi diperbarui di Landing Page" : "Program aksi ditambahkan ke Landing Page");
   };
 
   // ── News Handlers ───────────────────────────────────────────────────────────
@@ -811,10 +846,9 @@ export const KurasiLandingPage: React.FC = () => {
       updated.unshift(newsForm);
     }
 
-    setContent({ ...content, newsItems: updated });
-    setHasUnsavedChanges(true);
+    updateAndPersistContent({ ...content, newsItems: updated });
     setModalType(null);
-    showToast.success(editingIndex !== null ? "Berita diperbarui di draft" : "Berita ditambahkan ke draft");
+    showToast.success(editingIndex !== null ? "Berita diperbarui di Landing Page" : "Berita ditambahkan ke Landing Page");
   };
 
   // ── FAQ Handlers ────────────────────────────────────────────────────────────
@@ -844,10 +878,9 @@ export const KurasiLandingPage: React.FC = () => {
       updated.push(faqForm);
     }
 
-    setContent({ ...content, faqItems: updated });
-    setHasUnsavedChanges(true);
+    updateAndPersistContent({ ...content, faqItems: updated });
     setModalType(null);
-    showToast.success(editingIndex !== null ? "FAQ diperbarui di draft" : "FAQ ditambahkan ke draft");
+    showToast.success(editingIndex !== null ? "FAQ diperbarui di Landing Page" : "FAQ ditambahkan ke Landing Page");
   };
 
   // ── Delete Handler ──────────────────────────────────────────────────────────
@@ -855,26 +888,23 @@ export const KurasiLandingPage: React.FC = () => {
     if (!deleteConfig) return;
     const { tab, index } = deleteConfig;
 
+    let updatedContent = { ...content };
+
     if (tab === "product") {
-      const updated = content.marketProducts.filter((_, i) => i !== index);
-      setContent({ ...content, marketProducts: updated });
+      updatedContent.marketProducts = content.marketProducts.filter((_, i) => i !== index);
     } else if (tab === "slide") {
-      const updated = content.heroSlides.filter((_, i) => i !== index);
-      setContent({ ...content, heroSlides: updated });
+      updatedContent.heroSlides = content.heroSlides.filter((_, i) => i !== index);
     } else if (tab === "campaign") {
-      const updated = content.actionCampaigns.filter((_, i) => i !== index);
-      setContent({ ...content, actionCampaigns: updated });
+      updatedContent.actionCampaigns = content.actionCampaigns.filter((_, i) => i !== index);
     } else if (tab === "news") {
-      const updated = content.newsItems.filter((_, i) => i !== index);
-      setContent({ ...content, newsItems: updated });
+      updatedContent.newsItems = content.newsItems.filter((_, i) => i !== index);
     } else if (tab === "faq") {
-      const updated = content.faqItems.filter((_, i) => i !== index);
-      setContent({ ...content, faqItems: updated });
+      updatedContent.faqItems = content.faqItems.filter((_, i) => i !== index);
     }
 
-    setHasUnsavedChanges(true);
+    updateAndPersistContent(updatedContent);
     setDeleteConfig(null);
-    showToast.info("Item dihapus dari draft.");
+    showToast.info("Item dihapus.");
   };
 
   return (

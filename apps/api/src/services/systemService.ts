@@ -292,7 +292,7 @@ export const systemService = {
         categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
         initiator: "Kelompok 04 KKN UNIKOM",
         initiatorBadge: "Terverifikasi KKN",
-        location: "Kecamatan Bojongsoang, Kab. Bandung",
+        location: "Kecamatan Coblong, Kota Bandung",
         imageUrl: "/image/activity-2.webp",
         currentAmount: 390,
         targetAmount: 500,
@@ -311,7 +311,7 @@ export const systemService = {
         categoryColor: "bg-blue-100 text-blue-800 border-blue-200",
         initiator: "Pengurus RW 03 & Kader Lingkungan",
         initiatorBadge: "Mitra Warga",
-        location: "Desa Bojongsoang, Kab. Bandung",
+        location: "Kecamatan Coblong, Kota Bandung",
         imageUrl: "/image/activity-1.webp",
         currentAmount: 820,
         targetAmount: 1000,
@@ -330,7 +330,7 @@ export const systemService = {
         categoryColor: "bg-purple-100 text-purple-800 border-purple-200",
         initiator: "Tim Mahasiswa KKN Tematik 2026",
         initiatorBadge: "UNIKOM Official",
-        location: "Posko KKN RW 02, Bojongsoang",
+        location: "Posko KKN RW 02, Coblong",
         imageUrl: "/image/activity-3.webp",
         currentAmount: 245,
         targetAmount: 300,
@@ -349,7 +349,7 @@ export const systemService = {
         categoryColor: "bg-blue-100 text-blue-800 border-blue-200",
         initiator: "TP-PKK & Karang Taruna RW 04",
         initiatorBadge: "Komunitas",
-        location: "Kecamatan Bojongsoang",
+        location: "Kecamatan Coblong, Kota Bandung",
         imageUrl: "/image/kkn-hero-sorting.webp",
         currentAmount: 145,
         targetAmount: 200,
@@ -360,18 +360,56 @@ export const systemService = {
         impactHighlight: "Menyelamatkan 1.500 liter air tanah dari pencemaran minyak.",
         isPublished: true,
       },
+      {
+        id: "camp-05",
+        title: "Digitalisasi Penimbangan Sampah QR Code & IoT Sensor Lingkungan",
+        category: "tech",
+        categoryLabel: "Teknologi & IoT",
+        categoryColor: "bg-cyan-100 text-cyan-800 border-cyan-200",
+        initiator: "Divisi IoT Mahasiswa KKN UNIKOM",
+        initiatorBadge: "Inovasi IoT",
+        location: "Kecamatan Coblong, Kota Bandung",
+        imageUrl: "/image/landingpage.webp",
+        currentAmount: 180,
+        targetAmount: 200,
+        unit: "Titik RW",
+        daysRemaining: 20,
+        participantsCount: 95,
+        description: "Implementasi timbangan digital berbasis IoT terintegrasi QR code untuk pencatatan otomatis setor sampah warga langsung ke dashboard BERSEKA.",
+        impactHighlight: "Mengurangi 90% waktu pencatatan manual di posko bank sampah.",
+        isPublished: true,
+      },
+      {
+        id: "camp-06",
+        title: "Edukasi Pemilahan Sampah Dini & Workshop Komposting Kasgot Warga",
+        category: "edukasi",
+        categoryLabel: "Edukasi Lingkungan",
+        categoryColor: "bg-amber-100 text-amber-800 border-amber-200",
+        initiator: "Kelompok 08 KKN Tematik",
+        initiatorBadge: "Edukasi Warga",
+        location: "Balai Warga RW 06, Coblong",
+        imageUrl: "/image/activity-1.webp",
+        currentAmount: 320,
+        targetAmount: 400,
+        unit: "Peserta KK",
+        daysRemaining: 10,
+        participantsCount: 140,
+        description: "Sosialisasi door-to-door metode pemilahan 3 wadah (Organik, Anorganik, Residu) dan pembagian komposter ember tumpuk gratis bagi warga.",
+        impactHighlight: "Meningkatkan kepatuhan pemilahan rumah tangga hingga 88%.",
+        isPublished: true,
+      },
     ],
     newsItems: [
       {
         id: "news-01",
-        title: "UNIKOM dan Warga Bojongsoang Resmikan Rumah Kompos Terpadu Berbasis IoT",
+        title: "UNIKOM dan Warga Resmikan Rumah Kompos Terpadu Berbasis IoT",
         category: "Inovasi & KKN",
         date: "28 Mei 2026",
         readTime: "4 min baca",
-        location: "Kecamatan Bojongsoang",
+        location: "Kecamatan Coblong, Kota Bandung",
         imageUrl: "/image/activity-2.webp",
         summary: "Kolaborasi civitas akademika UNIKOM bersama aparat desa mewujudkan fasilitas biokonversi sampah organik berkapasitas 500kg per hari.",
-        content: "Universitas Komputer Indonesia (UNIKOM) bersama warga Desa Bojongsoang meresmikan Rumah Kompos Terpadu yang dilengkapi sistem monitoring digital BERSEKA. Melalui teknologi ini, suhu fermentasi kompos dan bobot timbulan sampah tercatat secara otomatis ke server cloud.\n\nKetua KKN Tematik menyampaikan bahwa fasilitas ini mampu mengolah hingga 500 kg sisa makanan per minggu, mencegah sampah membusuk di saluran drainase perumahan.",
+        content: "Universitas Komputer Indonesia (UNIKOM) bersama warga meresmikan Rumah Kompos Terpadu yang dilengkapi sistem monitoring digital BERSEKA. Melalui teknologi ini, suhu fermentasi kompos dan bobot timbulan sampah tercatat secara otomatis ke server cloud.\n\nKetua KKN Tematik menyampaikan bahwa fasilitas ini mampu mengolah hingga 500 kg sisa makanan per minggu, mencegah sampah membusuk di saluran drainase perumahan.",
         author: "Tim Humas KKN UNIKOM",
         isPublished: true,
       },
@@ -381,7 +419,7 @@ export const systemService = {
         category: "Dampak Warga",
         date: "22 Mei 2026",
         readTime: "3 min baca",
-        location: "RW 03 Bojongsoang",
+        location: "RW 03 Coblong",
         imageUrl: "/image/activity-1.webp",
         summary: "Sistem reward poin BERSEKA yang dapat ditukar kebutuhan sembako sukses mendorong kepatuhan pemilahan mandiri hingga 92%.",
         content: "Penerapan skema insentif sembako dan bibit tanaman pada program BERSEKA berhasil meningkatkan kepatuhan pemilahan sampah warga dari 34% menjadi 92% dalam kurun waktu 2 bulan.\n\nKader PKK setempat mengungkapkan bahwa antusiasme warga sangat tinggi karena sampah anorganik yang sebelumnya dibuang sia-sia kini memiliki nilai tukar yang pasti dan terdata secara digital.",
@@ -399,6 +437,45 @@ export const systemService = {
         summary: "Edukasi pemanfaatan kulit buah sisa dapur menjadi cairan multifungsi pembersih dan pupuk cair ramah lingkungan.",
         content: "Mahasiswa KKN menggelar pelatihan pembuatan cairan eco-enzyme bagi anggota Kelompok Wanita Tani (KWT). Limbah kulit buah jeruk, nanas, dan pepaya difermentasikan bersama molase selama 3 bulan untuk menghasilkan enzim pembersih alami.\n\nProduk ini kini menjadi salah satu komoditas unggulan di Pasar Berseka dan dibagikan secara berkala kepada warga sekitar.",
         author: "Fasilitator KKN Tematik",
+        isPublished: true,
+      },
+      {
+        id: "news-04",
+        title: "Panen Perdana Kasgot Organik Binaan KKN Hasilkan 120 Kg Pupuk Berkualitas",
+        category: "Ekonomi Sirkular",
+        date: "10 Mei 2026",
+        readTime: "4 min baca",
+        location: "Rumah Maggot RW 05",
+        imageUrl: "/image/activity-2.webp",
+        summary: "Hasil biokonversi maggot BSF berhasil dipanen dan langsung didistribusikan untuk kebun ketahanan pangan dan dijual di Pasar Berseka.",
+        content: "Unit budidaya maggot binaan mahasiswa KKN UNIKOM sukses melaksanakan panen perdana pupuk kasgot sebanyak 120 kg. Pupuk ini langsung dimanfaatkan oleh warga untuk menyuburkan kebun hidroponik dan tanaman cabai pekarangan.",
+        author: "Tim KKN Unit Maggot",
+        isPublished: true,
+      },
+      {
+        id: "news-05",
+        title: "Digitalisasi Bank Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
+        category: "Bank Sampah",
+        date: "5 Mei 2026",
+        readTime: "3 min baca",
+        location: "Bank Sampah RW 04",
+        imageUrl: "/image/activity-1.webp",
+        summary: "Penerapan sistem QR Code pada setiap kantong sampah memudahkan pencatatan saldo dan percepatan penukaran sembako bulanan.",
+        content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Bank Sampah RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
+        author: "Pengelola Bank Sampah",
+        isPublished: true,
+      },
+      {
+        id: "news-06",
+        title: "Aksi Bersih Saluran & Sosialisasi Pemilahan Sampah Door-to-Door",
+        category: "Aksi Lapangan",
+        date: "1 Mei 2026",
+        readTime: "4 min baca",
+        location: "Kecamatan Coblong",
+        imageUrl: "/image/kkn-hero-sorting.webp",
+        summary: "Mahasiswa KKN UNIKOM bersama Karang Taruna dan warga bergotong-royong membersihkan sedimentasi drainase dan membagikan stiker panduan pilah sampah.",
+        content: "Kegiatan gotong royong massal melibatkan lebih dari 150 warga dan mahasiswa. Selain membersihkan saluran air, tim membagikan tempat sampah pilah 2 warna dan menempelkan barcode QR di setiap rumah peserta program.",
+        author: "Koordinator Lapangan KKN",
         isPublished: true,
       },
     ],
@@ -444,6 +521,7 @@ export const systemService = {
       });
       if (config && config.value) {
         const parsed = JSON.parse(config.value);
+        const lastModified = parsed.lastModified || (config.updatedAt ? new Date(config.updatedAt).getTime() : Date.now());
         return {
           heroSlides: Array.isArray(parsed.heroSlides) ? parsed.heroSlides : defaults.heroSlides,
           marketProducts: Array.isArray(parsed.marketProducts) ? parsed.marketProducts : defaults.marketProducts,
@@ -451,19 +529,27 @@ export const systemService = {
           newsItems: Array.isArray(parsed.newsItems) ? parsed.newsItems : defaults.newsItems,
           liveLogs: Array.isArray(parsed.liveLogs) ? parsed.liveLogs : defaults.liveLogs,
           faqItems: Array.isArray(parsed.faqItems) ? parsed.faqItems : defaults.faqItems,
+          lastModified,
         };
       }
     } catch (err) {
       console.warn("[systemService] Failed parsing landing_cms_content:", err);
     }
-    return defaults;
+    return {
+      ...defaults,
+      lastModified: 0,
+    };
   },
 
   /**
    * Save dynamic landing page CMS content (Super User & Developer)
    */
   saveLandingContent: async (content: any, updatedBy: string = "Super User") => {
-    const jsonStr = JSON.stringify(content);
+    const payload = {
+      ...content,
+      lastModified: content.lastModified || Date.now(),
+    };
+    const jsonStr = JSON.stringify(payload);
     await prisma.systemConfig.upsert({
       where: { key: "landing_cms_content" },
       update: {
@@ -478,14 +564,17 @@ export const systemService = {
         updatedBy,
       },
     });
-    return content;
+    return payload;
   },
 
   /**
    * Reset dynamic landing page CMS content to default
    */
   resetLandingContent: async (updatedBy: string = "Super User") => {
-    const defaults = systemService.getDefaultLandingContent();
+    const defaults = {
+      ...systemService.getDefaultLandingContent(),
+      lastModified: Date.now(),
+    };
     const jsonStr = JSON.stringify(defaults);
     await prisma.systemConfig.upsert({
       where: { key: "landing_cms_content" },

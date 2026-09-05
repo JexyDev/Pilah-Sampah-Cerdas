@@ -214,14 +214,7 @@
   transform: scale(1.02);
 }
 
-.landing-media::after {
-  content: attr(data-label);
-  position: absolute;
-  inset: auto 12px 12px auto;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.75);
-  pointer-events: none;
-}
+
 
 /* ───────────────── Header ───────────────── */
 .landing-header {

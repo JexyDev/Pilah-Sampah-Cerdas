@@ -13,9 +13,9 @@ export const Footer: React.FC = () => {
       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
         <div className="flex items-center gap-2 font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
           <img
-            src="/app-logo.png"
+            src="/logos/berseka/berseka-logo-bg-transparent.png"
             alt="BERSEKA"
-            className="h-8 w-auto object-contain shrink-0"
+            className="h-7 w-auto object-contain shrink-0"
           />
           <span>BERSEKA</span>
         </div>
