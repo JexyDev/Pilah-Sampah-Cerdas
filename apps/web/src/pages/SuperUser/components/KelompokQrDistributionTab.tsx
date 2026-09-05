@@ -30,7 +30,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { EmptyTableState } from "../../../components/common/EmptyTableState";
-import { downloadKelompokZip, printQrStickers, QrStickerItem } from "../../../utils/printQrStickers";
+import { downloadKelompokZip, printQrStickers, type QrStickerItem } from "../../../utils/printQrStickers";
 
 export interface KelompokDistributionItem {
   id: string;
