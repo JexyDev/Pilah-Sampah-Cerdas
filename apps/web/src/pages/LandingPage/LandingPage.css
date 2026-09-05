@@ -318,6 +318,7 @@
   font-size: 0.92rem;
   position: relative;
   transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
 .landing-nav a:hover,

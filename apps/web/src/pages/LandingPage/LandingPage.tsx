@@ -480,13 +480,6 @@ export const LandingPage: React.FC = () => {
                 />
               </picture>
             </a>
-            <span
-              className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/90 text-[#0d5c3a] text-[11px] font-extrabold tracking-tight select-none shadow-2xs"
-              title="Sistem BERSEKA dalam Tahap Percontohan KKN Tematik di Kecamatan Coblong"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Pilot Project Coblong</span>
-            </span>
           </div>
 
           {/* Desktop & Mobile Navigation Links */}
@@ -580,7 +573,7 @@ export const LandingPage: React.FC = () => {
                   </button>
                 </div>
               </li>
-              <li className="landing-nav-auth-mobile space-y-2">
+              <li className="landing-nav-auth-mobile">
                 {isAuthenticated ? (
                   <button
                     type="button"
@@ -593,23 +586,13 @@ export const LandingPage: React.FC = () => {
                     Dasbor Saya
                   </button>
                 ) : (
-                  <>
-                    <Link
-                      to="/download"
-                      onClick={() => setIsNavOpen(false)}
-                      className="landing-btn landing-btn-outline w-full text-center justify-center flex items-center gap-2"
-                    >
-                      <Smartphone size={16} />
-                      <span>Unduh Aplikasi Warga (APK)</span>
-                    </Link>
-                    <Link
-                      to="/login"
-                      onClick={() => setIsNavOpen(false)}
-                      className="landing-btn landing-btn-primary w-full text-center justify-center"
-                    >
-                      Masuk Portal Pengelola
-                    </Link>
-                  </>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsNavOpen(false)}
+                    className="landing-btn landing-btn-primary w-full text-center justify-center"
+                  >
+                    Masuk
+                  </Link>
                 )}
               </li>
             </ul>
@@ -626,23 +609,12 @@ export const LandingPage: React.FC = () => {
                 Dasbor Saya
               </button>
             ) : (
-              <>
-                <Link
-                  to="/download"
-                  className="landing-btn landing-btn-outline landing-btn-sm hidden sm:inline-flex items-center gap-1.5"
-                  title="Unduh Aplikasi Android untuk Warga & Petugas"
-                >
-                  <Smartphone size={14} />
-                  <span>Aplikasi Warga</span>
-                </Link>
-                <Link
-                  to="/login"
-                  className="landing-btn landing-btn-primary landing-btn-sm inline-flex items-center gap-1.5"
-                  title="Portal Web Pengelola (RW, RT, DPL, & Admin)"
-                >
-                  <span>Masuk Portal</span>
-                </Link>
-              </>
+              <Link
+                to="/login"
+                className="landing-btn landing-btn-outline landing-btn-sm"
+              >
+                Masuk
+              </Link>
             )}
 
             <button
@@ -899,7 +871,7 @@ export const LandingPage: React.FC = () => {
                       alt={item.title}
                       loading="lazy"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/image/activity-1.webp";
+                        (e.target as HTMLImageElement).src = "/image/program/timbangan-digital-petugas.webp";
                       }}
                     />
                     <span className="landing-badge">{item.categoryLabel || "Program"}</span>
@@ -1640,7 +1612,7 @@ export const LandingPage: React.FC = () => {
                 alt={selectedProgram.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/image/activity-1.webp";
+                  (e.target as HTMLImageElement).src = "/image/program/timbangan-digital-petugas.webp";
                 }}
               />
             </div>

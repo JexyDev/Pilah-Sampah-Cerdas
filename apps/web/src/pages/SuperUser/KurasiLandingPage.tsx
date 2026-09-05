@@ -1139,13 +1139,13 @@ export const KurasiLandingPage: React.FC = () => {
     setCampaignForm({
       id: `camp-${Date.now()}`,
       title: "",
-      category: "organic",
-      categoryLabel: "Organik & Maggot",
+      category: "recycle",
+      categoryLabel: "Bank Sampah",
       categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Kelompok KKN UNIKOM",
-      initiatorBadge: "Terverifikasi KKN",
-      location: "Kecamatan Bojongsoang",
-      imageUrl: "/image/activity-2.webp",
+      initiator: "Tim KKN UNIKOM & Petugas DLH",
+      initiatorBadge: "Bank Sampah",
+      location: "Kecamatan Coblong, Kota Bandung",
+      imageUrl: "/image/program/timbangan-digital-petugas.webp",
       currentAmount: 0,
       targetAmount: 500,
       unit: "kg",
@@ -1635,7 +1635,7 @@ export const KurasiLandingPage: React.FC = () => {
                           src={camp.imageUrl}
                           alt={camp.title}
                           className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/image/program/timbangan-digital-petugas.webp"; }}
                         />
                         <span className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${camp.categoryColor}`}>
                           {camp.categoryLabel}
