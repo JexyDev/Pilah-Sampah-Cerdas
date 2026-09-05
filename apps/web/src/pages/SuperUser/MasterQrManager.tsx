@@ -5,9 +5,10 @@ import { Badge } from "../../components/common/Badge";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { Pagination } from "../../components/common/Pagination";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
-import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw, Pencil, X } from "lucide-react";
+import { QrCode, AlertTriangle, PlayCircle, Download, RefreshCw, Trash2, Plus, Search, Filter, Printer, RotateCcw, Pencil, X, FolderArchive } from "lucide-react";
 import { printQrStickers } from "../../utils/printQrStickers";
 import { exportToXlsx } from "../../utils/exportXlsx";
+import { KelompokQrDistributionTab } from "./components/KelompokQrDistributionTab";
 
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -46,7 +47,7 @@ export const MasterQrManager: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   // Approvals & Navigation states
-  const [activeTab, setActiveTab] = useState<"qrs" | "pending_petugas">("qrs");
+  const [activeTab, setActiveTab] = useState<"qrs" | "distribusi_kelompok" | "pending_petugas">("qrs");
   const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
 
   // Modal generate states
@@ -446,6 +447,15 @@ export const MasterQrManager: React.FC = () => {
           Semua Master QR & Tempat Sampah ({qrs.length})
         </button>
         <button
+          onClick={() => setActiveTab("distribusi_kelompok")}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === "distribusi_kelompok" ? "border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+          }`}
+        >
+          <FolderArchive size={16} />
+          Distribusi QR Kelompok KKN (Paket 10)
+        </button>
+        <button
           onClick={() => setActiveTab("pending_petugas")}
           className={`pb-3 text-sm font-bold border-b-2 transition-all cursor-pointer ${
             activeTab === "pending_petugas" ? "border-emerald-600 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400" : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
@@ -708,6 +718,11 @@ export const MasterQrManager: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Distribusi QR Kelompok KKN Tab */}
+      {activeTab === "distribusi_kelompok" && (
+        <KelompokQrDistributionTab />
       )}
 
       {/* Replace Broken Bin Modal */}
