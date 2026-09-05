@@ -177,6 +177,7 @@ export const DplDashboardPage: React.FC = () => {
 
   const { user } = useAuthStore();
   const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN"].includes(userRole);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -1057,7 +1058,7 @@ export const DplDashboardPage: React.FC = () => {
               {alerts.pendingRequests.map((req) => {
                 const hoursElapsed = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
                 const isOver24Hours = hoursElapsed >= 24;
-                const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"].includes(userRole);
+                const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"].includes(userRole);
                 const isCancelReq = req.status === "CANCEL_REQUESTED";
                 const isBusy = decidingLeaveId === req.id;
 
@@ -1399,7 +1400,7 @@ export const DplDashboardPage: React.FC = () => {
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
             <GraduationCap size={16} />
-            <span>Portal DPL</span>
+            <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : "Portal DPL"}</span>
             <span className="text-slate-300 dark:text-slate-600">•</span>
             <span className="text-slate-500 dark:text-slate-400 font-normal">
               {dplKelurahanList.length > 0
@@ -1408,10 +1409,12 @@ export const DplDashboardPage: React.FC = () => {
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            Dasbor KKN DPL
+            {isPimpinan ? "Dasbor Monitoring KKN Pimpinan" : "Dasbor KKN DPL"}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
-            Ringkasan eksekutif ekosistem KKN binaan, capaian presensi lapangan, dan status penilaian akademik.
+            {isPimpinan
+              ? "Ringkasan eksekutif pemantauan seluruh kelompok KKN binaan, DPL pengampu, capaian presensi lapangan, dan status pelaksanaan program kerja."
+              : "Ringkasan eksekutif ekosistem KKN binaan, capaian presensi lapangan, dan status penilaian akademik."}
           </p>
         </div>
 
@@ -1834,10 +1837,14 @@ export const DplDashboardPage: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <Users size={18} className="text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">Daftar Kelompok Dampingan</h3>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                {isPimpinan ? "Daftar Kelompok KKN & DPL Pengampu" : "Daftar Kelompok Dampingan"}
+              </h3>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Kelompok KKN binaan beserta cakupan wilayah RW dan progress aktivitas.
+              {isPimpinan
+                ? "Monitoring kelompok KKN binaan beserta DPL pengampu, cakupan wilayah RW, dan progres aktivitas."
+                : "Kelompok KKN binaan beserta cakupan wilayah RW dan progress aktivitas."}
             </p>
           </div>
           <Link
@@ -1876,6 +1883,11 @@ export const DplDashboardPage: React.FC = () => {
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                       Kel. {g.kelurahan || "-"} {g.kecamatan ? `• Kec. ${g.kecamatan}` : ""} • RW {rwFormatted}
                     </p>
+                    {g.dpl && (
+                      <p className="text-[11px] text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1 truncate" title={`DPL: ${g.dpl.name}${g.dpl.nip ? ` (${g.dpl.nip})` : ""}`}>
+                        <span className="text-slate-400 font-normal">DPL:</span> {g.dpl.name} {g.dpl.nip ? `(${g.dpl.nip})` : ""}
+                      </p>
+                    )}
                     {g.ketua && (
                       <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1 truncate">
                         <span className="text-slate-400 font-normal">Ketua Kelompok:</span> {g.ketua.name} ({g.ketua.nim})

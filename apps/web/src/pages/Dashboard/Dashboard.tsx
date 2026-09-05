@@ -1652,7 +1652,9 @@ const Dashboard: React.FC = () => {
       user?.peran === "RW" ||
       user?.peran === "DPL" ||
       user?.peran === "DOSEN_PEMBIMBING" ||
-      user?.peran === "PANITIA_TASKFORCE"
+      user?.peran === "PANITIA_TASKFORCE" ||
+      user?.peran === "PIMPINAN" ||
+      user?.peran === "PEMIMPIN"
     ) {
       setLoading(false);
       return;
@@ -1832,7 +1834,9 @@ const Dashboard: React.FC = () => {
   if (user?.peran === "PETUGAS_RESIDU") return <ResiduDashboard />;
   if (
     user?.peran === "DPL" ||
-    user?.peran === "DOSEN_PEMBIMBING"
+    user?.peran === "DOSEN_PEMBIMBING" ||
+    user?.peran === "PIMPINAN" ||
+    user?.peran === "PEMIMPIN"
   ) {
     return <DplDashboardPage />;
   }
