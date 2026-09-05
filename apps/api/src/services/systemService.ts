@@ -618,9 +618,33 @@ export const systemService = {
   /**
    * Get real KKN logbooks with photos from database as candidates for curation
    */
-  getApprovedLogbookSources: async () => {
+  getApprovedLogbookSources: async (params?: { kelompokId?: string; kelurahan?: string; search?: string; limit?: number }) => {
     try {
       const db = prisma as any;
+      const limit = Math.min(Number(params?.limit) || 500, 1000);
+      
+      let whereClause = "WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 3";
+      const conditions: string[] = [];
+
+      if (params?.kelompokId && String(params.kelompokId).trim()) {
+        const safeKelompokId = String(params.kelompokId).trim().replace(/'/g, "''");
+        conditions.push(`l.id_kelompok = '${safeKelompokId}'`);
+      }
+
+      if (params?.kelurahan && String(params.kelurahan).trim()) {
+        const safeKelurahan = String(params.kelurahan).trim().replace(/'/g, "''");
+        conditions.push(`k.kelurahan ILIKE '%${safeKelurahan}%'`);
+      }
+
+      if (params?.search && String(params.search).trim()) {
+        const safeSearch = String(params.search).trim().replace(/'/g, "''");
+        conditions.push(`(l.deskripsi ILIKE '%${safeSearch}%' OR l.tempat ILIKE '%${safeSearch}%' OR u.nama ILIKE '%${safeSearch}%' OR k.nama ILIKE '%${safeSearch}%' OR k.kelurahan ILIKE '%${safeSearch}%')`);
+      }
+
+      if (conditions.length > 0) {
+        whereClause += " AND " + conditions.join(" AND ");
+      }
+
       const logbooks = await db.$queryRawUnsafe(`
         SELECT 
           l.id, 
@@ -640,9 +664,9 @@ export const systemService = {
         LEFT JOIN kelompok_kkn k ON l.id_kelompok = k.id
         LEFT JOIN pengguna u ON l.id_penulis = u.id
         LEFT JOIN program_kerja_kkn p ON l.id_program_kerja = p.id
-        WHERE l.deskripsi IS NOT NULL AND length(l.deskripsi) > 5
+        ${whereClause}
         ORDER BY l.tanggal_kegiatan DESC
-        LIMIT 50
+        LIMIT ${limit}
       `);
       return logbooks || [];
     } catch (err) {
@@ -654,9 +678,35 @@ export const systemService = {
   /**
    * Get real student Program Kerja (Proker) from database as candidates for curation
    */
-  getRealProkerSources: async () => {
+  getRealProkerSources: async (params?: { kelompokId?: string; kelurahan?: string; kategori?: string; search?: string; limit?: number }) => {
     try {
       const db = prisma as any;
+      const limit = Math.min(Number(params?.limit) || 500, 1000);
+
+      const conditions: string[] = [];
+
+      if (params?.kelompokId && String(params.kelompokId).trim()) {
+        const safeKelompokId = String(params.kelompokId).trim().replace(/'/g, "''");
+        conditions.push(`p.id_kelompok = '${safeKelompokId}'`);
+      }
+
+      if (params?.kelurahan && String(params.kelurahan).trim()) {
+        const safeKelurahan = String(params.kelurahan).trim().replace(/'/g, "''");
+        conditions.push(`k.kelurahan ILIKE '%${safeKelurahan}%'`);
+      }
+
+      if (params?.kategori && String(params.kategori).trim()) {
+        const safeKategori = String(params.kategori).trim().replace(/'/g, "''");
+        conditions.push(`p.kategori ILIKE '%${safeKategori}%'`);
+      }
+
+      if (params?.search && String(params.search).trim()) {
+        const safeSearch = String(params.search).trim().replace(/'/g, "''");
+        conditions.push(`(p.deskripsi ILIKE '%${safeSearch}%' OR k.nama ILIKE '%${safeSearch}%' OR p.kategori ILIKE '%${safeSearch}%' OR k.kelurahan ILIKE '%${safeSearch}%')`);
+      }
+
+      const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+
       const prokers = await db.$queryRawUnsafe(`
         SELECT 
           p.id, 
@@ -689,8 +739,9 @@ export const systemService = {
           ) as "logbookTempat"
         FROM program_kerja_kkn p
         LEFT JOIN kelompok_kkn k ON p.id_kelompok = k.id
+        ${whereClause}
         ORDER BY p.dibuat_pada DESC
-        LIMIT 50
+        LIMIT ${limit}
       `);
       return prokers || [];
     } catch (err) {
