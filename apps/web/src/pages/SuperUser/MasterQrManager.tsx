@@ -453,7 +453,7 @@ export const MasterQrManager: React.FC = () => {
           }`}
         >
           <FolderArchive size={16} />
-          Distribusi QR Kelompok KKN (Paket 10)
+          Distribusi QR Kelompok KKN (Paket 20)
         </button>
         <button
           onClick={() => setActiveTab("pending_petugas")}

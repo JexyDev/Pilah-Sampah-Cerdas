@@ -1458,7 +1458,7 @@ export class SuperUserService {
       );
 
       let statusDistribusi = "BELUM_GENERATE";
-      if (totalBins >= 10) {
+      if (totalBins >= 20) {
         statusDistribusi = k.qrDownloadedAt ? "SUDAH_DIUNDUH" : "SIAP_UNDUH";
       } else if (totalBins > 0) {
         statusDistribusi = "BELUM_LENGKAP";
@@ -1492,7 +1492,7 @@ export class SuperUserService {
   }
 
   /**
-   * Generate exactly 10 QR Codes for a Kelompok (5 Organik + 5 Anorganik)
+   * Generate exactly 20 QR Codes for a Kelompok (10 Organik + 10 Anorganik)
    * Prevents duplication and locks quota.
    */
   async generateKelompokQrBundle(kelompokId: string, adminUserId: string) {
@@ -1527,14 +1527,14 @@ export class SuperUserService {
           b.qrCode.includes("-AGN-")
       ).length;
 
-      if (currentOrganik >= 5 && currentAnorganik >= 5) {
+      if (currentOrganik >= 10 && currentAnorganik >= 10) {
         throw new Error(
-          `Kelompok "${kelompok.name}" sudah memiliki kuota lengkap 10 QR Code (5 Organik & 5 Anorganik).`
+          `Kelompok "${kelompok.name}" sudah memiliki kuota lengkap 20 QR Code (10 Organik & 10 Anorganik).`
         );
       }
 
-      const neededOrganik = Math.max(0, 5 - currentOrganik);
-      const neededAnorganik = Math.max(0, 5 - currentAnorganik);
+      const neededOrganik = Math.max(0, 10 - currentOrganik);
+      const neededAnorganik = Math.max(0, 10 - currentAnorganik);
 
       // Find waste categories
       const allCategories = await tx.wasteCategory.findMany();

@@ -518,7 +518,7 @@ export const printQrStickers = (
 
 /**
  * Download Kelompok ZIP bundle containing:
- * - 10 HD sticker PNG files (5 Organik + 5 Anorganik) with size 2500 x 3808 px (10x15cm)
+ * - 20 HD sticker PNG files (10 Organik + 10 Anorganik) with size 2500 x 3808 px (10x15cm)
  * - Printable HTML document for one-click printing without internet
  * - Guidance text file
  */
@@ -577,7 +577,7 @@ export const downloadKelompokZip = async (
     console.warn("Failed loading bgAnorganikImg", e);
   }
 
-  onProgress?.("Menyiapkan 10 stiker HD...");
+  onProgress?.(`Menyiapkan ${sortedItems.length} stiker HD...`);
 
   for (let i = 0; i < sortedItems.length; i++) {
     const item = sortedItems[i];
@@ -663,9 +663,9 @@ export const downloadKelompokZip = async (
   KELOMPOK: ${kelompokName}
 ======================================================================
 
-Paket ZIP ini berisi 10 stiker QR Code resmi BERSEKA:
-- 5 Stiker Hijau : TEMPAT SAMPAH ORGANIK (Sisa makanan, sayur, buah, daun)
-- 5 Stiker Kuning: TEMPAT SAMPAH ANORGANIK (Botol plastik, kardus, kaleng, gelas)
+Paket ZIP ini berisi 20 stiker QR Code resmi BERSEKA:
+- 10 Stiker Hijau : TEMPAT SAMPAH ORGANIK (Sisa makanan, sayur, buah, daun)
+- 10 Stiker Kuning: TEMPAT SAMPAH ANORGANIK (Botol plastik, kardus, kaleng, gelas)
 
 PETUNJUK PENCETAKAN & PENEMPELAN:
 1. Ukuran baku stiker adalah 10 x 15 cm (portrait / tegak).
@@ -697,5 +697,5 @@ Tim BERSEKA
   document.body.removeChild(link);
   URL.revokeObjectURL(downloadUrl);
 
-  toast.success(`Paket ZIP 10 QR untuk "${kelompokName}" berhasil diunduh!`);
+  toast.success(`Paket ZIP QR untuk "${kelompokName}" berhasil diunduh!`);
 };
