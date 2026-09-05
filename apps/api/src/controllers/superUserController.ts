@@ -335,6 +335,87 @@ export class SuperUserController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  async getKelompokDistributionList(req: Request, res: Response): Promise<void> {
+    try {
+      const { search, statusDistribusi, hasGdrive, kelurahan } = req.query;
+      const data = await superUserService.getKelompokDistributionList({
+        search: search as string,
+        statusDistribusi: statusDistribusi as string,
+        hasGdrive: hasGdrive as string,
+        kelurahan: kelurahan as string,
+      });
+      res.status(200).json({ success: true, data });
+    } catch (error: any) {
+      console.error("[superUserController] getKelompokDistributionList error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async generateKelompokQrBundle(req: Request, res: Response): Promise<void> {
+    try {
+      const { kelompokId } = req.params;
+      const adminUserId = req.user!.userId;
+      const data = await superUserService.generateKelompokQrBundle(kelompokId, adminUserId);
+      res.status(200).json({
+        success: true,
+        data,
+        message: "Paket 10 QR Code (5 Organik & 5 Anorganik) berhasil digenerate untuk kelompok ini",
+      });
+    } catch (error: any) {
+      console.error("[superUserController] generateKelompokQrBundle error:", error);
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  async updateKelompokGdrive(req: Request, res: Response): Promise<void> {
+    try {
+      const { kelompokId } = req.params;
+      const { linkGoogleDrive } = req.body;
+      const adminUserId = req.user!.userId;
+      const data = await superUserService.updateKelompokGdrive(
+        kelompokId,
+        linkGoogleDrive,
+        adminUserId
+      );
+      res.status(200).json({
+        success: true,
+        data,
+        message: "Link Google Drive kelompok berhasil disimpan",
+      });
+    } catch (error: any) {
+      console.error("[superUserController] updateKelompokGdrive error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async markKelompokQrDownloaded(req: Request, res: Response): Promise<void> {
+    try {
+      const { kelompokId } = req.params;
+      const adminUserId = req.user!.userId;
+      const data = await superUserService.markKelompokQrDownloaded(kelompokId, adminUserId);
+      res.status(200).json({
+        success: true,
+        data,
+        message: "Status unduhan QR kelompok berhasil diperbarui",
+      });
+    } catch (error: any) {
+      console.error("[superUserController] markKelompokQrDownloaded error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async exportKelompokQrPdfHtml(req: Request, res: Response): Promise<void> {
+    try {
+      const { kelompokId } = req.params;
+      const html = await superUserService.exportKelompokQrPdfHtml(kelompokId);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.status(200).send(html);
+    } catch (error: any) {
+      console.error("[superUserController] exportKelompokQrPdfHtml error:", error);
+      res.status(500).send(`<h3>Gagal memuat dokumen cetak QR: ${error.message}</h3>`);
+    }
+  }
 }
 
 export const superUserController = new SuperUserController();
