@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Menu,
   X,
   Check,
@@ -107,6 +106,7 @@ export const LandingPage: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<MarketProductItem | null>(null);
   const [exchangeModalProduct, setExchangeModalProduct] = useState<MarketProductItem | null>(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
+  const [activeLightboxImage, setActiveLightboxImage] = useState<{ src: string; title?: string } | null>(null);
 
   // ── Cart Simulation Feedback ─────────────────────────────────────────────────
   const [cartSuccessId, setCartSuccessId] = useState<string | null>(null);
@@ -424,6 +424,18 @@ export const LandingPage: React.FC = () => {
   const toggleFaq = (idx: number) => {
     setOpenFaqIndex((prev) => (prev === idx ? null : idx));
   };
+
+  // ── Lightbox Keyboard Dismiss ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!activeLightboxImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveLightboxImage(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeLightboxImage]);
 
   // ── Penukaran Poin Pasar BERSEKA (Kontekstual, Profesional & Bebas AI-Slop) ───
   const handleOpenExchange = (product: MarketProductItem) => {
@@ -1535,28 +1547,22 @@ export const LandingPage: React.FC = () => {
             >
               <X size={18} />
             </button>
-            <div className="relative w-full max-h-[440px] bg-slate-950 overflow-hidden flex items-center justify-center">
+            <div
+              className="relative w-full max-h-[440px] bg-slate-950 overflow-hidden flex items-center justify-center cursor-zoom-in group"
+              onClick={() => setActiveLightboxImage({ src: selectedNews.imageUrl, title: selectedNews.title })}
+              title="Klik foto untuk melihat ukuran penuh"
+            >
               <img
                 src={selectedNews.imageUrl}
                 alt={selectedNews.title}
-                className="w-full max-h-[440px] object-contain"
+                className="w-full max-h-[440px] object-contain transition-transform duration-200 group-hover:scale-[1.01]"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/image/activity-3.webp";
                 }}
               />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold uppercase tracking-wider shadow-sm">
+              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-600/90 backdrop-blur-xs text-white text-xs font-bold uppercase tracking-wider shadow-sm pointer-events-none">
                 {selectedNews.category}
               </div>
-              <a
-                href={selectedNews.imageUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute bottom-3 right-3 px-3 py-1.5 rounded-lg bg-black/70 hover:bg-black/90 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
-                title="Buka foto resolusi penuh di tab baru"
-              >
-                <span>Lihat Foto HD</span>
-                <ExternalLink size={13} />
-              </a>
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 text-xs text-slate-400 font-semibold">
@@ -2143,6 +2149,41 @@ export const LandingPage: React.FC = () => {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Native Minimalist Fullscreen Lightbox Modal (Click-to-view HD photo) ── */}
+      {activeLightboxImage && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/92 backdrop-blur-sm flex flex-col items-center justify-center p-4 sm:p-6 select-none"
+          onClick={() => setActiveLightboxImage(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition cursor-pointer z-10"
+            onClick={() => setActiveLightboxImage(null)}
+            aria-label="Tutup pratinjau foto"
+          >
+            <X size={22} />
+          </button>
+
+          <div
+            className="relative max-w-6xl max-h-[88vh] w-full flex flex-col items-center justify-center cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={activeLightboxImage.src}
+              alt={activeLightboxImage.title || "Pratinjau foto"}
+              className="max-h-[82vh] max-w-full object-contain rounded-xl shadow-2xl"
+            />
+            {activeLightboxImage.title && (
+              <p className="mt-3 text-center text-sm font-medium text-slate-300 max-w-2xl px-4 line-clamp-2">
+                {activeLightboxImage.title}
+              </p>
+            )}
           </div>
         </div>
       )}
