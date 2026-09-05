@@ -737,7 +737,7 @@ export class LogbookService {
         attachmentUrls:
           payload.attachmentUrls || (payload.fotoBuktiUrl ? [payload.fotoBuktiUrl] : null),
         platformOs: payload.platformOs || (isDeveloper ? "DEVELOPER_OVERRIDE" : "ANDROID"),
-        tipeAktivitas: payload.tipeAktivitas || TipeAktivitasKkn.KELOMPOK,
+        tipeAktivitas: payload.tipeAktivitas || TipeAktivitasKkn.INDIVIDU,
         programKerjaId: payload.programKerjaId || null,
         fasilitasId: payload.fasilitasId || null,
         pekanKe,

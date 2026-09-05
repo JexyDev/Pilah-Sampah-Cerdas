@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { residuService } from "./residuService.js";
-import { kknService, checkClassificationMatch } from "./kknService.js";
+import { kknService, checkClassificationMatch, isOrganikBin, isAnorganikBin } from "./kknService.js";
 import { prisma } from "../lib/prisma.js";
 
 vi.mock("../lib/prisma.js", () => {
@@ -370,6 +370,210 @@ describe("Mobile Findings Backend Tests", () => {
       await expect(kknService.getWargaDetail("kkn-1", "non-existent-warga")).rejects.toThrow(
         "WARGA_NOT_FOUND"
       );
+    });
+
+    it("should throw FORBIDDEN_SCOPE when student accesses warga from a different RW/Kelurahan", async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({
+          id: "warga-out-of-scope",
+          name: "Warga Sukajadi",
+          rwId: 9,
+          rw: { id: 9, name: "09", kelurahan: { name: "Sukajadi" } },
+          households: [],
+          bins: [],
+          binOwnerships: [
+            {
+              bin: {
+                id: "bin-other",
+                registeredByStudentId: "other-student-99",
+                category: { name: "ORGANIC" },
+              },
+            },
+          ],
+          setoranOtomatis: [],
+        } as any)
+        .mockResolvedValueOnce({
+          id: "student-coblong",
+          role: { name: "MAHASISWA_KKN" },
+        } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValueOnce({
+        id: "skkn-1",
+        userId: "student-coblong",
+        assignedRwId: 1,
+        assignedRw: { id: 1, name: "01", kelurahan: { name: "Coblong" } },
+        kelompok: {
+          id: "kel-1",
+          kelurahan: "Coblong",
+          cakupanRw: ["01", "02"],
+          students: [{ userId: "student-coblong" }],
+        },
+        user: { id: "student-coblong", rwId: 1 },
+      } as any);
+
+      await expect(
+        kknService.getWargaDetail("student-coblong", "warga-out-of-scope")
+      ).rejects.toThrow("FORBIDDEN_SCOPE");
+    });
+
+    it("should permit access when warga was registered by a member of the same student group", async () => {
+      vi.mocked(prisma.user.findUnique)
+        .mockResolvedValueOnce({
+          id: "warga-group-registered",
+          name: "Warga Group Registered",
+          rwId: 99,
+          rw: { id: 99, name: "99", kelurahan: { name: "Cikutra" } },
+          households: [],
+          bins: [],
+          binOwnerships: [
+            {
+              bin: {
+                id: "bin-group",
+                registeredByStudentId: "peer-student-2",
+                category: { name: "ORGANIC" },
+                qrBatch: { assignedPicUserId: "peer-student-2" },
+              },
+            },
+          ],
+          setoranOtomatis: [],
+        } as any)
+        .mockResolvedValueOnce({
+          id: "student-1",
+          role: { name: "MAHASISWA_KKN" },
+        } as any);
+
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValueOnce({
+        id: "skkn-1",
+        userId: "student-1",
+        assignedRwId: 1,
+        assignedRw: { id: 1, name: "01", kelurahan: { name: "Coblong" } },
+        kelompok: {
+          id: "kel-1",
+          kelurahan: "Coblong",
+          students: [{ userId: "student-1" }, { userId: "peer-student-2" }],
+        },
+        user: { id: "student-1", rwId: 1 },
+      } as any);
+
+      vi.mocked(prisma.setoranOtomatis.aggregate).mockResolvedValueOnce({
+        _sum: { berat: 0, poin: 0 },
+        _count: { id: 0 },
+      } as any);
+      vi.mocked(prisma.pointHistory.aggregate).mockResolvedValueOnce({
+        _sum: { points: 0 },
+      } as any);
+      vi.mocked(prisma.setoranOtomatis.findMany).mockResolvedValueOnce([]);
+
+      const result = await kknService.getWargaDetail("student-1", "warga-group-registered");
+      expect(result.wargaId).toBe("warga-group-registered");
+    });
+  });
+
+  describe("isOrganikBin & isAnorganikBin Categorization Integrity", () => {
+    it("should accurately classify organic QR codes without false anorganik due to numbers or years", () => {
+      expect(isOrganikBin({ qrCode: "QR-2026-ORG-01" })).toBe(true);
+      expect(isAnorganikBin({ qrCode: "QR-2026-ORG-01" })).toBe(false);
+
+      expect(isOrganikBin({ qrCode: "BIN-BDG-ORG-1" })).toBe(true);
+      expect(isAnorganikBin({ qrCode: "BIN-BDG-ORG-1" })).toBe(false);
+
+      expect(isOrganikBin({ category: { name: "ORGANIK" } })).toBe(true);
+      expect(isAnorganikBin({ category: { name: "ORGANIK" } })).toBe(false);
+    });
+
+    it("should accurately classify anorganic QR codes and categories", () => {
+      expect(isAnorganikBin({ qrCode: "QR-2026-ANORG-01" })).toBe(true);
+      expect(isOrganikBin({ qrCode: "QR-2026-ANORG-01" })).toBe(false);
+
+      expect(isAnorganikBin({ qrCode: "BIN-NON-ORGANIK-02" })).toBe(true);
+      expect(isOrganikBin({ qrCode: "BIN-NON-ORGANIK-02" })).toBe(false);
+
+      expect(isAnorganikBin({ category: { name: "ANORGANIK" } })).toBe(true);
+      expect(isOrganikBin({ category: { name: "ANORGANIK" } })).toBe(false);
+    });
+
+    it("should not falsely match words containing substrings like 'bandung' or 'angkut'", () => {
+      expect(isAnorganikBin({ qrCode: "BIN-BANDUNG-01" })).toBe(false);
+      expect(isAnorganikBin({ qrCode: "TRASH-ANGKUT-02" })).toBe(false);
+    });
+  });
+
+  describe("getWargaList - Aggregation & Verification", () => {
+    it("should return root aggregates totalActivities, correctCount, incorrectCount, and correct percentages", async () => {
+      vi.mocked(prisma.studentKkn.findUnique).mockResolvedValueOnce({
+        id: "skkn-1",
+        userId: "student-1",
+        assignedRwId: 1,
+        assignedRw: { id: 1, name: "01", kelurahan: { name: "Coblong" } },
+        kelompok: {
+          id: "kel-1",
+          kelurahan: "Coblong",
+          students: [{ userId: "student-1" }],
+        },
+        user: { id: "student-1", rwId: 1 },
+      } as any);
+
+      vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
+        {
+          id: "warga-100",
+          name: "Ibu Ani",
+          phone: "0811111111",
+          address: "Jl. Dago No. 10",
+          rwId: 1,
+          rw: { id: 1, name: "01", kelurahan: { name: "Coblong" } },
+          households: [{ latitude: -6.89, longitude: 107.61 }],
+          binOwnerships: [
+            {
+              bin: {
+                id: "b-org",
+                qrCode: "BIN-ORG-01",
+                category: { name: "ORGANIK" },
+                currentVolumeLiter: 5,
+                maxCapacityLiter: 20,
+                registeredByStudentId: "student-1",
+                registeredByStudent: { name: "Mahasiswa 1" },
+              },
+            },
+          ],
+          bins: [],
+          setoranOtomatis: [
+            {
+              id: "setoran-1",
+              berat: 2.0,
+              poin: 20,
+              hasilKlasifikasiAi: "organik",
+              confidenceAi: 0.9,
+              discrepancyStatus: "NONE",
+              bin: { category: { name: "ORGANIK" } },
+              createdAt: new Date(),
+            },
+            {
+              id: "setoran-2",
+              berat: 1.5,
+              poin: 0,
+              hasilKlasifikasiAi: "anorganik",
+              confidenceAi: 0.85,
+              discrepancyStatus: "MISMATCH",
+              bin: { category: { name: "ORGANIK" } },
+              createdAt: new Date(),
+            },
+          ],
+          pointHistory: [{ points: 20 }],
+        },
+      ] as any);
+
+      const list = await kknService.getWargaList("student-1");
+      expect(list).toHaveLength(1);
+      const item = list[0];
+      expect(item.wargaId).toBe("warga-100");
+      expect(item.name).toBe("Ibu Ani");
+      expect(item.totalActivities).toBe(2);
+      expect(item.correctCount).toBe(1);
+      expect(item.incorrectCount).toBe(1);
+      expect(item.correctPercentage).toBe(50);
+      expect(item.errorPercentage).toBe(50);
+      expect(item.needsReeducation).toBe(true);
+      expect(item.binOrganikId).toBe("BIN-ORG-01");
     });
   });
 });

@@ -32,7 +32,6 @@ import {
   Power,
   X,
   Pencil,
-  Download,
   Navigation,
   CheckCircle2,
   FileSpreadsheet,
@@ -59,7 +58,6 @@ import {
 } from "lucide-react";
 import api from "../../services/api";
 import toast from "react-hot-toast";
-import * as XLSX from "xlsx";
 import { ConfirmModal } from "../../components/common/ConfirmModal";
 import { EmptyTableState } from "../../components/common/EmptyTableState";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -606,13 +604,6 @@ const MonitoringAbsen: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Export Modal State with Period Picker
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [exportPeriod, setExportPeriod] = useState<
-    "SEMUA" | "BULAN_INI" | "30_HARI" | "CUSTOM"
-  >("SEMUA");
-  const [exportStartDate, setExportStartDate] = useState("");
-  const [exportEndDate, setExportEndDate] = useState("");
   const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<any | null>(null);
 
   // Modal State for Schedule Add / Edit
@@ -1561,133 +1552,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     };
   }, [selectedScheduleId, selectedKelompokId, wsStatus]);
 
-  // Export Attendance Rekap to CSV
-  const handleExportCSV = () => {
-    if (!attendance || attendance.length === 0) {
-      toast.error(
-        "Tidak ada data presensi pada kegiatan/periode ini untuk diekspor."
-      );
-      return;
-    }
-
-    // Validasi: filter tanggal wajib diisi sebelum ekspor
-    if (exportPeriod === "SEMUA") {
-      toast.error("Filter tanggal wajib dipilih sebelum ekspor. Pilih Bulan Ini, 30 Hari, atau Custom.");
-      return;
-    }
-    if (exportPeriod === "CUSTOM" && (!exportStartDate || !exportEndDate)) {
-      toast.error("Tanggal awal dan tanggal akhir wajib diisi untuk ekspor periode custom.");
-      return;
-    }
-
-    let filtered = [...attendance];
-    if (exportPeriod === "BULAN_INI") {
-      const now = new Date();
-      filtered = filtered.filter((r) => {
-        const d = r.attendedAt ? new Date(r.attendedAt) : new Date();
-        return (
-          d.getMonth() === now.getMonth() &&
-          d.getFullYear() === now.getFullYear()
-        );
-      });
-    } else if (exportPeriod === "30_HARI") {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      filtered = filtered.filter((r) => {
-        const d = r.attendedAt ? new Date(r.attendedAt) : new Date();
-        return d >= thirtyDaysAgo;
-      });
-    } else if (exportPeriod === "CUSTOM" && exportStartDate && exportEndDate) {
-      const start = new Date(exportStartDate);
-      const end = new Date(exportEndDate);
-      end.setHours(23, 59, 59, 999);
-      filtered = filtered.filter((r) => {
-        const d = r.attendedAt ? new Date(r.attendedAt) : new Date();
-        return d >= start && d <= end;
-      });
-    }
-
-    if (filtered.length === 0) {
-      toast.error(
-        "Tidak ada data presensi pada filter periode tanggal yang dipilih."
-      );
-      return;
-    }
-
-    const headers = [
-      "Nama Mahasiswa",
-      "NIM",
-      "Status Absensi",
-      "Waktu Masuk",
-      "Waktu Pulang",
-      "Durasi Jeda (Menit)",
-      "Durasi Bersih (Menit)",
-      "Durasi Bersih (Format)",
-    ];
-    const rows = filtered.map((rec) => {
-      const isAttended = Boolean(rec.attendedAt);
-      const isCompleted = Boolean(rec.completedAt);
-      const statusUpper = String(rec.status || "").toUpperCase();
-      const isFinished = isCompleted || statusUpper === "HADIR_MEMENUHI" || statusUpper === "HADIR_TIDAK_MEMENUHI" || statusUpper === "SELESAI";
-      const recAny = rec as any;
-      const isLeaveOrAlpha = statusUpper.includes("SAKIT") || statusUpper.includes("IZIN") || statusUpper.includes("ALPA") || statusUpper.includes("ALPHA") || !isAttended;
-      const liveElapsedMins = rec.attendedAt ? calculateDurationMinutes(rec.attendedAt, rec.completedAt) : 0;
-      const storedMins = (recAny.actualInZoneMinutes !== null && recAny.actualInZoneMinutes !== undefined) ? Number(recAny.actualInZoneMinutes) : 0;
-      const durationMins = isLeaveOrAlpha ? 0 : (storedMins > 0 ? storedMins : liveElapsedMins);
-      const jedaMins = isLeaveOrAlpha ? 0 : (recAny.durasiJedaMenit !== undefined && recAny.durasiJedaMenit !== null ? Number(recAny.durasiJedaMenit) : 0);
-      const hours = Math.floor(durationMins / 60);
-      const mins = durationMins % 60;
-      const durasiFormatted = hours === 0 ? `${mins} Menit` : mins === 0 ? `${hours} Jam` : `${hours} Jam ${mins} Menit`;
-
-      let statusStr = "Belum Absen";
-      if (statusUpper.includes("SAKIT")) {
-        statusStr = "Sakit (Disetujui)";
-      } else if (statusUpper.includes("IZIN")) {
-        statusStr = "Izin (Disetujui)";
-      } else if (statusUpper.includes("ALPA")) {
-        statusStr = "Alpa";
-      } else if (isAttended && !isFinished) {
-        const isMem = rec.isMemenuhiDurasi !== undefined ? (Boolean(rec.isMemenuhiDurasi) || durationMins >= (scheduleTargetHours * 60)) : (durationMins >= (scheduleTargetHours * 60));
-        statusStr = isMem ? "Sedang di Lapangan (Memenuhi)" : "Sedang di Lapangan";
-      } else if (isFinished) {
-        const isMemenuhi = statusUpper === "SELESAI_TELAT"
-          ? false
-          : (durationMins >= (scheduleTargetHours * 60) && durationMins > 0);
-        statusStr = isMemenuhi ? "Hadir & Memenuhi" : "Hadir & Tidak Memenuhi";
-      }
-
-      return [
-        rec.student?.name || "",
-        rec.student?.studentProfile?.nim || "-",
-        statusStr,
-        rec.attendedAt ? new Date(rec.attendedAt).toLocaleString("id-ID") : "-",
-        rec.completedAt ? new Date(rec.completedAt).toLocaleString("id-ID") : "-",
-        jedaMins,
-        durationMins,
-        durasiFormatted,
-      ];
-    });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws["!cols"] = [
-      { wch: 28 }, // Nama
-      { wch: 18 }, // NIM
-      { wch: 25 }, // Status
-      { wch: 22 }, // Waktu Masuk
-      { wch: 22 }, // Waktu Pulang
-      { wch: 18 }, // Durasi Jeda
-      { wch: 18 }, // Durasi Bersih
-      { wch: 22 }, // Durasi Format
-    ];
-    XLSX.utils.book_append_sheet(wb, ws, "Rekap Presensi");
-    XLSX.writeFile(wb, `Rekap_Presensi_KKN_${activeSchedule?.title || "Kegiatan"}_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    setIsExportModalOpen(false);
-    toast.success(
-      `Laporan Presensi (${filtered.length} baris) berhasil diunduh ke Excel (.xlsx)`
-    );
-  };
-
   // Fly Map to Mahasiswa Location & smooth scroll to Map Section
   const handleFocusMahasiswaMap = (rec: AttendanceRecord) => {
     const liveLoc = studentLocations.find(l => l.studentId === rec.student.id || l.student?.id === rec.student.id);
@@ -2434,6 +2298,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     "SUPER_USER",
     "ADMIN_DLH",
     "PEMIMPIN",
+    "PIMPINAN",
     "PANITIA_TASKFORCE",
     "DEVELOPER",
   ].includes(userRole);
@@ -2458,7 +2323,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Pantau jam presensi mahasiswa KKN, verifikasi lokasi geofence GPS, dan unduh berita acara resmi.
+              Pantau jam presensi mahasiswa KKN dan verifikasi lokasi geofence GPS secara real-time.
             </p>
           </div>
         </div>
@@ -4939,114 +4804,6 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
         confirmText="Ya, Hapus Kegiatan"
         type="danger"
       />
-
-      {/* Modal Ekspor Presensi dengan Filter Periode */}
-      {isExportModalOpen && (
-        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center px-6 py-4 bg-slate-900 text-white">
-              <div className="flex items-center gap-2.5">
-                <Download size={18} className="text-emerald-400" />
-                <h3 className="font-black text-white text-base">
-                  Ekspor Rekap Presensi KKN
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsExportModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 font-semibold">
-                Kegiatan:{" "}
-                <strong className="text-emerald-950">
-                  {activeSchedule?.title || "Semua Kegiatan"}
-                </strong>{" "}
-                • {attendance.length} Data Mahasiswa
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-                  <Calendar size={14} className="text-slate-500" /> Filter Periode Laporan:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: "SEMUA", label: "Semua Data" },
-                    { id: "BULAN_INI", label: "Bulan Berjalan" },
-                    { id: "30_HARI", label: "30 Hari Terakhir" },
-                    { id: "CUSTOM", label: "Tanggal Kustom" },
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setExportPeriod(p.id as any)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition border text-left flex items-center justify-between cursor-pointer ${
-                        exportPeriod === p.id
-                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                          : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                      }`}
-                    >
-                      <span>{p.label}</span>
-                      {exportPeriod === p.id && (
-                        <CheckCircle2 size={14} className="text-white" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {exportPeriod === "CUSTOM" && (
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-200">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                      Tanggal Mulai:
-                    </label>
-                    <input
-                      type="date"
-                      value={exportStartDate}
-                      onChange={(e) => setExportStartDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
-                      Tanggal Selesai:
-                    </label>
-                    <input
-                      type="date"
-                      value={exportEndDate}
-                      onChange={(e) => setExportEndDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsExportModalOpen(false)}
-                  className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-xs transition cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={handleExportCSV}
-                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Download size={14} />
-                  Ekspor Excel (.xlsx)
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal Pengaturan Ketentuan Waktu & Target Kegiatan KKN (Khusus Super User & Developer) */}
       {isConfigModalOpen && isSuperUserOrDev && (

@@ -300,6 +300,7 @@ export const HasilPemanfaatan: React.FC = () => {
     "SUPER_USER",
     "ADMIN_DLH",
     "PEMIMPIN",
+    "PIMPINAN",
     "RW",
     "PANITIA_TASKFORCE",
   ].includes(user?.peran || "");

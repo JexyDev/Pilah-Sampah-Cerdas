@@ -382,6 +382,8 @@ model KelompokKkn {
   dplNamaMentah         String?                 @map("dpl_nama_mentah")
   dplId                 String?                 @map("id_dpl")
   mplId                 String?                 @map("id_mpl")
+  // QC-27: Link folder Google Drive untuk monitoring laporan dan portofolio KKN
+  linkGoogleDrive       String?                 @map("link_google_drive")
   // === SMART ZONE: Auto-generated polygon dari GPS mahasiswa aktif ===
   autoPolygon           Json?                   @map("auto_polygon")
   autoPolygonUpdatedAt  DateTime?               @map("auto_polygon_updated_at")
@@ -1016,6 +1018,8 @@ model Schedule {
   radius      Int?                 @default(500)
   kelompokId     String?              @map("id_kelompok")
   isActive       Boolean              @default(true) @map("is_aktif")
+  // QC-36: Advance scheduling — bulan efektif polygon area kerja (format: YYYY-MM)
+  effectiveMonth String?              @map("effective_month")
   // === SKIP KEGIATAN ===
   // Menyimpan status kegiatan: 'AKTIF' (default) atau 'TIDAK_ADA_KEGIATAN'
   statusKegiatan String               @default("AKTIF") @map("status_kegiatan")

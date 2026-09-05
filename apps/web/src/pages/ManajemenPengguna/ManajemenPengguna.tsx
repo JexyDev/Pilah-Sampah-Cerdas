@@ -153,7 +153,7 @@ const ManajemenPengguna: React.FC = () => {
         "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
       ];
     }
-    if (peran === "PEMIMPIN") {
+    if (peran === "PEMIMPIN" || peran === "PIMPINAN") {
       return [
         "PEMIMPIN",
         "PANITIA_TASKFORCE",

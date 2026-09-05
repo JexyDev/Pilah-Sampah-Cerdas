@@ -466,6 +466,19 @@ export const KelolaLogbookPage: React.FC = () => {
     }
   };
 
+  // Helper Format Tanggal + Jam Menit — untuk kolom "Waktu Diinput" (createdAt)
+  const formatDateTime = (dateStr: string): { date: string; time: string } => {
+    if (!dateStr) return { date: "-", time: "" };
+    try {
+      const d = new Date(dateStr);
+      const date = d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+      const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
+      return { date, time };
+    } catch {
+      return { date: dateStr, time: "" };
+    }
+  };
+
   // Status Badge Helper
   const renderStatusBadge = (status: string) => {
     switch (status) {
@@ -754,7 +767,8 @@ export const KelolaLogbookPage: React.FC = () => {
                 <th className="py-3 px-4 w-12 text-center">No</th>
                 <th className="py-3 px-4">Mahasiswa & NIM</th>
                 <th className="py-3 px-4">Kelompok & Wilayah</th>
-                <th className="py-3 px-4">Tanggal & Waktu</th>
+                <th className="py-3 px-4">Tgl Kegiatan</th>
+                <th className="py-3 px-4">Tgl Diinput</th>
                 <th className="py-3 px-4">Aktivitas & Tempat</th>
                 <th className="py-3 px-4 text-center">Bukti Foto</th>
                 <th className="py-3 px-4">Status</th>
@@ -764,14 +778,14 @@ export const KelolaLogbookPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-slate-500">
+                  <td colSpan={9} className="py-16 text-center text-slate-500">
                     <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#035941]" />
                     <p className="font-semibold text-xs">Memuat data logbook...</p>
                   </td>
                 </tr>
               ) : paginatedLogbooks.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-slate-400">
+                  <td colSpan={9} className="py-16 text-center text-slate-400">
                     <BookOpen size={36} className="mx-auto mb-2 opacity-30" />
                     <p className="font-bold text-xs text-slate-600 dark:text-slate-400">Tidak ada data logbook</p>
                     <p className="text-[11px] text-slate-400 mt-0.5">Silakan sesuaikan filter atau kata kunci pencarian.</p>
@@ -826,6 +840,18 @@ export const KelolaLogbookPage: React.FC = () => {
                           </span>
                           <span className="inline-block w-fit px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             Pekan {item.pekanKe}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Tgl Diinput — createdAt server timestamp */}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col space-y-0.5">
+                          <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px]">
+                            {formatDateTime(item.createdAt).date}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {formatDateTime(item.createdAt).time} WIB
                           </span>
                         </div>
                       </td>

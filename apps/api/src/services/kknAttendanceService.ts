@@ -86,13 +86,15 @@ async function buildGeofence(
   }
 
   // 3. Fallback: Default sistem dari Rule Engine / Config
+  // QC-07: Fallback default ke koordinat Kampus UNIKOM jika kelompok belum punya mapping area kerja
   const configLatStr = await configService.getConfig("default_activity_latitude");
   const configLngStr = await configService.getConfig("default_activity_longitude");
   const configRadiusStr = await configService.getConfig("default_activity_radius");
 
-  const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8915; // Bandung / Coblong
-  const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.6107;
-  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 500;
+  // Koordinat default: Kampus UNIKOM, Jl. Dipati Ukur No.112–116, Bandung
+  const defaultLat = configLatStr ? parseFloat(configLatStr) : -6.8681;
+  const defaultLng = configLngStr ? parseFloat(configLngStr) : 107.5886;
+  const defaultRadius = configRadiusStr ? parseInt(configRadiusStr, 10) : 200; // 200m radius kampus Unikom
 
   return {
     latitude: defaultLat,
@@ -282,7 +284,7 @@ export function calculateLiveInZoneMinutes(att: {
   ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
-  const MAX_CAP = 480; // menit
+  const MAX_CAP = 900; // menit (15 jam: 05:00 s.d. 20:00 WIB)
   const attendedDate = new Date(att.attendedAt);
   const now = new Date();
 
@@ -292,14 +294,14 @@ export function calculateLiveInZoneMinutes(att: {
     return Math.min(Math.max(0, att.actualInZoneMinutes ?? 0), MAX_CAP);
   }
 
-  // Batas Cutoff Jam 18:00:00 WIB pada tanggal kegiatan (18:00 WIB = 11:00 UTC)
+  // Batas Cutoff Jam 20:00:00 WIB pada tanggal kegiatan (20:00 WIB = 13:00 UTC)
   const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
-  const cutoff18Wib = new Date(
+  const cutoff20Wib = new Date(
     Date.UTC(
       attendedWib.getUTCFullYear(),
       attendedWib.getUTCMonth(),
       attendedWib.getUTCDate(),
-      11,
+      13, // 20:00 WIB = 13:00 UTC
       0,
       0,
       0
@@ -307,7 +309,7 @@ export function calculateLiveInZoneMinutes(att: {
   );
 
   const rawEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
-  const sessionEndMs = Math.min(rawEndMs, cutoff18Wib.getTime());
+  const sessionEndMs = Math.min(rawEndMs, cutoff20Wib.getTime());
   const grossMs = Math.max(0, sessionEndMs - attendedDate.getTime());
   const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
   const netMins = Math.max(0, Math.floor((grossMs - pauseMs) / 60000));
@@ -317,7 +319,7 @@ export function calculateLiveInZoneMinutes(att: {
 
 /**
  * Hitung durasi aktif presensi dalam DETIK (presisi per-detik untuk timer mobile).
- * Daily cap: 28800 detik (8 jam) dan batas cutoff jam 18:00 WIB.
+ * Daily cap: 54000 detik (15 jam) dan batas cutoff jam 20:00 WIB.
  */
 export function calculateLiveInZoneSeconds(att: {
   attendedAt: Date | string;
@@ -339,7 +341,7 @@ export function calculateLiveInZoneSeconds(att: {
   ];
   if (nonActiveStatuses.some((s) => statusUpper.includes(s))) return 0;
 
-  const MAX_CAP = 28800; // detik (8 jam)
+  const MAX_CAP = 54000; // detik (15 jam: 05:00 s.d. 20:00 WIB)
   const attendedDate = new Date(att.attendedAt);
   const now = new Date();
 
@@ -349,14 +351,14 @@ export function calculateLiveInZoneSeconds(att: {
     return Math.min(Math.max(0, (att.actualInZoneMinutes ?? 0) * 60), MAX_CAP);
   }
 
-  // Batas Cutoff Jam 18:00:00 WIB pada tanggal kegiatan (18:00 WIB = 11:00 UTC)
+  // Batas Cutoff Jam 20:00:00 WIB pada tanggal kegiatan (20:00 WIB = 13:00 UTC)
   const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
-  const cutoff18Wib = new Date(
+  const cutoff20Wib = new Date(
     Date.UTC(
       attendedWib.getUTCFullYear(),
       attendedWib.getUTCMonth(),
       attendedWib.getUTCDate(),
-      11,
+      13, // 20:00 WIB = 13:00 UTC
       0,
       0,
       0
@@ -364,7 +366,7 @@ export function calculateLiveInZoneSeconds(att: {
   );
 
   const rawEndMs = att.checkOutAt ? new Date(att.checkOutAt).getTime() : now.getTime();
-  const sessionEndMs = Math.min(rawEndMs, cutoff18Wib.getTime());
+  const sessionEndMs = Math.min(rawEndMs, cutoff20Wib.getTime());
   const grossMs = Math.max(0, sessionEndMs - attendedDate.getTime());
   const pauseMs = calcTotalPauseMs((att.jedaLogs as any[]) || [], sessionEndMs);
   const netSecs = Math.max(0, Math.floor((grossMs - pauseMs) / 1000));
@@ -844,6 +846,11 @@ export class KknAttendanceService {
         setoranOtomatis: {
           orderBy: { createdAt: "desc" },
           take: 10,
+          include: {
+            bin: {
+              include: { category: true },
+            },
+          },
         },
       },
     });
@@ -898,7 +905,7 @@ export class KknAttendanceService {
             log.confidenceAi,
             log.discrepancy_status || log.discrepancyStatus,
             log.hasilKlasifikasiAi,
-            primaryBin?.category
+            log.bin?.category || primaryBin?.category
           );
           return {
             ...log,
@@ -1884,7 +1891,27 @@ export class KknAttendanceService {
       }
     }
 
-    const checkOutTime = params.checkOutTime || new Date();
+    let checkOutTime = params.checkOutTime || new Date();
+    // Jika auto-checkout dan waktu melebihi batas 20:00 WIB hari kegiatan, clamp ke 20:00:00 WIB
+    if (isAutoCheckout && attendance.attendedAt) {
+      const attendedDate = new Date(attendance.attendedAt);
+      const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
+      const cutoff20Wib = new Date(
+        Date.UTC(
+          attendedWib.getUTCFullYear(),
+          attendedWib.getUTCMonth(),
+          attendedWib.getUTCDate(),
+          13, // 20:00 WIB = 13:00 UTC
+          0,
+          0,
+          0
+        )
+      );
+      if (checkOutTime.getTime() > cutoff20Wib.getTime()) {
+        checkOutTime = cutoff20Wib;
+      }
+    }
+
     // Bug #8 fix: guard attendedAt null agar tidak kalkulasi dari epoch (1970)
     const attendedTime = attendance.attendedAt ? new Date(attendance.attendedAt) : checkOutTime;
     const rawDurationMinutes = Math.max(
@@ -1938,14 +1965,14 @@ export class KknAttendanceService {
     }
 
     // [SSOT Backend]: Durasi mutlak berasal dari kalkulasi internal backend (mengabaikan input durasi dari mobile payload)
-    let actualInZoneMins = Math.min(480, Math.max(storedMins, liveMins, logsCalculatedMins));
+    let actualInZoneMins = Math.min(900, Math.max(storedMins, liveMins, logsCalculatedMins));
 
     // Only fallback to rawDurationMinutes if session was active (NOT paused), had NO jeda logs, and actualInZoneMins is still 0 (e.g. legacy/no-gps ping)
     if (actualInZoneMins === 0 && rawDurationMinutes > 0 && !isPaused && !hasJeda) {
-      actualInZoneMins = Math.min(480, rawDurationMinutes);
+      actualInZoneMins = Math.min(900, rawDurationMinutes);
     } else if (isPaused || hasJeda) {
       // If paused or has jeda, liveMins strictly caps duration to before-pause
-      actualInZoneMins = Math.min(480, liveMins);
+      actualInZoneMins = Math.min(900, liveMins);
     }
 
     // Determine final status: HADIR_MEMENUHI or HADIR_TIDAK_MEMENUHI
@@ -1954,7 +1981,7 @@ export class KknAttendanceService {
       durasiWajibMenit = await getScheduleTargetDurationMinutes(schedule);
     }
 
-    // Kebijakan Batas Maksimal 18:00 WIB:
+    // Kebijakan Batas Maksimal 20:00 WIB:
     // Jika diselesaikan otomatis oleh sistem (isAutoCheckout), mahasiswa yang telah hadir
     // dipastikan berstatus HADIR_MEMENUHI (Hadir) dengan durasi minimal memenuhi target kerja.
     if (isAutoCheckout) {
@@ -3171,22 +3198,26 @@ export class KknAttendanceService {
       // Bandingkan apakah jadwal ada di masa depan (pakai string tanggal WIB)
       const isFutureDate = schDateStr > todayStr;
 
-      // Status waktu kegiatan (dengan toleransi persiapan 60 menit sebelum mulai)
+      // Status waktu kegiatan (Mahasiswa diizinkan presensi mulai jam 05:00 WIB pagi, batas maksimal jam 20:00 WIB)
       let scheduleStatus = "AKTIF";
       if (isOvernight) {
         if (isSchedDateToday) {
-          scheduleStatus = currentMinutesTotal >= startMinutesTotal - 60 ? "AKTIF" : "AKAN_DATANG";
+          const earliestStart = Math.min(5 * 60, startMinutesTotal - 60);
+          scheduleStatus = currentMinutesTotal >= earliestStart ? "AKTIF" : "AKAN_DATANG";
         } else if (isFutureDate) {
           scheduleStatus = "AKAN_DATANG";
         } else {
-          scheduleStatus = currentMinutesTotal <= endMinutesTotal + 180 ? "AKTIF" : "SELESAI";
+          scheduleStatus = currentMinutesTotal <= Math.max(20 * 60, endMinutesTotal + 180) ? "AKTIF" : "SELESAI";
         }
       } else {
         if (isSchedDateToday) {
-          if (currentMinutesTotal < startMinutesTotal - 60) {
+          const earliestStart = Math.min(5 * 60, startMinutesTotal - 60);
+          const maxCutoff = Math.max(20 * 60, endMinutesTotal);
+
+          if (currentMinutesTotal < earliestStart) {
             scheduleStatus = "AKAN_DATANG";
           } else if (
-            currentMinutesTotal > endMinutesTotal + 180 &&
+            currentMinutesTotal >= maxCutoff &&
             (!sch.attendances || sch.attendances.length === 0)
           ) {
             scheduleStatus = "SELESAI";
@@ -3368,8 +3399,12 @@ export class KknAttendanceService {
           .catch(() => {});
       }
 
-      // Ekstrak detail skip dari jedaLogs (Array format baru dari skipKegiatan())
-      const jedaLogsArr = Array.isArray(att?.jedaLogs) ? (att.jedaLogs as any[]) : [];
+      // Ekstrak detail skip dari jedaLogs (Mendukung format Array maupun Object)
+      const jedaLogsArr = Array.isArray(att?.jedaLogs)
+        ? (att.jedaLogs as any[])
+        : att?.jedaLogs && typeof att.jedaLogs === "object"
+          ? [att.jedaLogs]
+          : [];
       const skipLog = jedaLogsArr.find((l: any) => l.skippedBy || l.keteranganSkip);
       const isSkip = att?.status === "TIDAK_ADA_KEGIATAN" || att?.status === "SKIP_KEGIATAN";
       const keteranganSkip = isSkip
@@ -3502,17 +3537,23 @@ export class KknAttendanceService {
     let scheduleStatus = "AKTIF";
     if (isOvernight) {
       if (isSchedDateToday) {
-        scheduleStatus = currentMinutesTotal >= startMinutesTotal - 60 ? "AKTIF" : "AKAN_DATANG";
+        const earliestStart = Math.min(5 * 60, startMinutesTotal - 60);
+        scheduleStatus = currentMinutesTotal >= earliestStart ? "AKTIF" : "AKAN_DATANG";
       } else if (isFutureDate) {
         scheduleStatus = "AKAN_DATANG";
       } else {
-        scheduleStatus = currentMinutesTotal <= endMinutesTotal + 180 ? "AKTIF" : "SELESAI";
+        scheduleStatus = currentMinutesTotal <= Math.max(20 * 60, endMinutesTotal + 180) ? "AKTIF" : "SELESAI";
       }
     } else {
       if (isSchedDateToday) {
-        // Toleransi persiapan presensi 60 menit sebelum jam mulai
-        if (currentMinutesTotal < startMinutesTotal - 60) {
+        // Toleransi persiapan presensi mulai jam 05:00 WIB pagi, batas maksimal jam 20:00 WIB
+        const earliestStart = Math.min(5 * 60, startMinutesTotal - 60);
+        const maxCutoff = Math.max(20 * 60, endMinutesTotal);
+
+        if (currentMinutesTotal < earliestStart) {
           scheduleStatus = "AKAN_DATANG";
+        } else if (currentMinutesTotal >= maxCutoff) {
+          scheduleStatus = "SELESAI";
         } else {
           scheduleStatus = "AKTIF";
         }
@@ -3524,9 +3565,9 @@ export class KknAttendanceService {
     }
 
     if (scheduleStatus === "AKAN_DATANG") {
-      throw new Error("FORBIDDEN: Jam mulai kegiatan belum bisa diakses (Mendatang).");
+      throw new Error("FORBIDDEN: Jam mulai kegiatan belum bisa diakses (Presensi dibuka mulai 05:00 WIB).");
     } else if (scheduleStatus === "SELESAI") {
-      throw new Error("FORBIDDEN: Kegiatan ini sudah selesai.");
+      throw new Error("FORBIDDEN: Kegiatan ini sudah selesai (Batas maksimal presensi jam 20:00 WIB).");
     }
 
     // Validasi Geofence: Mahasiswa WAJIB berada di dalam radius zona kegiatan / posko KKN saat memulai presensi
@@ -4350,27 +4391,70 @@ export class KknAttendanceService {
           }
         }
 
-        // Kebijakan Fleksibilitas Jam Pulang (Hold s.d. 18:00 WIB):
+        // Kebijakan Fleksibilitas Jam Pulang (Hold s.d. 20:00 WIB):
         // Jam pulang tidak diputus di jam 16:00 (di-hold agar mahasiswa fleksibel berkegiatan di lapangan).
-        // Begitu mencapai batas maksimal sore jam 18:00 WIB (1080 menit) atau endMins (jika jadwal selesai setelah 18:00),
+        // Begitu mencapai batas maksimal malam jam 20:00 WIB (1200 menit) atau endMins (jika jadwal selesai setelah 20:00),
         // atau sesi tersangkut dari hari sebelumnya (isPastDate), sistem menyelesaikan presensi secara otomatis
         // dengan status HADIR (HADIR_MEMENUHI).
-        const eveningCutoffMins = Math.max(18 * 60, endMins);
+        const eveningCutoffMins = Math.max(20 * 60, endMins);
         const isEveningCutoff = currentMins >= eveningCutoffMins;
 
         if (isPastDate || isEveningCutoff) {
           console.log(
-            `[AutoCheckout] Melakukan checkout otomatis batas jam 18:00 (Hadir) untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
+            `[AutoCheckout] Melakukan checkout otomatis batas jam 20:00 (Hadir) untuk Mahasiswa ${att.student.name} pada jadwal ${att.schedule.title}`
           );
+
+          // Hitung waktu checkout di-clamp ke batas 20:00:00 WIB tanggal kegiatan
+          const attendedDate = att.attendedAt ? new Date(att.attendedAt) : nowUtc;
+          const attendedWib = new Date(attendedDate.getTime() + 7 * 3600000);
+          const cutoff20Wib = new Date(
+            Date.UTC(
+              attendedWib.getUTCFullYear(),
+              attendedWib.getUTCMonth(),
+              attendedWib.getUTCDate(),
+              13, // 20:00 WIB = 13:00 UTC
+              0,
+              0,
+              0
+            )
+          );
+          const checkOutTime = isPastDate
+            ? cutoff20Wib
+            : nowUtc.getTime() > cutoff20Wib.getTime()
+            ? cutoff20Wib
+            : nowUtc;
 
           await this.checkOutAttendance({
             studentId: att.studentId,
             scheduleId: att.scheduleId,
             deskripsiKegiatan:
               att.deskripsiKegiatan ||
-              "Diselesaikan otomatis oleh sistem (Batas maksimal 18:00 WIB)",
+              "Diselesaikan otomatis oleh sistem (Batas maksimal 20:00 WIB)",
             isAutoCheckout: true,
+            checkOutTime,
           });
+
+          // Tutup juga presensi mandiri yang masih aktif hari ini jika ada
+          try {
+            const db = prisma as any;
+            if (db.presensiMandiri) {
+              await db.presensiMandiri.updateMany({
+                where: {
+                  studentId: att.studentId,
+                  status: "AKTIF",
+                  checkOutAt: null,
+                },
+                data: {
+                  status: "SELESAI",
+                  checkOutAt: checkOutTime,
+                  durasiMenit: Math.max(
+                    1,
+                    Math.floor((checkOutTime.getTime() - attendedDate.getTime()) / 60000)
+                  ),
+                },
+              });
+            }
+          } catch {}
 
           // Notifikasi Database
           try {
@@ -4378,7 +4462,7 @@ export class KknAttendanceService {
               data: {
                 userId: att.studentId,
                 title: "Kegiatan Selesai Otomatis (Hadir) ✅",
-                message: `Kegiatan ${att.schedule.title} telah mencapai batas jam 18:00 WIB. Sistem telah mencatat presensi Anda secara otomatis dengan status Hadir.`,
+                message: `Kegiatan ${att.schedule.title} telah mencapai batas jam 20:00 WIB. Sistem telah mencatat presensi Anda secara otomatis dengan status Hadir.`,
               },
             });
           } catch {}
@@ -4389,7 +4473,7 @@ export class KknAttendanceService {
               await notificationIntegrationService?.sendPushNotification?.(
                 att.student.fcmToken,
                 "Kegiatan Selesai Otomatis (Hadir) ✅",
-                `Kegiatan ${att.schedule.title} selesai otomatis pada jam 18:00 WIB. Status kehadiran Anda tercatat Hadir.`
+                `Kegiatan ${att.schedule.title} selesai otomatis pada jam 20:00 WIB. Status kehadiran Anda tercatat Hadir.`
               );
             } catch {}
           }

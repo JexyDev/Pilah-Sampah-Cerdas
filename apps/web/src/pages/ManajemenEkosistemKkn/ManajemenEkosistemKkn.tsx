@@ -35,7 +35,7 @@ import { sortKelompokList } from "../../utils/sortUtils";
 export const ManajemenEkosistemKkn: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING"].includes(currentUser?.peran || "");
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "DPL", "DOSEN_PEMBIMBING", "PEMIMPIN", "PIMPINAN"].includes(currentUser?.peran || "");
 
   const [activeTab, setActiveTab] = useState("kelompok");
 
@@ -388,14 +388,26 @@ export const ManajemenEkosistemKkn: React.FC = () => {
     e.preventDefault();
     if (!kelompokForm.name.trim()) return toast.error("Nama kelompok wajib diisi");
 
+    let driveUrl = (kelompokForm.linkGoogleDrive || "").trim();
+    if (!driveUrl) {
+      return toast.error("Link Google Drive Kelompok wajib diisi");
+    }
+    // Auto-fix protocol jika pengguna menginput langsung tanpa https://
+    if (!/^https?:\/\//i.test(driveUrl)) {
+      driveUrl = `https://${driveUrl}`;
+    }
+    if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(driveUrl)) {
+      return toast.error("URL harus berupa link Google Drive yang valid (contoh: https://drive.google.com/...)");
+    }
+
     setSubmittingKelompok(true);
     
     const payload = {
-      name: kelompokForm.name,
-      dplId: kelompokForm.dplId,
-      kelurahan: kelompokForm.kelurahan,
+      name: kelompokForm.name.trim(),
+      dplId: kelompokForm.dplId || null,
+      kelurahan: kelompokForm.kelurahan || null,
       cakupanRw: kelompokForm.cakupanRw ? kelompokForm.cakupanRw.split(",").map(r => r.trim()).filter(Boolean) : [],
-      linkGoogleDrive: kelompokForm.linkGoogleDrive
+      linkGoogleDrive: driveUrl
     };
     
     try {
@@ -1137,18 +1149,29 @@ export const ManajemenEkosistemKkn: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Link Google Drive Kelompok (Opsional)</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Link Google Drive Kelompok <span className="text-red-500">*</span></span>
+                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                    Wajib Diisi
+                  </span>
+                </label>
                 <div className="relative">
                   <input
-                    type="url"
+                    type="text"
+                    required
                     placeholder="https://drive.google.com/drive/folders/..."
                     value={kelompokForm.linkGoogleDrive || ""}
                     onChange={(e) => setKelompokForm({ ...kelompokForm, linkGoogleDrive: e.target.value })}
                     className="w-full px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-mono text-xs"
                   />
                 </div>
+                {kelompokForm.linkGoogleDrive && !/^https?:\/\/(drive|docs)\.google\.com\//i.test(kelompokForm.linkGoogleDrive.trim()) && !/^drive\.google\.com\//i.test(kelompokForm.linkGoogleDrive.trim()) && (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-semibold flex items-center gap-1">
+                    ⚠ Pastikan URL mengarah ke Google Drive (contoh: https://drive.google.com/...)
+                  </p>
+                )}
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Folder Google Drive disiapkan oleh Super User / Admin untuk monitoring laporan dan portofolio KKN.
+                  Folder Google Drive wajib diinput manual oleh Tim Berseka / Super User untuk monitoring laporan dan portofolio KKN.
                 </p>
               </div>
 

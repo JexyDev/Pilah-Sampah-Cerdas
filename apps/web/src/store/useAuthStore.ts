@@ -25,8 +25,8 @@ export type UserRole =
   | "DOSEN_PENDAMPING"
   | "DOSEN_PENDAMPING_LAPANGAN"
   | "MPL"
-  | "PEMIMPIN"
   | "PIMPINAN"
+  | "PEMIMPIN"
   | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
 
@@ -75,7 +75,7 @@ const normalizeRole = (role: string): UserRole => {
   if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
   if (["DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN", "DPL"].includes(role)) return "DPL";
   if (["MPL", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(role)) return "MPL";
-  if (["PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PEMIMPIN";
+  if (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PIMPINAN";
   if (["TASKFORCE", "Panitia", "TASK_FORCE", "Panitia/Taskforce", "PANITIA_TASKFORCE"].includes(role)) return "TASK_FORCE";
   return role as UserRole;
 };
@@ -115,6 +115,8 @@ const getWilayahByRole = (role: string, kelurahan?: string, kecamatan?: string, 
     case "DEVELOPER":
     case "SUPER_USER":
     case "ADMIN_DLH":
+    case "PIMPINAN":
+    case "PEMIMPIN":
       return "Sistem Terpusat";
     case "CAMAT":
       return "Tingkat Kecamatan";
@@ -179,6 +181,25 @@ const getInitialUser = (): User | null => {
     const stored = getStoredItem("psc_user");
     if (!stored) return null;
     const user = JSON.parse(stored);
+    if (!user) return null;
+
+    let modified = false;
+
+    if (user.peran) {
+      const norm = normalizeRole(user.peran);
+      if (user.peran !== norm) {
+        user.peran = norm;
+        modified = true;
+      }
+    }
+    if (user.role && typeof user.role === "string") {
+      const normRole = normalizeRole(user.role);
+      if (user.role !== normRole) {
+        user.role = normRole;
+        modified = true;
+      }
+    }
+
     if (user && WEB_DISABLED_ROLES.includes(user.peran)) {
       clearAllStoredItems();
       return null;
@@ -193,14 +214,28 @@ const getInitialUser = (): User | null => {
     if (
       user &&
       (user.wilayah === "Sistem Pusat" ||
+        user.wilayah === "Sistem Terpusat" ||
+        user.wilayah === "Wilayah Operasional" ||
         user.wilayah === "Dinas Lingkungan Hidup" ||
         user.wilayah === "PT Makerindo" ||
+        user.peran === "PIMPINAN" ||
+        user.peran === "PEMIMPIN" ||
+        user.peran === "SUPER_USER" ||
+        user.peran === "ADMIN_DLH" ||
+        user.peran === "DEVELOPER" ||
         !user.wilayah)
     ) {
-      user.wilayah = "Semua Wilayah";
+      if (user.wilayah !== "Semua Wilayah") {
+        user.wilayah = "Semua Wilayah";
+        modified = true;
+      }
+    }
+
+    if (modified) {
       const storage = getActiveStorage();
       storage.setItem("psc_user", JSON.stringify(user));
     }
+
     return user;
   } catch {
     return null;
@@ -270,13 +305,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         peran: normalizedRole,
         role: backendUser.role,
         wilayah:
-          backendUser.wilayah ||
-          getWilayahByRole(
-            normalizedRole,
-            backendUser.kelurahan,
-            backendUser.kecamatan,
-            backendUser.rw
-          ),
+          ["PIMPINAN", "DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(normalizedRole)
+            ? "Semua Wilayah"
+            : backendUser.wilayah ||
+              getWilayahByRole(
+                normalizedRole,
+                backendUser.kelurahan,
+                backendUser.kecamatan,
+                backendUser.rw
+              ),
         kelurahan: backendUser.kelurahan,
         kecamatan: backendUser.kecamatan || "",
         rw: backendUser.rw,

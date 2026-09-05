@@ -94,7 +94,7 @@ const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
 
 const ManajemenTempatSampah: React.FC = () => {
   const { user } = useAuthStore();
-  const isReadOnly = ["CAMAT", "LURAH", "PANITIA_TASKFORCE", "PEMIMPIN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
+  const isReadOnly = ["CAMAT", "LURAH", "PANITIA_TASKFORCE", "PEMIMPIN", "PIMPINAN", "DPL", "DOSEN_PEMBIMBING"].includes(user?.peran || "");
   const [searchParams, setSearchParams] = useSearchParams();
 
   type TabType = "kodefikasi" | "monitoring" | "kategori" | "batch_qr";
@@ -1049,7 +1049,7 @@ const ManajemenTempatSampah: React.FC = () => {
                     <Search size={15} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2.5" />
                     <input
                       type="text"
-                      placeholder="Cari kode tempat sampah..."
+                      placeholder="Cari nama atau kode tempat sampah..."
                       value={mapSearchInput}
                       onChange={(e) => setMapSearchInput(e.target.value)}
                       className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
@@ -1527,7 +1527,7 @@ const ManajemenTempatSampah: React.FC = () => {
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari kode tempat sampah..."
+              placeholder="Cari nama atau kode tempat sampah..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#009966] focus:bg-white dark:focus:bg-slate-800 transition-all"

@@ -16,7 +16,7 @@ import api from "../../utils/api";
 // Official High-Resolution BERSEKA Full Logo Asset
 const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-9 w-auto" }) => (
   <img
-    src="/app-logo.png"
+    src="/logos/berseka/berseka-logo-full.png"
     alt="BERSEKA"
     className={`${className} object-contain shrink-0`}
   />

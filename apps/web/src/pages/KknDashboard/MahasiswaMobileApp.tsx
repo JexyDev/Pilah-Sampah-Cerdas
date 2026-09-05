@@ -28,7 +28,7 @@ export const MahasiswaMobileApp: React.FC = () => {
 
   const fetchProkerList = async () => {
     try {
-      const res = await api.get("/dpl/program-kerja");
+      const res = await api.get("/kkn/program-kerja");
       setProkerList(res.data?.data || []);
     } catch {
       // Fallback

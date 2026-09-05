@@ -50,7 +50,7 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
       const [logbooks, presensiRes, prokerRes] = await Promise.allSettled([
         logbookApiService.getMahasiswaLogbooks(),
         api.get("/presensi/mandiri/saya"),
-        api.get("/dpl/program-kerja"),
+        api.get("/kkn/program-kerja"),
       ]);
 
       let logsList: LogbookMahasiswaItem[] = [];

@@ -55,7 +55,8 @@ const GoogleDriveIcon = () => (
 
 export const ProgramKerjaKkn: React.FC = () => {
   const { user } = useAuthStore();
-  const userRole = String(user?.peran || "").toUpperCase();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN", "CAMAT", "LURAH", "KEPALA_DESA", "REKTOR"].includes(userRole);
   const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
   const isDeveloper = userRole === "DEVELOPER" || userRole === "SUPER_USER";
   const isManagement = ["SUPER_USER", "PANITIA_TASKFORCE", "DEVELOPER", "ADMIN_DLH"].includes(userRole);
@@ -940,9 +941,16 @@ export const ProgramKerjaKkn: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
-            Program Kerja KKN
-          </h1>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Program Kerja KKN
+            </h1>
+            {isPimpinan && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">
+                Mode Pimpinan: View-Only
+              </span>
+            )}
+          </div>
           <p className="text-slate-500 text-xs mt-1">
             Menampilkan status usulan (persetujuan DPL) dan status pelaksanaan program kerja mahasiswa KKN.
           </p>

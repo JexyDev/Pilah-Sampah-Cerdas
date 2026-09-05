@@ -218,7 +218,8 @@ export const PoskoKknPage: React.FC = () => {
     "ADMIN_DLH",
     "DLH_ADMIN",
     "PANITIA_TASKFORCE",
-    "PEMIMPIN"
+    "PEMIMPIN",
+    "PIMPINAN"
   ].includes(userRole);
   const canEditPosko = isDeveloperOrAdmin || isDpl;
 

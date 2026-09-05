@@ -97,15 +97,30 @@ export class KknController {
     try {
       const kknUserId = req.user!.userId;
       const { wargaId } = req.params;
-      const data = await kknService.getWargaDetail(kknUserId, wargaId);
+      if (
+        !wargaId ||
+        typeof wargaId !== "string" ||
+        !wargaId.trim() ||
+        wargaId === "undefined" ||
+        wargaId === "null"
+      ) {
+        return res.status(404).json({ success: false, message: "Warga tidak ditemukan." });
+      }
+      const data = await kknService.getWargaDetail(kknUserId, wargaId.trim());
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaDetail error:", error);
       if (error.message === "WARGA_NOT_FOUND") {
         return res.status(404).json({ success: false, message: "Warga tidak ditemukan." });
       }
-      const code = error.message === "FORBIDDEN_SCOPE" ? 403 : 500;
-      res.status(code).json({ success: false, message: error.message });
+      if (error.message === "FORBIDDEN_SCOPE") {
+        return res.status(403).json({
+          success: false,
+          error: "FORBIDDEN_SCOPE",
+          message: "Warga berada di luar wilayah tugas KKN Anda.",
+        });
+      }
+      res.status(500).json({ success: false, message: error.message });
     }
   }
 

@@ -866,14 +866,18 @@ const Leaderboard: React.FC = () => {
                               }`}
                             >
                               <td className="py-3.5 px-4 font-black text-slate-700 dark:text-slate-300">
-                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black ${
-                                  u.rank === 1 ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40" :
-                                  u.rank === 2 ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700" :
-                                  u.rank === 3 ? "bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700/40" :
-                                  "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
-                                }`}>
-                                  {u.rank}
-                                </span>
+                                {u.rank <= 3 ? (
+                                  <span
+                                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-[18px]"
+                                    title={`Peringkat ${u.rank}`}
+                                  >
+                                    {u.rank === 1 ? "🥇" : u.rank === 2 ? "🥈" : "🥉"}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-[11px] font-black bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                    {u.rank}
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100">{u.name}</td>
                               <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-semibold">{u.subtitle || "-"}</td>
