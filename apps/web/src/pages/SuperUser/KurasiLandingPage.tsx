@@ -73,7 +73,7 @@ import {
 const PRESET_GALLERY_IMAGES = [
   { label: "Pemilahan & Daur Ulang", url: "/image/kkn-hero-sorting.webp", desc: "Aksi pemilahan sampah KKN" },
   { label: "Biokonversi Maggot & Kompos", url: "/image/activity-2.webp", desc: "Budidaya maggot BSF & kasgot" },
-  { label: "Bank Sampah & Sosialisasi", url: "/image/activity-1.webp", desc: "Sosialisasi penimbangan warga" },
+  { label: "Daur Ulang & Sosialisasi", url: "/image/activity-1.webp", desc: "Sosialisasi penimbangan warga" },
   { label: "Aksi Bersih Lingkungan", url: "/image/activity-3.webp", desc: "Pelatihan eco-enzyme & POC" },
   { label: "Komunitas & Inovasi", url: "/image/landingpage.webp", desc: "Kerjasama KKN UNIKOM" },
 ];
@@ -2211,7 +2211,7 @@ export const KurasiLandingPage: React.FC = () => {
                       const val = e.target.value as any;
                       const labels: Record<string, string> = {
                         organic: "Organik & Maggot",
-                        recycle: "Bank Sampah",
+                        recycle: "Daur Ulang & Kreativitas",
                         kkn: "Inisiatif KKN",
                         education: "Edukasi Warga",
                       };
@@ -2231,7 +2231,7 @@ export const KurasiLandingPage: React.FC = () => {
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 font-semibold focus:outline-none"
                   >
                     <option value="organic">Organik &amp; Maggot</option>
-                    <option value="recycle">Bank Sampah &amp; Daur Ulang</option>
+                    <option value="recycle">Daur Ulang &amp; Kreativitas</option>
                     <option value="kkn">Inisiatif KKN Mahasiswa</option>
                     <option value="education">Edukasi &amp; Sosialisasi</option>
                   </select>

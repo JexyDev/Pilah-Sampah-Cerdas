@@ -495,20 +495,6 @@
   z-index: 2;
 }
 
-.landing-slide-badge {
-  display: inline-block;
-  background: rgba(27, 107, 61, 0.92);
-  backdrop-filter: blur(4px);
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
 .landing-carousel-btn {
   position: absolute;
   top: 50%;
@@ -729,17 +715,35 @@
   font-size: 0.88rem;
 }
 
-.landing-badge {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  background: rgba(27, 107, 61, 0.92);
-  backdrop-filter: blur(4px);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 6px;
+/* ───────────────── 6 Program KKN BERSEKA ───────────────── */
+.landing-program-card .landing-card-body {
+  padding: 16px 20px 20px;
+  gap: 8px;
+}
+
+.landing-program-card h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.landing-program-card p {
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.landing-program-card .landing-link-more {
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.landing-program-card .landing-link-more:hover {
+  color: #166534;
 }
 
 /* ───────────────── Pasar BERSEKA Products ───────────────── */

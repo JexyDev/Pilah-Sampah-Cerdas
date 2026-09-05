@@ -145,8 +145,8 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     {
       id: "slide-3",
       image: "/image/activity-1.webp",
-      badge: "Edukasi & Bank Sampah",
-      title: "Sosialisasi Digitalisasi Bank Sampah & Sedekah Anorganik",
+      badge: "Edukasi & Sosialisasi",
+      title: "Sosialisasi Digitalisasi Pemilahan Sampah & Sedekah Anorganik",
       location: "Balai Warga RW 03, Bojongsoang",
       metric: "92% Partisipasi Warga",
       highlight: "Konversi Sampah Jadi Sembako",
@@ -230,11 +230,11 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       id: "prod-05",
       title: "Kerajinan Daur Ulang BERSEKA",
       category: "kerajinan",
-      categoryLabel: "Produk Kreatif",
-      categoryColor: "bg-emerald-100 text-emerald-800",
-      initiator: "Kelompok Kreatif Warga Coblong",
-      priceIdr: 30000,
-      pricePoints: 300,
+      categoryLabel: "Daur Ulang Kreatif",
+      categoryColor: "bg-blue-100 text-blue-800",
+      initiator: "Unit Daur Ulang Berkah RW 01",
+      priceIdr: 35000,
+      pricePoints: 350,
       stock: 25,
       unit: "1 produk",
       rating: 4.9,
@@ -338,116 +338,116 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
   actionCampaigns: [
     {
       id: "camp-01",
-      title: "Timbangan Digital untuk Petugas Sampah",
-      category: "recycle",
-      categoryLabel: "Bank Sampah",
+      title: "Kodifikasi Tempat Sampah Berbasis QR",
+      category: "tech",
+      categoryLabel: "IDENTITAS DIGITAL",
       categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Petugas Kebersihan DLH & Tim KKN UNIKOM",
-      initiatorBadge: "Data Timbangan",
+      initiator: "KKN UNIKOM 2026",
+      initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/program/timbangan-digital-petugas.webp",
-      currentAmount: 820,
-      targetAmount: 1000,
-      unit: "kg Terdata",
-      daysRemaining: 20,
-      participantsCount: 114,
-      description: "Petugas menimbang sampah berdasarkan jenis dan wilayah. Data berat, waktu, lokasi, serta identitas petugas tersimpan otomatis pada dashboard BERSEKA.ID.",
-      impactHighlight: "Pencatatan setor sampah real-time dan terintegrasi otomatis ke saldo poin warga.",
+      imageUrl: "/image/activity-1.webp",
+      currentAmount: 340,
+      targetAmount: 500,
+      unit: "Titik QR",
+      daysRemaining: 15,
+      participantsCount: 120,
+      description: "Setiap tempat sampah diberi kode QR sebagai identitas digital untuk mencatat pemilik, lokasi, jenis sampah, aktivitas pemilahan, dan riwayat pengangkutan.",
+      impactHighlight: "Memudahkan monitoring pemilahan sampah organik & residu secara real-time.",
       isPublished: true,
     },
     {
       id: "camp-02",
-      title: "Pemanfaatan Sampah Menjadi Produk Kreatif",
-      category: "recycle",
-      categoryLabel: "Bank Sampah",
+      title: "Pemantauan Gas Metana di TPS Organik",
+      category: "organic",
+      categoryLabel: "MONITORING LINGKUNGAN",
       categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Kelompok Kreatif Warga & Mahasiswa KKN",
-      initiatorBadge: "Ekonomi Sirkular",
+      initiator: "KKN UNIKOM 2026",
+      initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/program/pemanfaatan-produk-kreatif.webp",
-      currentAmount: 150,
+      imageUrl: "/image/activity-2.webp",
+      currentAmount: 180,
       targetAmount: 200,
-      unit: "Karya Kreatif",
-      daysRemaining: 25,
-      participantsCount: 88,
-      description: "Sampah anorganik terpilah diolah menjadi produk kerajinan dan barang bernilai jual untuk mendorong kreativitas warga, UMKM lokal, dan Pasar BERSEKA.",
-      impactHighlight: "Menghasilkan tas daur ulang, pot tanaman, dan suvenir bernilai ekonomis tinggi.",
+      unit: "TPS",
+      daysRemaining: 12,
+      participantsCount: 85,
+      description: "Sensor memantau konsentrasi gas metana, suhu, dan kelembapan pada tempat penampungan sementara organik untuk mendukung peringatan dini dan pengelolaan yang lebih aman.",
+      impactHighlight: "Peringatan dini otomatis untuk mencegah potensi akumulasi gas berlebih di area TPS.",
       isPublished: true,
     },
     {
       id: "camp-03",
-      title: "Kodifikasi Tempat Sampah Berbasis QR",
-      category: "recycle",
-      categoryLabel: "Bank Sampah",
-      categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Kelompok KKN UNIKOM & DLH Bandung",
-      initiatorBadge: "Identitas Digital",
+      title: "IoT untuk Buruan SAE",
+      category: "kkn",
+      categoryLabel: "PERTANIAN PERKOTAAN",
+      categoryColor: "bg-green-100 text-green-800 border-green-200",
+      initiator: "KKN UNIKOM 2026",
+      initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/program/kodifikasi-tempat-sampah-qr.webp",
-      currentAmount: 420,
-      targetAmount: 500,
-      unit: "Titik QR",
-      daysRemaining: 14,
-      participantsCount: 65,
-      description: "Setiap tempat sampah diberi kode QR sebagai identitas digital untuk mencatat pemilik, lokasi, jenis sampah, aktivitas pemilahan, dan riwayat pengangkutan.",
-      impactHighlight: "Mempermudah validasi digital dan monitoring keterpilahan sampah warga Coblong.",
+      imageUrl: "/image/activity-3.webp",
+      currentAmount: 240,
+      targetAmount: 300,
+      unit: "Kebun",
+      daysRemaining: 18,
+      participantsCount: 95,
+      description: "Sensor IoT membantu memantau kelembapan tanah, suhu, dan kebutuhan air pada kebun warga agar budidaya sayuran lebih efisien, produktif, dan berkelanjutan.",
+      impactHighlight: "Efisiensi penyiraman air tanaman hingga 40% dan peningkatan produktivitas sayur warga.",
       isPublished: true,
     },
     {
       id: "camp-04",
       title: "Komposter IoT untuk Pupuk Organik Cair",
       category: "organic",
-      categoryLabel: "Sampah Organik",
+      categoryLabel: "SAMPAH ORGANIK",
       categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Kader Lingkungan & Mahasiswa UNIKOM",
-      initiatorBadge: "Inovasi Organik",
-      location: "Posko Kompos RW, Kecamatan Coblong",
-      imageUrl: "/image/program/komposter-iot-poc.webp",
-      currentAmount: 280,
-      targetAmount: 350,
+      initiator: "KKN UNIKOM 2026",
+      initiatorBadge: "Terverifikasi KKN",
+      location: "Kecamatan Coblong, Kota Bandung",
+      imageUrl: "/image/activity-2.webp",
+      currentAmount: 390,
+      targetAmount: 500,
       unit: "Liter POC",
-      daysRemaining: 15,
-      participantsCount: 62,
+      daysRemaining: 10,
+      participantsCount: 65,
       description: "Komposter dilengkapi sensor suhu, kelembapan, dan waktu proses untuk membantu produksi pupuk organik cair yang konsisten, higienis, dan mudah dipantau.",
-      impactHighlight: "Mempercepat fermentasi pupuk cair bernutrisi tinggi tanpa menimbulkan bau menyengat.",
+      impactHighlight: "Menghasilkan pupuk organik cair berkualitas tinggi untuk kebun warga secara konsisten.",
       isPublished: true,
     },
     {
       id: "camp-05",
-      title: "IoT untuk Buruan SAE",
-      category: "organic",
-      categoryLabel: "Pertanian Perkotaan",
-      categoryColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
-      initiator: "Kelompok Tani & KKN UNIKOM",
-      initiatorBadge: "Buruan SAE",
+      title: "Timbangan Digital untuk Petugas Sampah",
+      category: "tech",
+      categoryLabel: "DATA TIMBANGAN",
+      categoryColor: "bg-cyan-100 text-cyan-800 border-cyan-200",
+      initiator: "KKN UNIKOM 2026",
+      initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/program/iot-buruan-sae.webp",
-      currentAmount: 120,
-      targetAmount: 150,
-      unit: "Bedeng Sayur",
-      daysRemaining: 12,
-      participantsCount: 54,
-      description: "Sensor IoT membantu memantau kelembapan tanah, suhu, dan kebutuhan air pada kebun warga agar budidaya sayuran lebih efisien, produktif, dan berkelanjutan.",
-      impactHighlight: "Meningkatkan hasil panen sayuran segar untuk ketahanan pangan keluarga Coblong.",
+      imageUrl: "/image/landingpage.webp",
+      currentAmount: 180,
+      targetAmount: 200,
+      unit: "Petugas",
+      daysRemaining: 20,
+      participantsCount: 110,
+      description: "Petugas menimbang sampah berdasarkan jenis dan wilayah. Data berat, waktu, lokasi, serta identitas petugas tersimpan otomatis pada dashboard BERSEKA.ID.",
+      impactHighlight: "Data penimbangan sampah terintegrasi 100% otomatis tanpa pencatatan manual di lapangan.",
       isPublished: true,
     },
     {
       id: "camp-06",
-      title: "Pemantauan Gas Metana di TPS Organik",
-      category: "education",
-      categoryLabel: "Edukasi Warga",
+      title: "Pemanfaatan Sampah Menjadi Produk Kreatif",
+      category: "recycle",
+      categoryLabel: "EKONOMI SIRKULAR",
       categoryColor: "bg-amber-100 text-amber-800 border-amber-200",
-      initiator: "Tim IoT KKN UNIKOM & Petugas DLH",
-      initiatorBadge: "Monitoring Lingkungan",
-      location: "TPS Organik Kecamatan Coblong",
-      imageUrl: "/image/program/pemantauan-gas-metana-tps.webp",
-      currentAmount: 85,
-      targetAmount: 100,
-      unit: "Sensor Terpasang",
-      daysRemaining: 18,
-      participantsCount: 48,
-      description: "Sensor memantau konsentrasi gas metana, suhu, dan kelembapan pada tempat penampungan sementara organik untuk mendukung peringatan dini dan pengelolaan yang lebih aman.",
-      impactHighlight: "Peringatan dini kebocoran gas berbahaya & kontrol mutu pengomposan warga.",
+      initiator: "KKN UNIKOM 2026",
+      initiatorBadge: "Terverifikasi KKN",
+      location: "Kecamatan Coblong, Kota Bandung",
+      imageUrl: "/image/kkn-hero-sorting.webp",
+      currentAmount: 450,
+      targetAmount: 500,
+      unit: "Produk",
+      daysRemaining: 8,
+      participantsCount: 140,
+      description: "Sampah anorganik terpilah diolah menjadi produk kerajinan dan barang bernilai jual untuk mendorong kreativitas warga, UMKM lokal, dan Pasar BERSEKA.",
+      impactHighlight: "Memberdayakan UMKM warga dan memasok produk bernilai ekonomi ke etalase Pasar BERSEKA.",
       isPublished: true,
     },
   ],
@@ -506,15 +506,15 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       id: "news-05",
-      title: "Digitalisasi Bank Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
-      category: "Bank Sampah",
+      title: "Digitalisasi Penimbangan Sampah: Warga Antusias Tukar Saldo Poin Jadi Sembako",
+      category: "Daur Ulang",
       date: "5 Mei 2026",
       readTime: "3 min baca",
-      location: "Bank Sampah RW 04",
+      location: "Posko Penimbangan RW 04",
       imageUrl: "/image/activity-1.webp",
       summary: "Penerapan sistem QR Code pada setiap kantong sampah memudahkan pencatatan saldo dan percepatan penukaran sembako bulanan.",
-      content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Bank Sampah RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
-      author: "Pengelola Bank Sampah",
+      content: "Sebanyak 85 kepala keluarga menghadiri hari penimbangan sampah serentak di Posko RW 04. Dengan sistem QR Code BERSEKA, verifikasi setoran botol plastik dan kardus berlangsung kurang dari 1 menit per warga.",
+      author: "Pengelola Lingkungan RW 04",
       isPublished: true,
     },
     {
@@ -545,7 +545,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       q: "Apakah produk di Pasar Berseka bisa dibeli dengan uang tunai?",
-      a: "Ya, seluruh produk hasil olahan KKN dan warga di Pasar Berseka dapat dibeli menggunakan uang tunai secara langsung di Posko KKN/Bank Sampah, ataupun ditukarkan dengan Poin BERSEKA."
+      a: "Ya, seluruh produk hasil olahan KKN dan warga di Pasar Berseka dapat dibeli menggunakan uang tunai secara langsung di Posko KKN/Mitra Warga, ataupun ditukarkan dengan Poin BERSEKA."
     },
     {
       q: "Apakah aplikasi BERSEKA berbayar untuk warga?",
@@ -557,16 +557,16 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
     },
     {
       q: "Apa yang membedakan sampah organik dan anorganik pada sistem BERSEKA?",
-      a: "Sampah organik (sisa makanan, kulit buah, sayur) akan dialirkan untuk biokonversi maggot BSF dan komposting kasgot. Sampah anorganik (botol plastik PET, kardus, kaleng) disalurkan ke Bank Sampah untuk didaur ulang."
+      a: "Sampah organik (sisa makanan, kulit buah, sayur) akan dialirkan untuk biokonversi maggot BSF dan komposting kasgot. Sampah anorganik (botol plastik PET, kardus, kaleng) disalurkan untuk didaur ulang menjadi produk kreatif."
     }
   ]
 };
 
 const DB_NAME = "berseka_cms_db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "landing_cms";
 const KEY = "current_content";
-const LS_FALLBACK_KEY = "berseka_landing_cms_content";
+const LS_FALLBACK_KEY = "berseka_landing_cms_content_v2";
 
 export interface StoredPayload {
   data: LandingContentPayload;
@@ -646,13 +646,60 @@ export async function saveCmsContent(content: LandingContentPayload): Promise<vo
 // ── Load CMS Content ─────────────────────────────────────────────────────────
 export function sanitizeCmsPayload(data: Partial<LandingContentPayload>): LandingContentPayload {
   if (!data || typeof data !== "object") return DEFAULT_CMS_CONTENT;
+
+  // Sanitize actionCampaigns: If stale data containing Bank Sampah or less than 6 programs exists, reset to defaults
+  let campaigns = Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns;
+  const hasStaleBankSampah = campaigns.some(
+    (c) =>
+      c.title?.includes("Bank Sampah") ||
+      c.categoryLabel?.toLowerCase().includes("bank sampah") ||
+      c.category === "recycle" ||
+      c.title?.includes("Sedekah Minyak Jelantah")
+  );
+  if (hasStaleBankSampah || campaigns.length !== 6) {
+    campaigns = DEFAULT_CMS_CONTENT.actionCampaigns;
+  }
+
+  // Clean newsItems
+  let news = Array.isArray(data.newsItems) ? data.newsItems : DEFAULT_CMS_CONTENT.newsItems;
+  news = news.map((n) => ({
+    ...n,
+    category: n.category === "Bank Sampah" ? "Daur Ulang" : n.category,
+    title: n.title?.replace(/Bank Sampah/gi, "Penimbangan Sampah") || n.title,
+    location: n.location?.replace(/Bank Sampah/gi, "Posko Penimbangan") || n.location,
+    content: n.content?.replace(/Bank Sampah/gi, "Posko") || n.content,
+    author: n.author?.replace(/Bank Sampah/gi, "Pengelola Lingkungan") || n.author,
+  }));
+
+  // Clean heroSlides
+  let slides = Array.isArray(data.heroSlides) ? data.heroSlides : DEFAULT_CMS_CONTENT.heroSlides;
+  slides = slides.map((s) => ({
+    ...s,
+    badge: s.badge?.replace(/Bank Sampah/gi, "Sosialisasi") || s.badge,
+    title: s.title?.replace(/Bank Sampah/gi, "Pemilahan Sampah") || s.title,
+  }));
+
+  // Clean marketProducts
+  let products = Array.isArray(data.marketProducts) ? data.marketProducts : DEFAULT_CMS_CONTENT.marketProducts;
+  products = products.map((p) => ({
+    ...p,
+    initiator: p.initiator?.replace(/Bank Sampah/gi, "Unit Daur Ulang") || p.initiator,
+  }));
+
+  // Clean FAQ
+  let faqs = Array.isArray(data.faqItems) ? data.faqItems : DEFAULT_CMS_CONTENT.faqItems;
+  faqs = faqs.map((f) => ({
+    ...f,
+    a: f.a?.replace(/Bank Sampah/gi, "Posko Daur Ulang") || f.a,
+  }));
+
   return {
-    heroSlides: Array.isArray(data.heroSlides) ? data.heroSlides : DEFAULT_CMS_CONTENT.heroSlides,
-    marketProducts: Array.isArray(data.marketProducts) ? data.marketProducts : DEFAULT_CMS_CONTENT.marketProducts,
-    actionCampaigns: Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns,
-    newsItems: Array.isArray(data.newsItems) ? data.newsItems : DEFAULT_CMS_CONTENT.newsItems,
+    heroSlides: slides,
+    marketProducts: products,
+    actionCampaigns: campaigns,
+    newsItems: news,
     liveLogs: Array.isArray(data.liveLogs) ? data.liveLogs : DEFAULT_CMS_CONTENT.liveLogs,
-    faqItems: Array.isArray(data.faqItems) ? data.faqItems : DEFAULT_CMS_CONTENT.faqItems,
+    faqItems: faqs,
   };
 }
 

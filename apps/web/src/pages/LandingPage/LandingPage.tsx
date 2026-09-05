@@ -105,8 +105,6 @@ export const LandingPage: React.FC = () => {
   const [newsSearchTerm, setNewsSearchTerm] = useState<string>("");
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>("Semua");
   const [selectedProgram, setSelectedProgram] = useState<ActionCampaignItem | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<MarketProductItem | null>(null);
-  const [exchangeModalProduct, setExchangeModalProduct] = useState<MarketProductItem | null>(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
   const [activeLightboxImage, setActiveLightboxImage] = useState<{ src: string; title?: string } | null>(null);
 
@@ -427,26 +425,14 @@ export const LandingPage: React.FC = () => {
     setOpenFaqIndex((prev) => (prev === idx ? null : idx));
   };
 
-  // ── Lightbox Keyboard Dismiss ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!activeLightboxImage) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setActiveLightboxImage(null);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeLightboxImage]);
-
-  // ── Penukaran Poin Pasar BERSEKA (Kontekstual, Profesional & Bebas AI-Slop) ───
-  const handleOpenExchange = (product: MarketProductItem) => {
-    setExchangeModalProduct(product);
-  };
-
+  // ── Tukar Poin Action ─────────────────────────────────────────────────────────
   const handleAddToCart = (product: MarketProductItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    handleOpenExchange(product);
+    setCartSuccessId(product.id);
+    showToast.success(`Permintaan tukar poin untuk "${product.title}" berhasil diajukan.`);
+    setTimeout(() => {
+      setCartSuccessId(null);
+    }, 1800);
   };
 
   // ── Calculator Computed Values ───────────────────────────────────────────────
@@ -696,7 +682,6 @@ export const LandingPage: React.FC = () => {
                     </figure>
                     <div className="landing-slide-overlay" />
                     <div className="landing-slide-caption">
-                      {slide.badge && <span className="landing-slide-badge">{slide.badge}</span>}
                       <div>{slide.title}</div>
                     </div>
                   </div>
@@ -863,8 +848,8 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="landing-grid-3">
-              {programs.slice(0, 6).map((item) => (
-                <article key={item.id} className="landing-card">
+              {programs.slice(0, 6).map((item, idx) => (
+                <article key={item.id} className="landing-card landing-program-card">
                   <figure className="landing-media">
                     <img
                       src={item.imageUrl}
@@ -874,7 +859,6 @@ export const LandingPage: React.FC = () => {
                         (e.target as HTMLImageElement).src = "/image/program/timbangan-digital-petugas.webp";
                       }}
                     />
-                    <span className="landing-badge">{item.categoryLabel || "Program"}</span>
                   </figure>
                   <div className="landing-card-body">
                     <h3>{item.title}</h3>
@@ -951,8 +935,6 @@ export const LandingPage: React.FC = () => {
                 <article
                   key={prod.id}
                   className="landing-card landing-product"
-                  onClick={() => setSelectedProduct(prod)}
-                  style={{ cursor: "pointer" }}
                 >
                   <figure className="landing-media">
                     <img
@@ -981,14 +963,28 @@ export const LandingPage: React.FC = () => {
                       </div>
                       <button
                         type="button"
-                        className="landing-btn-tukar"
-                        aria-label={`Tukar poin untuk ${prod.title}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenExchange(prod);
+                        className={`landing-btn landing-btn-sm ${cartSuccessId === prod.id ? "landing-btn-primary" : "landing-btn-outline"}`}
+                        style={{
+                          padding: "6px 14px",
+                          fontSize: "0.82rem",
+                          fontWeight: 700,
+                          borderRadius: "8px",
+                          gap: "6px",
+                          cursor: "pointer",
                         }}
+                        aria-label={`Tukar poin untuk ${prod.title}`}
+                        onClick={(e) => handleAddToCart(prod, e)}
                       >
-                        Tukar Poin
+                        {cartSuccessId === prod.id ? (
+                          <>
+                            <Check size={14} strokeWidth={2.4} />
+                            <span>Tersimpan</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Tukar Poin</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -1179,7 +1175,6 @@ export const LandingPage: React.FC = () => {
                   </figure>
                   <div className="landing-card-body">
                     <div className="landing-news-meta">
-                      <span className="tag">{news.category}</span>
                       <time dateTime="2026-05-01">{news.date}</time>
                     </div>
                     <h3>{news.title}</h3>
@@ -1345,7 +1340,7 @@ export const LandingPage: React.FC = () => {
               <h4>Program</h4>
               <ul>
                 <li><a href="#program">Pemilahan dari Rumah</a></li>
-                <li><a href="#program">Bank Sampah &amp; Pengolahan</a></li>
+                <li><a href="#program">Daur Ulang &amp; Pengolahan</a></li>
                 <li><a href="#program">Edukasi dan KKN Berdampak</a></li>
                 <li><a href="#program">Armada &amp; Pengangkutan</a></li>
                 <li><a href="#program">Monitoring &amp; Teknologi</a></li>
@@ -1490,7 +1485,6 @@ export const LandingPage: React.FC = () => {
                       </figure>
                       <div className="landing-card-body">
                         <div className="landing-news-meta">
-                          <span className="tag">{news.category}</span>
                           <time>{news.date}</time>
                         </div>
                         <h3 className="line-clamp-2 text-sm font-black">{news.title}</h3>
@@ -1645,95 +1639,7 @@ export const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="landing-modal-backdrop" onClick={() => setSelectedProduct(null)}>
-          <div className="landing-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="landing-modal-close"
-              onClick={() => setSelectedProduct(null)}
-              aria-label="Tutup produk"
-            >
-              <X size={18} />
-            </button>
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-              <img
-                src={selectedProduct.imageUrl}
-                alt={selectedProduct.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/image/activity-2.webp";
-                }}
-              />
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="landing-product-tag">
-                    {selectedProduct.categoryLabel || "Pangan Lokal"}
-                  </span>
-                  <h2 className="text-xl font-black text-slate-900 leading-tight mt-1">
-                    {selectedProduct.title}
-                  </h2>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    {selectedProduct.unit || "1 kemasan"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <PointsCoinIcon size={22} />
-                    <span className="text-xl font-black text-slate-900">
-                      {selectedProduct.pricePoints} Poin
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    Poin Partisipasi Warga
-                  </span>
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {selectedProduct.description}
-              </p>
-              {selectedProduct.benefits && selectedProduct.benefits.length > 0 && (
-                <div className="space-y-1.5 pt-2">
-                  <div className="text-xs font-bold text-slate-700">Keunggulan Produk:</div>
-                  <ul className="space-y-1">
-                    {selectedProduct.benefits.map((b, i) => (
-                      <li key={i} className="text-xs text-slate-600 flex items-center gap-2">
-                        <Check size={14} className="text-emerald-600 shrink-0" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div className="pt-4 flex items-center justify-end border-t border-slate-100 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedProduct(null)}
-                  className="landing-btn landing-btn-outline landing-btn-sm"
-                >
-                  Tutup
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const prod = selectedProduct;
-                    setSelectedProduct(null);
-                    handleOpenExchange(prod);
-                  }}
-                  className="landing-btn landing-btn-primary landing-btn-sm"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-                >
-                  <span>Tukar Poin</span>
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Modal Edukasi & Konfirmasi Penukaran Poin Posko KKN (Bebas AI-Slop & Profesional) */}
       {exchangeModalProduct && (
