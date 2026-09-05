@@ -201,7 +201,7 @@ export class SystemController {
    */
   async getApprovedLogbookSources(req: Request, res: Response): Promise<void> {
     try {
-      const logbooks = await systemService.getApprovedLogbookSources();
+      const logbooks = await systemService.getApprovedLogbookSources(req.query as any);
       res.status(200).json({ success: true, data: logbooks });
     } catch (error: any) {
       res
@@ -215,7 +215,7 @@ export class SystemController {
    */
   async getRealProkerSources(req: Request, res: Response): Promise<void> {
     try {
-      const prokers = await systemService.getRealProkerSources();
+      const prokers = await systemService.getRealProkerSources(req.query as any);
       res.status(200).json({ success: true, data: prokers });
     } catch (error: any) {
       res

@@ -9,7 +9,7 @@
  * Features seamless Dual Storage (API + LocalStorage Instant Live Sync) and Drag & Drop Image Upload
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Sparkles,
   Plus,
@@ -31,6 +31,7 @@ import {
   Eye,
   ExternalLink,
   ChevronRight,
+  ChevronLeft,
   Award,
   Tag,
   Clock,
@@ -44,7 +45,11 @@ import {
   Camera,
   Check,
   Search,
-  BookOpen
+  BookOpen,
+  Filter,
+  RotateCcw,
+  Building2,
+  Users
 } from "lucide-react";
 import api from "../../services/api";
 import showToast from "../../utils/showToast";
@@ -455,6 +460,11 @@ export const KurasiLandingPage: React.FC = () => {
   const [prokerSources, setProkerSources] = useState<any[]>([]);
   const [loadingSources, setLoadingSources] = useState<boolean>(false);
   const [importSearchTerm, setImportSearchTerm] = useState<string>("");
+  const [importFilterKelompok, setImportFilterKelompok] = useState<string>("");
+  const [importFilterKelurahan, setImportFilterKelurahan] = useState<string>("");
+  const [importFilterKategori, setImportFilterKategori] = useState<string>("");
+  const [importPage, setImportPage] = useState<number>(1);
+  const importPageSize = 8;
 
   const getSafeImageUrl = (url?: string | null, fallback = "/image/activity-1.webp"): string => {
     if (!url || typeof url !== "string" || !url.trim()) return fallback;
@@ -488,11 +498,135 @@ export const KurasiLandingPage: React.FC = () => {
     }
   };
 
+  // Distinct list of Kelurahan from both logbooks and prokers
+  const availableKelurahanList = useMemo(() => {
+    const set = new Set<string>();
+    logbookSources.forEach((l) => { if (l.kelurahan) set.add(l.kelurahan.trim()); });
+    prokerSources.forEach((p) => { if (p.kelurahan) set.add(p.kelurahan.trim()); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "id"));
+  }, [logbookSources, prokerSources]);
+
+  // Distinct list of Kelompok KKN with counts
+  const availableKelompokList = useMemo(() => {
+    const map = new Map<string, { id: string; nama: string; kelurahan?: string; logbookCount: number; prokerCount: number }>();
+    
+    logbookSources.forEach((l) => {
+      const key = l.kelompokNama || l.kelompokId || "Kelompok";
+      if (!map.has(key)) {
+        map.set(key, { id: String(l.kelompokId || key), nama: l.kelompokNama || `Kelompok (${key})`, kelurahan: l.kelurahan, logbookCount: 0, prokerCount: 0 });
+      }
+      map.get(key)!.logbookCount++;
+    });
+
+    prokerSources.forEach((p) => {
+      const key = p.kelompokNama || p.kelompokId || "Kelompok";
+      if (!map.has(key)) {
+        map.set(key, { id: String(p.kelompokId || key), nama: p.kelompokNama || `Kelompok (${key})`, kelurahan: p.kelurahan, logbookCount: 0, prokerCount: 0 });
+      }
+      map.get(key)!.prokerCount++;
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.nama.localeCompare(b.nama, "id", { numeric: true }));
+  }, [logbookSources, prokerSources]);
+
+  // Distinct list of Proker Categories
+  const availableProkerCategories = useMemo(() => {
+    const set = new Set<string>();
+    prokerSources.forEach((p) => { if (p.kategori) set.add(p.kategori.trim()); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "id"));
+  }, [prokerSources]);
+
+  // Reset pagination to page 1 whenever any filter or search changes
+  useEffect(() => {
+    setImportPage(1);
+  }, [importSourceType, importFilterKelompok, importFilterKelurahan, importFilterKategori, importSearchTerm]);
+
+  // Filtered source items
+  const filteredImportItems = useMemo(() => {
+    const items = importSourceType === "logbook" ? logbookSources : prokerSources;
+    return items.filter((item) => {
+      // 1. Filter Kelurahan
+      if (importFilterKelurahan) {
+        const itemKelurahan = (item.kelurahan || "").toLowerCase();
+        if (!itemKelurahan.includes(importFilterKelurahan.toLowerCase())) return false;
+      }
+
+      // 2. Filter Kelompok KKN
+      if (importFilterKelompok) {
+        const matchId = String(item.kelompokId || "") === importFilterKelompok;
+        const matchNama = (item.kelompokNama || "") === importFilterKelompok;
+        if (!matchId && !matchNama) return false;
+      }
+
+      // 3. Filter Kategori / Khusus
+      if (importFilterKategori) {
+        if (importSourceType === "proker") {
+          if ((item.kategori || "").toLowerCase() !== importFilterKategori.toLowerCase()) return false;
+        } else {
+          // Logbook filter
+          if (importFilterKategori === "with_photo") {
+            if (!item.fotoBuktiUrl || typeof item.fotoBuktiUrl !== "string" || item.fotoBuktiUrl.trim().length < 4) return false;
+          } else if (importFilterKategori === "pemanfaatan") {
+            const txt = `${item.deskripsi || ""} ${item.tempat || ""}`.toLowerCase();
+            if (!txt.includes("pemanfaatan") && !txt.includes("kompos") && !txt.includes("maggot") && !txt.includes("loseda") && !txt.includes("bata terawang") && !txt.includes("press")) return false;
+          }
+        }
+      }
+
+      // 4. Search query
+      if (importSearchTerm.trim()) {
+        const q = importSearchTerm.toLowerCase();
+        const deskripsi = (item.deskripsi || "").toLowerCase();
+        const tempat = (item.tempat || item.logbookTempat || "").toLowerCase();
+        const kelompokNama = (item.kelompokNama || "").toLowerCase();
+        const penulisNama = (item.penulisNama || "").toLowerCase();
+        const kelurahan = (item.kelurahan || "").toLowerCase();
+        const kategori = (item.kategori || item.prokerKategori || "").toLowerCase();
+        const idStr = String(item.id || "").toLowerCase();
+
+        return (
+          deskripsi.includes(q) ||
+          tempat.includes(q) ||
+          kelompokNama.includes(q) ||
+          penulisNama.includes(q) ||
+          kelurahan.includes(q) ||
+          kategori.includes(q) ||
+          idStr.includes(q)
+        );
+      }
+
+      return true;
+    });
+  }, [importSourceType, logbookSources, prokerSources, importFilterKelompok, importFilterKelurahan, importFilterKategori, importSearchTerm]);
+
+  // Paginated list
+  const totalImportPages = Math.max(1, Math.ceil(filteredImportItems.length / importPageSize));
+  const paginatedImportItems = useMemo(() => {
+    const start = (importPage - 1) * importPageSize;
+    return filteredImportItems.slice(start, start + importPageSize);
+  }, [filteredImportItems, importPage, importPageSize]);
+
+  const hasActiveImportFilters = Boolean(
+    importFilterKelompok || importFilterKelurahan || importFilterKategori || importSearchTerm.trim()
+  );
+
+  const handleResetImportFilters = () => {
+    setImportFilterKelompok("");
+    setImportFilterKelurahan("");
+    setImportFilterKategori("");
+    setImportSearchTerm("");
+    setImportPage(1);
+  };
+
   const handleOpenImportModal = (targetCategory?: "campaign" | "news" | "hero" | "pasar") => {
     const target = targetCategory || (activeTab === "campaign" ? "campaign" : activeTab === "news" ? "news" : activeTab === "hero" ? "hero" : activeTab === "pasar" ? "pasar" : "campaign");
     setImportTargetCategory(target);
     setShowImportModal(true);
     setImportSearchTerm("");
+    setImportFilterKelompok("");
+    setImportFilterKelurahan("");
+    setImportFilterKategori("");
+    setImportPage(1);
     if (target === "news") {
       setImportSourceType("logbook");
     } else {
@@ -2442,13 +2576,16 @@ export const KurasiLandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Controls: Source Switcher + Search + Refresh */}
+            {/* Controls: Source Switcher + Refresh */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
               {/* Type Switcher */}
               <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-extrabold">
                 <button
                   type="button"
-                  onClick={() => setImportSourceType("logbook")}
+                  onClick={() => {
+                    setImportSourceType("logbook");
+                    setImportFilterKategori("");
+                  }}
                   className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-[11px] sm:text-xs ${
                     importSourceType === "logbook"
                       ? "bg-white text-[#005841] shadow-2xs font-black"
@@ -2460,7 +2597,10 @@ export const KurasiLandingPage: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setImportSourceType("proker")}
+                  onClick={() => {
+                    setImportSourceType("proker");
+                    setImportFilterKategori("");
+                  }}
                   className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 cursor-pointer text-[11px] sm:text-xs ${
                     importSourceType === "proker"
                       ? "bg-white text-[#005841] shadow-2xs font-black"
@@ -2472,165 +2612,201 @@ export const KurasiLandingPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Search & Refresh */}
+              {/* Refresh Data Button */}
               <div className="flex items-center gap-2">
-                <div className="relative flex-1 sm:w-60">
+                <button
+                  type="button"
+                  onClick={fetchImportSources}
+                  disabled={loadingSources}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  title="Segarkan Data Sumber dari Server"
+                >
+                  <RefreshCw size={13} className={loadingSources ? "animate-spin text-emerald-700" : ""} />
+                  <span>Segarkan Data</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Comprehensive & Detailed Filter Bar */}
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2.5 shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {/* 1. Search Query */}
+                <div className="relative">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     value={importSearchTerm}
                     onChange={(e) => setImportSearchTerm(e.target.value)}
-                    placeholder="Cari aktivitas, kelompok, kelurahan..."
-                    className="w-full pl-8.5 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none focus:border-[#005841]"
+                    placeholder="Cari kata kunci, nama, RW..."
+                    className="w-full pl-8.5 pr-7 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 transition"
                   />
+                  {importSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setImportSearchTerm("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={fetchImportSources}
-                  disabled={loadingSources}
-                  className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer shrink-0 disabled:opacity-50"
-                  title="Segarkan Data Sumber"
-                >
-                  <RefreshCw size={14} className={loadingSources ? "animate-spin" : ""} />
-                </button>
+
+                {/* 2. Filter Kelurahan */}
+                <div className="relative">
+                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                    <Building2 size={13} />
+                  </div>
+                  <select
+                    value={importFilterKelurahan}
+                    onChange={(e) => {
+                      setImportFilterKelurahan(e.target.value);
+                      if (importFilterKelompok) {
+                        const kelItem = availableKelompokList.find((k) => k.id === importFilterKelompok || k.nama === importFilterKelompok);
+                        if (kelItem?.kelurahan && e.target.value && !kelItem.kelurahan.toLowerCase().includes(e.target.value.toLowerCase())) {
+                          setImportFilterKelompok("");
+                        }
+                      }
+                    }}
+                    className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                  >
+                    <option value="">Semua Kelurahan ({availableKelurahanList.length})</option>
+                    {availableKelurahanList.map((kel) => (
+                      <option key={kel} value={kel}>
+                        Kel. {kel}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 3. Filter Kelompok KKN */}
+                <div className="relative">
+                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                    <Users size={13} />
+                  </div>
+                  <select
+                    value={importFilterKelompok}
+                    onChange={(e) => setImportFilterKelompok(e.target.value)}
+                    className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                  >
+                    <option value="">Semua Kelompok KKN ({availableKelompokList.length})</option>
+                    {availableKelompokList
+                      .filter((k) => !importFilterKelurahan || (k.kelurahan && k.kelurahan.toLowerCase().includes(importFilterKelurahan.toLowerCase())))
+                      .map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.nama} {k.kelurahan ? `(${k.kelurahan})` : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* 4. Filter Kategori (Proker) / Tipe (Logbook) */}
+                <div className="relative">
+                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-700 pointer-events-none">
+                    <Filter size={13} />
+                  </div>
+                  {importSourceType === "proker" ? (
+                    <select
+                      value={importFilterKategori}
+                      onChange={(e) => setImportFilterKategori(e.target.value)}
+                      className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                    >
+                      <option value="">Semua Kategori Proker ({availableProkerCategories.length})</option>
+                      {availableProkerCategories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      value={importFilterKategori}
+                      onChange={(e) => setImportFilterKategori(e.target.value)}
+                      className="w-full pl-7.5 pr-6 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#005841] focus:ring-1 focus:ring-[#005841]/20 cursor-pointer transition truncate"
+                    >
+                      <option value="">Semua Logbook</option>
+                      <option value="with_photo">📷 Hanya Ada Foto Bukti Asli</option>
+                      <option value="pemanfaatan">♻️ Aksi Pemanfaatan &amp; Pengolahan</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              {/* Active Filter Indicators & Reset Action */}
+              <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] pt-1 border-t border-slate-200/60 font-semibold text-slate-600">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span>
+                    Menampilkan <strong className="text-emerald-800">{filteredImportItems.length}</strong> dari{" "}
+                    <strong>{importSourceType === "logbook" ? logbookSources.length : prokerSources.length}</strong>{" "}
+                    {importSourceType === "logbook" ? "Logbook Kegiatan" : "Program Kerja"}
+                  </span>
+                  {importFilterKelurahan && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      Kel. {importFilterKelurahan}
+                      <button type="button" onClick={() => setImportFilterKelurahan("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                    </span>
+                  )}
+                  {importFilterKelompok && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold">
+                      {availableKelompokList.find((k) => k.id === importFilterKelompok || k.nama === importFilterKelompok)?.nama || "Kelompok Terpilih"}
+                      <button type="button" onClick={() => setImportFilterKelompok("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                    </span>
+                  )}
+                  {importFilterKategori && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-bold">
+                      {importFilterKategori === "with_photo" ? "Ada Foto Bukti" : importFilterKategori === "pemanfaatan" ? "Pemanfaatan" : importFilterKategori}
+                      <button type="button" onClick={() => setImportFilterKategori("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                    </span>
+                  )}
+                  {importSearchTerm && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">
+                      "{importSearchTerm}"
+                      <button type="button" onClick={() => setImportSearchTerm("")} className="hover:text-red-600 cursor-pointer">✕</button>
+                    </span>
+                  )}
+                </div>
+
+                {hasActiveImportFilters && (
+                  <button
+                    type="button"
+                    onClick={handleResetImportFilters}
+                    className="inline-flex items-center gap-1 text-slate-500 hover:text-rose-600 text-[11px] font-extrabold cursor-pointer transition shrink-0 ml-auto"
+                  >
+                    <RotateCcw size={11} />
+                    <span>Reset Filter</span>
+                  </button>
+                )}
               </div>
             </div>
 
             {/* List Body */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-[280px]">
+            <div className="flex-1 overflow-y-auto pr-1 space-y-3 min-h-[300px]">
               {loadingSources ? (
                 <div className="py-16 text-center space-y-3">
                   <RefreshCw size={28} className="animate-spin text-[#005841] mx-auto" />
                   <p className="text-xs font-bold text-slate-600">Mengambil data aktivitas lapangan KKN...</p>
                 </div>
-              ) : importSourceType === "logbook" ? (
-                // Filtered Logbooks
-                (() => {
-                  const filtered = logbookSources.filter((item) => {
-                    if (!importSearchTerm.trim()) return true;
-                    const q = importSearchTerm.toLowerCase();
-                    return (
-                      (item.deskripsi || "").toLowerCase().includes(q) ||
-                      (item.tempat || "").toLowerCase().includes(q) ||
-                      (item.kelompokNama || "").toLowerCase().includes(q) ||
-                      (item.penulisNama || "").toLowerCase().includes(q) ||
-                      (item.kelurahan || "").toLowerCase().includes(q)
-                    );
-                  });
-
-                  if (filtered.length === 0) {
-                    return (
-                      <div className="py-16 text-center space-y-2 bg-slate-50 rounded-2xl border border-slate-100">
-                        <AlertCircle size={32} className="text-slate-400 mx-auto" />
-                        <p className="text-xs font-extrabold text-slate-700">Tidak ada logbook kegiatan yang cocok</p>
-                        <p className="text-[11px] text-slate-500">Coba kata kunci lain atau segarkan data.</p>
-                      </div>
-                    );
-                  }
-
-                  const targetLabel =
-                    importTargetCategory === "campaign" ? "Program Aksi" :
-                    importTargetCategory === "news" ? "Berita" :
-                    importTargetCategory === "hero" ? "Hero Carousel" :
-                    "Pasar Berseka";
-
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {filtered.map((item) => (
-                        <div
-                          key={item.id}
-                          className="bg-slate-50/70 hover:bg-emerald-50/30 rounded-2xl border border-slate-200 hover:border-emerald-300 p-4 transition space-y-3 flex flex-col justify-between group"
-                        >
-                          <div className="space-y-2.5">
-                            {/* Top info */}
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-[#005841] font-black text-[10px] truncate max-w-[150px]">
-                                {item.kelompokNama || "Kelompok KKN"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="font-mono text-[9px] font-bold bg-slate-200/70 text-slate-700 px-1.5 py-0.2 rounded">
-                                  #{String(item.id).slice(0, 8)}
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-400">
-                                  {item.tanggalKegiatan ? new Date(item.tanggalKegiatan).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Image if available */}
-                            {item.fotoBuktiUrl && (
-                              <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-800 border border-slate-200">
-                                <img
-                                  src={getSafeImageUrl(item.fotoBuktiUrl)}
-                                  alt="Foto Bukti Logbook"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                  onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
-                                />
-                                <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 text-white text-[9px] font-bold">
-                                  📷 Foto Asli Lapangan
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Location & Author */}
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-semibold flex-wrap">
-                              <span className="flex items-center gap-1">
-                                <MapPin size={12} className="text-slate-400" />
-                                <span>{item.tempat || item.kelurahan || "Lokasi Lapangan"}</span>
-                              </span>
-                              {item.penulisNama && (
-                                <span className="truncate">• Penulis: {item.penulisNama}</span>
-                              )}
-                            </div>
-
-                            {/* Description preview */}
-                            <p className="text-xs text-slate-700 font-medium line-clamp-3 leading-relaxed">
-                              {item.deskripsi}
-                            </p>
-                          </div>
-
-                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1">
-                              <ShieldCheck size={12} /> Strict by ID
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectImportItem(item, "logbook", importTargetCategory)}
-                              className="px-3 py-1.5 rounded-xl bg-[#005841] hover:bg-[#004734] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                            >
-                              <Sparkles size={13} />
-                              <span>Tarik ke {targetLabel}</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()
+              ) : filteredImportItems.length === 0 ? (
+                <div className="py-16 text-center space-y-2 bg-slate-50 rounded-2xl border border-slate-100 p-6">
+                  <AlertCircle size={32} className="text-slate-400 mx-auto" />
+                  <p className="text-xs font-extrabold text-slate-700">
+                    Tidak ada {importSourceType === "logbook" ? "logbook kegiatan" : "program kerja"} yang cocok dengan filter
+                  </p>
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                    Coba ubah kata kunci pencarian, pilih kelurahan lain, atau tekan tombol reset di bawah.
+                  </p>
+                  {hasActiveImportFilters && (
+                    <button
+                      type="button"
+                      onClick={handleResetImportFilters}
+                      className="mt-3 px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Reset Semua Filter</span>
+                    </button>
+                  )}
+                </div>
               ) : (
-                // Filtered Prokers
                 (() => {
-                  const filtered = prokerSources.filter((item) => {
-                    if (!importSearchTerm.trim()) return true;
-                    const q = importSearchTerm.toLowerCase();
-                    return (
-                      (item.deskripsi || "").toLowerCase().includes(q) ||
-                      (item.kategori || "").toLowerCase().includes(q) ||
-                      (item.kelompokNama || "").toLowerCase().includes(q) ||
-                      (item.kelurahan || "").toLowerCase().includes(q)
-                    );
-                  });
-
-                  if (filtered.length === 0) {
-                    return (
-                      <div className="py-16 text-center space-y-2 bg-slate-50 rounded-2xl border border-slate-100">
-                        <AlertCircle size={32} className="text-slate-400 mx-auto" />
-                        <p className="text-xs font-extrabold text-slate-700">Tidak ada program kerja yang cocok</p>
-                        <p className="text-[11px] text-slate-500">Coba kata kunci lain atau segarkan data.</p>
-                      </div>
-                    );
-                  }
-
                   const targetLabel =
                     importTargetCategory === "campaign" ? "Program Aksi" :
                     importTargetCategory === "news" ? "Berita" :
@@ -2638,77 +2814,178 @@ export const KurasiLandingPage: React.FC = () => {
                     "Pasar Berseka";
 
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {filtered.map((item) => (
-                        <div
-                          key={item.id}
-                          className="bg-slate-50/70 hover:bg-emerald-50/30 rounded-2xl border border-slate-200 hover:border-emerald-300 p-4 transition space-y-3 flex flex-col justify-between group"
-                        >
-                          <div className="space-y-2.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-black text-[10px] uppercase">
-                                {item.kategori || "PROKER KKN"}
-                              </span>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="font-mono text-[9px] font-bold bg-slate-200/70 text-slate-700 px-1.5 py-0.2 rounded">
-                                  #{String(item.id).slice(0, 8)}
-                                </span>
-                                <span className="text-[10px] font-bold text-slate-400 truncate max-w-[120px]">
-                                  {item.kelompokNama || "Kelompok KKN"}
-                                </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {paginatedImportItems.map((item) => {
+                        const isLogbook = importSourceType === "logbook";
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-white hover:bg-emerald-50/20 rounded-2xl border border-slate-200 hover:border-emerald-300 p-4 transition space-y-3 flex flex-col justify-between group shadow-2xs"
+                          >
+                            <div className="space-y-2.5">
+                              {/* Top Info Header */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 overflow-hidden">
+                                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-[#005841] font-black text-[10px] truncate max-w-[160px]">
+                                    {item.kelompokNama || "Kelompok KKN"}
+                                  </span>
+                                  {item.kelurahan && (
+                                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-bold shrink-0">
+                                      Kel. {item.kelurahan}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="font-mono text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded border border-slate-200/60">
+                                    #{String(item.id).slice(0, 8)}
+                                  </span>
+                                  {isLogbook && item.tanggalKegiatan && (
+                                    <span className="text-[10px] font-bold text-slate-400">
+                                      {new Date(item.tanggalKegiatan).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
 
-                            {/* Image if available */}
-                            {item.fotoBuktiUrl && (
-                              <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-800 border border-slate-200">
-                                <img
-                                  src={getSafeImageUrl(item.fotoBuktiUrl)}
-                                  alt="Foto Bukti Proker"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                  onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-2.webp"; }}
-                                />
-                                <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 text-white text-[9px] font-bold">
-                                  📷 Foto Bukti Proker
+                              {/* Photo Preview */}
+                              {item.fotoBuktiUrl ? (
+                                <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-800 border border-slate-200">
+                                  <img
+                                    src={getSafeImageUrl(item.fotoBuktiUrl)}
+                                    alt="Foto Bukti"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = "/image/activity-1.webp"; }}
+                                  />
+                                  <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded bg-black/65 text-white text-[9px] font-bold flex items-center gap-1">
+                                    <Camera size={10} /> Foto Asli Lapangan
+                                  </span>
+                                </div>
+                              ) : (
+                                !isLogbook && (
+                                  <div className="h-16 w-full rounded-xl bg-slate-50 border border-dashed border-slate-200 flex items-center justify-center text-[10px] text-slate-400 font-bold gap-1.5">
+                                    <Layers size={14} className="text-slate-300" />
+                                    <span>Program Kerja Resmi</span>
+                                  </div>
+                                )
+                              )}
+
+                              {/* Proker Category or Logbook Location */}
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold flex-wrap">
+                                {!isLogbook && item.kategori && (
+                                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-black uppercase">
+                                    {item.kategori}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={12} className="text-slate-400 shrink-0" />
+                                  <span className="truncate max-w-[200px]">{item.tempat || item.logbookTempat || item.kelurahan || "Coblong"}</span>
                                 </span>
+                                {isLogbook && item.penulisNama && (
+                                  <span className="truncate max-w-[150px]">• {item.penulisNama}</span>
+                                )}
                               </div>
-                            )}
 
-                            <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm line-clamp-2">
-                              {item.deskripsi}
-                            </h4>
+                              {/* Description snippet */}
+                              <p className="text-xs text-slate-700 font-medium line-clamp-3 leading-relaxed">
+                                {item.deskripsi}
+                              </p>
 
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-semibold flex-wrap">
-                              <span className="flex items-center gap-1">
-                                <MapPin size={12} className="text-slate-400" />
-                                <span>{item.kelurahan ? `Kel. ${item.kelurahan}` : "Kecamatan Coblong"}</span>
-                              </span>
-                              {item.waktuPelaksanaan && (
-                                <span>• Pelaksanaan: {item.waktuPelaksanaan}</span>
+                              {/* Proker Extra Metadata */}
+                              {!isLogbook && (item.kebutuhanBiaya || item.waktuPelaksanaan) && (
+                                <div className="pt-1 flex items-center gap-2 text-[10px] font-bold text-slate-600 flex-wrap">
+                                  {item.kebutuhanBiaya && Number(item.kebutuhanBiaya) > 0 && (
+                                    <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200/60">
+                                      Biaya: Rp {Number(item.kebutuhanBiaya).toLocaleString("id-ID")}
+                                    </span>
+                                  )}
+                                  {item.waktuPelaksanaan && (
+                                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                                      Waktu: {item.waktuPelaksanaan}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          </div>
 
-                          <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-emerald-700 flex items-center gap-1">
-                              <ShieldCheck size={12} /> Strict by ID
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectImportItem(item, "proker", importTargetCategory)}
-                              className="px-3 py-1.5 rounded-xl bg-[#005841] hover:bg-[#004734] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-                            >
-                              <Sparkles size={13} />
-                              <span>Tarik ke {targetLabel}</span>
-                            </button>
+                            {/* Card Footer: Strict ID badge & Action Button */}
+                            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-extrabold text-emerald-800 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60 shrink-0">
+                                <ShieldCheck size={12} className="text-emerald-700" />
+                                <span>Strict ID #{String(item.id).slice(0, 6)}</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectImportItem(item, isLogbook ? "logbook" : "proker", importTargetCategory)}
+                                className="px-3 py-1.5 rounded-xl bg-[#005841] hover:bg-[#004734] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+                              >
+                                <Sparkles size={12} />
+                                <span>Tarik ke {targetLabel}</span>
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()
               )}
             </div>
+
+            {/* Pagination Footer */}
+            {totalImportPages > 1 && (
+              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2 shrink-0 flex-wrap text-xs">
+                <span className="text-[11px] font-bold text-slate-500">
+                  Halaman <strong className="text-slate-800">{importPage}</strong> dari <strong className="text-slate-800">{totalImportPages}</strong> ({filteredImportItems.length} total entri)
+                </span>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setImportPage((prev) => Math.max(1, prev - 1))}
+                    disabled={importPage <= 1}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition text-xs font-bold flex items-center gap-1"
+                  >
+                    <ChevronLeft size={14} />
+                    <span className="hidden sm:inline">Sebelumnya</span>
+                  </button>
+
+                  {/* Page numbers (up to 5 pages shown) */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalImportPages }, (_, i) => i + 1)
+                      .filter((p) => p === 1 || p === totalImportPages || Math.abs(p - importPage) <= 1)
+                      .map((p, idx, arr) => {
+                        const prev = arr[idx - 1];
+                        return (
+                          <React.Fragment key={p}>
+                            {prev && p - prev > 1 && <span className="px-1 text-slate-400 text-xs">...</span>}
+                            <button
+                              type="button"
+                              onClick={() => setImportPage(p)}
+                              className={`w-7 h-7 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                                importPage === p
+                                  ? "bg-[#005841] text-white shadow-2xs"
+                                  : "text-slate-600 hover:bg-slate-100 border border-slate-200/60"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setImportPage((prev) => Math.min(totalImportPages, prev + 1))}
+                    disabled={importPage >= totalImportPages}
+                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition text-xs font-bold flex items-center gap-1"
+                  >
+                    <span className="hidden sm:inline">Selanjutnya</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Footer */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between shrink-0 text-xs">
