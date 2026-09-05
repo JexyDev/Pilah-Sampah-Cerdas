@@ -305,7 +305,13 @@ export const scheduleController = {
         const wibNowStr = toWibDateString(now);
         const wibActivityStr = toWibDateString(parsedDate);
 
-        if (wibActivityStr < wibNowStr) {
+        const existingSchedule = await prisma.schedule.findUnique({
+          where: { id },
+          select: { date: true },
+        });
+        const existingWibStr = existingSchedule?.date ? toWibDateString(existingSchedule.date) : null;
+
+        if (wibActivityStr < wibNowStr && wibActivityStr !== existingWibStr) {
           res.status(400).json({
             success: false,
             error: "VALIDATION_ERROR",

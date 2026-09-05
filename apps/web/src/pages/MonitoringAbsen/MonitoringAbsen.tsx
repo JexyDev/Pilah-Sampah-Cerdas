@@ -433,6 +433,31 @@ const DualGeofencePickerModalMap: React.FC<{
   );
 };
 
+const toDateInputString = (dateInput?: string | Date | null): string => {
+  if (!dateInput) return "";
+  if (typeof dateInput === "string") {
+    const trimmed = dateInput.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (isNaN(d.getTime())) return "";
+
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(d);
+  } catch {
+    const wibDate = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+    return wibDate.toISOString().slice(0, 10);
+  }
+};
+
 const parseTimeString = (timeStr?: string) => {
   if (!timeStr) return { start: "08:00", end: "12:00" };
   const matches = timeStr.match(
@@ -2010,12 +2035,11 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
       errors.category = "Nama kategori kustom wajib diisi";
     }
 
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const todayStr = toDateInputString(new Date());
 
     if (!startDate) {
       errors.startDate = "Tanggal mulai pelaksanaan wajib diisi";
-    } else if (startDate < todayStr) {
+    } else if (modalMode === "add" && startDate < todayStr) {
       errors.startDate = "Tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)";
     }
 
@@ -2069,7 +2093,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
   };
 
   const handleOpenAddModal = () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = toDateInputString(new Date());
     setModalMode("add");
     setModalStep(1);
     setGeofenceMode("CIRCLE");
@@ -2116,11 +2140,9 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
     setModalMode("edit");
     setModalStep(1);
     setFormErrors({});
-    const dateStr = schedule.date
-      ? schedule.date.split("T")[0]
-      : new Date().toISOString().split("T")[0];
+    const dateStr = toDateInputString(schedule.date) || toDateInputString(new Date());
     setStartDate(dateStr);
-    setEndDate(schedule.endDate ? schedule.endDate.split("T")[0] : dateStr);
+    setEndDate(schedule.endDate ? toDateInputString(schedule.endDate) : dateStr);
     const parsedTime = parseTimeString(schedule.time);
     setStartTime(parsedTime.start);
     setEndTime(parsedTime.end);
@@ -4596,7 +4618,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       </label>
                       <input
                         type="date"
-                        min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
+                        min={modalMode === "add" ? toDateInputString(new Date()) : undefined}
                         value={startDate}
                         onChange={(e) => {
                           setStartDate(e.target.value);
@@ -4613,7 +4635,7 @@ const getScheduleStatus = (schedule?: ScheduleActivity | null) => {
                       <input
                         type="date"
                         value={endDate}
-                        min={startDate || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
+                        min={startDate || (modalMode === "add" ? toDateInputString(new Date()) : undefined)}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="w-full h-10 px-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-100 outline-none"
                       />
