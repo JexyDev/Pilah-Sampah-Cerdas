@@ -52,6 +52,7 @@ import {
 import { dplService, type GroupSummary } from "../../services/dplService";
 import { sortKelompokList, sortChronologicalList } from "../../utils/sortUtils";
 import { resolveImageUrl } from "../../utils/imageUrl";
+import { downloadImageFile } from "../../utils/photoUtils";
 
 // Helper Format Tanggal
 const formatDateShort = (dateStr: string): string => {
@@ -1813,16 +1814,26 @@ export const LogbookKknPage: React.FC = () => {
                             }}
                             className="w-full h-full object-contain max-h-52 group-hover:scale-105 transition duration-200"
                           />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPreviewPhotoUrl(resolveImageUrl(photoUrl));
-                              setPreviewTitle(`Dokumentasi #${pIdx + 1}: ${selectedItemDetail.tempat}`);
-                            }}
-                            className="absolute bottom-2 right-2 px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs"
-                          >
-                            <Eye className="w-3 h-3" /> Perbesar
-                          </button>
+                          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-auto">
+                            <button
+                              type="button"
+                              onClick={() => downloadImageFile(photoUrl, `logbook-${selectedItemDetail.penulisNim || "mhs"}-foto-${pIdx + 1}.jpg`)}
+                              className="px-2.5 py-1 bg-[#035941]/90 hover:bg-[#035941] text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs transition"
+                              title="Unduh Foto Bukti"
+                            >
+                              <Download className="w-3 h-3" /> Unduh
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewPhotoUrl(resolveImageUrl(photoUrl));
+                                setPreviewTitle(`Dokumentasi #${pIdx + 1}: ${selectedItemDetail.tempat}`);
+                              }}
+                              className="px-2.5 py-1 bg-black/60 hover:bg-black/80 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer shadow-xs transition"
+                            >
+                              <Eye className="w-3 h-3" /> Perbesar
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2174,12 +2185,23 @@ export const LogbookKknPage: React.FC = () => {
               <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate pr-4">
                 {previewTitle || "Foto Dokumentasi Bukti Kegiatan"}
               </h3>
-              <button
-                onClick={() => setPreviewPhotoUrl(null)}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadImageFile(previewPhotoUrl, "foto-dokumentasi-logbook.jpg")}
+                  className="px-3 py-1.5 bg-[#035941] hover:bg-[#02402e] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                  title="Unduh foto dokumentasi ini ke perangkat"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Unduh Foto</span>
+                </button>
+                <button
+                  onClick={() => setPreviewPhotoUrl(null)}
+                  className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-slate-500 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="p-4 bg-slate-950 flex items-center justify-center max-h-[75vh] overflow-auto">
               <img

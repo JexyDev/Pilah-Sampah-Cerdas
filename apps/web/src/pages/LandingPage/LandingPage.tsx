@@ -846,11 +846,11 @@ export const LandingPage: React.FC = () => {
             ========================================================= */}
         <section className="landing-section" id="pasar">
           <div className="landing-container">
-            <div className="landing-section-head flex-col items-start gap-1 mb-4">
-              <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800 }}>
+            <div className="landing-section-head is-left flex-col items-start gap-1 mb-4" style={{ alignItems: "flex-start", textAlign: "left", display: "flex", flexDirection: "column" }}>
+              <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800, textAlign: "left", width: "100%" }}>
                 Pasar BERSEKA
               </h2>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem", textAlign: "left", width: "100%" }}>
                 Tukar poin partisipasi menjadi produk ramah lingkungan dan karya kreatif warga.
               </p>
             </div>
@@ -916,10 +916,10 @@ export const LandingPage: React.FC = () => {
                     <p className="landing-product-meta">{prod.unit || prod.categoryLabel}</p>
                     <div className="landing-product-row">
                       <div className="landing-price-wrap">
-                        <span className="landing-price">Rp{prod.priceIdr?.toLocaleString("id-ID") || 0}</span>
-                        {prod.pricePoints ? (
-                          <span className="landing-points-badge">{prod.pricePoints} Poin</span>
-                        ) : null}
+                        <span className="landing-price" style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--green-800)", fontWeight: 800, fontSize: "1.05rem" }}>
+                          <Sparkles size={15} className="text-amber-500" style={{ fill: "#f59e0b" }} />
+                          <span>{prod.pricePoints ? prod.pricePoints.toLocaleString("id-ID") : prod.priceIdr ? Math.round(prod.priceIdr / 100).toLocaleString("id-ID") : 0} Poin</span>
+                        </span>
                       </div>
                       <button
                         type="button"
@@ -1610,14 +1610,13 @@ export const LandingPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-black text-emerald-700">
-                    Rp{selectedProduct.priceIdr?.toLocaleString("id-ID") || 0}
+                  <div className="text-xl font-black text-emerald-800 flex items-center justify-end gap-1.5">
+                    <Sparkles size={18} className="text-amber-500" style={{ fill: "#f59e0b" }} />
+                    <span>{selectedProduct.pricePoints ? selectedProduct.pricePoints.toLocaleString("id-ID") : Math.round((selectedProduct.priceIdr || 0) / 100).toLocaleString("id-ID")} Poin</span>
                   </div>
-                  {selectedProduct.pricePoints ? (
-                    <div className="text-xs font-bold text-amber-600">
-                      atau {selectedProduct.pricePoints} Poin
-                    </div>
-                  ) : null}
+                  <div className="text-[11px] font-bold text-slate-400 mt-0.5">
+                    Poin BERSEKA
+                  </div>
                 </div>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">

@@ -116,6 +116,20 @@
   margin-bottom: 20px;
 }
 
+.landing-section-head.is-left {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  gap: 4px;
+}
+
+.landing-section-head.is-left .landing-section-title,
+.landing-section-head.is-left p {
+  text-align: left !important;
+  width: 100%;
+}
+
 .landing-section-title {
   font-size: 1.35rem;
   font-weight: 700;
@@ -747,9 +761,12 @@
 }
 
 .landing-price {
-  color: var(--green-700);
-  font-weight: 700;
-  font-size: 1rem;
+  color: var(--green-900);
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .landing-points-badge {

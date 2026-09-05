@@ -39,8 +39,10 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Check,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { downloadImageFile } from "../../utils/photoUtils";
 import {
   dplActivityLogService,
   type DplActivityLogItem,
@@ -1586,6 +1588,15 @@ export const LogAktivitasDpl: React.FC = () => {
                 Pratinjau Foto Dokumentasi Kegiatan DPL
               </span>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadImageFile(previewGalleryImage, "foto-kegiatan-dpl.jpg")}
+                  className="px-3 py-1.5 rounded-lg bg-[#035941] hover:bg-[#02402e] text-white transition text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Unduh foto kegiatan"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Unduh Foto</span>
+                </button>
                 <a
                   href={previewGalleryImage}
                   target="_blank"
