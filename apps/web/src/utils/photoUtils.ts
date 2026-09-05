@@ -83,3 +83,53 @@ export function handleAvatarError(
     target.src = fallbackSvg;
   }
 }
+
+/**
+ * Downloads an image file seamlessly to the user's device
+ */
+export async function downloadImageFile(
+  url?: string | null,
+  defaultFilename: string = "foto-logbook.jpg"
+): Promise<void> {
+  if (!url || url.trim() === "" || url === "null" || url === "undefined") {
+    return;
+  }
+
+  const resolved = resolveImageUrl(url);
+  try {
+    const response = await fetch(resolved, { mode: "cors" });
+    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+
+    let filename = defaultFilename;
+    const urlClean = resolved.split("?")[0];
+    const parts = urlClean.split("/");
+    const lastPart = parts[parts.length - 1];
+    if (lastPart && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(lastPart)) {
+      filename = lastPart;
+    } else if (blob.type) {
+      const ext = blob.type.split("/")[1] || "jpg";
+      if (!filename.includes(".")) {
+        filename = `${filename}.${ext}`;
+      }
+    }
+
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.warn("[downloadImageFile] Fetch blob failed, triggering direct download fallback:", err);
+    const link = document.createElement("a");
+    link.href = resolved;
+    link.target = "_blank";
+    link.download = defaultFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}

@@ -895,11 +895,11 @@ export const LandingPage: React.FC = () => {
             ========================================================= */}
         <section className="landing-section" id="pasar">
           <div className="landing-container">
-            <div className="landing-section-head flex-col items-start gap-1 mb-4">
-              <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800 }}>
+            <div className="landing-section-head is-left flex-col items-start gap-1 mb-4" style={{ alignItems: "flex-start", textAlign: "left", display: "flex", flexDirection: "column" }}>
+              <h2 className="landing-section-title" style={{ fontSize: "clamp(1.4rem, 2.5vw, 1.85rem)", fontWeight: 800, textAlign: "left", width: "100%" }}>
                 Pasar BERSEKA
               </h2>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem", textAlign: "left", width: "100%" }}>
                 Tukar poin partisipasi menjadi produk ramah lingkungan dan karya kreatif warga.
               </p>
             </div>

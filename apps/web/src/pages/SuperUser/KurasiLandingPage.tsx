@@ -1474,8 +1474,11 @@ export const KurasiLandingPage: React.FC = () => {
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                         <div>
-                          <div className="text-sm font-black text-[#005841]">Rp {prod.priceIdr.toLocaleString("id-ID")}</div>
-                          <div className="text-[11px] font-bold text-[#0468bf]">⭐ {prod.pricePoints} Poin</div>
+                          <div className="text-sm font-black text-[#005841] flex items-center gap-1">
+                            <Sparkles size={14} className="text-amber-500 fill-amber-400" />
+                            <span>{prod.pricePoints ? prod.pricePoints.toLocaleString("id-ID") : Math.round((prod.priceIdr || 0) / 100).toLocaleString("id-ID")} Poin</span>
+                          </div>
+                          <div className="text-[11px] font-semibold text-slate-400">Poin BERSEKA</div>
                         </div>
 
                         <div className="flex items-center gap-1.5">

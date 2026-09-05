@@ -116,6 +116,20 @@
   margin-bottom: 20px;
 }
 
+.landing-section-head.is-left {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  gap: 4px;
+}
+
+.landing-section-head.is-left .landing-section-title,
+.landing-section-head.is-left p {
+  text-align: left !important;
+  width: 100%;
+}
+
 .landing-section-title {
   font-size: 1.35rem;
   font-weight: 700;
