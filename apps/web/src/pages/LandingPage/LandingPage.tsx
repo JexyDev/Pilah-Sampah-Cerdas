@@ -75,7 +75,6 @@ export const LandingPage: React.FC = () => {
   const [newsSearchTerm, setNewsSearchTerm] = useState<string>("");
   const [selectedNewsCategory, setSelectedNewsCategory] = useState<string>("Semua");
   const [selectedProgram, setSelectedProgram] = useState<ActionCampaignItem | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<MarketProductItem | null>(null);
   const [showCalculatorModal, setShowCalculatorModal] = useState<boolean>(false);
 
   // ── Cart Simulation Feedback ─────────────────────────────────────────────────
@@ -395,11 +394,11 @@ export const LandingPage: React.FC = () => {
     setOpenFaqIndex((prev) => (prev === idx ? null : idx));
   };
 
-  // ── Cart Simulation Action ───────────────────────────────────────────────────
+  // ── Tukar Poin Action ─────────────────────────────────────────────────────────
   const handleAddToCart = (product: MarketProductItem, e: React.MouseEvent) => {
     e.stopPropagation();
     setCartSuccessId(product.id);
-    showToast.success(`"${product.title}" berhasil ditambahkan ke keranjang.`);
+    showToast.success(`Permintaan tukar poin untuk "${product.title}" berhasil diajukan.`);
     setTimeout(() => {
       setCartSuccessId(null);
     }, 1800);
@@ -810,8 +809,8 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="landing-grid-3">
-              {programs.slice(0, 6).map((item) => (
-                <article key={item.id} className="landing-card">
+              {programs.slice(0, 6).map((item, idx) => (
+                <article key={item.id} className="landing-card landing-program-card">
                   <figure className="landing-media">
                     <img
                       src={item.imageUrl}
@@ -821,9 +820,12 @@ export const LandingPage: React.FC = () => {
                         (e.target as HTMLImageElement).src = "/image/activity-1.webp";
                       }}
                     />
-                    <span className="landing-badge">{item.categoryLabel || "Program"}</span>
                   </figure>
                   <div className="landing-card-body">
+                    <div className="landing-program-pill">
+                      <span className="landing-program-num">{String(idx + 1).padStart(2, "0")}</span>
+                      <span className="landing-program-tag">{item.categoryLabel || "PROGRAM KKN"}</span>
+                    </div>
                     <h3>{item.title}</h3>
                     <p>{item.description}</p>
                     <button
@@ -898,8 +900,6 @@ export const LandingPage: React.FC = () => {
                 <article
                   key={prod.id}
                   className="landing-card landing-product"
-                  onClick={() => setSelectedProduct(prod)}
-                  style={{ cursor: "pointer" }}
                 >
                   <figure className="landing-media">
                     <img
@@ -923,14 +923,27 @@ export const LandingPage: React.FC = () => {
                       </div>
                       <button
                         type="button"
-                        className={`landing-icon-btn ${cartSuccessId === prod.id ? "is-success" : ""}`}
-                        aria-label={`Tambahkan ${prod.title} ke keranjang`}
+                        className={`landing-btn landing-btn-sm ${cartSuccessId === prod.id ? "landing-btn-primary" : "landing-btn-outline"}`}
+                        style={{
+                          padding: "6px 14px",
+                          fontSize: "0.82rem",
+                          fontWeight: 700,
+                          borderRadius: "8px",
+                          gap: "6px",
+                          cursor: "pointer",
+                        }}
+                        aria-label={`Tukar poin untuk ${prod.title}`}
                         onClick={(e) => handleAddToCart(prod, e)}
                       >
                         {cartSuccessId === prod.id ? (
-                          <Check size={16} strokeWidth={2.4} />
+                          <>
+                            <Check size={14} strokeWidth={2.4} />
+                            <span>Tersimpan</span>
+                          </>
                         ) : (
-                          <ShoppingBag size={16} strokeWidth={2} />
+                          <>
+                            <span>Tukar Poin</span>
+                          </>
                         )}
                       </button>
                     </div>
@@ -1577,81 +1590,7 @@ export const LandingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="landing-modal-backdrop" onClick={() => setSelectedProduct(null)}>
-          <div className="landing-modal-card" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="landing-modal-close"
-              onClick={() => setSelectedProduct(null)}
-              aria-label="Tutup produk"
-            >
-              <X size={18} />
-            </button>
-            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-              <img
-                src={selectedProduct.imageUrl}
-                alt={selectedProduct.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/image/activity-2.webp";
-                }}
-              />
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 leading-tight">
-                    {selectedProduct.title}
-                  </h2>
-                  <p className="text-xs text-slate-400 font-medium mt-1">
-                    {selectedProduct.unit || selectedProduct.categoryLabel}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-black text-emerald-800 flex items-center justify-end gap-1.5">
-                    <Sparkles size={18} className="text-amber-500" style={{ fill: "#f59e0b" }} />
-                    <span>{selectedProduct.pricePoints ? selectedProduct.pricePoints.toLocaleString("id-ID") : Math.round((selectedProduct.priceIdr || 0) / 100).toLocaleString("id-ID")} Poin</span>
-                  </div>
-                  <div className="text-[11px] font-bold text-slate-400 mt-0.5">
-                    Poin BERSEKA
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {selectedProduct.description}
-              </p>
-              {selectedProduct.benefits && selectedProduct.benefits.length > 0 && (
-                <div className="space-y-1.5 pt-2">
-                  <div className="text-xs font-bold text-slate-700">Manfaat Utama:</div>
-                  <ul className="space-y-1">
-                    {selectedProduct.benefits.map((b, i) => (
-                      <li key={i} className="text-xs text-slate-600 flex items-center gap-2">
-                        <Check size={14} className="text-emerald-600 shrink-0" />
-                        <span>{b}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div className="pt-4 flex items-center justify-end border-t border-slate-100 gap-3">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    handleAddToCart(selectedProduct, e);
-                    setSelectedProduct(null);
-                  }}
-                  className="landing-btn landing-btn-primary landing-btn-sm"
-                >
-                  <ShoppingBag size={14} />
-                  <span>Pesan Sekarang</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Kalkulator BERSEKA Modal */}
       {showCalculatorModal && (

@@ -738,6 +738,63 @@
   border-radius: 6px;
 }
 
+/* ───────────────── 6 Program KKN BERSEKA ───────────────── */
+.landing-program-card .landing-card-body {
+  padding: 16px 20px 20px;
+  gap: 8px;
+}
+
+.landing-program-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+.landing-program-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #15803d;
+  letter-spacing: 0.02em;
+}
+
+.landing-program-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #15803d;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.landing-program-card h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+}
+
+.landing-program-card p {
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.landing-program-card .landing-link-more {
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.landing-program-card .landing-link-more:hover {
+  color: #166534;
+}
+
 /* ───────────────── Pasar BERSEKA Products ───────────────── */
 .landing-product .landing-card-body {
   gap: 4px;
