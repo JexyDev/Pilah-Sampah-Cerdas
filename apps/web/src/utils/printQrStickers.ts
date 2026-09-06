@@ -278,10 +278,10 @@ export const generatePosterHtml = (
           white-space: nowrap;
           line-height: 1;
           box-sizing: border-box;
-          width: 42.0%;
-          left: 51.5%;
-          height: 4.6%;
-          top: 85.8%;
+          width: 41.0%;
+          left: 53.5%;
+          height: 4.4%;
+          top: 85.9%;
         }
 
         /* Organik Pill Badge Styling */
@@ -459,10 +459,10 @@ export const generatePosterHtml = (
 
             if (isAnorg) {
               ctx.fillStyle = '#000000';
-              ctx.fillText(serial, 1814, 3350);
+              ctx.fillText(serial, 1850, 3356);
             } else {
               ctx.fillStyle = '#ffffff';
-              ctx.fillText(serial, 1814, 3350);
+              ctx.fillText(serial, 1850, 3356);
             }
 
             // Trigger download
@@ -637,10 +637,10 @@ export const downloadKelompokZip = async (
 
     if (isAnorg) {
       ctx.fillStyle = "#000000";
-      ctx.fillText(serial, 1814, 3350);
+      ctx.fillText(serial, 1850, 3356);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(serial, 1814, 3350);
+      ctx.fillText(serial, 1850, 3356);
     }
 
     // Convert canvas to blob and add to ZIP

@@ -517,19 +517,18 @@ export class SuperUserService {
       white-space: nowrap;
       line-height: 1;
       box-sizing: border-box;
-      width: 41.12%;
-      left: 52.00%;
-      height: 4.41%;
+      width: 41.0%;
+      left: 53.5%;
+      height: 4.4%;
+      top: 85.9%;
     }
 
     .pill-organik {
-      top: 85.7%;
       color: #ffffff;
       font-size: 8.5pt;
     }
 
     .pill-anorganik {
-      top: 86.0%;
       color: #000000;
       font-size: 8.5pt;
     }
