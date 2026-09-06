@@ -1,6 +1,6 @@
-# Dokumentasi Pengembang: Modul Mahasiswa KKN
+﻿# Dokumentasi Pengembang: Modul Mahasiswa KKN
 
-Dokumen ini berisi panduan teknis, arsitektur, dan penjelasan implementasi **Modul Mahasiswa KKN** pada aplikasi *Pilah Sampah Cerdas* untuk memudahkan *developer* lain memahami, memelihara, maupun mengembangkan fitur ini lebih lanjut.
+Dokumen ini berisi panduan teknis, arsitektur, dan penjelasan implementasi **Modul Mahasiswa KKN** pada aplikasi *BERSEKA* untuk memudahkan *developer* lain memahami, memelihara, maupun mengembangkan fitur ini lebih lanjut.
 
 ---
 

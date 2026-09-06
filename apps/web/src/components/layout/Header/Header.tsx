@@ -1,545 +1,685 @@
-import { Bell, LayoutGrid, Gift, MessageSquare, BookOpen, Settings, LogOut, Wallet, Leaf, GlassWater, Menu, Sun, Moon } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import { 
+  Bell, 
+  LayoutGrid, 
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  LogOut,
+  User,
+  ChevronDown
+} from "lucide-react";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useThemeStore } from "../../../store/useThemeStore";
+import { getProfilePhotoUrl, handleAvatarError } from "../../../utils/photoUtils";
+import api from "../../../services/api";
+
+const formatTimeAgo = (dateString?: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSec = Math.floor((now.getTime() - date.getTime()) / 1000);
+  if (diffInSec < 60) return "Baru saja";
+  const diffInMin = Math.floor(diffInSec / 60);
+  if (diffInMin < 60) return `${diffInMin} menit lalu`;
+  const diffInHours = Math.floor(diffInMin / 60);
+  if (diffInHours < 24) return `${diffInHours} jam lalu`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} hari lalu`;
+  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+};
 
 interface HeaderProps {
   onToggleSidebar: () => void;
+  isCollapsed?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isCollapsed }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme } = useThemeStore();
-  const [showLogoutModal, setShowLogoutModal] = useState<boolean>(false);
-
-  const getProfilePhotoUrl = (path?: string) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-    const host = baseUrl.replace("/api/v1", "");
-    return `${host}${path}`;
-  };
 
   // Dropdown visibility states
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showApps, setShowApps] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-
-  // Integrated Modal states
-  const [showTukarPoin, setShowTukarPoin] = useState(false);
-  const [tukarPoinAmount, setTukarPoinAmount] = useState("50000");
-  const [ewalletType, setEwalletType] = useState("DANA");
-  const [ewalletPhone, setEwalletPhone] = useState("");
-  const [showBrosur, setShowBrosur] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Refs for closing on outside click
   const notifRef = useRef<HTMLDivElement>(null);
-  const appsRef = useRef<HTMLDivElement>(null);
-  const profRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node))
         setShowNotifications(false);
-      if (appsRef.current && !appsRef.current.contains(e.target as Node)) setShowApps(false);
-      if (profRef.current && !profRef.current.contains(e.target as Node)) setShowProfile(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node))
+        setShowProfileDropdown(false);
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const getHeaderInfo = (pathname: string) => {
+  // EYD & KBBI Indonesian Standard Page Breadcrumb Titles
+  const getBreadcrumbItems = (pathname: string, search: string = ""): string[] => {
+    if (pathname === "/dashboard-kkn") {
+      return ["Dasbor KKN"];
+    }
+
+    if (pathname === "/manajemen-ekosistem-kkn" || pathname === "/pelaksanaan/kelompok") {
+      if (search.includes("tab=MAHASISWA")) return ["Pelaksanaan", "Portofolio Mahasiswa"];
+      return ["Pelaksanaan", "Kelompok"];
+    }
+
+    if (pathname.startsWith("/superUser/data-survei-kkn/")) {
+      return ["Survei", "Detail Survei"];
+    }
+
     switch (pathname) {
+      case "/dasbor":
       case "/dashboard":
       case "/":
-        return {
-          title: `Selamat datang kembali, ${user?.name || "Pengguna"} 👋`,
-          subtitle:
-            user?.peran === "WARGA"
-              ? "Pantau poin Anda, temukan tempat sampah terdekat, dan mulai memilah sampah secara pintar."
-              : "Kelola data, pantau aktivitas, dan wujudkan lingkungan yang lebih bersih.",
-        };
-      case "/manajemen-pengguna":
-        return {
-          title: "Manajemen Pengguna",
-          subtitle: "Kelola daftar akun, hak akses, dan data warga.",
-        };
-      case "/manajemen-tempat-sampah":
-        return {
-          title: "Manajemen Tempat Sampah",
-          subtitle: "Pantau status kapasitas dan lokasi titik kumpul sampah.",
-        };
-      case "/manajemen-lokasi":
-        return {
-          title: "Manajemen Lokasi",
-          subtitle: "Daftar wilayah dan RT/RW yang dilayani oleh sistem.",
-        };
+        return ["Dasbor"];
+      case "/monitoring-wilayah":
+      case "/monitoring":
+        return ["Peta Wilayah"];
+      case "/pelaksanaan/linimasa-kegiatan":
       case "/jadwal-kegiatan":
-        return {
-          title: "Jadwal Kegiatan",
-          subtitle: "Agenda sosialisasi, pelatihan, dan pengangkutan sampah.",
-        };
-      case "/kategori-sampah":
-        return {
-          title: "Kategori Sampah",
-          subtitle: "Pengaturan jenis dan nilai tukar sampah (poin/rupiah).",
-        };
+        return ["Pelaksanaan", "Linimasa Kegiatan"];
+      case "/monitoring-kegiatan/presensi":
+      case "/monitoring-absen":
+        return ["Monitoring Kegiatan", "Presensi"];
+      case "/monitoring-kegiatan/pengajuan-izin":
+      case "/ajuan-absensi":
+      case "/validasi-absensi":
+        return ["Monitoring Kegiatan", "Pengajuan Izin/Sakit"];
+      case "/pelaksanaan/program-kerja":
+      case "/program-kerja-kkn":
+      case "/program-kerja":
+        return ["Pelaksanaan", "Program Kerja"];
+      case "/pemantauan-rekapitulasi":
+      case "/monitoring-pemilahan":
+      case "/monitoring-aktivitas":
+        return ["Pemilahan & Angkut", "Rekapitulasi Setoran"];
+      case "/hasil-survei/baseline":
+      case "/survei/baseline":
+      case "/superUser/data-survei-baseline":
+      case "/data-survei-baseline":
+      case "/superUser/data-survei-kkn":
+      case "/data-survei-kkn":
+        return ["Hasil Survei", "Baseline"];
+      case "/hasil-survei/endline":
+      case "/survei/endline":
+      case "/superUser/data-survei-endline":
+      case "/data-survei-endline":
+        return ["Hasil Survei", "Endline"];
+      case "/hasil-survei/data-survei":
+      case "/superUser/import-survei-kkn":
+      case "/import-survei-kkn":
+        return ["Hasil Survei", "Data Survei"];
+      case "/hasil-survei/evaluasi-dan-dampak":
+      case "/evaluasi-dampak-kkn":
+      case "/evaluasi-dampak":
+        return ["Hasil Survei", "Evaluasi dan Dampak"];
+      case "/penilaian/mahasiswa":
+      case "/penilaian-kkn/individu":
+      case "/penilaian-kkn/mahasiswa":
+        return ["Penilaian", "Mahasiswa"];
+      case "/penilaian/program-kerja":
+      case "/penilaian-kkn/program-kerja":
+        return ["Penilaian", "Program Kerja"];
+      case "/penilaian/laporan-akhir":
+      case "/penilaian-kkn/laporan-akhir":
+        return ["Penilaian", "Laporan Akhir"];
+      case "/penilaian/rekapitulasi-nilai-akhir":
+      case "/penilaian-kkn/rekap":
+        return ["Penilaian", "Rekapitulasi Nilai Akhir"];
+      case "/monitoring-pemilahan/pengangkutan-sampah":
+      case "/pengangkutan-residu":
+      case "/manajemen-pengangkutan":
+        return ["Monitoring Pemilahan", "Pengangkutan Sampah"];
+      case "/pengguna":
+      case "/master-pengguna":
+      case "/master-data-pengguna":
+      case "/manajemen-pengguna":
+      case "/users":
+      case "/admin/users": {
+        const params = new URLSearchParams(search);
+        const role = params.get("role") || params.get("roleName") || params.get("type");
+        if (role) {
+          const roleMap: Record<string, string> = {
+            developer: "Developer",
+            su: "Admin",
+            admin: "Admin",
+            superuser: "Admin",
+            super_user: "Admin",
+            pimpinan: "Pimpinan",
+            pemimpin: "Pimpinan",
+            taskforce: "Task Force",
+            dpl: "Dosen Pendamping Lapangan",
+            dlh: "Dinas Lingkungan Hidup",
+            camat: "Camat",
+            lurah: "Lurah",
+            rw: "Rukun Warga",
+            "petugas-pemilah": "Petugas Pemilah",
+            "petugas-residu": "Petugas Pemilah",
+            petugas: "Petugas Pemilah",
+            mahasiswa: "Mahasiswa",
+            warga: "Warga",
+          };
+          const label = roleMap[role.toLowerCase()];
+          if (label) return ["Pengguna", label];
+        }
+        return ["Pengguna"];
+      }
+      case "/monitoring-pengelolaan/tempat-sampah":
+      case "/master-data/manajemen-tempat-sampah":
+      case "/manajemen-tempat-sampah":
+        return ["Monitoring Pengelolaan", "Tempat Sampah"];
+      case "/peraturan":
+      case "/dataset/peraturan":
+      case "/master-data/rule-engine":
+      case "/master-rule-engine":
+      case "/rule-engine":
+      case "/pengaturan/rule-engine":
+        return ["Peraturan"];
+      case "/wilayah/provinsi":
+      case "/master-data/provinsi":
+      case "/master-provinsi":
+        return ["Wilayah", "Provinsi"];
+      case "/wilayah/kota-kabupaten":
+      case "/master-data/kota-kabupaten":
+      case "/master-kota-kabupaten":
+      case "/master-kabupaten":
+        return ["Wilayah", "Kota / Kabupaten"];
+      case "/wilayah/kecamatan":
+      case "/master-data/kecamatan":
+      case "/master-data/kecematan":
+      case "/master-kecamatan":
+        return ["Wilayah", "Kecamatan"];
+      case "/wilayah/kelurahan":
+      case "/master-data/kelurahan":
+      case "/master-kelurahan":
+        return ["Wilayah", "Kelurahan"];
+      case "/wilayah/rw":
+      case "/wilayah/rukun-warga":
+      case "/master-data/rukun-warga":
+      case "/master-rw":
+        return ["Wilayah", "Rukun Warga"];
+      case "/monitoring-wilayah":
+      case "/manajemen-lokasi":
+      case "/peta":
+        return ["Monitoring Wilayah"];
+      case "/dashboard-dpl":
+        return ["Dasbor"];
+      case "/role-permissions":
+        return ["Hak Akses"];
+      case "/pelaksanaan/kelompok":
+      case "/manajemen-ekosistem-kkn":
+        return ["Pelaksanaan", "Kelompok"];
+      case "/kkn-portal":
+        return ["Dashboard KKN"];
+      case "/residu-portal":
+        return ["Dashboard Petugas Residu"];
+      case "/monitoring-pengelolaan/fasilitas":
+      case "/pengelolaan-sampah":
+      case "/pemanfaatan-sampah":
+        return ["Monitoring Pengelolaan", "Fasilitas"];
+      case "/pelaksanaan/posko":
+      case "/posko-kkn":
+      case "/posko":
+        return ["Pelaksanaan", "Posko"];
+      case "/monitoring-pemanfaatan":
+      case "/hasil-pemanfaatan":
+        return ["Monitoring Pemanfaatan"];
+      case "/monitoring-pemilahan/penyetoran-sampah":
+      case "/penyetoran-sampah":
+      case "/setor-sampah":
+      case "/setor":
+        return ["Monitoring Pemilahan", "Penyetoran Sampah"];
+      case "/pelaksanaan/linimasa-kegiatan":
+      case "/jadwal-kegiatan":
+        return ["Pelaksanaan", "Linimasa Kegiatan"];
+      case "/monitoring-pemilahan/rekapitulasi-setoran":
+      case "/pemantauan-rekapitulasi":
+      case "/rekapitulasi-setoran":
       case "/rekap-setoran":
-        return {
-          title: "Rekap Setoran",
-          subtitle: "Laporan transaksi harian, bulanan, dan total penimbangan.",
-        };
+        return ["Monitoring Pemilahan", "Rekapitulasi Setoran"];
+      case "/master-data/panduan":
+        return ["Panduan & Edukasi", "Buku Panduan"];
+      case "/master-data/kegiatan-sampah":
+        return ["Panduan & Edukasi", "Kegiatan Sampah"];
+      case "/dataset/hasil-klasifikasi":
+      case "/master-dataset-klasifikasi":
+      case "/dataset-klasifikasi":
+        return ["Dataset", "Hasil Klasifikasi"];
       case "/poin-warga":
-        return { title: "Poin Warga", subtitle: "Kelola leaderboard poin warga." };
+        return ["Poin Warga"];
+      case "/monitoring-pemilahan/peringkat-warga":
+      case "/peringkat":
+      case "/leaderboard":
+        return ["Monitoring Pemilahan", "Peringkat Warga"];
       case "/laporan-analitik":
-        return {
-          title: "Laporan & Analitik",
-          subtitle: "Visualisasi dan statistik progres pemilahan sampah.",
-        };
+        return ["Laporan & Analitik"];
+      case "/log-aktivitas/mahasiswa":
+      case "/logbook-kkn":
+      case "/dpl/logbook":
+      case "/logbook":
+      case "/fasilitas/logbook": {
+        const params = new URLSearchParams(search);
+        const tab = params.get("tab");
+        if (tab === "dpl") {
+          return ["Log Aktivitas", "Dosen Pendamping Lapangan"];
+        }
+        return ["Log Aktivitas", "Mahasiswa"];
+      }
+      case "/log-aktivitas/dosen-pendamping-lapangan":
+      case "/log-aktivitas/dosen-pembimbing-lapangan":
+      case "/log-aktivitas-dpl":
+      case "/dpl/log-aktivitas":
+        return ["Log Aktivitas", "Dosen Pendamping Lapangan"];
       case "/notifikasi":
-        return {
-          title: "Notifikasi",
-          subtitle: "Pusat pemberitahuan sistem dan pembaruan aplikasi.",
-        };
+        return ["Notifikasi"];
+      case "/profil":
       case "/pengaturan":
-        return { title: "Pengaturan", subtitle: "Konfigurasi akun dan preferensi aplikasi." };
+        return ["Profil"];
+      case "/master-data/pengguna-online":
+      case "/master-data/pengguna-daring":
+      case "/pengguna-online":
+      case "/pengguna-daring":
+        return ["Pengguna Daring"];
+      case "/master-data/histori-sistem":
+      case "/histori-sistem":
+      case "/log-aktivitas":
+      case "/superUser/audit":
+      case "/audit-trail":
+      case "/audit-log":
+        return ["Histori Sistem"];
+      case "/kurasi-landing":
+      case "/kelola-landing":
+      case "/manajemen-berita":
+      case "/master-data/kurasi-landing":
+      case "/master-data/manajemen-berita":
+      case "/superUser/kurasi-landing":
+        return ["Master Data", "Kelola Landing Page"];
+      case "/evaluasi-ai":
+      case "/superUser/discrepancies":
+        return ["Verifikasi & QR", "Diskrepansi AI"];
+      case "/superUser/configs":
+        return ["Akun & Sistem", "Konfigurasi Sistem"];
+      case "/superUser/master-qr":
+      case "/superUser/qr-master":
+        return ["Verifikasi & QR", "Batch Kode QR"];
+      case "/rw/approval":
+        return ["Verifikasi Tempat Sampah"];
+      case "/rw/fasilitas":
+        return ["Fasilitas & Ide"];
+      case "/ide-daur-ulang":
+        return ["Ide Daur Ulang"];
+      case "/panduan":
+        return ["Buku Panduan"];
+      case "/informasi":
+      case "/tentang":
+        return ["Informasi"];
       default:
-        return { title: "Dashboard", subtitle: "" };
+        return ["Dasbor"];
     }
   };
 
-  const headerInfo = getHeaderInfo(location.pathname);
+  const breadcrumbItems = getBreadcrumbItems(location.pathname, location.search);
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Berhasil keluar sistem");
-    navigate("/login");
-  };
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loadingNotifs, setLoadingNotifs] = useState<boolean>(false);
 
-  const handleTukarPoinSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ewalletPhone) {
-      toast.error("Masukkan nomor telepon E-Wallet Anda!");
-      return;
+  // Auto Fetch System Notifications
+  const fetchNotifications = async () => {
+    const token =
+      localStorage.getItem("psc_access_token") ?? sessionStorage.getItem("psc_access_token");
+    if (!token) return;
+
+    try {
+      setLoadingNotifs(true);
+      const res = await api.get("/notifications");
+      if (res.data?.success && Array.isArray(res.data?.data)) {
+        setNotifications(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications in Header:", err);
+    } finally {
+      setLoadingNotifs(false);
     }
-    toast.success(
-      `Permintaan penukaran Rp ${parseInt(tukarPoinAmount).toLocaleString()} ke ${ewalletType} (${ewalletPhone}) sedang diproses! Poin Anda akan berkurang.`
-    );
-    setShowTukarPoin(false);
-    setEwalletPhone("");
   };
 
-  const triggerCallOfficer = () => {
-    toast.success(
-      'Menghubungi Ketua RT/RW (WhatsApp simulasi): "Halo Pak RT, saya ingin melaporkan tempat sampah dekat rumah penuh..."'
-    );
-    setShowApps(false);
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 45000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkNotificationRead = async (notifId: string) => {
+    try {
+      // Optimistic UI update (Instant visual feedback)
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notifId ? { ...n, isRead: true } : n))
+      );
+      const targetNotif = notifications.find((n) => n.id === notifId);
+      if (targetNotif && !targetNotif.isRead) {
+        await api.put(`/notifications/${notifId}/read`);
+      }
+    } catch (err) {
+      console.error("Error marking notification read:", err);
+    }
   };
 
-  const notifications = [
-    {
-      id: 1,
-      title: "Kapasitas Tong Kritis",
-      desc: "Tong Anorganik #2 - RT 02 terisi 88%. Harap setor ke titik lain.",
-      time: "5 menit yang lalu",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "Sukses Penimbangan",
-      desc: "Setoran Organik 1.5kg berhasil terdata. +15 Poin ditambahkan.",
-      time: "2 jam yang lalu",
-      unread: false,
-    },
-    {
-      id: 3,
-      title: "Agenda Esok Hari",
-      desc: "Sosialisasi pemilahan sampah mandiri Dago pukul 09.00 WIB.",
-      time: "1 hari yang lalu",
-      unread: false,
-    },
-  ];
-
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Optimistic UI update
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      await api.put("/notifications/read-all");
+    } catch (err) {
+      console.error("Error marking all notifications read:", err);
+    }
+  };
 
   return (
-    <header className="sticky top-0 h-[72px] bg-white border-b border-outline-variant px-container-margin flex items-center justify-between z-40">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between sticky top-0 z-30 transition-all shadow-2xs">
+      {/* Left Section: Sidebar Toggle & Dynamic Breadcrumb Pills */}
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        {/* Toggle Sidebar Button (Green Squircle Icon Button) */}
         <button
           onClick={onToggleSidebar}
-          className="p-2 -ml-2 text-on-surface-variant hover:bg-surface-container rounded-lg lg:hidden cursor-pointer"
+          title={isCollapsed ? "Perluas Sidebar" : "Ciutkan Sidebar"}
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 hover:bg-[#d0f2df] dark:hover:bg-emerald-900/60 active:scale-95 transition-all flex items-center justify-center border border-[#009966]/10 dark:border-emerald-700/20 cursor-pointer shadow-2xs shrink-0"
         >
-          <Menu size={24} />
+          <LayoutGrid size={18} className="sm:w-[19px] sm:h-[19px]" />
         </button>
-        <div className="min-w-0">
-          <h2 className="font-headline-lg text-[18px] sm:text-[20px] font-bold text-on-surface truncate">
-            {headerInfo.title}
-          </h2>
-          <p className="text-body-md text-[11px] sm:text-[14px] text-on-surface-variant truncate">{headerInfo.subtitle}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-gutter flex-shrink-0">
-        {/* Icons */}
-        <div className="flex items-center gap-3">
-          {/* Notifications Popover */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all border border-outline-variant/30 cursor-pointer"
-            >
-              <Bell size={22} />
-              <span className="absolute top-2 right-2 w-4 h-4 bg-error text-white text-[9px] flex items-center justify-center rounded-full border border-white font-bold">
-                3
+
+        {breadcrumbItems.map((item, idx) => {
+          const isLast = idx === breadcrumbItems.length - 1;
+          return (
+            <React.Fragment key={idx}>
+              <ChevronRight
+                size={14}
+                className={`text-slate-300 dark:text-slate-600 shrink-0 ${
+                  !isLast ? "hidden sm:inline-block" : ""
+                }`}
+              />
+              <span
+                className={`items-center gap-1.5 text-xs px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border transition-all truncate max-w-[120px] sm:max-w-[220px] ${
+                  !isLast ? "hidden sm:flex" : "flex"
+                } ${
+                  isLast
+                    ? "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-slate-200/90 dark:border-slate-700 font-black shadow-2xs"
+                    : "bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-slate-800 font-extrabold"
+                }`}
+              >
+                <span className="truncate">{item}</span>
               </span>
-            </button>
+            </React.Fragment>
+          );
+        })}
+      </div>
 
-            {showNotifications && (
-              <div className="absolute top-11 right-0 w-80 bg-white rounded-xl shadow-xl border border-outline-variant/50 flex flex-col z-50 overflow-hidden">
-                <div className="p-3 bg-surface-container-low border-b border-outline-variant/30 flex justify-between items-center">
-                  <span className="text-xs font-bold text-on-surface">Pemberitahuan Baru</span>
-                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
-                    3 Belum Dibaca
-                  </span>
-                </div>
-                <div className="divide-y divide-outline-variant/20 max-h-72 overflow-y-auto">
-                  {notifications.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`p-3 flex gap-2.5 transition-all hover:bg-surface-container-lowest ${n.unread ? "bg-primary/5" : ""}`}
-                    >
-                      <span
-                        className={`material-symbols-outlined text-[18px] ${n.title.includes("Kritis") ? "text-error" : "text-primary"} mt-0.5`}
-                      >
-                        {n.title.includes("Kritis") ? "warning" : "info"}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-on-surface truncate">{n.title}</p>
-                        <p className="text-[11px] text-on-surface-variant leading-relaxed mt-0.5">
-                          {n.desc}
-                        </p>
-                        <p className="text-[9px] text-on-surface-variant mt-1 font-semibold">
-                          {n.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => {
-                    setShowNotifications(false);
-                    navigate("/notifikasi");
-                  }}
-                  className="w-full text-center py-2.5 bg-slate-50 border-t border-outline-variant/30 text-xs font-bold text-primary hover:bg-slate-100 transition-all cursor-pointer"
-                >
-                  Lihat Semua Notifikasi
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Apps 9-Dot Popover */}
-          <div className="relative" ref={appsRef}>
-            <button
-              onClick={() => setShowApps(!showApps)}
-              className="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all border border-outline-variant/30 cursor-pointer"
-            >
-              <LayoutGrid size={22} />
-            </button>
-
-            {showApps && (
-              <div className="absolute top-11 right-0 w-72 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-4 flex flex-col gap-3 z-50">
-                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/20 pb-2">
-                  Layanan Terintegrasi Warga
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      setShowTukarPoin(true);
-                      setShowApps(false);
-                    }}
-                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-primary/5 hover:border-primary transition-all text-center gap-1 cursor-pointer"
-                  >
-                    <Gift className="text-primary" size={24} />
-                    <span className="text-[11px] font-bold text-on-surface">Tukar Poin</span>
-                  </button>
-                  <button
-                    onClick={triggerCallOfficer}
-                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-green-50 hover:border-green-600 transition-all text-center gap-1 cursor-pointer"
-                  >
-                    <MessageSquare className="text-green-600" size={24} />
-                    <span className="text-[11px] font-bold text-on-surface">Hubungi RT</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowBrosur(true);
-                      setShowApps(false);
-                    }}
-                    className="flex flex-col items-center p-3 rounded-lg border border-outline-variant/40 hover:bg-blue-50 hover:border-blue-600 transition-all text-center gap-1 cursor-pointer col-span-2"
-                  >
-                    <BookOpen className="text-blue-600" size={24} />
-                    <span className="text-[11px] font-bold text-on-surface">
-                      Panduan Pemilahan Sampah
-                    </span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Dark / Light Mode Toggle Button */}
+      {/* Right Section: System Actions & User Profile */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Notifications Popover Trigger & Container */}
+        <div className="relative" ref={notifRef}>
           <button
-            onClick={toggleTheme}
-            className="group relative w-10 h-10 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center justify-center transition-all duration-300 active:scale-95 cursor-pointer shadow-2xs border border-outline-variant/40 overflow-hidden"
-            title={theme === "light" ? "Beralih ke Dark Mode" : "Beralih ke Light Mode"}
-            aria-label="Toggle Theme"
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center relative transition-all border border-slate-200/80 dark:border-slate-700/80 cursor-pointer shadow-2xs active:scale-95"
+            title="Notifikasi Sistem"
           >
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-400/10 via-transparent to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            {theme === "light" ? (
-              <Moon size={18} className="text-slate-700 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300" />
-            ) : (
-              <Sun size={18} className="text-amber-400 group-hover:rotate-90 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+            <Bell size={17} className="sm:w-[18px] sm:h-[18px]" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-rose-500 text-white font-black text-[9px] sm:text-[10px] rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs animate-bounce">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
             )}
           </button>
+
+          {/* Notifications Dropdown Popover */}
+          {showNotifications && (
+            <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:top-12 sm:right-0 sm:w-96 max-w-[calc(100vw-1.5rem)] sm:max-w-none bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Popover Header */}
+              <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-850">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-emerald-100/70 dark:bg-emerald-950/70 text-[#009966] dark:text-emerald-400 flex items-center justify-center">
+                    <Bell size={15} />
+                  </div>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-tight">Notifikasi Sistem</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-[10px] sm:text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer transition-all"
+                    >
+                      Tandai Semua Dibaca
+                    </button>
+                  )}
+                  <span className="text-[10.5px] sm:text-[11px] bg-[#e5f7ed] dark:bg-emerald-950 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-black border border-[#009966]/20 dark:border-emerald-700/30 shrink-0">
+                    {unreadCount > 0 ? `${unreadCount} Baru` : `${notifications.length} Peristiwa`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Popover List Body */}
+              <div className="divide-y divide-slate-100/80 dark:divide-slate-800 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
+                {loadingNotifs && notifications.length === 0 ? (
+                  <div className="p-4 space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 animate-pulse p-2">
+                        <div className="w-9 h-9 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-3/4" />
+                          <div className="h-2.5 bg-slate-100 dark:bg-slate-800/60 rounded w-1/2" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-6 text-center text-xs font-bold text-slate-400 dark:text-slate-500 flex flex-col items-center gap-1.5">
+                    <Bell size={24} className="text-slate-300 dark:text-slate-600 mb-1" />
+                    <span>Tidak ada notifikasi baru</span>
+                    <span className="text-[10.5px] font-normal text-slate-400 dark:text-slate-500">Sistem dalam kondisi normal & optimal.</span>
+                  </div>
+                ) : (
+                  notifications.map((n) => {
+                    const isCritical = n.title?.toLowerCase().includes("kritis") || n.title?.toLowerCase().includes("penuh") || n.type === "TEMPAT_SAMPAH_PENUH" || n.type === "TONG_PENUH";
+                    const isSuccess = n.title?.toLowerCase().includes("sukses") || n.title?.toLowerCase().includes("setuju") || n.type === "POIN_BERTAMBAH";
+
+                    return (
+                      <div
+                        key={n.id}
+                        onClick={() => handleMarkNotificationRead(n.id)}
+                        className={`p-3.5 sm:p-4 flex gap-3 transition-all hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 cursor-pointer ${
+                          !n.isRead ? "bg-emerald-50/30 dark:bg-emerald-950/20" : ""
+                        }`}
+                      >
+                        {/* Soft Squircle Icon Badge */}
+                        <div
+                          className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 border ${
+                            isCritical
+                              ? "bg-rose-50 dark:bg-rose-950/60 border-rose-100 dark:border-rose-900/60 text-rose-500"
+                              : isSuccess
+                              ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-100 dark:border-emerald-900/60 text-[#009966] dark:text-emerald-400"
+                              : "bg-blue-50 dark:bg-sky-950/60 border-blue-100 dark:border-sky-900/60 text-blue-500 dark:text-sky-400"
+                          }`}
+                        >
+                          {isCritical ? (
+                            <AlertTriangle size={17} />
+                          ) : isSuccess ? (
+                            <CheckCircle2 size={17} />
+                          ) : (
+                            <Info size={17} />
+                          )}
+                        </div>
+
+                        {/* Text Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+                              {n.title}
+                            </h4>
+                            {!n.isRead && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {n.message}
+                          </p>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
+                            {formatTimeAgo(n.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Popover Footer: Go to Full Inbox Page */}
+              <button
+                onClick={() => {
+                  setShowNotifications(false);
+                  navigate("/notifikasi");
+                }}
+                className="w-full py-2.5 bg-slate-50 dark:bg-slate-850 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-[#009966] dark:hover:text-emerald-400 text-xs font-black border-t border-slate-100 dark:border-slate-800 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Lihat Semua Notifikasi</span>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Profile Avatar Clickable Dropdown */}
-        <div className="relative" ref={profRef}>
+        {/* Vertical Separator */}
+        <div className="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5 shrink-0" />
+
+        {/* User Profile Pill Card with Dropdown (Direct Navigation & Logout) */}
+        <div className="relative" ref={profileRef}>
           <div
-            onClick={() => setShowProfile(!showProfile)}
-            className="flex items-center gap-3 ml-2 border-l border-outline-variant pl-4 cursor-pointer hover:opacity-90 select-none"
+            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            title="Menu Akun Pengguna"
+            className="bg-gradient-to-r from-white dark:from-slate-900 via-emerald-50/20 dark:via-emerald-950/20 to-emerald-50/60 dark:to-emerald-950/40 border border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-600 rounded-full p-1 sm:pl-4 sm:pr-2 sm:py-1.5 flex items-center gap-2 sm:gap-2.5 cursor-pointer hover:shadow-md transition-all duration-300 group select-none shadow-2xs"
           >
-            <div className="text-right hidden sm:block">
-              <p className="text-label-md font-bold text-on-surface leading-tight">
+            <div className="hidden sm:flex flex-col items-center justify-center text-center gap-0.5">
+              <span className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight block truncate max-w-[120px]">
                 {user?.name || "Pengguna"}
-              </p>
-              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
-                {user?.peran?.replace("_", " ") || "WARGA"}
-              </p>
+              </span>
+              <span className="inline-flex items-center justify-center bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider leading-none">
+                {user?.peran ? (
+                  user.peran === "SUPER_USER" ? "ADMIN" :
+                  user.peran === "DEVELOPER" ? "DEVELOPER" :
+                  user.peran === "MAHASISWA_KKN" ? "MAHASISWA" :
+                  user.peran === "PANITIA_TASKFORCE" ? "TASK FORCE" :
+                  (user.peran === "PEMIMPIN" || user.peran === "PIMPINAN") ? "PIMPINAN" :
+                  user.peran.replace("_", " ")
+                ) : "ADMIN"}
+              </span>
             </div>
-            <div
-              className={`w-10 h-10 rounded-full ${user?.avatarBg || "bg-blue-100"} ${user?.avatarColor || "text-blue-700"} flex items-center justify-center font-bold text-xs shadow-sm border border-outline-variant/20 flex-shrink-0 overflow-hidden`}
-            >
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center border-2 border-white dark:border-slate-800 shadow-sm shadow-emerald-600/30 shrink-0 overflow-hidden group-hover:scale-105 transition-transform duration-300">
               {user?.fotoProfil ? (
                 <img
-                  src={getProfilePhotoUrl(user.fotoProfil) || undefined}
+                  src={getProfilePhotoUrl(user?.fotoProfil, user?.name)}
                   alt="Avatar"
                   className="w-full h-full object-cover"
+                  onError={(e) => handleAvatarError(e, user?.name)}
                 />
               ) : (
-                user?.avatar || "U"
+                <span>
+                  {user?.name ? user.name.trim()[0].toUpperCase() : "U"}
+                </span>
               )}
             </div>
+            <ChevronDown size={14} className={`text-slate-400 dark:text-slate-500 transition-transform duration-200 ${showProfileDropdown ? "rotate-180" : ""}`} />
           </div>
 
-          {showProfile && (
-            <div className="absolute top-12 right-0 w-48 bg-white rounded-xl shadow-xl border border-outline-variant/50 p-2 flex flex-col gap-1 z-50">
-              <button
-                onClick={() => {
-                  setShowProfile(false);
-                  navigate("/pengaturan");
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-on-surface hover:bg-surface-container transition-all text-left cursor-pointer"
-              >
-                <Settings size={18} />
-                Profil & Pengaturan
-              </button>
-              <button
-                onClick={() => {
-                  setShowProfile(false);
-                  setShowLogoutModal(true);
-                }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-error hover:bg-red-50 transition-all text-left border-t border-outline-variant/20 mt-1 cursor-pointer"
-              >
-                <LogOut size={18} />
-                Keluar Sistem
-              </button>
+          {/* Profile Dropdown Menu */}
+          {showProfileDropdown && (
+            <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800/80">
+                <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{user?.name || "Pengguna"}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{user?.email || "user@berseka.id"}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setShowProfileDropdown(false);
+                    navigate("/profil");
+                  }}
+                  className="w-full px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 hover:text-[#009966] dark:hover:text-emerald-400 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <User size={15} className="text-slate-400" />
+                  <span>Profil Saya</span>
+                </button>
+              </div>
+
+              <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                <button
+                  onClick={() => {
+                    setShowProfileDropdown(false);
+                    setShowLogoutModal(true);
+                  }}
+                  className="w-full px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <LogOut size={15} className="text-rose-500" />
+                  <span>Keluar Akun</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Tukar Poin Modal */}
-      {showTukarPoin && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <form
-            onSubmit={handleTukarPoinSubmit}
-            className="bg-white rounded-2xl border border-outline-variant shadow-2xl p-6 max-w-sm w-full flex flex-col gap-4"
-          >
-            <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-[16px] font-bold text-on-surface">
-                Tukar Poin Ke Saldo E-Wallet
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowTukarPoin(false)}
-                className="material-symbols-outlined text-[20px] text-on-surface-variant hover:text-primary cursor-pointer"
-              >
-                close
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                Pilih Nominal Pencairan
-              </label>
-              <select
-                className="w-full h-10 px-3 bg-surface-container rounded-lg text-xs font-semibold text-on-surface"
-                value={tukarPoinAmount}
-                onChange={(e) => setTukarPoinAmount(e.target.value)}
-              >
-                <option value="50000">Rp 50.000 (Setara 500 Poin)</option>
-                <option value="100000">Rp 100.000 (Setara 1.000 Poin)</option>
-                <option value="250000">Rp 250.000 (Setara 2.500 Poin)</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                Pilih Jenis E-Wallet
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {["DANA", "OVO", "GOPAY"].map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setEwalletType(type)}
-                    className={`h-9 text-xs font-bold rounded-lg border transition-all cursor-pointer ${ewalletType === type ? "border-primary bg-primary/5 text-primary" : "border-outline-variant text-on-surface hover:bg-surface-container-low"}`}
-                  >
-                    {type}
-                  </button>
-                ))}
+      {/* Logout Confirmation Modal - Rendered via Portal to ensure center-screen alignment outside backdrop-filter stacking context */}
+      {showLogoutModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-slate-100 dark:border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
+                <LogOut size={26} />
+              </div>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">Konfirmasi Keluar</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Apakah Anda yakin ingin mengakhiri sesi dan keluar dari sistem BERSEKA?
+                </p>
+              </div>
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutModal(false);
+                    logout();
+                    navigate("/login");
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition cursor-pointer"
+                >
+                  Ya, Keluar
+                </button>
               </div>
             </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-on-surface-variant uppercase">
-                Nomor HP E-Wallet
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full h-10 px-3 bg-surface-container border border-outline-variant/55 rounded-lg text-xs focus:outline-none focus:border-primary"
-                placeholder="Contoh: 08123456789"
-                value={ewalletPhone}
-                onChange={(e) => setEwalletPhone(e.target.value)}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full h-11 bg-primary text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-primary/10 mt-2"
-            >
-              <Wallet size={18} />
-              Proses Pencairan Poin
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Brosur Panduan Modal */}
-      {showBrosur && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl border border-outline-variant shadow-2xl p-6 max-w-md w-full flex flex-col gap-4">
-            <div className="flex justify-between items-center border-b border-outline-variant/30 pb-3">
-              <h3 className="text-[16px] font-bold text-on-surface flex items-center gap-1.5">
-                <BookOpen className="text-primary" size={20} />
-                Panduan Klasifikasi Sampah Cerdas
-              </h3>
-              <button
-                onClick={() => setShowBrosur(false)}
-                className="material-symbols-outlined text-[20px] text-on-surface-variant hover:text-primary cursor-pointer"
-              >
-                close
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
-              {/* Organik */}
-              <div className="p-3 bg-green-50 rounded-xl border border-green-200">
-                <p className="text-xs font-bold text-green-800 uppercase tracking-wider flex items-center gap-1">
-                  <Leaf size={16} />
-                  Sampah Organik (Hijau)
-                </p>
-                <p className="text-[11px] text-green-700 leading-relaxed mt-1">
-                  Sampah alami yang mudah membusuk dan dapat diolah menjadi kompos pupuk organik.
-                </p>
-                <ul className="text-[10px] text-green-800 list-disc list-inside mt-2 space-y-0.5 font-semibold">
-                  <li>Sisa makanan & sayur dapur</li>
-                  <li>Dedaunan kering & ranting</li>
-                  <li>Kulit buah-buahan</li>
-                  <li>Sisa tulang daging / ikan</li>
-                </ul>
-              </div>
-
-              {/* Anorganik */}
-              <div className="p-3 bg-blue-50 rounded-xl border border-blue-200">
-                <p className="text-xs font-bold text-blue-800 uppercase tracking-wider flex items-center gap-1">
-                  <GlassWater size={16} />
-                  Sampah Anorganik (Biru)
-                </p>
-                <p className="text-[11px] text-blue-700 leading-relaxed mt-1">
-                  Sampah buatan manusia yang sulit membusuk dan bernilai tinggi untuk proses daur
-                  ulang industri.
-                </p>
-                <ul className="text-[10px] text-blue-800 list-disc list-inside mt-2 space-y-0.5 font-semibold">
-                  <li>Botol plastik PET & gelas air mineral</li>
-                  <li>Kardus box & kertas koran bekas</li>
-                  <li>Kaleng aluminium makanan / minuman</li>
-                  <li>Plastik kantong bening bersih</li>
-                </ul>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowBrosur(false)}
-              className="w-full h-10 bg-primary text-white text-xs font-bold rounded-lg cursor-pointer"
-            >
-              Saya Paham
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100]">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-xl border border-gray-100 text-center space-y-4 animate-in fade-in zoom-in duration-150">
-            <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto font-bold text-lg">
-              !
-            </div>
-            <div>
-              <h3 className="font-extrabold text-lg text-gray-900">Konfirmasi Keluar</h3>
-              <p className="text-xs text-gray-500 mt-1">Apakah Anda yakin ingin keluar dari aplikasi TrashCare?</p>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 transition cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => {
-                  setShowLogoutModal(false);
-                  handleLogout();
-                }}
-                className="flex-1 py-2.5 bg-rose-600 text-white font-bold text-xs rounded-xl hover:bg-rose-700 transition shadow-sm cursor-pointer"
-              >
-                Ya, Keluar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </header>
   );
 };

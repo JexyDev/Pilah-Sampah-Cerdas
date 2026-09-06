@@ -1,55 +1,36 @@
 /**
- * Project: TrashCare Web App
+ * Project: BERSEKA Web App
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * 
- * Halaman Registrasi Terpadu TrashCare (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
+ * Halaman Registrasi Terpadu BERSEKA (Default: Warga, Opsi: Mahasiswa KKN & Petugas Residu)
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRight, ShieldCheck, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { User, Phone, Lock, Eye, EyeOff, MapPin, GraduationCap, Truck, ArrowRight, ShieldCheck, RefreshCcw, CheckCircle2, Smartphone } from "lucide-react";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../utils/api";
 
-// Exact Vector SVG Icon matching the TrashCare logo
-const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-10 h-10" }) => (
-  <svg viewBox="-6 -8 112 116" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path
-      d="M 25 54 A 31 31 0 1 1 76 34"
-      fill="none"
-      stroke="#0284c7"
-      strokeWidth="7.5"
-      strokeLinecap="round"
-    />
-    <polygon points="76,20 88,36 68,36" fill="#0284c7" />
-    <path
-      d="M 76 46 A 31 31 0 0 1 25 64"
-      fill="none"
-      stroke="#16a34a"
-      strokeWidth="7.5"
-      strokeLinecap="round"
-    />
-    <rect x="36" y="27" width="28" height="6" rx="2" fill="#0284c7" />
-    <path d="M43 27 C43 23 57 23 57 27 Z" fill="#0284c7" />
-    <path d="M38 35 L41 68 C41 71 44 73 48 73 L52 73 L48 55 C48 45 58 40 62 35 Z" fill="#0284c7" />
-    <path
-      d="M 46 68 C 46 47 70 41 70 41 C 70 41 74 61 58 68 C 50 71 46 68 46 68 Z"
-      fill="#16a34a"
-    />
-    <path
-      d="M 48 66 Q 58 56 68 43"
-      fill="none"
-      stroke="#ffffff"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
-  </svg>
+// Official High-Resolution BERSEKA Full Logo Asset
+const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-9 w-auto" }) => (
+  <img
+    src="/logos/berseka/berseka-logo-full.png"
+    alt="BERSEKA"
+    className={`${className} object-contain shrink-0`}
+  />
 );
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+
+  // Force clean light mode on Register page unconditionally
+  useEffect(() => {
+    useThemeStore.getState().setInsideMainLayout(false);
+    useThemeStore.getState().resetThemeToLight();
+  }, []);
 
   // Role State (Default: WARGA)
   const initialRole = (searchParams.get("role") || "WARGA").toUpperCase();
@@ -90,9 +71,12 @@ export const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) return toast.error("Nama lengkap wajib diisi.");
+   if (!name.trim()) return toast.error("Nama lengkap wajib diisi.");
     if (!phone.trim()) return toast.error("Nomor telepon wajib diisi.");
-    if (!password.trim() || password.length < 6) return toast.error("Kata sandi minimal 6 karakter.");
+    if (!password.trim() || password.length < 8) return toast.error("Kata sandi minimal 8 karakter.");
+    if (!/[A-Z]/.test(password)) return toast.error("Kata sandi harus mengandung huruf besar (A-Z).");
+    if (!/[a-z]/.test(password)) return toast.error("Kata sandi harus mengandung huruf kecil (a-z).");
+    if (!/[0-9]/.test(password)) return toast.error("Kata sandi harus mengandung angka (0-9).");
     if (password !== confirmPassword) return toast.error("Konfirmasi kata sandi tidak cocok.");
 
     let formattedPhone = phone.trim();
@@ -184,7 +168,7 @@ export const Register: React.FC = () => {
       )}
 
       {/* Main Container */}
-      <div className="w-full max-w-[920px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10">
+      <div className="w-full max-w-[920px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10">
         
         {/* Left Side: Eco Feature Showcase */}
         <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-8 flex-col justify-between relative overflow-hidden">
@@ -200,7 +184,7 @@ export const Register: React.FC = () => {
                 Bergabunglah Dalam Gerakan Kebersihan
               </h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Daftarkan diri Anda untuk berpartisipasi aktif dalam tata kelola sampah Kecamatan Coblong.
+                Daftarkan diri Anda untuk berpartisipasi aktif dalam tata kelola sampah lingkungan Anda.
               </p>
             </div>
 
@@ -239,27 +223,18 @@ export const Register: React.FC = () => {
           </div>
 
           <div className="pt-8 border-t border-white/15 relative z-10 text-[11px] text-emerald-200/80 font-medium text-left">
-            © 2026 UNIKOM. All rights reserved.
+            © 2026 Universitas Komputer Indonesia. All rights reserved.
           </div>
         </div>
 
         {/* Right Side: Registration Form */}
-        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+        <div className="col-span-12 md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white dark:bg-slate-900 space-y-6">
           <div className="space-y-6">
             
             {/* Header */}
             <div className="flex items-center justify-between">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <TrashCareLogoIcon className="w-9 h-9 transition-transform group-hover:scale-105" />
-                <div className="flex flex-col text-left">
-                  <span className="text-lg font-black tracking-tight leading-none">
-                    <span className="text-sky-600">Trash</span>
-                    <span className="text-emerald-600">Care</span>
-                  </span>
-                  <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wider mt-0.5">
-                    Pilah Sampah Cerdas
-                  </span>
-                </div>
+              <Link to="/" className="flex items-center gap-2 group">
+                <BersekaLogoIcon className="h-9 w-auto transition-transform group-hover:scale-105 shrink-0" />
               </Link>
 
               <Link to="/login" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">
@@ -267,14 +242,33 @@ export const Register: React.FC = () => {
               </Link>
             </div>
 
-            <div className="space-y-1 text-left">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Daftar Akun Baru</h1>
-              <p className="text-xs text-slate-500 font-medium">Lengkapi data diri Anda untuk bergabung ke dalam platform.</p>
+            <div className="space-y-3 text-left">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Pendaftaran Akun</h1>
+              
+              {/* Mobile App Redirect Notice */}
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs text-amber-800">
+                  <Smartphone className="text-amber-600" size={18} />
+                  <span>Akses Warga, Mahasiswa, & Petugas Residu Khusus Mobile App</span>
+                </div>
+                <p className="text-xs leading-relaxed text-amber-800/90 font-medium">
+                  Sesuai kebijakan tata kelola sistem, pendaftaran dan pengoperasian akun Warga, Mahasiswa KKN, dan Petugas Residu **hanya dapat dilakukan melalui Aplikasi Mobile BERSEKA**.
+                </p>
+                <div className="pt-1 flex items-center gap-2">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs transition shadow-xs"
+                  >
+                    <span>Halaman Login Web (Khusus Pengawas/Admin)</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
+              </div>
             </div>
 
             {/* Role Selection Dropdown/Tabs (Default: Warga) */}
             <div className="space-y-1.5 text-left">
-              <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+              <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                 PILIH PERAN
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -284,7 +278,7 @@ export const Register: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     role === "WARGA"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   <User size={14} />
@@ -297,7 +291,7 @@ export const Register: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     role === "MAHASISWA_KKN"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   <GraduationCap size={14} />
@@ -310,7 +304,7 @@ export const Register: React.FC = () => {
                   className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     role === "PETUGAS_RESIDU"
                       ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20"
-                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                   }`}
                 >
                   <Truck size={14} />
@@ -324,7 +318,7 @@ export const Register: React.FC = () => {
               
               {/* Nama Lengkap */}
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   NAMA LENGKAP
                 </label>
                 <div className="relative">
@@ -335,14 +329,14 @@ export const Register: React.FC = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Masukkan nama lengkap Anda..."
-                    className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
+                    className="w-full pl-10 pr-4 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
                   />
                 </div>
               </div>
 
               {/* Nomor Telepon */}
               <div className="space-y-1">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   NOMOR TELEPON (WHATSAPP)
                 </label>
                 <div className="relative">
@@ -353,7 +347,7 @@ export const Register: React.FC = () => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="081234567890"
-                    className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
+                    className="w-full pl-10 pr-4 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
                   />
                 </div>
               </div>
@@ -364,7 +358,7 @@ export const Register: React.FC = () => {
               {role === "WARGA" && (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                    <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                       ALAMAT RUMAH
                     </label>
                     <div className="relative">
@@ -375,33 +369,33 @@ export const Register: React.FC = () => {
                         value={alamat}
                         onChange={(e) => setAlamat(e.target.value)}
                         placeholder="Jl. Dipatiukur No. 10..."
-                        className="w-full pl-10 pr-4 h-11 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
+                        className="w-full pl-10 pr-4 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium focus:border-emerald-600 focus:ring-1 outline-none transition-all"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         KECAMATAN
                       </label>
                       <select
                         value={kecamatan}
                         onChange={(e) => setKecamatan(e.target.value)}
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
                       >
                         <option value="Kecamatan Coblong">Kecamatan Coblong</option>
                       </select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         KELURAHAN
                       </label>
                       <select
                         value={kelurahan}
                         onChange={(e) => setKelurahan(e.target.value)}
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:border-emerald-600 outline-none"
                       >
                         <option value="Dago">Kel. Dago</option>
                         <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
@@ -415,23 +409,23 @@ export const Register: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">RT</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">RT</label>
                       <input
                         type="text"
                         value={rt}
                         onChange={(e) => setRt(e.target.value)}
                         placeholder="RT 01"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">RW</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">RW</label>
                       <input
                         type="text"
                         value={rw}
                         onChange={(e) => setRw(e.target.value)}
                         placeholder="RW 06"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
@@ -443,50 +437,50 @@ export const Register: React.FC = () => {
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">NIM</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">NIM</label>
                       <input
                         type="text"
                         required
                         value={nim}
                         onChange={(e) => setNim(e.target.value)}
                         placeholder="10121001"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">EMAIL</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">EMAIL</label>
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="mhs@univ.ac.id"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">JURUSAN</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">JURUSAN</label>
                       <input
                         type="text"
                         required
                         value={jurusan}
                         onChange={(e) => setJurusan(e.target.value)}
                         placeholder="Teknik Lingkungan"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">FAKULTAS</label>
+                      <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">FAKULTAS</label>
                       <input
                         type="text"
                         required
                         value={fakultas}
                         onChange={(e) => setFakultas(e.target.value)}
                         placeholder="FTSL"
-                        className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                        className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                       />
                     </div>
                   </div>
@@ -496,7 +490,7 @@ export const Register: React.FC = () => {
               {/* PETUGAS RESIDU FIELDS */}
               {role === "PETUGAS_RESIDU" && (
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     NIP / KODE PETUGAS (OPSIONAL)
                   </label>
                   <input
@@ -504,7 +498,7 @@ export const Register: React.FC = () => {
                     value={nip}
                     onChange={(e) => setNip(e.target.value)}
                     placeholder="PTG-001"
-                    className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                    className="w-full h-11 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none"
                   />
                 </div>
               )}
@@ -512,7 +506,7 @@ export const Register: React.FC = () => {
               {/* Password Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">KATA SANDI</label>
+                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">KATA SANDI</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
@@ -520,8 +514,8 @@ export const Register: React.FC = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min. 6 karakter"
-                      className="w-full pl-9 pr-8 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
+                      placeholder="Min. 8 karakter"
+                      className="w-full pl-9 pr-8 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium outline-none"
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
                       {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
@@ -530,7 +524,7 @@ export const Register: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">KONFIRMASI SANDI</label>
+                  <label className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">KONFIRMASI SANDI</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
@@ -539,9 +533,28 @@ export const Register: React.FC = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Ulangi kata sandi"
-                      className="w-full pl-9 pr-3 h-11 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none"
+                      className="w-full pl-9 pr-3 h-11 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium outline-none"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Password Requirements Indicator */}
+              <div className="text-[10px] text-slate-500 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 space-y-1">
+                <p className="font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Ketentuan Kata Sandi (Wajib):</p>
+                <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+                  <p className={password.length >= 8 ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {password.length >= 8 ? "✓" : "○"} Minimal 8 karakter
+                  </p>
+                  <p className={/[A-Z]/.test(password) ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {/[A-Z]/.test(password) ? "✓" : "○"} Huruf Besar (A-Z)
+                  </p>
+                  <p className={/[a-z]/.test(password) ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {/[a-z]/.test(password) ? "✓" : "○"} Huruf Kecil (a-z)
+                  </p>
+                  <p className={/[0-9]/.test(password) ? "text-emerald-600 font-bold" : "text-slate-400"}>
+                    {/[0-9]/.test(password) ? "✓" : "○"} Angka (0-9)
+                  </p>
                 </div>
               </div>
 
@@ -561,7 +574,7 @@ export const Register: React.FC = () => {
 
           </div>
 
-          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500">
             Sudah memiliki akun?{" "}
             <Link to="/login" className="text-emerald-600 font-extrabold hover:underline">
               Masuk

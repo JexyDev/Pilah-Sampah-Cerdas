@@ -1,5 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -9,20 +10,18 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { authService } from "./authService.js";
 import { systemService } from "./systemService.js";
 
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
 
 describe("E2E & Security Validation for All 8 Roles", () => {
   beforeAll(async () => {
     const rolesList = [
-      "SUPER_ADMIN",
+      "SUPER_USER",
       "ADMIN_DLH",
       "CAMAT",
       "LURAH",
       "RW",
       "PETUGAS_RESIDU",
+      "MAHASISWA_KKN",
       "WARGA",
     ];
     const roleMap: Record<string, any> = {};
@@ -38,43 +37,41 @@ describe("E2E & Security Validation for All 8 Roles", () => {
     const userSeeds = [
       {
         phone: "+628111111111",
-        email: `superadmin.test-${Date.now()}@psc.id`,
-        name: "Super Admin",
-        roleId: roleMap["SUPER_ADMIN"].id,
+        name: "SUPER USER",
+        roleId: roleMap["SUPER_USER"].id,
       },
       {
         phone: "+628111111112",
-        email: `admin.test-${Date.now()}@psc.id`,
-        name: "Admin DLH",
+        name: "ADMIN DLH",
         roleId: roleMap["ADMIN_DLH"].id,
       },
       {
         phone: "+628111111113",
-        email: `camat.test-${Date.now()}@psc.id`,
-        name: "Camat Coblong",
+        name: "CAMAT",
         roleId: roleMap["CAMAT"].id,
       },
       {
         phone: "+628111111114",
-        email: `lurah.test-${Date.now()}@psc.id`,
-        name: "Lurah Dago",
+        name: "LURAH",
         roleId: roleMap["LURAH"].id,
       },
       {
         phone: "+628111111115",
-        email: `rw.test-${Date.now()}@psc.id`,
-        name: "Asep RW 06",
+        name: "RW",
         roleId: roleMap["RW"].id,
       },
       {
         phone: "+628111111117",
-        email: `petugas.test-${Date.now()}@psc.id`,
-        name: "Budi Petugas Residu",
+        name: "PETUGAS RESIDU",
         roleId: roleMap["PETUGAS_RESIDU"].id,
       },
       {
+        phone: "+628111111118",
+        name: "MAHASISWA KKN",
+        roleId: roleMap["MAHASISWA_KKN"].id,
+      },
+      {
         phone: "+6282100000001",
-        email: `warga.test-${Date.now()}@psc.id`,
         name: "Test Warga E2E",
         roleId: roleMap["WARGA"].id,
       },
@@ -86,17 +83,41 @@ describe("E2E & Security Validation for All 8 Roles", () => {
       select: { id: true },
     });
     const userIds = usersToDelete.map((u) => u.id);
-    await prisma.refreshToken.deleteMany({
-      where: { userId: { in: userIds } },
-    });
-    await prisma.user.deleteMany({
-      where: { phone: { in: testPhones } },
-    });
+    await prisma.pointHistory
+      .deleteMany({
+        where: { userId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.activityAttendance
+      .deleteMany({
+        where: { studentId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.studentLocation
+      .deleteMany({
+        where: { studentId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.refreshToken
+      .deleteMany({
+        where: { userId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.notification
+      .deleteMany({
+        where: { userId: { in: userIds } },
+      })
+      .catch(() => {});
+    await prisma.user
+      .deleteMany({
+        where: { phone: { in: testPhones } },
+      })
+      .catch(() => {});
 
     for (const u of userSeeds) {
       await prisma.user.upsert({
         where: { phone: u.phone },
-        update: {},
+        update: { status: "Aktif", password: passwordHash },
         create: {
           ...u,
           password: passwordHash,
@@ -107,12 +128,13 @@ describe("E2E & Security Validation for All 8 Roles", () => {
   });
 
   const roles = [
-    { phone: "+628111111111", role: "SUPER_ADMIN" },
+    { phone: "+628111111111", role: "SUPER_USER" },
     { phone: "+628111111112", role: "ADMIN_DLH" },
     { phone: "+628111111113", role: "CAMAT" },
     { phone: "+628111111114", role: "LURAH" },
     { phone: "+628111111115", role: "RW" },
     { phone: "+628111111117", role: "PETUGAS_RESIDU" },
+    { phone: "+628111111118", role: "MAHASISWA_KKN" },
     { phone: "+6282100000001", role: "WARGA" },
   ];
 

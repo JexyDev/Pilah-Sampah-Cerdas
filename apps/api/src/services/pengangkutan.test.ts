@@ -1,14 +1,13 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { pengangkutanService } from "./pengangkutanService.js";
-import { PrismaClient, DispatchStatus } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { DispatchStatus } from "@prisma/client";
 
 describe("Pengangkutan Service CRUD Tests", () => {
   let bin: any;

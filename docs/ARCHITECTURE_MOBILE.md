@@ -1,7 +1,10 @@
-# ARCHITECTURE_MOBILE.md — apps/mobile
+﻿# ARCHITECTURE_MOBILE.md — Repo Mobile (Branch `mobile`)
 
-> Tech stack: Flutter (sesuaikan jika React Native)
-> Pola: Clean Architecture + Feature-first, selaras dengan pola backend supaya tim mudah paham lintas layer.
+> ⚠️ **ISOLASI REPO:** Kode mobile dikelola di repositori/branch `mobile` yang **terpisah** dari repo `main` ini.
+> AI Agent yang bekerja di `main` **DILARANG** menyentuh, membuat, atau mengubah folder/file mobile.
+>
+> Tech stack: Flutter (Habil — Mobile Dev)
+> Pola: Clean Architecture + Feature-first, selaras dengan pola backend.
 
 ---
 
@@ -101,7 +104,7 @@ final schedule = ref.watch(getActiveScheduleProvider);
 
 ## 4. Aturan Khusus: Background Notification Engine
 
-Karena Trashcare butuh notifikasi jadwal yang tetap jalan walau app ditutup:
+Karena BERSEKA butuh notifikasi jadwal yang tetap jalan walau app ditutup:
 
 - Semua logic ada di `core/services/notification_engine.dart`, **bukan** tersebar di UI.
 - Jam/jadwal notifikasi (rule) didefinisikan sebagai constant di `core/constants/app_constants.dart`, contoh:

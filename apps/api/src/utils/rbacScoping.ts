@@ -1,23 +1,25 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
-
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export interface ScopingFilters {
   userFilter?: any;
   binFilter?: any;
   householdFilter?: any;
   wasteLogFilter?: any;
+  pemanfaatanFilter?: any;
+  facilityFilter?: any;
+  kelompokKknFilter?: any;
+  studentKknFilter?: any;
 }
 
 /**
  * Determine dynamic query filters based on User role and area-scoping.
+ * Hierarki: SUPER_USER/ADMIN_DLH = all data; CAMAT = per Kecamatan; LURAH = per Kelurahan; RW/RT = per RW.
  */
 export async function getScopingFilters(user: {
   userId: string;
@@ -25,7 +27,7 @@ export async function getScopingFilters(user: {
 }): Promise<ScopingFilters> {
   const dbUser = await prisma.user.findUnique({
     where: { id: user.userId },
-    include: { rtRw: { include: { kelurahan: true } } },
+    include: { rw: { include: { kelurahan: { include: { kecamatan: true } } } } },
   });
 
   if (!dbUser) return {};
@@ -38,109 +40,358 @@ export async function getScopingFilters(user: {
   };
   const role = normalizeRole(user.role);
 
-  // 1. SUPER_ADMIN, ADMIN_DLH, and CAMAT see all data (CAMAT is read-only checked at route level)
-  if (role === "SUPER_ADMIN" || role === "ADMIN_DLH" || role === "CAMAT") {
+  // 1. DEVELOPER, SUPER_USER, ADMIN_DLH, PEMIMPIN, and PANITIA_TASKFORCE see all data
+  if (["DEVELOPER", "SUPER_USER", "ADMIN_DLH", "PEMIMPIN", "PANITIA_TASKFORCE"].includes(role)) {
     return {};
   }
 
-  // 2. LURAH is scoped by Kelurahan
+  // 1b. DPL (Dosen Pendamping Lapangan) is strictly scoped to their assigned Kelompok KKN Kelurahan
+  if (
+    role === "DPL" ||
+    role === "DOSEN_PEMBIMBING" ||
+    role === "DOSEN_PENDAMPING" ||
+    role === "DOSEN_PENDAMPING_LAPANGAN"
+  ) {
+    const dplOr: any[] = [{ dplId: dbUser.id }, { dpl: { id: dbUser.id } }];
+    if (dbUser.name)
+      dplOr.push({ dplNamaMentah: { equals: dbUser.name.trim(), mode: "insensitive" } });
+    if (dbUser.nip) dplOr.push({ dpl: { nip: dbUser.nip } });
+    if (dbUser.phone) dplOr.push({ dpl: { phone: dbUser.phone } });
+
+    const dplGroups = await prisma.kelompokKkn.findMany({
+      where: {
+        OR: dplOr,
+      },
+      select: { kelurahan: true },
+    });
+    const dplKelurahans = Array.from(
+      new Set(dplGroups.map((g) => g.kelurahan).filter(Boolean))
+    ) as string[];
+
+    if (dplKelurahans.length === 0) {
+      // Fallback: check if user.rw has a kelurahan
+      const userKel = dbUser.rw?.kelurahan?.name;
+      if (userKel) dplKelurahans.push(userKel);
+    }
+
+    if (dplKelurahans.length === 0) {
+      return {
+        userFilter: { id: "none" },
+        binFilter: { id: "none" },
+        householdFilter: { id: "none" },
+        wasteLogFilter: { id: "none" },
+        pemanfaatanFilter: { id: "none" },
+        facilityFilter: { id: "none" },
+        kelompokKknFilter: { id: "none" },
+        studentKknFilter: { userId: "none" },
+      };
+    }
+
+    const kelurahanRecords = await prisma.kelurahan.findMany({
+      where: {
+        name: { in: dplKelurahans, mode: "insensitive" },
+      },
+      select: { id: true, name: true },
+    });
+    const kelurahanIds = kelurahanRecords.map((k) => k.id);
+    const kelurahanNames = kelurahanRecords.map((k) => k.name);
+    const allKelurahanNames = Array.from(new Set([...dplKelurahans, ...kelurahanNames]));
+
+    return {
+      userFilter: {
+        OR: [
+          {
+            rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } },
+            role: { name: "WARGA" },
+          },
+          { studentProfile: { kelompok: { dplId: dbUser.id } } },
+        ],
+      },
+      binFilter: {
+        OR: [
+          { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } },
+          { kelurahanId: { in: kelurahanIds } },
+          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+        ],
+      },
+      householdFilter: {
+        rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } },
+      },
+      wasteLogFilter: {
+        OR: [
+          { bin: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          { bin: { kelurahanId: { in: kelurahanIds } } },
+          { bin: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } } },
+          {
+            warga: { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          },
+        ],
+      },
+      pemanfaatanFilter: {
+        OR: [
+          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          { rw: { kelurahanId: { in: kelurahanIds } } },
+        ],
+      },
+      facilityFilter: {
+        OR: [
+          { rw: { kelurahan: { name: { in: allKelurahanNames, mode: "insensitive" } } } },
+          { kelompok: { dplId: dbUser.id } },
+        ],
+      },
+      kelompokKknFilter: { OR: dplOr },
+      studentKknFilter: { kelompok: { OR: dplOr } },
+    };
+  }
+
+  // 2. CAMAT is scoped by Kecamatan
+  if (role === "CAMAT") {
+    const kecamatanId = dbUser.rw?.kelurahan?.kecamatanId;
+    if (!kecamatanId) {
+      return {
+        userFilter: { id: "none" },
+        binFilter: { id: "none" },
+        householdFilter: { id: "none" },
+        wasteLogFilter: { id: "none" },
+        pemanfaatanFilter: { id: "none" },
+        facilityFilter: { id: "none" },
+        kelompokKknFilter: { id: "none" },
+        studentKknFilter: { userId: "none" },
+      };
+    }
+    return {
+      userFilter: { rw: { kelurahan: { kecamatanId } } },
+      binFilter: {
+        OR: [{ kelurahan: { kecamatanId } }, { rw: { kelurahan: { kecamatanId } } }],
+      },
+      householdFilter: { rw: { kelurahan: { kecamatanId } } },
+      wasteLogFilter: {
+        OR: [
+          { bin: { kelurahan: { kecamatanId } } },
+          { bin: { rw: { kelurahan: { kecamatanId } } } },
+          { warga: { rw: { kelurahan: { kecamatanId } } } },
+        ],
+      },
+      pemanfaatanFilter: { rw: { kelurahan: { kecamatanId } } },
+      facilityFilter: { rw: { kelurahan: { kecamatanId } } },
+      kelompokKknFilter: { id: "none" }, // Unlikely to be used by Camat directly
+      studentKknFilter: { userId: "none" },
+    };
+  }
+
+  // 3. LURAH is scoped by Kelurahan
   if (role === "LURAH") {
-    const kelurahanId = dbUser.rtRw?.kelurahanId;
+    let kelurahanId = dbUser.rw?.kelurahanId;
+    let kelurahanName = dbUser.rw?.kelurahan?.name;
+
+    if (!kelurahanId && dbUser.address) {
+      const match = await prisma.kelurahan.findFirst({
+        where: {
+          name: { contains: dbUser.address, mode: "insensitive" },
+        },
+      });
+      if (match) {
+        kelurahanId = match.id;
+        kelurahanName = match.name;
+      }
+    }
+
     if (!kelurahanId) {
       return {
         userFilter: { id: "none" },
         binFilter: { id: "none" },
         householdFilter: { id: "none" },
         wasteLogFilter: { id: "none" },
+        pemanfaatanFilter: { id: "none" },
+        facilityFilter: { id: "none" },
+        kelompokKknFilter: { id: "none" },
+        studentKknFilter: { userId: "none" },
       };
     }
+
+    const userOr: any[] = [{ rw: { kelurahanId } }];
+    const binOr: any[] = [{ kelurahanId }, { rw: { kelurahanId } }];
+    const householdOr: any[] = [{ rw: { kelurahanId } }];
+    const wasteLogOr: any[] = [
+      { bin: { kelurahanId } },
+      { bin: { rw: { kelurahanId } } },
+      { warga: { rw: { kelurahanId } } },
+    ];
+
+    if (kelurahanName) {
+      userOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      binOr.push({ kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } });
+      binOr.push({ rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } });
+      householdOr.push({
+        rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+      });
+      wasteLogOr.push({
+        bin: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } },
+      });
+      wasteLogOr.push({
+        bin: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+      });
+      wasteLogOr.push({
+        warga: { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+      });
+    }
+
     return {
-      userFilter: { rtRw: { kelurahanId } },
-      binFilter: { kelurahanId },
-      householdFilter: { rtRw: { kelurahanId } },
-      wasteLogFilter: { bin: { kelurahanId } },
+      userFilter: { OR: userOr },
+      binFilter: { OR: binOr },
+      householdFilter: { OR: householdOr },
+      wasteLogFilter: { OR: wasteLogOr },
+      pemanfaatanFilter: {
+        OR: [
+          { rw: { kelurahanId } },
+          { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+        ],
+      },
+      facilityFilter: {
+        OR: [
+          { rw: { kelurahanId } },
+          { rw: { kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } } } },
+        ],
+      },
+      kelompokKknFilter: { OR: [{ kelurahan: { equals: kelurahanName, mode: "insensitive" } }] },
+      studentKknFilter: {
+        kelompok: { OR: [{ kelurahan: { equals: kelurahanName, mode: "insensitive" } }] },
+      },
     };
   }
 
-  // 3. RW is scoped strictly by RW number and Kelurahan
-  if (role === "RW") {
-    const areaName = dbUser.rtRw?.name; // e.g. "RT 02 / RW 06"
-    const kelurahanId = dbUser.rtRw?.kelurahanId;
-
-    if (!areaName || !kelurahanId) {
+  // 4. RW & RT scoped by their rwId
+  if (role === "RW" || role === "RT") {
+    const rwId = dbUser.rwId;
+    if (!rwId) {
       return {
         userFilter: { id: "none" },
         binFilter: { id: "none" },
         householdFilter: { id: "none" },
         wasteLogFilter: { id: "none" },
-      };
-    }
-
-    const rwPart =
-      areaName
-        .split("/")
-        .map((s) => s.trim())
-        .find((s) => s.startsWith("RW")) || areaName;
-
-    return {
-      userFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
-      binFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
-      householdFilter: { rtRw: { kelurahanId, name: { contains: rwPart } } },
-      wasteLogFilter: { bin: { rtRw: { kelurahanId, name: { contains: rwPart } } } },
-    };
-  }
-
-  // 3b. RT is scoped by their exact RT/RW area
-  if (role === "RT") {
-    const rtRwId = dbUser.rtRwId;
-    if (!rtRwId) {
-      return {
-        userFilter: { id: "none" },
-        binFilter: { id: "none" },
-        householdFilter: { id: "none" },
-        wasteLogFilter: { id: "none" },
+        pemanfaatanFilter: { id: "none" },
+        facilityFilter: { id: "none" },
+        kelompokKknFilter: { id: "none" },
+        studentKknFilter: { userId: "none" },
       };
     }
     return {
-      userFilter: { rtRwId },
-      binFilter: { rtRwId },
-      householdFilter: { rtRwId },
-      wasteLogFilter: { bin: { rtRwId } },
+      userFilter: { rwId },
+      binFilter: { rwId },
+      householdFilter: { rwId },
+      wasteLogFilter: { bin: { rwId } },
+      pemanfaatanFilter: { rwId },
+      facilityFilter: { rwId },
+      kelompokKknFilter: { id: "none" },
+      studentKknFilter: { assignedRwId: rwId },
     };
   }
 
-  // 4. MAHASISWA_KKN is scoped by their assigned RT/RW area polygon
+  // 5. MAHASISWA_KKN is scoped by their assigned RW area or kelompok kelurahan
   if (role === "MAHASISWA_KKN") {
     const student = await prisma.studentKkn.findUnique({
       where: { userId: user.userId },
+      include: { kelompok: true },
     });
-    if (student && student.assignedPolygonId) {
+    if (student && student.assignedRwId) {
+      const kel = student.kelompok?.kelurahan;
       return {
-        userFilter: { rtRwId: student.assignedPolygonId },
-        binFilter: { rtRwId: student.assignedPolygonId },
-        householdFilter: { rtRwId: student.assignedPolygonId },
-        wasteLogFilter: { bin: { rtRwId: student.assignedPolygonId } },
+        userFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        binFilter: {
+          rwId: student.assignedRwId,
+        },
+        householdFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        wasteLogFilter: {
+          OR: [
+            { bin: { rwId: student.assignedRwId } },
+            ...(kel ? [{ bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } }] : []),
+          ],
+        },
+        pemanfaatanFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+          ],
+        },
+        facilityFilter: {
+          OR: [
+            { rwId: student.assignedRwId },
+            ...(kel ? [{ rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } }] : []),
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            { registeredByUserId: user.userId },
+          ],
+        },
+        kelompokKknFilter: { id: student.kelompokId },
+        studentKknFilter: { assignedRwId: student.assignedRwId },
+      };
+    }
+    if (student?.kelompok?.kelurahan) {
+      const kel = student.kelompok.kelurahan;
+      return {
+        userFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+        binFilter: {
+          OR: [
+            { kelurahan: { name: { equals: kel, mode: "insensitive" } } },
+            { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+          ],
+        },
+        householdFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+        wasteLogFilter: {
+          OR: [
+            { bin: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+            { bin: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } },
+            { warga: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } } },
+          ],
+        },
+        pemanfaatanFilter: { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+        facilityFilter: {
+          OR: [
+            { rw: { kelurahan: { name: { equals: kel, mode: "insensitive" } } } },
+            ...(student.kelompokId ? [{ kelompokId: student.kelompokId }] : []),
+            { registeredByUserId: user.userId },
+          ],
+        },
+        kelompokKknFilter: { kelurahan: { equals: kel, mode: "insensitive" } },
+        studentKknFilter: { kelompok: { kelurahan: { equals: kel, mode: "insensitive" } } },
       };
     }
   }
 
-  // 4b. PETUGAS_RESIDU can see WARGA users for manual deposits
+  // 5b. PETUGAS_RESIDU can see WARGA users for manual deposits
   if (role === "PETUGAS_RESIDU") {
     return {
       userFilter: { role: { name: "WARGA" } },
       binFilter: {},
       householdFilter: {},
       wasteLogFilter: {},
+      pemanfaatanFilter: { id: "none" },
+      facilityFilter: { id: "none" },
+      kelompokKknFilter: { id: "none" },
+      studentKknFilter: { userId: "none" },
     };
   }
 
-  // 5. WARGA sees only their own data
+  // 6. WARGA sees only their own data
   if (role === "WARGA") {
     return {
       userFilter: { id: user.userId },
       binFilter: { binOwnerships: { some: { userId: user.userId } } },
       householdFilter: { userId: user.userId },
       wasteLogFilter: { household: { userId: user.userId } },
+      pemanfaatanFilter: { id: "none" },
+      facilityFilter: { id: "none" },
+      kelompokKknFilter: { id: "none" },
+      studentKknFilter: { userId: "none" },
     };
   }
 
@@ -150,5 +401,9 @@ export async function getScopingFilters(user: {
     binFilter: { id: "none" },
     householdFilter: { id: "none" },
     wasteLogFilter: { id: "none" },
+    pemanfaatanFilter: { id: "none" },
+    facilityFilter: { id: "none" },
+    kelompokKknFilter: { id: "none" },
+    studentKknFilter: { userId: "none" },
   };
 }

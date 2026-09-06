@@ -32,7 +32,7 @@ export const AktivitasMonitoring: React.FC = () => {
         <p className="text-sm text-gray-500 mt-1">Ringkasan statistik pemilahan sampah harian di wilayah kerja Anda.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm h-96">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm h-96">
         <h3 className="font-bold text-gray-800 text-sm mb-4">Volume Sampah Terpilah (Bulan Ini)</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={stats}>

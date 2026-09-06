@@ -1,5 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -17,10 +18,6 @@ declare global {
   }
 }
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
 export const authMiddleware = async (
   req: Request,
   res: Response,
@@ -29,13 +26,13 @@ export const authMiddleware = async (
   try {
     let token = "";
 
-    // 1. Try to get token from HttpOnly Cookie (Web Client)
-    if (req.cookies && req.cookies.accessToken) {
-      token = req.cookies.accessToken;
-    }
-    // 2. Try to get token from Authorization header (Mobile App)
-    else if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+    // 1. Try to get token from Authorization header (Bearer token - primary for API/Web/Mobile)
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
       token = req.headers.authorization.split(" ")[1];
+    }
+    // 2. Try to get token from HttpOnly Cookie (Fallback for Cookie-based sessions)
+    else if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
     }
 
     if (!token) {
@@ -45,11 +42,11 @@ export const authMiddleware = async (
 
     // DEV BYPASS
     if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
-      const superAdminUser = await prisma.user.findFirst({
-        where: { role: { name: "SUPER_ADMIN" } },
+      const superUserUser = await prisma.user.findFirst({
+        where: { role: { name: "SUPER_USER" } },
         select: { id: true },
       });
-      req.user = { userId: superAdminUser?.id || "mock-admin-id", role: "SUPER_ADMIN" };
+      req.user = { userId: superUserUser?.id || "mock-admin-id", role: "SUPER_USER" };
       return next();
     }
 
@@ -94,19 +91,65 @@ export const authMiddleware = async (
     if (decoded.role === "CAMAT" || decoded.role === "LURAH") {
       const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
       if (writeMethods.includes(req.method)) {
-        res.status(403).json({
-          error: "FORBIDDEN",
-          message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
-        });
-        return;
+        // Exception: LURAH is allowed to evaluate KKN as Kelurahan evaluator on penilaian-kkn endpoint
+        const isPenilaianKkn =
+          (req.baseUrl || "").includes("penilaian-kkn") ||
+          (req.originalUrl || "").includes("penilaian-kkn");
+        if (decoded.role === "LURAH" && isPenilaianKkn) {
+          // Allow LURAH for penilaian-kkn write
+        } else {
+          res.status(403).json({
+            error: "FORBIDDEN",
+            message: `Role ${decoded.role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,
+          });
+          return;
+        }
       }
     }
 
     req.user = decoded; // Attach user payload to request
     next();
-  } catch {
+  } catch (error: any) {
+    console.warn(
+      `[authMiddleware 401] URL: ${req.originalUrl} | Error: ${error?.message || error}`
+    );
     res
       .status(401)
       .json({ error: "UNAUTHORIZED", message: "Token tidak valid atau sudah kadaluarsa" });
+  }
+};
+
+export const optionalAuthMiddleware = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    let token = "";
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    } else if (req.cookies && req.cookies.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
+      const superUserUser = await prisma.user.findFirst({
+        where: { role: { name: "SUPER_USER" } },
+        select: { id: true },
+      });
+      req.user = { userId: superUserUser?.id || "mock-admin-id", role: "SUPER_USER" };
+      return next();
+    }
+
+    const decoded = verifyAccessToken(token);
+    req.user = decoded;
+    next();
+  } catch {
+    // If token invalid, proceed without req.user
+    next();
   }
 };

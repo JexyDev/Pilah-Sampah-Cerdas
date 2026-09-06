@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -10,6 +10,13 @@ import { systemService } from "./systemService.js";
 
 const mockCreate = vi.fn();
 const mockFindMany = vi.fn();
+
+vi.mock("./redisService.js", () => ({
+  redisService: {
+    checkAndUseQuota: vi.fn().mockResolvedValue(true),
+    enqueueAiTask: vi.fn().mockImplementation((task) => task()),
+  },
+}));
 
 vi.mock("@prisma/client", () => {
   const mPrisma = {

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -15,7 +15,7 @@ router.get(
   "/",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -23,6 +23,8 @@ router.get(
     "RT",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
   ]),
   pengangkutanController.getAll
 );
@@ -31,7 +33,7 @@ router.get(
   "/:id",
   authMiddleware,
   roleMiddleware([
-    "SUPER_ADMIN",
+    "SUPER_USER",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -39,6 +41,8 @@ router.get(
     "RT",
     "PETUGAS_RESIDU",
     "MAHASISWA_KKN",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
   ]),
   pengangkutanController.getById
 );
@@ -46,21 +50,21 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
   pengangkutanController.create
 );
 
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
   pengangkutanController.update
 );
 
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
   pengangkutanController.delete
 );
 

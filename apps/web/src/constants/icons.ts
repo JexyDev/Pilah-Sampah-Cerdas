@@ -26,8 +26,8 @@ import {
   BataTerawangIcon,
   BankSampahIcon,
   LosedaIcon,
-  TongOrganikIcon,
-  TongNonOrganikIcon,
+  TempatSampahOrganikIcon,
+  TempatSampahNonOrganikIcon,
 } from "../components/CustomIcons";
 
 // Ekspor semua icons (Standard Lucide + Custom) secara terpusat.
@@ -56,6 +56,6 @@ export {
   BataTerawangIcon,
   BankSampahIcon,
   LosedaIcon,
-  TongOrganikIcon,
-  TongNonOrganikIcon,
+  TempatSampahOrganikIcon,
+  TempatSampahNonOrganikIcon,
 };

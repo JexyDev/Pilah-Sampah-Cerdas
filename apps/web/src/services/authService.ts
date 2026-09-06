@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -19,6 +19,7 @@ export const authService = {
     phone?: string;
     address?: string;
     fotoProfil?: string;
+    jumlahAnggotaKeluarga?: number;
   }) => {
     const res = await api.put("/auth/profile", data);
     return res.data;

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -78,7 +78,7 @@ export const AuditTrailList: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-3">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-3">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* Search Field */}
           <div>
@@ -88,7 +88,7 @@ export const AuditTrailList: React.FC = () => {
               placeholder="Nama user, email, atau aksi..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
             />
           </div>
 
@@ -98,7 +98,7 @@ export const AuditTrailList: React.FC = () => {
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
             >
               <option value="">Semua Aksi</option>
               <option value="REACTIVATE_BIN">Reaktivasi Bin</option>
@@ -119,7 +119,7 @@ export const AuditTrailList: React.FC = () => {
               type="date"
               value={startDateFilter}
               onChange={(e) => setStartDateFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
             />
           </div>
 
@@ -130,7 +130,7 @@ export const AuditTrailList: React.FC = () => {
               type="date"
               value={endDateFilter}
               onChange={(e) => setEndDateFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary shadow-sm"
             />
           </div>
 
@@ -145,7 +145,7 @@ export const AuditTrailList: React.FC = () => {
             <button
               type="button"
               onClick={handleResetFilters}
-              className="bg-gray-100 text-gray-600 font-semibold py-2 px-3 rounded-lg text-sm hover:bg-gray-200 transition shadow-sm"
+              className="bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 font-semibold py-2 px-3 rounded-lg text-sm hover:bg-gray-200 dark:hover:bg-slate-700 transition shadow-sm"
             >
               Reset
             </button>
@@ -155,7 +155,7 @@ export const AuditTrailList: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Logs Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center p-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -163,7 +163,7 @@ export const AuditTrailList: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-6 py-3">Timestamp</th>
                     <th className="px-6 py-3">Aksi</th>
@@ -181,7 +181,7 @@ export const AuditTrailList: React.FC = () => {
                     </tr>
                   ) : (
                     logs.map((l, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelectedLog(l)}>
+                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer" onClick={() => setSelectedLog(l)}>
                         <td className="px-6 py-4 text-xs font-semibold text-gray-500">
                           {new Date(l.timestamp).toLocaleString("id-ID")}
                         </td>
@@ -213,7 +213,7 @@ export const AuditTrailList: React.FC = () => {
         </div>
 
         {/* View JSON Detail Panel */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-fit space-y-4">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col justify-between h-fit space-y-4">
           <div>
             <h3 className="font-bold text-gray-800 text-sm">Detail Payload Transaksi</h3>
             <p className="text-xs text-gray-500 mt-1">Perbandingan nilai lama dan nilai baru hasil mutasi.</p>
@@ -226,14 +226,14 @@ export const AuditTrailList: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <span className="text-[10px] font-bold text-gray-400 uppercase">Nilai Baru (New Value)</span>
-                <pre className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap max-h-48">
+                <pre className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-800 text-[10px] font-mono text-gray-700 dark:text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-48">
                   {JSON.stringify(selectedLog.newValue, null, 2)}
                 </pre>
               </div>
               {selectedLog.oldValue && (
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase">Nilai Lama (Old Value)</span>
-                  <pre className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-[10px] font-mono text-gray-700 overflow-x-auto whitespace-pre-wrap max-h-48">
+                  <pre className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-800 text-[10px] font-mono text-gray-700 dark:text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-48">
                     {JSON.stringify(selectedLog.oldValue, null, 2)}
                   </pre>
                 </div>

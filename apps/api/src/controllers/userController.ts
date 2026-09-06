@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -28,12 +28,14 @@ export const userController = {
       );
 
       res.status(200).json({ success: true, data: mapped });
-    } catch (error) {
-      console.error("[UserController] getAll error:", error);
+    } catch (error: any) {
+      console.error("[UserController] getAll uncaught error STACK:", error?.stack || error);
       res.status(500).json({
         success: false,
         error: "INTERNAL_SERVER_ERROR",
-        message: "Gagal memuat data pengguna",
+        message: error?.message
+          ? `Gagal memuat data pengguna: ${error.message}`
+          : "Gagal memuat data pengguna",
       });
     }
   },
@@ -45,8 +47,9 @@ export const userController = {
     try {
       const { id } = req.params;
       const currentUserId = req.user?.userId;
+      const currentUserRole = req.user?.role;
 
-      await userService.deleteUser(id, currentUserId);
+      await userService.deleteUser(id, currentUserId, currentUserRole);
 
       res.status(200).json({ success: true, message: "Pengguna berhasil dihapus" });
     } catch (error: any) {
@@ -61,6 +64,18 @@ export const userController = {
           success: false,
           error: "BAD_REQUEST",
           message: "Tidak bisa menghapus akun sendiri",
+        });
+      } else if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Hanya Developer yang dapat mengelola atau menghapus akun Developer",
+        });
+      } else if (error.message === "FORBIDDEN_ROLE_DELETE") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki izin untuk menghapus akun dengan peran ini",
         });
       } else {
         res.status(500).json({
@@ -93,11 +108,49 @@ export const userController = {
     } catch (error: any) {
       console.error("[UserController] createUser error:", error);
 
-      if (error.message === "FORBIDDEN_ROLE_CREATION") {
+      if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Super Admin yang dapat membuat akun Admin DLH, Camat, atau Lurah",
+          message: "Hanya akun Developer yang dapat membuat akun Developer",
+        });
+      } else if (error.message === "FORBIDDEN_ROLE_CREATION") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki izin untuk membuat akun dengan peran ini",
+        });
+      } else if (
+        error.message === "NIM_CONFLICT" ||
+        (error.code === "P2002" && String(error.meta?.target || "").includes("nim"))
+      ) {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA",
+        });
+      } else if (
+        error.message === "PHONE_CONFLICT" ||
+        (error.code === "P2002" &&
+          (String(error.meta?.target || "").includes("phone") ||
+            String(error.meta?.target || "").includes("no_telepon")))
+      ) {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "Nomor telepon (+62) sudah terdaftar di sistem BERSEKA",
+        });
+      } else if (error.message === "PHONE_REQUIRED") {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Nomor telepon wajib diisi",
+        });
+      } else if (error.message === "RW_ALREADY_HAS_PETUGAS_RESIDU") {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "Wilayah RW ini sudah memiliki Petugas Pemilah yang terdaftar",
         });
       } else if (error.message === "ROLE_NOT_FOUND") {
         res.status(400).json({
@@ -113,7 +166,9 @@ export const userController = {
         res.status(500).json({
           success: false,
           error: "INTERNAL_SERVER_ERROR",
-          message: "Gagal membuat pengguna",
+          message: error.message
+            ? `Gagal membuat pengguna: ${error.message}`
+            : "Gagal membuat pengguna",
         });
       }
     }
@@ -135,11 +190,24 @@ export const userController = {
     } catch (error: any) {
       console.error("[UserController] updateUser error:", error);
 
-      if (error.message === "FORBIDDEN_ROLE_UPDATE") {
+      if (error.message === "CANNOT_DEACTIVATE_SELF") {
+        res.status(400).json({
+          success: false,
+          error: "BAD_REQUEST",
+          message:
+            "Anda tidak dapat menonaktifkan akun Anda sendiri yang sedang terhubung ke sistem.",
+        });
+      } else if (error.message === "FORBIDDEN_DEVELOPER_MUTATION") {
         res.status(403).json({
           success: false,
           error: "FORBIDDEN",
-          message: "Hanya Super Admin yang dapat memodifikasi akun Admin DLH, Camat, atau Lurah",
+          message: "Hanya akun Developer yang dapat memodifikasi akun Developer",
+        });
+      } else if (error.message === "FORBIDDEN_ROLE_UPDATE") {
+        res.status(403).json({
+          success: false,
+          error: "FORBIDDEN",
+          message: "Anda tidak memiliki izin untuk memodifikasi akun dengan peran ini",
         });
       } else if (error.message === "USER_NOT_FOUND") {
         res
@@ -151,11 +219,34 @@ export const userController = {
           error: "VALIDATION_ERROR",
           message: `Role '${req.body.roleName}' tidak ditemukan`,
         });
+      } else if (error.message === "NIM_ALREADY_REGISTERED") {
+        res.status(400).json({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "NIM (Nomor Induk Mahasiswa) sudah terdaftar di sistem BERSEKA",
+        });
+      } else if (
+        error.message === "PHONE_CONFLICT" ||
+        (error.code === "P2002" &&
+          (String(error.meta?.target || "").includes("phone") ||
+            String(error.meta?.target || "").includes("no_telepon")))
+      ) {
+        res.status(409).json({
+          success: false,
+          error: "CONFLICT",
+          message: "Nomor telepon sudah terdaftar di sistem",
+        });
+      } else if (error.message === "RW_ALREADY_HAS_PETUGAS_RESIDU") {
+        res.status(400).json({
+          success: false,
+          error: "VALIDATION_ERROR",
+          message: "Wilayah RW tersebut sudah memiliki Petugas Residu aktif",
+        });
       } else {
         res.status(500).json({
           success: false,
           error: "INTERNAL_SERVER_ERROR",
-          message: "Gagal memperbarui pengguna",
+          message: error.message || "Gagal memperbarui pengguna",
         });
       }
     }

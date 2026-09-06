@@ -1,5 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -10,12 +11,9 @@ import { residuController } from "../controllers/residuController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
-import { PrismaClient } from "@prisma/client";
-
 import { uploadResiduImage } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const verifiedPetugasGuard = async (req: any, res: any, next: any) => {
   if (req.user?.role === "PETUGAS_RESIDU") {
@@ -193,6 +191,50 @@ router.get(
   roleMiddleware(["PETUGAS_RESIDU"]),
   verifiedPetugasGuard,
   residuController.getRiwayat
+);
+
+router.get(
+  "/pengajuan",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getPengajuan
+);
+
+router.put(
+  "/pengajuan/:id/terima",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.acceptPengajuan
+);
+
+/**
+ * @swagger
+ * /api/v1/petugas-residu/points:
+ *   get:
+ *     summary: Statistik total poin & ledger poin petugas residu
+ *     tags: [Petugas Residu]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan statistik poin
+ */
+router.get(
+  "/points",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getPetugasPoints
+);
+
+router.get(
+  "/statistik-poin",
+  authMiddleware,
+  roleMiddleware(["PETUGAS_RESIDU"]),
+  verifiedPetugasGuard,
+  residuController.getPetugasPoints
 );
 
 export default router;

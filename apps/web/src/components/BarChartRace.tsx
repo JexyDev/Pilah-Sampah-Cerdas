@@ -1,127 +1,189 @@
 import React, { useState, useEffect } from "react";
-import { Play, Pause, RotateCcw, Award } from "lucide-react";
+import { Award, Scale, CheckCircle2, Trophy, Flame } from "lucide-react";
+import api from "../services/api";
 
-interface KelurahanData {
+interface KelurahanMetrics {
   name: string;
   color: string;
   logo: string;
-  history: number[]; // Scores for Week 1 to 8
+  tonaseKg: number;
+  compliancePct: number;
+  totalPoints: number;
 }
 
-const KELURAHAN_SEEDS: KelurahanData[] = [
-  { name: "Dago", color: "bg-emerald-500", logo: "🌱", history: [65, 78, 85, 92, 98, 105, 115, 128] },
-  { name: "Cigadung", color: "bg-blue-500", logo: "♻️", history: [58, 66, 74, 88, 95, 108, 120, 122] },
-  { name: "Sadang Serang", color: "bg-amber-500", logo: "🏡", history: [70, 72, 80, 85, 90, 94, 102, 110] },
-  { name: "Sekeloa", color: "bg-indigo-500", logo: "✨", history: [50, 62, 68, 75, 84, 98, 105, 118] },
-  { name: "Lebak Gede", color: "bg-purple-500", logo: "💧", history: [45, 50, 60, 70, 82, 90, 99, 105] },
-];
+const KEL_STYLE_MAP: Record<string, { color: string; logo: string }> = {
+  sekeloa: { color: "bg-emerald-500", logo: "🌿" },
+  cipaganti: { color: "bg-blue-500", logo: "♻️" },
+  "sadang serang": { color: "bg-amber-500", logo: "🏡" },
+  "lebak siliwangi": { color: "bg-purple-500", logo: "✨" },
+  "lebak gede": { color: "bg-indigo-500", logo: "💧" },
+  dago: { color: "bg-rose-500", logo: "🍃" },
+};
 
 export const BarChartRace: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const totalSteps = KELURAHAN_SEEDS[0].history.length;
+  const [metricTab, setMetricTab] = useState<"TONASE" | "KEPATUHAN" | "POIN">("TONASE");
+  const [kelurahanData, setKelurahanData] = useState<KelurahanMetrics[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let interval: any;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setCurrentStep((prev) => {
-          if (prev >= totalSteps - 1) {
-            setIsPlaying(false);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1500);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, totalSteps]);
+    const fetchKelurahanRealData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/gamification/leaderboard");
+        if (res.data?.success && res.data.data?.regions && Array.isArray(res.data.data.regions)) {
+          const regions = res.data.data.regions;
+          const mapped: KelurahanMetrics[] = regions.map((r: any) => {
+            const rawName = r.kelurahanName || r.name || "Kelurahan";
+            const cleanKey = rawName.toLowerCase().replace(/^kelurahan\s*/i, "").replace(/^kel\.\s*/i, "").trim();
+            const style = KEL_STYLE_MAP[cleanKey] || { color: "bg-emerald-500", logo: "📍" };
+            return {
+              name: rawName.startsWith("Kel") ? rawName : `Kel. ${rawName}`,
+              color: style.color,
+              logo: style.logo,
+              tonaseKg: parseFloat(Number(r.totalWeightKg || r.totalWeight || (r.totalPoints ? r.totalPoints * 0.1 : 0)).toFixed(2)),
+              compliancePct: Math.min(100, Math.max(0, Math.round(Number(r.complianceRate ?? r.compliance ?? 0)))),
+              totalPoints: Math.round(Number(r.totalPoints || 0)),
+            };
+          });
+          setKelurahanData(mapped);
+        }
+      } catch (err) {
+        console.error("Gagal memuat data real kelurahan untuk BarChartRace:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchKelurahanRealData();
+  }, []);
 
-  // Map kelurahans to current score and sort
-  const currentData = KELURAHAN_SEEDS.map((k) => ({
-    name: k.name,
-    color: k.color,
-    logo: k.logo,
-    score: k.history[currentStep],
-  })).sort((a, b) => b.score - a.score);
-
-  // Find max score at current step to calculate width percentage
-  const maxScore = Math.max(...currentData.map((d) => d.score), 1);
-
-  const handleReset = () => {
-    setIsPlaying(false);
-    setCurrentStep(0);
+  const getScore = (item: KelurahanMetrics) => {
+    if (metricTab === "TONASE") return item.tonaseKg;
+    if (metricTab === "KEPATUHAN") return item.compliancePct;
+    return item.totalPoints;
   };
 
+  const getUnit = () => {
+    if (metricTab === "TONASE") return "Kg";
+    if (metricTab === "KEPATUHAN") return "%";
+    return "Poin";
+  };
+
+  const sortedData = [...kelurahanData].sort((a, b) => getScore(b) - getScore(a));
+  const maxScore = Math.max(...sortedData.map((d) => getScore(d)), 1);
+
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-slate-100 pb-4">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4 sm:space-y-6">
+      {/* Header & Metric Tabs */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 border-b border-slate-100 dark:border-slate-800 pb-3 sm:pb-4">
         <div>
-          <h3 className="font-extrabold text-lg text-slate-800 flex items-center gap-2">
-            <Award className="text-primary animate-pulse" />
-            Persaingan Kebersihan Kelurahan (Bar Chart Race)
-          </h3>
-          <p className="text-xs text-slate-500">Peringkat akumulasi tonase pilah bersih Kelurahan per minggu</p>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-700/40 shadow-2xs">
+              <Award size={18} className="animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100 tracking-tight">
+                Peringkat Kelurahan Teraktif
+              </h3>
+              <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                Peringkat real-time hasil akumulasi data dari seluruh Rukun Warga
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Metric Selector Pills */}
+        <div className="flex items-center bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700 w-full sm:w-auto justify-center overflow-x-auto scrollbar-none">
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold uppercase transition hover:bg-primary/95"
+            onClick={() => setMetricTab("TONASE")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+              metricTab === "TONASE"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            }`}
           >
-            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            {isPlaying ? "Pause" : "Mulai"}
+            <Scale size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+            Tonase (Kg)
           </button>
+
           <button
-            onClick={handleReset}
-            className="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 transition"
+            onClick={() => setMetricTab("KEPATUHAN")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+              metricTab === "KEPATUHAN"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            }`}
           >
-            <RotateCcw size={16} />
+            <CheckCircle2 size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
+            Kepatuhan (%)
+          </button>
+
+          <button
+            onClick={() => setMetricTab("POIN")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+              metricTab === "POIN"
+                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+            }`}
+          >
+            <Trophy size={13} className="text-amber-500 dark:text-amber-400 shrink-0" />
+            Total Poin
           </button>
         </div>
       </div>
 
-      <div className="relative h-72 w-full mt-4 flex flex-col justify-between">
-        {currentData.map((item, idx) => {
-          const widthPct = (item.score / maxScore) * 85; // leave 15% space for labels
-          return (
-            <div
-              key={item.name}
-              className="absolute w-full flex items-center transition-all duration-1000 ease-out"
-              style={{
-                transform: `translateY(${idx * 52}px)`,
-                height: "40px",
-              }}
-            >
-              <div className="w-28 text-xs font-bold text-slate-700 truncate pr-2 flex items-center gap-1.5">
-                <span className="text-sm">{item.logo}</span>
-                <span>{item.name}</span>
-              </div>
-              <div className="flex-1 bg-slate-50 h-7 rounded-full overflow-hidden relative border border-slate-100">
-                <div
-                  className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out flex items-center justify-end px-3 shadow-inner`}
-                  style={{ width: `${widthPct}%` }}
-                >
-                  <span className="text-[10px] font-black text-white drop-shadow-md">
-                    {item.score} Ton
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-slate-400 dark:text-slate-500 text-xs font-semibold">
+          Memuat data real kelurahan...
+        </div>
+      ) : sortedData.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-slate-400 dark:text-slate-500 text-xs font-semibold">
+          Tidak ada data kelurahan ditemukan.
+        </div>
+      ) : (
+        <div className="relative min-h-60 w-full space-y-3">
+          {sortedData.map((item, index) => {
+            const score = getScore(item);
+            const widthPct = maxScore > 0 ? (score / maxScore) * 85 : 5;
+            const isRank1 = index === 0;
+
+            return (
+              <div
+                key={item.name}
+                className="w-full flex items-center transition-all duration-700 ease-out group"
+                style={{ height: "42px" }}
+              >
+                {/* Kelurahan Label */}
+                <div className="w-40 text-xs font-extrabold text-slate-800 dark:text-slate-200 truncate pr-2 flex items-center gap-2">
+                  <span className="w-5 text-center font-black text-slate-400 dark:text-slate-500 text-[11px]">
+                    #{index + 1}
                   </span>
+                  <span className="text-base">{item.logo}</span>
+                  <span className="truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {item.name}
+                  </span>
+                  {isRank1 && (
+                    <span className="text-amber-500 flex items-center gap-0.5 text-[10px] font-black uppercase bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md border border-amber-200 dark:border-amber-700/40">
+                      <Flame size={11} className="fill-amber-500" /> TOP
+                    </span>
+                  )}
+                </div>
+
+                {/* Animated Progress Bar */}
+                <div className="flex-1 bg-slate-50 dark:bg-slate-800 h-8 rounded-full overflow-hidden relative border border-slate-100 dark:border-slate-700 shadow-2xs">
+                  <div
+                    className={`h-full ${item.color} rounded-full transition-all duration-700 ease-out flex items-center justify-end px-3 shadow-inner`}
+                    style={{ width: `${Math.max(widthPct, 10)}%` }}
+                  >
+                    <span className="text-[11px] font-black text-white drop-shadow-sm font-mono">
+                      {score} {getUnit()}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="flex justify-between items-center pt-4 border-t border-slate-100 text-xs font-semibold text-slate-500">
-        <span>Minggu Ke-{currentStep + 1}</span>
-        <div className="w-1/2 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-          <div
-            className="bg-primary h-full transition-all duration-300"
-            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
-          ></div>
+            );
+          })}
         </div>
-        <span>Selesai (W8)</span>
-      </div>
+      )}
     </div>
   );
 };

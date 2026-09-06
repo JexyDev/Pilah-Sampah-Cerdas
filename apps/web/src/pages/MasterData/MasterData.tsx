@@ -1,15 +1,16 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import React, { useEffect, useState, useMemo } from "react";
-import { Loader2, Trash2, GraduationCap, MapPin, Phone, Eye, Search, Users, Delete } from "lucide-react";
+import { Loader2, Trash2, GraduationCap, MapPin, Phone, Eye, Search, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useMasterDataStore } from "../../store/useMasterDataStore";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import api from "../../services/api";
 import styles from "./MasterData.module.css";
 
@@ -30,8 +31,8 @@ const MasterData: React.FC = () => {
   const fetchMahasiswas = async () => {
     setLoadingMahasiswa(true);
     try {
-      const response = await api.get(`/admin/mahasiswa?limit=500`);
-      setMahasiswas(response.data.users || []);
+      const response = await api.get(`/users?roleName=MAHASISWA_KKN`);
+      setMahasiswas(response.data.data || response.data.users || []);
     } catch (err: any) {
       console.error("Gagal memuat data mahasiswa:", err);
     } finally {
@@ -50,43 +51,58 @@ const MasterData: React.FC = () => {
     return mahasiswas.filter(
       (m) =>
         (m.name || "").toLowerCase().includes(q) ||
-        (m.studentProfile?.nim || "").toLowerCase().includes(q) ||
+        (m.studentProfile?.nim || m.nim || "").toLowerCase().includes(q) ||
         (m.phone || "").toLowerCase().includes(q) ||
         (m.studentProfile?.kelompok?.name || "").toLowerCase().includes(q)
     );
   }, [mahasiswas, mhsSearch]);
 
-  const handleDeleteUser = async (id: string, name: string) => {
-    if (window.confirm(`Yakin ingin menghapus ${name}?`)) {
-      try {
+  const [deleteModalConfig, setDeleteModalConfig] = useState<{
+    isOpen: boolean;
+    id: string;
+    name: string;
+    type: "user" | "bin" | "mahasiswa";
+  }>({
+    isOpen: false,
+    id: "",
+    name: "",
+    type: "user",
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteUser = (id: string, name: string) => {
+    setDeleteModalConfig({ isOpen: true, id, name, type: "user" });
+  };
+
+  const handleDeleteBin = (id: string, name: string) => {
+    setDeleteModalConfig({ isOpen: true, id, name, type: "bin" });
+  };
+
+  const handleDeleteMahasiswa = (mhs: any) => {
+    setDeleteModalConfig({ isOpen: true, id: mhs.id, name: mhs.name, type: "mahasiswa" });
+  };
+
+  const handleExecuteDelete = async () => {
+    const { id, name, type } = deleteModalConfig;
+    if (!id) return;
+    try {
+      setIsDeleting(true);
+      if (type === "user") {
         await deleteUser(id);
         toast.success(`Berhasil menghapus ${name}`);
-      } catch (e: any) {
-        toast.error("Gagal menghapus user");
-      }
-    }
-  };
-
-  const handleDeleteBin = async (id: string, name: string) => {
-    if (window.confirm(`Yakin ingin menghapus ${name}?`)) {
-      try {
+      } else if (type === "bin") {
         await deleteBin(id);
         toast.success(`Berhasil menghapus ${name}`);
-      } catch (e: any) {
-        toast.error("Gagal menghapus tempat sampah");
-      }
-    }
-  };
-
-  const handleDeleteMahasiswa = async (mhs: any) => {
-    if (window.confirm(`Yakin ingin menonaktifkan mahasiswa ${mhs.name}?`)) {
-      try {
-        await api.delete(`/admin/mahasiswa/${mhs.id}`);
-        toast.success(`Mahasiswa ${mhs.name} berhasil dinonaktifkan`);
+      } else if (type === "mahasiswa") {
+        await api.delete(`/users/${id}`);
+        toast.success(`Mahasiswa ${name} berhasil dihapus`);
         fetchMahasiswas();
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || "Gagal menonaktifkan mahasiswa");
       }
+      setDeleteModalConfig({ isOpen: false, id: "", name: "", type: "user" });
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || "Gagal melakukan penghapusan");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -110,11 +126,11 @@ const MasterData: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 text-slate-800 dark:text-slate-100">
       {/* Header Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
             Master Data Sistem
           </h1>
           <p className="text-sm text-slate-500 mt-1">
@@ -124,12 +140,12 @@ const MasterData: React.FC = () => {
       </div>
 
       {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
         <button
           className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === "mahasiswa"
               ? "bg-primary text-white shadow-sm"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
           }`}
           onClick={() => setActiveTab("mahasiswa")}
         >
@@ -140,7 +156,7 @@ const MasterData: React.FC = () => {
           className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === "users"
               ? "bg-primary text-white shadow-sm"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
           }`}
           onClick={() => setActiveTab("users")}
         >
@@ -151,7 +167,7 @@ const MasterData: React.FC = () => {
           className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
             activeTab === "bins"
               ? "bg-primary text-white shadow-sm"
-              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
           }`}
           onClick={() => setActiveTab("bins")}
         >
@@ -161,7 +177,7 @@ const MasterData: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-6">
         {/* Tab 1: Mahasiswa KKN */}
         {activeTab === "mahasiswa" && (
           <div className="space-y-4">
@@ -173,7 +189,7 @@ const MasterData: React.FC = () => {
                   placeholder="Cari Nama, NIM, No. WA, Kelompok..."
                   value={mhsSearch}
                   onChange={(e) => setMhsSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 pl-10 pr-4 py-2 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
               <p className="text-xs text-slate-500 font-semibold">
@@ -184,7 +200,7 @@ const MasterData: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                     <th className="py-3 px-4 w-12 text-center">No</th>
                     <th className="py-3 px-4">Nama & NIM</th>
                     <th className="py-3 px-4">Universitas / Fakultas</th>
@@ -195,7 +211,7 @@ const MasterData: React.FC = () => {
                     {!isReadOnly && <th className="py-3 px-4 text-center w-24">Aksi</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium">
                   {loadingMahasiswa ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -211,16 +227,16 @@ const MasterData: React.FC = () => {
                     </tr>
                   ) : (
                     filteredMahasiswas.map((mhs, idx) => (
-                      <tr key={mhs.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={mhs.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                         <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
                         <td className="py-3.5 px-4">
-                          <p className="font-bold text-slate-900">{mhs.name}</p>
+                          <p className="font-bold text-slate-900 dark:text-slate-100">{mhs.name}</p>
                           <p className="text-[10px] font-mono text-slate-400">NIM: {mhs.studentProfile?.nim || "-"}</p>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-semibold">
                           {mhs.studentProfile?.fakultas || "UNIKOM"}
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-slate-600">
+                        <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-400">
                           <a
                             href={`https://wa.me/${(mhs.phone || "").replace(/\+/g, "")}`}
                             target="_blank"
@@ -236,7 +252,7 @@ const MasterData: React.FC = () => {
                             {mhs.studentProfile?.kelompok?.name || "Belum Plotting"}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                        <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 font-medium">
                           {mhs.rtRw?.name ? (
                             <span className="flex items-center gap-1">
                               <MapPin size={13} className="text-primary" />
@@ -262,7 +278,7 @@ const MasterData: React.FC = () => {
                             <div className="flex justify-center gap-1">
                               <button
                                 onClick={() => setSelectedMhsDetail(mhs)}
-                                className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-primary rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-primary rounded-lg transition-colors cursor-pointer"
                                 title="Detail Profil"
                               >
                                 <Eye size={15} />
@@ -291,7 +307,7 @@ const MasterData: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3 px-4">ID</th>
                   <th className="py-3 px-4">Nama User</th>
                   <th className="py-3 px-4">Email / No. HP</th>
@@ -300,14 +316,14 @@ const MasterData: React.FC = () => {
                   {!isReadOnly && <th className="py-3 px-4 text-center">Aksi</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <td className="py-3 px-4 font-mono text-slate-400 text-[10px]">
                       {u.id ? u.id.substring(0, 8) : "-"}
                     </td>
-                    <td className="py-3 px-4 font-bold text-slate-900">{u.name}</td>
-                    <td className="py-3 px-4 text-slate-600 font-mono">{u.email || (u as any).phone || "-"}</td>
+                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">{u.name}</td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400 font-mono">{u.email || (u as any).phone || "-"}</td>
                     <td className="py-3 px-4">
                       <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold text-[10px] border border-purple-200 uppercase">
                         {u.role}
@@ -339,7 +355,7 @@ const MasterData: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
                   <th className="py-3 px-4">ID</th>
                   <th className="py-3 px-4">QR Code / Kode</th>
                   <th className="py-3 px-4">Wilayah RT/RW</th>
@@ -349,16 +365,16 @@ const MasterData: React.FC = () => {
                   {!isReadOnly && <th className="py-3 px-4 text-center">Aksi</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-medium">
                 {bins.map((b) => (
-                  <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                     <td className="py-3 px-4 font-mono text-slate-400 text-[10px]">
                       {b.id ? b.id.substring(0, 8) : "-"}
                     </td>
-                    <td className="py-3 px-4 font-bold text-slate-900 font-mono">{b.qrCode}</td>
-                    <td className="py-3 px-4 text-slate-600">{b.rtRw?.name || "-"}</td>
-                    <td className="py-3 px-4 font-bold text-slate-700">{b.maxCapacityLiter} L</td>
-                    <td className="py-3 px-4 font-bold text-slate-700">{b.currentVolumeLiter} L</td>
+                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 font-mono">{b.qrCode}</td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{b.rtRw?.name || "-"}</td>
+                    <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">{b.maxCapacityLiter} L</td>
+                    <td className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">{b.currentVolumeLiter} L</td>
                     <td className="py-3 px-4 text-center">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
@@ -376,7 +392,7 @@ const MasterData: React.FC = () => {
                       <td className="py-3 px-4 text-center">
                         <button
                           className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus Tong"
+                          title="Hapus Tempat Sampah"
                           onClick={() => handleDeleteBin(b.id, b.qrCode)}
                         >
                           <Trash2 size={15} />
@@ -394,38 +410,38 @@ const MasterData: React.FC = () => {
       {/* Modal Detail Profil Mahasiswa */}
       {selectedMhsDetail && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4 transition-all">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-slate-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/60">
+              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <GraduationCap className="text-primary" /> Detail Mahasiswa KKN
               </h3>
               <button
                 onClick={() => setSelectedMhsDetail(null)}
-                className="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             <div className="p-6 space-y-4 text-xs">
-              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800">
                 <div className="w-12 h-12 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center text-lg">
                   {selectedMhsDetail.name.charAt(0)}
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900 text-sm">{selectedMhsDetail.name}</p>
+                  <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">{selectedMhsDetail.name}</p>
                   <p className="font-mono text-slate-500 text-[11px]">NIM: {selectedMhsDetail.studentProfile?.nim || "-"}</p>
                 </div>
               </div>
 
-              <div className="space-y-2 border-t border-slate-100 pt-3">
+              <div className="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
                 <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-500">Universitas / Fakultas</span>
-                  <span className="font-bold text-slate-800">{selectedMhsDetail.studentProfile?.fakultas || "UNIKOM"}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{selectedMhsDetail.studentProfile?.fakultas || "UNIKOM"}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-500">Program Studi</span>
-                  <span className="font-semibold text-slate-700">{selectedMhsDetail.studentProfile?.jurusan || "-"}</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedMhsDetail.studentProfile?.jurusan || "-"}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
                   <span className="text-slate-500">No. WhatsApp</span>
@@ -436,18 +452,18 @@ const MasterData: React.FC = () => {
                   <span className="font-bold text-blue-700">{selectedMhsDetail.studentProfile?.kelompok?.name || "Belum Plotting"}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Dosen Pembimbing (DPL)</span>
+                  <span className="text-slate-500">Dosen Pendamping Lapangan (DPL)</span>
                   <span className="font-semibold text-purple-700">{selectedMhsDetail.studentProfile?.kelompok?.dpl?.name || "Belum Ada DPL"}</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-slate-500">Wilayah Penugasan</span>
-                  <span className="font-bold text-slate-800">{selectedMhsDetail.rtRw?.name || "-"}</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{selectedMhsDetail.rtRw?.name || "-"}</span>
                 </div>
               </div>
 
               <button
                 onClick={() => setSelectedMhsDetail(null)}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer mt-2"
+                className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-all cursor-pointer mt-2"
               >
                 Tutup Detail
               </button>
@@ -455,6 +471,24 @@ const MasterData: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal Hapus Data Master */}
+      <ConfirmModal
+        isOpen={deleteModalConfig.isOpen}
+        onClose={() => setDeleteModalConfig({ isOpen: false, id: "", name: "", type: "user" })}
+        onConfirm={handleExecuteDelete}
+        isLoading={isDeleting}
+        title={
+          deleteModalConfig.type === "mahasiswa"
+            ? "Nonaktifkan Mahasiswa KKN"
+            : deleteModalConfig.type === "bin"
+            ? "Hapus Tempat Sampah"
+            : "Hapus Pengguna"
+        }
+        message={`Apakah Anda yakin ingin menghapus/menonaktifkan ${deleteModalConfig.name}? Tindakan ini akan memengaruhi relasi data terkait.`}
+        confirmText="Ya, Lanjutkan"
+        type="danger"
+      />
     </div>
   );
 };

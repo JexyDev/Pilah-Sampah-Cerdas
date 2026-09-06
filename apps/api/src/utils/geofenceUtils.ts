@@ -21,8 +21,7 @@ export function isPointInPolygon(point: Point, polygon: Point[]): boolean {
     const xj = polygon[j].longitude;
     const yj = polygon[j].latitude;
 
-    const intersect = ((yi > y) !== (yj > y)) &&
-      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }
 
@@ -39,9 +38,9 @@ export function calculateHaversineDistance(pt1: Point, pt2: Point): number {
   const deltaLat = ((pt2.latitude - pt1.latitude) * Math.PI) / 180;
   const deltaLng = ((pt2.longitude - pt1.longitude) * Math.PI) / 180;
 
-  const a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(rad1) * Math.cos(rad2) *
-    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(rad1) * Math.cos(rad2) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return R * c;

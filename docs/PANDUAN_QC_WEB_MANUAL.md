@@ -1,8 +1,8 @@
-# PANDUAN & CHECKLIST TESTING QC WEB MANUAL (TRASHCARE)
+﻿# PANDUAN & CHECKLIST TESTING QC WEB MANUAL (BERSEKA)
 
 > **Versi Dokumen:** 1.0 (Manual Web QA Checklist)  
 > **Lokasi File:** `docs/PANDUAN_QC_WEB_MANUAL.md`  
-> **Target Aplikasi:** Frontend Web Trashcare (`apps/web`)  
+> **Target Aplikasi:** Frontend Web BERSEKA (`apps/web`)  
 > **Metode Pengujian:** Pengujian Manual UI/UX, Alur Bisnis, & Respon API  
 
 ---
@@ -12,7 +12,7 @@
 ### 1.1 Login & Autentikasi Pengguna
 - [ ] **Langkah Tes**:
   1. Buka URL `/login`.
-  2. Masukkan Email/No HP dan Password valid (misal: Super Admin / RW / Mahasiswa).
+  2. Masukkan Email/No HP dan Password valid (misal: SUPER USER / RW / Mahasiswa).
   3. Klik tombol **"Masuk"**.
 - [ ] **Ekspektasi Visual & System**:
   - Loading indicator tampil pada tombol saat API dipanggil.
@@ -135,7 +135,7 @@
 - [ ] **Ekspektasi Visual & System**:
   - Kapasitas <70% berwarna **Hijau**.
   - Kapasitas 70%-89% berwarna **Kuning**.
-  - Kapasitas >=90% berwarna **Merah (Tong Penuh)**.
+  - Kapasitas >=90% berwarna **Merah (Tempat Sampah Penuh)**.
 
 ### 5.2 Bulk Generate & Export Master QR Code
 - [ ] **Langkah Tes**:
@@ -185,7 +185,7 @@
   - Legenda menampilkan 4 warna standar:
     - **Hijau**: Organik / Kompos
     - **Biru**: Daur Ulang / Anorganik
-    - **Merah**: Residu / TPA / Tong Penuh
+    - **Merah**: Residu / TPA / Tempat Sampah Penuh
     - **Emas**: Flash Drop Challenge
 
 ---
@@ -213,10 +213,10 @@
 
 ## KATEGORI 9: PENGANGKUTAN SAMPAH & ESKALASI BERJENJANG
 
-### 9.1 Alert Tong Penuh & Flow Status Penjemputan
+### 9.1 Alert Tempat Sampah Penuh & Flow Status Penjemputan
 - [ ] **Langkah Tes**:
   1. Access `/manajemen-pengangkutan`.
-  2. Amati daftar penjemputan pemicu Notifikasi Tong Penuh (>90%).
+  2. Amati daftar penjemputan pemicu Notifikasi Tempat Sampah Penuh (>90%).
   3. Ubah status penjemputan: `Menunggu` → `Diterima` → `Dalam Perjalanan` → `Selesai`.
 - [ ] **Ekspektasi Visual & System**:
   - Status ter-update realtime.
@@ -338,7 +338,7 @@
   1. Klik ikon lonceng notifikasi di navbar.
   2. Periksa item belum dibaca (Bold) vs sudah dibaca.
   3. Klik tombol **"Tandai Semua Dibaca"**.
-  4. Klik salah satu notifikasi (misal: Notif Diskrepansi atau Tong Penuh).
+  4. Klik salah satu notifikasi (misal: Notif Diskrepansi atau Tempat Sampah Penuh).
 - [ ] **Ekspektasi Visual & System**:
   - Counter unread notification berkurang/nol.
   - Mengklik notifikasi langsung me-redirect ke halaman detail terkait.
@@ -388,7 +388,7 @@
 
 ### 20.1 View Audit Log & Filter Timestamp
 - [ ] **Langkah Tes**:
-  1. Login sebagai **Super Admin** → Akses `/aktivitas-pemilahan`.
+  1. Login sebagai **SUPER USER** → Akses `/aktivitas-pemilahan`.
   2. Terapkan filter rentang waktu & tipe aksi.
 - [ ] **Ekspektasi Visual & System**:
   - Menampilkan log aktivitas mentah seluruh sistem.
@@ -409,7 +409,7 @@
 
 ### 21.2 Rule Engine / System Configuration
 - [ ] **Langkah Tes**:
-  1. Akses `/super-admin` atau menu Rule Engine.
+  1. Akses `/super-user` atau menu Rule Engine.
   2. Ubah parameter global (misal: Masa Aktif Bin 30 hari, AI Confidence Threshold 90%).
 - [ ] **Ekspektasi Visual & System**:
   - Parameter global tersimpan & langsung berdampak pada backend logic.
@@ -423,9 +423,9 @@
 | 1. Autentikasi & Sesi | 4 Skenario | Semua Role | [ ] Pass / [ ] Fail |
 | 2. Dashboard & Analitik | 3 Skenario | Semua Role (Scoped) | [ ] Pass / [ ] Fail |
 | 3. Setoran & Input Manual | 2 Skenario | Petugas, Warga | [ ] Pass / [ ] Fail |
-| 4. Manajemen Pengguna | 2 Skenario | Super Admin, Admin | [ ] Pass / [ ] Fail |
-| 5. Tempat Sampah & QR | 2 Skenario | RW, Super Admin | [ ] Pass / [ ] Fail |
-| 6. Manajemen Lokasi | 2 Skenario | Super Admin | [ ] Pass / [ ] Fail |
+| 4. Manajemen Pengguna | 2 Skenario | SUPER USER, Admin | [ ] Pass / [ ] Fail |
+| 5. Tempat Sampah & QR | 2 Skenario | RW, SUPER USER | [ ] Pass / [ ] Fail |
+| 6. Manajemen Lokasi | 2 Skenario | SUPER USER | [ ] Pass / [ ] Fail |
 | 7. Peta GIS & Polygon | 2 Skenario | Semua Role | [ ] Pass / [ ] Fail |
 | 8. Portal RW | 2 Skenario | RW | [ ] Pass / [ ] Fail |
 | 9. Pengangkutan & Eskalasi | 2 Skenario | Petugas Pengangkut | [ ] Pass / [ ] Fail |
@@ -433,11 +433,11 @@
 | 11. Ekosistem & Presensi KKN | 3 Skenario | Mahasiswa, DPL | [ ] Pass / [ ] Fail |
 | 12. Pemanfaatan Buruan Sae | 1 Skenario | RW, Mahasiswa | [ ] Pass / [ ] Fail |
 | 13. Leaderboard Publik | 2 Skenario | Publik / Semua Role | [ ] Pass / [ ] Fail |
-| 14. Rekap & Export Data | 2 Skenario | Admin, Super Admin | [ ] Pass / [ ] Fail |
+| 14. Rekap & Export Data | 2 Skenario | Admin, SUPER USER | [ ] Pass / [ ] Fail |
 | 15. Laporan & Analitik | 1 Skenario | Camat, Lurah, DLH | [ ] Pass / [ ] Fail |
 | 16. Notifikasi System | 1 Skenario | Semua Role | [ ] Pass / [ ] Fail |
 | 17. Ide Daur Ulang | 1 Skenario | Admin, Warga | [ ] Pass / [ ] Fail |
 | 18. Jadwal Kegiatan | 1 Skenario | Admin, RW | [ ] Pass / [ ] Fail |
-| 19. Kategori Sampah | 1 Skenario | Super Admin | [ ] Pass / [ ] Fail |
-| 20. Audit Log Immutable | 1 Skenario | Super Admin | [ ] Pass / [ ] Fail |
+| 19. Kategori Sampah | 1 Skenario | SUPER USER | [ ] Pass / [ ] Fail |
+| 20. Audit Log Immutable | 1 Skenario | SUPER USER | [ ] Pass / [ ] Fail |
 | 21. Profil & Rule Engine | 2 Skenario | Semua Role / Admin | [ ] Pass / [ ] Fail |

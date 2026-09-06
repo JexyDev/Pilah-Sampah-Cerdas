@@ -1,0 +1,565 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ */
+
+import { prisma } from "../lib/prisma.js";
+import { auditTrailService } from "./auditTrailService.js";
+import { websocketService } from "./websocketService.js";
+
+const MAX_DESKRIPSI_LENGTH = 500;
+
+export class PresensiMandiriService {
+  /**
+   * Check-in presensi mandiri — berlaku dengan atau tanpa jadwal aktif.
+   * Foto bukti wajib. Deskripsi kegiatan wajib (max 500 karakter).
+   * Otomatis sinkronisasi ke ActivityAttendance (kehadiran_kegiatan) jika ada jadwal KKN aktif hari ini.
+   */
+  async checkIn(params: {
+    studentId: string;
+    latitude: number;
+    longitude: number;
+    deskripsiKegiatan: string;
+    fotoUrl: string;
+    platformOs?: string;
+  }) {
+    const { studentId, latitude, longitude, deskripsiKegiatan, fotoUrl, platformOs } = params;
+
+    if (!deskripsiKegiatan || deskripsiKegiatan.trim().length === 0) {
+      throw new Error("DESKRIPSI_REQUIRED");
+    }
+    if (deskripsiKegiatan.trim().length > MAX_DESKRIPSI_LENGTH) {
+      throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
+    }
+
+    const student = await prisma.studentKkn.findUnique({
+      where: { userId: studentId },
+      select: { kelompokId: true, nim: true, jurusan: true },
+    });
+
+    if (!student) throw new Error("STUDENT_PROFILE_INCOMPLETE");
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const db = prisma as any;
+    const existingToday = await db.presensiMandiri.findFirst({
+      where: { studentId, status: "AKTIF", checkInAt: { gte: todayStart, lte: todayEnd } },
+    });
+
+    if (existingToday) throw new Error("ALREADY_CHECKED_IN_TODAY");
+
+    const record = await db.presensiMandiri.create({
+      data: {
+        studentId,
+        kelompokId: student.kelompokId ?? null,
+        latitude,
+        longitude,
+        deskripsiKegiatan: deskripsiKegiatan.trim(),
+        fotoUrl,
+        platformOs: platformOs || "ANDROID",
+        status: "AKTIF",
+      },
+      include: {
+        student: { select: { id: true, name: true, phone: true, studentProfile: { select: { nim: true, jurusan: true } } } },
+        kelompok: { select: { id: true, name: true, kelurahan: true } },
+      },
+    });
+
+    // Record into system history / audit trail
+    auditTrailService
+      .recordPresensiMandiriCheckIn({
+        presensiId: record.id,
+        studentId: record.studentId,
+        studentName: record.student?.name,
+        nim: record.student?.studentProfile?.nim,
+        kelompokName: record.kelompok?.name,
+        kelurahan: record.kelompok?.kelurahan,
+        latitude: Number(record.latitude),
+        longitude: Number(record.longitude),
+        deskripsiKegiatan: record.deskripsiKegiatan,
+        fotoUrl: record.fotoUrl,
+        platformOs: record.platformOs,
+        checkInAt: record.checkInAt.toISOString(),
+      })
+      .catch((err) => console.warn("[Audit] Presensi mandiri check-in log error:", err));
+
+    // [AUTO-SYNC] Bridge presensi mandiri ke ActivityAttendance (Jadwal KKN Resmi)
+    try {
+      const activeSchedule = await prisma.schedule.findFirst({
+        where: {
+          date: { gte: todayStart, lte: todayEnd },
+          isActive: true,
+          ...(student.kelompokId ? { OR: [{ kelompokId: student.kelompokId }, { kelompokId: null }] } : {}),
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (activeSchedule) {
+        const syncedAtt = await prisma.activityAttendance.upsert({
+          where: {
+            studentId_scheduleId: {
+              studentId,
+              scheduleId: activeSchedule.id,
+            },
+          },
+          update: {
+            status: "BERLANGSUNG",
+            attendedAt: new Date(),
+            latitude,
+            longitude,
+            method: "GPS_MANDIRI_SYNC",
+            deskripsiKegiatan: deskripsiKegiatan.trim(),
+            fotoUrl,
+            platformOs: platformOs || "IOS_SAFARI_WEB",
+            checkOutAt: null,
+          },
+          create: {
+            studentId,
+            scheduleId: activeSchedule.id,
+            status: "BERLANGSUNG",
+            attendedAt: new Date(),
+            latitude,
+            longitude,
+            method: "GPS_MANDIRI_SYNC",
+            deskripsiKegiatan: deskripsiKegiatan.trim(),
+            fotoUrl,
+            platformOs: platformOs || "IOS_SAFARI_WEB",
+          },
+        });
+
+        // Broadcast realtime updates ke web dashboard via WebSocket
+        websocketService.broadcastStudentAttendance({
+          id: syncedAtt.id,
+          studentId,
+          scheduleId: activeSchedule.id,
+          status: "BERLANGSUNG",
+          currentStatus: "DALAM_ZONA",
+          attendedAt: syncedAtt.attendedAt.toISOString(),
+          actualInZoneMinutes: 0,
+        });
+      }
+
+      // Record student GPS point log
+      const newLoc = await prisma.studentLocation.create({
+        data: {
+          studentId,
+          latitude,
+          longitude,
+        },
+      });
+
+      websocketService.broadcastStudentLocation({
+        id: newLoc.id,
+        studentId,
+        latitude,
+        longitude,
+        recordedAt: newLoc.recordedAt,
+        namaMahasiswa: record.student?.name || "Mahasiswa",
+        nim: student.nim || "",
+        jurusan: student.jurusan || "",
+        kelompokId: student.kelompokId || null,
+        student: {
+          id: studentId,
+          name: record.student?.name || "Mahasiswa",
+          phone: record.student?.phone || "",
+          studentProfile: {
+            nim: student.nim || "",
+            jurusan: student.jurusan || "",
+            kelompokId: student.kelompokId || null,
+          },
+        },
+      });
+    } catch (syncErr) {
+      console.warn("[PresensiMandiri] Auto-sync to ActivityAttendance warning:", syncErr);
+    }
+
+    return {
+      presensiId: record.id,
+      studentId: record.studentId,
+      nim: record.student?.studentProfile?.nim ?? null,
+      namaLengkap: record.student?.name,
+      kelompok: record.kelompok
+        ? {
+            id: record.kelompok.id,
+            nama: record.kelompok.name,
+            kelurahan: record.kelompok.kelurahan,
+          }
+        : null,
+      latitude: Number(record.latitude),
+      longitude: Number(record.longitude),
+      deskripsiKegiatan: record.deskripsiKegiatan,
+      fotoUrl: record.fotoUrl,
+      status: record.status,
+      checkInAt: record.checkInAt.toISOString(),
+      checkOutAt: null,
+      durasiMenit: null,
+      canCheckOut: true,
+    };
+  }
+
+  async checkOut(params: { presensiId: string; studentId: string; deskripsiKegiatan?: string }) {
+    const { presensiId, studentId, deskripsiKegiatan } = params;
+    const db = prisma as any;
+    const record = await db.presensiMandiri.findFirst({
+      where: { id: presensiId, studentId },
+      include: {
+        student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
+        kelompok: { select: { id: true, name: true } },
+      },
+    });
+    if (!record) throw new Error("PRESENSI_NOT_FOUND");
+    if (record.status === "SELESAI") throw new Error("ALREADY_CHECKED_OUT");
+
+    const checkOutAt = new Date();
+    const durasiMenit = Math.max(1, Math.floor((checkOutAt.getTime() - record.checkInAt.getTime()) / 60000));
+
+    const updateData: any = { status: "SELESAI", checkOutAt, durasiMenit };
+    if (deskripsiKegiatan && deskripsiKegiatan.trim().length > 0) {
+      if (deskripsiKegiatan.trim().length > MAX_DESKRIPSI_LENGTH) {
+        throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
+      }
+      updateData.deskripsiKegiatan = deskripsiKegiatan.trim();
+    }
+
+    const updated = await db.presensiMandiri.update({
+      where: { id: presensiId },
+      data: updateData,
+    });
+
+    // Record into system history / audit trail
+    auditTrailService
+      .recordPresensiMandiriCheckOut({
+        presensiId: updated.id,
+        studentId: record.studentId,
+        studentName: record.student?.name,
+        nim: record.student?.studentProfile?.nim,
+        kelompokName: record.kelompok?.name,
+        durasiMenit,
+        checkInAt: record.checkInAt.toISOString(),
+        checkOutAt: checkOutAt.toISOString(),
+        deskripsiKegiatan: updated.deskripsiKegiatan,
+      })
+      .catch((err) => console.warn("[Audit] Presensi mandiri check-out log error:", err));
+
+    // [AUTO-SYNC] Sinkronisasi penyelesaian sesi di ActivityAttendance
+    try {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const activeAttendance = await prisma.activityAttendance.findFirst({
+        where: {
+          studentId,
+          attendedAt: { gte: todayStart },
+          status: { in: ["BERLANGSUNG", "TERJEDA", "DALAM_RADIUS", "DI_ZONA"] },
+        },
+        orderBy: { attendedAt: "desc" },
+      });
+
+      if (activeAttendance) {
+        const finalStatus = durasiMenit >= 240 ? "HADIR_MEMENUHI" : "HADIR_TIDAK_MEMENUHI";
+        const syncedFinish = await prisma.activityAttendance.update({
+          where: { id: activeAttendance.id },
+          data: {
+            status: finalStatus,
+            checkOutAt,
+            actualInZoneMinutes: durasiMenit,
+            ...(updateData.deskripsiKegiatan ? { deskripsiKegiatan: updateData.deskripsiKegiatan } : {}),
+          },
+        });
+
+        websocketService.broadcastStudentAttendance({
+          id: syncedFinish.id,
+          studentId,
+          scheduleId: syncedFinish.scheduleId,
+          status: finalStatus,
+          currentStatus: "CHECKED_OUT",
+          attendedAt: syncedFinish.attendedAt.toISOString(),
+          actualInZoneMinutes: durasiMenit,
+        });
+      }
+    } catch (finishSyncErr) {
+      console.warn("[PresensiMandiri] Auto-sync finish to ActivityAttendance warning:", finishSyncErr);
+    }
+
+    return {
+      presensiId: updated.id,
+      status: updated.status,
+      checkInAt: updated.checkInAt.toISOString(),
+      checkOutAt: updated.checkOutAt!.toISOString(),
+      durasiMenit: updated.durasiMenit,
+      deskripsiKegiatan: updated.deskripsiKegiatan,
+    };
+  }
+
+  async updateDeskripsi(params: {
+    presensiId: string;
+    studentId: string;
+    deskripsiKegiatan: string;
+  }) {
+    const { presensiId, studentId, deskripsiKegiatan } = params;
+    if (!deskripsiKegiatan || deskripsiKegiatan.trim().length === 0)
+      throw new Error("DESKRIPSI_REQUIRED");
+    if (deskripsiKegiatan.trim().length > MAX_DESKRIPSI_LENGTH) {
+      throw new Error(`DESKRIPSI_TOO_LONG: Maksimal ${MAX_DESKRIPSI_LENGTH} karakter`);
+    }
+    const db = prisma as any;
+    const record = await db.presensiMandiri.findFirst({
+      where: { id: presensiId, studentId },
+      include: {
+        student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
+      },
+    });
+    if (!record) throw new Error("PRESENSI_NOT_FOUND");
+    const updated = await db.presensiMandiri.update({
+      where: { id: presensiId },
+      data: { deskripsiKegiatan: deskripsiKegiatan.trim() },
+    });
+
+    // Record into system history / audit trail
+    auditTrailService
+      .recordAudit({
+        action: "PRESENSI_MANDIRI_UPDATE",
+        userId: studentId,
+        roleName: "MAHASISWA_KKN",
+        featureCategory: "Presensi KKN",
+        endpoint: `/api/v1/presensi/mandiri/${presensiId}/deskripsi`,
+        oldValue: { deskripsiKegiatanLama: record.deskripsiKegiatan },
+        newValue: {
+          presensiId: updated.id,
+          deskripsiKegiatanBaru: updated.deskripsiKegiatan,
+          keterangan: `Mahasiswa ${record.student?.name ? `${record.student.name} (${record.student?.studentProfile?.nim || "-"})` : ""} memperbarui catatan kegiatan Presensi Mandiri.`,
+        },
+      })
+      .catch((err) => console.warn("[Audit] Presensi mandiri update log error:", err));
+
+    return {
+      presensiId: updated.id,
+      deskripsiKegiatan: updated.deskripsiKegiatan,
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+  }
+
+  async getRiwayatSaya(studentId: string, params: { page?: number; limit?: number }) {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(50, Math.max(1, params.limit ?? 10));
+    const skip = (page - 1) * limit;
+    const db = prisma as any;
+    const [total, items] = await Promise.all([
+      db.presensiMandiri.count({ where: { studentId } }),
+      db.presensiMandiri.findMany({
+        where: { studentId },
+        orderBy: { checkInAt: "desc" },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          latitude: true,
+          longitude: true,
+          deskripsiKegiatan: true,
+          fotoUrl: true,
+          status: true,
+          checkInAt: true,
+          checkOutAt: true,
+          durasiMenit: true,
+          kelompok: { select: { id: true, name: true } },
+        },
+      }),
+    ]);
+    return {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      items: items.map((p: any) => ({
+        presensiId: p.id,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        deskripsiKegiatan: p.deskripsiKegiatan,
+        fotoUrl: p.fotoUrl,
+        status: p.status,
+        checkInAt: p.checkInAt.toISOString(),
+        checkOutAt: p.checkOutAt?.toISOString() ?? null,
+        durasiMenit: p.durasiMenit,
+        kelompok: p.kelompok ? { id: p.kelompok.id, nama: p.kelompok.name } : null,
+      })),
+    };
+  }
+
+  async getLiveMap(params: { kelompokId?: string }) {
+    const { kelompokId } = params;
+    const db = prisma as any;
+    const mandiriAktif = await db.presensiMandiri.findMany({
+      where: { status: "AKTIF", ...(kelompokId ? { kelompokId } : {}) },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            studentProfile: { select: { nim: true } },
+            locations: {
+              orderBy: { recordedAt: "desc" },
+              take: 1,
+              select: { latitude: true, longitude: true, recordedAt: true },
+            },
+          },
+        },
+        kelompok: { select: { id: true, name: true, kelurahan: true } },
+      },
+    });
+    const resmiAktif = await prisma.activityAttendance.findMany({
+      where: {
+        status: "BERLANGSUNG",
+        ...(kelompokId ? { student: { studentProfile: { kelompokId } } } : {}),
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            studentProfile: { select: { nim: true, kelompokId: true } },
+            locations: {
+              orderBy: { recordedAt: "desc" },
+              take: 1,
+              select: { latitude: true, longitude: true, recordedAt: true },
+            },
+          },
+        },
+        schedule: { select: { title: true, kelompokId: true } },
+      },
+    });
+
+    const byKelompokMap = new Map<string, any>();
+    const addEntry = (kKey: string, kData: any, entry: any) => {
+      if (!byKelompokMap.has(kKey)) {
+        byKelompokMap.set(kKey, {
+          kelompokId: kData.id,
+          namaKelompok: kData.name ?? kData.nama,
+          kelurahan: kData.kelurahan ?? null,
+          mahasiswaAktif: [],
+        });
+      }
+      byKelompokMap.get(kKey)!.mahasiswaAktif.push(entry);
+    };
+
+    for (const pm of mandiriAktif) {
+      const lastLoc = pm.student.locations[0];
+      const kId = pm.kelompok?.id ?? "TANPA_KELOMPOK";
+      addEntry(
+        kId,
+        pm.kelompok ?? { id: "TANPA_KELOMPOK", name: "Tanpa Kelompok", kelurahan: null },
+        {
+          userId: pm.student.id,
+          nim: pm.student.studentProfile?.nim ?? null,
+          namaLengkap: pm.student.name,
+          latitude: lastLoc ? Number(lastLoc.latitude) : Number(pm.latitude),
+          longitude: lastLoc ? Number(lastLoc.longitude) : Number(pm.longitude),
+          lastSeen: lastLoc ? lastLoc.recordedAt.toISOString() : pm.checkInAt.toISOString(),
+          statusPresensi: "MANDIRI",
+          deskripsiKegiatan: pm.deskripsiKegiatan,
+          fotoUrl: pm.fotoUrl,
+          presensiId: pm.id,
+          checkInAt: pm.checkInAt.toISOString(),
+          durasiMenit: Math.floor((Date.now() - pm.checkInAt.getTime()) / 60000),
+        }
+      );
+    }
+
+    for (const ra of resmiAktif) {
+      const lastLoc = ra.student.locations[0];
+      const kId = ra.student.studentProfile?.kelompokId ?? "TANPA_KELOMPOK";
+      addEntry(
+        kId,
+        { id: kId, name: kId, kelurahan: null },
+        {
+          userId: ra.student.id,
+          nim: ra.student.studentProfile?.nim ?? null,
+          namaLengkap: ra.student.name,
+          latitude: lastLoc ? Number(lastLoc.latitude) : Number(ra.latitude),
+          longitude: lastLoc ? Number(lastLoc.longitude) : Number(ra.longitude),
+          lastSeen: lastLoc ? lastLoc.recordedAt.toISOString() : ra.attendedAt.toISOString(),
+          statusPresensi: "RESMI",
+          deskripsiKegiatan: (ra as any).deskripsiKegiatan ?? "Kegiatan Resmi",
+          presensiId: ra.id,
+          checkInAt: ra.attendedAt.toISOString(),
+          durasiMenit:
+            ra.actualInZoneMinutes ?? Math.floor((Date.now() - ra.attendedAt.getTime()) / 60000),
+        }
+      );
+    }
+
+    const byKelompok = Array.from(byKelompokMap.values());
+    return {
+      totalAktif: byKelompok.reduce((s, k) => s + k.mahasiswaAktif.length, 0),
+      byKelompok,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  async getAll(params: {
+    kelompokId?: string;
+    tanggalMulai?: string;
+    tanggalAkhir?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const page = Math.max(1, params.page ?? 1);
+    const limit = Math.min(100, Math.max(1, params.limit ?? 20));
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (params.kelompokId) where.kelompokId = params.kelompokId;
+    if (params.status) where.status = params.status;
+    if (params.tanggalMulai || params.tanggalAkhir) {
+      where.checkInAt = {};
+      if (params.tanggalMulai) where.checkInAt.gte = new Date(params.tanggalMulai);
+      if (params.tanggalAkhir) {
+        const e = new Date(params.tanggalAkhir);
+        e.setHours(23, 59, 59, 999);
+        where.checkInAt.lte = e;
+      }
+    }
+    const db = prisma as any;
+    const [total, items] = await Promise.all([
+      db.presensiMandiri.count({ where }),
+      db.presensiMandiri.findMany({
+        where,
+        orderBy: { checkInAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          student: { select: { id: true, name: true, studentProfile: { select: { nim: true } } } },
+          kelompok: { select: { id: true, name: true, kelurahan: true } },
+        },
+      }),
+    ]);
+    return {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      items: items.map((p: any) => ({
+        presensiId: p.id,
+        studentId: p.studentId,
+        nim: p.student.studentProfile?.nim ?? null,
+        namaLengkap: p.student.name,
+        kelompok: p.kelompok
+          ? { id: p.kelompok.id, nama: p.kelompok.name, kelurahan: p.kelompok.kelurahan }
+          : null,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        deskripsiKegiatan: p.deskripsiKegiatan,
+        fotoUrl: p.fotoUrl,
+        status: p.status,
+        checkInAt: p.checkInAt.toISOString(),
+        checkOutAt: p.checkOutAt?.toISOString() ?? null,
+        durasiMenit: p.durasiMenit,
+        createdAt: p.createdAt.toISOString(),
+      })),
+    };
+  }
+}
+
+export const presensiMandiriService = new PresensiMandiriService();

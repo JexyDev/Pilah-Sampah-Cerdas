@@ -1,6 +1,6 @@
-# LAPORAN FORENSIK AUDIT & QC MODUL PETUGAS RESIDU (TRASHCARE)
+﻿# LAPORAN FORENSIK AUDIT & QC MODUL PETUGAS RESIDU (BERSEKA)
 
-Dokumen ini merupakan laporan pemeriksaan menyeluruh (*Bug Hunting & QC Audit*) untuk **Modul Petugas Residu** pada aplikasi mobile **TrashCare** (Flutter Dart).
+Dokumen ini merupakan laporan pemeriksaan menyeluruh (*Bug Hunting & QC Audit*) untuk **Modul Petugas Residu** pada aplikasi mobile **BERSEKA** (Flutter Dart).
 
 ---
 

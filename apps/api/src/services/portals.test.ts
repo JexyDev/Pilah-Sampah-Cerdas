@@ -1,17 +1,15 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
-import { PrismaClient } from "@prisma/client";
 import { kknService } from "./kknService.js";
 import { residuService } from "./residuService.js";
 import { authService } from "./authService.js";
-
-const prisma = new PrismaClient();
 
 describe("Portals A & B Service Integration Tests", () => {
   let kknUser: any;
@@ -27,8 +25,10 @@ describe("Portals A & B Service Integration Tests", () => {
     await prisma.pointHistory.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.violation.deleteMany({});
-    await prisma.setoranOtomatis.deleteMany({});
+    await prisma.aiRequestLog.deleteMany({});
+    await prisma.auditTrail.deleteMany({});
     await prisma.setoranManual.deleteMany({});
+    await prisma.binResetRequest.deleteMany({});
     await prisma.bin.deleteMany({});
     await prisma.household.deleteMany({});
     await prisma.user.deleteMany({ where: { role: { name: "WARGA" } } });
@@ -44,7 +44,7 @@ describe("Portals A & B Service Integration Tests", () => {
       include: { petugasProfile: true },
     });
 
-    rtRwArea = await prisma.rtRwArea.findFirst();
+    rtRwArea = await prisma.rw.findFirst();
 
     const timestamp = Date.now();
     // Create a QR batch assigned to KKN PIC
@@ -66,7 +66,7 @@ describe("Portals A & B Service Integration Tests", () => {
         qrCode: `ORG-TEST-${timestamp}`,
         categoryId: category!.id,
         maxCapacityLiter: 25.0,
-        rtRwId: rtRwArea.id,
+        rwId: rtRwArea.id,
         status: "PRINTED",
         qrBatchId: qrBatch.id,
       },
@@ -79,7 +79,7 @@ describe("Portals A & B Service Integration Tests", () => {
         qrCode: `ANO-TEST-${timestamp}`,
         categoryId: catIno!.id,
         maxCapacityLiter: 25.0,
-        rtRwId: rtRwArea.id,
+        rwId: rtRwArea.id,
         status: "PRINTED",
         qrBatchId: qrBatch.id,
       },
@@ -103,12 +103,12 @@ describe("Portals A & B Service Integration Tests", () => {
           phone: "+62812" + Math.floor(10000000 + Math.random() * 90000000).toString(),
 
           password: "password123",
-          rtRwId: rtRwArea.id,
+          rwId: rtRwArea.id,
           address: "Jl. Dago Giri No. 12",
         },
         {
           address: "Jl. Dago Giri No. 12",
-          rtRwId: rtRwArea.id,
+          rwId: rtRwArea.id,
           latitude: -6.88923,
           longitude: 107.6105,
         },
@@ -152,7 +152,7 @@ describe("Portals A & B Service Integration Tests", () => {
         type: "RESIDU_MIXED_ORGANIC",
         severity: "MEDIUM",
         evidencePhotoUrl: "/uploads/violation_test.jpg",
-        notes: "Ditemukan plastik tercampur dalam tong organik",
+        notes: "Ditemukan plastik tercampur dalam Tempat Sampah Organik",
       });
 
       expect(violation).toHaveProperty("id");

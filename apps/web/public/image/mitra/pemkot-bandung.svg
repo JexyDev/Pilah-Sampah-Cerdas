@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bandungShield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield Outline -->
+  <path d="M60 8 L102 24 V64 C102 90 60 112 60 112 C60 112 18 90 18 64 V24 Z" fill="url(#bandungShield)" stroke="url(#goldAccent)" stroke-width="4.5" stroke-linejoin="round"/>
+  <!-- Top Crown / Roof Landmark -->
+  <path d="M38 34 L60 20 L82 34 L76 34 L60 24 L44 34 Z" fill="url(#goldAccent)"/>
+  <!-- Waves representing Bandung Gemah Ripah -->
+  <path d="M30 52 C45 46 75 58 90 52" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 64 C45 58 75 70 90 64" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+  <path d="M30 76 C45 70 75 82 90 76" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Central Star -->
+  <polygon points="60,34 62.5,41.5 70,41.5 64,46 66,53.5 60,49 54,53.5 56,46 50,41.5 57.5,41.5" fill="#f59e0b"/>
+  <!-- Text KOTA BANDUNG -->
+  <text x="60" y="98" font-family="Arial, sans-serif" font-weight="900" font-size="9" fill="#ffffff" text-anchor="middle" letter-spacing="0.8">KOTA BANDUNG</text>
+</svg>

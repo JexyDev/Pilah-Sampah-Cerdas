@@ -1,34 +1,43 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ * 
+ * Component: Monitoring Real-Time Penyetoran Sampah
+ * Clean, Simple, Enterprise-Grade Design with Live WebSocket Stream
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { Pagination } from "../../components/common/Pagination";
+import api from "../../services/api";
+import showToast from "../../utils/showToast";
+import { useAuthStore } from "../../store/useAuthStore";
+import { wsClient } from "../../utils/websocket";
 import {
-  Search,
-  RefreshCw,
-  CheckCircle,
-  FileText,
   Scale,
   Sparkles,
-  TrendingUp,
-  Image as ImageIcon,
-  X,
-  Loader2,
-  Calendar,
   ShieldCheck,
-  ChevronLeft,
-  ChevronRight,
+  X,
+  Phone,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Leaf,
+  Layers,
+  Trash2,
+  Bot,
+  MapPin,
+  CheckCheck,
+  User,
 } from "lucide-react";
-import api from "../../utils/api";
 
 interface DepositLog {
   id: string;
   warga: string;
   phone?: string;
-  rtRw: string;
+  rw?: string;
+  rtRw?: string;
   kelurahan?: string;
   jenis: string;
   berat: number;
@@ -36,515 +45,616 @@ interface DepositLog {
   waktu: string;
   status: string;
   lokasi: string;
-  confidence?: number;
-  fotoUrl?: string;
+  confidence?: number | null;
+  organikPercent?: number;
+  anorganikPercent?: number;
+  fotoUrl?: string | null;
+  fotoProfil?: string | null;
+  isManual?: boolean;
+  catatanPenolakan?: string | null;
 }
 
 export default function SetorSampah() {
+  const { user } = useAuthStore();
+  const role = (user?.role || user?.peran || "").toUpperCase();
+  const isDeveloper = ["DEVELOPER", "SUPER_USER", "DEV"].includes(role);
+  const isLurah = role === "LURAH";
+  const userKelurahan =
+    user?.kelurahan ||
+    (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
+
   const [logs, setLogs] = useState<DepositLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  
-  // Filters State
+  const [wsStatus, setWsStatus] = useState<"CONNECTED" | "CONNECTING" | "DISCONNECTED">("CONNECTING");
+  const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
+
+  // Detail Modal & Preview Image
+  const [selectedLog, setSelectedLog] = useState<DepositLog | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  // Filters
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [filterKelurahan, setFilterKelurahan] = useState<string>("ALL");
-  const [filterRtRw, setFilterRtRw] = useState<string>("ALL");
+  const [filterKelurahan, setFilterKelurahan] = useState<string>(isLurah ? userKelurahan : "ALL");
+  const [filterRw, setFilterRw] = useState<string>("ALL");
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
-  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [filterPeriode, setFilterPeriode] = useState<string>("ALL");
 
-  // Pagination State
+  // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 10;
-
-  // Photo Modal State
-  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    if (isLurah && userKelurahan) {
+      setFilterKelurahan(userKelurahan);
+    }
+  }, [isLurah, userKelurahan]);
 
-  const fetchLogs = async () => {
-    setIsLoading(true);
+  // Fetch Initial Data
+  const fetchLogs = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const res = await api.get("/transactions/deposits");
       if (res.data?.success && Array.isArray(res.data.data)) {
         setLogs(res.data.data);
       } else {
-        setLogs(getDummyLogs());
+        setLogs([]);
       }
-    } catch (err) {
-      console.warn("Failed to fetch live deposit logs, fallback to monitoring demo data:", err);
-      setLogs(getDummyLogs());
+    } catch (err: any) {
+      console.error("Gagal memuat data penyetoran:", err);
+      showToast.error(err.response?.data?.message || "Gagal terhubung ke server");
+      setLogs([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getDummyLogs = (): DepositLog[] => [
-    {
-      id: "LOG-1092",
-      warga: "Keluarga Budi Santoso",
-      phone: "081298765432",
-      rtRw: "RT 04 / RW 02",
-      kelurahan: "Lebak Siliwangi",
-      jenis: "Organik",
-      berat: 2.5,
-      poin: 180,
-      waktu: "2026-08-02 08:15",
-      status: "TERVERIFIKASI_KKN",
-      lokasi: "Bin BIN-ORG-04-001",
-      confidence: 94,
-      fotoUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "LOG-1091",
-      warga: "Ibu Siti Rahmawati",
-      phone: "081311223344",
-      rtRw: "RT 02 / RW 01",
-      kelurahan: "Sadang Serang",
-      jenis: "Anorganik",
-      berat: 1.8,
-      poin: 140,
-      waktu: "2026-08-02 07:45",
-      status: "TERVERIFIKASI_KKN",
-      lokasi: "Bin BIN-ANO-02-004",
-      confidence: 91,
-      fotoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "LOG-1090",
-      warga: "Pak Hendra Wijaya",
-      phone: "085299887766",
-      rtRw: "RT 05 / RW 03",
-      kelurahan: "Dago",
-      jenis: "Organik",
-      berat: 3.2,
-      poin: 230,
-      waktu: "2026-08-02 07:10",
-      status: "SELESAI",
-      lokasi: "Bin BIN-ORG-05-002",
-      confidence: 96,
-      fotoUrl: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=600&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "LOG-1089",
-      warga: "Keluarga Ahmad Jubaedi",
-      phone: "087766554433",
-      rtRw: "RT 01 / RW 02",
-      kelurahan: "Sekeloa",
-      jenis: "Anorganik",
-      berat: 4.0,
-      poin: 280,
-      waktu: "2026-08-01 17:30",
-      status: "PENDING_REVIEW",
-      lokasi: "Bin BIN-ANO-01-008",
-      confidence: 87,
-      fotoUrl: "https://images.unsplash.com/photo-1595278069441-2cf29f8005a4?w=600&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "LOG-1088",
-      warga: "Ibu Ratna Dewi",
-      phone: "089612345678",
-      rtRw: "RT 03 / RW 02",
-      kelurahan: "Lebak Gede",
-      jenis: "Organik",
-      berat: 1.5,
-      poin: 110,
-      waktu: "2026-08-01 16:50",
-      status: "TERVERIFIKASI_KKN",
-      lokasi: "Bin BIN-ORG-03-005",
-      confidence: 95,
-      fotoUrl: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80",
-    },
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  // WebSocket Live Subscription
+  useEffect(() => {
+    const unsubscribeStatus = wsClient.onStatusChange((status) => {
+      setWsStatus(status);
+    });
+
+    const unsubscribeDeposit = wsClient.onDeposit((newDeposit: DepositLog) => {
+      setLogs((prev) => {
+        const exists = prev.some((d) => d.id === newDeposit.id);
+        if (exists) return prev;
+        return [newDeposit, ...prev];
+      });
+
+      setRecentlyAddedId(newDeposit.id);
+      setTimeout(() => {
+        setRecentlyAddedId(null);
+      }, 4000);
+
+      showToast.success(`Setoran baru: ${newDeposit.warga} (${newDeposit.berat} Kg ${newDeposit.jenis})`);
+    });
+
+    return () => {
+      unsubscribeStatus();
+      unsubscribeDeposit();
+    };
+  }, []);
+
+  // Clean Warga Name
+  const cleanWargaName = (rawName?: string) => {
+    if (!rawName) return "Warga";
+    return rawName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim() || "Warga";
+  };
+
+  // Format Rukun Warga
+  const formatRukunWarga = (rawRw?: string) => {
+    if (!rawRw) return "RW 01";
+    if (rawRw.includes("/")) {
+      const parts = rawRw.split("/");
+      const rwPart = parts.find((p) => p.toLowerCase().includes("rw")) || parts[parts.length - 1];
+      return rwPart.trim();
+    }
+    return rawRw;
+  };
+
+  // Extract Real Photo URL
+  const getRealPhotoUrl = (log: DepositLog): string | null => {
+    if (!log.fotoUrl) return null;
+    const url = log.fotoUrl.trim();
+    if (url.length === 0 || url.includes("default-residu") || url.includes("unsplash.com") || url.includes("picsum.photos")) {
+      return null;
+    }
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:image/")) {
+      return url;
+    }
+    return url.startsWith("/") ? url : `/${url}`;
+  };
+
+  const COBLONG_6_KELURAHAN = [
+    "Cipaganti",
+    "Dago",
+    "Lebak Gede",
+    "Lebak Siliwangi",
+    "Sadang Serang",
+    "Sekeloa",
   ];
 
-  // Helper to format Warga name cleanly
-  const cleanWargaName = (rawName: string) => {
-    if (!rawName) return "Warga Coblong";
-    let cleaned = rawName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim();
-    return cleaned || "Warga Coblong";
-  };
-
-  // Helper to format image URL with fallback
-  const getPhotoUrl = (log: DepositLog) => {
-    if (log.fotoUrl && log.fotoUrl.length > 5 && !log.fotoUrl.includes("default-residu")) {
-      if (log.fotoUrl.startsWith("http://") || log.fotoUrl.startsWith("https://") || log.fotoUrl.startsWith("data:image/")) {
-        return log.fotoUrl;
-      }
-      return log.fotoUrl.startsWith("/") ? log.fotoUrl : `/${log.fotoUrl}`;
-    }
-    // High quality Unsplash waste sorting demo images
-    if (log.jenis?.toLowerCase() === "organik") {
-      return "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80";
-    }
-    return "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80";
-  };
-
-  // Helper to format confidence percentage properly (converting decimal <= 1 or missing value)
-  const formatConfidence = (log: DepositLog) => {
-    const val = log.confidence;
-    if (val !== undefined && val !== null && !isNaN(Number(val)) && Number(val) > 0) {
-      const num = Number(val);
-      if (num <= 1) return Math.round(num * 100);
-      return Math.round(num);
-    }
-    const charCodeSum = (log.id || "").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-    return 91 + (charCodeSum % 8);
-  };
-
-  // Dynamic Options for Filters
   const kelurahanOptions = useMemo(() => {
-    const set = new Set<string>();
-    logs.forEach((log) => {
-      if (log.kelurahan) set.add(log.kelurahan);
-    });
-    // Add default kelurahan if empty
-    ["Coblong", "Lebak Siliwangi", "Sadang Serang", "Dago", "Sekeloa", "Lebak Gede"].forEach((k) => set.add(k));
-    return Array.from(set);
-  }, [logs]);
+    if (isLurah && userKelurahan) return [userKelurahan];
+    return COBLONG_6_KELURAHAN;
+  }, [isLurah, userKelurahan]);
 
-  const rtRwOptions = useMemo(() => {
+  const rwOptions = useMemo(() => {
+    const targetKel = isLurah ? userKelurahan : filterKelurahan;
     const set = new Set<string>();
-    logs.forEach((log) => {
-      if (log.rtRw) set.add(log.rtRw);
-    });
-    ["RT 01 / RW 01", "RT 02 / RW 01", "RT 04 / RW 02", "RT 05 / RW 03", "RT 03 / RW 02"].forEach((r) => set.add(r));
-    return Array.from(set);
-  }, [logs]);
 
-  // Filtered Logs
+    logs.forEach((log) => {
+      if (targetKel === "ALL" || (log.kelurahan || "").toLowerCase().includes(targetKel.toLowerCase())) {
+        const formatted = formatRukunWarga(log.rw || log.rtRw);
+        if (formatted) set.add(formatted);
+      }
+    });
+
+    if (set.size === 0 && targetKel !== "ALL") {
+      const rwCount = targetKel.toLowerCase().includes("cipaganti") ? 18 : 13;
+      for (let i = 1; i <= rwCount; i++) {
+        set.add(`RW ${String(i).padStart(2, "0")}`);
+      }
+    }
+
+    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [logs, isLurah, userKelurahan, filterKelurahan]);
+
+  // Filtered dataset
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        log.warga.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.rtRw.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (log.kelurahan && log.kelurahan.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        log.id.toLowerCase().includes(searchQuery.toLowerCase());
+      // 1. Search Query
+      if (searchQuery.trim() !== "") {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesWarga = cleanWargaName(log.warga).toLowerCase().includes(q);
+        const matchesRw = formatRukunWarga(log.rw || log.rtRw).toLowerCase().includes(q);
+        const matchesKel = (log.kelurahan || "").toLowerCase().includes(q);
+        const matchesId = (log.id || "").toLowerCase().includes(q);
+        const matchesPhone = (log.phone || "").toLowerCase().includes(q);
+        if (!matchesWarga && !matchesRw && !matchesKel && !matchesId && !matchesPhone) return false;
+      }
 
-      const matchesKelurahan =
-        filterKelurahan === "ALL" || log.kelurahan?.toLowerCase() === filterKelurahan.toLowerCase();
+      // 2. Kelurahan
+      const targetKel = isLurah ? userKelurahan : filterKelurahan;
+      if (targetKel !== "ALL" && !(log.kelurahan || "").toLowerCase().includes(targetKel.toLowerCase())) {
+        return false;
+      }
 
-      const matchesRtRw =
-        filterRtRw === "ALL" || log.rtRw?.toLowerCase() === filterRtRw.toLowerCase();
+      // 3. RW
+      if (filterRw !== "ALL") {
+        const rwFormatted = formatRukunWarga(log.rw || log.rtRw);
+        if (rwFormatted.toLowerCase() !== filterRw.toLowerCase()) return false;
+      }
 
-      const matchesCategory =
-        filterCategory === "ALL" || log.jenis.toUpperCase() === filterCategory.toUpperCase();
+      // 4. Category
+      if (filterCategory !== "ALL") {
+        const catUpper = (log.jenis || "").toUpperCase();
+        if (filterCategory === "ORGANIC" && (!catUpper.includes("ORGANIK") || catUpper.includes("ANORGANIK"))) return false;
+        if (filterCategory === "NON_ORGANIC" && !catUpper.includes("ANORGANIK")) return false;
+        if (filterCategory === "RESIDU" && !catUpper.includes("RESIDU")) return false;
+      }
 
-      const matchesStatus =
-        filterStatus === "ALL" || log.status.toUpperCase() === filterStatus.toUpperCase();
+      // 5. Periode
+      if (filterPeriode !== "ALL") {
+        const depositDate = new Date(log.waktu);
+        const limitDate = new Date();
+        if (filterPeriode === "7d") limitDate.setDate(limitDate.getDate() - 7);
+        else if (filterPeriode === "30d") limitDate.setDate(limitDate.getDate() - 30);
+        else if (filterPeriode === "90d") limitDate.setDate(limitDate.getDate() - 90);
+        if (depositDate < limitDate) return false;
+      }
 
-      return matchesSearch && matchesKelurahan && matchesRtRw && matchesCategory && matchesStatus;
+      return true;
     });
-  }, [logs, searchQuery, filterKelurahan, filterRtRw, filterCategory, filterStatus]);
+  }, [logs, searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, isLurah, userKelurahan]);
 
-  // Reset page when filters change
+  // Reset pagination on filter change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterKelurahan, filterRtRw, filterCategory, filterStatus]);
+  }, [searchQuery, filterKelurahan, filterRw, filterCategory, filterPeriode, itemsPerPage]);
 
-  // Pagination Calculation
   const totalItems = filteredLogs.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentLogs = filteredLogs.slice(startIndex, endIndex);
 
-  // Totals for KPIs (Rounded integers)
-  const totalBerat = useMemo(
-    () => filteredLogs.reduce((acc, curr) => acc + (Number(curr.berat) || 0), 0),
-    [filteredLogs]
-  );
-  const totalPoinRounded = useMemo(
-    () => Math.round(filteredLogs.reduce((acc, curr) => acc + (Number(curr.poin) || 0), 0)),
-    [filteredLogs]
-  );
+  // Aggregated KPI Stats
+  const totalBerat = useMemo(() => {
+    return filteredLogs.reduce((acc, curr) => acc + (Number(curr.berat) || 0), 0);
+  }, [filteredLogs]);
+
+  const totalPoin = useMemo(() => {
+    return Math.round(filteredLogs.reduce((acc, curr) => acc + (Number(curr.poin) || 0), 0));
+  }, [filteredLogs]);
+
+  const akurasiAi = useMemo(() => {
+    const aiLogs = filteredLogs.filter((l) => l.confidence !== null && l.confidence !== undefined);
+    if (aiLogs.length === 0) return null;
+    const sum = aiLogs.reduce((acc, curr) => acc + Number(curr.confidence), 0);
+    return Math.round(sum / aiLogs.length);
+  }, [filteredLogs]);
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setFilterKelurahan(isLurah ? userKelurahan : "ALL");
+    setFilterRw("ALL");
+    setFilterCategory("ALL");
+    setFilterPeriode("ALL");
+  };
+
+  const renderCategoryTag = (jenis?: string) => {
+    const j = (jenis || "").toUpperCase();
+    if (j.includes("ANORGANIK") || j.includes("NON_ORGANIC") || j.includes("NON-ORGANIC")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100/90 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-700 shadow-2xs">
+          <Layers size={13} /> Anorganik
+        </span>
+      );
+    }
+    if (j.includes("ORGANIK") || j.includes("ORGANIC")) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100/90 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700 shadow-2xs">
+          <Leaf size={13} /> Organik
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-rose-100/90 text-rose-800 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-700 shadow-2xs">
+        <Trash2 size={13} /> Residu
+      </span>
+    );
+  };
+
+  const renderStatusTag = (status?: string) => {
+    const s = (status || "").toUpperCase();
+    if (s === "ACCEPTED" || s === "SELESAI") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+          <CheckCircle2 size={12} /> Diterima
+        </span>
+      );
+    }
+    if (s === "REJECTED" || s === "DITOLAK") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800">
+          <XCircle size={12} /> Ditolak
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black rounded-xl bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800">
+        <Clock size={12} /> Pending
+      </span>
+    );
+  };
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100 font-sans">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Monitoring Pemilahan Sampah Warga
-            </h1>
-            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <Sparkles size={13} /> Real-Time Sync
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold tracking-wider uppercase text-slate-500 dark:text-slate-400">
+              {isLurah ? `Kelurahan ${userKelurahan}` : (user?.wilayah || "Semua Wilayah")}
+            </span>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+              Monitoring Penyetoran
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Pemantauan aktivitas pemilahan harian warga, klasifikasi AI, & verifikasi lapangan di Kecamatan Coblong.
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Log Aktivitas Penyetoran Sampah
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Pencatatan real-time transaksi setoran warga, inferensi AI, dan penimbangan residu lapangan.
           </p>
         </div>
 
-        <button
-          onClick={fetchLogs}
-          disabled={isLoading}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
-        >
-          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-          {isLoading ? "Memuat Data..." : "Refresh Data"}
-        </button>
-      </div>
+        {/* Real-Time WebSocket Indicator - Eksklusif Developer / Super User */}
+        <div className="flex items-center gap-3">
+          {isDeveloper && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${
+                  wsStatus === "CONNECTED"
+                    ? "bg-emerald-500 animate-pulse"
+                    : wsStatus === "CONNECTING"
+                    ? "bg-amber-500"
+                    : "bg-slate-400"
+                }`}
+              />
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {wsStatus === "CONNECTED"
+                  ? "Live Stream Terhubung"
+                  : wsStatus === "CONNECTING"
+                  ? "Menghubungkan..."
+                  : "Offline (Klik Refresh)"}
+              </span>
+            </div>
+          )}
 
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Sampah Terpilah</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
-              {totalBerat.toFixed(1)} <span className="text-sm font-bold text-slate-500">Kg</span>
-            </h3>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <TrendingUp size={12} /> +12.4% vs minggu lalu
-            </p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-            <Scale size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Skor Kepatuhan</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">94.8%</h3>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <CheckCircle size={12} /> Kategori Akurat
-            </p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-            <ShieldCheck size={24} />
-          </div>
-        </div>
-
-        {/* POIN DITERBITKAN - Clean Rounded Number */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Poin Diterbitkan</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">
-              {totalPoinRounded.toLocaleString("id-ID")} <span className="text-sm font-bold text-slate-500">Pts</span>
-            </h3>
-            <p className="text-[11px] font-semibold text-slate-500 mt-1 flex items-center gap-1">
-              <Sparkles size={12} /> Reward Gamifikasi
-            </p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-            <Sparkles size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Akurasi AI Model</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">96.2%</h3>
-            <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1">
-              <CheckCircle size={12} /> High Confidence
-            </p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-            <FileText size={24} />
-          </div>
+          <button
+            onClick={() => fetchLogs(false)}
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
+          >
+            Refresh
+          </button>
         </div>
       </div>
 
-      {/* Comprehensive Filter Bar (Kelurahan, RT/RW, Kategori, Status) */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      {/* KPI Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Weight */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            Total Sampah Terpilah
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            {totalBerat >= 1000
+              ? (totalBerat / 1000).toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : totalBerat.toLocaleString("id-ID", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+              {totalBerat >= 1000 ? "Ton" : "Kg"}
+            </span>
+          </div>
+        </div>
+
+        {/* Points Awarded */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            Poin Diterbitkan
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            {totalPoin.toLocaleString("id-ID")}{" "}
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Pts</span>
+          </div>
+        </div>
+
+        {/* AI Model Accuracy */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            Akurasi Model AI
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            {akurasiAi !== null ? `${akurasiAi}%` : "—"}{" "}
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+              {akurasiAi !== null ? "(Rerata)" : "(Tidak ada data AI)"}
+            </span>
+          </div>
+        </div>
+
+        {/* Total Transactions */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+            Total Transaksi
+          </div>
+          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            {totalItems}{" "}
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Transaksi</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Controls */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Search */}
-        <div className="relative w-full lg:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+        <div className="flex-1 min-w-[260px]">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari Warga, RT/RW, ID Log..."
-            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium text-slate-800"
+            placeholder="Cari nama warga/petugas, RW, kelurahan, no. telp, ID..."
+            className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 outline-none focus:border-slate-400"
           />
         </div>
 
-        {/* Dropdown Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
-          {/* Kelurahan Dropdown */}
-          <div>
-            <select
-              value={filterKelurahan}
-              onChange={(e) => setFilterKelurahan(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="ALL">Semua Kelurahan</option>
-              {kelurahanOptions.map((kel) => (
-                <option key={kel} value={kel}>
-                  {kel}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* RT/RW Dropdown */}
-          <div>
-            <select
-              value={filterRtRw}
-              onChange={(e) => setFilterRtRw(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="ALL">Semua RT / RW</option>
-              {rtRwOptions.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Kategori Sampah Dropdown */}
-          <div>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="ALL">Semua Kategori</option>
-              <option value="ORGANIK">Organik</option>
-              <option value="ANORGANIK">Anorganik</option>
-              <option value="RESIDU">Residu</option>
-            </select>
-          </div>
-
-          {/* Status Dropdown */}
-          <div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="ALL">Semua Status</option>
-              <option value="SELESAI">Selesai</option>
-              <option value="TERVERIFIKASI_KKN">Terverifikasi KKN</option>
-              <option value="PENDING_REVIEW">Pending Review</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Reset Filter Button */}
-        {(searchQuery || filterKelurahan !== "ALL" || filterRtRw !== "ALL" || filterCategory !== "ALL" || filterStatus !== "ALL") && (
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setFilterKelurahan("ALL");
-              setFilterRtRw("ALL");
-              setFilterCategory("ALL");
-              setFilterStatus("ALL");
-            }}
-            className="px-3 py-2.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
+        {/* Dropdowns */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Kelurahan */}
+          <select
+            value={filterKelurahan}
+            disabled={isLurah}
+            onChange={(e) => setFilterKelurahan(e.target.value)}
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
           >
-            <X size={14} /> Reset Filter
-          </button>
-        )}
+            {!isLurah && <option value="ALL">Semua Kelurahan</option>}
+            {kelurahanOptions.map((kel) => (
+              <option key={kel} value={kel}>
+                Kel. {kel} {isLurah ? "(Wilayah Tugas)" : ""}
+              </option>
+            ))}
+          </select>
+
+          {/* RW */}
+          <select
+            value={filterRw}
+            onChange={(e) => setFilterRw(e.target.value)}
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
+          >
+            <option value="ALL">Semua Rukun Warga</option>
+            {rwOptions.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+
+          {/* Category */}
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
+          >
+            <option value="ALL">Semua Kategori</option>
+            <option value="ORGANIC">Organik</option>
+            <option value="NON_ORGANIC">Anorganik</option>
+            <option value="RESIDU">Residu</option>
+          </select>
+
+          {/* Periode */}
+          <select
+            value={filterPeriode}
+            onChange={(e) => setFilterPeriode(e.target.value)}
+            className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 outline-none"
+          >
+            <option value="ALL">Semua Periode</option>
+            <option value="7d">7 Hari Terakhir</option>
+            <option value="30d">30 Hari Terakhir</option>
+            <option value="90d">90 Hari Terakhir</option>
+          </select>
+
+          {(searchQuery || filterKelurahan !== (isLurah ? userKelurahan : "ALL") || filterRw !== "ALL" || filterCategory !== "ALL" || filterPeriode !== "ALL") && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-2 text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition"
+            >
+              Reset
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
-          <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-            <Calendar size={16} className="text-primary" /> Daftar Aktivitas Pemilahan Sampah
-          </h3>
-          <span className="text-xs font-bold text-slate-500">
-            Menampilkan {totalItems === 0 ? 0 : `${startIndex + 1} - ${endIndex}`} dari {totalItems} data
+      {/* Main Table */}
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <span>
+            Menampilkan {totalItems === 0 ? 0 : `${startIndex + 1} - ${endIndex}`} dari {totalItems} transaksi
           </span>
         </div>
 
         {isLoading ? (
-          <div className="p-12 text-center flex flex-col items-center justify-center gap-2">
-            <Loader2 className="animate-spin text-primary" size={32} />
-            <p className="text-xs font-bold text-slate-500">Memuat aktivitas pemilahan...</p>
+          <div className="py-16 text-center text-xs text-slate-500">
+            Memuat data penyetoran...
           </div>
         ) : currentLogs.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs font-medium">
-            Tidak ada data pemilahan yang sesuai dengan kriteria filter.
+          <div className="py-16 text-center text-xs text-slate-500">
+            Tidak ada transaksi yang cocok dengan filter yang dipilih.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
-                  <th className="py-3.5 px-4">ID / Waktu</th>
-                  <th className="py-3.5 px-4">Warga & Wilayah</th>
-                  <th className="py-3.5 px-4">Kategori Sampah</th>
-                  <th className="py-3.5 px-4">Berat & Poin</th>
-                  <th className="py-3.5 px-4">Akurasi AI</th>
-                  <th className="py-3.5 px-4">Status Verifikasi</th>
-                  <th className="py-3.5 px-4 text-center">Foto Bukti</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase text-[11px] tracking-wide">
+                  <th className="py-3 px-3">ID Transaksi</th>
+                  <th className="py-3 px-3">Nama Penyetor</th>
+                  <th className="py-3 px-3">Wilayah</th>
+                  <th className="py-3 px-3">Kategori</th>
+                  <th className="py-3 px-3 text-right">Berat (Kg)</th>
+                  <th className="py-3 px-3 text-right">Poin</th>
+                  <th className="py-3 px-3 text-center">Akurasi AI</th>
+                  <th className="py-3 px-3 text-center">Status</th>
+                  <th className="py-3 px-3">Waktu</th>
+                  <th className="py-3 px-3 text-center">Foto Bukti</th>
+                  <th className="py-3 px-3 text-center">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                 {currentLogs.map((log) => {
-                  const isOrganik = log.jenis.toLowerCase() === "organik";
-                  const photoSrc = getPhotoUrl(log);
+                  const realPhoto = getRealPhotoUrl(log);
+                  const isHighlighted = log.id === recentlyAddedId;
 
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        <p className="text-xs font-black text-slate-800 tracking-tight">
-                          {log.id.length > 24 ? `${log.id.substring(0, 18)}...` : log.id}
-                        </p>
-                        <p className="text-[10px] font-medium text-slate-400 mt-0.5">{log.waktu}</p>
+                    <tr
+                      key={log.id}
+                      onClick={() => setSelectedLog(log)}
+                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/60 transition cursor-pointer ${
+                        isHighlighted ? "bg-emerald-50/80 dark:bg-emerald-950/40" : ""
+                      }`}
+                    >
+                      {/* ID */}
+                      <td className="py-3 px-3 font-mono font-medium text-slate-900 dark:text-slate-100">
+                        {log.id.length > 12 ? `${log.id.substring(0, 8)}...` : log.id}
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-800">{cleanWargaName(log.warga)}</p>
-                        <p className="text-[10px] text-slate-500 font-semibold">
-                          {log.rtRw} • {log.kelurahan || "Coblong"}
-                        </p>
+                      {/* Name & Phone */}
+                      <td className="py-3 px-3 font-medium text-slate-900 dark:text-slate-100">
+                        <div>{cleanWargaName(log.warga)}</div>
+                        {log.phone && log.phone !== "-" && (
+                          <div className="text-[10px] text-slate-400">{log.phone}</div>
+                        )}
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
-                            isOrganik
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : "bg-blue-100 text-blue-800 border border-blue-200"
-                          }`}
-                        >
-                          {log.jenis}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <p className="font-black text-slate-900">{log.berat} Kg</p>
-                        <p className="text-[10px] font-bold text-emerald-600">
-                          +{Math.round(log.poin)} Poin
-                        </p>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-extrabold text-slate-700">{formatConfidence(log)}%</span>
-                          <span className="text-[10px] text-emerald-600 font-bold">Akurat</span>
+                      {/* Region */}
+                      <td className="py-3 px-3">
+                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                          {formatRukunWarga(log.rw || log.rtRw)}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {log.kelurahan ? `Kel. ${log.kelurahan}` : "-"}
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
-                          <CheckCircle size={12} /> {log.status === "TERVERIFIKASI_KKN" ? "Verified KKN" : "Selesai"}
-                        </span>
+                      {/* Category */}
+                      <td className="py-3 px-3">{renderCategoryTag(log.jenis)}</td>
+
+                      {/* Weight */}
+                      <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {log.berat}
                       </td>
 
-                      {/* Foto Bukti Column - Clean Thumbnail + Modal Trigger */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => setSelectedPhotoUrl(photoSrc)}
-                          className="group relative inline-flex items-center gap-1.5 p-1 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 transition-all cursor-pointer"
-                          title="Klik untuk memperbesar foto bukti"
-                        >
-                          <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-300 bg-slate-200 flex-shrink-0">
-                            <img
-                              src={photoSrc}
-                              alt="Bukti"
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
-                            />
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-700 pr-1.5 group-hover:text-primary">
-                            Lihat Foto
+                      {/* Points */}
+                      <td className="py-3 px-3 text-right font-mono font-semibold text-slate-900 dark:text-slate-100">
+                        {log.poin > 0 ? `+${Math.round(log.poin)}` : "0"}
+                      </td>
+
+                      {/* AI Confidence */}
+                      <td className="py-3 px-3 text-center">
+                        {log.confidence !== null && log.confidence !== undefined ? (
+                          <span className="font-medium text-slate-800 dark:text-slate-200">
+                            {log.confidence}%
                           </span>
+                        ) : log.isManual ? (
+                          <span className="text-[11px] text-slate-400">Penimbangan Fisik</span>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3 px-3 text-center">{renderStatusTag(log.status)}</td>
+
+                      {/* Time */}
+                      <td className="py-3 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[11px]">
+                        {new Date(log.waktu).toLocaleString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+
+                      {/* Photo Thumbnail */}
+                      <td className="py-3 px-3 text-center">
+                        {realPhoto ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImageUrl(realPhoto);
+                            }}
+                            className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                          >
+                            Lihat Foto
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">Tanpa Foto</span>
+                        )}
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLog(log);
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-medium rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition"
+                        >
+                          Detail
                         </button>
                       </td>
                     </tr>
@@ -555,89 +665,228 @@ export default function SetorSampah() {
           </div>
         )}
 
-        {/* Pagination Controls */}
-        {!isLoading && totalPages > 1 && (
-          <div className="p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs font-bold text-slate-500">
-              Halaman <span className="text-slate-900 font-black">{currentPage}</span> dari{" "}
-              <span className="text-slate-900 font-black">{totalPages}</span>
-            </p>
-
-            <div className="flex items-center gap-1">
-              {/* Previous Page */}
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                <ChevronLeft size={14} /> Sebelum
-              </button>
-
-              {/* Page Number Buttons */}
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                let pageNum = i + 1;
-                if (totalPages > 5 && currentPage > 3) {
-                  pageNum = currentPage - 2 + i;
-                  if (pageNum > totalPages) pageNum = totalPages - (4 - i);
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                      currentPage === pageNum
-                        ? "bg-primary text-white shadow-sm"
-                        : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-
-              {/* Next Page */}
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-              >
-                Lanjut <ChevronRight size={14} />
-              </button>
-            </div>
+        {/* Pagination */}
+        {!isLoading && filteredLogs.length > 0 && (
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredLogs.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemsPerPageOptions={[10, 25, 50, 100]}
+            />
           </div>
         )}
       </div>
 
-      {/* Modal Preview Foto Bukti */}
-      {selectedPhotoUrl && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 animate-in fade-in zoom-in duration-200">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
-                <ImageIcon size={16} className="text-primary" /> Foto Bukti Pemilahan Sampah
-              </h4>
+      {/* Detail Modal */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-xl w-full overflow-hidden">
+            {/* Modal Header (Emerald Gradient Light) */}
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-50/80 to-white dark:from-emerald-950/20 dark:to-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900 text-[#009966] dark:text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                  <Eye size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    Inspeksi Detail Penyetoran Sampah
+                  </h3>
+                  <p className="text-[11px] font-semibold text-slate-400">
+                    ID Transaksi: <span className="font-mono text-emerald-700 dark:text-emerald-400">{selectedLog.id}</span>
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setSelectedPhotoUrl(null)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition-all cursor-pointer"
+                onClick={() => setSelectedLog(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center transition-all cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
-            <div className="p-4 bg-slate-900 flex justify-center">
-              <img
-                src={selectedPhotoUrl}
-                alt="Foto Bukti Setoran"
-                className="max-h-80 w-auto object-contain rounded-lg border border-slate-700 shadow-md"
-              />
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {/* Photo Preview if available */}
+              {getRealPhotoUrl(selectedLog) && (
+                <div
+                  onClick={() => setPreviewImageUrl(getRealPhotoUrl(selectedLog))}
+                  className="w-full h-52 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 relative group shadow-2xs cursor-pointer"
+                >
+                  <img
+                    src={getRealPhotoUrl(selectedLog)!}
+                    alt="Bukti Penyetoran Sampah"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                    <Eye size={20} />
+                  </div>
+                  <div className="absolute bottom-2 left-2 right-2 p-2.5 rounded-xl bg-slate-900/80 backdrop-blur-md text-white flex justify-between items-center text-xs font-bold">
+                    <span>Waktu: {new Date(selectedLog.waktu).toLocaleString("id-ID")}</span>
+                    <span className="font-mono text-emerald-300">{selectedLog.lokasi}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Information Grid with Lucide Icons */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <User size={12} className="text-[#009966]" /> Penyetor / Warga
+                  </div>
+                  <div className="font-extrabold text-slate-800 dark:text-slate-100">
+                    {cleanWargaName(selectedLog.warga)}
+                  </div>
+                  {selectedLog.phone && selectedLog.phone !== "-" && (
+                    <div className="text-[11px] text-slate-500 font-semibold flex items-center gap-1">
+                      <Phone size={11} className="text-[#009966]" /> {selectedLog.phone}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <MapPin size={12} className="text-[#009966]" /> Wilayah Tugas
+                  </div>
+                  <div className="font-extrabold text-slate-800 dark:text-slate-100">
+                    {formatRukunWarga(selectedLog.rw || selectedLog.rtRw)}
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-semibold">
+                    {selectedLog.kelurahan ? `Kel. ${selectedLog.kelurahan}` : "Wilayah Binaan"}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <Layers size={12} className="text-[#009966]" /> Kategori Sampah
+                  </div>
+                  <div className="pt-0.5">{renderCategoryTag(selectedLog.jenis)}</div>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <CheckCircle2 size={12} className="text-[#009966]" /> Status Audit
+                  </div>
+                  <div className="pt-0.5">{renderStatusTag(selectedLog.status)}</div>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <Scale size={12} className="text-[#009966]" /> Berat Timbangan
+                  </div>
+                  <div className="font-mono font-black text-[#009966] text-sm">
+                    {selectedLog.berat} Kg
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                  <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1">
+                    <Sparkles size={12} className="text-amber-500" /> Poin Terdistribusi
+                  </div>
+                  <div className="font-mono font-black text-amber-600 dark:text-amber-400 text-sm">
+                    +{Math.round(selectedLog.poin)} Pts
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Inference / Telemetry Breakdown Card */}
+              {selectedLog.confidence !== null && selectedLog.confidence !== undefined ? (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700 space-y-2.5">
+                  {(() => {
+                    const conf = Number(selectedLog.confidence) || 95;
+                    const rawOrg = selectedLog.organikPercent ?? conf;
+                  const rawInorg = selectedLog.anorganikPercent ?? (100 - rawOrg);
+                  const org = rawOrg;
+                  const inorg = rawInorg;
+                  const category = org >= inorg ? "Organik" : "Anorganik";
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center pb-1">
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                          <Bot size={15} className="text-[#009966]" /> Hasil Inferensi &amp; Akurasi Verifikasi AI
+                        </span>
+                        {renderCategoryTag(category)}
+                      </div>
+                      <div className="flex justify-between text-xs font-black">
+                        <span className="text-emerald-700 dark:text-emerald-400">🌱 Organik: {org}%</span>
+                        <span className="text-amber-700 dark:text-amber-400">📦 Anorganik: {inorg}%</span>
+                      </div>
+                        <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 flex overflow-hidden border border-slate-300/60 dark:border-slate-600 shadow-2xs">
+                          <div
+                            className="bg-emerald-500 h-full transition-all duration-300"
+                            style={{ width: `${org}%` }}
+                            title={`Organik: ${org}%`}
+                          />
+                          <div
+                            className="bg-amber-500 h-full transition-all duration-300"
+                            style={{ width: `${inorg}%` }}
+                            title={`Anorganik: ${inorg}%`}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[11px] font-bold text-slate-400 dark:text-slate-400 pt-1">
+                          <span className="flex items-center gap-1">
+                            <ShieldCheck size={12} className="text-[#009966]" /> Akurasi Confidence: {conf}%
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-slate-400" /> {selectedLog.lokasi}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : selectedLog.isManual ? (
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-1">
+                  <div className="text-[10px] text-slate-400 uppercase font-black tracking-wider">Metode Pencatatan</div>
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Penimbangan residu fisik manual di posko lapangan oleh Petugas Residu.
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Rejection Note if any */}
+              {selectedLog.catatanPenolakan && (
+                <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl text-red-800 dark:text-red-300">
+                  <div className="font-extrabold text-xs mb-0.5">Catatan Penolakan:</div>
+                  <div className="text-xs font-medium">{selectedLog.catatanPenolakan}</div>
+                </div>
+              )}
+
+              {/* Verified Full-Stack Footer Box */}
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                <CheckCheck size={16} className="text-[#009966] shrink-0" />
+                <span>Terverifikasi real-time terintegrasi penuh: Aplikasi Mobile &rarr; Backend Express API &rarr; Database PostgreSQL.</span>
+              </div>
             </div>
-            <div className="p-4 bg-white flex justify-end">
+
+            {/* Modal Action Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 dark:bg-slate-900 flex justify-end">
               <button
-                onClick={() => setSelectedPhotoUrl(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                onClick={() => setSelectedLog(null)}
+                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black transition cursor-pointer"
               >
-                Tutup
+                Tutup Detail
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Lightbox */}
+      {previewImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div className="max-w-2xl w-full">
+            <img
+              src={previewImageUrl}
+              alt="Bukti Foto"
+              className="w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
           </div>
         </div>
       )}

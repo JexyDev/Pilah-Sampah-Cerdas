@@ -1,0 +1,90 @@
+/**
+ * Project: BERSEKA
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * 
+ * Master Mobile App Component for Mahasiswa KKN (React Web Mobile Experience)
+ */
+
+import React, { useState, useEffect } from "react";
+import { IOSSafariGate } from "../../components/common/IOSSafariGate";
+import { MahasiswaMobileShell } from "../../components/layout/MahasiswaMobileShell/MahasiswaMobileShell";
+import { MahasiswaMobileHome } from "./MahasiswaMobileHome";
+import { MahasiswaPresensiMobile } from "./MahasiswaPresensiMobile";
+import { MahasiswaLogbookMobile } from "./MahasiswaLogbookMobile";
+import { MahasiswaProkerMobile } from "./MahasiswaProkerMobile";
+import { MahasiswaProfilMobile } from "./MahasiswaProfilMobile";
+import { MahasiswaLogbookFormModal } from "./MahasiswaLogbookFormModal";
+import api from "../../utils/api";
+
+export const MahasiswaMobileApp: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<"beranda" | "presensi" | "logbook" | "proker" | "profil">("beranda");
+  const [isLogbookModalOpen, setIsLogbookModalOpen] = useState(false);
+  const [logbookRefreshTrigger, setLogbookRefreshTrigger] = useState(0);
+  const [prokerList, setProkerList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchProkerList();
+  }, []);
+
+  const fetchProkerList = async () => {
+    try {
+      const res = await api.get("/kkn/program-kerja");
+      setProkerList(res.data?.data || []);
+    } catch {
+      // Fallback
+    }
+  };
+
+  return (
+    <IOSSafariGate>
+      <MahasiswaMobileShell activeTab={activeTab} onTabChange={setActiveTab}>
+        {(tab) => {
+          switch (tab) {
+            case "beranda":
+              return (
+                <MahasiswaMobileHome
+                  onNavigateTab={setActiveTab}
+                  onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
+                  refreshTrigger={logbookRefreshTrigger}
+                />
+              );
+            case "presensi":
+              return <MahasiswaPresensiMobile />;
+            case "logbook":
+              return (
+                <MahasiswaLogbookMobile
+                  onOpenCreateModal={() => setIsLogbookModalOpen(true)}
+                  refreshTrigger={logbookRefreshTrigger}
+                />
+              );
+            case "proker":
+              return <MahasiswaProkerMobile onProkerCreated={fetchProkerList} />;
+            case "profil":
+              return <MahasiswaProfilMobile />;
+            default:
+              return (
+                <MahasiswaMobileHome
+                  onNavigateTab={setActiveTab}
+                  onOpenLogbookModal={() => setIsLogbookModalOpen(true)}
+                  refreshTrigger={logbookRefreshTrigger}
+                />
+              );
+          }
+        }}
+      </MahasiswaMobileShell>
+
+      {/* Global Logbook Modal */}
+      <MahasiswaLogbookFormModal
+        isOpen={isLogbookModalOpen}
+        onClose={() => setIsLogbookModalOpen(false)}
+        onSuccess={() => {
+          setLogbookRefreshTrigger((prev) => prev + 1);
+        }}
+        prokerList={prokerList}
+      />
+    </IOSSafariGate>
+  );
+};
+
+export default MahasiswaMobileApp;

@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 import { Badge } from "../../components/common/Badge";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 
 export const RwApproval = () => {
-    const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
+  const [pendingPetugas, setPendingPetugas] = useState<any[]>([]);
   const [inactiveBins, setInactiveBins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [brokenBinTarget, setBrokenBinTarget] = useState<string | null>(null);
+  const [isMarkingBroken, setIsMarkingBroken] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -30,18 +32,23 @@ export const RwApproval = () => {
     fetchData();
   }, []);
 
-  
-  
-  const markBinBroken = async (id: string) => {
-    if (confirm("Tandai bin ini rusak permanen?")) {
-      try {
-        await api.put(`/rw/bins/${id}/broken`);
-        toast.success("Status tempat sampah diubah menjadi RUSAK (BROKEN)");
-        fetchData();
-      } catch (error) {
-        console.error("Failed to mark bin broken", error);
-        toast.error("Gagal memperbarui status");
-      }
+  const markBinBroken = (id: string) => {
+    setBrokenBinTarget(id);
+  };
+
+  const handleConfirmMarkBinBroken = async () => {
+    if (!brokenBinTarget) return;
+    try {
+      setIsMarkingBroken(true);
+      await api.put(`/rw/bins/${brokenBinTarget}/broken`);
+      toast.success("Status tempat sampah diubah menjadi RUSAK (BROKEN)");
+      setBrokenBinTarget(null);
+      fetchData();
+    } catch (error) {
+      console.error("Failed to mark bin broken", error);
+      toast.error("Gagal memperbarui status");
+    } finally {
+      setIsMarkingBroken(false);
     }
   };
 
@@ -61,7 +68,7 @@ export const RwApproval = () => {
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <div className="h-9 w-64 skeleton-loading rounded-lg mb-8"></div>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-2xl border border-gray-100 p-6 space-y-4 shadow-sm">
+          <div key={i} className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-6 space-y-4 shadow-sm">
             <div className="h-6 w-48 skeleton-loading rounded-md"></div>
             <div className="space-y-3">
               <div className="h-12 w-full skeleton-loading rounded-lg"></div>
@@ -75,20 +82,20 @@ export const RwApproval = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Portal Approval RW</h1>
+      <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-100 tracking-tight">Verifikasi RW</h1>
       
 
 
       {/* Petugas Verification */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-polish">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-800 text-sm">Verifikasi Akun Petugas Residu</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden card-polish">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Verifikasi Akun Petugas Residu</h3>
         </div>
         <div className="p-4">
           {pendingPetugas.length === 0 ? (
             <p className="text-gray-500 text-sm p-4 text-center">Tidak ada pengajuan petugas residu baru.</p>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
               <thead>
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama & Kontak</th>
@@ -96,12 +103,12 @@ export const RwApproval = () => {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                 {pendingPetugas.map((petugas) => {
                   const targetId = petugas.id || petugas.userId;
                   const isApproved = petugas.whitelistStatus === "APPROVED" || petugas.user?.status === "Aktif";
                   return (
-                    <tr key={targetId} className="hover:bg-slate-50/50 transition-colors duration-150">
+                    <tr key={targetId} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
                       <td className="px-4 py-2">
                         <p className="font-semibold text-sm">{petugas.nama || petugas.user?.name || "Petugas Residu"}</p>
                         <p className="text-xs text-gray-500">{petugas.noWa || petugas.user?.phone || "-"}</p>
@@ -129,15 +136,15 @@ export const RwApproval = () => {
       </div>
 
       {/* Inactive Bins */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden card-polish">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="font-bold text-gray-800 text-sm">Daftar Tempat Sampah Tidak Aktif (30 Hari+)</h3>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden card-polish">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/50">
+          <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm">Daftar Tempat Sampah Tidak Aktif (30 Hari+)</h3>
         </div>
         <div className="p-4">
           {inactiveBins.length === 0 ? (
             <p className="text-gray-500 text-sm p-4 text-center">Tidak ada tempat sampah yang inaktif di wilayah ini.</p>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
               <thead>
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pemilik</th>
@@ -146,9 +153,9 @@ export const RwApproval = () => {
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tindakan Lapangan</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                 {inactiveBins.map((bin) => (
-                  <tr key={bin.id} className="hover:bg-slate-50/50 transition-colors duration-150">
+                  <tr key={bin.id} className="hover:bg-slate-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50 transition-colors duration-150">
                     <td className="px-4 py-2 font-medium text-sm">{bin.user?.name}</td>
                     <td className="px-4 py-2 font-mono text-sm">{bin.qrCode}</td>
                     <td className="px-4 py-2">
@@ -165,6 +172,20 @@ export const RwApproval = () => {
         </div>
       </div>
 
+      {/* Modern BERSEKA Confirmation Modal for Marking Bin Broken */}
+      <ConfirmModal
+        isOpen={Boolean(brokenBinTarget)}
+        onClose={() => setBrokenBinTarget(null)}
+        onConfirm={handleConfirmMarkBinBroken}
+        isLoading={isMarkingBroken}
+        title="Tandai Tempat Sampah Rusak"
+        message="Apakah Anda yakin ingin menandai tempat sampah ini sebagai rusak permanen (BROKEN)? Status tempat sampah akan dinonaktifkan dari sistem."
+        confirmText="Ya, Tandai Rusak"
+        cancelText="Batal"
+        type="warning"
+      />
     </div>
   );
 };
+
+export default RwApproval;

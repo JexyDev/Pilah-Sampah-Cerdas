@@ -1,25 +1,33 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/prisma.js";
 
 export class IdeDaurUlangService {
-  async createIde(userId: string, judul: string, material: string, foto: string | null) {
+  async createIde(
+    userId: string,
+    judul: string,
+    material: string,
+    foto: string | null,
+    sumber: "WARGA" | "MAHASISWA_KKN" = "WARGA"
+  ) {
     const ide = await prisma.ideDaurUlang.create({
       data: {
         userId,
         judul,
         material,
         foto,
+        sumber,
         statusApproval: "PENDING",
       },
     });
     return ide;
   }
 
-  async getSemuaIde(filters?: { search?: string; status?: string }) {
+  async getSemuaIde(filters?: { search?: string; status?: string; sumber?: string }) {
     let whereClause: any = {};
     if (filters?.status) {
       whereClause.statusApproval = filters.status;
+    }
+    if (filters?.sumber) {
+      whereClause.sumber = filters.sumber;
     }
     if (filters?.search) {
       whereClause.OR = [
@@ -47,6 +55,7 @@ export class IdeDaurUlangService {
     });
   }
 
+  /** RW approve ide dari WARGA (+50 poin) */
   async approveIde(id: string, approvedBy: string) {
     const ide = await prisma.ideDaurUlang.update({
       where: { id },
@@ -74,6 +83,41 @@ export class IdeDaurUlangService {
     });
 
     return ide;
+  }
+
+  /** DPL approve ide dari MAHASISWA_KKN (+30 poin) */
+  async approveDpl(id: string, dplUserId: string) {
+    const ide = await prisma.ideDaurUlang.findUnique({ where: { id } });
+    if (!ide) throw new Error("IDE_NOT_FOUND");
+    if (ide.sumber !== "MAHASISWA_KKN")
+      throw new Error("Hanya ide dari Mahasiswa KKN yang bisa di-approve oleh DPL");
+    if (ide.statusApproval !== "PENDING") throw new Error("Ide sudah diproses sebelumnya");
+
+    const updated = await prisma.ideDaurUlang.update({
+      where: { id },
+      data: { statusApproval: "APPROVED", approvedBy: dplUserId },
+    });
+
+    // +30 poin untuk mahasiswa
+    await prisma.pointHistory.create({
+      data: {
+        userId: ide.userId,
+        points: 30,
+        description: `Ide Daur Ulang KKN Disetujui DPL: ${ide.judul}`,
+        kategori: "IDE_DAUR_ULANG",
+      },
+    });
+
+    await prisma.socialFeed.create({
+      data: {
+        tipe: "RECYCLE_IDEA",
+        deskripsi: `Ide mahasiswa KKN "${ide.judul}" disetujui DPL untuk dijadikan program kerja!`,
+        userId: ide.userId,
+        entityId: ide.id,
+      },
+    });
+
+    return updated;
   }
 
   async rejectIde(id: string, rejectedBy: string) {

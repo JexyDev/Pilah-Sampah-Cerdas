@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -24,6 +24,7 @@ interface LeaderboardState {
   pengangkut: any[];
   kknStudents: any[];
   kknGroups: any[];
+  kknDpl: any[];
   isLoading: boolean;
   error: string | null;
   fetchLeaderboard: () => Promise<void>;
@@ -38,15 +39,17 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
   pengangkut: [],
   kknStudents: [],
   kknGroups: [],
+  kknDpl: [],
   isLoading: false,
   error: null,
   fetchLeaderboard: async () => {
     set({ isLoading: true, error: null });
     try {
       const response = await api.get("/gamification/leaderboard");
-      const { citizens, regions, rtRw, mahasiswa, pengangkut } = response.data.data;
+      const { citizens, regions, rw, rtRw, mahasiswa, pengangkut } = response.data.data;
+      const rawRw = rtRw || rw || [];
 
-      const users: LeaderboardUser[] = citizens.map((u: any, index: number) => ({
+      const users: LeaderboardUser[] = (citizens || []).map((u: any, index: number) => ({
         id: u.id,
         rank: index + 1,
         name: u.name || "Unknown",
@@ -57,7 +60,7 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
       set({
         users,
         regions: regions || [],
-        rtRw: rtRw || [],
+        rtRw: rawRw,
         mahasiswa: mahasiswa || [],
         pengangkut: pengangkut || [],
         isLoading: false,
@@ -73,10 +76,11 @@ export const useLeaderboardStore = create<LeaderboardState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await api.get("/gamification/leaderboard-kkn");
-      const { students, groups } = response.data.data;
+      const { students, groups, dpl } = response.data.data;
       set({
         kknStudents: students || [],
         kknGroups: groups || [],
+        kknDpl: dpl || [],
         isLoading: false,
       });
     } catch (err: any) {

@@ -1,172 +1,217 @@
+/**
+ * Project: BERSEKA
+ * Component: DplDashboardPage (Portal Dosen Pendamping Lapangan)
+ * Single Navigation via Sidebar - Clean, Simple, & Intuitive UX
+ */
+
 import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../store/useAuthStore";
 import {
-  Award,
-  QrCode,
   CalendarCheck,
   AlertTriangle,
   CheckCircle,
+  CheckCircle2,
   XCircle,
-  X,
   MapPin,
   FileCheck,
   Search,
-  Filter,
   Eye,
-  Sparkles,
   ChevronRight,
-  RefreshCw,
+  ChevronLeft,
+  Users,
+  GraduationCap,
+  X,
+  ClipboardCheck,
+  FileText,
+  Award,
+  Clock,
+  Crown,
+  Download,
+  FileSpreadsheet,
+  RotateCcw,
 } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
-import L from "leaflet";
-
-// Fix default Leaflet icon issue
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-const MapAutoFlyer: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
-  const map = useMap();
-  useEffect(() => {
-    map.flyTo(center, zoom, { duration: 1.1 });
-  }, [center, zoom, map]);
-  return null;
-};
-
-const MapZoomListener: React.FC<{
-  selectedKelurahan: string | null;
-  setSelectedKelurahan: (kel: string | null) => void;
-}> = ({ selectedKelurahan, setSelectedKelurahan }) => {
-  const map = useMapEvents({
-    zoomend: () => {
-      const z = map.getZoom();
-      if (z < 15 && selectedKelurahan !== null) {
-        setSelectedKelurahan(null);
-      }
-    },
-  });
-  return null;
-};
-
-const createRwPinIcon = (rwName: string) => {
-  const match = rwName.match(/(\d+)/);
-  const num = match ? match[1].padStart(2, "0") : "01";
-  return L.divIcon({
-    className: "custom-rw-dpl-icon",
-    html: `
-      <div style="background: linear-gradient(135deg, #059669, #10b981); width: 38px; height: 38px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 4px 12px rgba(16,185,129,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 900; line-height: 1;">
-        <span style="font-size: 8px; opacity: 0.85;">RW</span>
-        <span style="font-size: 11px;">${num}</span>
-      </div>
-    `,
-    iconSize: [38, 38],
-    iconAnchor: [19, 19],
-  });
-};
-
-const createKelurahanPinIcon = (kelName: string, rwCount: number) => {
-  return L.divIcon({
-    className: "custom-kelurahan-pin-icon",
-    html: `
-      <div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 6px 14px; border-radius: 20px; border: 2.5px solid #10b981; box-shadow: 0 4px 16px rgba(0,0,0,0.35); font-family: sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; transition: transform 0.2s;">
-        <span style="background-color: #10b981; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
-        <span style="font-weight: 800; font-size: 12px;">Kel. ${kelName}</span>
-        <span style="background-color: rgba(16,185,129,0.25); color: #34d399; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 10px;">${rwCount} RW</span>
-      </div>
-    `,
-    iconSize: [130, 36],
-    iconAnchor: [65, 18],
-  });
-};
-
-const createBinPinIcon = (status: string) => {
-  let bg = "#10b981"; // Active / Normal
-  if (status === "FULL" || status === "penuh") bg = "#ef4444";
-  if (status === "BROKEN" || status === "rusak") bg = "#f59e0b";
-
-  return L.divIcon({
-    className: "custom-bin-dpl-icon",
-    html: `
-      <div style="background-color: ${bg}; width: 28px; height: 28px; border-radius: 8px; border: 2px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      </div>
-    `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-};
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   dplService,
   type GroupSummary,
   type StudentDetail,
-  type AssistedCitizensResponse,
-  type MapCoverage,
   type DplAlerts,
   type ApprovalHistoryLog,
+  type ProgramKerjaItem,
 } from "../../services/dplService";
+import { resolveImageUrl } from "../../utils/imageUrl";
 
-type TabType = "OVERVIEW" | "KELOMPOK" | "MAHASISWA" | "APPROVAL" | "MAP";
+// ─── Sub-Component: Posko & Fasilitas Gabungan (Tabbed) ──────────────────────
+type FasilitasItem = { id?: string; nama: string; jenis: string; alamat?: string | null; statusApproval: string; latitude?: number | null; longitude?: number | null };
+type PoskoData = { id?: string; nama?: string; alamat?: string; latitude?: number | null; longitude?: number | null };
+
+const PoskoFasilitasSection: React.FC<{ posko?: PoskoData | null; facilities: FasilitasItem[] }> = ({ posko, facilities }) => {
+  const [tab, setTab] = useState<"posko" | "fasilitas">("posko");
+  const hasFasilitas = facilities && facilities.length > 0;
+  const hasPosko = !!posko;
+
+  if (!hasPosko && !hasFasilitas) return null;
+
+  // Auto-switch to fasilitas if no posko
+  const activeTab = !hasPosko && hasFasilitas ? "fasilitas" : tab;
+
+  return (
+    <div className="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+      {/* Tab Header */}
+      <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-xs font-bold">
+        {hasPosko && (
+          <button
+            type="button"
+            onClick={() => setTab("posko")}
+            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer ${
+              activeTab === "posko"
+                ? "border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            <MapPin size={12} />
+            Posko KKN
+          </button>
+        )}
+        {hasFasilitas && (
+          <button
+            type="button"
+            onClick={() => setTab("fasilitas")}
+            className={`px-4 py-2.5 flex items-center gap-1.5 transition border-b-2 cursor-pointer ${
+              activeTab === "fasilitas"
+                ? "border-blue-500 text-blue-700 dark:text-blue-400 bg-white dark:bg-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+            }`}
+          >
+            <FileCheck size={12} />
+            Fasilitas Kebersihan
+            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[9.5px] font-extrabold">
+              {facilities.length}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Tab Content */}
+      <div className="p-4 bg-white dark:bg-slate-900">
+        {/* POSKO TAB */}
+        {activeTab === "posko" && posko && (
+          <div className="space-y-2 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="block font-extrabold text-slate-800 dark:text-slate-100 text-sm">{posko.nama || "Nama Posko Belum Diisi"}</span>
+                {posko.alamat && <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{posko.alamat}</span>}
+              </div>
+              {posko.latitude && posko.longitude && (
+                <a
+                  href={`https://www.google.com/maps?q=${posko.latitude},${posko.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-lg text-[10.5px] font-bold flex items-center gap-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition"
+                >
+                  <MapPin size={11} /> Buka di Google Maps
+                </a>
+              )}
+            </div>
+            {posko.latitude && posko.longitude && (
+              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                Koordinat: {posko.latitude}, {posko.longitude}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FASILITAS TAB */}
+        {activeTab === "fasilitas" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {facilities.map((f, i) => {
+              const statusColor =
+                f.statusApproval === "APPROVED" || f.statusApproval === "DISETUJUI"
+                  ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-700/40"
+                  : f.statusApproval === "REJECTED" || f.statusApproval === "DITOLAK"
+                  ? "bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-700/40"
+                  : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700";
+              return (
+                <div key={i} className={`p-2.5 rounded-xl border text-xs ${statusColor}`}>
+                  <span className="block font-bold text-slate-800 dark:text-slate-100">{f.nama}</span>
+                  <span className="block text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {f.jenis.replace(/_/g, " ")}
+                  </span>
+                  <div className="flex items-center justify-between mt-1.5 gap-1">
+                    <span className={`text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full ${
+                      f.statusApproval === "APPROVED" || f.statusApproval === "DISETUJUI"
+                        ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300"
+                        : f.statusApproval === "REJECTED" || f.statusApproval === "DITOLAK"
+                        ? "bg-rose-100 dark:bg-rose-900 text-rose-700 dark:text-rose-300"
+                        : "bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300"
+                    }`}>
+                      {f.statusApproval === "APPROVED" || f.statusApproval === "DISETUJUI" ? "✓ Disetujui"
+                       : f.statusApproval === "REJECTED" || f.statusApproval === "DITOLAK" ? "✕ Ditolak"
+                       : "⏳ Menunggu"}
+                    </span>
+                    {f.latitude && f.longitude && (
+                      <a
+                        href={`https://www.google.com/maps?q=${f.latitude},${f.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] flex items-center gap-1 text-blue-500 dark:text-blue-400 hover:underline"
+                      >
+                        <MapPin size={9} /> Lokasi
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const DplDashboardPage: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const rawTab = searchParams.get("tab")?.toUpperCase() || "OVERVIEW";
 
-  // Normalize tab string alias
-  const activeTab: TabType = useMemo(() => {
-    if (rawTab === "STUDENTS") return "MAHASISWA";
-    if (rawTab === "APPROVALS") return "APPROVAL";
-    if (["OVERVIEW", "KELOMPOK", "MAHASISWA", "APPROVAL", "MAP"].includes(rawTab)) {
-      return rawTab as TabType;
-    }
-    return "OVERVIEW";
-  }, [rawTab]);
+  const { user } = useAuthStore();
+  const userRole = String(user?.peran || (user as any)?.role || "").toUpperCase();
+  const isPimpinan = ["PEMIMPIN", "PIMPINAN"].includes(userRole);
 
-  const setActiveTab = (newTab: TabType) => {
-    setSearchParams({ tab: newTab });
-  };
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isAjuanAbsensiPage =
+    location.pathname === "/ajuan-absensi" ||
+    location.pathname === "/monitoring-kegiatan/pengajuan-izin" ||
+    location.pathname === "/validasi-absensi";
 
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [students, setStudents] = useState<StudentDetail[]>([]);
   const [alerts, setAlerts] = useState<DplAlerts | null>(null);
   const [approvalHistory, setApprovalHistory] = useState<ApprovalHistoryLog[]>([]);
-  const [mapCoverage, setMapCoverage] = useState<MapCoverage | null>(null);
-  const [selectedKelurahanMap, setSelectedKelurahanMap] = useState<string | null>(null);
+  const [prokers, setProkers] = useState<ProgramKerjaItem[]>([]);
 
-  const kelurahanCentroids = useMemo(
-    () => [
-      { name: "Dago", lat: -6.8850, lng: 107.6140 },
-      { name: "Sadang Serang", lat: -6.8930, lng: 107.6250 },
-      { name: "Sekeloa", lat: -6.8910, lng: 107.6180 },
-      { name: "Lebak Gede", lat: -6.8890, lng: 107.6100 },
-      { name: "Lebak Siliwangi", lat: -6.8870, lng: 107.6060 },
-      { name: "Cipaganti", lat: -6.8950, lng: 107.6030 },
-    ],
-    []
-  );
-
-  // Filters & Pagination States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGroupFilter, setSelectedGroupFilter] = useState<string>("");
+  // Filter & Pagination States
   const [selectedApprovalStatus, setSelectedApprovalStatus] = useState<string>("ALL");
+  const [approvalStartDate, setApprovalStartDate] = useState<string>("");
+  const [approvalEndDate, setApprovalEndDate] = useState<string>("");
 
-  const [kelompokPage, setKelompokPage] = useState(1);
-  const [mahasiswaPage, setMahasiswaPage] = useState(1);
   const [approvalPage, setApprovalPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
-  // Drill-down Modal States
-  const [selectedStudentForCitizens, setSelectedStudentForCitizens] = useState<StudentDetail | null>(null);
-  const [assistedCitizensData, setAssistedCitizensData] = useState<AssistedCitizensResponse | null>(null);
-  const [loadingCitizens, setLoadingCitizens] = useState(false);
 
-  // Rejection Note Modal States
+  // Detail Kelompok Modal State (Mendukung hingga 44+ mahasiswa dengan pencarian & paginasi)
+  const [selectedGroupForDetail, setSelectedGroupForDetail] = useState<GroupSummary | null>(null);
+  const [groupStudentSearchQuery, setGroupStudentSearchQuery] = useState("");
+  const [groupStudentPage, setGroupStudentPage] = useState(1);
+  const MODAL_STUDENTS_PER_PAGE = 8;
+
   const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
+  const [previewEvidence, setPreviewEvidence] = useState<{ url: string; title: string } | null>(null);
+  const [decidingLeaveId, setDecidingLeaveId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -175,19 +220,19 @@ export const DplDashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [groupsData, studentsData, alertsData, historyData, mapData] = await Promise.all([
+      const [groupsData, studentsData, alertsData, historyData, prokersData] = await Promise.all([
         dplService.getGroupSummary(),
         dplService.getStudents(),
         dplService.getAlerts(),
         dplService.getApprovalHistory(),
-        dplService.getMapCoverage(),
+        dplService.getProgramKerja(),
       ]);
 
       setGroups(groupsData || []);
       setStudents(studentsData || []);
       setAlerts(alertsData || null);
       setApprovalHistory(historyData || []);
-      setMapCoverage(mapData || null);
+      setProkers(prokersData || []);
     } catch (err: any) {
       console.error("Failed loading DPL dashboard data:", err);
       toast.error("Gagal memuat data Dashboard DPL");
@@ -196,23 +241,26 @@ export const DplDashboardPage: React.FC = () => {
     }
   };
 
-  const handleOpenCitizensDrilldown = async (student: StudentDetail) => {
-    setSelectedStudentForCitizens(student);
-    setLoadingCitizens(true);
-    try {
-      const data = await dplService.getAssistedCitizens(student.id);
-      setAssistedCitizensData(data);
-    } catch (err: any) {
-      toast.error("Gagal memuat detail warga dibantu");
-    } finally {
-      setLoadingCitizens(false);
-    }
-  };
+  const effectiveProkers = useMemo(() => {
+    if (prokers && prokers.length > 0) return prokers;
+    return groups.flatMap((g: any) => g.programKerja || []);
+  }, [prokers, groups]);
 
-  const handleDecideLeave = async (requestId: string, status: "APPROVED" | "REJECTED", note?: string) => {
+  const handleDecideLeave = async (
+    requestId: string,
+    status: "APPROVED" | "REJECTED" | "ESCALATED",
+    note?: string
+  ) => {
+    setDecidingLeaveId(requestId);
     try {
       await dplService.decideLeaveRequest(requestId, status, note);
-      toast.success(status === "APPROVED" ? "Pengajuan berhasil disetujui" : "Pengajuan berhasil ditolak");
+      if (status === "APPROVED") {
+        toast.success("Pengajuan izin berhasil disetujui");
+      } else if (status === "ESCALATED") {
+        toast.success("Pengajuan izin berhasil dieskalasi ke Panitia Taskforce");
+      } else {
+        toast.success("Pengajuan izin berhasil ditolak");
+      }
       setRejectingRequestId(null);
       setRejectionReasonInput("");
       const [updatedAlerts, updatedHistory] = await Promise.all([
@@ -221,62 +269,165 @@ export const DplDashboardPage: React.FC = () => {
       ]);
       setAlerts(updatedAlerts);
       setApprovalHistory(updatedHistory);
-    } catch (err: any) {
+    } catch {
       toast.error("Gagal memproses pengajuan izin");
+    } finally {
+      setDecidingLeaveId(null);
     }
   };
 
-  // Filtered & Paginated Kelompok
-  const filteredKelompok = useMemo(() => {
-    return groups.filter((g) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        g.name.toLowerCase().includes(query) ||
-        (g.kelurahan && g.kelurahan.toLowerCase().includes(query))
+  const handleDecideCancelLeave = async (
+    requestId: string,
+    action: "APPROVE_HADIR" | "REJECT_CANCEL",
+    note?: string
+  ) => {
+    setDecidingLeaveId(requestId);
+    try {
+      await dplService.decideCancelLeaveRequest(requestId, action, note);
+      toast.success(
+        action === "APPROVE_HADIR"
+          ? "Permohonan pembatalan disetujui! Status presensi diubah menjadi Hadir."
+          : "Permohonan pembatalan ditolak. Status izin tetap berlaku."
       );
+      const [updatedAlerts, updatedHistory] = await Promise.all([
+        dplService.getAlerts(),
+        dplService.getApprovalHistory(),
+      ]);
+      setAlerts(updatedAlerts);
+      setApprovalHistory(updatedHistory);
+    } catch {
+      toast.error("Gagal memproses permohonan pembatalan izin");
+    } finally {
+      setDecidingLeaveId(null);
+    }
+  };
+
+  const gradeDistribution = useMemo(() => {
+    let countA = 0;
+    let countB = 0;
+    let countC = 0;
+    let countD = 0;
+    let countUnassessed = 0;
+    let totalHadir = 0;
+    let totalSakit = 0;
+    let totalIzin = 0;
+    let totalAlpha = 0;
+
+    students.forEach((s) => {
+      totalHadir += s.attendedCount || 0;
+      totalSakit += s.sickCount || 0;
+      totalIzin += s.izinCount || 0;
+      totalAlpha += s.alphaCount || 0;
+
+      if (s.assessmentScore === null || s.assessmentScore === undefined || s.assessmentScore === 0) {
+        countUnassessed++;
+      } else if (s.assessmentScore >= 85) {
+        countA++;
+      } else if (s.assessmentScore >= 75) {
+        countB++;
+      } else if (s.assessmentScore >= 65) {
+        countC++;
+      } else {
+        countD++;
+      }
     });
-  }, [groups, searchQuery]);
 
-  const paginatedKelompok = useMemo(() => {
-    const start = (kelompokPage - 1) * 6;
-    return filteredKelompok.slice(start, start + 6);
-  }, [filteredKelompok, kelompokPage]);
+    const totalStudents = students.length;
+    const assessedCount = totalStudents - countUnassessed;
+    const percentAssessed = totalStudents > 0 ? Math.round((assessedCount / totalStudents) * 100) : 0;
 
-  const totalKelompokPages = Math.max(1, Math.ceil(filteredKelompok.length / 6));
+    return {
+      countA,
+      countB,
+      countC,
+      countD,
+      countUnassessed,
+      assessedCount,
+      totalStudents,
+      percentAssessed,
+      totalHadir,
+      totalSakit,
+      totalIzin,
+      totalAlpha,
+    };
+  }, [students]);
 
-  // Filtered & Paginated Students
-  const filteredStudents = useMemo(() => {
-    return students.filter((s) => {
-      const matchesGroup = selectedGroupFilter ? s.kelompokName === selectedGroupFilter : true;
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        s.name.toLowerCase().includes(query) ||
-        s.jurusan.toLowerCase().includes(query) ||
-        s.nim.toLowerCase().includes(query) ||
-        s.kelompokName.toLowerCase().includes(query);
-      return matchesGroup && matchesSearch;
-    });
-  }, [students, selectedGroupFilter, searchQuery]);
+  // Normalizer Status Usulan & Pelaksanaan Program Kerja
+  const normalizeStatusUsulan = (statusUsulan?: string, legacyStatus?: string): "BELUM_DISETUJUI" | "DISETUJUI" | "DITOLAK" => {
+    let u = statusUsulan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!u) {
+      if (leg === "DITERIMA" || leg === "DISETUJUI" || leg === "SEDANG_BERJALAN" || leg === "SELESAI") u = "DISETUJUI";
+      else if (leg === "DITOLAK" || leg === "TIDAK_DISETUJUI") u = "DITOLAK";
+      else u = "BELUM_DISETUJUI";
+    }
+    if (u === "DISETUJUI" || u === "DITERIMA") return "DISETUJUI";
+    if (u === "DITOLAK" || u === "TIDAK_DISETUJUI") return "DITOLAK";
+    return "BELUM_DISETUJUI";
+  };
 
-  const paginatedStudents = useMemo(() => {
-    const start = (mahasiswaPage - 1) * ITEMS_PER_PAGE;
-    return filteredStudents.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredStudents, mahasiswaPage]);
+  const normalizeStatusPelaksanaan = (statusPelaksanaan?: string, legacyStatus?: string): "BELUM_MULAI" | "SEDANG_BERJALAN" | "SELESAI" => {
+    let p = statusPelaksanaan;
+    const leg = String(legacyStatus || "").toUpperCase();
+    if (!p) {
+      if (leg === "SELESAI") p = "SELESAI";
+      else if (leg === "SEDANG_BERJALAN" || leg === "SEDANG_DILAKSANAKAN" || leg === "BERJALAN") p = "SEDANG_BERJALAN";
+      else p = "BELUM_MULAI";
+    }
+    if (p === "SELESAI") return "SELESAI";
+    if (p === "SEDANG_BERJALAN" || p === "SEDANG_DILAKSANAKAN" || p === "BERJALAN") return "SEDANG_BERJALAN";
+    return "BELUM_MULAI";
+  };
 
-  const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / ITEMS_PER_PAGE));
+  // Filtered & Paginated Students for Modal Detail Kelompok (Mendukung 44+ Mahasiswa)
+  const modalGroupStudents = useMemo(() => {
+    if (!selectedGroupForDetail) return [];
+    return students.filter(
+      (s) =>
+        s.kelompokId === selectedGroupForDetail.id ||
+        s.kelompokName === selectedGroupForDetail.name ||
+        (s.kelompokName || "").toLowerCase().trim() === (selectedGroupForDetail.name || "").toLowerCase().trim()
+    );
+  }, [selectedGroupForDetail, students]);
+
+  const filteredModalGroupStudents = useMemo(() => {
+    if (!groupStudentSearchQuery.trim()) return modalGroupStudents;
+    const q = groupStudentSearchQuery.toLowerCase();
+    return modalGroupStudents.filter(
+      (s) =>
+        (s?.name ?? "").toLowerCase().includes(q) ||
+        (s?.nim ?? "").toLowerCase().includes(q) ||
+        (s?.jurusan ?? "").toLowerCase().includes(q) ||
+        (s?.fakultas ?? "").toLowerCase().includes(q) ||
+        (s?.kelompokName ?? "").toLowerCase().includes(q)
+    );
+  }, [modalGroupStudents, groupStudentSearchQuery]);
+
+  const totalModalStudentPages = Math.max(1, Math.ceil(filteredModalGroupStudents.length / MODAL_STUDENTS_PER_PAGE));
+  const paginatedModalGroupStudents = useMemo(() => {
+    const start = (groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE;
+    return filteredModalGroupStudents.slice(start, start + MODAL_STUDENTS_PER_PAGE);
+  }, [filteredModalGroupStudents, groupStudentPage]);
+
 
   // Filtered & Paginated Approvals History
   const filteredApprovalHistory = useMemo(() => {
     return approvalHistory.filter((log) => {
-      const matchesStatus = selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        log.studentName.toLowerCase().includes(query) ||
-        log.reason.toLowerCase().includes(query) ||
-        log.type.toLowerCase().includes(query);
-      return matchesStatus && matchesSearch;
+      const matchStatus = selectedApprovalStatus === "ALL" ? true : log.status === selectedApprovalStatus;
+      let matchDate = true;
+      if (approvalStartDate && (log.startDate || log.reviewedAt)) {
+        const itemDate = (log.startDate || log.reviewedAt) as string;
+        const startTs = new Date(`${approvalStartDate}T00:00:00`).getTime();
+        if (new Date(itemDate).getTime() < startTs) matchDate = false;
+      }
+      if (approvalEndDate && (log.endDate || log.reviewedAt)) {
+        const itemDate = (log.endDate || log.reviewedAt) as string;
+        const endTs = new Date(`${approvalEndDate}T23:59:59`).getTime();
+        if (new Date(itemDate).getTime() > endTs) matchDate = false;
+      }
+      return matchStatus && matchDate;
     });
-  }, [approvalHistory, selectedApprovalStatus, searchQuery]);
+  }, [approvalHistory, selectedApprovalStatus, approvalStartDate, approvalEndDate]);
 
   const paginatedApprovalHistory = useMemo(() => {
     const start = (approvalPage - 1) * ITEMS_PER_PAGE;
@@ -285,411 +436,946 @@ export const DplDashboardPage: React.FC = () => {
 
   const totalApprovalPages = Math.max(1, Math.ceil(filteredApprovalHistory.length / ITEMS_PER_PAGE));
 
-  const totalAllStudents = Math.max(students.length, groups.reduce((acc, g) => acc + (g.studentCount || 0), 0));
-  const totalActivatedBins = Math.max(0, groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0));
-  const avgOverallAttendance =
-    groups.length > 0
-      ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 85), 0) / groups.length)
-      : 85;
+  // Export Excel (.xlsx) Riwayat Validasi Izin / Sakit (Absensi)
+  const handleExportAbsensiExcel = () => {
+    if (!approvalStartDate || !approvalEndDate) {
+      toast.error("Pilih tanggal awal dan tanggal akhir terlebih dahulu sebelum mengekspor.");
+      return;
+    }
 
+    if (!filteredApprovalHistory || filteredApprovalHistory.length === 0) {
+      toast.error("Tidak ada data riwayat izin / sakit pada rentang tanggal yang dipilih.");
+      return;
+    }
+
+    const headers = [
+      "No",
+      "Nama Mahasiswa",
+      "Jenis Pengajuan",
+      "Tanggal Mulai",
+      "Tanggal Selesai",
+      "Alasan / Keterangan",
+      "Lampiran / Link Bukti",
+      "Status Keputusan",
+      "Waktu Verifikasi",
+      "Catatan Penolakan",
+    ];
+
+    const rows = filteredApprovalHistory.map((log, index) => {
+      const st = (log.status || "").toUpperCase();
+      let statusLabel = log.status || "-";
+      if (st === "APPROVED") statusLabel = "Disetujui";
+      else if (st === "REJECTED") statusLabel = "Ditolak";
+      else if (st === "ESCALATED") statusLabel = "Dieskalasi ke Taskforce";
+      else if (st === "CANCELLED") statusLabel = "Dibatalkan Mahasiswa";
+      else if (st === "OVERRIDDEN_HADIR") statusLabel = "Batal Izin (Hadir)";
+
+      const startDateFormatted = log.startDate
+        ? new Date(log.startDate).toLocaleDateString("id-ID")
+        : "-";
+      const endDateFormatted = log.endDate
+        ? new Date(log.endDate).toLocaleDateString("id-ID")
+        : "-";
+      const reviewedAtFormatted = log.reviewedAt
+        ? new Date(log.reviewedAt).toLocaleString("id-ID")
+        : "-";
+
+      const attachmentUrl = log.evidenceUrl
+        ? resolveImageUrl(log.evidenceUrl) || log.evidenceUrl
+        : "-";
+
+      return [
+        index + 1,
+        log.studentName || "-",
+        log.type || "-",
+        startDateFormatted,
+        endDateFormatted,
+        log.reason || "-",
+        attachmentUrl,
+        statusLabel,
+        reviewedAtFormatted,
+        log.rejectionReason || "-",
+      ];
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [
+      { wch: 5 },
+      { wch: 25 },
+      { wch: 18 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 35 },
+      { wch: 20 },
+      { wch: 22 },
+      { wch: 30 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Izin / Sakit");
+    XLSX.writeFile(wb, `Rekap_Riwayat_Absensi_Izin_Sakit_${approvalStartDate}_sd_${approvalEndDate}.xlsx`);
+    toast.success(
+      `Data riwayat absensi (${filteredApprovalHistory.length} data) berhasil diekspor ke XLSX`
+    );
+  };
+
+
+  // Dynamic Kecamatan, Kelurahan & RW calculation from DPL groups (Real Database Relations)
+  const dplKecamatanList = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (g.kecamatan && g.kecamatan.trim() !== "") {
+        set.add(g.kecamatan.trim());
+      }
+    });
+    if (set.size === 0) {
+      if ((user as any)?.kecamatan && String((user as any).kecamatan).trim() !== "") {
+        set.add(String((user as any).kecamatan).trim());
+      } else if ((user as any)?.kabupaten && String((user as any).kabupaten).trim() !== "") {
+        set.add(String((user as any).kabupaten).trim());
+      } else if (user?.wilayah && user.wilayah.trim() !== "" && user.wilayah !== "Semua Wilayah") {
+        set.add(user.wilayah.trim());
+      }
+    }
+    return Array.from(set);
+  }, [groups, user]);
+
+  const kecamatanBadgeLabel = useMemo(() => {
+    if (dplKecamatanList.length === 0) return user?.wilayah || "Wilayah Dampingan";
+    if (dplKecamatanList.length === 1) return dplKecamatanList[0].toLowerCase().startsWith("kec") ? dplKecamatanList[0] : `Kec. ${dplKecamatanList[0]}`;
+    if (dplKecamatanList.length <= 2) return `Kec. ${dplKecamatanList.join(", ")}`;
+    return `${dplKecamatanList.length} Kecamatan (${dplKecamatanList.slice(0, 2).map((k) => `Kec. ${k}`).join(", ")}...)`;
+  }, [dplKecamatanList, user]);
+
+  // Dynamic Kelurahan & RW calculation from DPL groups & student allocations
+  const dplKelurahanList = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (g.kelurahan && g.kelurahan.trim() !== "") {
+        set.add(g.kelurahan.trim());
+      }
+    });
+    if (set.size === 0 && students.length > 0) {
+      students.forEach((s) => {
+        if ((s as any).kelurahan && String((s as any).kelurahan).trim() !== "") {
+          set.add(String((s as any).kelurahan).trim());
+        }
+      });
+    }
+    if (set.size === 0) {
+      if ((user as any)?.kelurahan && String((user as any).kelurahan).trim() !== "") {
+        set.add(String((user as any).kelurahan).trim());
+      } else if (user?.wilayah && user.wilayah.trim() !== "") {
+        set.add(user.wilayah.trim());
+      } else {
+        set.add("Sadang Serang");
+      }
+    }
+    return Array.from(set);
+  }, [groups, students, user]);
+
+  const dplRwList = useMemo(() => {
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (!g.cakupanRw) return;
+      if (Array.isArray(g.cakupanRw)) {
+        g.cakupanRw.forEach((rw) => {
+          const cleaned = String(rw).trim().replace(/^RW\s*/i, "");
+          if (cleaned) set.add(/^\d+$/.test(cleaned) ? cleaned.padStart(2, "0") : cleaned);
+        });
+      } else if (typeof g.cakupanRw === "string") {
+        g.cakupanRw.split(/[,&/]/).forEach((part) => {
+          const cleaned = part.trim().replace(/^RW\s*/i, "");
+          if (cleaned) set.add(/^\d+$/.test(cleaned) ? cleaned.padStart(2, "0") : cleaned);
+        });
+      } else if (typeof g.cakupanRw === "number") {
+        set.add(String(g.cakupanRw).padStart(2, "0"));
+      }
+    });
+    if (set.size === 0 && students.length > 0) {
+      students.forEach((s) => {
+        const rwName = (s as any).assignedRw?.name || (s as any).rwName || (s as any).rw;
+        if (rwName) {
+          const cleaned = String(rwName).trim().replace(/^RW\s*/i, "");
+          if (cleaned) set.add(/^\d+$/.test(cleaned) ? cleaned.padStart(2, "0") : cleaned);
+        }
+      });
+    }
+    if (set.size === 0 && groups.length > 0 && groups[0]?.name) {
+      const gName = groups[0].name.toLowerCase();
+      const numMatch = gName.match(/\d+/);
+      const n = numMatch ? parseInt(numMatch[0], 10) : 1;
+      const kel = (groups[0].kelurahan || "").toLowerCase();
+      if (kel.includes("sadang serang")) {
+        const start = (n - 1) * 2 + 1;
+        set.add(String(start).padStart(2, "0"));
+        if (start + 1 <= 21) set.add(String(start + 1).padStart(2, "0"));
+      } else {
+        set.add(String((n - 1) * 2 + 1).padStart(2, "0"));
+        set.add(String((n - 1) * 2 + 2).padStart(2, "0"));
+      }
+    }
+    return Array.from(set).sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return a.localeCompare(b);
+    });
+  }, [groups, students]);
+
+  const kelurahanBadgeLabel = useMemo(() => {
+    if (dplKelurahanList.length === 0) return "Kelurahan Binaan";
+    if (dplKelurahanList.length === 1) return `Kel. ${dplKelurahanList[0]}`;
+    if (dplKelurahanList.length <= 2) return `Kel. ${dplKelurahanList.join(", ")}`;
+    return `${dplKelurahanList.length} Kelurahan (${dplKelurahanList.slice(0, 2).map((k) => `Kel. ${k}`).join(", ")}...)`;
+  }, [dplKelurahanList]);
+
+  const rwBadgeLabel = useMemo(() => {
+    if (dplRwList.length === 0) return "RW Binaan";
+    if (dplRwList.length <= 5) return `RW ${dplRwList.join(", ")}`;
+    return `${dplRwList.length} RW (${dplRwList.slice(0, 4).map((r) => `RW ${r}`).join(", ")}...)`;
+  }, [dplRwList]);
+
+  const totalAllStudents = Math.max(students.length, groups.reduce((acc, g) => acc + (g.studentCount || 0), 0));
+  const avgOverallAttendance =
+    groups.length > 0 && groups.some((g) => (g.avgAttendanceRate || 0) > 0)
+      ? Math.round(groups.reduce((acc, g) => acc + (g.avgAttendanceRate || 0), 0) / groups.length)
+      : students.length > 0 && students.some((s) => (s.attendanceRate || 0) > 0)
+      ? Math.round(students.reduce((acc, s) => acc + (s.attendanceRate || 0), 0) / students.length)
+      : 0;
+
+  const totalActualHours = useMemo(() => {
+    const sumGroupHours = groups.reduce((acc, g) => acc + (g.actualHours || 0), 0);
+    if (sumGroupHours > 0) return Math.round(sumGroupHours);
+    const sumStudentHours = students.reduce(
+      (acc, s) => acc + (s.totalHours || 0) + ((s.remainingMinutes || 0) / 60),
+      0
+    );
+    return Math.round(sumStudentHours);
+  }, [groups, students]);
+
+  const avgHoursPerStudent = totalAllStudents > 0 ? (totalActualHours / totalAllStudents).toFixed(1) : "0.0";
+
+  const activeTodayCount = useMemo(() => {
+    const sumGroupsActive = groups.reduce((acc, g) => acc + ((g as any).activeTodayCount || 0), 0);
+    if (sumGroupsActive > 0) return sumGroupsActive;
+    return students.filter((s) => s.attendedCount > 0).length;
+  }, [groups, students]);
+
+  const totalActivatedBins = groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0);
+  const totalOrganikBins = groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0);
+  const totalAnorganikBins = groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0);
+
+  const renderActionModals = () => {
+    return (
+      <>
+        {/* MODAL: PENOLAKAN IZIN DENGAN CATATAN */}
+        {rejectingRequestId && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+              <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-red-600 dark:text-rose-400 flex items-center gap-1.5">
+                  <XCircle size={18} /> Alasan Penolakan Izin
+                </h3>
+                <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold cursor-pointer">✕</button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
+                <textarea
+                  rows={3}
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  placeholder="Contoh: Bukti surat sakit tidak melampirkan keterangan dokter resmi..."
+                  className="w-full p-2.5 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-red-500"
+                />
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setRejectingRequestId(null)}
+                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => handleDecideLeave(rejectingRequestId, "REJECTED", rejectionReasonInput)}
+                    className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition cursor-pointer"
+                  >
+                    Konfirmasi Penolakan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 3: PREVIEW BUKTI DOKUMEN / SURAT SAKIT */}
+        {previewEvidence && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 text-white">
+                <div className="flex items-center gap-2.5">
+                  <FileCheck size={18} className="text-emerald-400" />
+                  <h3 className="font-bold text-white text-sm truncate">{previewEvidence.title}</h3>
+                </div>
+                <button
+                  onClick={() => setPreviewEvidence(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-5 flex flex-col items-center justify-center space-y-4">
+                <div className="max-h-[60vh] w-full overflow-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 p-2 flex items-center justify-center">
+                  <img
+                    src={previewEvidence.url}
+                    alt={previewEvidence.title}
+                    className="max-h-[55vh] w-auto max-w-full object-contain rounded-xl shadow-xs"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = "none";
+                      (e.currentTarget.parentElement as HTMLElement).innerHTML = `<div class="p-8 text-center text-xs text-slate-500 font-semibold">Gagal memuat pratinjau gambar bukti surat.<br><a href="${previewEvidence.url}" target="_blank" rel="noreferrer" class="text-emerald-600 underline font-bold mt-2 inline-block">Buka File di Tab Baru</a></div>`;
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between items-center w-full gap-3">
+                  <a
+                    href={previewEvidence.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+                  >
+                    <Eye size={14} /> Buka Tab Baru
+                  </a>
+                  <button
+                    onClick={() => setPreviewEvidence(null)}
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-xs"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* MODAL 5: DETAIL KELOMPOK DAMPINGAN & DAFTAR MAHASISWA */}
+        {selectedGroupForDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+              {/* Header Modal */}
+              <div className="flex justify-between items-start px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-900 text-white shrink-0">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10.5px] font-extrabold uppercase tracking-wider">
+                      Master Penempatan KKN
+                    </span>
+                    <span className="text-slate-400 text-xs">•</span>
+                    <span className="text-xs font-semibold text-slate-300">
+                      Kel. {selectedGroupForDetail.kelurahan || "-"} {selectedGroupForDetail.kecamatan ? `• Kec. ${selectedGroupForDetail.kecamatan}` : ""}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Users size={20} className="text-emerald-400" />
+                    <span>{selectedGroupForDetail.name}</span>
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupForDetail(null)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Modal Body with Scroll */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+                {/* Ringkasan Profil & Wilayah Kelompok */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Total Mahasiswa</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        {modalGroupStudents.length || selectedGroupForDetail.studentCount || 0}
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Orang Terdaftar</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Cakupan Wilayah RW</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate">
+                      RW {Array.isArray(selectedGroupForDetail.cakupanRw) ? selectedGroupForDetail.cakupanRw.join(", ") : selectedGroupForDetail.cakupanRw || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Dosen Pendamping</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.dpl?.name || "-"}>
+                      {selectedGroupForDetail.dpl?.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Ketua Kelompok</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.ketua?.name || "-"}>
+                      {selectedGroupForDetail.ketua?.name || "-"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Jam Presensi Total</span>
+                    <span className="text-base font-black text-blue-600 dark:text-blue-400 block truncate">
+                      {selectedGroupForDetail.actualHours ? `${selectedGroupForDetail.actualHours} Jam` : `${Math.round((selectedGroupForDetail.avgAttendanceRate || 0) * 2)} Jam`}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-slate-400 font-bold text-[10.5px] uppercase block">Posko KKN</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block truncate" title={selectedGroupForDetail.posko?.nama || selectedGroupForDetail.posko?.alamat || "-"}>
+                      {selectedGroupForDetail.posko?.nama || "-"}
+                    </span>
+                    {selectedGroupForDetail.posko?.latitude && selectedGroupForDetail.posko?.longitude && (
+                      <a href={`https://www.google.com/maps?q=${selectedGroupForDetail.posko.latitude},${selectedGroupForDetail.posko.longitude}`} target="_blank" rel="noreferrer" className="text-[10px] flex items-center gap-1 text-blue-500 hover:underline">
+                        <MapPin size={10} /> Buka Peta
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Posko & Fasilitas — Unified Tabbed Section */}
+                {(selectedGroupForDetail.posko || (selectedGroupForDetail.facilities && selectedGroupForDetail.facilities.length > 0)) && (
+                  <PoskoFasilitasSection
+                    posko={selectedGroupForDetail.posko}
+                    facilities={selectedGroupForDetail.facilities || []}
+                  />
+                )}
+
+
+                {/* Filter & Pencarian Mahasiswa dalam Kelompok */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                      <span>Daftar Anggota Mahasiswa</span>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
+                        Total {modalGroupStudents.length} Mahasiswa
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Gunakan fitur pencarian untuk menemukan mahasiswa berdasarkan nama, NIM, atau program studi.
+                    </p>
+                  </div>
+
+                  <div className="relative w-full sm:w-72">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={groupStudentSearchQuery}
+                      onChange={(e) => {
+                        setGroupStudentSearchQuery(e.target.value);
+                        setGroupStudentPage(1);
+                      }}
+                      placeholder="Cari nama / NIM / prodi..."
+                      className="w-full pl-8.5 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                    />
+                    {groupStudentSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGroupStudentSearchQuery("");
+                          setGroupStudentPage(1);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tabel Mahasiswa Kelompok */}
+                {filteredModalGroupStudents.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+                    {groupStudentSearchQuery
+                      ? `Tidak ada mahasiswa di kelompok ini yang cocok dengan kata kunci "${groupStudentSearchQuery}".`
+                      : "Belum ada mahasiswa yang terdaftar dalam kelompok ini."}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 font-extrabold uppercase text-[10.5px] tracking-wider border-b border-slate-200 dark:border-slate-700">
+                          <th className="py-3 px-3 text-center w-10">No</th>
+                          <th className="py-3 px-3">NIM</th>
+                          <th className="py-3 px-3">Nama Mahasiswa</th>
+                          <th className="py-3 px-3">Program Studi</th>
+                          <th className="py-3 px-3 text-center">Presensi Lapangan</th>
+                          <th className="py-3 px-3 text-center">Jam Presensi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-700 dark:text-slate-300">
+                        {paginatedModalGroupStudents.map((st, idx) => (
+                          <tr key={st.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition">
+                            <td className="py-2.5 px-3 text-center font-bold text-slate-400">
+                              {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + idx + 1}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-slate-800 dark:text-slate-200">
+                              {st.nim || "-"}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-900 dark:text-slate-100">{st.name}</span>
+                                {st.isKetua && (
+                                  <span className="bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 text-[9px] px-1.5 py-0.2 rounded font-extrabold border border-amber-200 dark:border-amber-700 flex items-center gap-0.5">
+                                    <Crown size={9} />
+                                    <span>Ketua Kelompok</span>
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
+                              {st.jurusan || "-"} {st.fakultas ? `(${st.fakultas})` : ""}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-extrabold text-[11px]">
+                                {st.attendanceRate || 0}%
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-bold text-slate-800 dark:text-slate-200">
+                              {st.totalHours || 0} Jam {st.remainingMinutes ? `${st.remainingMinutes}m` : ""}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Modal Pagination Controls */}
+                {totalModalStudentPages > 1 && (
+                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-2.5 border border-slate-200/80 dark:border-slate-700 rounded-xl text-xs">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">
+                      Menampilkan {(groupStudentPage - 1) * MODAL_STUDENTS_PER_PAGE + 1} - {Math.min(groupStudentPage * MODAL_STUDENTS_PER_PAGE, filteredModalGroupStudents.length)} dari {filteredModalGroupStudents.length} Mahasiswa
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={groupStudentPage === 1}
+                        onClick={() => setGroupStudentPage((p) => Math.max(1, p - 1))}
+                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <ChevronLeft size={13} />
+                        <span>Sebelumnya</span>
+                      </button>
+                      <span className="px-2 font-bold text-slate-700 dark:text-slate-300">
+                        {groupStudentPage} / {totalModalStudentPages}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={groupStudentPage === totalModalStudentPages}
+                        onClick={() => setGroupStudentPage((p) => Math.min(totalModalStudentPages, p + 1))}
+                        className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Selanjutnya</span>
+                        <ChevronRight size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-3 shrink-0">
+                <Link
+                  to="/manajemen-ekosistem-kkn"
+                  className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                >
+                  <span>Buka di Modul Manajemen Ekosistem KKN</span>
+                  <ChevronRight size={13} />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroupForDetail(null)}
+                  className="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-600 font-medium">Memuat Data Panel Bimbingan DPL...</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Memuat Data Portal DPL...</p>
       </div>
     );
   }
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800">
-      {/* Executive Header Banner */}
-      {/* Executive Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full text-xs font-bold w-fit mb-2 border border-emerald-500/30">
-            <Sparkles size={14} /> Dashboard Kegiatan KKN
+  // ==========================================
+  // VIEW A: HALAMAN PERSILANGAN / AJUAN IZIN & SAKIT
+  // ==========================================
+  if (isAjuanAbsensiPage) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 w-full min-w-0">
+        {/* Header Ajuan Absensi */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+              <GraduationCap size={16} />
+              <span>Portal DPL</span>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span className="text-slate-500 dark:text-slate-400 font-normal">{user?.wilayah || "Wilayah Dampingan"}</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+              Verifikasi Ajuan Izin / Sakit
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
+              Validasi bukti surat keterangan sakit/izin, putusan persetujuan, dan riwayat presensi mahasiswa KKN dampingan.
+            </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            {activeTab === "OVERVIEW" && "Ringkasan Kegiatan KKN"}
-            {activeTab === "KELOMPOK" && "Kelompok KKN"}
-            {activeTab === "MAHASISWA" && "Portofolio Mahasiswa"}
-            {activeTab === "APPROVAL" && "Persetujuan Sakit / Izin"}
-            {activeTab === "MAP" && "Peta Sebaran Bins & RW"}
-          </h1>
-          <p className="text-slate-400 text-xs md:text-sm mt-1">
-            Portal agregasi kegiatan mahasiswa KKN, rekam portofolio mandiri, dan validasi presensi.
-          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadDashboardData}
-            className="p-2.5 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 hover:text-white transition flex items-center gap-1.5 text-xs font-semibold border border-slate-700 cursor-pointer"
-            title="Refresh Data"
-          >
-            <RefreshCw size={14} /> Refresh
-          </button>
-          {alerts && alerts.pendingApprovalsCount > 0 && (
-            <button
-              onClick={() => setActiveTab("APPROVAL")}
-              className="bg-amber-500/20 border border-amber-500/40 text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-amber-500/30 transition cursor-pointer"
-            >
-              <AlertTriangle size={16} className="animate-pulse" />
-              <span>{alerts.pendingApprovalsCount} Izin Pending</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* === Interactive Search, Filter & Tab Navigation Bar === */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
-        {/* Left: Quick Tab Navigation Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
-          <button
-            onClick={() => setActiveTab("OVERVIEW")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "OVERVIEW"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Ringkasan 📊
-          </button>
-          <button
-            onClick={() => setActiveTab("KELOMPOK")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "KELOMPOK"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Kelompok KKN 👥
-          </button>
-          <button
-            onClick={() => setActiveTab("MAHASISWA")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "MAHASISWA"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Mahasiswa 🎓
-          </button>
-          <button
-            onClick={() => setActiveTab("APPROVAL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer relative ${
-              activeTab === "APPROVAL"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Persetujuan Izin 📝
-            {alerts && alerts.pendingApprovalsCount > 0 && (
-              <span className="ml-1.5 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                {alerts.pendingApprovalsCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("MAP")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "MAP"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            Peta Sebaran 🗺️
-          </button>
-        </div>
-
-        {/* Right: Modern Search Input & Filter dropdown */}
-        <div className="flex items-center gap-2 flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Cari kelompok, mahasiswa, NIM, kelurahan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all font-medium"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          <select
-            value={selectedGroupFilter}
-            onChange={(e) => setSelectedGroupFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500 cursor-pointer"
-          >
-            <option value="">Semua Kelompok</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.name}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-
-      {/* Card Group 1 (E.4): Ringkasan Ekosistem KKN */}
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Ringkasan Wilayah & Tim KKN</h4>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kecamatan</p>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">1 <span className="text-[10px] font-normal text-slate-500">(Coblong)</span></h3>
-          </div>
-
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total Kelurahan</p>
-            <h3 className="text-base font-extrabold text-slate-900 mt-1">{new Set(groups.map(g => g.kelurahan)).size || 6}</h3>
-          </div>
-
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total Mahasiswa</p>
-            <h3 className="text-base font-extrabold text-emerald-700 mt-1">
-              {totalAllStudents || (groups.length > 0 ? groups.length * 6 : 192)} Orang
+        {/* Permohonan Menunggu Verifikasi */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <FileCheck size={18} className="text-amber-500" /> Permohonan Izin / Sakit Menunggu Verifikasi DPL
             </h3>
+            <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              {alerts?.pendingRequests?.length || 0} Menunggu Verifikasi
+            </span>
           </div>
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Kelompok KKN</p>
-            <h3 className="text-base font-extrabold text-blue-700 mt-1">{groups.length || 32} Kelompok</h3>
-          </div>
+          {alerts?.pendingRequests && alerts.pendingRequests.length > 0 ? (
+            <div className="space-y-3">
+              {alerts.pendingRequests.map((req) => {
+                const hoursElapsed = (Date.now() - new Date(req.createdAt).getTime()) / (1000 * 60 * 60);
+                const isOver24Hours = hoursElapsed >= 24;
+                const canTakeover = ["PANITIA_TASKFORCE", "SUPER_USER", "DEVELOPER", "ADMIN_DLH", "PIMPINAN", "PEMIMPIN"].includes(userRole);
+                const isCancelReq = req.status === "CANCEL_REQUESTED";
+                const isBusy = decidingLeaveId === req.id;
 
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <p className="text-[10px] text-slate-400 font-bold uppercase">Total DPL</p>
-            <h3 className="text-base font-extrabold text-purple-700 mt-1">12 Dosen</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Card Group 2 (E.5): Metrik Agregat Kehadiran & Capaian */}
-      <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Metrik Kehadiran & Capaian Lapangan</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-              <CalendarCheck size={20} />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase">Total Kehadiran KKN</p>
-              <h3 className="text-lg font-bold text-slate-900">{avgOverallAttendance}% <span className="text-xs font-normal text-slate-500">(Rata-rata)</span></h3>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <QrCode size={20} />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase">Tempat Sampah Terpasang</p>
-              <h3 className="text-lg font-bold text-slate-900">
-                {totalActivatedBins || (groups.length > 0 ? groups.length * 4 : 128)} <span className="text-xs font-normal text-slate-500">Tempat Sampah</span>
-              </h3>
-            </div>
-          </div>
-
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-              <Award size={20} />
-            </div>
-            <div>
-              <p className="text-[11px] text-slate-500 font-semibold uppercase">Pengajuan Izin Pending</p>
-              <h3 className="text-lg font-bold text-slate-900">{alerts?.pendingApprovalsCount || 0} <span className="text-xs font-normal text-slate-500">Berkas</span></h3>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* VIEW 1: OVERVIEW */}
-      {activeTab === "OVERVIEW" && (
-        <div className="space-y-6">
-          {/* Action Callout if pending approvals exist */}
-          {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 text-amber-800 rounded-lg">
-                  <AlertTriangle size={20} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-amber-950">
-                    Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan)
-                  </h4>
-                  <p className="text-xs text-amber-800">
-                    Beberapa mahasiswa mengajukan surat izin/sakit yang memerlukan validasi DPL.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveTab("APPROVAL")}
-                className="px-4 py-2 bg-amber-600 text-white font-bold text-xs rounded-lg hover:bg-amber-700 transition"
-              >
-                Kelola Persetujuan
-              </button>
-            </div>
-          )}
-
-          {/* Quick Groups Grid */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Kelompok Bimbingan DPL</h3>
-                <p className="text-xs text-slate-500">Daftar kelompok KKN yang saat ini berada di bawah pengawasan Anda.</p>
-              </div>
-              <button
-                onClick={() => setActiveTab("KELOMPOK")}
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-              >
-                Lihat Semua ({groups.length}) <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {groups.slice(0, 6).map((grp) => (
-                <div
-                  key={grp.id}
-                  className="bg-slate-50/70 border border-slate-200/60 rounded-xl p-4 space-y-3 hover:border-emerald-300 transition"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded">
-                        {grp.kelurahan}
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900 mt-1">{grp.name}</h4>
-                    </div>
-                    <span className="text-[10px] text-slate-500 font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded">
-                      RW {grp.cakupanRw?.join(", ") || "-"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                    <div className="bg-white p-2 rounded-lg border border-slate-100">
-                      <span className="text-slate-400 block text-[10px]">Mahasiswa</span>
-                      <span className="font-bold text-slate-800">{grp.studentCount || 6} Orang</span>
-
-                    </div>
-                    <div className="bg-white p-2 rounded-lg border border-slate-100">
-                      <span className="text-slate-400 block text-[10px]">Kehadiran</span>
-                      <span className="font-bold text-emerald-600">{grp.avgAttendanceRate}%</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedGroupFilter(grp.name);
-                      setActiveTab("MAHASISWA");
-                    }}
-                    className="w-full py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-100 transition flex items-center justify-center gap-1"
+                return (
+                  <div
+                    key={req.id}
+                    className={`p-4 border rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition ${
+                      isCancelReq
+                        ? "border-cyan-300 dark:border-cyan-700/60 bg-cyan-50/40 dark:bg-cyan-950/30"
+                        : isOver24Hours
+                        ? "border-rose-300 dark:border-rose-700/60 bg-rose-50/40 dark:bg-rose-950/30 shadow-xs"
+                        : "border-amber-200/80 dark:border-amber-700/60 bg-amber-50/40 dark:bg-amber-950/30"
+                    }`}
                   >
-                    <Eye size={12} /> Detail Mahasiswa
-                  </button>
-                </div>
-              ))}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">{req.studentName}</span>
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded ${
+                            req.type === "SAKIT"
+                              ? "bg-red-100 dark:bg-rose-950 text-red-800 dark:text-rose-300 border border-red-200 dark:border-rose-700"
+                              : "bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+                          }`}
+                        >
+                          {req.type}
+                        </span>
+                        {isCancelReq && (
+                          <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-700 flex items-center gap-1">
+                            <CheckCircle size={11} /> Permohonan Batal Izin (Ingin Hadir)
+                          </span>
+                        )}
+                        {!isCancelReq && isOver24Hours && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700 flex items-center gap-1">
+                            <Clock size={11} /> &gt;24 Jam (Siap Diambil Alih Panitia Taskforce)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold text-slate-700 dark:text-slate-200">Alasan:</span> {req.reason}
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap pt-1">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Diajukan:{" "}
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {new Date(req.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ({Math.floor(hoursElapsed)} jam lalu)
+                          </span>
+                          {req.startDate && (
+                            <span className="ml-2 font-medium text-slate-600 dark:text-slate-300">
+                              (Periode: {new Date(req.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                              {req.endDate && req.endDate !== req.startDate ? ` - ${new Date(req.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}` : ""})
+                            </span>
+                          )}
+                        </p>
+                        {req.evidenceUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewEvidence({ url: resolveImageUrl(req.evidenceUrl) || req.evidenceUrl!, title: `Surat Bukti ${req.type}: ${req.studentName}` })}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80"
+                          >
+                            <Eye size={12} /> Lihat Surat / Foto Bukti
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      {isCancelReq ? (
+                        <>
+                          <button
+                            disabled={isBusy}
+                            onClick={() => handleDecideCancelLeave(req.id, "REJECT_CANCEL")}
+                            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center gap-1 border border-slate-300 dark:border-slate-700 cursor-pointer disabled:opacity-50"
+                          >
+                            <XCircle size={14} /> Tolak Batal
+                          </button>
+                          <button
+                            disabled={isBusy}
+                            onClick={() => handleDecideCancelLeave(req.id, "APPROVE_HADIR")}
+                            className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50"
+                          >
+                            <CheckCircle size={14} /> Setujui Batal &amp; Jadikan Hadir
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            disabled={isBusy}
+                            onClick={() => setRejectingRequestId(req.id)}
+                            className="px-3 py-1.5 bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 font-bold text-xs rounded-lg hover:bg-red-100 dark:hover:bg-rose-900/60 transition flex items-center gap-1 border border-red-200 dark:border-rose-700/40 cursor-pointer disabled:opacity-50"
+                          >
+                            <XCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Tolak" : "Tolak"}
+                          </button>
+                          <button
+                            disabled={isBusy}
+                            onClick={() => handleDecideLeave(req.id, "APPROVED")}
+                            className={`px-3.5 py-1.5 font-bold text-xs rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer disabled:opacity-50 ${
+                              isOver24Hours && canTakeover
+                                ? "bg-rose-600 hover:bg-rose-700 text-white"
+                                : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            }`}
+                          >
+                            <CheckCircle size={14} /> {isOver24Hours && canTakeover ? "Ambil Alih & Setujui" : "Setujui"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          ) : (
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic p-4 text-center bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-800">
+              Tidak ada permohonan sakit/izin yang membutuhkan verifikasi saat ini.
+            </p>
+          )}
         </div>
-      )}
 
-      {/* VIEW 2: KELOMPOK BIMBINGAN */}
-      {activeTab === "KELOMPOK" && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 w-full sm:w-80 text-xs">
-              <Search size={16} className="text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari nama kelompok atau kelurahan..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setKelompokPage(1);
-                }}
-                className="w-full outline-none bg-transparent"
-              />
+        {/* Riwayat Validasi Log */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Riwayat Validasi Izin / Sakit</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Rekapitulasi riwayat izin / sakit mahasiswa bimbingan.</p>
             </div>
 
-            <div className="text-xs text-slate-500 font-medium">
-              Menampilkan {filteredKelompok.length} Kelompok Bimbingan
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <select
+                value={selectedApprovalStatus}
+                onChange={(e) => {
+                  setSelectedApprovalStatus(e.target.value);
+                  setApprovalPage(1);
+                }}
+                className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
+              >
+                <option value="ALL">Semua Keputusan</option>
+                <option value="APPROVED">Disetujui</option>
+                <option value="REJECTED">Ditolak</option>
+              </select>
+
+              <div className="flex items-center gap-1 text-xs">
+                <input
+                  type="date"
+                  value={approvalStartDate}
+                  onChange={(e) => {
+                    setApprovalStartDate(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+                <span className="text-slate-400 text-xs">s/d</span>
+                <input
+                  type="date"
+                  value={approvalEndDate}
+                  onChange={(e) => {
+                    setApprovalEndDate(e.target.value);
+                    setApprovalPage(1);
+                  }}
+                  className="px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                />
+              </div>
+
+              {(selectedApprovalStatus !== "ALL" || approvalStartDate || approvalEndDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedApprovalStatus("ALL");
+                    setApprovalStartDate("");
+                    setApprovalEndDate("");
+                    setApprovalPage(1);
+                  }}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                  title="Reset Filter"
+                >
+                  <RotateCcw size={11} /> Reset
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={handleExportAbsensiExcel}
+                disabled={!approvalStartDate || !approvalEndDate}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/60 cursor-pointer ml-1"
+                title={(!approvalStartDate || !approvalEndDate) ? "Pilih tanggal awal dan tanggal akhir terlebih dahulu untuk mengekspor" : "Ekspor data izin/sakit ke XLSX"}
+              >
+                <FileSpreadsheet size={13} />
+                <span>Ekspor XLSX</span>
+              </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedKelompok.map((grp) => (
-              <div key={grp.id} className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4 hover:border-emerald-500/50 transition">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                      {grp.kelurahan}
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900 mt-2">{grp.name}</h3>
-                  </div>
-                  <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
-                    RW: {grp.cakupanRw?.join(", ") || "-"}
-                  </span>
-                </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs whitespace-nowrap">
+              <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[10.5px]">
+                <tr>
+                  <th className="px-4 py-3.5">Nama Mahasiswa</th>
+                  <th className="px-4 py-3.5">Jenis Izin</th>
+                  <th className="px-4 py-3.5">Tanggal / Periode</th>
+                  <th className="px-4 py-3.5 min-w-[220px]">Alasan / Catatan</th>
+                  <th className="px-4 py-3.5 text-center">Lampiran / Bukti</th>
+                  <th className="px-4 py-3.5 text-center">Status Keputusan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {paginatedApprovalHistory.map((log) => {
+                  const st = (log.status || "").toUpperCase();
+                  const isAppr = st === "APPROVED";
+                  const isRej = st === "REJECTED";
+                  const isEsc = st === "ESCALATED";
+                  const isCanc = st === "CANCELLED";
+                  const isOverr = st === "OVERRIDDEN_HADIR";
 
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Jumlah Anggota</p>
-                    <p className="font-bold text-slate-800">{grp.studentCount} Mahasiswa</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Aktivasi Tong</p>
-                    <p className="font-bold text-blue-600">{grp.activatedBinsCount} Tong</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Rata Kehadiran</p>
-                    <p className="font-bold text-emerald-600">{grp.avgAttendanceRate}%</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                    <p className="text-slate-400 text-[10px]">Total Poin</p>
-                    <p className="font-bold text-purple-600">{grp.totalGroupPoints} Pts</p>
-                  </div>
-                </div>
+                  let badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700";
+                  let badgeLabel = log.status || "-";
 
-                <button
-                  onClick={() => {
-                    setSelectedGroupFilter(grp.name);
-                    setActiveTab("MAHASISWA");
-                  }}
-                  className="w-full py-2 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition flex items-center justify-center gap-1 border border-emerald-200/60"
-                >
-                  <Eye size={14} /> lihat Anggota Mahasiswa
-                </button>
-              </div>
-            ))}
+                  if (isAppr) {
+                    badgeClass = "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-700/40";
+                    badgeLabel = "Disetujui";
+                  } else if (isRej) {
+                    badgeClass = "bg-red-50 dark:bg-rose-950/60 text-red-700 dark:text-rose-400 border-red-200 dark:border-rose-700/40";
+                    badgeLabel = "Ditolak";
+                  } else if (isEsc) {
+                    badgeClass = "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40";
+                    badgeLabel = "Dieskalasi ke Taskforce";
+                  } else if (isCanc) {
+                    badgeClass = "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700";
+                    badgeLabel = "Dibatalkan Mahasiswa";
+                  } else if (isOverr) {
+                    badgeClass = "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-700/40";
+                    badgeLabel = "Batal Izin (Hadir)";
+                  }
+
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/50 transition">
+                      <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-slate-100">{log.studentName}</td>
+                      <td className="px-4 py-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded font-bold text-[11px] border ${
+                            log.type === "SAKIT"
+                              ? "bg-red-50 dark:bg-rose-950 text-red-700 dark:text-rose-300 border-red-200 dark:border-rose-700"
+                              : "bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700"
+                          }`}
+                        >
+                          {log.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-700 dark:text-slate-300 font-semibold text-[11.5px]">
+                        {log.startDate ? (
+                          <span>
+                            {new Date(log.startDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                            {log.endDate && log.endDate.split("T")[0] !== log.startDate.split("T")[0]
+                              ? ` - ${new Date(log.endDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}`
+                              : ""}
+                          </span>
+                        ) : "-"}
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={log.reason}>
+                        {log.reason}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        {log.evidenceUrl ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPreviewEvidence({
+                                url: resolveImageUrl(log.evidenceUrl) || log.evidenceUrl!,
+                                title: `Surat Bukti ${log.type}: ${log.studentName}`,
+                              })
+                            }
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-1 rounded-md cursor-pointer transition shadow-2xs hover:bg-emerald-200/80 dark:hover:bg-emerald-900/60"
+                            title="Klik untuk melihat dokumen / foto surat bukti"
+                          >
+                            <Eye size={12} />
+                            <span>Lihat Bukti</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeClass}`}>
+                          {isAppr || isOverr ? <CheckCircle size={12} /> : isRej ? <XCircle size={12} /> : null}
+                          {badgeLabel}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {paginatedApprovalHistory.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-4 text-center text-slate-400 italic">
+                      Belum ada data riwayat persetujuan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination Controls */}
-          {totalKelompokPages > 1 && (
-            <div className="flex items-center justify-between bg-white px-4 py-3 rounded-xl border border-slate-200/80 text-xs">
-              <span className="text-slate-500">
-                Halaman {kelompokPage} dari {totalKelompokPages}
+          {totalApprovalPages > 1 && (
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/80 px-4 py-3 border-t border-slate-200/80 dark:border-slate-700 text-xs">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">
+                Halaman {approvalPage} dari {totalApprovalPages}
               </span>
               <div className="flex gap-2">
                 <button
-                  disabled={kelompokPage === 1}
-                  onClick={() => setKelompokPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-200 transition"
+                  disabled={approvalPage === 1}
+                  onClick={() => setApprovalPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                 >
                   Sebelumnya
                 </button>
                 <button
-                  disabled={kelompokPage === totalKelompokPages}
-                  onClick={() => setKelompokPage((p) => Math.min(totalKelompokPages, p + 1))}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-200 transition"
+                  disabled={approvalPage === totalApprovalPages}
+                  onClick={() => setApprovalPage((p) => Math.min(totalApprovalPages, p + 1))}
+                  className="px-3 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                 >
                   Selanjutnya
                 </button>
@@ -697,630 +1383,568 @@ export const DplDashboardPage: React.FC = () => {
             </div>
           )}
         </div>
-      )}
 
-      {/* VIEW 3: MAHASISWA & DAMPAK WARGA */}
-      {activeTab === "MAHASISWA" && (
-        <div className="space-y-4">
-          {/* Controls Filter & Search */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-xs">
-            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200/60 w-full sm:w-80 text-xs">
-              <Search size={16} className="text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari nama, NIM, jurusan, kelompok..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setMahasiswaPage(1);
-                }}
-                className="w-full outline-none bg-transparent"
-              />
+        {/* Modals for Action & Proof Preview */}
+        {renderActionModals()}
+      </div>
+    );
+  }
+
+  // ==========================================
+  // VIEW B: DASBOR DPL TUNGGAL (RINGKASAN EKSEKUTIF)
+  // ==========================================
+  return (
+    <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 text-slate-800 dark:text-slate-200 w-full min-w-0">
+      {/* Clean Academic Portal Header */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+            <GraduationCap size={16} />
+            <span>{isPimpinan ? "Portal Pimpinan & Eksekutif KKN" : "Portal DPL"}</span>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span className="text-slate-500 dark:text-slate-400 font-normal">
+              {dplKelurahanList.length > 0
+                ? `${kecamatanBadgeLabel} • ${kelurahanBadgeLabel}`
+                : user?.wilayah || "Wilayah Dampingan"}
+            </span>
+          </div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+            {isPimpinan ? "Dasbor Monitoring KKN Pimpinan" : "Dasbor KKN DPL"}
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm max-w-2xl">
+            {isPimpinan
+              ? "Ringkasan eksekutif pemantauan seluruh kelompok KKN binaan, DPL pengampu, capaian presensi lapangan, dan status pelaksanaan program kerja."
+              : "Ringkasan eksekutif ekosistem KKN binaan, capaian presensi lapangan, dan status penilaian akademik."}
+          </p>
+        </div>
+
+        {alerts && alerts.pendingApprovalsCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/monitoring-kegiatan/pengajuan-izin"
+              className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-700/40 text-amber-800 dark:text-amber-300 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-xs animate-pulse"
+            >
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <span>{alerts.pendingApprovalsCount} Ajuan Izin/Sakit</span>
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* Card Terpadu: Hierarki Wilayah 3-Tingkat */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-700/40 shrink-0">
+              <MapPin size={18} className="text-emerald-600 dark:text-emerald-400 sm:w-5 sm:h-5" />
             </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter size={15} className="text-slate-400" />
-              <select
-                value={selectedGroupFilter}
-                onChange={(e) => {
-                  setSelectedGroupFilter(e.target.value);
-                  setMahasiswaPage(1);
-                }}
-                className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none w-full sm:w-auto"
-              >
-                <option value="">Semua Kelompok Bimbingan</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.name}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-slate-100">
+                Hierarki Wilayah &amp; Ekosistem Dampingan KKN
+              </h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Struktur 3 tingkatan wilayah binaan KKN terintegrasi.
+              </p>
             </div>
           </div>
 
-          {/* Table Mahasiswa */}
-          <div className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
-                  <tr>
-                    <th className="p-3.5">Mahasiswa</th>
-                    <th className="p-3.5">Kelompok KKN</th>
-                    <th className="p-3.5">Kehadiran (%)</th>
-                    <th className="p-3.5 text-center">Hadir (H)</th>
-                    <th className="p-3.5 text-center">Sakit (S)</th>
-                    <th className="p-3.5 text-center">Izin (I)</th>
-                    <th className="p-3.5 text-center">Alpha (A)</th>
-                    <th className="p-3.5">Rekam Portofolio</th>
-                    <th className="p-3.5 text-center">Aksi Portofolio</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedStudents.map((st) => (
-                    <tr key={st.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs border border-emerald-200">
-                            {st.name.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                              {st.name}
-                              {st.isKetua && (
-                                <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.2 rounded font-bold">
-                                  Ketua Kelompok
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-[11px] text-slate-500">
-                              {st.jurusan} • NIM {st.nim}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3.5 font-medium text-slate-700">{st.kelompokName}</td>
-                      <td className="p-3.5">
-                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                          {st.attendanceRate}%
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-block min-w-[28px]">
-                          {st.attendedCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200/60 inline-block min-w-[28px]">
-                          {st.sickCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className="text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200/60 inline-block min-w-[28px]">
-                          {st.izinCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center font-bold">
-                        <span className={`px-2 py-0.5 rounded border inline-block min-w-[28px] ${st.alphaCount > 0 ? "text-red-700 bg-red-100 border-red-200" : "text-slate-600 bg-slate-100 border-slate-200/60"}`}>
-                          {st.alphaCount}
-                        </span>
-                      </td>
-                      <td className="p-3.5 font-bold text-slate-800">
-                        <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-full text-[11px] border border-emerald-200 inline-flex items-center gap-1">
-                          <FileCheck size={12} /> Portofolio Aktif
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleOpenCitizensDrilldown(st)}
-                            className="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition flex items-center gap-1 text-[11px] border border-emerald-200/60 cursor-pointer"
-                            title="Detail Aktivitas Pendampingan Warga"
-                          >
-                            <QrCode size={13} /> Lihat Portofolio
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {paginatedStudents.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-6 text-center text-slate-400 italic text-xs">
-                        Tidak ada data mahasiswa bimbingan yang cocok.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {totalStudentPages > 1 && (
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
-                <span className="text-slate-500 font-medium">
-                  Mahasiswa {(mahasiswaPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(mahasiswaPage * ITEMS_PER_PAGE, filteredStudents.length)} dari {filteredStudents.length}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    disabled={mahasiswaPage === 1}
-                    onClick={() => setMahasiswaPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
-                  >
-                    Sebelumnya
-                  </button>
-                  <button
-                    disabled={mahasiswaPage === totalStudentPages}
-                    onClick={() => setMahasiswaPage((p) => Math.min(totalStudentPages, p + 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
-                  >
-                    Selanjutnya
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs">
+            <span className="px-2.5 sm:px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-lg font-extrabold flex items-center gap-1.5 text-[11px] sm:text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+              Tingkat 1: {kecamatanBadgeLabel}
+            </span>
+            <span className="px-2.5 sm:px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700/40 rounded-lg font-extrabold text-[11px] sm:text-xs">
+              Tingkat 2: {kelurahanBadgeLabel}
+            </span>
+            <span className="px-2.5 sm:px-3 py-1 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700/40 rounded-lg font-extrabold text-[11px] sm:text-xs">
+              Tingkat 3: {rwBadgeLabel}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* VIEW 4: PERSETUJUAN SAKIT / IZIN */}
-      {activeTab === "APPROVAL" && (
-        <div className="space-y-6">
-          {/* Pending Approval Requests */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <FileCheck size={18} className="text-amber-500" /> Permohonan Izin / Sakit Menunggu Verification
-              </h3>
-              <span className="bg-amber-100 text-amber-900 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                {alerts?.pendingRequests?.length || 0} Pending
-              </span>
+        {/* Grid 2 Metrik Kunci KPI Dampingan */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Mahasiswa Dampingan</span>
+            <div className="mt-1">
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalAllStudents}</span>
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Orang</span>
             </div>
+            <span className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-bold mt-1">
+              {groups.reduce((acc, g) => acc + ((g as any).activeTodayCount || 0), 0)} Aktif Hari Ini
+            </span>
+          </div>
 
-            {alerts?.pendingRequests && alerts.pendingRequests.length > 0 ? (
-              <div className="space-y-3">
-                {alerts.pendingRequests.map((req) => (
-                  <div
-                    key={req.id}
-                    className="p-4 border border-amber-200/80 bg-amber-50/40 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 text-sm">{req.studentName}</span>
-                        <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded ${req.type === "SAKIT" ? "bg-red-100 text-red-800" : "bg-purple-100 text-purple-800"
-                            }`}
-                        >
-                          {req.type}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">
-                        <span className="font-semibold text-slate-700">Alasan:</span> {req.reason}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Diajukan pada: {new Date(req.createdAt).toLocaleDateString("id-ID")}
-                      </p>
-                    </div>
+          <div className="bg-slate-50/80 dark:bg-slate-800/80 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Tempat Sampah Teraktivasi</span>
+            <div className="mt-1">
+              <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                {groups.reduce((acc, g) => acc + (g.activatedBinsCount || 0), 0)}
+              </span>
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 ml-1.5">Unit</span>
+            </div>
+            <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium mt-1 truncate">
+              {groups.reduce((acc, g) => acc + (g.organikBinsCount || 0), 0)} Organik • {groups.reduce((acc, g) => acc + (g.anorganikBinsCount || 0), 0)} Anorganik
+            </span>
+          </div>
+        </div>
+      </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setRejectingRequestId(req.id)}
-                        className="px-3 py-1.5 bg-red-50 text-red-700 font-bold text-xs rounded-lg hover:bg-red-100 transition flex items-center gap-1 border border-red-200"
-                      >
-                        <XCircle size={14} /> Tolak
-                      </button>
-                      <button
-                        onClick={() => handleDecideLeave(req.id, "APPROVED")}
-                        className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-lg hover:bg-emerald-700 transition flex items-center gap-1 shadow-xs"
-                      >
-                        <CheckCircle size={14} /> Setujui
-                      </button>
-                    </div>
-                  </div>
-                ))}
+      {/* Quick Action Navigation Cards (Pintu Akses Operasional) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        <Link
+          to="/manajemen-ekosistem-kkn"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 rounded-xl group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
+              <Users size={20} />
+            </div>
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Kelompok</h4>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+        </Link>
+
+        <Link
+          to="/monitoring-absen"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-amber-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition shrink-0">
+              <ClipboardCheck size={20} />
+            </div>
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Presensi</h4>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+        </Link>
+
+        <Link
+          to="/program-kerja-kkn"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-blue-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition shrink-0">
+              <FileText size={20} />
+            </div>
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Program Kerja</h4>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+        </Link>
+
+        <Link
+          to="/penilaian-kkn/mahasiswa"
+          className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 rounded-2xl hover:border-emerald-500 hover:shadow-md transition group flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition shrink-0">
+              <Award size={20} />
+            </div>
+            <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">Penilaian</h4>
+          </div>
+          <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition shrink-0" />
+        </Link>
+      </div>
+
+      {/* Metrik Agregat Presensi & Program Kerja */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Metrik Presensi Mahasiswa */}
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                Presensi Lapangan
+              </span>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                Tingkat Presensi Mahasiswa
+              </h3>
+            </div>
+            <Link
+              to="/monitoring-absen"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+              title="Buka Halaman Presensi"
+            >
+              <span>Presensi</span>
+              <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
+            </Link>
+          </div>
+
+          <Link
+            to="/monitoring-absen"
+            className="flex items-center justify-between gap-4 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-700/40 p-4 rounded-xl transition group cursor-pointer"
+            title="Lihat Detail Presensi Lapangan"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white flex items-center justify-center font-extrabold shadow-sm shrink-0 transition">
+                <CalendarCheck size={24} />
+              </div>
+              <div>
+                <span className="text-2xl font-black text-emerald-900 dark:text-emerald-300">
+                  {groups.length > 0 ? avgOverallAttendance : 0}%
+                </span>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">Rerata Presensi Kelompok</p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition shrink-0" />
+          </Link>
+
+          <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700 flex flex-wrap items-center justify-around gap-1 text-xs font-medium">
+            <Link
+              to="/monitoring-kegiatan/pengajuan-izin"
+              className="text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Sakit)"
+            >
+              <span>{gradeDistribution.totalSakit} Sakit</span>
+            </Link>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <Link
+              to="/monitoring-kegiatan/pengajuan-izin"
+              className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Pengajuan Izin/Sakit (Filter Izin)"
+            >
+              <span>{gradeDistribution.totalIzin} Izin</span>
+            </Link>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <Link
+              to="/monitoring-absen"
+              className="text-rose-700 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:underline font-bold px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer flex items-center gap-1"
+              title="Buka Halaman Presensi (Tanpa Keterangan)"
+            >
+              <span>{gradeDistribution.totalAlpha} Tanpa Keterangan</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Right: Program Kerja yang Diusulkan */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
+                Rencana &amp; Eksekusi Lapangan
+              </span>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100 mt-0.5">
+                Program Kerja yang Diusulkan
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/program-kerja-kkn"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 group"
+                title="Buka Halaman Manajemen Program Kerja KKN"
+              >
+                <span>Semua Proker</span>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            {effectiveProkers.length === 0 ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+                Belum ada program kerja yang diusulkan oleh mahasiswa di kelompok dampingan.
+              </div>
+            ) : effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length === 0 ? (
+              <div className="p-6 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+                Belum ada program kerja disetujui.{" "}
+                {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length > 0 && (
+                  <Link to="/program-kerja-kkn?statusUsulan=BELUM_DISETUJUI" className="text-amber-600 dark:text-amber-400 font-semibold hover:underline">
+                    {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length} proker menunggu persetujuan DPL →
+                  </Link>
+                )}
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic p-4 text-center bg-slate-50 rounded-xl border border-slate-100">
-                Tidak ada permohonan sakit/izin yang membutuhkan persetujuan saat ini.
-              </p>
-            )}
-          </div>
+              effectiveProkers
+                .filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI")
+                .slice(0, 4).map((p: any) => {
 
-          {/* Riwayat Approval Log */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <h3 className="text-base font-bold text-slate-900">Riwayat Validasi Izin DPL</h3>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <select
-                  value={selectedApprovalStatus}
-                  onChange={(e) => {
-                    setSelectedApprovalStatus(e.target.value);
-                    setApprovalPage(1);
-                  }}
-                  className="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none"
-                >
-                  <option value="ALL">Semua Status Review</option>
-                  <option value="APPROVED">Disetujui (APPROVED)</option>
-                  <option value="REJECTED">Ditolak (REJECTED)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
-                  <tr>
-                    <th className="p-3">Nama Mahasiswa</th>
-                    <th className="p-3">Jenis Izin</th>
-                    <th className="p-3">Alasan / Catatan</th>
-                    <th className="p-3">Status Decision</th>
-                    <th className="p-3">Waktu Review</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedApprovalHistory.map((log) => (
-                    <tr key={log.id}>
-                      <td className="p-3 font-bold text-slate-900">{log.studentName}</td>
-                      <td className="p-3 font-semibold">{log.type}</td>
-                      <td className="p-3 text-slate-600 max-w-xs truncate">{log.reason}</td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2 py-0.5 rounded font-bold text-[11px] ${log.status === "APPROVED"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
-                        >
-                          {log.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-slate-400">
-                        {log.reviewedAt ? new Date(log.reviewedAt).toLocaleString("id-ID") : "-"}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {paginatedApprovalHistory.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-slate-400 italic">
-                        Belum ada data riwayat persetujuan.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Controls */}
-            {totalApprovalPages > 1 && (
-              <div className="flex items-center justify-between bg-slate-50 px-4 py-3 border-t border-slate-200/80 text-xs">
-                <span className="text-slate-500 font-medium">
-                  Halaman {approvalPage} dari {totalApprovalPages}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    disabled={approvalPage === 1}
-                    onClick={() => setApprovalPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
+                const normU = normalizeStatusUsulan(p.statusUsulan, p.status);
+                const normP = normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status);
+                return (
+                  <Link
+                    key={p.id}
+                    to={`/program-kerja-kkn?search=${encodeURIComponent(p.deskripsi || p.judul || "")}`}
+                    className="p-3 bg-slate-50/80 dark:bg-slate-800/80 hover:bg-emerald-50/60 dark:hover:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700/60 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs group cursor-pointer"
+                    title="Klik untuk membuka detail program kerja di Halaman Program Kerja KKN"
                   >
-                    Sebelumnya
-                  </button>
-                  <button
-                    disabled={approvalPage === totalApprovalPages}
-                    onClick={() => setApprovalPage((p) => Math.min(totalApprovalPages, p + 1))}
-                    className="px-3 py-1 bg-white border border-slate-200 text-slate-700 rounded-lg disabled:opacity-50 font-medium hover:bg-slate-100 transition"
-                  >
-                    Selanjutnya
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* VIEW 5: PETA SEBARAN */}
-      {activeTab === "MAP" && (
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <MapPin size={18} className="text-emerald-600" /> Peta Sebaran Wilayah Bimbingan & Tong Sampah
-              </h3>
-              <p className="text-xs text-slate-500">
-                Pilih Kelurahan untuk melihat detail titik RW dampingan dan lokasi tempat sampah warga.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-              <span className="flex items-center gap-1 text-emerald-700">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
-                {mapCoverage?.rwAreas.length || 0} Wilayah RW
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1 text-blue-700">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
-                {mapCoverage?.bins.length || 0} Titik Sampah
-              </span>
-            </div>
-          </div>
-
-          <div className="h-[520px] w-full rounded-2xl overflow-hidden border border-slate-200 shadow-inner relative z-0">
-            {/* Top Floating Control Bar */}
-            <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-              {selectedKelurahanMap ? (
-                <button
-                  onClick={() => setSelectedKelurahanMap(null)}
-                  className="bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-bold px-3.5 py-2 rounded-xl backdrop-blur-md shadow-lg border border-slate-700 flex items-center gap-2 transition cursor-pointer"
-                >
-                  <span>← Kembali ke Ringkasan Kelurahan</span>
-                  <span className="bg-emerald-500/30 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md border border-emerald-500/40">
-                    {selectedKelurahanMap}
-                  </span>
-                </button>
-              ) : (
-                <div className="bg-slate-900/85 backdrop-blur-md text-white text-xs font-semibold px-3 py-2 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                  <span>Klik icon Kelurahan di bawah untuk zoom ke detail tempat</span>
-                </div>
-              )}
-            </div>
-
-            <MapContainer
-              center={
-                selectedKelurahanMap
-                  ? [
-                    kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
-                    kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
-                  ]
-                  : [-6.8903, 107.6110]
-              }
-              zoom={selectedKelurahanMap ? 16 : 14}
-              scrollWheelZoom={true}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <MapAutoFlyer
-                center={
-                  selectedKelurahanMap
-                    ? [
-                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lat || -6.8903,
-                      kelurahanCentroids.find((k) => k.name.toLowerCase() === selectedKelurahanMap.toLowerCase())?.lng || 107.6110,
-                    ]
-                    : [-6.8903, 107.6110]
-                }
-                zoom={selectedKelurahanMap ? 16 : 14}
-              />
-              <MapZoomListener
-                selectedKelurahan={selectedKelurahanMap}
-                setSelectedKelurahan={setSelectedKelurahanMap}
-              />
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-
-              {/* LEVEL 1: RENDER ONLY KELURAHAN OVERVIEW MARKERS WHEN NO KELURAHAN SELECTED */}
-              {!selectedKelurahanMap &&
-                kelurahanCentroids.map((kel) => {
-                  const rwsInKel = (mapCoverage?.rwAreas || []).filter((r) =>
-                    r.kelurahan.toLowerCase().includes(kel.name.toLowerCase()) ||
-                    r.name.toLowerCase().includes(kel.name.toLowerCase())
-                  );
-
-                  return (
-                    <Marker
-                      key={`kel-pin-${kel.name}`}
-                      position={[kel.lat, kel.lng]}
-                      icon={createKelurahanPinIcon(kel.name, rwsInKel.length || 10)}
-                      eventHandlers={{
-                        click: () => setSelectedKelurahanMap(kel.name),
-                      }}
-                    >
-                      <Popup>
-                        <div className="text-xs p-1 text-center font-sans">
-                          <strong className="text-sm font-bold block text-slate-900 mb-1">
-                            Kelurahan {kel.name}
-                          </strong>
-                          <p className="text-slate-600 mb-2">
-                            Total Wilayah: <strong>{rwsInKel.length} RW</strong>
-                          </p>
-                          <button
-                            onClick={() => setSelectedKelurahanMap(kel.name)}
-                            className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg hover:bg-emerald-700 transition"
-                          >
-                            Buka Detail Titik Tempat Sampah →
-                          </button>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
-
-              {/* LEVEL 2: RENDER DETAILED RW AND BIN MARKERS WHEN A KELURAHAN IS SELECTED */}
-              {selectedKelurahanMap && (
-                <>
-                  {/* 1. Render RW Area Markers for Selected Kelurahan */}
-                  {(mapCoverage?.rwAreas || [])
-                    .filter(
-                      (rw) =>
-                        rw.kelurahan.toLowerCase().includes(selectedKelurahanMap.toLowerCase()) ||
-                        rw.name.toLowerCase().includes(selectedKelurahanMap.toLowerCase())
-                    )
-                    .map((rw) => {
-                      if (!rw.latitude || !rw.longitude) return null;
-                      const lat = Number(rw.latitude);
-                      const lng = Number(rw.longitude);
-                      if (isNaN(lat) || isNaN(lng)) return null;
-
-                      return (
-                        <Marker
-                          key={`dpl-rw-${rw.id}`}
-                          position={[lat, lng]}
-                          icon={createRwPinIcon(rw.name)}
-                        >
-                          <Popup>
-                            <div className="text-xs p-1 text-center font-sans">
-                              <strong className="text-sm font-bold block mb-1 text-slate-800">
-                                Wilayah {rw.name}
-                              </strong>
-                              <p className="text-slate-600 mb-1">
-                                Kelurahan: <strong className="text-emerald-600">{rw.kelurahan}</strong>
-                              </p>
-                              <p className="text-[10px] text-slate-500 font-semibold italic">
-                                Wilayah Pendampingan Mahasiswa KKN
-                              </p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      );
-                    })}
-
-                  {/* 2. Render Bin Markers for Selected Kelurahan */}
-                  {(mapCoverage?.bins || []).map((bin) => {
-                    if (!bin.latitude || !bin.longitude) return null;
-                    const lat = Number(bin.latitude);
-                    const lng = Number(bin.longitude);
-                    if (isNaN(lat) || isNaN(lng)) return null;
-
-                    return (
-                      <Marker
-                        key={`dpl-bin-${bin.id}`}
-                        position={[lat, lng]}
-                        icon={createBinPinIcon(bin.status)}
-                      >
-                        <Popup>
-                          <div className="text-xs p-1 text-center font-sans space-y-1">
-                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full inline-block">
-                              Tong Sampah Aktif
-                            </span>
-                            <strong className="text-sm font-bold block text-slate-900">
-                              {bin.qrCode}
-                            </strong>
-                            <p className="text-slate-600 text-[11px]">
-                              Warga: <strong>{bin.wargaNama || "Warga Binaan"}</strong>
-                            </p>
-                            <p className="text-[10px] text-slate-500">
-                              Status: <span className="font-bold text-slate-800">{bin.status}</span>
-                            </p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    );
-                  })}
-                </>
-              )}
-            </MapContainer>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 1: DRILLDOWN DAMPAK WARGA DIBANTU */}
-      {selectedStudentForCitizens && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                  Dampak Pendampingan Warga
-                </span>
-                <h3 className="text-base font-bold text-slate-900 mt-1">
-                  Warga Dibantu: {selectedStudentForCitizens.name}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedStudentForCitizens(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            {loadingCitizens ? (
-              <div className="py-12 text-center text-xs text-slate-500 animate-pulse">
-                Memuat data warga & pola buang sampah...
-              </div>
-            ) : assistedCitizensData && assistedCitizensData.citizens.length > 0 ? (
-              <div className="space-y-3">
-                <div className="bg-slate-50 p-3 rounded-lg flex items-center justify-between text-xs text-slate-700 border border-slate-200/60">
-                  <span>Total Warga Didampingi: <strong>{assistedCitizensData.totalCitizensAssisted} Warga</strong></span>
-                </div>
-                {assistedCitizensData.citizens.map((c) => (
-                  <div key={c.binId} className="p-4 border border-slate-200/60 rounded-xl bg-slate-50/40 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-bold text-slate-900 text-xs">{c.warga?.nama || "Warga Binaan"}</p>
-                        <p className="text-[11px] text-slate-500">{c.warga?.alamat || "Alamat tercatat"}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition truncate">
+                          {p.deskripsi || p.judul}
+                        </p>
+                        {p.kategori && (
+                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-extrabold border bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600">
+                            {p.kategori}
+                          </span>
+                        )}
+                        {p.kelompokName && (
+                          <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40">
+                            {p.kelompokName}
+                          </span>
+                        )}
                       </div>
-                      <span
-                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${c.polaBuangSampah === "RUTIN"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : c.polaBuangSampah === "KURANG_RUTIN"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-slate-200 text-slate-700"
-                          }`}
-                      >
-                        Pola: {c.polaBuangSampah}
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Kebutuhan: Rp {Number(p.kebutuhanBiaya || 0).toLocaleString("id-ID")}
+                        {p.waktuPelaksanaan && <span className="ml-2">• {p.waktuPelaksanaan}</span>}
+                      </p>
+                    </div>
+
+                    {/* Dual Status Badges: Usulan & Pelaksanaan */}
+                    <div className="shrink-0 flex items-center gap-1.5 flex-wrap">
+                      {/* 1. Status Usulan */}
+                      {normU === "DISETUJUI" && (
+                        <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400" />
+                          <span>Disetujui</span>
+                        </span>
+                      )}
+                      {normU === "DITOLAK" && (
+                        <span className="px-2 py-0.5 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <XCircle size={11} className="text-rose-600 dark:text-rose-400" />
+                          <span>Ditolak</span>
+                        </span>
+                      )}
+                      {normU === "BELUM_DISETUJUI" && (
+                        <span className="px-2 py-0.5 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <Clock size={11} className="text-amber-600 dark:text-amber-400" />
+                          <span>Menunggu</span>
+                        </span>
+                      )}
+
+                      {/* 2. Status Pelaksanaan (Indikator Hijau UI/UX Friendly untuk Sedang Berjalan) */}
+                      {normP === "SEDANG_BERJALAN" && (
+                        <span className="px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/50 rounded-full font-black text-[10px] inline-flex items-center gap-1.5 shadow-2xs">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          <span>Sedang Berlangsung</span>
+                        </span>
+                      )}
+                      {normP === "SELESAI" && (
+                        <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-full font-bold text-[10px] inline-flex items-center gap-1">
+                          <CheckCircle2 size={11} className="text-blue-600 dark:text-blue-400" />
+                          <span>Selesai</span>
+                        </span>
+                      )}
+                      {normP === "BELUM_MULAI" && (
+                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-[10px]">
+                          Belum Mulai
+                        </span>
+                      )}
+
+                      <ChevronRight size={14} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition shrink-0 ml-0.5" />
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
+              <span className="font-semibold">
+                Total Proker: <strong className="text-slate-800 dark:text-slate-200">{effectiveProkers.length} Kegiatan</strong>
+              </span>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-[10.5px]">
+                {/* Rekap Status Usulan */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Usulan:</span>
+                  <Link
+                    to="/program-kerja-kkn?statusUsulan=BELUM_DISETUJUI"
+                    className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Menunggu Persetujuan"
+                  >
+                    Menunggu: {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "BELUM_DISETUJUI").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusUsulan=DISETUJUI"
+                    className="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Disetujui"
+                  >
+                    Disetujui: {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DISETUJUI").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusUsulan=DITOLAK"
+                    className="px-2 py-0.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Ditolak"
+                  >
+                    Ditolak: {effectiveProkers.filter((p: any) => normalizeStatusUsulan(p.statusUsulan, p.status) === "DITOLAK").length}
+                  </Link>
+                </div>
+
+                <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+
+                {/* Rekap Status Pelaksanaan */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Pelaksanaan:</span>
+                  <Link
+                    to="/program-kerja-kkn?statusPelaksanaan=SEDANG_BERJALAN"
+                    className="px-2 py-0.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/50 rounded-md font-black transition cursor-pointer"
+                    title="Filter Program Kerja Sedang Berlangsung"
+                  >
+                    Berlangsung: {effectiveProkers.filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SEDANG_BERJALAN").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusPelaksanaan=SELESAI"
+                    className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-700/40 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Selesai"
+                  >
+                    Selesai: {effectiveProkers.filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "SELESAI").length}
+                  </Link>
+                  <Link
+                    to="/program-kerja-kkn?statusPelaksanaan=BELUM_MULAI"
+                    className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-md font-bold transition cursor-pointer"
+                    title="Filter Program Kerja Belum Mulai"
+                  >
+                    Belum Mulai: {effectiveProkers.filter((p: any) => normalizeStatusPelaksanaan(p.statusPelaksanaan, p.status) === "BELUM_MULAI").length}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Callout if pending approvals exist */}
+      {alerts?.pendingRequests && alerts.pendingRequests.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-xl">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+                Membutuhkan Persetujuan ({alerts.pendingRequests.length} Pengajuan Izin/Sakit)
+              </h4>
+              <p className="text-xs text-amber-800 dark:text-amber-400">
+                Beberapa mahasiswa dampingan mengajukan surat izin / sakit yang memerlukan validasi DPL.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/monitoring-kegiatan/pengajuan-izin")}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-xs whitespace-nowrap cursor-pointer"
+          >
+            Validasi Sekarang
+          </button>
+        </div>
+      )}
+
+      {/* Daftar Kelompok Binaan DPL (Clean Table / Card Overview) */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <Users size={18} className="text-emerald-600 dark:text-emerald-400" />
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-slate-100">
+                {isPimpinan ? "Daftar Kelompok KKN & DPL Pengampu" : "Daftar Kelompok Dampingan"}
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {isPimpinan
+                ? "Monitoring kelompok KKN binaan beserta DPL pengampu, cakupan wilayah RW, dan progres aktivitas."
+                : "Kelompok KKN binaan beserta cakupan wilayah RW dan progress aktivitas."}
+            </p>
+          </div>
+          <Link
+            to="/manajemen-ekosistem-kkn"
+            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 self-start sm:self-auto"
+          >
+            <span>Kelola di Menu Kelompok</span>
+            <ChevronRight size={14} />
+          </Link>
+        </div>
+
+        {groups.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs">
+            Belum ada kelompok dampingan yang terdaftar untuk akun DPL ini.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {groups.map((g) => {
+              const rwFormatted = Array.isArray(g.cakupanRw)
+                ? g.cakupanRw.join(", ")
+                : typeof g.cakupanRw === "string"
+                ? g.cakupanRw
+                : "-";
+              return (
+                <div
+                  key={g.id}
+                  className="bg-slate-50/70 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700 hover:border-emerald-500/40 transition space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">{g.name}</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40">
+                        {g.studentCount || 0} Mahasiswa
                       </span>
                     </div>
-
-                    <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] text-slate-600">
-                      <div><span className="text-slate-400 block text-[10px]">Kode QR Bin</span> <strong className="text-slate-800">{c.qrCode}</strong></div>
-                      <div><span className="text-slate-400 block text-[10px]">Frekuensi</span> <strong className="text-slate-800">{c.totalSetoranCount}x Setor</strong></div>
-                      <div><span className="text-slate-400 block text-[10px]">Total Berat</span> <strong className="text-emerald-700">{c.totalKg} Kg</strong></div>
-                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                      Kel. {g.kelurahan || "-"} {g.kecamatan ? `• Kec. ${g.kecamatan}` : ""} • RW {rwFormatted}
+                    </p>
+                    {g.dpl && (
+                      <p className="text-[11px] text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1 truncate" title={`DPL: ${g.dpl.name}${g.dpl.nip ? ` (${g.dpl.nip})` : ""}`}>
+                        <span className="text-slate-400 font-normal">DPL:</span> {g.dpl.name} {g.dpl.nip ? `(${g.dpl.nip})` : ""}
+                      </p>
+                    )}
+                    {g.ketua && (
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1 truncate">
+                        <span className="text-slate-400 font-normal">Ketua Kelompok:</span> {g.ketua.name} ({g.ketua.nim})
+                      </p>
+                    )}
+                    {g.posko && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center justify-between" title={g.posko.alamat}>
+                        <span><span className="font-semibold text-slate-600 dark:text-slate-300">Posko:</span> {g.posko.nama}</span>
+                        {g.posko.latitude && g.posko.longitude && (
+                          <a href={`https://www.google.com/maps?q=${g.posko.latitude},${g.posko.longitude}`} target="_blank" rel="noreferrer" className="text-[10px] flex items-center gap-1 text-blue-500 hover:underline">
+                            <MapPin size={10} /> Lokasi
+                          </a>
+                        )}
+                      </p>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-xs text-slate-500 italic bg-slate-50 rounded-xl">
-                Mahasiswa ini belum mengaktivasi tempat sampah warga.
-              </div>
-            )}
+
+                  <div className="flex items-center justify-between text-xs pt-2.5 border-t border-slate-200/60 dark:border-slate-700/60 text-slate-600 dark:text-slate-300">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Rerata Presensi Lapangan</span>
+                    <strong className="text-emerald-700 dark:text-emerald-400 font-black text-sm bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-200/80 dark:border-emerald-700/40">
+                      {g.avgAttendanceRate || 0}%
+                    </strong>
+                  </div>
+
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroupForDetail(g);
+                        setGroupStudentSearchQuery("");
+                        setGroupStudentPage(1);
+                      }}
+                      className="flex-1 py-2 px-3 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/60 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Users size={14} className="text-emerald-600 dark:text-emerald-400" />
+                      <span>Detail Anggota ({g.studentCount || 0})</span>
+                    </button>
+                    <Link
+                      to="/manajemen-ekosistem-kkn"
+                      className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs transition flex items-center justify-center cursor-pointer"
+                      title="Kelola Struktur & Logbook di Manajemen Ekosistem"
+                    >
+                      <ChevronRight size={15} />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* MODAL DRILL-DOWN WARGA DIBANTU */}
+        {/* Render Action Modals */}
+        {renderActionModals()}
+      </div>
+    );
+  };
 
-      {/* MODAL 3: PENOLAKAN IZIN CATATAN */}
-      {rejectingRequestId && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
-            <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-red-600 flex items-center gap-1.5">
-                <XCircle size={18} /> Alasan Penolakan Izin
-              </h3>
-              <button onClick={() => setRejectingRequestId(null)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <label className="block font-semibold text-slate-700">Tuliskan Alasan Penolakan untuk Mahasiswa:</label>
-              <textarea
-                rows={3}
-                value={rejectionReasonInput}
-                onChange={(e) => setRejectionReasonInput(e.target.value)}
-                placeholder="Contoh: Bukti surat sakit tidak melampirkan keterangan dokter resmi..."
-                className="w-full p-2.5 border border-slate-200 rounded-lg outline-none focus:border-red-500"
-              />
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => setRejectingRequestId(null)}
-                  className="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={() => handleDecideLeave(rejectingRequestId, "REJECTED", rejectionReasonInput)}
-                  className="flex-1 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
-                >
-                  Konfirmasi Penolakan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default DplDashboardPage;
+  export default DplDashboardPage;

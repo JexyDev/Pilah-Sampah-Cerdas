@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  *
@@ -59,38 +59,87 @@ export class VendorWasteAiAdapter implements IWasteAiAdapter {
     }
 
     try {
+      const formData = new FormData();
+      const fs = await import("fs");
+      const path = await import("path");
+
+      let resolvedPath = payload.imagePath ? path.resolve(payload.imagePath) : "";
+      if (!resolvedPath || !fs.existsSync(resolvedPath)) {
+        if (payload.imageUrl && !payload.imageUrl.startsWith("http")) {
+          const cleanUrl = payload.imageUrl.replace(/^\/?uploads\//, "");
+          const candidatePath = path.resolve(process.cwd(), "uploads", cleanUrl);
+          if (fs.existsSync(candidatePath)) {
+            resolvedPath = candidatePath;
+          }
+        }
+      }
+
+      if (resolvedPath && fs.existsSync(resolvedPath)) {
+        const fileBuffer = fs.readFileSync(resolvedPath);
+        formData.append(
+          "image",
+          new Blob([new Uint8Array(fileBuffer)], { type: "image/jpeg" }),
+          "waste.jpg"
+        );
+      } else if (payload.imageUrl && payload.imageUrl.startsWith("http")) {
+        const imgResp = await fetch(payload.imageUrl);
+        const arrayBuf = await imgResp.arrayBuffer();
+        formData.append("image", new Blob([arrayBuf], { type: "image/jpeg" }), "waste.jpg");
+      } else {
+        throw new Error("IMAGE_UNREADABLE");
+      }
+
       const response = await fetch(this.endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          imageUrl: payload.imageUrl,
-          clientApp: "Trashcare-Bandung",
-        }),
+        headers: this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {},
+        body: formData,
       });
 
       if (!response.ok) {
+        if (response.status === 422) {
+          const errData = (await response.json().catch(() => ({}))) as any;
+          if (errData?.detail === "NO_WASTE_DETECTED") {
+            throw new Error("NO_WASTE_DETECTED");
+          }
+          if (errData?.detail === "IMAGE_UNREADABLE") {
+            throw new Error("IMAGE_UNREADABLE");
+          }
+        }
         throw new Error(`AI Vendor returned HTTP ${response.status}`);
       }
 
       const data = (await response.json()) as any;
+      const detUpper = String(data.detectedType || "").toUpperCase();
+      const orgPct =
+        data.organik_percent !== undefined
+          ? Number(data.organik_percent)
+          : detUpper === "ORGANIC" || detUpper === "ORGANIK"
+            ? 95
+            : 5;
+      const inorgPct =
+        data.non_organik_percent !== undefined ? Number(data.non_organik_percent) : 100 - orgPct;
+      const isOrganic = orgPct >= inorgPct;
 
       return {
         requestId: data.requestId || uuidv4(),
-        detectedType: data.label || data.detectedType || "organik",
-        confidenceScore: Number(data.confidence || data.confidenceScore || 0.9),
-        estimatedVolumeLiter: Number(data.volumeLiter || 2.0),
+        detectedType: isOrganic ? "ORGANIC" : "NON_ORGANIC",
+        confidenceScore: Number(data.confidenceScore || Math.max(orgPct, inorgPct) / 100),
+        estimatedVolumeLiter: Number(data.estimatedVolumeLiter || 2.0),
         detections: data.detections || [],
-        vendorName: data.vendorName || "ExternalVendorAI",
-        rawPayload: data,
+        vendorName: data.vendorName || "BERSEKA-v3c",
+        annotatedImageBase64: data.annotatedImageBase64,
+        rawPayload: {
+          ...data,
+          organik_percent: orgPct,
+          non_organik_percent: inorgPct,
+        },
       };
     } catch (error: any) {
+      if (error.message === "NO_WASTE_DETECTED" || error.message === "IMAGE_UNREADABLE") {
+        throw error;
+      }
       console.error("[VendorWasteAiAdapter] Error calling vendor AI API:", error.message);
-      // Fallback to Mock if vendor call fails
-      const fallback = new MockWasteAiAdapter();
-      return fallback.classifyWaste(payload);
+      throw error;
     }
   }
 }
