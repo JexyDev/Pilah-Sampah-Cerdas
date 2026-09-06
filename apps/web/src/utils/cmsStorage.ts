@@ -345,7 +345,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       initiator: "KKN UNIKOM 2026",
       initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/activity-1.webp",
+      imageUrl: "/image/program/kodifikasi-tempat-sampah-qr.webp",
       currentAmount: 340,
       targetAmount: 500,
       unit: "Titik QR",
@@ -364,7 +364,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       initiator: "KKN UNIKOM 2026",
       initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/activity-2.webp",
+      imageUrl: "/image/program/pemantauan-gas-metana-tps.webp",
       currentAmount: 180,
       targetAmount: 200,
       unit: "TPS",
@@ -383,7 +383,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       initiator: "KKN UNIKOM 2026",
       initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/activity-3.webp",
+      imageUrl: "/image/program/iot-buruan-sae.webp",
       currentAmount: 240,
       targetAmount: 300,
       unit: "Kebun",
@@ -402,7 +402,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       initiator: "KKN UNIKOM 2026",
       initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/activity-2.webp",
+      imageUrl: "/image/program/komposter-iot-poc.webp",
       currentAmount: 390,
       targetAmount: 500,
       unit: "Liter POC",
@@ -421,7 +421,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       initiator: "KKN UNIKOM 2026",
       initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/landingpage.webp",
+      imageUrl: "/image/program/timbangan-digital-petugas.webp",
       currentAmount: 180,
       targetAmount: 200,
       unit: "Petugas",
@@ -440,7 +440,7 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
       initiator: "KKN UNIKOM 2026",
       initiatorBadge: "Terverifikasi KKN",
       location: "Kecamatan Coblong, Kota Bandung",
-      imageUrl: "/image/kkn-hero-sorting.webp",
+      imageUrl: "/image/program/pemanfaatan-produk-kreatif.webp",
       currentAmount: 450,
       targetAmount: 500,
       unit: "Produk",
@@ -647,13 +647,12 @@ export async function saveCmsContent(content: LandingContentPayload): Promise<vo
 export function sanitizeCmsPayload(data: Partial<LandingContentPayload>): LandingContentPayload {
   if (!data || typeof data !== "object") return DEFAULT_CMS_CONTENT;
 
-  // Sanitize actionCampaigns: If stale data containing Bank Sampah or less than 6 programs exists, reset to defaults
+  // Sanitize actionCampaigns: If stale data containing Bank Sampah references or less than 6 programs, reset to defaults
   let campaigns = Array.isArray(data.actionCampaigns) ? data.actionCampaigns : DEFAULT_CMS_CONTENT.actionCampaigns;
   const hasStaleBankSampah = campaigns.some(
     (c) =>
       c.title?.includes("Bank Sampah") ||
       c.categoryLabel?.toLowerCase().includes("bank sampah") ||
-      c.category === "recycle" ||
       c.title?.includes("Sedekah Minyak Jelantah")
   );
   if (hasStaleBankSampah || campaigns.length !== 6) {
