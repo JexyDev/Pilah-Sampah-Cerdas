@@ -264,7 +264,7 @@ export const generatePosterHtml = (
           display: block;
         }
 
-        /* Serial Code Text Overlay (Precision calibrated: Left 52.00%, Width 41.12%, Height 4.41%) */
+        /* Serial Code Text Overlay (Precision calibrated relative to template pill bounds) */
         .pill-overlay {
           position: absolute;
           z-index: 10;
@@ -274,27 +274,28 @@ export const generatePosterHtml = (
           font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace, sans-serif;
           font-weight: 900;
           text-align: center;
-          letter-spacing: 0.6px;
+          letter-spacing: 0.5px;
           white-space: nowrap;
           line-height: 1;
           box-sizing: border-box;
-          width: 41.12%;
-          left: 52.00%;
-          height: 4.41%;
+          width: 48.0%;
+          left: 48.0%;
         }
 
         /* Organik Pill Badge Position & Styling */
         .pill-organik {
-          top: 85.7%;
+          top: 86.48%;
+          height: 6.4%;
           color: #ffffff;
-          font-size: 8.5pt;
+          font-size: 8.2pt;
         }
 
         /* Anorganik Pill Badge Position & Styling */
         .pill-anorganik {
-          top: 86.0%;
+          top: 85.05%;
+          height: 7.0%;
           color: #000000;
-          font-size: 8.5pt;
+          font-size: 8.2pt;
         }
 
         /* A4 Multi-grid mode */
@@ -460,10 +461,10 @@ export const generatePosterHtml = (
 
             if (isAnorg) {
               ctx.fillStyle = '#000000';
-              ctx.fillText(serial, 1814, 3357);
+              ctx.fillText(serial, 1800, 3372);
             } else {
               ctx.fillStyle = '#ffffff';
-              ctx.fillText(serial, 1814, 3348);
+              ctx.fillText(serial, 1803, 3415);
             }
 
             // Trigger download
@@ -638,10 +639,10 @@ export const downloadKelompokZip = async (
 
     if (isAnorg) {
       ctx.fillStyle = "#000000";
-      ctx.fillText(serial, 1814, 3357);
+      ctx.fillText(serial, 1800, 3372);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(serial, 1814, 3348);
+      ctx.fillText(serial, 1803, 3415);
     }
 
     // Convert canvas to blob and add to ZIP
