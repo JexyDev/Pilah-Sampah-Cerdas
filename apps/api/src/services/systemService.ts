@@ -293,7 +293,7 @@ export const systemService = {
         initiator: "KKN UNIKOM 2026",
         initiatorBadge: "Terverifikasi KKN",
         location: "Kecamatan Coblong, Kota Bandung",
-        imageUrl: "/image/activity-1.webp",
+        imageUrl: "/image/program/kodifikasi-tempat-sampah-qr.webp",
         currentAmount: 340,
         targetAmount: 500,
         unit: "Titik QR",
@@ -312,7 +312,7 @@ export const systemService = {
         initiator: "KKN UNIKOM 2026",
         initiatorBadge: "Terverifikasi KKN",
         location: "Kecamatan Coblong, Kota Bandung",
-        imageUrl: "/image/activity-2.webp",
+        imageUrl: "/image/program/pemantauan-gas-metana-tps.webp",
         currentAmount: 180,
         targetAmount: 200,
         unit: "TPS",
@@ -331,7 +331,7 @@ export const systemService = {
         initiator: "KKN UNIKOM 2026",
         initiatorBadge: "Terverifikasi KKN",
         location: "Kecamatan Coblong, Kota Bandung",
-        imageUrl: "/image/activity-3.webp",
+        imageUrl: "/image/program/iot-buruan-sae.webp",
         currentAmount: 240,
         targetAmount: 300,
         unit: "Kebun",
@@ -350,7 +350,7 @@ export const systemService = {
         initiator: "KKN UNIKOM 2026",
         initiatorBadge: "Terverifikasi KKN",
         location: "Kecamatan Coblong, Kota Bandung",
-        imageUrl: "/image/activity-2.webp",
+        imageUrl: "/image/program/komposter-iot-poc.webp",
         currentAmount: 390,
         targetAmount: 500,
         unit: "Liter POC",
@@ -369,7 +369,7 @@ export const systemService = {
         initiator: "KKN UNIKOM 2026",
         initiatorBadge: "Terverifikasi KKN",
         location: "Kecamatan Coblong, Kota Bandung",
-        imageUrl: "/image/landingpage.webp",
+        imageUrl: "/image/program/timbangan-digital-petugas.webp",
         currentAmount: 180,
         targetAmount: 200,
         unit: "Petugas",
@@ -388,7 +388,7 @@ export const systemService = {
         initiator: "KKN UNIKOM 2026",
         initiatorBadge: "Terverifikasi KKN",
         location: "Kecamatan Coblong, Kota Bandung",
-        imageUrl: "/image/kkn-hero-sorting.webp",
+        imageUrl: "/image/program/pemanfaatan-produk-kreatif.webp",
         currentAmount: 450,
         targetAmount: 500,
         unit: "Produk",
@@ -528,7 +528,6 @@ export const systemService = {
           (c: any) =>
             c.title?.includes("Bank Sampah") ||
             c.categoryLabel?.toLowerCase().includes("bank sampah") ||
-            c.category === "recycle" ||
             c.title?.includes("Sedekah Minyak Jelantah")
         );
         if (hasStaleBankSampah || campaigns.length !== 6) {
