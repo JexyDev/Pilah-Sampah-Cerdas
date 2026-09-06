@@ -517,10 +517,10 @@ export class SuperUserService {
       white-space: nowrap;
       line-height: 1;
       box-sizing: border-box;
-      width: 41.0%;
-      left: 53.5%;
+      width: 42.0%;
+      left: 51.5%;
       height: 4.4%;
-      top: 85.9%;
+      top: 85.7%;
     }
 
     .pill-organik {
