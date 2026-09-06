@@ -274,7 +274,7 @@ export const generatePosterHtml = (
           font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace, sans-serif;
           font-weight: 900;
           text-align: center;
-          letter-spacing: 0.6px;
+          letter-spacing: 0.3px;
           white-space: nowrap;
           line-height: 1;
           box-sizing: border-box;
@@ -287,13 +287,13 @@ export const generatePosterHtml = (
         /* Organik Pill Badge Styling */
         .pill-organik {
           color: #ffffff;
-          font-size: 8.5pt;
+          font-size: 7.2pt;
         }
 
         /* Anorganik Pill Badge Styling */
         .pill-anorganik {
           color: #000000;
-          font-size: 8.5pt;
+          font-size: 7.2pt;
         }
 
         /* A4 Multi-grid mode */
@@ -453,7 +453,7 @@ export const generatePosterHtml = (
             });
 
             // Draw Serial text on pill
-            ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+            ctx.font = '900 58px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
@@ -632,7 +632,7 @@ export const downloadKelompokZip = async (
     }
 
     // 3. Draw Serial Number on Pill
-    ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+    ctx.font = '900 58px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 

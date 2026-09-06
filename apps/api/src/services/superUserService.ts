@@ -513,7 +513,7 @@ export class SuperUserService {
       font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace, sans-serif;
       font-weight: 900;
       text-align: center;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.3px;
       white-space: nowrap;
       line-height: 1;
       box-sizing: border-box;
@@ -525,12 +525,12 @@ export class SuperUserService {
 
     .pill-organik {
       color: #ffffff;
-      font-size: 8.5pt;
+      font-size: 7.2pt;
     }
 
     .pill-anorganik {
       color: #000000;
-      font-size: 8.5pt;
+      font-size: 7.2pt;
     }
 
     body.layout-a4-grid .print-canvas {
@@ -684,7 +684,7 @@ export class SuperUserService {
           img.src = qrImg.src;
         });
 
-        ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+        ctx.font = '900 58px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
