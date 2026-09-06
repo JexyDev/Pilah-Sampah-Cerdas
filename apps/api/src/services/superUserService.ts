@@ -513,25 +513,24 @@ export class SuperUserService {
       font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace, sans-serif;
       font-weight: 900;
       text-align: center;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.3px;
       white-space: nowrap;
       line-height: 1;
       box-sizing: border-box;
-      width: 41.12%;
-      left: 52.00%;
-      height: 4.41%;
+      left: 54.72%;
+      width: 38.36%;
+      top: 86.05%;
+      height: 4.16%;
     }
 
     .pill-organik {
-      top: 85.7%;
       color: #ffffff;
-      font-size: 8.5pt;
+      font-size: 7pt;
     }
 
     .pill-anorganik {
-      top: 86.0%;
       color: #000000;
-      font-size: 8.5pt;
+      font-size: 7pt;
     }
 
     body.layout-a4-grid .print-canvas {
@@ -685,16 +684,16 @@ export class SuperUserService {
           img.src = qrImg.src;
         });
 
-        ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
+        ctx.font = '900 68px "JetBrains Mono", "Plus Jakarta Sans", monospace, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         if (isAnorg) {
           ctx.fillStyle = '#000000';
-          ctx.fillText(serial, 1814, 3357);
+          ctx.fillText(serial, 1848, 3356);
         } else {
           ctx.fillStyle = '#ffffff';
-          ctx.fillText(serial, 1814, 3348);
+          ctx.fillText(serial, 1848, 3356);
         }
 
         const dataUrl = canvas.toDataURL('image/png');
