@@ -1,6 +1,7 @@
 import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
 import '../models/wilayah_kelompok_model.dart';
+import '../models/kelompok_qr_models.dart';
 
 /// Interface repository untuk fitur Mahasiswa KKN.
 ///
@@ -77,6 +78,9 @@ abstract class KknRepository {
 
   /// Mengambil data kelompok KKN mahasiswa yang sedang login (GET /kkn/kelompok/me)
   Future<KelompokKknData?> getKelompokKkn();
+
+  /// Mengambil data kuota dan daftar 20 QR Code Stiker kelompok
+  Future<KelompokQrResponse> getKelompokQrCodes();
 
   /// Mengambil data wilayah dan posko kelompok KKN (GET /api/v1/kkn/wilayah-kelompok)
   Future<WilayahKelompokModel?> getWilayahKelompok();

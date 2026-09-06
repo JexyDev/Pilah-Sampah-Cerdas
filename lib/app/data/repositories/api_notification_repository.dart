@@ -3,6 +3,7 @@ import '../models/notification_entity.dart';
 import 'notification_repository.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
+import '../../core/utils/input_sanitizer.dart';
 
 /// Implementasi NotificationRepository yang terhubung ke backend Express.js.
 ///
@@ -171,11 +172,14 @@ class ApiNotificationRepository implements NotificationRepository {
 
     final displayTime = json['time']?.toString() ?? 'Baru saja';
 
+    final cleanDesc = InputSanitizer.cleanSystemMessage(rawDesc);
+    final cleanTitle = InputSanitizer.cleanSystemMessage(rawTitle);
+
     return NotificationEntity(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? json['notificationId']?.toString() ?? '',
       type: rawType,
-      title: rawTitle,
-      desc: rawDesc,
+      title: cleanTitle,
+      desc: cleanDesc,
       isRead: json['isRead'] as bool? ?? json['read'] as bool? ?? json['is_read'] as bool? ?? false,
       time: displayTime,
       icon: json['icon']?.toString() ?? 'info',

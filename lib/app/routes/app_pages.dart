@@ -48,6 +48,7 @@ import '../modules/mahasiswa/views/mahasiswa_notifikasi_view.dart';
 import '../modules/petugas_pemilahan/views/petugas_notification_view.dart';
 import '../modules/petugas_pemilahan/views/pengajuan_warga_view.dart';
 import '../modules/mahasiswa/views/pengajuan_program_kerja_view.dart';
+import '../modules/mahasiswa/views/kelompok_stiker_qr_view.dart';
 import '../modules/mahasiswa/views/riwayat_program_kerja_view.dart';
 import '../modules/mahasiswa/views/logbook_pemanfaatan_view.dart';
 import '../modules/mahasiswa/views/catat_panen_view.dart';
@@ -162,6 +163,8 @@ class AppPages {
         return _buildRoute(const GantiPasswordPetugasView(), settings);
       case AppRoutes.ketersediaanQr:
         return _buildRoute(const KetersediaanQrView(), settings);
+      case AppRoutes.kelompokStikerQr:
+        return _buildRoute(const KelompokStikerQrView(), settings);
       case AppRoutes.pengajuanWarga:
         return _buildRoute(const PengajuanWargaView(), settings);
       case AppRoutes.monitoringDampakKelurahan:

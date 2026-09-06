@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mahasiswa_kkn_models.dart';
 import '../models/kkn_timeline_models.dart';
 import '../models/wilayah_kelompok_model.dart';
+import '../models/kelompok_qr_models.dart';
 import '../providers/api_client.dart';
 import '../../core/values/api_constants.dart';
 import 'kkn_repository.dart';
@@ -436,6 +437,26 @@ class ApiKknRepository implements KknRepository {
       rethrow;
     } catch (e) {
       rethrow;
+    }
+  }
+
+  @override
+  Future<KelompokQrResponse> getKelompokQrCodes() async {
+    try {
+      final response = await apiClient.dio.get(ApiEndpoints.kknMyKelompokQrCodes);
+      if (response.statusCode == 200 && response.data != null) {
+        return KelompokQrResponse.fromJson(response.data as Map<String, dynamic>);
+      }
+      throw Exception('Format respon tidak valid.');
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final msg = _extractSafeErrorMessage(e.response?.data, 'Gagal memuat QR Code Kelompok');
+      if (statusCode == 404) {
+         throw Exception('KELOMPOK_NOT_ASSIGNED');
+      }
+      throw Exception(msg);
+    } catch (e) {
+      throw Exception('Terjadi kesalahan saat memuat QR Code: $e');
     }
   }
 

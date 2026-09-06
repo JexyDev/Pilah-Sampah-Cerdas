@@ -6,6 +6,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../../data/services/firebase_notification_service.dart';
 import '../../../data/services/local_notification_cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 final Set<String> _mhsShownNotifIds = {};
 
@@ -117,11 +118,12 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
             
         final isPunishment = ph.points < 0;
             
+        final cleanDesc = InputSanitizer.cleanSystemMessage(ph.description);
         list.add(NotificationEntity(
           id: notifId,
           type: isPunishment ? 'PUNISHMENT' : 'POIN_KKN',
           title: isPunishment ? 'Penalti Poin KKN' : 'Poin KKN Bertambah!',
-          desc: ph.description.isNotEmpty ? ph.description : (isPunishment ? 'Poin KKN Anda dikurangi ${ph.points}.' : 'Anda mendapatkan +${ph.points} poin.'),
+          desc: cleanDesc.isNotEmpty ? cleanDesc : (isPunishment ? 'Poin KKN Anda dikurangi ${ph.points}.' : 'Anda mendapatkan +${ph.points} poin.'),
           isRead: isRead,
           time: ph.createdAt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '),
           icon: isPunishment ? 'warning' : 'star',
@@ -169,15 +171,19 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
   for (final notif in list) {
     if (!_isMahasiswaNotification(notif)) continue;
     
+    // Bersihkan metadata sistem seperti [ReportID:xxxx] dari judul dan deskripsi
+    final sanitizedTitle = InputSanitizer.cleanSystemMessage(notif.title);
+    final sanitizedDesc = InputSanitizer.cleanSystemMessage(notif.desc);
+
     // Deduplikasi berdasar ID atau kesamaan persis (Title + Desc + Type)
-    if (result.any((n) => n.id == notif.id || (n.title == notif.title && n.desc == notif.desc && n.type == notif.type))) continue;
+    if (result.any((n) => n.id == notif.id || (n.title == sanitizedTitle && n.desc == sanitizedDesc && n.type == notif.type))) continue;
 
     // Pastikan konversi waktu ke lokal jika formatnya UTC (ada 'Z')
-    NotificationEntity finalNotif = notif;
+    NotificationEntity finalNotif = notif.copyWith(title: sanitizedTitle, desc: sanitizedDesc);
     if (notif.time.endsWith('Z')) {
       final dt = DateTime.tryParse(notif.time);
       if (dt != null) {
-        finalNotif = notif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
+        finalNotif = finalNotif.copyWith(time: dt.toLocal().toIso8601String().substring(0, 16).replaceAll('T', ' '));
       }
     }
 

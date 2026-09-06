@@ -793,6 +793,19 @@ class ApiAuthRepository implements AuthRepository {
                     (sp['assignedRw']?['kelurahan']?['name'])?.toString() ?? 
                     '';
       }
+      // Prioritaskan cakupan RW kelompok jika user memiliki profil mahasiswa KKN dengan kelompok
+      final cRw = sp['kelompok']?['cakupanRw'] ?? userMap['kelompokKkn']?['cakupanRw'];
+      if (cRw != null) {
+        if (cRw is List && cRw.isNotEmpty) {
+          rw = cRw.map((e) {
+            final digits = e.toString().replaceAll(RegExp(r'[^\d]'), '').trim();
+            return digits.isNotEmpty ? digits.padLeft(2, '0') : e.toString();
+          }).join(', ');
+        } else if (cRw.toString().isNotEmpty && cRw.toString() != '-') {
+          rw = cRw.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim();
+        }
+      }
+
       if (rw.isEmpty || rw == '-') {
         if (sp['rw'] != null && sp['rw'].toString() != '-') {
           rw = sp['rw'].toString();
@@ -800,13 +813,6 @@ class ApiAuthRepository implements AuthRepository {
           rw = '${sp['penugasanRt']}/${sp['penugasanRw']}';
         } else if (sp['kelompok']?['rw'] != null && sp['kelompok']['rw'].toString() != '-') {
           rw = sp['kelompok']['rw'].toString();
-        } else if (sp['kelompok']?['cakupanRw'] != null) {
-          final cRw = sp['kelompok']['cakupanRw'];
-          if (cRw is List) {
-            rw = cRw.map((e) => e.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim()).join(', ');
-          } else {
-            rw = cRw.toString().replaceAll(RegExp(r'^RW\s*', caseSensitive: false), '').trim();
-          }
         } else if (sp['assignedRw']?['name'] != null && sp['assignedRw']['name'].toString() != '-') {
           rw = sp['assignedRw']['name'].toString();
         }

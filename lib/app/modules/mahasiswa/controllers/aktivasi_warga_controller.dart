@@ -79,18 +79,27 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
       String cleanRw(String val) => val.replaceAll(RegExp(r'[^\d]'), '').replaceFirst(RegExp(r'^0+'), '');
       String cleanKel(String val) => val.toLowerCase().replaceAll('kel.', '').replaceAll('kelurahan', '').replaceAll('desa', '').trim();
 
-      final targetRwClean = cleanRw(rw);
+      final targetRwSet = rw
+          .split(',')
+          .map((s) => cleanRw(s))
+          .where((s) => s.isNotEmpty)
+          .toSet();
       final targetKelClean = cleanKel(kelurahan);
+
+      // Jika multi-RW, jangan kirim filter rw koma ke query backend, biarkan backend return warga kelurahan
+      final isMultiRw = targetRwSet.length > 1;
+      final queryRw = isMultiRw ? null : (rw.isEmpty ? null : rw);
 
       var data = await repo.getWargaForAktivasi(
         kecamatan: user?.kecamatan,
         kelurahan: kelurahan.isEmpty ? null : kelurahan,
-        rw: rw.isEmpty ? null : rw,
+        rw: queryRw,
         search: search.isEmpty ? null : search,
       );
 
-      // Jika kosong, coba query dengan format RW bersih (hanya angka)
-      if (data.isEmpty && rw.isNotEmpty) {
+      // Jika kosong dan single-RW, coba query dengan format RW bersih (hanya angka)
+      if (data.isEmpty && !isMultiRw && rw.isNotEmpty) {
+        final targetRwClean = cleanRw(rw);
         data = await repo.getWargaForAktivasi(
           kecamatan: user?.kecamatan,
           kelurahan: targetKelClean.isEmpty ? null : targetKelClean,
@@ -99,7 +108,7 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
         );
       }
 
-      // Fallback: Jika backend tetap kosong atau mengembalikan data umum, lakukan filter ketat
+      // Filter atau Fallback: Pastikan data sesuai dengan target RW (baik single-RW maupun multi-RW)
       if (data.isEmpty && (kelurahan.isNotEmpty || rw.isNotEmpty)) {
         final allRaw = await repo.getWargaForAktivasi(
           search: search.isEmpty ? null : search,
@@ -110,10 +119,24 @@ class AktivasiWargaNotifier extends StateNotifier<AktivasiWargaState> {
           final wKel = cleanKel(w.kelurahan);
           final wAddr = w.address.toLowerCase();
 
-          final rwMatches = targetRwClean.isEmpty || wRw == targetRwClean || wAddr.contains('rw $targetRwClean') || wAddr.contains('rw 0$targetRwClean');
-          final kelMatches = targetKelClean.isEmpty || wKel.contains(targetKelClean) || targetKelClean.contains(wKel) || wAddr.contains(targetKelClean);
+          final rwMatches = targetRwSet.isEmpty ||
+              targetRwSet.contains(wRw) ||
+              targetRwSet.any((r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'));
+          final kelMatches = targetKelClean.isEmpty ||
+              wKel.contains(targetKelClean) ||
+              targetKelClean.contains(wKel) ||
+              wAddr.contains(targetKelClean);
 
           return rwMatches && kelMatches;
+        }).toList();
+      } else if (isMultiRw && data.isNotEmpty) {
+        // Jika data dari backend kelurahan ada, saring hanya yang masuk di cakupan RW
+        data = data.where((e) {
+          final w = e is WargaDampingan ? e : WargaDampingan.fromJson(e as Map<String, dynamic>);
+          final wRw = cleanRw(w.rw);
+          final wAddr = w.address.toLowerCase();
+          return targetRwSet.contains(wRw) ||
+              targetRwSet.any((r) => wAddr.contains('rw $r') || wAddr.contains('rw 0$r'));
         }).toList();
       }
 

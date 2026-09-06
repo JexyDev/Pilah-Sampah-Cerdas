@@ -8,6 +8,7 @@ import '../controllers/warga_notifikasi_controller.dart';
 import '../../shared/widgets/app_loading.dart';
 import 'package:intl/intl.dart';
 import '../../../routes/app_routes.dart';
+import '../../../core/utils/input_sanitizer.dart';
 
 
 /// Halaman daftar notifikasi Warga.
@@ -303,7 +304,7 @@ class _NotificationTile extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          item.title,
+                          InputSanitizer.cleanSystemMessage(item.title),
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: item.isRead
@@ -329,7 +330,7 @@ class _NotificationTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    item.desc,
+                    InputSanitizer.cleanSystemMessage(item.desc),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
