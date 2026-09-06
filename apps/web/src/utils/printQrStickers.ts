@@ -637,10 +637,10 @@ export const downloadKelompokZip = async (
 
     if (isAnorg) {
       ctx.fillStyle = "#000000";
-      ctx.fillText(serial, 1850, 3356);
+      ctx.fillText(serial, 1850, 4000);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(serial, 1850, 3356);
+      ctx.fillText(serial, 1850, 4000);
     }
 
     // Convert canvas to blob and add to ZIP
