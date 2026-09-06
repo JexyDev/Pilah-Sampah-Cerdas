@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GraduationCap } from "lucide-react";
 import toast from "react-hot-toast";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../utils/api";
 
 const MahasiswaRegistration: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+
+  // Force clean light mode on mount unconditionally
+  useEffect(() => {
+    useThemeStore.getState().setInsideMainLayout(false);
+    useThemeStore.getState().resetThemeToLight();
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -39,18 +47,18 @@ const MahasiswaRegistration: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-50 z-0"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50 z-0"></div>
 
-      <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 max-w-xl w-full relative z-10">
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 max-w-xl w-full relative z-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <GraduationCap className="w-8 h-8" />
           </div>
           <h2 className="text-3xl font-bold text-slate-800">Registrasi Mahasiswa KKN</h2>
-          <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator TrashCare</p>
+          <p className="text-slate-500 mt-2">Daftarkan diri Anda untuk menjadi fasilitator program BERSEKA</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

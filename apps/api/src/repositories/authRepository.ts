@@ -1,14 +1,13 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient, User, RefreshToken, Role } from "@prisma/client";
+import { User, RefreshToken, Role } from "@prisma/client";
 import { DatabaseUnavailableError } from "../utils/errors.js";
-
-const prisma = new PrismaClient();
 
 function isDatabaseConnectionError(error: any): boolean {
   const code = error?.code;
@@ -29,90 +28,112 @@ function isDatabaseConnectionError(error: any): boolean {
 }
 
 import { formatPhoneNumber } from "../utils/phoneUtils.js";
+import { getRandomDefaultAvatar } from "../utils/avatarUtils.js";
 
 export class AuthRepository {
-  async findUserByPhone(phone: string): Promise<(User & { role: Role }) | null> {
+  async findUserByPhone(
+    phone: string
+  ): Promise<(User & { role: Role; rw?: any; studentProfile?: any }) | null> {
     try {
-      const formatted = formatPhoneNumber(phone);
-      const raw = phone.trim();
-      const alt = raw.startsWith("0")
-        ? "+62" + raw.slice(1)
-        : raw.startsWith("+62")
-          ? "0" + raw.slice(3)
-          : raw;
+      const raw = (phone || "").trim();
+      if (!raw) return null;
 
-      let user = (await prisma.user.findFirst({
-        where: {
-          OR: [
-            { phone: formatted },
-            { phone: raw },
-            { phone: alt },
-            { name: { contains: raw, mode: "insensitive" } },
-            { petugasProfile: { is: { noWa: { contains: raw } } } },
-            { studentProfile: { is: { OR: [{ nim: raw }, { noWa: { contains: raw } }] } } },
-          ],
-        },
-        include: { role: true },
-      })) as (User & { role: Role }) | null;
+      const formatted = formatPhoneNumber(raw);
+      const cleaned = raw.replace(/[^\d+]/g, "");
+      const digitsOnly = raw.replace(/\D/g, "");
 
-      if (!user) {
-        const lower = raw.toLowerCase();
-        let targetRole = "";
-        if (
-          lower.includes("petugas") ||
-          ["08111111117", "+628111111117", "0812001004", "+62812001004"].includes(raw)
-        ) {
-          targetRole = "PETUGAS_RESIDU";
-        } else if (
-          lower.includes("kkn") ||
-          lower.includes("mahasiswa") ||
-          ["08111111118", "+62811111118", "0812001005", "+62812001005"].includes(raw)
-        ) {
-          targetRole = "MAHASISWA_KKN";
-        } else if (
-          lower.includes("rw") ||
-          ["08111111115", "+628111111115", "081200999995", "+6281200999995"].includes(raw)
-        ) {
-          targetRole = "RW";
-        } else if (
-          lower.includes("rt") ||
-          ["08111111116", "+628111111116", "081200999994", "+6281200999994"].includes(raw)
-        ) {
-          targetRole = "RT";
-        } else if (
-          lower.includes("lurah") ||
-          ["08111111114", "+628111111114", "081200999996", "+6281200999996"].includes(raw)
-        ) {
-          targetRole = "LURAH";
-        } else if (
-          lower.includes("camat") ||
-          ["08111111113", "+628111111113", "081200999997", "+6281200999997"].includes(raw)
-        ) {
-          targetRole = "CAMAT";
-        } else if (
-          lower.includes("dlh") ||
-          ["08111111112", "+628111111112", "081200999998", "+6281200999998"].includes(raw)
-        ) {
-          targetRole = "ADMIN_DLH";
-        } else if (
-          lower.includes("super") ||
-          ["08111111111", "+628111111111", "081200999999", "+6281200999999"].includes(raw)
-        ) {
-          targetRole = "SUPER_ADMIN";
-        } else if (
-          lower.includes("warga") ||
-          ["0812001001", "+62812001001", "0812001003", "+62812001003"].includes(raw)
-        ) {
-          targetRole = "WARGA";
-        }
-
-        if (targetRole) {
-          user = (await prisma.user.findFirst({
-            where: { role: { name: targetRole }, status: { in: ["Aktif", "ACTIVE"] } },
-            include: { role: true },
-          })) as (User & { role: Role }) | null;
+      const candidatePhones = new Set<string>();
+      if (raw) candidatePhones.add(raw);
+      if (formatted) candidatePhones.add(formatted);
+      if (cleaned) candidatePhones.add(cleaned);
+      if (digitsOnly) {
+        candidatePhones.add(digitsOnly);
+        if (digitsOnly.startsWith("0")) {
+          candidatePhones.add("+62" + digitsOnly.slice(1));
+          candidatePhones.add("62" + digitsOnly.slice(1));
+        } else if (digitsOnly.startsWith("62")) {
+          candidatePhones.add("+" + digitsOnly);
+          candidatePhones.add("0" + digitsOnly.slice(2));
+        } else if (digitsOnly.startsWith("8")) {
+          candidatePhones.add("+62" + digitsOnly);
+          candidatePhones.add("0" + digitsOnly);
+          candidatePhones.add("62" + digitsOnly);
         }
       }
+
+      const phoneArray = Array.from(candidatePhones);
+
+      // Cari user berdasarkan seluruh kemungkinan format nomor HP, NIM mahasiswa, NIP dosen, atau Email
+      const user = (await prisma.user.findFirst({
+        where: {
+          OR: [
+            { phone: { in: phoneArray } },
+            { studentProfile: { nim: { in: [raw, digitsOnly, cleaned].filter(Boolean) } } },
+            { nip: { in: [raw, digitsOnly, cleaned].filter(Boolean) } },
+            ...(raw.includes("@") ? [{ email: { equals: raw, mode: "insensitive" as const } }] : []),
+          ],
+        },
+        include: {
+          role: true,
+          rw: {
+            include: {
+              kelurahan: {
+                include: {
+                  kecamatan: true,
+                },
+              },
+            },
+          },
+          rt: true,
+          studentProfile: {
+            include: {
+              assignedRw: {
+                include: {
+                  kelurahan: {
+                    include: {
+                      kecamatan: true,
+                    },
+                  },
+                },
+              },
+              kelompok: {
+                include: {
+                  dpl: {
+                    select: { id: true, name: true, phone: true },
+                  },
+                },
+              },
+            },
+          },
+          dplKelompok: {
+            select: {
+              id: true,
+              name: true,
+              kelurahan: true,
+              cakupanRw: true,
+            },
+          },
+          petugasProfile: true,
+          households: {
+            include: {
+              rw: {
+                include: {
+                  kelurahan: true,
+                },
+              },
+            },
+          },
+        },
+      })) as
+        | (User & {
+            role: Role;
+            rw?: any;
+            studentProfile?: any;
+            dplKelompok?: any;
+            petugasProfile?: any;
+            households?: any[];
+          })
+        | null;
 
       return user;
     } catch (error: any) {
@@ -197,11 +218,177 @@ export class AuthRepository {
   /**
    * Find a user by ID, including their role details.
    */
-  async findUserById(id: string): Promise<(User & { role: Role }) | null> {
+  async findUserById(id: string): Promise<any> {
     return prisma.user.findUnique({
       where: { id },
-      include: { role: true },
+      include: {
+        role: true,
+        rw: {
+          include: {
+            kelurahan: {
+              include: {
+                kecamatan: true,
+              },
+            },
+          },
+        },
+        rt: true,
+        studentProfile: {
+          include: {
+            assignedRw: {
+              include: {
+                kelurahan: {
+                  include: {
+                    kecamatan: true,
+                  },
+                },
+              },
+            },
+            kelompok: {
+              include: {
+                dpl: {
+                  select: { id: true, name: true, phone: true },
+                },
+              },
+            },
+          },
+        },
+        dplKelompok: {
+          select: {
+            id: true,
+            name: true,
+            kelurahan: true,
+            cakupanRw: true,
+          },
+        },
+        petugasProfile: true,
+        households: {
+          include: {
+            rw: {
+              include: {
+                kelurahan: true,
+              },
+            },
+          },
+        },
+      },
     });
+  }
+
+  /**
+   * Cari data mahasiswa pendamping KKN untuk warga.
+   * Prioritas 1: Dari Tempat Sampah (Bin) yang terdaftar/terkait ke warga
+   * Prioritas 2: Dari Mahasiswa KKN aktif yang ditugaskan di RW warga
+   */
+  async findCitizenMentor(userId: string, rwId?: number | null) {
+    const ownership = await prisma.binOwnership.findFirst({
+      where: {
+        userId,
+        bin: {
+          status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        bin: {
+          select: {
+            id: true,
+            registeredByStudent: {
+              select: {
+                id: true,
+                name: true,
+                phone: true,
+                studentProfile: {
+                  select: {
+                    nim: true,
+                    jurusan: true,
+                    fakultas: true,
+                    kelompok: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (ownership?.bin?.registeredByStudent) {
+      return ownership.bin.registeredByStudent;
+    }
+
+    // Cek juga dari Bin langsung jika userId terikat di tabel Bin
+    const directBin = await prisma.bin.findFirst({
+      where: {
+        userId,
+        status: { in: ["ACTIVE_BOUND", "PENDING_APPROVAL"] },
+        registeredByStudentId: { not: null },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        registeredByStudent: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            studentProfile: {
+              select: {
+                nim: true,
+                jurusan: true,
+                fakultas: true,
+                kelompok: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (directBin?.registeredByStudent) {
+      return directBin.registeredByStudent;
+    }
+
+    if (rwId) {
+      const activeStudent = await prisma.user.findFirst({
+        where: {
+          role: { name: "MAHASISWA_KKN" },
+          studentProfile: {
+            assignedRwId: rwId,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          studentProfile: {
+            select: {
+              nim: true,
+              jurusan: true,
+              fakultas: true,
+              kelompok: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      return activeStudent;
+    }
+
+    return null;
   }
 
   /**
@@ -209,7 +396,13 @@ export class AuthRepository {
    */
   async updateUser(
     id: string,
-    data: { name?: string; phone?: string; address?: string; fotoProfil?: string }
+    data: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      fotoProfil?: string | null;
+      jumlahAnggotaKeluarga?: number | null;
+    }
   ): Promise<User> {
     return prisma.user.update({
       where: { id },
@@ -232,7 +425,34 @@ export class AuthRepository {
    */
   async findRoleByName(name: string): Promise<Role | null> {
     try {
-      return await prisma.role.findUnique({ where: { name } });
+      const normalizedMap: Record<string, string> = {
+        Admin: "SUPER_USER",
+        ADMIN: "SUPER_USER",
+        "Super User": "SUPER_USER",
+        "SUPER USER": "SUPER_USER",
+        "Dinas Lingkungan Hidup": "ADMIN_DLH",
+        Camat: "CAMAT",
+        Lurah: "LURAH",
+        "Rukun Warga": "RW",
+        "Rukun Tetangga": "RT",
+        "Dosen Pendamping Lapangan": "DPL",
+        "Dosen Pembimbing Lapangan": "DPL",
+        "Petugas Residu": "PETUGAS_RESIDU",
+        Mahasiswa: "MAHASISWA_KKN",
+        "Mahasiswa KKN": "MAHASISWA_KKN",
+        Warga: "WARGA",
+        Pimpinan: "PEMIMPIN",
+        "Task Force": "PANITIA_TASKFORCE",
+      };
+
+      const searchName = normalizedMap[name] || name;
+      let role = await prisma.role.findUnique({ where: { name: searchName } });
+      if (!role) {
+        role = await prisma.role.findFirst({
+          where: { name: { equals: searchName, mode: "insensitive" } },
+        });
+      }
+      return role;
     } catch (error: any) {
       if (isDatabaseConnectionError(error)) {
         throw new DatabaseUnavailableError();
@@ -255,7 +475,7 @@ export class AuthRepository {
       if (qrCode) {
         // 1. Find Bin with row-level lock (FOR UPDATE)
         const bins = await tx.$queryRaw<any[]>`
-          SELECT * FROM tong_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
+          SELECT * FROM tempat_sampah WHERE kode_qr = ${qrCode} FOR UPDATE
         `;
         if (!bins || bins.length === 0) throw new Error("BIN_NOT_FOUND");
         bin = bins[0];
@@ -288,9 +508,30 @@ export class AuthRepository {
       const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
-          ...userData,
+          name: userData.name,
+          password: userData.password,
           phone: formattedPhone,
+          address: userData.address || null,
+          fotoProfil:
+            userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          rwId: userData.rwId !== undefined && userData.rwId !== null ? Number(userData.rwId) : null,
+          rtId: userData.rtId !== undefined && userData.rtId !== null ? Number(userData.rtId) : null,
+          email: userData.email || null,
+          provinsi: userData.provinsi || null,
+          kabupaten: userData.kabupaten || userData.kota || null,
+          jumlahAnggotaKeluarga:
+            userData.jumlahAnggotaKeluarga !== undefined && userData.jumlahAnggotaKeluarga !== null
+              ? Number(userData.jumlahAnggotaKeluarga)
+              : null,
+          defaultPetugasId: userData.defaultPetugasId || null,
+          nip: userData.nip || null,
+          institusi: userData.institusi || null,
+          jabatan: userData.jabatan || null,
+          programStudi: userData.programStudi || null,
+          jenjangPendidikan: userData.jenjangPendidikan || null,
+          mustChangePassword: userData.mustChangePassword ?? false,
           roleId: role.id,
+          status: userData.status || "Aktif",
           wargaSubtype: wargaSubtype || "UTAMA",
         },
       });
@@ -319,7 +560,7 @@ export class AuthRepository {
             data: {
               status: "ACTIVE_BOUND",
               userId: user.id,
-              rtRwId: user.rtRwId ?? householdData.rtRwId,
+              rwId: user.rwId ?? householdData.rwId,
               latitude: householdData.latitude,
               longitude: householdData.longitude,
             },
@@ -357,11 +598,25 @@ export class AuthRepository {
       const role = await tx.role.findUnique({ where: { name: "MAHASISWA_KKN" } });
       if (!role) throw new Error("ROLE_NOT_FOUND");
 
+      const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
-          ...userData,
+          name: userData.name,
+          password: userData.password,
+          phone: formattedPhone,
+          address: userData.address || null,
+          fotoProfil:
+            userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          rwId: userData.rwId !== undefined && userData.rwId !== null ? Number(userData.rwId) : null,
+          rtId: userData.rtId !== undefined && userData.rtId !== null ? Number(userData.rtId) : null,
+          email: userData.email || null,
+          provinsi: userData.provinsi || null,
+          kabupaten: userData.kabupaten || userData.kota || null,
+          programStudi: userData.programStudi || userData.jurusan || null,
+          jenjangPendidikan: userData.jenjangPendidikan || null,
+          institusi: userData.institusi || userData.fakultas || null,
           roleId: role.id,
-          status: "Aktif",
+          status: userData.status || "Aktif",
         },
       });
 
@@ -385,11 +640,22 @@ export class AuthRepository {
       const role = await tx.role.findUnique({ where: { name: "PETUGAS_RESIDU" } });
       if (!role) throw new Error("ROLE_NOT_FOUND");
 
+      const formattedPhone = formatPhoneNumber(userData.phone);
       const user = await tx.user.create({
         data: {
-          ...userData,
+          name: userData.name,
+          password: userData.password,
+          phone: formattedPhone,
+          address: userData.address || null,
+          fotoProfil:
+            userData.fotoProfil && userData.fotoProfil.trim() !== "" ? userData.fotoProfil : null,
+          rwId: userData.rwId !== undefined && userData.rwId !== null ? Number(userData.rwId) : null,
+          rtId: userData.rtId !== undefined && userData.rtId !== null ? Number(userData.rtId) : null,
+          email: userData.email || null,
+          provinsi: userData.provinsi || null,
+          kabupaten: userData.kabupaten || userData.kota || null,
           roleId: role.id,
-          status: "Pending",
+          status: userData.status || "Pending",
         },
       });
 
@@ -451,8 +717,35 @@ export class AuthRepository {
    * Create staff/general user
    */
   async createUser(data: any): Promise<User> {
+    const formattedPhone = formatPhoneNumber(data.phone);
     return prisma.user.create({
-      data,
+      data: {
+        name: data.name,
+        password: data.password,
+        phone: formattedPhone,
+        address: data.address || null,
+        fotoProfil:
+          data.fotoProfil && data.fotoProfil.trim() !== "" ? data.fotoProfil : null,
+        rwId: data.rwId !== undefined && data.rwId !== null ? Number(data.rwId) : null,
+        rtId: data.rtId !== undefined && data.rtId !== null ? Number(data.rtId) : null,
+        email: data.email || null,
+        nip: data.nip || null,
+        institusi: data.institusi || null,
+        jabatan: data.jabatan || null,
+        programStudi: data.programStudi || null,
+        jenjangPendidikan: data.jenjangPendidikan || null,
+        provinsi: data.provinsi || null,
+        kabupaten: data.kabupaten || data.kota || null,
+        jumlahAnggotaKeluarga:
+          data.jumlahAnggotaKeluarga !== undefined && data.jumlahAnggotaKeluarga !== null
+            ? Number(data.jumlahAnggotaKeluarga)
+            : null,
+        defaultPetugasId: data.defaultPetugasId || null,
+        mustChangePassword: data.mustChangePassword ?? false,
+        roleId: data.roleId,
+        status: data.status || "Aktif",
+        wargaSubtype: data.wargaSubtype || null,
+      },
     });
   }
 }

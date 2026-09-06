@@ -1,13 +1,14 @@
-import { ShieldCheck, Image as ImageIcon, X, Filter, Check, Search, Trash2 } from "lucide-react";
+import { ShieldCheck, Image as ImageIcon, X, Filter, Check } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import api from "../../utils/api";
+import { resolveImageUrl } from "../../utils/imageUrl";
 import toast from "react-hot-toast";
 
 interface DiscrepancyLog {
@@ -28,81 +29,6 @@ interface DiscrepancyLog {
     rtRw: { name: string; kelurahan: { name: string } };
   };
 }
-
-const DEFAULT_DISCREPANCY_LOGS: DiscrepancyLog[] = [
-  {
-    id: "disc-001",
-    weightKg: "12.5",
-    volumeLiter: "25.0",
-    aiClassification: "ORGANIC",
-    aiConfidence: "94.5",
-    petugasClassification: "ANORGANIK",
-    actualWeightPetugas: "14.0",
-    geolocation: "-6.8778, 107.6186",
-    createdAt: "2026-08-04T09:30:00Z",
-    evidencePhotoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80",
-    discrepancyStatus: "PENDING_REVIEW",
-    category: { name: "Sampah Organik Dapur" },
-    household: {
-      user: { name: "Budi Santoso", email: "budi.dago@gmail.com" },
-      rtRw: { name: "RT 02 / RW 01", kelurahan: { name: "Dago" } },
-    },
-  },
-  {
-    id: "disc-002",
-    weightKg: "8.2",
-    volumeLiter: "18.0",
-    aiClassification: "ANORGANIK",
-    aiConfidence: "91.2",
-    petugasClassification: "RESIDU",
-    actualWeightPetugas: "9.5",
-    geolocation: "-6.8870, 107.6060",
-    createdAt: "2026-08-04T14:15:00Z",
-    evidencePhotoUrl: "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=600&auto=format&fit=crop&q=80",
-    discrepancyStatus: "PENDING_REVIEW",
-    category: { name: "Plastik & Botol Kemasan" },
-    household: {
-      user: { name: "Siti Rahmawati", email: "siti.lebak@gmail.com" },
-      rtRw: { name: "RT 01 / RW 02", kelurahan: { name: "Lebak Siliwangi" } },
-    },
-  },
-  {
-    id: "disc-003",
-    weightKg: "15.0",
-    volumeLiter: "30.0",
-    aiClassification: "ORGANIC",
-    aiConfidence: "96.0",
-    petugasClassification: "ORGANIC",
-    actualWeightPetugas: "15.2",
-    geolocation: "-6.8890, 107.6100",
-    createdAt: "2026-08-03T11:00:00Z",
-    evidencePhotoUrl: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=600&auto=format&fit=crop&q=80",
-    discrepancyStatus: "RESOLVED",
-    category: { name: "Sisa Makanan & Sayur" },
-    household: {
-      user: { name: "Ahmad Hidayat", email: "ahmad.gede@gmail.com" },
-      rtRw: { name: "RT 03 / RW 01", kelurahan: { name: "Lebak Gede" } },
-    },
-  },
-  {
-    id: "disc-004",
-    weightKg: "6.8",
-    volumeLiter: "12.0",
-    aiClassification: "ANORGANIK",
-    aiConfidence: "93.8",
-    petugasClassification: "ORGANIC",
-    actualWeightPetugas: "7.0",
-    geolocation: "-6.8910, 107.6180",
-    createdAt: "2026-08-02T16:45:00Z",
-    evidencePhotoUrl: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80",
-    discrepancyStatus: "PENDING_REVIEW",
-    category: { name: "Kertas & Karton Daur Ulang" },
-    household: {
-      user: { name: "Dewi Lestari", email: "dewi.sekeloa@gmail.com" },
-      rtRw: { name: "RT 04 / RW 01", kelurahan: { name: "Sekeloa" } },
-    },
-  },
-];
 
 export const ReviewDiscrepancy: React.FC = () => {
   const [logs, setLogs] = useState<DiscrepancyLog[]>([]);
@@ -136,26 +62,12 @@ export const ReviewDiscrepancy: React.FC = () => {
       if (endDate) params.append("endDate", endDate);
 
       const res = await api.get(`/waste/logs/discrepancies?${params.toString()}`);
-      if (res.data.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      if (res.data.success) {
         setLogs(res.data.data);
-        setSelectedLog(res.data.data[0]);
-      } else {
-        // Fallback to rich realistic demo data for Kecamatan Coblong
-        const filtered = DEFAULT_DISCREPANCY_LOGS.filter((item) => {
-          if (filterStatus !== "Semua" && item.discrepancyStatus !== filterStatus) return false;
-          return true;
-        });
-        setLogs(filtered);
-        if (filtered.length > 0) setSelectedLog(filtered[0]);
       }
     } catch (e) {
-      console.error("Gagal mengambil data diskrepansi, memuat data demo:", e);
-      const filtered = DEFAULT_DISCREPANCY_LOGS.filter((item) => {
-        if (filterStatus !== "Semua" && item.discrepancyStatus !== filterStatus) return false;
-        return true;
-      });
-      setLogs(filtered);
-      if (filtered.length > 0) setSelectedLog(filtered[0]);
+      console.error("Gagal mengambil data diskrepansi:", e);
+      toast.error("Gagal memuat daftar review diskrepansi");
     } finally {
       setLoading(false);
     }
@@ -173,18 +85,12 @@ export const ReviewDiscrepancy: React.FC = () => {
         payload.finalWeight = finalWeight;
       }
       
-      const res = await api.put(`/waste/logs/${id}/resolve`, payload).catch(() => ({ data: { success: true } }));
+      const res = await api.put(`/waste/logs/${id}/resolve`, payload);
       if (res.data.success) {
-        toast.success(`Putusan diskrepansi (${finalClassification}) berhasil disetujui & poin diperbarui`);
-        setLogs((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, discrepancyStatus: "RESOLVED" } : item
-          )
-        );
-        if (selectedLog?.id === id) {
-          setSelectedLog((prev) => (prev ? { ...prev, discrepancyStatus: "RESOLVED" } : null));
-        }
+        toast.success(`Data disetujui, poin diteruskan ke rekap setoran warga`);
+        setSelectedLog(null);
         setIsKoreksiModalOpen(false);
+        fetchDiscrepancies();
       }
     } catch (e: any) {
       console.error("Gagal resolve diskrepansi:", e);
@@ -194,232 +100,101 @@ export const ReviewDiscrepancy: React.FC = () => {
     }
   };
 
-  const openKoreksiModal = () => {
-    if (selectedLog) {
-      setKoreksiClass(selectedLog.aiClassification);
-      setKoreksiWeight(selectedLog.weightKg);
-      setIsKoreksiModalOpen(true);
-    }
-  };
-
-  const submitKoreksi = async (e: React.FormEvent) => {
+  const submitKoreksi = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLog) return;
-    const w = parseFloat(koreksiWeight);
-    await handleResolve(selectedLog.id, koreksiClass, isNaN(w) ? undefined : w);
-  };
-
-
-  // Additional CRUD & Search states
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newWargaName, setNewWargaName] = useState("");
-  const [newKelurahan, setNewKelurahan] = useState("Dago");
-  const [newRtRw, setNewRtRw] = useState("RT 01 / RW 01");
-  const [newAiCategory, setNewAiCategory] = useState("ORGANIC");
-  const [newPetugasCategory, setNewPetugasCategory] = useState("ANORGANIK");
-  const [newWeight, setNewWeight] = useState("10.0");
-
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const matchSearch =
-        searchQuery === "" ||
-        log.household?.user?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.household?.rtRw?.kelurahan?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.category?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.aiClassification.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchStatus = filterStatus === "Semua" || log.discrepancyStatus === filterStatus;
-      return matchSearch && matchStatus;
-    });
-  }, [logs, searchQuery, filterStatus]);
-
-  const handleCreateDiscrepancy = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newLog: DiscrepancyLog = {
-      id: `disc-${Date.now()}`,
-      weightKg: newWeight,
-      volumeLiter: (Number(newWeight) * 2).toString(),
-      aiClassification: newAiCategory,
-      aiConfidence: "92.0",
-      petugasClassification: newPetugasCategory,
-      actualWeightPetugas: newWeight,
-      geolocation: "-6.8890, 107.6150",
-      createdAt: new Date().toISOString(),
-      evidencePhotoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600&auto=format&fit=crop&q=80",
-      discrepancyStatus: "PENDING_REVIEW",
-      category: { name: `Setoran Sampah ${newAiCategory}` },
-      household: {
-        user: { name: newWargaName || "Warga Baru", email: "warga@pilahsampah.id" },
-        rtRw: { name: newRtRw, kelurahan: { name: newKelurahan } },
-      },
-    };
-
-    setLogs((prev) => [newLog, ...prev]);
-    setSelectedLog(newLog);
-    setIsCreateModalOpen(false);
-    toast.success("Laporan diskrepansi manual berhasil ditambahkan!");
-  };
-
-  const handleDeleteLog = (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus data diskrepansi ini?")) {
-      setLogs((prev) => prev.filter((item) => item.id !== id));
-      if (selectedLog?.id === id) setSelectedLog(null);
-      toast.success("Data diskrepansi berhasil dihapus.");
+    const weightNum = parseFloat(koreksiWeight);
+    if (isNaN(weightNum) || weightNum <= 0) {
+      toast.error("Berat harus berupa angka positif");
+      return;
     }
+    handleResolve(selectedLog.id, koreksiClass, weightNum);
   };
 
-  const handleExportCsv = () => {
-    const headers = ["ID", "Tanggal", "Warga", "Kelurahan", "Status", "AI Class", "AI Conf", "Petugas Class", "Berat (Kg)"];
-    const rows = filteredLogs.map((l) => [
-      l.id,
-      new Date(l.createdAt).toLocaleDateString(),
-      l.household?.user?.name || "",
-      l.household?.rtRw?.kelurahan?.name || "",
-      l.discrepancyStatus,
-      l.aiClassification,
-      `${l.aiConfidence}%`,
-      l.petugasClassification,
-      l.weightKg,
-    ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `laporan_diskrepansi_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Laporan diskrepansi berhasil di-export ke CSV!");
+  const openKoreksiModal = () => {
+    if (!selectedLog) return;
+    setKoreksiClass(selectedLog.petugasClassification);
+    setKoreksiWeight(selectedLog.actualWeightPetugas || selectedLog.weightKg);
+    setIsKoreksiModalOpen(true);
   };
-
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header Title & Explanatory Data Flow Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 p-6 rounded-2xl border border-emerald-800/40 shadow-xl text-white space-y-3">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-emerald-500/30">
-                Pusat Pengawasan DLH
-              </span>
-              <span className="text-xs text-slate-400">Rule of Discrepancy (Confidence &gt; 90%)</span>
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-tight mt-1">Review Diskrepansi AI & Approval System</h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              onClick={handleExportCsv}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-1.5 cursor-pointer"
-            >
-              📥 Export CSV
-            </button>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-black rounded-xl transition shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
-            >
-              ➕ Tambah Diskrepansi Manual
-            </button>
-          </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Review Diskrepansi AI</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Daftar setoran warga dengan perbedaan klasifikasi antara AI & petugas.
+          </p>
         </div>
 
-        {/* Data Flow Explanation Banner */}
-        <div className="bg-slate-900/80 p-3.5 rounded-xl border border-emerald-500/20 text-xs text-slate-300 leading-relaxed flex items-start gap-3">
-          <span className="text-emerald-400 font-bold text-base">ℹ️</span>
-          <div>
-            <strong className="text-emerald-300 font-bold">Ke mana hasil data putusan ini diteruskan?</strong>
-            <p className="mt-0.5 text-[11px] text-slate-300">
-              Setiap kali Admin DLH melakukan approval (<strong>Approve AI</strong>, <strong>Approve Petugas</strong>, atau <strong>Koreksi Manual</strong>), hasil akhir secara otomatis 
-              <span className="text-emerald-300 font-semibold"> 1) Memperbarui data setoran fisik</span> di tabel setoran, 
-              <span className="text-emerald-300 font-semibold"> 2) Mengkalkulasi & meneruskan poin gamifikasi ke Poin Warga</span>, dan 
-              <span className="text-emerald-300 font-semibold"> 3) Mencatat log aktivitas ke Audit Trail DLH</span>.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search size={16} className="absolute left-3.5 top-3 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari nama warga, kelurahan, atau jenis sampah..."
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-gray-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-2">
             <Filter size={16} className="text-gray-400" />
-            <span className="text-xs font-bold text-gray-500">Status:</span>
+            <span className="text-xs font-bold text-gray-500">Filter:</span>
           </div>
-
+          
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="text-xs bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-2 font-semibold text-gray-700"
+            className="text-xs border-gray-300 rounded-lg focus:ring-primary focus:border-primary px-3 py-1.5"
           >
             <option value="Semua">Semua Status</option>
-            <option value="PENDING_REVIEW">Menunggu Review (Pending)</option>
+            <option value="PENDING_REVIEW">Menunggu Review</option>
             <option value="RESOLVED">Selesai (Resolved)</option>
           </select>
-
+          
           <div className="flex items-center gap-2">
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="text-xs bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700"
+              className="text-xs border-gray-300 rounded-lg focus:ring-primary focus:border-primary px-3 py-1.5"
             />
             <span className="text-xs text-gray-400">-</span>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="text-xs bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 px-3 py-1.5 text-gray-700"
+              className="text-xs border-gray-300 rounded-lg focus:ring-primary focus:border-primary px-3 py-1.5"
             />
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Table List of Pending & Resolved Reviews */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[70vh]">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-            <h3 className="font-bold text-gray-800 text-sm">Daftar Laporan Diskrepansi ({filteredLogs.length})</h3>
-            {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>}
+        {/* Table List of Pending Reviews */}
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col h-[70vh]">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 dark:bg-slate-800/50 flex justify-between items-center">
+            <h3 className="font-bold text-gray-800 text-sm">Daftar Laporan Diskrepansi</h3>
+            {loading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>}
           </div>
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-auto flex-1">
             <table className="min-w-full divide-y divide-gray-200 text-sm text-left relative">
-              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider sticky top-0 z-10">
+              <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3">Tanggal</th>
-                  <th className="px-6 py-3">Warga & Wilayah</th>
+                  <th className="px-6 py-3">Warga</th>
                   <th className="px-6 py-3 text-center">Status</th>
                   <th className="px-6 py-3 text-center">Deteksi AI</th>
                   <th className="px-6 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 text-gray-700">
-                {filteredLogs.length === 0 && !loading ? (
+                {logs.length === 0 && !loading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
-                      Tidak ada data diskrepansi sesuai pencarian/filter.
+                      Tidak ada data diskrepansi sesuai filter.
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log) => (
+                  logs.map((log) => (
                     <tr
                       key={log.id}
                       onClick={() => setSelectedLog(log)}
-                      className={`hover:bg-gray-50 transition cursor-pointer ${
-                        selectedLog?.id === log.id ? "bg-emerald-50/60 border-l-4 border-l-emerald-600" : "border-l-4 border-l-transparent"
+                      className={`hover:bg-gray-50 dark:hover:bg-slate-800 transition cursor-pointer ${
+                        selectedLog?.id === log.id ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"
                       }`}
                     >
                       <td className="px-6 py-4 text-xs font-semibold text-gray-500 whitespace-nowrap">
@@ -433,36 +208,24 @@ export const ReviewDiscrepancy: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-center">
                         {log.discrepancyStatus === "RESOLVED" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-700 uppercase">
                             Selesai
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-50 text-yellow-700 uppercase">
                             Pending
                           </span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-100 text-indigo-800 uppercase">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 uppercase">
                           {log.aiClassification}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => setSelectedLog(log)}
-                            className="text-emerald-600 hover:text-emerald-800 font-bold text-xs whitespace-nowrap cursor-pointer"
-                          >
-                            {log.discrepancyStatus === "RESOLVED" ? "Lihat" : "Tinjau"}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteLog(log.id)}
-                            className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition cursor-pointer"
-                            title="Hapus / Invalidate Record"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        <button className="text-primary hover:text-primary-dark font-bold text-xs whitespace-nowrap">
+                          {log.discrepancyStatus === "RESOLVED" ? "Lihat" : "Tinjau"}
+                        </button>
                       </td>
                     </tr>
                   ))
@@ -472,9 +235,8 @@ export const ReviewDiscrepancy: React.FC = () => {
           </div>
         </div>
 
-
         {/* Panel Resolution Detail */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col h-[70vh] overflow-y-auto">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col h-[70vh] overflow-y-auto">
           {selectedLog ? (
             <div className="space-y-6 flex-1 flex flex-col">
               <div>
@@ -492,39 +254,39 @@ export const ReviewDiscrepancy: React.FC = () => {
               {/* Image Preview Thumbnail */}
               {selectedLog.evidencePhotoUrl ? (
                 <div 
-                  className="w-full h-40 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 cursor-pointer group relative shadow-sm"
+                  className="w-full h-40 bg-gray-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 cursor-pointer group relative shadow-sm"
                   onClick={() => setIsPhotoModalOpen(true)}
                 >
                   <img 
-                    src={selectedLog.evidencePhotoUrl.startsWith('http') ? selectedLog.evidencePhotoUrl : `http://localhost:3000${selectedLog.evidencePhotoUrl}`} 
+                    src={resolveImageUrl(selectedLog.evidencePhotoUrl)} 
                     alt="Bukti Fisik" 
                     className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-gray-900 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                    <span className="opacity-0 group-hover:opacity-100 bg-white/90 dark:bg-slate-800/90 text-gray-900 dark:text-slate-100 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
                       <ImageIcon size={14} /> Lihat Foto Penuh
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-32 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+                <div className="w-full h-32 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500">
                   <ImageIcon size={24} className="mb-2 opacity-50" />
                   <span className="text-[10px] font-medium">Foto bukti tidak tersedia</span>
                 </div>
               )}
 
               {/* Contrast Panel */}
-              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-850 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
                 <div className="space-y-1">
                   <span className="text-[9px] uppercase font-bold text-gray-400">Model AI</span>
                   <div className="text-sm font-bold text-indigo-700 font-mono">{selectedLog.aiClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Conf: {Number(selectedLog.aiConfidence).toFixed(1)}%</span>
-                  <span className="text-[10px] text-gray-500 block">Berat: {selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 block">Conf: {Number(selectedLog.aiConfidence).toFixed(2)}%</span>
+                  <span className="text-[10px] text-gray-500 block">Berat: {Number(selectedLog.weightKg || 0).toFixed(2)} Kg</span>
                 </div>
                 <div className="space-y-1 border-l border-gray-200 pl-4">
                   <span className="text-[9px] uppercase font-bold text-gray-400">Fisik Petugas</span>
                   <div className="text-sm font-bold text-orange-700 font-mono">{selectedLog.petugasClassification}</div>
-                  <span className="text-[10px] text-gray-500 block">Actual: {selectedLog.actualWeightPetugas || selectedLog.weightKg} Kg</span>
+                  <span className="text-[10px] text-gray-500 block">Actual: {Number(selectedLog.actualWeightPetugas || selectedLog.weightKg || 0).toFixed(2)} Kg</span>
                   <span className="text-[10px] text-gray-500 block truncate" title={selectedLog.geolocation}>Lokasi: {selectedLog.geolocation || "-"}</span>
                 </div>
               </div>
@@ -556,14 +318,14 @@ export const ReviewDiscrepancy: React.FC = () => {
                       <button
                         disabled={isSubmitting}
                         onClick={openKoreksiModal}
-                        className="w-full py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
+                        className="w-full py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-[11px] font-bold shadow-sm transition disabled:opacity-50"
                       >
                         Koreksi Manual / Reject
                       </button>
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-center text-gray-400 italic bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <p className="text-xs text-center text-gray-400 dark:text-slate-400 italic bg-gray-50 dark:bg-slate-850 p-3 rounded-lg border border-gray-100 dark:border-slate-800">
                     Diskrepansi ini telah diputuskan.
                   </p>
                 )}
@@ -589,12 +351,12 @@ export const ReviewDiscrepancy: React.FC = () => {
           <div className="relative max-w-4xl w-full">
             <button
               onClick={() => setIsPhotoModalOpen(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors p-2 bg-black/50 rounded-full cursor-pointer"
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors p-2 bg-black/50 rounded-full"
             >
               <X size={24} />
             </button>
             <img 
-              src={selectedLog.evidencePhotoUrl.startsWith('http') ? selectedLog.evidencePhotoUrl : `http://localhost:3000${selectedLog.evidencePhotoUrl}`} 
+              src={resolveImageUrl(selectedLog.evidencePhotoUrl)} 
               alt="Bukti Fisik Resolusi Tinggi" 
               className="w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
             />
@@ -605,12 +367,12 @@ export const ReviewDiscrepancy: React.FC = () => {
       {/* Modal Koreksi Manual */}
       {isKoreksiModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/50">
               <h3 className="text-lg font-bold text-gray-900">Koreksi Manual Hasil Tinjauan</h3>
               <button
                 onClick={() => setIsKoreksiModalOpen(false)}
-                className="text-gray-400 hover:bg-gray-100 p-1.5 rounded-full transition-colors cursor-pointer"
+                className="text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 p-1.5 rounded-full transition-colors"
               >
                 <X size={18} />
               </button>
@@ -629,11 +391,11 @@ export const ReviewDiscrepancy: React.FC = () => {
                   required
                   value={koreksiClass}
                   onChange={(e) => setKoreksiClass(e.target.value)}
-                  className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-colors text-sm font-semibold text-slate-800"
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white dark:focus:bg-slate-700 text-slate-800 dark:text-slate-100 transition-colors text-sm font-semibold"
                 >
                   <option value="ORGANIC">Organik</option>
-                  <option value="ANORGANIK">Anorganik</option>
-                  <option value="RESIDU">Residu</option>
+                  <option value="NON_ORGANIC">Anorganik / Non-Organik</option>
+                  <option value="B3">B3</option>
                 </select>
               </div>
 
@@ -648,7 +410,7 @@ export const ReviewDiscrepancy: React.FC = () => {
                   value={koreksiWeight}
                   onChange={(e) => setKoreksiWeight(e.target.value)}
                   placeholder="Misal: 2.5"
-                  className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-gray-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-colors text-sm"
+                  className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 focus:border-primary focus:ring-1 focus:ring-primary focus:bg-white dark:focus:bg-slate-700 text-slate-800 dark:text-slate-100 transition-colors text-sm"
                 />
               </div>
 
@@ -656,132 +418,16 @@ export const ReviewDiscrepancy: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsKoreksiModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors text-xs cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-extrabold hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition-all text-xs disabled:opacity-50 cursor-pointer"
+                  className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary-dark shadow-sm shadow-primary/20 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? "Menyimpan..." : "Simpan Koreksi"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Tambah Diskrepansi Manual */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
-              <h3 className="text-sm font-extrabold text-white">Tambah Laporan Diskrepansi Manual</h3>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-gray-300 hover:text-white p-1 rounded-full transition cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateDiscrepancy} className="p-6 space-y-4">
-              <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Nama Warga / PIC</label>
-                <input
-                  type="text"
-                  required
-                  value={newWargaName}
-                  onChange={(e) => setNewWargaName(e.target.value)}
-                  placeholder="Misal: Bambang Gunawan"
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Kelurahan</label>
-                  <select
-                    value={newKelurahan}
-                    onChange={(e) => setNewKelurahan(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-gray-800"
-                  >
-                    <option value="Dago">Dago</option>
-                    <option value="Lebak Siliwangi">Lebak Siliwangi</option>
-                    <option value="Lebak Gede">Lebak Gede</option>
-                    <option value="Sekeloa">Sekeloa</option>
-                    <option value="Sadang Serang">Sadang Serang</option>
-                    <option value="Cipaganti">Cipaganti</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">RT / RW</label>
-                  <input
-                    type="text"
-                    required
-                    value={newRtRw}
-                    onChange={(e) => setNewRtRw(e.target.value)}
-                    placeholder="Misal: RT 02 / RW 03"
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Hasil Deteksi AI</label>
-                  <select
-                    value={newAiCategory}
-                    onChange={(e) => setNewAiCategory(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-indigo-700"
-                  >
-                    <option value="ORGANIC">Organik</option>
-                    <option value="ANORGANIK">Anorganik</option>
-                    <option value="RESIDU">Residu</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Input Fisik Petugas</label>
-                  <select
-                    value={newPetugasCategory}
-                    onChange={(e) => setNewPetugasCategory(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500 font-semibold text-orange-700"
-                  >
-                    <option value="ORGANIC">Organik</option>
-                    <option value="ANORGANIK">Anorganik</option>
-                    <option value="RESIDU">Residu</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">Berat Sampah (Kg)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  required
-                  value={newWeight}
-                  onChange={(e) => setNewWeight(e.target.value)}
-                  placeholder="Misal: 10.5"
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 text-xs transition cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl font-extrabold hover:bg-emerald-700 text-xs shadow-md shadow-emerald-600/20 transition cursor-pointer"
-                >
-                  Simpan Laporan
                 </button>
               </div>
             </form>
@@ -791,6 +437,4 @@ export const ReviewDiscrepancy: React.FC = () => {
     </div>
   );
 };
-
-
 

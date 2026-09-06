@@ -1,5 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,8 +9,15 @@
 import { Router } from "express";
 import { kknController } from "../controllers/kknController.js";
 import { kknAttendanceController } from "../controllers/kknAttendanceController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { logbookController } from "../controllers/logbookController.js";
+import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import {
+  uploadSingleImage,
+  safeUploadSingleImage,
+  uploadPemanfaatanImage,
+  upload,
+} from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
@@ -54,7 +62,15 @@ router.post(
 router.get(
   "/dashboard",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getDashboardStats
 );
 
@@ -87,7 +103,15 @@ router.post("/handover", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknC
 router.get(
   "/warga-dampingan",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getRegisteredWarga
 );
 
@@ -103,7 +127,20 @@ router.get(
  *       200:
  *         description: Berhasil mendapatkan list warga
  */
-router.get("/warga", authMiddleware, roleMiddleware(["MAHASISWA_KKN"]), kknController.getWargaList);
+router.get(
+  "/warga",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getWargaList
+);
 
 /**
  * @swagger
@@ -164,8 +201,46 @@ router.post(
 router.get(
   "/warga/:wargaId",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getWargaDetail
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/warga/{wargaId}/claim:
+ *   post:
+ *     summary: Mahasiswa KKN mengklaim warga mandiri menjadi warga dampingannya
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: wargaId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID Warga yang akan diklaim
+ *     responses:
+ *       200:
+ *         description: Berhasil mengklaim warga
+ *       400:
+ *         description: Warga belum memiliki tempat sampah aktif atau sudah didampingi mahasiswa lain
+ *       404:
+ *         description: Warga tidak ditemukan
+ */
+router.post(
+  "/warga/:wargaId/claim",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.claimWargaMandiri
 );
 
 /**
@@ -183,7 +258,15 @@ router.get(
 router.get(
   "/activity-log",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
   kknController.getActivityLog
 );
 
@@ -195,14 +278,64 @@ router.get(
  *     tags: [Mahasiswa KKN]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - rwId
+ *               - nama
+ *               - jenis
+ *               - latitude
+ *               - longitude
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID User Warga (penanggung jawab/pemilik fasilitas)
+ *                 example: "11111111-1111-1111-1111-111111111101"
+ *               rwId:
+ *                 type: integer
+ *                 description: ID RW lokasi fasilitas
+ *                 example: 1
+ *               nama:
+ *                 type: string
+ *                 description: Nama fasilitas
+ *                 example: "Loseda Berkah RT 02"
+ *               jenis:
+ *                 type: string
+ *                 enum: [loseda, bata_terawang, rumah_maggot, bank_sampah, tps, buruan_sae, poc]
+ *                 description: Jenis fasilitas pengolahan sampah
+ *                 example: "rumah_maggot"
+ *               latitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat latitude
+ *                 example: -6.89060000
+ *               longitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat longitude
+ *                 example: 107.61500000
+ *               foto:
+ *                 type: string
+ *                 description: URL foto fasilitas (opsional)
+ *                 example: "https://example.com/foto-maggot.jpg"
  *     responses:
- *       200:
- *         description: Fasilitas berhasil di-input
+ *       201:
+ *         description: Fasilitas berhasil di-input (+5 Poin Mahasiswa)
+ *       400:
+ *         description: Data input tidak valid
  */
+router.get("/fasilitas/jenis", authMiddleware, kknController.getJenisFasilitas);
+
 router.post(
   "/fasilitas/bantu-input",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH"]),
+  safeUploadSingleImage("foto"),
   kknController.inputFacility
 );
 
@@ -221,8 +354,8 @@ router.post(
 router.post(
   "/location-ping",
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  kknAttendanceController.updateLocation
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.pingLocation
 );
 
 /**
@@ -260,6 +393,213 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/posko/register:
+ *   post:
+ *     summary: Pendaftaran / perbarui lokasi Posko KKN (Khusus Ketua Kelompok KKN)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - latitude
+ *               - longitude
+ *             properties:
+ *               nama:
+ *                 type: string
+ *                 description: Nama posko (opsional, default 'Posko KKN [Nama Kelompok]')
+ *                 example: "Posko KKN Kelompok 12 Dago"
+ *               alamat:
+ *                 type: string
+ *                 description: Alamat fisik posko
+ *                 example: "Jl. Dago Asri No. 12 RT 03 / RW 08"
+ *               rwId:
+ *                 type: integer
+ *                 description: ID RW lokasi posko (opsional, default sesuai assigned RW)
+ *                 example: 3
+ *               latitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat latitude lokasi posko
+ *                 example: -6.8851234
+ *               longitude:
+ *                 type: number
+ *                 format: float
+ *                 description: Titik koordinat longitude lokasi posko
+ *                 example: 107.6134567
+ *               foto:
+ *                 type: string
+ *                 description: URL foto posko (opsional)
+ *                 example: "https://example.com/posko.jpg"
+ *     responses:
+ *       201:
+ *         description: Posko KKN berhasil didaftarkan (Menunggu approval RW)
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ */
+router.post(
+  "/posko/register",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.registerPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/me:
+ *   get:
+ *     summary: Mendapatkan data Posko KKN kelompok saat ini
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Detail posko KKN ditemukan
+ */
+router.get(
+  "/posko/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER"]),
+  kknController.getMyPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/me:
+ *   put:
+ *     summary: Pembaruan data Posko KKN kelompok (Khusus Ketua Kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data Posko KKN berhasil diperbarui
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ *       404:
+ *         description: Posko belum terdaftar
+ */
+router.put(
+  "/posko/me",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updateMyPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko/update:
+ *   put:
+ *     summary: Alias pembaruan data Posko KKN kelompok (Khusus Ketua Kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Data Posko KKN berhasil diperbarui
+ *       400:
+ *         description: Koordinat tidak valid atau bentrok radius < 30m dengan posko lain
+ *       403:
+ *         description: Ditolak karena bukan Ketua Kelompok
+ *       404:
+ *         description: Posko belum terdaftar
+ */
+router.put(
+  "/posko/update",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknController.updateMyPosko
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/zona-map-unified:
+ *   get:
+ *     summary: Mendapatkan seluruh data peta zona KKN terpadu (SSOT)
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat data zona KKN terpadu
+ */
+router.get("/zona-map-unified", authMiddleware, kknController.getUnifiedZones);
+
+/**
+ * @swagger
+ * /api/v1/kkn/posko:
+ *   get:
+ *     summary: Mendapatkan seluruh daftar Posko KKN di seluruh kelurahan
+ *     tags: [Monitoring KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat daftar seluruh posko KKN
+ */
+router.get("/posko", authMiddleware, kknController.getAllPosko);
+
+router.post(
+  "/posko",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "DPL",
+  ]),
+  safeUploadSingleImage("foto"),
+  kknController.createPosko
+);
+
+router.put(
+  "/posko/:id",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+    "DPL",
+  ]),
+  safeUploadSingleImage("foto"),
+  kknController.updatePosko
+);
+
+router.delete(
+  "/posko/:id",
+  authMiddleware,
+  roleMiddleware([
+    "DEVELOPER",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DLH_ADMIN",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.deletePosko
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/active-zone:
  *   get:
  *     summary: Batas wilayah penugasan (Polygon RW & RT) Mahasiswa KKN
@@ -279,6 +619,79 @@ router.get(
 
 /**
  * @swagger
+ * /api/v1/kkn/kegiatan-aktif:
+ *   get:
+ *     summary: Mendapatkan daftar kegiatan aktif KKN mahasiswa hari ini
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Daftar kegiatan aktif
+ */
+router.get(
+  "/kegiatan-aktif",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  kknAttendanceController.getKegiatanAktif
+);
+
+router.post(
+  "/kegiatan/:id/mulai",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.mulaiKegiatan
+);
+
+router.post(
+  "/kegiatan/:id/skip",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "DPL", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.skipKegiatan
+);
+
+router.post(
+  "/kegiatan/:id/jeda",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.jedaKegiatan
+);
+
+router.post(
+  "/kegiatan/:id/lanjut",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.lanjutKegiatan
+);
+
+router.post(
+  "/kegiatan/:id/selesai",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.selesaiKegiatan
+);
+
+router.post(
+  ["/absen", "/kegiatan/:id/absen"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  safeUploadSingleImage("foto"),
+  kknAttendanceController.absenAlias
+);
+
+// [Q4 REMOVED] /out-of-zone-violation endpoint dihapus (LOSS MODE)
+
+router.get(
+  "/kegiatan/:id/presensi-history",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknAttendanceController.getPresensiHistory
+);
+
+/**
+ * @swagger
  * /api/v1/kkn/pemanfaatan-sampah:
  *   post:
  *     summary: Pencatatan pemanfaatan sampah (Loseda/Maggot/Kompos) oleh Mahasiswa KKN
@@ -293,7 +706,343 @@ router.post(
   "/pemanfaatan-sampah",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
-  kknController.createPemanfaatanSampah
+  uploadPemanfaatanImage,
+  kknController.createLogbookPemanfaatan
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/pemanfaatan-sampah/{id}:
+ *   put:
+ *     summary: Pembaruan logbook pemanfaatan sampah KKN (Murni edit data tanpa mengubah riwayat poin)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Logbook pemanfaatan sampah berhasil diperbarui
+ */
+router.put(
+  "/pemanfaatan-sampah/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  kknController.updateLogbookPemanfaatan
+);
+
+router.patch(
+  "/pemanfaatan-sampah/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  kknController.updateLogbookPemanfaatan
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/pemanfaatan-sampah/{id}:
+ *   delete:
+ *     summary: Menghapus logbook pemanfaatan sampah KKN (Menarik kembali riwayat poin dari seluruh anggota kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Laporan pemanfaatan sampah berhasil dihapus
+ */
+router.delete(
+  "/pemanfaatan-sampah/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "ADMIN_DLH"]),
+  kknController.deleteLogbookPemanfaatan
+);
+
+router.get(
+  "/pemanfaatan-sampah/unharvested",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getUnharvestedLogbooks
+);
+
+// ──────────────────────────────────────────────────────────
+// PROGRAM KERJA (PROKER) MAHASISWA KKN
+// ──────────────────────────────────────────────────────────
+
+router.post(
+  ["/program-kerja", "/proker"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  uploadPemanfaatanImage,
+  kknController.createProgramKerja
+);
+
+router.put(
+  "/program-kerja/:id",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
+  upload.single("filePdf"),
+  kknController.updateProgramKerja
+);
+
+router.get(
+  ["/program-kerja", "/proker"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getProgramKerja
+);
+
+router.get(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getProgramKerjaById
+);
+
+router.put(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.patch(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  kknController.updateProgramKerja
+);
+
+router.delete(
+  ["/program-kerja/:id", "/proker/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  kknController.deleteProgramKerja
+);
+
+// ──────────────────────────────────────────────────────────
+// LOGBOOK MAHASISWA (ALIAS UNDER /api/v1/kkn)
+// ──────────────────────────────────────────────────────────
+
+router.get(
+  ["/logbook", "/logbook-aktivitas"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "DPL",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  logbookController.getMahasiswaLogbooks
+);
+
+router.get(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "DPL",
+    "ADMIN_DLH",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  logbookController.getMahasiswaLogbookById
+);
+
+router.post(
+  ["/logbook", "/logbook-aktivitas"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  uploadPemanfaatanImage,
+  logbookController.createMahasiswaLogbook
+);
+
+router.put(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
+router.patch(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
+  uploadPemanfaatanImage,
+  logbookController.updateMahasiswaLogbook
+);
+
+router.delete(
+  ["/logbook/:id", "/logbook-aktivitas/:id"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "ADMIN_DLH"]),
+  logbookController.deleteMahasiswaLogbook
+);
+/**
+ * @swagger
+ * /api/v1/kkn/panen-hasil:
+ *   post:
+ *     summary: Pencatatan hasil panen (Pilar 3) oleh Mahasiswa KKN
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Hasil panen berhasil dicatat (+25 Poin untuk seluruh anggota kelompok)
+ */
+router.post(
+  ["/panen-hasil", "/panen-hasil/:id"],
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  uploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+
+router.post(
+  "/panen-hasil",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  uploadPemanfaatanImage,
+  kknController.createPanenHasil
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/panen-hasil/{id}:
+ *   put:
+ *     summary: Pembaruan data hasil panen KKN (Murni edit data tanpa mengubah riwayat poin)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Hasil panen berhasil diperbarui
+ */
+router.put(
+  "/panen-hasil/:id",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  uploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+
+router.patch(
+  "/panen-hasil/:id",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  uploadPemanfaatanImage,
+  kknController.updatePanenHasil
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/panen-hasil/{id}:
+ *   delete:
+ *     summary: Menghapus hasil panen KKN (Menarik kembali riwayat poin panen seluruh anggota kelompok)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Hasil panen berhasil dihapus dan poin ditarik kembali
+ */
+router.delete(
+  "/panen-hasil/:id",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "DEVELOPER",
+    "ADMIN_DLH",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.deletePanenHasil
 );
 
 /**
@@ -315,8 +1064,6 @@ router.post(
   kknController.registerWarga
 );
 
-import { uploadSingleImage } from "../middlewares/uploadMiddleware.js";
-
 /**
  * @swagger
  * /api/v1/kkn/pengajuan-izin:
@@ -330,14 +1077,47 @@ import { uploadSingleImage } from "../middlewares/uploadMiddleware.js";
  *         description: Pengajuan izin berhasil dikirim ke DPL
  */
 router.post(
-  "/pengajuan-izin",
+  ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN"]),
-  uploadSingleImage.single("fotoBukti"),
+  uploadPemanfaatanImage,
   kknController.createLeaveRequest
 );
 
+router.get(
+  ["/pengajuan-izin", "/students/leave-request", "/leave-request"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.getLeaveRequests
+);
+
+router.put(
+  ["/pengajuan-izin/:id/batal", "/pengajuan-izin/:id/cancel"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.cancelLeaveRequest
+);
+
+router.post(
+  ["/pengajuan-izin/:id/batal", "/pengajuan-izin/:id/cancel"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknController.cancelLeaveRequest
+);
+
 // Alias routes matching exact Mahasiswa KKN spec
+/**
+ * @swagger
+ * /api/v1/kkn/attendance/check-in:
+ *   post:
+ *     summary: Absensi check-in KKN (Alternatif)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil check-in
+ */
 router.post(
   ["/attendance/check-in", "/attendance/checkin"],
   authMiddleware,
@@ -345,6 +1125,25 @@ router.post(
   kknAttendanceController.recordAttendance
 );
 
+router.post(
+  ["/attendance/check-out", "/attendance/checkout"],
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN"]),
+  kknAttendanceController.checkOutAttendance
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/history:
+ *   get:
+ *     summary: Riwayat aktivitas lapangan
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logbook kegiatan
+ */
 router.get(
   "/history",
   authMiddleware,
@@ -352,15 +1151,30 @@ router.get(
   kknController.getActivityLog
 );
 
+/**
+ * @swagger
+ * /api/v1/kkn/kegiatan/{id}/lokasi:
+ *   get:
+ *     summary: Mendapatkan lokasi kegiatan (Target Lokasi)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lokasi target kegiatan
+ */
 router.get(
   ["/kegiatan/:id/lokasi", "/target-lokasi"],
   authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
   kknAttendanceController.getActivityLocation
 );
-
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
 
 router.get(
   "/notifications",
@@ -388,6 +1202,217 @@ router.get(
       res.status(500).json({ success: false, message: error.message });
     }
   }
+);
+
+import { scheduleController } from "../controllers/scheduleController.js";
+
+/**
+ * @swagger
+ * /api/v1/kkn/schedules:
+ *   get:
+ *     summary: Mendapatkan daftar jadwal KKN (Alias Mobile Spec)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mengambil list jadwal KKN
+ */
+router.get("/schedules", authMiddleware, scheduleController.getAllSchedules);
+
+/**
+ * @swagger
+ * /api/v1/kkn/dampak-rw:
+ *   get:
+ *     summary: Statistik riil dampak pemilahan di wilayah RW binaan Mahasiswa KKN
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik dampak RW
+ */
+router.get(
+  "/dampak-rw",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getDampakRw
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/dampak-kelurahan:
+ *   get:
+ *     summary: Statistik riil dampak pemilahan di tingkat Kelurahan
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistik dampak Kelurahan
+ */
+router.get(
+  "/dampak-kelurahan",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "DPL",
+    "PEMIMPIN",
+    "PANITIA_TASKFORCE",
+  ]),
+  kknController.getDampakKelurahan
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/timeline/active:
+ *   get:
+ *     summary: Mengambil HANYA tahapan linimasa KKN yang sedang berlangsung (Active Stage) untuk widget mobile
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat tahapan yang sedang berlangsung beserta rekomendasi aksi & pertanyaan kritis
+ */
+router.get(
+  ["/timeline/active", "/timeline/aktif", "/linimasa/active", "/linimasa/aktif"],
+  optionalAuthMiddleware,
+  kknController.getActiveTimelineMahasiswa
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/timeline:
+ *   get:
+ *     summary: Linimasa resmi KKN Mahasiswa beserta Rekomendasi Aksi & Pertanyaan Kritis
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: fase
+ *         schema:
+ *           type: string
+ *         description: Filter fase KKN (e.g. Pra-Kegiatan, Fase 1, Fase 2, Fase 3, Fase 4)
+ *       - in: query
+ *         name: statusPelaksanaan
+ *         schema:
+ *           type: string
+ *         description: Filter status pelaksanaan (BELUM_DIMULAI, SEDANG_BERJALAN, SELESAI)
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Pencarian teks kegiatan atau rekomendasi
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat linimasa KKN, rekomendasi aksi, dan pertanyaan kritis
+ */
+router.get(["/timeline", "/linimasa"], optionalAuthMiddleware, kknController.getTimelineMahasiswa);
+
+/**
+ * @swagger
+ * /api/v1/kkn/wilayah-kelompok:
+ *   get:
+ *     summary: Mengambil data batas geografis (Polygon/Radius) serta titik pusat posko dari kelompok KKN mahasiswa yang sedang login
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat wilayah kelompok
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Hanya untuk Mahasiswa KKN
+ *       404:
+ *         description: Data kelompok KKN mahasiswa tidak ditemukan
+ */
+router.get(
+  "/wilayah-kelompok",
+  authMiddleware,
+  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
+  kknController.getWilayahKelompok
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/my-kelompok/qr-codes:
+ *   get:
+ *     summary: Mengambil 20 QR Code alokasi kelompok KKN mahasiswa yang sedang login (Strict by Kelompok ID)
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: kelompokId
+ *         schema:
+ *           type: string
+ *         description: Khusus DPL atau Super User untuk melihat alokasi kelompok tertentu
+ *     responses:
+ *       200:
+ *         description: Berhasil memuat daftar 20 QR kelompok
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Mahasiswa belum terdaftar dalam kelompok KKN
+ */
+router.get(
+  "/my-kelompok/qr-codes",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.getMyKelompokQrCodes
+);
+
+/**
+ * @swagger
+ * /api/v1/kkn/my-kelompok/qr-codes/export-print:
+ *   get:
+ *     summary: Export file dokumen HTML 10x15cm siap cetak / simpan PDF untuk diberikan ke tukang printer
+ *     tags: [Mahasiswa KKN]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: kelompokId
+ *         schema:
+ *           type: string
+ *         description: Khusus DPL atau Super User
+ *     responses:
+ *       200:
+ *         description: Dokumen HTML cetak stiker 10x15cm
+ */
+router.get(
+  "/my-kelompok/qr-codes/export-print",
+  authMiddleware,
+  roleMiddleware([
+    "MAHASISWA_KKN",
+    "DPL",
+    "DOSEN_PEMBIMBING",
+    "SUPER_USER",
+    "ADMIN_DLH",
+    "PANITIA_TASKFORCE",
+    "PEMIMPIN",
+  ]),
+  kknController.exportMyKelompokQrCodesPrint
 );
 
 export default router;

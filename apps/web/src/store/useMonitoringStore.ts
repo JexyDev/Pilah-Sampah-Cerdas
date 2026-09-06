@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -11,19 +11,42 @@ import api from "../utils/api";
 export interface Bin {
   id: string;
   qrCode: string;
+  kode?: string;
   latitude: number | null;
   longitude: number | null;
-  maxCapacityLiter: string;
-  currentVolumeLiter: string;
-  category: {
+  maxCapacityLiter: string | number;
+  currentVolumeLiter: string | number;
+  category?: {
+    id?: string;
     name: string;
-  };
+  } | null;
   status?: string;
-  userId?: string;
-  wargaName?: string;
-  kknName?: string;
-  rtRw?: string;
+  realStatus?: string;
+  userId?: string | null;
+  wargaName?: string | null;
+  wargaPhone?: string | null;
+  wargaAddress?: string | null;
+  address?: string | null;
+  kknName?: string | null;
+  rtRw?: string | null;
+  rw?: string | null;
+  kelurahan?: string | null | { name?: string };
+  user?: {
+    id?: string;
+    name?: string;
+    phone?: string;
+    address?: string | null;
+  } | null;
   lokasi?: string;
+  kapasitas?: number;
+  lastUpdate?: string;
+  verifiedAt?: string;
+  gpsFormatted?: string;
+  altitude?: number;
+  categoryId?: string | null;
+  rwId?: number | null;
+  needsInspection?: boolean;
+  lastActivityLog?: string;
 }
 
 interface MonitoringState {

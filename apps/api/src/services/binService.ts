@@ -1,5 +1,6 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,13 +9,11 @@
 import { v4 as uuidv4 } from "uuid";
 import { binRepository } from "../repositories/binRepository.js";
 import { getDistanceMeters } from "../utils/haversineUtils.js";
-import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { websocketService } from "./websocketService.js";
 import { notificationIntegrationService } from "./notificationIntegrationService.js";
 import { generateNextQrCode } from "../utils/qrGenerator.js";
-
-const prisma = new PrismaClient();
+import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 // Density configurations (Kg per Liter)
 const DENSITY = {
@@ -23,11 +22,11 @@ const DENSITY = {
 };
 
 // Helper to find local RW/RT and Petugas staff for a given bin area
-async function getStaffForBin(binRtRwId: number | null) {
-  if (!binRtRwId) return [];
+async function getStaffForBin(binRwId: number | null) {
+  if (!binRwId) return [];
 
-  const area = await prisma.rtRwArea.findUnique({
-    where: { id: binRtRwId },
+  const area = await prisma.rw.findUnique({
+    where: { id: binRwId },
   });
   if (!area) return [];
 
@@ -37,7 +36,7 @@ async function getStaffForBin(binRtRwId: number | null) {
       .map((s) => s.trim())
       .find((s) => s.startsWith("RW")) || area.name;
 
-  const matchingAreas = await prisma.rtRwArea.findMany({
+  const matchingAreas = await prisma.rw.findMany({
     where: {
       kelurahanId: area.kelurahanId,
       name: { contains: rwPart },
@@ -46,11 +45,11 @@ async function getStaffForBin(binRtRwId: number | null) {
   });
 
   let areaIds = matchingAreas.map((a) => a.id);
-  if (areaIds.length === 0) areaIds = [binRtRwId];
+  if (areaIds.length === 0) areaIds = [binRwId];
 
   return prisma.user.findMany({
     where: {
-      rtRwId: { in: areaIds },
+      rwId: { in: areaIds },
       role: {
         name: { in: ["RW", "PETUGAS_RESIDU", "RT", "MAHASISWA_KKN"] },
       },
@@ -72,31 +71,132 @@ export class BinService {
     }
   ) {
     let whereClause: any = {};
+    let reqStatus = filters?.status?.toUpperCase();
+    if (filters?.status === "Rusak") {
+      reqStatus = "BROKEN";
+    }
+
     if (currentUser) {
       const { getScopingFilters } = await import("../utils/rbacScoping.js");
       const scoping = await getScopingFilters(currentUser);
-      whereClause = { ...scoping.binFilter };
+      const hasScoping = scoping.binFilter && Object.keys(scoping.binFilter).length > 0;
+
+      if (hasScoping) {
+        if (reqStatus === "PRINTED") {
+          // Hapus bypass global, paksa filter sesuai wilayah RW/Kelurahan
+          whereClause = {
+            AND: [scoping.binFilter, { status: "PRINTED" }],
+          };
+        } else if (reqStatus && reqStatus !== "ALL") {
+          whereClause = {
+            AND: [scoping.binFilter, { status: reqStatus }],
+          };
+        } else {
+          // Hapus bypass OR. Semua request wajib ter-filter wilayahnya
+          whereClause = scoping.binFilter;
+        }
+      } else {
+        // Non-scoped user (SUPER_USER, DEVELOPER, etc.)
+        if (reqStatus && reqStatus !== "ALL") {
+          whereClause = { status: reqStatus };
+        }
+      }
+    } else {
+      if (reqStatus && reqStatus !== "ALL") {
+        whereClause = { status: reqStatus };
+      }
     }
 
     if (filters) {
-      if (filters.status) {
-        whereClause.status = filters.status;
-      }
       if (filters.areaId) {
-        whereClause.rtRwId = parseInt(filters.areaId, 10);
+        const parsedAreaId = parseInt(filters.areaId, 10);
+        if (!isNaN(parsedAreaId)) {
+          if (whereClause.OR) {
+            whereClause = {
+              AND: [whereClause, { rwId: parsedAreaId }],
+            };
+          } else {
+            whereClause.rwId = parsedAreaId;
+          }
+        }
       }
       if (filters.categoryId) {
-        whereClause.categoryId = filters.categoryId;
+        if (whereClause.OR) {
+          whereClause = {
+            AND: [whereClause, { categoryId: filters.categoryId }],
+          };
+        } else {
+          whereClause.categoryId = filters.categoryId;
+        }
       }
       if (filters.search) {
-        whereClause.OR = [
+        const searchCondition = [
           { qrCode: { contains: filters.search, mode: "insensitive" } },
           { id: { contains: filters.search, mode: "insensitive" } },
         ];
+        if (whereClause.OR || whereClause.AND) {
+          whereClause = {
+            AND: [whereClause, { OR: searchCondition }],
+          };
+        } else {
+          whereClause.OR = searchCondition;
+        }
       }
     }
 
     return binRepository.findAll(whereClause);
+  }
+
+  /**
+   * Reset ownership of a bin back to PRINTED (unassigned)
+   */
+  async resetBinOwnership(binIdOrQrCode: string, adminUserId?: string) {
+    const bin = await prisma.bin.findFirst({
+      where: {
+        OR: [{ id: binIdOrQrCode }, { qrCode: binIdOrQrCode }],
+      },
+    });
+
+    if (!bin) {
+      throw new Error("BIN_NOT_FOUND");
+    }
+
+    return prisma.$transaction(async (tx) => {
+      // 1. Delete all ownership links
+      await tx.binOwnership.deleteMany({
+        where: { binId: bin.id },
+      });
+
+      // 2. Update bin to PRINTED state with cleared owner & coordinates
+      const updatedBin = await tx.bin.update({
+        where: { id: bin.id },
+        data: {
+          status: "PRINTED",
+          userId: null,
+          rwId: null,
+          latitude: null,
+          longitude: null,
+          currentVolumeLiter: 0,
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      // 3. Record Audit Trail
+      if (adminUserId) {
+        await tx.auditTrail.create({
+          data: {
+            action: "RESET_BIN_OWNERSHIP",
+            userId: adminUserId,
+            oldValue: JSON.parse(JSON.stringify(bin)),
+            newValue: JSON.parse(JSON.stringify(updatedBin)),
+          },
+        });
+      }
+
+      return updatedBin;
+    });
   }
 
   /**
@@ -121,8 +221,23 @@ export class BinService {
     evidencePhotoUrl?: string,
     detections?: Array<{ detectedType: string; volumeEstimate: number; confidence?: number }>
   ) {
-    if (userLat === undefined || userLng === undefined) {
-      throw new Error("GPS_COORDINATES_REQUIRED");
+    if (!householdId) {
+      const existingHh = await prisma.household.findFirst({ where: { userId } });
+      if (existingHh) {
+        householdId = existingHh.id;
+      } else {
+        const u = await prisma.user.findUnique({ where: { id: userId } });
+        const newHh = await prisma.household.create({
+          data: {
+            userId,
+            address: u?.address || "Bandung, Jawa Barat",
+            rwId: u?.rwId || 1,
+            latitude: userLat ?? -6.8903,
+            longitude: userLng ?? 107.611,
+          },
+        });
+        householdId = newHh.id;
+      }
     }
 
     // 1. Find the Bin
@@ -151,6 +266,18 @@ export class BinService {
       const isOwner = bin.binOwnerships.some((o: any) => o.userId === userId);
       if (!isOwner) {
         throw new Error("BIN_NOT_OWNED");
+      }
+    }
+
+    // ✅ TAMBAHAN: Jika QR khusus RW dan tidak punya owner terdaftar,
+    // pastikan scanner adalah warga dari RW yang sama
+    if (bin.rwId !== null && (!bin.binOwnerships || bin.binOwnerships.length === 0)) {
+      const scanUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { rwId: true },
+      });
+      if (scanUser?.rwId && scanUser.rwId !== bin.rwId) {
+        throw new Error("BIN_RW_MISMATCH");
       }
     }
 
@@ -341,7 +468,7 @@ export class BinService {
           multiplier = multVal ? Number(multVal) : 1.0;
         }
 
-        const rawConf = det.confidence ?? aiConfidence ?? 1.0;
+        const rawConf = (det.confidence ?? aiConfidence)!;
         const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
         const rate = 100 * multiplier;
         const calculatedPoints = Math.max(1, Math.round(vol * rate * confScale));
@@ -365,12 +492,26 @@ export class BinService {
         totalVolumeLiter += vol;
         totalPointsAwarded += calculatedPoints;
 
+        const sortingStatus = evaluateSortingStatus(
+          confScale,
+          undefined,
+          targetBin.category?.name,
+          targetBin.category
+        );
+
         results.push({
           wasteLogId: result.setoranOtomatis.id,
+          id: result.setoranOtomatis.id,
           category: targetBin.category?.name || "Umum",
           weightKg,
           volumeLiter: vol,
           pointsAwarded: calculatedPoints,
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
         });
       }
 
@@ -494,7 +635,7 @@ export class BinService {
       multiplier = multVal ? Number(multVal) : 1.0;
     }
 
-    const rawConf = aiConfidence ?? 1.0;
+    const rawConf = aiConfidence!;
     const confScale = rawConf > 1 ? rawConf / 100 : rawConf;
     const rate = 100 * multiplier;
     const calculatedPoints = Math.max(1, Math.round(estimatedVolume * rate * confScale));
@@ -530,12 +671,26 @@ export class BinService {
         .catch((e) => console.error("FCM Error:", e));
     }
 
+    const sortingStatus = evaluateSortingStatus(
+      confScale,
+      undefined,
+      isOrganic ? "organik" : "anorganik",
+      bin.category
+    );
+
     return {
       wasteLogId: result.setoranOtomatis.id,
+      id: result.setoranOtomatis.id,
       weightKg,
       volumeLiter: estimatedVolume,
       pointsAwarded: calculatedPoints,
       newBinVolume: newVolume,
+      ai_confidence: sortingStatus.ai_confidence,
+      aiConfidence: sortingStatus.aiConfidence,
+      discrepancy_status: sortingStatus.discrepancy_status,
+      discrepancyStatus: sortingStatus.discrepancyStatus,
+      is_correct: sortingStatus.is_correct,
+      isCorrect: sortingStatus.isCorrect,
     };
   }
 
@@ -582,10 +737,23 @@ export class BinService {
       include: { households: true },
     });
     if (!user) throw new Error("USER_NOT_FOUND");
-    if (!user.households || user.households.length === 0) {
-      throw new Error("HOUSEHOLDS_NOT_FOUND");
+    let household = user.households && user.households.length > 0 ? user.households[0] : null;
+    if (!household) {
+      const rwId = user.rwId || 1;
+      const lat = data.latitude ?? -6.8903;
+      const lng = data.longitude ?? 107.611;
+      const addr = user.address || "Bandung, Jawa Barat";
+
+      household = await prisma.household.create({
+        data: {
+          userId: user.id,
+          address: addr,
+          rwId: rwId,
+          latitude: lat,
+          longitude: lng,
+        },
+      });
     }
-    const household = user.households[0];
 
     const codes = data.qrCodes || (data.qrCode ? [data.qrCode] : []);
     if (codes.length === 0) throw new Error("QR_CODES_REQUIRED");
@@ -605,6 +773,19 @@ export class BinService {
         if (bin.status !== "PRINTED") {
           throw new Error(`BIN_ALREADY_USED: ${qrCode}`);
         }
+
+        // ✅ TAMBAHAN: Validasi RW jika QR bukan massal
+        if (bin.rwId !== null && bin.rwId !== undefined) {
+          // QR ini khusus untuk satu RW — hanya Warga di RW tersebut yang boleh aktivasi
+          const userRwId = user.rwId;
+          if (!userRwId) {
+            throw new Error("USER_RW_NOT_SET");
+          }
+          if (bin.rwId !== userRwId) {
+            throw new Error("BIN_RW_MISMATCH");
+          }
+        }
+        // Jika bin.rwId === null → QR massal → siapa pun boleh aktivasi ✅
 
         if (bin.categoryId) {
           // 1. Get user's current bins to check onboarding status
@@ -644,7 +825,7 @@ export class BinService {
           data: {
             status: "ACTIVE_BOUND",
             userId: user.id,
-            rtRwId: user.rtRwId ?? household.rtRwId,
+            rwId: user.rwId ?? household.rwId,
             latitude: data.latitude ?? household.latitude,
             longitude: data.longitude ?? household.longitude,
           },
@@ -742,24 +923,74 @@ export class BinService {
     if (!data.categoryId) {
       throw new Error("CATEGORY_ID_REQUIRED");
     }
-    const qrCode = await generateNextQrCode(data.categoryId);
+
+    let catId = data.categoryId;
+    const cat = await prisma.wasteCategory.findFirst({
+      where: {
+        OR: [{ id: catId }, { name: { contains: catId, mode: "insensitive" } }],
+      },
+    });
+    if (cat) {
+      catId = cat.id;
+    }
+
+    const count = parseInt(data.count || data.generateCount || "1", 10);
+    if (count > 1) {
+      const createdBins = [];
+      for (let i = 0; i < count; i++) {
+        const qrCode = await generateNextQrCode(catId);
+        let kelurahanId = null;
+        let parsedRwId: number | null = null;
+        if (data.rwId) {
+          const parsed = parseInt(data.rwId, 10);
+          if (!isNaN(parsed)) {
+            parsedRwId = parsed;
+            const area = await binRepository.findRtRwById(parsed);
+            if (area) {
+              kelurahanId = area.kelurahanId;
+            }
+          }
+        }
+        const bin = await binRepository.createBin({
+          qrCode,
+          categoryId: catId,
+          rwId: parsedRwId,
+          kelurahanId,
+          latitude: data.latitude ? parseFloat(data.latitude) : null,
+          longitude: data.longitude ? parseFloat(data.longitude) : null,
+          maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
+          userId: data.userId || null,
+          status: data.status || "PRINTED",
+        });
+        createdBins.push(bin);
+      }
+      return createdBins;
+    }
+
+    const qrCode = await generateNextQrCode(catId);
     let kelurahanId = null;
-    if (data.rtRwId) {
-      const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
-      if (area) {
-        kelurahanId = area.kelurahanId;
+    let parsedRwId: number | null = null;
+    if (data.rwId) {
+      const parsed = parseInt(data.rwId, 10);
+      if (!isNaN(parsed)) {
+        parsedRwId = parsed;
+        const area = await binRepository.findRtRwById(parsed);
+        if (area) {
+          kelurahanId = area.kelurahanId;
+        }
       }
     }
 
     return binRepository.createBin({
       qrCode,
-      categoryId: data.categoryId,
-      rtRwId: parseInt(data.rtRwId),
+      categoryId: catId,
+      rwId: parsedRwId,
       kelurahanId,
       latitude: data.latitude ? parseFloat(data.latitude) : null,
       longitude: data.longitude ? parseFloat(data.longitude) : null,
       maxCapacityLiter: data.maxCapacityLiter ? parseFloat(data.maxCapacityLiter) : 25.0,
       userId: data.userId || null,
+      status: data.status || "PRINTED",
     });
   }
 
@@ -768,21 +999,64 @@ export class BinService {
    */
   async updateBin(id: string, data: any) {
     const updateData: any = {};
-    if (data.qrCode) updateData.qrCode = data.qrCode;
-    if (data.categoryId) updateData.categoryId = data.categoryId;
-    if (data.rtRwId) {
-      updateData.rtRwId = parseInt(data.rtRwId);
-      const area = await binRepository.findRtRwById(parseInt(data.rtRwId));
-      if (area) {
-        updateData.kelurahanId = area.kelurahanId;
+
+    if (data.categoryId) {
+      const cat = await prisma.wasteCategory.findFirst({
+        where: {
+          OR: [
+            { id: data.categoryId },
+            { name: { contains: data.categoryId, mode: "insensitive" } },
+          ],
+        },
+      });
+      if (cat) {
+        updateData.categoryId = cat.id;
       }
     }
-    if (data.maxCapacityLiter) updateData.maxCapacityLiter = parseFloat(data.maxCapacityLiter);
-    if (data.latitude !== undefined)
-      updateData.latitude = data.latitude ? parseFloat(data.latitude) : null;
-    if (data.longitude !== undefined)
-      updateData.longitude = data.longitude ? parseFloat(data.longitude) : null;
-    if (data.userId !== undefined) updateData.userId = data.userId || null;
+
+    const rwVal = data.rwId || data.rtRwId;
+    if (rwVal) {
+      const parsed = parseInt(rwVal, 10);
+      if (!isNaN(parsed)) {
+        const area = await binRepository.findRtRwById(parsed);
+        if (area) {
+          updateData.rwId = parsed;
+          updateData.kelurahanId = area.kelurahanId;
+        }
+      }
+    }
+
+    if (data.maxCapacityLiter !== undefined && data.maxCapacityLiter !== null) {
+      const cap = parseFloat(data.maxCapacityLiter);
+      if (!isNaN(cap)) {
+        updateData.maxCapacityLiter = cap;
+      }
+    }
+
+    if (data.status) {
+      const statusUpper = String(data.status).toUpperCase();
+      if (statusUpper === "RUSAK" || statusUpper === "BROKEN") {
+        updateData.status = "BROKEN";
+      } else if (
+        ["ACTIVE_BOUND", "ACTIVE", "PRINTED", "INACTIVE", "PENDING_APPROVAL"].includes(statusUpper)
+      ) {
+        updateData.status = statusUpper;
+      } else if (data.status === "Normal" || data.status === "Penuh" || data.status === "Sedang") {
+        updateData.status = "ACTIVE_BOUND";
+      }
+    }
+
+    if (data.latitude !== undefined) {
+      updateData.latitude =
+        data.latitude !== null && data.latitude !== "" ? parseFloat(data.latitude) : null;
+    }
+    if (data.longitude !== undefined) {
+      updateData.longitude =
+        data.longitude !== null && data.longitude !== "" ? parseFloat(data.longitude) : null;
+    }
+    if (data.userId !== undefined && data.userId !== "") {
+      updateData.userId = data.userId || null;
+    }
 
     return binRepository.updateBin(id, updateData);
   }
@@ -794,7 +1068,70 @@ export class BinService {
     return binRepository.deleteBin(id);
   }
 
-  async getAreas() {
+  async getAreas(user?: any) {
+    if (user) {
+      const roleName = String(user.role || "").toUpperCase();
+
+      if (roleName === "DPL" || roleName === "DOSEN_PEMBIMBING") {
+        const userId = user.userId || user.id;
+        const kelompoks = await prisma.kelompokKkn.findMany({
+          where: { dplId: userId },
+        });
+
+        if (kelompoks.length > 0) {
+          const kelurahanNames = kelompoks
+            .map((k) => k.kelurahan)
+            .filter((k): k is string => Boolean(k));
+
+          const allCakupanRw: string[] = [];
+          kelompoks.forEach((k) => {
+            if (Array.isArray(k.cakupanRw)) {
+              (k.cakupanRw as any[]).forEach((r) => {
+                const s = String(r).trim();
+                if (/^\d+$/.test(s)) {
+                  allCakupanRw.push(`RW ${s.length === 1 ? `0${s}` : s}`);
+                } else {
+                  allCakupanRw.push(s);
+                }
+              });
+            }
+          });
+
+          if (kelurahanNames.length > 0) {
+            return prisma.rw.findMany({
+              where: {
+                kelurahan: {
+                  name: { in: kelurahanNames, mode: "insensitive" },
+                },
+                ...(allCakupanRw.length > 0 ? { name: { in: allCakupanRw } } : {}),
+              },
+              include: { kelurahan: true },
+              orderBy: { name: "asc" },
+            });
+          }
+        }
+      } else if (roleName === "RW") {
+        const rwId = user.rwId || user.rtRwId;
+        if (rwId) {
+          return prisma.rw.findMany({
+            where: { id: Number(rwId) },
+            include: { kelurahan: true },
+            orderBy: { name: "asc" },
+          });
+        }
+      } else if (roleName === "LURAH" && user.kelurahan) {
+        return prisma.rw.findMany({
+          where: {
+            kelurahan: {
+              name: { equals: user.kelurahan, mode: "insensitive" },
+            },
+          },
+          include: { kelurahan: true },
+          orderBy: { name: "asc" },
+        });
+      }
+    }
+
     return binRepository.findAreas();
   }
 
@@ -902,7 +1239,7 @@ export class BinService {
         maxCapacityLiter: maxVol,
         kapasitas,
         isCritical: kapasitas >= 80,
-        rtRw: bin.rtRw?.name || `RT/RW ${bin.rtRwId}`,
+        rw: bin.rw?.name || `RT/RW ${bin.rwId}`,
         status:
           realStatus === "TIDAK_AKTIF"
             ? "TIDAK AKTIF"
@@ -928,7 +1265,135 @@ export class BinService {
   /**
    * Create bin reset request and notify area petugas
    */
-  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
+  /**
+   * Cek status petugas tetap (default) warga yang sedang login.
+   * @param userId - ID user warga
+   * @returns { hasDefaultPetugas: boolean, petugas: {...} | null }
+   */
+  async getPetugasStatusForWarga(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        defaultPetugasId: true,
+        rwId: true,
+      },
+    });
+    if (!user) throw new Error("RESOURCE_NOT_FOUND");
+
+    if (!user.defaultPetugasId) {
+      return { hasDefaultPetugas: false, petugas: null };
+    }
+
+    const petugas = await prisma.user.findUnique({
+      where: { id: user.defaultPetugasId },
+      select: { id: true, name: true, fotoProfil: true, rwId: true },
+    });
+
+    // Reset jika petugas sudah tidak di wilayah yang sama (warga pindah)
+    if (!petugas || petugas.rwId !== user.rwId) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { defaultPetugasId: null },
+      });
+      return { hasDefaultPetugas: false, petugas: null };
+    }
+
+    return {
+      hasDefaultPetugas: true,
+      petugas: {
+        id: petugas.id,
+        nama: petugas.name,
+        foto: petugas.fotoProfil,
+      },
+    };
+  }
+
+  /**
+   * Ambil daftar petugas residu yang bertugas di RW yang sama dengan warga.
+   * Sumber kebenaran wilayah dari profil server, bukan input frontend.
+   * @param userId - ID user warga (untuk resolve rwId)
+   * @returns Array petugas aktif di wilayah warga
+   */
+  async getPetugasByRw(userId: string) {
+    const warga = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { rwId: true },
+    });
+    console.log(`[getPetugasByRw] warga ${userId} → rwId: ${warga?.rwId}`);
+    if (!warga?.rwId) return [];
+
+    return prisma.user.findMany({
+      where: {
+        rwId: warga.rwId,
+        role: { name: "PETUGAS_RESIDU" },
+        status: "Aktif",
+      },
+      select: { id: true, name: true, fotoProfil: true },
+    });
+  }
+
+  async debugPetugasData(userId?: string) {
+    let warga = null;
+    if (userId) {
+      warga = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, rwId: true, role: { select: { name: true } } },
+      });
+    }
+
+    const petugasList = await prisma.user.findMany({
+      where: { role: { name: "PETUGAS_RESIDU" } },
+      select: { id: true, name: true, rwId: true, status: true },
+    });
+
+    const wargaList = await prisma.user.findMany({
+      where: { role: { name: "WARGA" } },
+      select: { id: true, name: true, rwId: true },
+      take: 20,
+    });
+
+    return {
+      warga,
+      wargaList,
+      petugas: petugasList,
+    };
+  }
+
+  /**
+   * Simpan petugas tetap (default) untuk warga.
+   * Validasi: petugas wajib bertugas di RW yang sama dengan warga.
+   * @param userId - ID user warga
+   * @param petugasId - ID user petugas yang dipilih
+   */
+  async setDefaultPetugas(userId: string, petugasId: string) {
+    const [warga, petugas] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { rwId: true } }),
+      prisma.user.findUnique({
+        where: { id: petugasId },
+        select: { rwId: true, role: { select: { name: true } } },
+      }),
+    ]);
+
+    if (!warga) throw new Error("RESOURCE_NOT_FOUND");
+    if (!petugas) throw new Error("PETUGAS_NOT_FOUND");
+    if (petugas.role.name !== "PETUGAS_RESIDU") throw new Error("NOT_PETUGAS");
+    if (petugas.rwId !== warga.rwId) throw new Error("WILAYAH_MISMATCH");
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { defaultPetugasId: petugasId },
+    });
+
+    return { success: true, petugasId };
+  }
+
+  async createResetRequest(
+    binId: string,
+    userId: string,
+    evidencePhotoUrl: string,
+    petugasId?: string | null,
+    jenisSampah?: string | null
+  ) {
     // 1. check if bin exists in DB
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
@@ -956,33 +1421,39 @@ export class BinService {
       throw new Error("DUPLICATE_REQUEST");
     }
 
-    const request = await binRepository.createResetRequest(binId, userId, evidencePhotoUrl);
-
-    // Notify local RW & Petugas staff
-    const staffList = await getStaffForBin(request.bin?.rtRwId || null);
-    const citizenName = request.user?.name || "Warga";
-    const binQr = request.bin?.qrCode || "Tong";
-    const areaName = request.bin?.rtRw?.name || "Wilayah";
-
-    for (const staff of staffList) {
-      await prisma.notification
-        .create({
-          data: {
-            userId: staff.id,
-            title: "Pengajuan Pengosongan Baru",
-            message: `Warga (${citizenName}) mengajukan pengosongan tempat sampah ${binQr} di ${areaName}.`,
-          },
-        })
-        .catch(() => {});
+    // 4. Resolve petugasId dari defaultPetugasId warga jika tidak dikirim
+    let resolvedPetugasId = petugasId ?? null;
+    if (!resolvedPetugasId) {
+      const warga = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { defaultPetugasId: true },
+      });
+      resolvedPetugasId = warga?.defaultPetugasId ?? null;
     }
 
-    // Notify citizen
+    const request = await binRepository.createResetRequest(
+      binId,
+      userId,
+      evidencePhotoUrl,
+      resolvedPetugasId,
+      jenisSampah
+    );
+
+    // Langsung eksekusi reset kapasitas tempat sampah ke 0L (instan tanpa approval)
+    await prisma.bin.update({
+      where: { id: binId },
+      data: { currentVolumeLiter: 0 },
+    });
+
+    const binQr = request.bin?.qrCode || "Tempat Sampah";
+
+    // Notifikasi konfirmasi ke warga
     await prisma.notification
       .create({
         data: {
           userId,
-          title: "Pengajuan Pengosongan Dikirim",
-          message: `Pengajuan pengosongan tempat sampah ${binQr} berhasil dikirim ke petugas RT/RW.`,
+          title: "Pengosongan Tempat Sampah Berhasil",
+          message: `Tempat sampah ${binQr} telah berhasil dikosongkan secara otomatis. Kapasitas kembali 0L.`,
         },
       })
       .catch(() => {});
@@ -1022,7 +1493,7 @@ export class BinService {
       include: {
         bin: {
           include: {
-            rtRw: {
+            rw: {
               include: {
                 kelurahan: true,
               },
@@ -1055,6 +1526,29 @@ export class BinService {
     if (status === "APPROVED" || status === "COMPLETED") {
       // Reset Bin volume
       await binRepository.updateVolume(request.binId, 0.0);
+
+      if (reviewedById) {
+        const existingReward = await prisma.pointHistory.findFirst({
+          where: {
+            userId: reviewedById,
+            description: { contains: request.bin?.qrCode || id },
+            kategori: "VALIDASI_PENGOSONGAN",
+          },
+        });
+        if (!existingReward) {
+          await prisma.pointHistory
+            .create({
+              data: {
+                userId: reviewedById,
+                points: 15,
+                description: `Reward validasi pengosongan tempat sampah (${request.bin?.qrCode || id})`,
+                kategori: "VALIDASI_PENGOSONGAN",
+                redeemable: false,
+              },
+            })
+            .catch(() => {});
+        }
+      }
 
       // Notify Warga
       await binRepository
@@ -1168,7 +1662,7 @@ export class BinService {
       include: {
         bin: {
           include: {
-            rtRw: true,
+            rw: true,
           },
         },
       },
@@ -1192,7 +1686,7 @@ export class BinService {
         latitude: t.bin.latitude,
         longitude: t.bin.longitude,
         distanceMeters,
-        rtRw: t.bin.rtRw?.name || `RT/RW ${t.bin.rtRwId}`,
+        rw: t.bin.rw?.name || `RT/RW ${t.bin.rwId}`,
       };
     });
 
@@ -1366,7 +1860,7 @@ export class BinService {
   ) {
     const bin = await prisma.bin.findUnique({
       where: { id: binId },
-      include: { rtRw: true },
+      include: { rw: true },
     });
 
     if (!bin) {
@@ -1381,7 +1875,7 @@ export class BinService {
       throw new Error("USER_NOT_FOUND");
     }
 
-    const staffList = await getStaffForBin(bin.rtRwId);
+    const staffList = await getStaffForBin(bin.rwId);
 
     if (issueType === "EMPTY_REQUEST") {
       // 1. Update bin volume to maxCapacityLiter (forces capacity to 100% full, showing red on map)
@@ -1417,7 +1911,7 @@ export class BinService {
       }
 
       const title = "Permintaan Pengosongan Sampah";
-      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tempat sampah ${bin.qrCode}.`;
+      const message = `[PANGGILAN] Warga (${user.name}) di (${user.address || bin.rw?.name || "Wilayah Umum"}) meminta petugas segera mengosongkan tempat sampah ${bin.qrCode}.`;
 
       for (const staff of staffList) {
         await prisma.notification
@@ -1442,7 +1936,7 @@ export class BinService {
       });
 
       const title = "Laporan Tempat Sampah Rusak";
-      const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rtRw?.name || "Wilayah Umum"}) rusak atau QR code-nya sobek/rusak.`;
+      const message = `Warga (${user.name}) melaporkan bahwa tempat sampah ${bin.qrCode} di (${user.address || bin.rw?.name || "Wilayah Umum"}) rusak atau QR code-nya sobek/rusak.`;
 
       for (const staff of staffList) {
         await prisma.notification

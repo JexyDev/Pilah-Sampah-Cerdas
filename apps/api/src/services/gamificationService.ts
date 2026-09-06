@@ -1,13 +1,10 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
-
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export const gamificationService = {
   /**
@@ -37,7 +34,7 @@ export const gamificationService = {
             id: true,
             name: true,
             phone: true,
-            rtRw: true,
+            rw: true,
           },
         },
       },
@@ -119,7 +116,7 @@ export const gamificationService = {
         id: true,
         name: true,
         wargaSubtype: true,
-        rtRw: {
+        rw: {
           select: {
             name: true,
             kelurahan: {
@@ -142,7 +139,7 @@ export const gamificationService = {
           id: u.id,
           name: u.name,
           wargaSubtype: u.wargaSubtype,
-          wilayah: u.rtRw ? `${u.rtRw.name} (Kel. ${u.rtRw.kelurahan.name})` : "N/A",
+          wilayah: u.rw ? `${u.rw.name} (Kel. ${u.rw.kelurahan.name})` : "N/A",
           totalPoints,
         };
       })
@@ -152,7 +149,7 @@ export const gamificationService = {
     // 2. Region-Based Leaderboard (Kelurahan)
     const kelurahans = await prisma.kelurahan.findMany({
       include: {
-        rtRwAreas: {
+        rws: {
           include: {
             users: {
               include: {
@@ -169,7 +166,7 @@ export const gamificationService = {
     const kelurahanLeaderboard = kelurahans
       .map((k: any) => {
         let totalKg = 0;
-        k.rtRwAreas.forEach((area: any) => {
+        k.rws.forEach((area: any) => {
           area.users.forEach((u: any) => {
             totalKg += u.setoranOtomatis.reduce(
               (acc: number, cur: any) => acc + Number(cur.berat || 0),
@@ -187,31 +184,38 @@ export const gamificationService = {
       .slice(0, 10);
 
     // 3. RT/RW Leaderboard
-    const rtRwAreas = await prisma.rtRwArea.findMany({
+    const rws = await prisma.rw.findMany({
       include: {
         kelurahan: { select: { name: true } },
         users: {
           include: {
             setoranOtomatis: { select: { berat: true } },
+            pointHistory: { select: { points: true } },
           },
         },
       },
     });
 
-    const rtRwLeaderboard = rtRwAreas
+    const rtRwLeaderboard = rws
       .map((area: any) => {
         let totalKg = 0;
+        let totalPoin = 0;
         area.users.forEach((u: any) => {
-          totalKg += u.setoranOtomatis.reduce(
+          totalKg += (u.setoranOtomatis || []).reduce(
             (acc: number, cur: any) => acc + Number(cur.berat || 0),
+            0
+          );
+          totalPoin += (u.pointHistory || []).reduce(
+            (acc: number, cur: any) => acc + Number(cur.points || 0),
             0
           );
         });
         return {
-          rtRwId: area.id,
+          rwId: area.id,
           rtRwName: area.name,
-          kelurahanName: area.kelurahan.name,
-          totalPoints: totalKg,
+          kelurahanName: area.kelurahan?.name || "Coblong",
+          totalPoints: totalPoin > 0 ? totalPoin : totalKg,
+          totalKg,
         };
       })
       .sort((a, b) => b.totalPoints - a.totalPoints)
@@ -225,7 +229,7 @@ export const gamificationService = {
         name: true,
         studentProfile: {
           select: {
-            assignedPolygon: {
+            assignedRw: {
               select: {
                 name: true,
                 kelurahan: { select: { name: true } },
@@ -244,7 +248,7 @@ export const gamificationService = {
 
         // Points earned by their dampingan (warga in their rtRwArea)
         let dampinganPoints = 0;
-        const area = m.studentProfile?.assignedPolygon;
+        const area = m.studentProfile?.assignedRw;
         // Simplified: Since we don't eager-load users in the area to save queries, we only use ownPoints.
         // For a full implementation, we could sum points of all users in area.
 
@@ -271,7 +275,7 @@ export const gamificationService = {
       select: {
         id: true,
         name: true,
-        rtRw: { select: { name: true } },
+        rw: { select: { name: true } },
         setoranManual: { select: { berat: true } },
         claimedTasks: {
           select: {
@@ -313,11 +317,11 @@ export const gamificationService = {
         return {
           id: p.id,
           name: p.name,
-          wilayah: p.rtRw?.name || "Semua Area",
+          wilayah: p.rw?.name || "Semua Area",
           totalCompleted,
-          avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(1)),
-          successRatePercent: parseFloat((successRate * 100).toFixed(1)),
-          totalPoints: parseFloat(compositeScore.toFixed(1)),
+          avgSlaMinutes: parseFloat(avgSlaMinutes.toFixed(2)),
+          successRatePercent: parseFloat((successRate * 100).toFixed(2)),
+          totalPoints: parseFloat(compositeScore.toFixed(2)),
           totalKgHandled: totalKg,
         };
       })
@@ -327,6 +331,7 @@ export const gamificationService = {
     return {
       citizens: citizenLeaderboard,
       regions: kelurahanLeaderboard,
+      rw: rtRwLeaderboard,
       rtRw: rtRwLeaderboard,
       mahasiswa: mahasiswaLeaderboard,
       pengangkut: pengangkutLeaderboard,
@@ -369,7 +374,7 @@ export const gamificationService = {
         nim: s.nim,
         kelompok: s.kelompok?.name || "Tanpa Kelompok",
         kelompokId: s.kelompokId,
-        totalHours: parseFloat(totalHours.toFixed(1)),
+        totalHours: parseFloat(totalHours.toFixed(2)),
         activeBins: activeBinsCount,
         dplScore,
         finalScore: parseFloat(finalScore.toFixed(2)),
@@ -378,34 +383,68 @@ export const gamificationService = {
 
     studentLeaderboard.sort((a, b) => b.finalScore - a.finalScore);
 
-    const kelompokMap: Record<string, { id: string; name: string; scores: number[] }> = {};
-    studentLeaderboard.forEach((student) => {
-      if (student.kelompokId) {
-        if (!kelompokMap[student.kelompokId]) {
-          kelompokMap[student.kelompokId] = {
-            id: student.kelompokId,
-            name: student.kelompok,
-            scores: [],
-          };
-        }
-        kelompokMap[student.kelompokId].scores.push(student.finalScore);
-      }
+    const groups = await prisma.kelompokKkn.findMany({
+      include: {
+        dpl: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        students: {
+          include: {
+            user: {
+              include: {
+                attendances: true,
+                registeredBins: true,
+              },
+            },
+          },
+        },
+      },
     });
 
-    const kelompokLeaderboard = Object.values(kelompokMap).map((k) => {
-      const totalScore = k.scores.reduce((sum, s) => sum + s, 0);
-      const avgScore = k.scores.length ? totalScore / k.scores.length : 0;
+    const kelompokLeaderboard = groups.map((g: any) => {
+      let totalGroupScore = 0;
+      const studentCount = g.students.length;
+
+      g.students.forEach((s: any) => {
+        let totalHours = 0;
+        s.user?.attendances?.forEach((att: any) => {
+          if (att.checkOutAt && att.attendedAt) {
+            const diffMs = new Date(att.checkOutAt).getTime() - new Date(att.attendedAt).getTime();
+            totalHours += diffMs / (1000 * 60 * 60);
+          }
+        });
+
+        const activeBinsCount = (s.user?.registeredBins || []).filter(
+          (b: any) => b.status === "ACTIVE_BOUND"
+        ).length;
+        const dplScore = Number(s.assessmentScore || 0);
+
+        const finalScore = totalHours * 0.4 + activeBinsCount * 0.3 + dplScore * 0.3;
+        totalGroupScore += finalScore;
+      });
+
+      const avgScore = studentCount > 0 ? totalGroupScore / studentCount : 0;
+      const dplName = g.dpl?.name || g.dplNamaMentah || null;
+
       return {
-        id: k.id,
-        name: k.name,
+        id: g.id,
+        name: g.name,
+        dplName: dplName
+          ? dplName.toLowerCase().startsWith("dpl")
+            ? dplName
+            : `DPL: ${dplName}`
+          : "DPL: Belum Ditugaskan",
         avgScore: parseFloat(avgScore.toFixed(2)),
-        membersCount: k.scores.length,
+        membersCount: studentCount,
       };
     });
 
     kelompokLeaderboard.sort((a, b) => b.avgScore - a.avgScore);
 
-    // 3. DPL (Dosen Pembimbing Lapangan) Leaderboard
+    // 3. DPL (Dosen Pendamping Lapangan) Leaderboard
     const dplUsers = await prisma.user.findMany({
       where: { role: { name: "DPL" } },
       select: {

@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -34,7 +34,7 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
 
     // DEV BYPASS
     if (process.env.NODE_ENV === "development" && token === "MOCK_TOKEN_ADMIN") {
-      // Mock admin is SUPER_ADMIN, which has write access
+      // Mock admin is SUPER_USER, which has write access
       return next();
     }
 
@@ -52,46 +52,22 @@ export const readOnlyGuard = (req: Request, res: Response, next: NextFunction): 
         if (role === "CAMAT" || role === "LURAH" || role === "ADMIN_DLH") {
           const writeMethods = ["POST", "PUT", "DELETE", "PATCH"];
           if (writeMethods.includes(req.method)) {
-            // Exception: ADMIN_DLH can resolve discrepancy
-            const isResolveDiscrepancy =
-              role === "ADMIN_DLH" &&
-              req.method === "PUT" &&
-              req.originalUrl.includes("/waste/logs/") &&
-              req.originalUrl.endsWith("/resolve");
-
-            // Exception: ADMIN_DLH can register staff (Camat, Lurah, RW, Petugas)
-            const isRegisterStaff =
-              role === "ADMIN_DLH" &&
-              req.method === "POST" &&
-              /\/api\/v1\/auth\/register\/(camat|lurah|rw|petugas-residu)/.test(req.originalUrl);
-
-            // Exception: ADMIN_DLH can approve KKN whitelist
-            const isKknApproval =
-              role === "ADMIN_DLH" &&
-              (req.method === "PATCH" || req.method === "PUT") &&
-              req.originalUrl.includes("/auth/kkn/whitelist");
-
-            // Exception: ADMIN_DLH can generate and assign QR batches
-            const isQrBatchManagement =
-              role === "ADMIN_DLH" &&
-              (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") &&
-              (req.originalUrl.includes("/bins/generate-qr") ||
-                req.originalUrl.includes("/bins/qr-batch"));
-
             // Exception: Any user can manage their notification inbox & profile/password settings
+            // Exception: ADMIN_DLH allowed for AI discrepancy resolution, audit corrections, and validation
+            const targetUrl = (req.originalUrl || req.url || "").toLowerCase();
             const isUserNotificationAction =
-              req.originalUrl.includes("/notifications") ||
-              req.originalUrl.includes("/auth/profile") ||
-              req.originalUrl.includes("/auth/password") ||
-              req.originalUrl.includes("/auth/change-password");
+              targetUrl.includes("/notifications") ||
+              targetUrl.includes("/auth/profile") ||
+              targetUrl.includes("/auth/password") ||
+              targetUrl.includes("/auth/change-password") ||
+              (role === "ADMIN_DLH" &&
+                (targetUrl.includes("/resolve") ||
+                  targetUrl.includes("/discrepanc") ||
+                  targetUrl.includes("/koreksi") ||
+                  targetUrl.includes("/reject") ||
+                  targetUrl.includes("/ai/")));
 
-            if (
-              !isResolveDiscrepancy &&
-              !isRegisterStaff &&
-              !isKknApproval &&
-              !isQrBatchManagement &&
-              !isUserNotificationAction
-            ) {
+            if (!isUserNotificationAction) {
               res.status(403).json({
                 error: "FORBIDDEN",
                 message: `Role ${role} hanya memiliki akses Read-Only. Operasi tulis ditolak.`,

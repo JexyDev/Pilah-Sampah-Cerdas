@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   User,
@@ -12,6 +12,7 @@ import {
   Star,
 } from "lucide-react";
 import api from "../services/api";
+import { useAuthStore } from "../store/useAuthStore";
 
 interface LeaderboardItem {
   rank: number;
@@ -39,30 +40,31 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   items,
   maxPoints,
   unitLabel = "Poin",
-  linkTo = "/leaderboard",
+  linkTo = "/peringkat",
 }) => {
   const displayItems = items.slice(0, 10);
-  const topScore = maxPoints || displayItems[0]?.points || 100;
+  const positivePoints = displayItems.map((i) => i.points).filter((p) => p > 0);
+  const topScore = maxPoints > 0 ? maxPoints : (positivePoints[0] || 100);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const getRankBadge = (rank: number) => {
     if (rank === 1) {
       return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 text-amber-950 font-black text-[11px] flex items-center justify-center shadow-xs border border-amber-200 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-900 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-amber-200 shrink-0">
           🥇
         </span>
       );
     }
     if (rank === 2) {
       return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-slate-300 to-slate-100 text-slate-800 font-extrabold text-[11px] flex items-center justify-center shadow-xs border border-slate-300 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-slate-200 dark:border-slate-800 shrink-0">
           🥈
         </span>
       );
     }
     if (rank === 3) {
       return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-700 to-amber-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-xs border border-amber-600 shrink-0">
+        <span className="w-6 h-6 rounded-full bg-amber-50 text-amber-900 font-bold text-[11px] flex items-center justify-center shadow-2xs border border-amber-200 shrink-0">
           🥉
         </span>
       );
@@ -75,25 +77,25 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full relative">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md p-5 flex flex-col justify-between transition-all duration-200 h-full relative">
       {/* Header */}
-      <div className="flex justify-between items-center pb-3 border-b border-slate-100 shrink-0">
+      <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className={`p-2 rounded-xl ${iconBg} text-white shadow-xs shrink-0 flex items-center justify-center`}>
             {icon}
           </div>
           <div>
-            <h5 className="font-extrabold text-[14px] text-slate-800 tracking-tight truncate" title={title}>
+            <h5 className="font-extrabold text-[14px] text-slate-800 dark:text-slate-100 tracking-tight truncate" title={title}>
               {title}
             </h5>
-            <p className="text-[10px] text-slate-400 font-medium leading-none mt-0.5">
-              Skala Acuan: Top 1 = <span className="font-bold text-slate-600">{topScore.toLocaleString("id-ID")} {unitLabel}</span>
+            <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">
+              Skala Acuan: Top 1 = <span className="font-bold text-slate-600 dark:text-slate-300">{topScore.toLocaleString("id-ID")} {unitLabel}</span>
             </p>
           </div>
         </div>
         <Link
           to={linkTo}
-          className="text-slate-400 hover:text-emerald-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100 shrink-0"
+          className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
           title="Lihat Detail"
         >
           <ChevronRight size={18} />
@@ -101,75 +103,80 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
       </div>
 
       {/* Item List */}
-      <div className="my-3 flex-1 flex flex-col justify-start space-y-2 min-h-[240px]">
-        {displayItems.map((item, idx) => {
-          const rawPct = Math.round((item.points / (topScore || 1)) * 100);
-          const barPct = Math.min(100, Math.max(8, rawPct));
-          const isHovered = hoveredIndex === idx;
+      <div className="my-3 flex-1 flex flex-col justify-start space-y-1.5 min-h-[240px]">
+        {displayItems.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 italic text-xs py-8">
+            Belum ada data poin terverifikasi.
+          </div>
+        ) : (
+          displayItems.map((item, idx) => {
+            const rawPct = topScore > 0 && item.points > 0 ? Math.round((item.points / topScore) * 100) : 0;
+            const barPct = item.points > 0 ? Math.min(100, Math.max(8, rawPct)) : 0;
+            const isHovered = hoveredIndex === idx;
 
-          return (
-            <div
-              key={`${item.rank}-${item.name}`}
-              onMouseEnter={() => setHoveredIndex(idx)}
-              onMouseLeave={() => setHoveredIndex(null)}
-              className={`flex items-center gap-1.5 text-xs group px-2 py-1.5 rounded-xl transition-all duration-150 border min-w-0 ${
-                isHovered
-                  ? "bg-slate-50 border-slate-300/80 shadow-xs scale-[1.01]"
-                  : "bg-white border-transparent"
-              }`}
-            >
-              {/* Rank Icon / Medal */}
-              {getRankBadge(item.rank)}
+            return (
+              <Link
+                key={`${item.rank}-${item.name}`}
+                to={`${linkTo}&search=${encodeURIComponent(item.name)}`}
+                onMouseEnter={() => setHoveredIndex(idx)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                className={`flex items-center gap-2 text-xs group px-2.5 py-2 rounded-xl transition-all duration-150 border min-w-0 ${
+                  isHovered
+                    ? "bg-slate-50 dark:bg-slate-800/80 border-slate-300/80 dark:border-slate-700 shadow-xs scale-[1.01]"
+                    : "bg-white dark:bg-slate-900 border-transparent hover:bg-slate-50/60 dark:hover:bg-slate-800/40"
+                }`}
+                title={`Lihat detail peringkat untuk ${item.name}`}
+              >
+                {/* Rank Icon / Medal */}
+                {getRankBadge(item.rank)}
 
-              {/* Name & Subtitle */}
-              <div className="flex-1 min-w-0 pr-1">
-                <p className="font-extrabold text-slate-800 text-[12px] sm:text-[13px] leading-snug group-hover:text-emerald-700 truncate" title={item.name}>
-                  {item.name}
-                </p>
-                {item.subtitle && (
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 leading-tight font-medium truncate">
-                    {item.subtitle}
+                {/* Name & Subtitle - Generous room to avoid text clipping */}
+                <div className="flex-1 min-w-0 pr-1">
+                  <p className="font-extrabold text-slate-800 dark:text-slate-100 text-[12px] sm:text-[12.5px] leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate" title={item.name}>
+                    {item.name}
                   </p>
-                )}
-              </div>
-
-              {/* Interactive Progress Bar & Percentage Ratio */}
-              <div className="w-16 sm:w-24 shrink-0 flex flex-col items-end gap-0.5">
-                <div className="flex justify-between items-center w-full text-[9px] text-slate-500 font-bold">
-                  <span className="text-slate-400 font-normal hidden sm:inline">Rasio</span>
-                  <span className="text-slate-700">{rawPct}%</span>
+                  {item.subtitle && (
+                    <p className="text-[10px] sm:text-[10.5px] text-slate-400 dark:text-slate-400 leading-tight font-medium truncate mt-0.5" title={item.subtitle}>
+                      {item.subtitle}
+                    </p>
+                  )}
                 </div>
-                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden relative border border-slate-200/50">
-                  <div
-                    className="h-full rounded-full transition-all duration-500 opacity-90 group-hover:opacity-100 shadow-xs"
-                    style={{ width: `${barPct}%`, backgroundColor: barColor }}
-                  />
-                </div>
-              </div>
 
-              {/* Points */}
-              <div className="w-14 sm:w-16 text-right shrink-0">
-                <span className="font-extrabold text-slate-800 text-[11px] sm:text-[13px] font-mono block leading-none truncate">
-                  {item.points.toLocaleString("id-ID")}
-                </span>
-                <span className="text-[8px] sm:text-[9px] text-slate-400 font-bold block mt-0.5 uppercase">
-                  {unitLabel}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+                {/* Compact Point & Ratio Display */}
+                <div className="shrink-0 flex flex-col items-end text-right pl-1">
+                  <div className="flex items-baseline gap-1">
+                    <span className={`font-black text-[12px] sm:text-[12.5px] font-mono leading-none ${item.points < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"}`}>
+                      {item.points.toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-400 uppercase">
+                      {unitLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <div className="w-12 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/60 dark:border-slate-700">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${barPct}%`, backgroundColor: barColor }}
+                      />
+                    </div>
+                    <span className="text-[8.5px] sm:text-[9px] font-bold text-slate-400 w-5 text-right">{rawPct}%</span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })
+        )}
       </div>
 
       {/* Card Footer */}
-      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] shrink-0">
+      <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] shrink-0">
         <span className="text-slate-400 font-medium flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           Akumulasi Terverifikasi Real-time
         </span>
         <Link
           to={linkTo}
-          className="font-bold text-emerald-600 hover:text-emerald-700 transition-colors flex items-center gap-0.5"
+          className="font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center gap-0.5"
         >
           Detail Lengkap <ChevronRight size={14} />
         </Link>
@@ -180,106 +187,14 @@ const ColumnCard: React.FC<ColumnCardProps> = ({
 
 
 export const LeaderboardWidget: React.FC = () => {
-  // Default Full Mock Datasets (matching screenshot)
-  const defaultWarga: LeaderboardItem[] = [
-    { rank: 1, name: "Dewi Lestari", subtitle: "RW 06, Kel. Sekeloa", points: 12350 },
-    { rank: 2, name: "Budi Hartono", subtitle: "RW 02, Kel. Dago", points: 9870 },
-    { rank: 3, name: "Siti Aminah", subtitle: "RW 01, Kel. Sekeloa", points: 8420 },
-    { rank: 4, name: "Rizky Maulana", subtitle: "RW 03, Kel. Cibeunying", points: 7560 },
-    { rank: 5, name: "Ahmad Fauzi", subtitle: "RW 02, Kel. Sekeloa", points: 7120 },
-    { rank: 6, name: "Tuti Handayani", subtitle: "RW 04, Kel. Cibeunying", points: 6780 },
-    { rank: 7, name: "Rina Marlina", subtitle: "RW 01, Kel. Dago", points: 6450 },
-    { rank: 8, name: "Hendra Wijaya", subtitle: "RW 05, Kel. Cipedes", points: 6230 },
-    { rank: 9, name: "Yuniar", subtitle: "RW 08, Kel. Sekeloa", points: 5890 },
-    { rank: 10, name: "Agus Setiawan", subtitle: "RW 03, Kel. Cibeunying", points: 5430 },
-  ];
-
-  const defaultPetugas: LeaderboardItem[] = [
-    { rank: 1, name: "Dodi Kurniawan", subtitle: "Kel. Sekeloa", points: 8620 },
-    { rank: 2, name: "Agus Salim", subtitle: "Kel. Dago", points: 7540 },
-    { rank: 3, name: "Iwan Setiawan", subtitle: "Kel. Cibeunying", points: 6980 },
-    { rank: 4, name: "Asep Saepudin", subtitle: "Kel. Cipedes", points: 6450 },
-    { rank: 5, name: "Tedi Hermawan", subtitle: "Kel. Cibeunying", points: 6120 },
-    { rank: 6, name: "Ujang Rehman", subtitle: "Kel. Dago", points: 5780 },
-    { rank: 7, name: "Rahmat Hidayat", subtitle: "Kel. Sekeloa", points: 5430 },
-    { rank: 8, name: "Deni Surya", subtitle: "Kel. Cipedes", points: 5190 },
-    { rank: 9, name: "Yayan Sopiyan", subtitle: "Kel. Dago", points: 4860 },
-    { rank: 10, name: "Cecep Maulana", subtitle: "Kel. Sekeloa", points: 4520 },
-  ];
-
-  const defaultRw: LeaderboardItem[] = [
-    { rank: 1, name: "RW 01", subtitle: "Kel. Sekeloa", points: 24560 },
-    { rank: 2, name: "RW 02", subtitle: "Kel. Dago", points: 21870 },
-    { rank: 3, name: "RW 06", subtitle: "Kel. Sekeloa", points: 19420 },
-    { rank: 4, name: "RW 03", subtitle: "Kel. Cibeunying", points: 18230 },
-    { rank: 5, name: "RW 05", subtitle: "Kel. Cibeunying", points: 16870 },
-    { rank: 6, name: "RW 04", subtitle: "Kel. Cipedes", points: 15430 },
-    { rank: 7, name: "RW 07", subtitle: "Kel. Cipedes", points: 13980 },
-    { rank: 8, name: "RW 08", subtitle: "Kel. Dago", points: 12570 },
-    { rank: 9, name: "RW 09", subtitle: "Kel. Cibeunying", points: 10620 },
-    { rank: 10, name: "RW 10", subtitle: "Kel. Cibeunying", points: 9340 },
-  ];
-
-  const defaultKelurahan: LeaderboardItem[] = [
-    { rank: 1, name: "Kelurahan Sekeloa", points: 56230 },
-    { rank: 2, name: "Kelurahan Dago", points: 49700 },
-    { rank: 3, name: "Kelurahan Cibeunying", points: 45120 },
-    { rank: 4, name: "Kelurahan Cipedes", points: 37800 },
-    { rank: 5, name: "Kelurahan Lebakgede", points: 29780 },
-    { rank: 6, name: "Kelurahan Sukajadi", points: 28680 },
-    { rank: 7, name: "Kelurahan Pasirkaliki", points: 26480 },
-    { rank: 8, name: "Kelurahan Tamansari", points: 23160 },
-    { rank: 9, name: "Kelurahan Sukapura", points: 20340 },
-    { rank: 10, name: "Kelurahan Pasirwangi", points: 18540 },
-  ];
-
-  const defaultMahasiswa: LeaderboardItem[] = [
-    { rank: 1, name: "Andi Firmansyah", subtitle: "RW 01 / RT 02 (Kel. Sekeloa)", points: 7820 },
-    { rank: 2, name: "Bella Saphira", subtitle: "RW 01 / RT 01 (Kel. Dago)", points: 7120 },
-    { rank: 3, name: "Ciko Jeriko", subtitle: "RW 02 / RT 01 (Kel. Sekeloa)", points: 6880 },
-    { rank: 4, name: "Dinda Aprilia", subtitle: "RW 03 / RT 02 (Kel. Cibeunying)", points: 6230 },
-    { rank: 5, name: "Fajar Ramadhan", subtitle: "RW 04 / RT 01 (Kel. Cibeunying)", points: 5940 },
-    { rank: 6, name: "Gina Nuraini", subtitle: "RW 05 / RT 02 (Kel. Cipedes)", points: 5780 },
-    { rank: 7, name: "Muhammad Rayhan", subtitle: "RW 06 / RT 01 (Kel. Cipedes)", points: 5600 },
-    { rank: 8, name: "Nabila Zahran", subtitle: "RW 07 / RT 01 (Kel. Dago)", points: 5210 },
-    { rank: 9, name: "Ricki Ardiansyah", subtitle: "RW 08 / RT 01 (Kel. Dago)", points: 4980 },
-    { rank: 10, name: "Putri Melati", subtitle: "RW 09 / RT 02 (Kel. Sekeloa)", points: 4750 },
-  ];
-
-  const defaultKelompok: LeaderboardItem[] = [
-    { rank: 1, name: "Kelompok A", subtitle: "Kel. Sekeloa", points: 29680 },
-    { rank: 2, name: "Kelompok B", subtitle: "Kel. Dago", points: 26430 },
-    { rank: 3, name: "Kelompok C", subtitle: "Kel. Cibeunying", points: 24150 },
-    { rank: 4, name: "Kelompok D", subtitle: "Kel. Cipedes", points: 21760 },
-    { rank: 5, name: "Kelompok E", subtitle: "Kel. Dago", points: 20340 },
-    { rank: 6, name: "Kelompok F", subtitle: "Kel. Cibeunying", points: 19120 },
-    { rank: 7, name: "Kelompok G", subtitle: "Kel. Sekeloa", points: 17350 },
-    { rank: 8, name: "Kelompok H", subtitle: "Kel. Cipedes", points: 15820 },
-    { rank: 9, name: "Kelompok I", subtitle: "Kel. Dago", points: 14200 },
-    { rank: 10, name: "Kelompok J", subtitle: "Kel. Sekeloa", points: 12870 },
-  ];
-
-  const defaultDpl: LeaderboardItem[] = [
-    { rank: 1, name: "Dr. Ir. Rudi Hermawan, M.T.", points: 9420 },
-    { rank: 2, name: "Dr. Siti Rahmawati, M.Si.", points: 8730 },
-    { rank: 3, name: "Prof. Dr. Andi Setiawan, M.Sc.", points: 7980 },
-    { rank: 4, name: "Dr. Nunik Kurniasih, S.T., M.T.", points: 7120 },
-    { rank: 5, name: "Dr. Dodi Supriadi, M.Pd.", points: 6540 },
-    { rank: 6, name: "Dr. Yulia Puspitasari, M.Kom.", points: 5980 },
-    { rank: 7, name: "Dr. Asep Hidayat, S.E., M.M.", points: 5820 },
-    { rank: 8, name: "Dr. Bambang Irawan, M.Sc.", points: 5230 },
-    { rank: 9, name: "Dr. Rina Marlina, S.T., M.T.", points: 4890 },
-    { rank: 10, name: "Dr. Hendra Wijaya, M.T.", points: 4520 },
-  ];
-
-  // Dynamic API state overlay
-  const [wargaList, setWargaList] = useState<LeaderboardItem[]>(defaultWarga);
-  const [petugasList, setPetugasList] = useState<LeaderboardItem[]>(defaultPetugas);
-  const [rwList, setRwList] = useState<LeaderboardItem[]>(defaultRw);
-  const [kelurahanList, setKelurahanList] = useState<LeaderboardItem[]>(defaultKelurahan);
-  const [mahasiswaList, setMahasiswaList] = useState<LeaderboardItem[]>(defaultMahasiswa);
-  const [kelompokList, setKelompokList] = useState<LeaderboardItem[]>(defaultKelompok);
-  const [dplList, setDplList] = useState<LeaderboardItem[]>(defaultDpl);
+  // Real DB state (starts empty, filled from API)
+  const [wargaList, setWargaList] = useState<LeaderboardItem[]>([]);
+  const [petugasList, setPetugasList] = useState<LeaderboardItem[]>([]);
+  const [rwList, setRwList] = useState<LeaderboardItem[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<LeaderboardItem[]>([]);
+  const [mahasiswaList, setMahasiswaList] = useState<LeaderboardItem[]>([]);
+  const [kelompokList, setKelompokList] = useState<LeaderboardItem[]>([]);
+  const [dplList, setDplList] = useState<LeaderboardItem[]>([]);
 
   useEffect(() => {
     fetchLiveLeaderboards();
@@ -290,39 +205,51 @@ export const LeaderboardWidget: React.FC = () => {
       const res = await api.get("/gamification/leaderboard");
       if (res.data?.success && res.data.data) {
         const d = res.data.data;
-        if (d.citizens && d.citizens.length > 0) {
+        if (d.citizens) {
           const apiWarga = d.citizens.map((c: any, i: number) => ({
             rank: i + 1,
             name: c.name,
-            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : (defaultWarga[i]?.subtitle || "RW 06, Kel. Sekeloa"),
-            points: c.totalPoints > 0 ? c.totalPoints : (defaultWarga[i]?.points || Math.max(1000, 12350 - i * 700)),
+            subtitle: c.wilayah && c.wilayah !== "N/A" ? c.wilayah : "Wilayah Binaan",
+            points: Number(c.totalPoints || 0),
           }));
           setWargaList(apiWarga);
         }
-        if (d.pengangkut && d.pengangkut.length > 0) {
+        if (d.pengangkut) {
           const apiPetugas = d.pengangkut.map((p: any, i: number) => ({
             rank: i + 1,
             name: p.name,
-            subtitle: p.wilayah || "Kel. Sekeloa",
-            points: p.totalPoints > 0 ? p.totalPoints : (defaultPetugas[i]?.points || Math.max(800, 8620 - i * 400)),
+            subtitle: p.wilayah || "Wilayah Operasional",
+            points: Number(p.totalPoints || 0),
           }));
           setPetugasList(apiPetugas);
         }
-        if (d.rtRw && d.rtRw.length > 0) {
-          const apiRw = d.rtRw.map((r: any, i: number) => ({
-            rank: i + 1,
-            name: r.rtRwName || `RW 0${i + 1}`,
-            subtitle: `Kel. ${r.kelurahanName || "Sekeloa"}`,
-            points: r.totalPoints > 0 ? r.totalPoints : (defaultRw[i]?.points || Math.max(2000, 24560 - i * 1500)),
-          }));
+        const rawRw = d.rw || d.rtRw;
+        if (rawRw && Array.isArray(rawRw)) {
+          const apiRw = rawRw.map((r: any, i: number) => {
+            const rawName = r.rtRwName || r.name || `${r.rwId || i + 1}`;
+            const cleanRw = rawName.toLowerCase().startsWith("rw") ? rawName : `RW ${rawName}`;
+            const rawKel = r.kelurahanName || "Wilayah Kerja";
+            const cleanKel = rawKel.toLowerCase().startsWith("kel") ? rawKel : `Kel. ${rawKel}`;
+            return {
+              rank: i + 1,
+              name: cleanRw,
+              subtitle: cleanKel,
+              points: Number(r.totalPoints || 0),
+            };
+          });
           setRwList(apiRw);
         }
-        if (d.regions && d.regions.length > 0) {
-          const apiKel = d.regions.map((k: any, i: number) => ({
-            rank: i + 1,
-            name: `Kelurahan ${k.kelurahanName}`,
-            points: k.totalPoints > 0 ? k.totalPoints : (defaultKelurahan[i]?.points || Math.max(5000, 56230 - i * 4000)),
-          }));
+        if (d.regions) {
+          const apiKel = d.regions.map((k: any, i: number) => {
+            const rawKel = k.kelurahanName || `${i + 1}`;
+            const cleanKel = rawKel.toLowerCase().startsWith("kelurahan") ? rawKel : `Kelurahan ${rawKel}`;
+            return {
+              rank: i + 1,
+              name: cleanKel,
+              subtitle: k.kecamatanName || "Wilayah Operasional",
+              points: Number(k.totalPoints || 0),
+            };
+          });
           setKelurahanList(apiKel);
         }
       }
@@ -330,30 +257,45 @@ export const LeaderboardWidget: React.FC = () => {
       const resKkn = await api.get("/gamification/leaderboard-kkn");
       if (resKkn.data?.success && resKkn.data.data) {
         const d = resKkn.data.data;
-        if (d.students && d.students.length > 0) {
-          const apiMhs = d.students.map((s: any, i: number) => ({
-            rank: i + 1,
-            name: s.name,
-            subtitle: s.kelompok && s.kelompok !== "Tanpa Kelompok" ? `Kelompok ${s.kelompok}` : (defaultMahasiswa[i]?.subtitle || "RW 01 / RT 02 (Kel. Sekeloa)"),
-            points: s.finalScore > 0 ? s.finalScore : (defaultMahasiswa[i]?.points || Math.max(500, 7820 - i * 350)),
-          }));
+        if (d.students) {
+          const apiMhs = d.students.map((s: any, i: number) => {
+            const rawK = s.kelompok;
+            const cleanK =
+              rawK && rawK !== "Tanpa Kelompok" && rawK !== "N/A"
+                ? rawK.trim().toLowerCase().startsWith("kelompok")
+                  ? rawK.trim()
+                  : `Kelompok ${rawK.trim()}`
+                : "Mahasiswa KKN";
+            return {
+              rank: i + 1,
+              name: s.name,
+              subtitle: cleanK,
+              points: Number(s.finalScore || 0),
+            };
+          });
           setMahasiswaList(apiMhs);
         }
-        if (d.groups && d.groups.length > 0) {
-          const apiGrp = d.groups.map((g: any, i: number) => ({
-            rank: i + 1,
-            name: g.name,
-            subtitle: "Kel. Sekeloa",
-            points: g.avgScore > 0 ? g.avgScore : (defaultKelompok[i]?.points || Math.max(3000, 29680 - i * 1800)),
-          }));
+        if (d.groups) {
+          const apiGrp = d.groups.map((g: any, i: number) => {
+            const rawG = g.name || `Kelompok ${i + 1}`;
+            const cleanG = rawG.trim().toLowerCase().startsWith("kelompok")
+              ? rawG.trim()
+              : `Kelompok ${rawG.trim()}`;
+            return {
+              rank: i + 1,
+              name: cleanG,
+              subtitle: g.dplName || "Tim Dampingan KKN",
+              points: Number(g.avgScore || 0),
+            };
+          });
           setKelompokList(apiGrp);
         }
-        if (d.dpl && d.dpl.length > 0) {
+        if (d.dpl) {
           const apiDpl = d.dpl.map((dp: any, i: number) => ({
             rank: i + 1,
             name: dp.name,
             subtitle: `DPL (${dp.totalGroups || 0} Kelompok)`,
-            points: dp.points > 0 ? dp.points : (defaultDpl[i]?.points || Math.max(1000, 9420 - i * 500)),
+            points: Number(dp.points || 0),
           }));
           setDplList(apiDpl);
         }
@@ -363,38 +305,103 @@ export const LeaderboardWidget: React.FC = () => {
     }
   };
 
+  const { user } = useAuthStore();
+  const isLurah = (user?.role || user?.peran || "").toUpperCase() === "LURAH";
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "");
+
+  // Official 6 Kelurahan of Kecamatan Coblong
+  const COBLONG_6_KELURAHAN = [
+    "Cipaganti",
+    "Dago",
+    "Lebak Gede",
+    "Lebak Siliwangi",
+    "Sadang Serang",
+    "Sekeloa",
+  ];
+
+  // RW items for Lurah's kelurahan
+  const lurahRwItems = useMemo(() => {
+    if (!isLurah || !userKelurahan) return [];
+    return rwList.filter((r) =>
+      (r.subtitle || "").toLowerCase().includes(userKelurahan.toLowerCase()) ||
+      (r.name || "").toLowerCase().includes(userKelurahan.toLowerCase())
+    );
+  }, [isLurah, userKelurahan, rwList]);
+
+  // Citizens filtered for Lurah
+  const displayedWargaList = useMemo(() => {
+    if (isLurah && userKelurahan) {
+      const filtered = wargaList.filter((w) =>
+        (w.subtitle || "").toLowerCase().includes(userKelurahan.toLowerCase())
+      );
+      return filtered.length > 0 ? filtered.map((w, i) => ({ ...w, rank: i + 1 })) : wargaList;
+    }
+    return wargaList;
+  }, [isLurah, userKelurahan, wargaList]);
+
+  // Map real database kelurahan data or RW data for charts
+  const activeChartData = useMemo(() => {
+    if (isLurah && lurahRwItems.length > 0) {
+      return lurahRwItems.slice(0, 10).map((r) => ({
+        name: r.name,
+        points: r.points || 0,
+      }));
+    }
+    return COBLONG_6_KELURAHAN.map((kelName) => {
+      const match = kelurahanList.find((k) =>
+        k.name.toLowerCase().includes(kelName.toLowerCase())
+      );
+      return {
+        name: kelName,
+        points: match ? Number(match.points || 0) : 0,
+      };
+    });
+  }, [isLurah, lurahRwItems, kelurahanList]);
+
+  const maxVolumeKg = useMemo(() => {
+    const vals = activeChartData.map((k) => k.points);
+    const max = Math.max(...vals, 0);
+    return max > 0 ? max : 10;
+  }, [activeChartData]);
+
+  const chartColCount = Math.max(1, activeChartData.length);
+
   return (
     <div className="space-y-6 w-full">
 
       {/* ----------------- TOP SECTION: 2 BAR CHARTS ----------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
-        {/* Chart 1: Kepatuhan Pemilahan per Kelurahan */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+        {/* Chart 1: Kepatuhan Pemilahan */}
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
                 <span className="material-symbols-outlined text-xl">bar_chart</span>
               </div>
               <div>
-                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                  Grafik Kepatuhan Pemilahan per Kelurahan
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
+                  {isLurah
+                    ? `Grafik Kepatuhan Pemilahan per Rukun Warga (Kel. ${userKelurahan || "Cipaganti"})`
+                    : "Grafik Kepatuhan Pemilahan per Kelurahan"}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Persentase kepatuhan dalam pemilahan sampah
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {isLurah
+                    ? "Performa kepatuhan pemilahan tiap RW di wilayah kelurahan"
+                    : "Persentase kepatuhan dalam pemilahan sampah real-time"}
                 </p>
               </div>
             </div>
 
-            <div className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center gap-1">
-              <span className="text-[10px] text-emerald-600 font-bold uppercase">Rata-rata</span>
-              <span className="text-emerald-700">81%</span>
+            <div className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700/30 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">Status</span>
+              <span className="text-emerald-700 dark:text-emerald-300">Terverifikasi Real</span>
             </div>
           </div>
 
           {/* Bar Chart Area */}
           <div className="pt-4 flex gap-2 items-end">
-            <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-40 text-right select-none shrink-0 pb-5">
+            <div className="flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-1.5 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none shrink-0 pb-5">
               <span>100%</span>
               <span>80%</span>
               <span>60%</span>
@@ -403,101 +410,111 @@ export const LeaderboardWidget: React.FC = () => {
               <span>0%</span>
             </div>
 
-            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {[
-                { name: "Kel. Sekeloa", val: 92 },
-                { name: "Kel. Dago", val: 88 },
-                { name: "Kel. Cibeunying", val: 84 },
-                { name: "Kel. Cipedes", val: 79 },
-                { name: "Kel. Lebakgede", val: 74 },
-                { name: "Kel. Tamansari", val: 69 },
-              ].map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                  <span className="text-[10px] font-black text-slate-800 group-hover:text-emerald-600 transition">
-                    {d.val}%
-                  </span>
-                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                    <div
-                      className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                      style={{ height: `${d.val}%` }}
-                    ></div>
+            <div
+              className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
+              style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+            >
+              {activeChartData.map((d, idx) => {
+                const valPct = d.points > 0 ? Math.min(100, Math.round(d.points)) : 0;
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition truncate w-full text-center">
+                      {valPct}%
+                    </span>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                      <div
+                        className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                        style={{ height: `${valPct}%` }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {["Kel. Sekeloa", "Kel. Dago", "Kel. Cibeunying", "Kel. Cipedes", "Kel. Lebakgede", "Kel. Tamansari"].map((name, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {name}
+          <div
+            className="grid gap-2 pl-9 text-center"
+            style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+          >
+            {activeChartData.map((item, idx) => (
+              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate" title={item.name}>
+                {item.name}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Chart 2: Volume Sampah per Kelurahan */}
-        <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+        {/* Chart 2: Volume Sampah */}
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-xs">
                 <span className="material-symbols-outlined text-xl">delete</span>
               </div>
               <div>
-                <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                  Grafik Volume Sampah per Kelurahan
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 leading-snug">
+                  {isLurah
+                    ? `Grafik Volume Sampah per Rukun Warga (Kel. ${userKelurahan || "Cipaganti"})`
+                    : "Grafik Volume Sampah per Kelurahan"}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Total volume sampah terkumpul (ton)
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {isLurah
+                    ? "Total volume sampah terkumpul per RW binaan (Kg)"
+                    : "Total volume sampah terkumpul real (Kg)"}
                 </p>
               </div>
             </div>
 
-            <div className="px-3 py-1 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs font-black flex items-center gap-1">
-              <span className="text-[10px] text-sky-600 font-bold uppercase">Total</span>
-              <span className="text-sky-700">15.6 ton</span>
+            <div className="px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-700/30 text-sky-800 dark:text-sky-300 text-xs font-black flex items-center gap-1">
+              <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase">Total</span>
+              <span className="text-sky-700 dark:text-sky-300">
+                {activeChartData.reduce((acc, k) => acc + (k.points || 0), 0).toFixed(2)} Kg
+              </span>
             </div>
           </div>
 
           {/* Bar Chart Area */}
           <div className="pt-4 flex gap-2 items-end">
-            <div className="flex flex-col justify-between text-[9px] text-slate-400 font-extrabold pr-1.5 border-r border-slate-200 h-40 text-right select-none shrink-0 pb-5">
-              <span>5 ton</span>
-              <span>4</span>
-              <span>3</span>
-              <span>2</span>
-              <span>1</span>
+            <div className="flex flex-col justify-between text-[9px] text-slate-400 dark:text-slate-500 font-extrabold pr-1.5 border-r border-slate-200 dark:border-slate-800 h-40 text-right select-none shrink-0 pb-5">
+              <span>{maxVolumeKg.toFixed(0)} Kg</span>
+              <span>{(maxVolumeKg * 0.8).toFixed(0)}</span>
+              <span>{(maxVolumeKg * 0.6).toFixed(0)}</span>
+              <span>{(maxVolumeKg * 0.4).toFixed(0)}</span>
+              <span>{(maxVolumeKg * 0.2).toFixed(0)}</span>
               <span>0</span>
             </div>
 
-            <div className="flex-1 grid grid-cols-6 gap-2 items-end h-40 border-b border-slate-200 pb-1 relative">
-              {[
-                { name: "Kel. Sekeloa", val: 3.4 },
-                { name: "Kel. Dago", val: 3.1 },
-                { name: "Kel. Cibeunying", val: 2.8 },
-                { name: "Kel. Cipedes", val: 2.4 },
-                { name: "Kel. Lebakgede", val: 2.1 },
-                { name: "Kel. Tamansari", val: 1.8 },
-              ].map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
-                  <span className="text-[10px] font-black text-slate-800 group-hover:text-sky-600 transition">
-                    {d.val} ton
-                  </span>
-                  <div className="w-full bg-slate-100 rounded-t-lg overflow-hidden h-[80%] flex items-end">
-                    <div
-                      className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
-                      style={{ height: `${(d.val / 5) * 100}%` }}
-                    ></div>
+            <div
+              className="flex-1 grid gap-2 items-end h-40 border-b border-slate-200 dark:border-slate-800 pb-1 relative"
+              style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+            >
+              {activeChartData.map((d, idx) => {
+                const heightPct = d.points > 0 ? Math.min(100, Math.round((d.points / maxVolumeKg) * 100)) : 0;
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1 group h-full justify-end">
+                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition truncate w-full text-center">
+                      {(d.points || 0).toFixed(2)} Kg
+                    </span>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg overflow-hidden h-[80%] flex items-end">
+                      <div
+                        className="w-full bg-gradient-to-t from-sky-700 to-sky-500 rounded-t-lg transition-all duration-500 shadow-2xs"
+                        style={{ height: `${heightPct}%` }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-2 pl-9 text-center">
-            {["Kel. Sekeloa", "Kel. Dago", "Kel. Cibeunying", "Kel. Cipedes", "Kel. Lebakgede", "Kel. Tamansari"].map((name, idx) => (
-              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 truncate">
-                {name}
+          <div
+            className="grid gap-2 pl-9 text-center"
+            style={{ gridTemplateColumns: `repeat(${chartColCount}, minmax(0, 1fr))` }}
+          >
+            {activeChartData.map((item, idx) => (
+              <span key={idx} className="text-[9px] sm:text-[10px] font-extrabold text-slate-600 dark:text-slate-400 truncate" title={item.name}>
+                {item.name}
               </span>
             ))}
           </div>
@@ -505,17 +522,19 @@ export const LeaderboardWidget: React.FC = () => {
 
       </div>
 
-      {/* GRUP 1 — Top 10 Warga & Wilayah */}
+      {/* Top 10 Warga & Wilayah */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-xl bg-emerald-600 text-white shadow-xs">
             <Star size={16} className="fill-current" />
           </div>
           <div>
-            <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Grup 1 — Top 10 Warga &amp; Wilayah
+            <h3 className="font-extrabold text-[15px] text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
+              {isLurah
+                ? `Top 10 Warga & Wilayah (Kel. ${userKelurahan || "Cipaganti"})`
+                : "Top 10 Warga & Wilayah"}
             </h3>
-            <p className="text-[11px] text-slate-500 leading-none mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-none mt-0.5">
               Ranking dan performa warga serta wilayah berdasarkan perolehan poin.
             </p>
           </div>
@@ -524,24 +543,24 @@ export const LeaderboardWidget: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 items-stretch min-w-0">
           {/* 1. Top 10 Warga */}
           <ColumnCard
-            title="Top 10 Warga"
+            title={isLurah ? `Top Warga Kel. ${userKelurahan || "Cipaganti"}` : "Top 10 Warga"}
             icon={<User size={14} />}
             iconBg="bg-emerald-600"
             barColor="#10b981"
-            items={wargaList}
-            maxPoints={wargaList[0]?.points || 12350}
-            linkTo="/leaderboard?system=system1&tab=citizens"
+            items={displayedWargaList}
+            maxPoints={displayedWargaList[0]?.points || 0}
+            linkTo="/peringkat?system=system1&tab=citizens"
           />
 
           {/* 2. Top 10 Petugas Residu */}
           <ColumnCard
-            title="Top 10 Petugas Residu"
+            title="Top 10 Petugas Pemilah"
             icon={<Truck size={14} />}
             iconBg="bg-rose-500"
             barColor="#ef4444"
             items={petugasList}
-            maxPoints={petugasList[0]?.points || 8620}
-            linkTo="/leaderboard?system=system1&tab=pengangkut"
+            maxPoints={petugasList[0]?.points || 0}
+            linkTo="/peringkat?system=system1&tab=pengangkut"
           />
 
           {/* 3. Top 10 RW */}
@@ -551,8 +570,8 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={rwList}
-            maxPoints={rwList[0]?.points || 24560}
-            linkTo="/leaderboard?system=system1&tab=rtrw"
+            maxPoints={rwList[0]?.points || 0}
+            linkTo="/peringkat?system=system1&tab=rtrw"
           />
 
           {/* 4. Top 10 Kelurahan */}
@@ -562,21 +581,21 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-blue-600"
             barColor="#3b82f6"
             items={kelurahanList}
-            maxPoints={kelurahanList[0]?.points || 56230}
-            linkTo="/leaderboard?system=system1&tab=kelurahan"
+            maxPoints={kelurahanList[0]?.points || 0}
+            linkTo="/peringkat?system=system1&tab=kelurahan"
           />
         </div>
       </div>
 
-      {/* GRUP 2 — Top 10 Akademik & Pendampingan */}
+      {/* Top 10 Akademik & Pendampingan */}
       <div className="space-y-3 pt-1">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-xl bg-emerald-700 text-white shadow-xs">
             <GraduationCap size={16} />
           </div>
           <div>
-            <h3 className="font-extrabold text-[15px] text-slate-800 tracking-tight leading-tight">
-              Grup 2 — Top 10 Akademik &amp; Pendampingan
+            <h3 className="font-extrabold text-[15px] text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
+              Top 10 Akademik &amp; Pendampingan
             </h3>
             <p className="text-[11px] text-slate-500 leading-none mt-0.5">
               Ranking dan performa peserta dari ekosistem pendampingan mahasiswa.
@@ -592,8 +611,8 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={mahasiswaList}
-            maxPoints={mahasiswaList[0]?.points || 7820}
-            linkTo="/leaderboard?system=system2&tab=students"
+            maxPoints={mahasiswaList[0]?.points || 0}
+            linkTo="/peringkat?system=system2&tab=students"
           />
 
           {/* 2. Top 10 Kelompok Mahasiswa */}
@@ -603,8 +622,8 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-emerald-600"
             barColor="#10b981"
             items={kelompokList}
-            maxPoints={kelompokList[0]?.points || 29680}
-            linkTo="/leaderboard?system=system2&tab=groups"
+            maxPoints={kelompokList[0]?.points || 0}
+            linkTo="/peringkat?system=system2&tab=groups"
           />
 
           {/* 3. Top 10 Dosen Pendamping Lapangan (DPL) */}
@@ -614,8 +633,8 @@ export const LeaderboardWidget: React.FC = () => {
             iconBg="bg-teal-600"
             barColor="#10b981"
             items={dplList}
-            maxPoints={dplList[0]?.points || 9420}
-            linkTo="/leaderboard?system=system2&tab=students"
+            maxPoints={dplList[0]?.points || 0}
+            linkTo="/peringkat?system=system2&tab=dpl"
           />
         </div>
       </div>

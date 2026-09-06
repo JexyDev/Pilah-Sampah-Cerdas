@@ -1,0 +1,3767 @@
+{
+  "schemaVersion": "ecc.install.v1",
+  "installedAt": "2026-08-02T06:32:57.491Z",
+  "target": {
+    "id": "antigravity-project",
+    "target": "antigravity",
+    "kind": "project",
+    "root": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent",
+    "installStatePath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/ecc-install-state.json"
+  },
+  "request": {
+    "profile": null,
+    "modules": [],
+    "includeComponents": [],
+    "excludeComponents": [],
+    "legacyLanguages": [
+      "typescript",
+      "go"
+    ],
+    "legacyMode": true
+  },
+  "resolution": {
+    "selectedModules": [
+      "rules-core",
+      "agents-core",
+      "commands-core"
+    ],
+    "skippedModules": []
+  },
+  "source": {
+    "repoVersion": "2.1.0",
+    "repoCommit": "e4e4163101f162881e628f300a9ca4e6a940bcea",
+    "manifestVersion": 1
+  },
+  "operations": [
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/angular/coding-style.md",
+      "sourceRelativePath": "rules/angular/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/angular-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/angular/hooks.md",
+      "sourceRelativePath": "rules/angular/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/angular-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/angular/patterns.md",
+      "sourceRelativePath": "rules/angular/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/angular-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/angular/security.md",
+      "sourceRelativePath": "rules/angular/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/angular-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/angular/testing.md",
+      "sourceRelativePath": "rules/angular/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/angular-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/arkts/coding-style.md",
+      "sourceRelativePath": "rules/arkts/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/arkts-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/arkts/hooks.md",
+      "sourceRelativePath": "rules/arkts/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/arkts-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/arkts/patterns.md",
+      "sourceRelativePath": "rules/arkts/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/arkts-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/arkts/security.md",
+      "sourceRelativePath": "rules/arkts/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/arkts-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/arkts/testing.md",
+      "sourceRelativePath": "rules/arkts/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/arkts-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/agents.md",
+      "sourceRelativePath": "rules/common/agents.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-agents.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/code-review.md",
+      "sourceRelativePath": "rules/common/code-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-code-review.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/coding-style.md",
+      "sourceRelativePath": "rules/common/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/development-workflow.md",
+      "sourceRelativePath": "rules/common/development-workflow.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-development-workflow.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/git-workflow.md",
+      "sourceRelativePath": "rules/common/git-workflow.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-git-workflow.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/hooks.md",
+      "sourceRelativePath": "rules/common/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/patterns.md",
+      "sourceRelativePath": "rules/common/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/performance.md",
+      "sourceRelativePath": "rules/common/performance.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-performance.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/security.md",
+      "sourceRelativePath": "rules/common/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/common/testing.md",
+      "sourceRelativePath": "rules/common/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/common-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/cpp/coding-style.md",
+      "sourceRelativePath": "rules/cpp/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/cpp-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/cpp/hooks.md",
+      "sourceRelativePath": "rules/cpp/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/cpp-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/cpp/patterns.md",
+      "sourceRelativePath": "rules/cpp/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/cpp-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/cpp/security.md",
+      "sourceRelativePath": "rules/cpp/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/cpp-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/cpp/testing.md",
+      "sourceRelativePath": "rules/cpp/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/cpp-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/csharp/coding-style.md",
+      "sourceRelativePath": "rules/csharp/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/csharp-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/csharp/hooks.md",
+      "sourceRelativePath": "rules/csharp/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/csharp-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/csharp/patterns.md",
+      "sourceRelativePath": "rules/csharp/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/csharp-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/csharp/security.md",
+      "sourceRelativePath": "rules/csharp/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/csharp-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/csharp/testing.md",
+      "sourceRelativePath": "rules/csharp/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/csharp-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/dart/coding-style.md",
+      "sourceRelativePath": "rules/dart/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/dart-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/dart/hooks.md",
+      "sourceRelativePath": "rules/dart/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/dart-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/dart/patterns.md",
+      "sourceRelativePath": "rules/dart/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/dart-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/dart/security.md",
+      "sourceRelativePath": "rules/dart/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/dart-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/dart/testing.md",
+      "sourceRelativePath": "rules/dart/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/dart-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/fsharp/coding-style.md",
+      "sourceRelativePath": "rules/fsharp/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/fsharp-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/fsharp/hooks.md",
+      "sourceRelativePath": "rules/fsharp/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/fsharp-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/fsharp/patterns.md",
+      "sourceRelativePath": "rules/fsharp/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/fsharp-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/fsharp/security.md",
+      "sourceRelativePath": "rules/fsharp/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/fsharp-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/fsharp/testing.md",
+      "sourceRelativePath": "rules/fsharp/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/fsharp-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/golang/coding-style.md",
+      "sourceRelativePath": "rules/golang/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/golang-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/golang/hooks.md",
+      "sourceRelativePath": "rules/golang/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/golang-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/golang/patterns.md",
+      "sourceRelativePath": "rules/golang/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/golang-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/golang/security.md",
+      "sourceRelativePath": "rules/golang/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/golang-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/golang/testing.md",
+      "sourceRelativePath": "rules/golang/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/golang-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/java/coding-style.md",
+      "sourceRelativePath": "rules/java/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/java-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/java/hooks.md",
+      "sourceRelativePath": "rules/java/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/java-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/java/patterns.md",
+      "sourceRelativePath": "rules/java/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/java-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/java/security.md",
+      "sourceRelativePath": "rules/java/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/java-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/java/testing.md",
+      "sourceRelativePath": "rules/java/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/java-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/kotlin/coding-style.md",
+      "sourceRelativePath": "rules/kotlin/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/kotlin-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/kotlin/hooks.md",
+      "sourceRelativePath": "rules/kotlin/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/kotlin-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/kotlin/patterns.md",
+      "sourceRelativePath": "rules/kotlin/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/kotlin-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/kotlin/security.md",
+      "sourceRelativePath": "rules/kotlin/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/kotlin-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/kotlin/testing.md",
+      "sourceRelativePath": "rules/kotlin/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/kotlin-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/nuxt/coding-style.md",
+      "sourceRelativePath": "rules/nuxt/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/nuxt-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/nuxt/hooks.md",
+      "sourceRelativePath": "rules/nuxt/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/nuxt-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/nuxt/patterns.md",
+      "sourceRelativePath": "rules/nuxt/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/nuxt-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/nuxt/security.md",
+      "sourceRelativePath": "rules/nuxt/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/nuxt-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/nuxt/testing.md",
+      "sourceRelativePath": "rules/nuxt/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/nuxt-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/perl/coding-style.md",
+      "sourceRelativePath": "rules/perl/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/perl-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/perl/hooks.md",
+      "sourceRelativePath": "rules/perl/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/perl-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/perl/patterns.md",
+      "sourceRelativePath": "rules/perl/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/perl-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/perl/security.md",
+      "sourceRelativePath": "rules/perl/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/perl-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/perl/testing.md",
+      "sourceRelativePath": "rules/perl/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/perl-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/php/coding-style.md",
+      "sourceRelativePath": "rules/php/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/php-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/php/hooks.md",
+      "sourceRelativePath": "rules/php/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/php-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/php/patterns.md",
+      "sourceRelativePath": "rules/php/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/php-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/php/security.md",
+      "sourceRelativePath": "rules/php/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/php-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/php/testing.md",
+      "sourceRelativePath": "rules/php/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/php-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/python/coding-style.md",
+      "sourceRelativePath": "rules/python/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/python-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/python/fastapi.md",
+      "sourceRelativePath": "rules/python/fastapi.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/python-fastapi.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/python/hooks.md",
+      "sourceRelativePath": "rules/python/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/python-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/python/patterns.md",
+      "sourceRelativePath": "rules/python/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/python-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/python/security.md",
+      "sourceRelativePath": "rules/python/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/python-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/python/testing.md",
+      "sourceRelativePath": "rules/python/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/python-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react/coding-style.md",
+      "sourceRelativePath": "rules/react/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react/hooks.md",
+      "sourceRelativePath": "rules/react/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react/patterns.md",
+      "sourceRelativePath": "rules/react/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react/security.md",
+      "sourceRelativePath": "rules/react/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react/testing.md",
+      "sourceRelativePath": "rules/react/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/accessibility.md",
+      "sourceRelativePath": "rules/react-native/accessibility.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-accessibility.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/coding-style.md",
+      "sourceRelativePath": "rules/react-native/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/hooks.md",
+      "sourceRelativePath": "rules/react-native/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/patterns.md",
+      "sourceRelativePath": "rules/react-native/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/performance.md",
+      "sourceRelativePath": "rules/react-native/performance.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-performance.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/production-readiness.md",
+      "sourceRelativePath": "rules/react-native/production-readiness.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-production-readiness.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/security.md",
+      "sourceRelativePath": "rules/react-native/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/react-native/testing.md",
+      "sourceRelativePath": "rules/react-native/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/react-native-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/README.md",
+      "sourceRelativePath": "rules/README.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/README.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/ruby/coding-style.md",
+      "sourceRelativePath": "rules/ruby/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/ruby-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/ruby/hooks.md",
+      "sourceRelativePath": "rules/ruby/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/ruby-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/ruby/patterns.md",
+      "sourceRelativePath": "rules/ruby/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/ruby-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/ruby/security.md",
+      "sourceRelativePath": "rules/ruby/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/ruby-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/ruby/testing.md",
+      "sourceRelativePath": "rules/ruby/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/ruby-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/rust/coding-style.md",
+      "sourceRelativePath": "rules/rust/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/rust-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/rust/hooks.md",
+      "sourceRelativePath": "rules/rust/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/rust-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/rust/patterns.md",
+      "sourceRelativePath": "rules/rust/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/rust-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/rust/security.md",
+      "sourceRelativePath": "rules/rust/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/rust-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/rust/testing.md",
+      "sourceRelativePath": "rules/rust/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/rust-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/swift/coding-style.md",
+      "sourceRelativePath": "rules/swift/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/swift-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/swift/hooks.md",
+      "sourceRelativePath": "rules/swift/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/swift-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/swift/patterns.md",
+      "sourceRelativePath": "rules/swift/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/swift-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/swift/security.md",
+      "sourceRelativePath": "rules/swift/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/swift-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/swift/testing.md",
+      "sourceRelativePath": "rules/swift/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/swift-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/typescript/coding-style.md",
+      "sourceRelativePath": "rules/typescript/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/typescript-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/typescript/hooks.md",
+      "sourceRelativePath": "rules/typescript/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/typescript-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/typescript/patterns.md",
+      "sourceRelativePath": "rules/typescript/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/typescript-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/typescript/security.md",
+      "sourceRelativePath": "rules/typescript/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/typescript-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/typescript/testing.md",
+      "sourceRelativePath": "rules/typescript/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/typescript-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/vue/coding-style.md",
+      "sourceRelativePath": "rules/vue/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/vue-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/vue/hooks.md",
+      "sourceRelativePath": "rules/vue/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/vue-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/vue/patterns.md",
+      "sourceRelativePath": "rules/vue/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/vue-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/vue/security.md",
+      "sourceRelativePath": "rules/vue/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/vue-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/vue/testing.md",
+      "sourceRelativePath": "rules/vue/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/vue-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/coding-style.md",
+      "sourceRelativePath": "rules/web/coding-style.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-coding-style.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/design-quality.md",
+      "sourceRelativePath": "rules/web/design-quality.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-design-quality.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/hooks.md",
+      "sourceRelativePath": "rules/web/hooks.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-hooks.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/patterns.md",
+      "sourceRelativePath": "rules/web/patterns.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-patterns.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/performance.md",
+      "sourceRelativePath": "rules/web/performance.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-performance.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/security.md",
+      "sourceRelativePath": "rules/web/security.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-security.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "rules-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/rules/web/testing.md",
+      "sourceRelativePath": "rules/web/testing.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/rules/web-testing.md",
+      "strategy": "flatten-copy",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/plugins/marketplace.json",
+      "sourceRelativePath": ".agents/plugins/marketplace.json",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/plugins/marketplace.json",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/agent-introspection-debugging/SKILL.md",
+      "sourceRelativePath": ".agents/skills/agent-introspection-debugging/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/agent-introspection-debugging/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/agent-introspection-debugging/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/agent-introspection-debugging/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/agent-introspection-debugging/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/agent-sort/SKILL.md",
+      "sourceRelativePath": ".agents/skills/agent-sort/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/agent-sort/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/agent-sort/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/agent-sort/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/agent-sort/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/api-design/SKILL.md",
+      "sourceRelativePath": ".agents/skills/api-design/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/api-design/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/api-design/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/api-design/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/api-design/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/article-writing/SKILL.md",
+      "sourceRelativePath": ".agents/skills/article-writing/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/article-writing/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/article-writing/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/article-writing/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/article-writing/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/backend-patterns/SKILL.md",
+      "sourceRelativePath": ".agents/skills/backend-patterns/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/backend-patterns/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/backend-patterns/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/backend-patterns/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/backend-patterns/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/benchmark-methodology/SKILL.md",
+      "sourceRelativePath": ".agents/skills/benchmark-methodology/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/benchmark-methodology/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/benchmark-methodology/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/benchmark-methodology/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/benchmark-methodology/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/SKILL.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/brand-discovery/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/10_purpose-why.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/10_purpose-why.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/10_purpose-why.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/20_positioning.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/20_positioning.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/20_positioning.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/30_audience-niche.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/30_audience-niche.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/30_audience-niche.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/40_personality-archetype.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/40_personality-archetype.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/40_personality-archetype.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/50_voice-tone.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/50_voice-tone.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/50_voice-tone.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/60_narrative-story.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/60_narrative-story.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/60_narrative-story.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/70_founder-tension.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/70_founder-tension.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/70_founder-tension.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-discovery/references/90_SYNTHESIS.md",
+      "sourceRelativePath": ".agents/skills/brand-discovery/references/90_SYNTHESIS.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-discovery/references/90_SYNTHESIS.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-voice/SKILL.md",
+      "sourceRelativePath": ".agents/skills/brand-voice/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-voice/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-voice/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/brand-voice/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-voice/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/brand-voice/references/voice-profile-schema.md",
+      "sourceRelativePath": ".agents/skills/brand-voice/references/voice-profile-schema.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/brand-voice/references/voice-profile-schema.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/bun-runtime/SKILL.md",
+      "sourceRelativePath": ".agents/skills/bun-runtime/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/bun-runtime/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/bun-runtime/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/bun-runtime/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/bun-runtime/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/coding-standards/SKILL.md",
+      "sourceRelativePath": ".agents/skills/coding-standards/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/coding-standards/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/coding-standards/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/coding-standards/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/coding-standards/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/competitive-platform-analysis/SKILL.md",
+      "sourceRelativePath": ".agents/skills/competitive-platform-analysis/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/competitive-platform-analysis/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/competitive-platform-analysis/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/competitive-platform-analysis/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/competitive-platform-analysis/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/competitive-report-structure/SKILL.md",
+      "sourceRelativePath": ".agents/skills/competitive-report-structure/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/competitive-report-structure/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/competitive-report-structure/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/competitive-report-structure/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/competitive-report-structure/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/content-engine/SKILL.md",
+      "sourceRelativePath": ".agents/skills/content-engine/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/content-engine/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/content-engine/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/content-engine/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/content-engine/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/crosspost/SKILL.md",
+      "sourceRelativePath": ".agents/skills/crosspost/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/crosspost/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/crosspost/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/crosspost/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/crosspost/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/deep-research/SKILL.md",
+      "sourceRelativePath": ".agents/skills/deep-research/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/deep-research/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/deep-research/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/deep-research/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/deep-research/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/dmux-workflows/SKILL.md",
+      "sourceRelativePath": ".agents/skills/dmux-workflows/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/dmux-workflows/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/dmux-workflows/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/dmux-workflows/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/dmux-workflows/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/documentation-lookup/SKILL.md",
+      "sourceRelativePath": ".agents/skills/documentation-lookup/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/documentation-lookup/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/documentation-lookup/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/documentation-lookup/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/documentation-lookup/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/e2e-testing/SKILL.md",
+      "sourceRelativePath": ".agents/skills/e2e-testing/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/e2e-testing/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/e2e-testing/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/e2e-testing/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/e2e-testing/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/eval-harness/SKILL.md",
+      "sourceRelativePath": ".agents/skills/eval-harness/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/eval-harness/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/eval-harness/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/eval-harness/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/eval-harness/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/everything-claude-code/SKILL.md",
+      "sourceRelativePath": ".agents/skills/everything-claude-code/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/everything-claude-code/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/everything-claude-code/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/everything-claude-code/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/everything-claude-code/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/exa-search/SKILL.md",
+      "sourceRelativePath": ".agents/skills/exa-search/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/exa-search/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/exa-search/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/exa-search/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/exa-search/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/fal-ai-media/SKILL.md",
+      "sourceRelativePath": ".agents/skills/fal-ai-media/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/fal-ai-media/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/fal-ai-media/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/fal-ai-media/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/fal-ai-media/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/frontend-patterns/SKILL.md",
+      "sourceRelativePath": ".agents/skills/frontend-patterns/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/frontend-patterns/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/frontend-patterns/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/frontend-patterns/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/frontend-patterns/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/frontend-slides/SKILL.md",
+      "sourceRelativePath": ".agents/skills/frontend-slides/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/frontend-slides/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/frontend-slides/STYLE_PRESETS.md",
+      "sourceRelativePath": ".agents/skills/frontend-slides/STYLE_PRESETS.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/frontend-slides/STYLE_PRESETS.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/frontend-slides/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/frontend-slides/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/frontend-slides/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/investor-materials/SKILL.md",
+      "sourceRelativePath": ".agents/skills/investor-materials/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/investor-materials/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/investor-materials/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/investor-materials/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/investor-materials/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/investor-outreach/SKILL.md",
+      "sourceRelativePath": ".agents/skills/investor-outreach/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/investor-outreach/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/investor-outreach/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/investor-outreach/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/investor-outreach/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/market-research/SKILL.md",
+      "sourceRelativePath": ".agents/skills/market-research/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/market-research/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/market-research/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/market-research/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/market-research/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/mcp-server-patterns/SKILL.md",
+      "sourceRelativePath": ".agents/skills/mcp-server-patterns/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/mcp-server-patterns/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/mcp-server-patterns/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/mcp-server-patterns/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/mcp-server-patterns/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/mle-workflow/SKILL.md",
+      "sourceRelativePath": ".agents/skills/mle-workflow/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/mle-workflow/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/mle-workflow/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/mle-workflow/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/mle-workflow/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/nextjs-turbopack/SKILL.md",
+      "sourceRelativePath": ".agents/skills/nextjs-turbopack/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/nextjs-turbopack/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/nextjs-turbopack/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/nextjs-turbopack/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/nextjs-turbopack/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/plan-canvas/SKILL.md",
+      "sourceRelativePath": ".agents/skills/plan-canvas/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/plan-canvas/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/plan-canvas/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/plan-canvas/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/plan-canvas/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/product-capability/SKILL.md",
+      "sourceRelativePath": ".agents/skills/product-capability/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/product-capability/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/product-capability/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/product-capability/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/product-capability/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/security-review/SKILL.md",
+      "sourceRelativePath": ".agents/skills/security-review/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/security-review/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/security-review/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/security-review/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/security-review/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/strategic-compact/SKILL.md",
+      "sourceRelativePath": ".agents/skills/strategic-compact/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/strategic-compact/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/strategic-compact/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/strategic-compact/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/strategic-compact/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/tdd-workflow/SKILL.md",
+      "sourceRelativePath": ".agents/skills/tdd-workflow/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/tdd-workflow/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/tdd-workflow/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/tdd-workflow/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/tdd-workflow/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/unified-memory/SKILL.md",
+      "sourceRelativePath": ".agents/skills/unified-memory/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/unified-memory/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/unified-memory/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/unified-memory/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/unified-memory/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/verification-loop/SKILL.md",
+      "sourceRelativePath": ".agents/skills/verification-loop/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/verification-loop/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/verification-loop/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/verification-loop/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/verification-loop/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/video-editing/SKILL.md",
+      "sourceRelativePath": ".agents/skills/video-editing/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/video-editing/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/video-editing/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/video-editing/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/video-editing/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/x-api/SKILL.md",
+      "sourceRelativePath": ".agents/skills/x-api/SKILL.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/x-api/SKILL.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/.agents/skills/x-api/agents/openai.yaml",
+      "sourceRelativePath": ".agents/skills/x-api/agents/openai.yaml",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/.agents/skills/x-api/agents/openai.yaml",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/a11y-architect.md",
+      "sourceRelativePath": "agents/a11y-architect.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/a11y-architect.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/agent-evaluator.md",
+      "sourceRelativePath": "agents/agent-evaluator.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/agent-evaluator.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/architect.md",
+      "sourceRelativePath": "agents/architect.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/architect.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/build-error-resolver.md",
+      "sourceRelativePath": "agents/build-error-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/build-error-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/chief-of-staff.md",
+      "sourceRelativePath": "agents/chief-of-staff.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/chief-of-staff.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/code-architect.md",
+      "sourceRelativePath": "agents/code-architect.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/code-architect.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/code-explorer.md",
+      "sourceRelativePath": "agents/code-explorer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/code-explorer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/code-reviewer.md",
+      "sourceRelativePath": "agents/code-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/code-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/code-simplifier.md",
+      "sourceRelativePath": "agents/code-simplifier.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/code-simplifier.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/comment-analyzer.md",
+      "sourceRelativePath": "agents/comment-analyzer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/comment-analyzer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/conversation-analyzer.md",
+      "sourceRelativePath": "agents/conversation-analyzer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/conversation-analyzer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/cpp-build-resolver.md",
+      "sourceRelativePath": "agents/cpp-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/cpp-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/cpp-reviewer.md",
+      "sourceRelativePath": "agents/cpp-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/cpp-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/csharp-reviewer.md",
+      "sourceRelativePath": "agents/csharp-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/csharp-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/dart-build-resolver.md",
+      "sourceRelativePath": "agents/dart-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/dart-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/database-reviewer.md",
+      "sourceRelativePath": "agents/database-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/database-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/django-build-resolver.md",
+      "sourceRelativePath": "agents/django-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/django-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/django-reviewer.md",
+      "sourceRelativePath": "agents/django-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/django-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/doc-updater.md",
+      "sourceRelativePath": "agents/doc-updater.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/doc-updater.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/docs-lookup.md",
+      "sourceRelativePath": "agents/docs-lookup.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/docs-lookup.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/e2e-runner.md",
+      "sourceRelativePath": "agents/e2e-runner.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/e2e-runner.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/fastapi-reviewer.md",
+      "sourceRelativePath": "agents/fastapi-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/fastapi-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/flutter-reviewer.md",
+      "sourceRelativePath": "agents/flutter-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/flutter-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/fsharp-reviewer.md",
+      "sourceRelativePath": "agents/fsharp-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/fsharp-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/gan-evaluator.md",
+      "sourceRelativePath": "agents/gan-evaluator.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/gan-evaluator.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/gan-generator.md",
+      "sourceRelativePath": "agents/gan-generator.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/gan-generator.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/gan-planner.md",
+      "sourceRelativePath": "agents/gan-planner.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/gan-planner.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/go-build-resolver.md",
+      "sourceRelativePath": "agents/go-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/go-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/go-reviewer.md",
+      "sourceRelativePath": "agents/go-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/go-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/harmonyos-app-resolver.md",
+      "sourceRelativePath": "agents/harmonyos-app-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/harmonyos-app-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/harness-optimizer.md",
+      "sourceRelativePath": "agents/harness-optimizer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/harness-optimizer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/healthcare-reviewer.md",
+      "sourceRelativePath": "agents/healthcare-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/healthcare-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/homelab-architect.md",
+      "sourceRelativePath": "agents/homelab-architect.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/homelab-architect.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/java-build-resolver.md",
+      "sourceRelativePath": "agents/java-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/java-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/java-reviewer.md",
+      "sourceRelativePath": "agents/java-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/java-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/kotlin-build-resolver.md",
+      "sourceRelativePath": "agents/kotlin-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/kotlin-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/kotlin-reviewer.md",
+      "sourceRelativePath": "agents/kotlin-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/kotlin-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/loop-operator.md",
+      "sourceRelativePath": "agents/loop-operator.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/loop-operator.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/marketing-agent.md",
+      "sourceRelativePath": "agents/marketing-agent.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/marketing-agent.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/mle-reviewer.md",
+      "sourceRelativePath": "agents/mle-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/mle-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/network-architect.md",
+      "sourceRelativePath": "agents/network-architect.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/network-architect.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/network-config-reviewer.md",
+      "sourceRelativePath": "agents/network-config-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/network-config-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/network-troubleshooter.md",
+      "sourceRelativePath": "agents/network-troubleshooter.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/network-troubleshooter.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/opensource-forker.md",
+      "sourceRelativePath": "agents/opensource-forker.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/opensource-forker.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/opensource-packager.md",
+      "sourceRelativePath": "agents/opensource-packager.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/opensource-packager.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/opensource-sanitizer.md",
+      "sourceRelativePath": "agents/opensource-sanitizer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/opensource-sanitizer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/performance-optimizer.md",
+      "sourceRelativePath": "agents/performance-optimizer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/performance-optimizer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/php-reviewer.md",
+      "sourceRelativePath": "agents/php-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/php-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/planner.md",
+      "sourceRelativePath": "agents/planner.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/planner.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/pr-test-analyzer.md",
+      "sourceRelativePath": "agents/pr-test-analyzer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/pr-test-analyzer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/python-reviewer.md",
+      "sourceRelativePath": "agents/python-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/python-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/pytorch-build-resolver.md",
+      "sourceRelativePath": "agents/pytorch-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/pytorch-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/react-build-resolver.md",
+      "sourceRelativePath": "agents/react-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/react-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/react-reviewer.md",
+      "sourceRelativePath": "agents/react-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/react-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/refactor-cleaner.md",
+      "sourceRelativePath": "agents/refactor-cleaner.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/refactor-cleaner.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/rust-build-resolver.md",
+      "sourceRelativePath": "agents/rust-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/rust-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/rust-reviewer.md",
+      "sourceRelativePath": "agents/rust-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/rust-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/security-reviewer.md",
+      "sourceRelativePath": "agents/security-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/security-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/seo-specialist.md",
+      "sourceRelativePath": "agents/seo-specialist.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/seo-specialist.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/silent-failure-hunter.md",
+      "sourceRelativePath": "agents/silent-failure-hunter.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/silent-failure-hunter.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/spec-miner.md",
+      "sourceRelativePath": "agents/spec-miner.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/spec-miner.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/swift-build-resolver.md",
+      "sourceRelativePath": "agents/swift-build-resolver.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/swift-build-resolver.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/swift-reviewer.md",
+      "sourceRelativePath": "agents/swift-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/swift-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/tdd-guide.md",
+      "sourceRelativePath": "agents/tdd-guide.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/tdd-guide.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/type-design-analyzer.md",
+      "sourceRelativePath": "agents/type-design-analyzer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/type-design-analyzer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/typescript-reviewer.md",
+      "sourceRelativePath": "agents/typescript-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/typescript-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/agents/vue-reviewer.md",
+      "sourceRelativePath": "agents/vue-reviewer.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/skills/vue-reviewer.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "agents-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/AGENTS.md",
+      "sourceRelativePath": "AGENTS.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/AGENTS.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/aside.md",
+      "sourceRelativePath": "commands/aside.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/aside.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/auto-update.md",
+      "sourceRelativePath": "commands/auto-update.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/auto-update.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/build-fix.md",
+      "sourceRelativePath": "commands/build-fix.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/build-fix.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/checkpoint.md",
+      "sourceRelativePath": "commands/checkpoint.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/checkpoint.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/code-review.md",
+      "sourceRelativePath": "commands/code-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/code-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/cost-report.md",
+      "sourceRelativePath": "commands/cost-report.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/cost-report.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/cpp-build.md",
+      "sourceRelativePath": "commands/cpp-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/cpp-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/cpp-review.md",
+      "sourceRelativePath": "commands/cpp-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/cpp-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/cpp-test.md",
+      "sourceRelativePath": "commands/cpp-test.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/cpp-test.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/ecc-guide.md",
+      "sourceRelativePath": "commands/ecc-guide.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/ecc-guide.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-claim.md",
+      "sourceRelativePath": "commands/epic-claim.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-claim.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-decompose.md",
+      "sourceRelativePath": "commands/epic-decompose.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-decompose.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-publish.md",
+      "sourceRelativePath": "commands/epic-publish.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-publish.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-review.md",
+      "sourceRelativePath": "commands/epic-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-sync.md",
+      "sourceRelativePath": "commands/epic-sync.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-sync.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-unblock.md",
+      "sourceRelativePath": "commands/epic-unblock.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-unblock.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/epic-validate.md",
+      "sourceRelativePath": "commands/epic-validate.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/epic-validate.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/evolve.md",
+      "sourceRelativePath": "commands/evolve.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/evolve.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/fastapi-review.md",
+      "sourceRelativePath": "commands/fastapi-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/fastapi-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/feature-dev.md",
+      "sourceRelativePath": "commands/feature-dev.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/feature-dev.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/flutter-build.md",
+      "sourceRelativePath": "commands/flutter-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/flutter-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/flutter-review.md",
+      "sourceRelativePath": "commands/flutter-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/flutter-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/flutter-test.md",
+      "sourceRelativePath": "commands/flutter-test.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/flutter-test.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/gan-build.md",
+      "sourceRelativePath": "commands/gan-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/gan-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/gan-design.md",
+      "sourceRelativePath": "commands/gan-design.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/gan-design.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/go-build.md",
+      "sourceRelativePath": "commands/go-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/go-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/go-review.md",
+      "sourceRelativePath": "commands/go-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/go-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/go-test.md",
+      "sourceRelativePath": "commands/go-test.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/go-test.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/gradle-build.md",
+      "sourceRelativePath": "commands/gradle-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/gradle-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/harness-audit.md",
+      "sourceRelativePath": "commands/harness-audit.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/harness-audit.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/hookify-configure.md",
+      "sourceRelativePath": "commands/hookify-configure.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/hookify-configure.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/hookify-help.md",
+      "sourceRelativePath": "commands/hookify-help.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/hookify-help.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/hookify-list.md",
+      "sourceRelativePath": "commands/hookify-list.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/hookify-list.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/hookify.md",
+      "sourceRelativePath": "commands/hookify.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/hookify.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/instinct-export.md",
+      "sourceRelativePath": "commands/instinct-export.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/instinct-export.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/instinct-import.md",
+      "sourceRelativePath": "commands/instinct-import.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/instinct-import.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/instinct-status.md",
+      "sourceRelativePath": "commands/instinct-status.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/instinct-status.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/jira.md",
+      "sourceRelativePath": "commands/jira.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/jira.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/kotlin-build.md",
+      "sourceRelativePath": "commands/kotlin-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/kotlin-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/kotlin-review.md",
+      "sourceRelativePath": "commands/kotlin-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/kotlin-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/kotlin-test.md",
+      "sourceRelativePath": "commands/kotlin-test.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/kotlin-test.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/learn-eval.md",
+      "sourceRelativePath": "commands/learn-eval.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/learn-eval.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/learn.md",
+      "sourceRelativePath": "commands/learn.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/learn.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/loop-start.md",
+      "sourceRelativePath": "commands/loop-start.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/loop-start.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/loop-status.md",
+      "sourceRelativePath": "commands/loop-status.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/loop-status.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/marketing-campaign.md",
+      "sourceRelativePath": "commands/marketing-campaign.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/marketing-campaign.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/model-route.md",
+      "sourceRelativePath": "commands/model-route.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/model-route.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/multi-backend.md",
+      "sourceRelativePath": "commands/multi-backend.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/multi-backend.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/multi-execute.md",
+      "sourceRelativePath": "commands/multi-execute.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/multi-execute.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/multi-frontend.md",
+      "sourceRelativePath": "commands/multi-frontend.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/multi-frontend.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/multi-plan.md",
+      "sourceRelativePath": "commands/multi-plan.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/multi-plan.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/multi-workflow.md",
+      "sourceRelativePath": "commands/multi-workflow.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/multi-workflow.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/orch-add-feature.md",
+      "sourceRelativePath": "commands/orch-add-feature.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/orch-add-feature.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/orch-build-mvp.md",
+      "sourceRelativePath": "commands/orch-build-mvp.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/orch-build-mvp.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/orch-change-feature.md",
+      "sourceRelativePath": "commands/orch-change-feature.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/orch-change-feature.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/orch-fix-defect.md",
+      "sourceRelativePath": "commands/orch-fix-defect.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/orch-fix-defect.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/orch-refine-code.md",
+      "sourceRelativePath": "commands/orch-refine-code.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/orch-refine-code.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/orch-review.md",
+      "sourceRelativePath": "commands/orch-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/orch-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/plan-canvas.md",
+      "sourceRelativePath": "commands/plan-canvas.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/plan-canvas.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/plan-prd.md",
+      "sourceRelativePath": "commands/plan-prd.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/plan-prd.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/plan.md",
+      "sourceRelativePath": "commands/plan.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/plan.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/pm2.md",
+      "sourceRelativePath": "commands/pm2.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/pm2.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/pr.md",
+      "sourceRelativePath": "commands/pr.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/pr.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/project-init.md",
+      "sourceRelativePath": "commands/project-init.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/project-init.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/projects.md",
+      "sourceRelativePath": "commands/projects.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/projects.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/promote.md",
+      "sourceRelativePath": "commands/promote.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/promote.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/prp-commit.md",
+      "sourceRelativePath": "commands/prp-commit.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/prp-commit.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/prp-implement.md",
+      "sourceRelativePath": "commands/prp-implement.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/prp-implement.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/prp-plan.md",
+      "sourceRelativePath": "commands/prp-plan.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/prp-plan.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/prp-pr.md",
+      "sourceRelativePath": "commands/prp-pr.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/prp-pr.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/prp-prd.md",
+      "sourceRelativePath": "commands/prp-prd.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/prp-prd.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/prune.md",
+      "sourceRelativePath": "commands/prune.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/prune.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/python-review.md",
+      "sourceRelativePath": "commands/python-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/python-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/quality-gate.md",
+      "sourceRelativePath": "commands/quality-gate.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/quality-gate.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/react-build.md",
+      "sourceRelativePath": "commands/react-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/react-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/react-review.md",
+      "sourceRelativePath": "commands/react-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/react-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/react-test.md",
+      "sourceRelativePath": "commands/react-test.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/react-test.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/refactor-clean.md",
+      "sourceRelativePath": "commands/refactor-clean.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/refactor-clean.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/resume-session.md",
+      "sourceRelativePath": "commands/resume-session.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/resume-session.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/review-pr.md",
+      "sourceRelativePath": "commands/review-pr.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/review-pr.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/rust-build.md",
+      "sourceRelativePath": "commands/rust-build.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/rust-build.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/rust-review.md",
+      "sourceRelativePath": "commands/rust-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/rust-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/rust-test.md",
+      "sourceRelativePath": "commands/rust-test.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/rust-test.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/santa-loop.md",
+      "sourceRelativePath": "commands/santa-loop.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/santa-loop.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/save-session.md",
+      "sourceRelativePath": "commands/save-session.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/save-session.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/security-scan.md",
+      "sourceRelativePath": "commands/security-scan.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/security-scan.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/sessions.md",
+      "sourceRelativePath": "commands/sessions.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/sessions.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/setup-pm.md",
+      "sourceRelativePath": "commands/setup-pm.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/setup-pm.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/skill-create.md",
+      "sourceRelativePath": "commands/skill-create.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/skill-create.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/skill-health.md",
+      "sourceRelativePath": "commands/skill-health.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/skill-health.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/test-coverage.md",
+      "sourceRelativePath": "commands/test-coverage.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/test-coverage.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/update-codemaps.md",
+      "sourceRelativePath": "commands/update-codemaps.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/update-codemaps.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/update-docs.md",
+      "sourceRelativePath": "commands/update-docs.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/update-docs.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    },
+    {
+      "kind": "copy-file",
+      "moduleId": "commands-core",
+      "sourcePath": "/home/dajayape/.local/share/ecc/commands/vue-review.md",
+      "sourceRelativePath": "commands/vue-review.md",
+      "destinationPath": "/home/dajayape/Documents/work/makerindo/employment/projects/sespimma/code/.agent/workflows/vue-review.md",
+      "strategy": "preserve-relative-path",
+      "ownership": "managed",
+      "scaffoldOnly": false
+    }
+  ]
+}

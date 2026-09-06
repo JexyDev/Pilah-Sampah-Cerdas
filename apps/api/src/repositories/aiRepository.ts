@@ -1,13 +1,12 @@
+import { prisma } from "../lib/prisma.js";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { PrismaClient, AiRequestLog } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { AiRequestLog } from "@prisma/client";
 
 export class AiRepository {
   /**

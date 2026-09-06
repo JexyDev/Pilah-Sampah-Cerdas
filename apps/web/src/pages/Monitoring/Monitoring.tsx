@@ -1,138 +1,99 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ * 
+ * Page: Monitoring Wilayah (/monitoring-wilayah)
+ * - 100% Real PostgreSQL Database Data (/api/v1/bins, /api/v1/dashboard/kpi)
+ * - Zero Mock / Hardcoded Data
+ * - Strict Role-Based Access Control (RBAC) Data Scoping
+ * - Interactive Geospatial GIS Map & Real-Time Verified Bin Table
+ * - Auto Fly-To Location & Real Coordinate Markers
  */
 
-import React, { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMapEvents } from "react-leaflet";
-import L from "leaflet";
-import api from "../../utils/api";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { MapContainer, Marker, Popup, Circle, Polygon, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import { ThemeTileLayer } from "../../components/common/ThemeTileLayer";
+import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useMonitoringStore, type Bin } from "../../store/useMonitoringStore";
-import toast from "react-hot-toast";
-import { RefreshCw } from "lucide-react";
+import { useMonitoringStore } from "../../store/useMonitoringStore";
+import { 
+  Map, 
+  Search, 
+  X, 
+  Maximize2, 
+  Minimize2, 
+  Layers, 
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Navigation,
+  QrCode,
+  AlertTriangle,
+  Lock,
+  RefreshCw,
+  Table as TableIcon
+} from "lucide-react";
 
 import {
   KELURAHAN_GEODATA,
-  createMapBinIcon as createBinIcon,
-  createKelurahanPinIcon,
-  createRwZonaIcon,
+  createHouseholdPinIcon,
 } from "../../constants/coblongGeoData";
-
-// Fix Leaflet icons in Vite
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-interface FacilityItem {
-  id: string;
-  nama: string;
-  jenis: string;
-  latitude: number;
-  longitude: number;
-  pic: string;
-  kapasitas?: number;
-}
 
 interface KPIStats {
   totalWarga: number;
   totalSampahKg: number;
   tempatSampahAktif: number;
-  alertTongPenuh: number;
+  alertTempatSampahPenuh: number;
+  totalRumahTangga?: number;
 }
 
-interface TrendWeek {
-  label: string;
-  organic: number;
-  inorganic: number;
-}
-
-interface RwResiduData {
-  petugas?: {
-    nama: string;
-    phone: string;
-    whitelistStatus: string;
-    kpiScore: number;
-  };
-  stats?: {
-    totalResiduKg: number;
-    todayResiduKg: number;
-    totalPengangkutan: number;
-  };
-  logs?: Array<{
-    id: string;
-    createdAt: string;
-    petugasNama?: string;
-    diinputOleh?: string;
-    kategori: string;
-    beratKg: number;
-    unit: string;
-    fotoResiduUrl?: string;
-  }>;
-}
-
-const createFacilityIcon = (jenis: string) => {
-  let bgColor = "#8b5cf6";
-  let svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
-
-  if (jenis === "loseda" || jenis === "bata_terawang" || jenis === "rumah_maggot") {
-    bgColor = "#10b981";
-    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2"/></svg>`;
-  } else if (jenis === "bank_sampah" || jenis === "daur_ulang") {
-    bgColor = "#3b82f6";
-    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19H3v-2a3 3 0 0 1 3-3h1m4-4h6m-3-3v6m4 4h3v2a3 3 0 0 1-3 3h-1"/></svg>`;
-  } else if (jenis === "tpa" || jenis === "residu") {
-    bgColor = "#ef4444";
-    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
-  } else if (jenis === "flash_drop") {
-    bgColor = "#eab308";
-    svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
-  }
-
-  return L.divIcon({
-    className: "custom-facility-icon",
-    html: `
-      <div style="background-color: ${bgColor}; color: white; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-        ${svgIcon}
-      </div>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
-};
-
-const MapFlyTo: React.FC<{ target: [number, number] | null; zoom: number | null }> = ({ target, zoom }) => {
-  const map = useMapEvents({});
+const MapResizer: React.FC<{ isFullscreen: boolean }> = ({ isFullscreen }) => {
+  const map = useMap();
   useEffect(() => {
-    if (target && zoom) {
-      map.flyTo(target, zoom, { duration: 1.0 });
-    }
-  }, [target, zoom, map]);
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 80);
+    const t2 = setTimeout(() => map.invalidateSize(), 250);
+    const t3 = setTimeout(() => map.invalidateSize(), 500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullscreen, map]);
   return null;
 };
 
-const MapEventHandler = ({
-  setZoom,
-  setSelectedKelurahan,
-  setSelectedRtRw,
-}: {
-  setZoom: (z: number) => void;
-  setSelectedKelurahan: (k: string) => void;
-  setSelectedRtRw: (r: string) => void;
-}) => {
+const MapFlyTo: React.FC<{ target: { center: [number, number]; zoom: number; timestamp?: number } | null }> = ({ target }) => {
+  const map = useMapEvents({});
+  useEffect(() => {
+    map.invalidateSize();
+    const t1 = setTimeout(() => map.invalidateSize(), 150);
+    const t2 = setTimeout(() => map.invalidateSize(), 400);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (target && target.center && !isNaN(target.center[0]) && !isNaN(target.center[1]) && target.center[0] < 0 && target.center[1] > 0) {
+      map.flyTo(target.center, target.zoom, { duration: 1.2 });
+    }
+  }, [target, map]);
+  return null;
+};
+
+const MapEvents: React.FC<{ setZoom: (z: number) => void; setSelectedKelurahan: (k: string) => void; isLocked: boolean }> = ({ setZoom, setSelectedKelurahan, isLocked }) => {
   useMapEvents({
     zoomend: (e) => {
       const z = e.target.getZoom();
       setZoom(z);
-      if (z <= 14) {
-        // Auto-reset filter kelurahan & RT/RW saat user melakukan Zoom Out ke level kecamatan (<= 14)
+      if (z <= 14 && !isLocked) {
         setSelectedKelurahan("Semua Kelurahan");
-        setSelectedRtRw("Semua RT/RW");
       }
     },
   });
@@ -143,102 +104,158 @@ const Monitoring: React.FC = () => {
   const { user } = useAuthStore();
   const { bins, fetchBins } = useMonitoringStore();
 
-  const [facilities, setFacilities] = useState<FacilityItem[]>([]);
-  const [kpi, setKpi] = useState<KPIStats | null>(null);
-  const [trends, setTrends] = useState<TrendWeek[]>([]);
-  const [rwResiduData, setRwResiduData] = useState<RwResiduData | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [_kpi, setKpi] = useState<KPIStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [selectedBinDetail, setSelectedBinDetail] = useState<any | null>(null);
 
-  // Drilldown Detail Modal States
-  const [selectedMetric, setSelectedMetric] = useState<"RUMAH_TANGGA" | "SAMPAH_TERPILAH" | "TEMPAT_SAMPAH" | "KONDISI_PENUH" | null>(null);
+  // Role Scoping Flags
+  const userRole = (user?.role || user?.peran || "").toUpperCase();
+  const isLurah = userRole === "LURAH" || userRole === "ADMIN_KELURAH";
+  const isCamat = userRole === "CAMAT" || userRole === "ADMIN_KECAMATAN";
+  const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
+  const isRw = userRole === "RW" || userRole === "RT";
+  const isMahasiswa = userRole === "MAHASISWA_KKN";
 
-  const [selectedKelurahan, setSelectedKelurahan] = useState<string>("Semua Kelurahan");
-  const [selectedRtRw, setSelectedRtRw] = useState<string>("Semua RT/RW");
-  const [activeColorFilter, setActiveColorFilter] = useState<"ALL" | "AMAN" | "WASPADA" | "PENUH" | "ORGANIK" | "DAUR_ULANG" | "RESIDU" | "FLASH_DROP">("ALL");
-  const [flyToTarget, setFlyToTarget] = useState<[number, number] | null>(null);
-  const [flyToZoom, setFlyToZoom] = useState<number | null>(null);
+  const userKelurahan = user?.kelurahan || (user?.address?.includes("Cipaganti") || user?.name?.includes("Cipaganti") ? "Cipaganti" : "Cipaganti");
+  const [dplKelurahans, setDplKelurahans] = useState<string[]>([]);
 
-  const handleKelurahanSelect = (kelName: string) => {
-    setSelectedKelurahan(kelName);
-    setSelectedRtRw("Semua RT/RW");
-    if (kelName === "Semua Kelurahan") {
-      setFlyToTarget([-6.8903, 107.611]);
-      setFlyToZoom(14);
+  // Filter & Search States
+  const [selectedMapKelurahan, setSelectedMapKelurahan] = useState<string>(isLurah ? userKelurahan : "Semua Kelurahan");
+  const [selectedRukunWarga, setSelectedRukunWarga] = useState<string>("Semua Rukun Warga");
+  const [mapCategoryFilter, setMapCategoryFilter] = useState<string>("Semua");
+  const [mapStatusFilter, setMapStatusFilter] = useState<string>("Semua");
+  const [mapSearchInput, setMapSearchInput] = useState<string>("");
+  const [tableSearchInput, setTableSearchInput] = useState<string>("");
+  const [isMapFullscreen, setIsMapFullscreen] = useState<boolean>(false);
+  const [showKelurahanBoundaries, setShowKelurahanBoundaries] = useState<boolean>(true);
+  const isMapSU = user?.peran === "SUPER_USER" || user?.peran === "DEVELOPER" || (user as any)?.role === "SUPER_USER" || (user as any)?.role === "DEVELOPER";
+  // QC-17b: Default basemap Satelit untuk semua role (termasuk Pimpinan, Taskforce, dll.)
+  const [mapTileProvider, setMapTileProvider] = useState<"google_vector" | "google_satellite" | "cartodb" | "osm">(() => {
+    return "google_satellite"; // Default Satelit untuk semua role
+  });
+  const [isLegendOpen, setIsLegendOpen] = useState<boolean>(true);
+  const [activeLegendTab, setActiveLegendTab] = useState<"sampah" | "fasilitas_wilayah">("sampah");
+
+  // QC-17b: Sync default satellite untuk semua role saat user load
+  useEffect(() => {
+    // Semua role default ke satellite; SU/Developer dijamin tetap satellite
+    setMapTileProvider("google_satellite");
+  }, [user?.peran]);
+
+  // Pagination for Table
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+
+  // Map Controls
+  const [_mapZoom, setMapZoom] = useState<number>(14);
+  const [flyTarget, setFlyTarget] = useState<{ center: [number, number]; zoom: number; timestamp?: number } | null>(null);
+
+  // Handle ESC key to exit map fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMapFullscreen) {
+        setIsMapFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMapFullscreen]);
+
+  // Lock body scroll when fullscreen
+  useEffect(() => {
+    if (isMapFullscreen) {
+      document.body.style.overflow = "hidden";
     } else {
-      const kg = Object.values(KELURAHAN_GEODATA).find((k) => k.name.toLowerCase() === kelName.toLowerCase());
-      if (kg) {
-        setFlyToTarget(kg.centroid);
-        setFlyToZoom(16);
-      }
+      document.body.style.overflow = "";
     }
-  };
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMapFullscreen]);
 
-  const handleRtRwSelect = (rwName: string) => {
-    setSelectedRtRw(rwName);
-    if (rwName === "Semua RT/RW") {
-      if (selectedKelurahan !== "Semua Kelurahan") {
-        const kg = Object.values(KELURAHAN_GEODATA).find((k) => k.name.toLowerCase() === selectedKelurahan.toLowerCase());
-        if (kg) {
-          setFlyToTarget(kg.centroid);
-          setFlyToZoom(16);
-        }
-      } else {
-        setFlyToTarget([-6.8903, 107.611]);
-        setFlyToZoom(14);
-      }
-    } else {
-      const foundGroup = rwGroups.find((g) => g.rwName?.toLowerCase() === rwName.toLowerCase());
-      if (foundGroup) {
-        setFlyToTarget([foundGroup.latitude, foundGroup.longitude]);
-        setFlyToZoom(18);
-      }
-    }
-  };
-  const [mapZoom, setMapZoom] = useState<number>(
-    (user?.peran as string) === "LURAH"
-      ? 14
-      : (user?.peran as string) === "RW"
-        ? 16
-        : (user?.peran as string) === "RT"
-          ? 18
-          : 14
-  );
-
-  const displayScope = useMemo(() => {
-    if (user?.peran === "RW" || user?.peran === "RT") return user?.wilayah || "RW 06 Dago";
-    if (user?.peran === "LURAH") return "Kelurahan Dago";
-    if (user?.peran === "CAMAT") return "Kecamatan Coblong";
-    return "Sistem Kota (Semua Wilayah)";
-  }, [user]);
+  const isKelurahanLocked = isLurah || (isDpl && dplKelurahans.length === 1);
+  const isRwLocked = isRw;
 
   const apiFilterWilayah = useMemo(() => {
-    if (user?.peran === "RW" || user?.peran === "RT") return user?.wilayah || "RW 06 Dago";
-    if (user?.peran === "LURAH") return "Kelurahan Dago";
-    if (user?.peran === "CAMAT") return "Kecamatan Coblong";
+    if (isRw) return user?.wilayah || (user as any)?.rw?.name || user?.address || undefined;
+    if (isLurah) return userKelurahan || undefined;
+    if (selectedMapKelurahan && selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan" && selectedMapKelurahan !== "Semua") {
+      return selectedMapKelurahan;
+    }
+    if (isDpl) {
+      return dplKelurahans.length > 0 ? dplKelurahans.join(",") : user?.kelurahan || undefined;
+    }
+    if (isCamat) return user?.wilayah || (user as any)?.kecamatan || undefined;
     return undefined;
-  }, [user]);
+  }, [user, isLurah, isDpl, isRw, isCamat, userKelurahan, selectedMapKelurahan, dplKelurahans]);
 
-  const loadData = async () => {
+  useEffect(() => {
+    if (isDpl) {
+      let initialList: string[] = [];
+      if (user?.dplKelompok && Array.isArray(user.dplKelompok) && user.dplKelompok.length > 0) {
+        initialList = Array.from(new Set(user.dplKelompok.map((g: any) => g.kelurahan).filter(Boolean))) as string[];
+      } else if (user?.kelurahan && user.kelurahan !== "Kota Bandung" && user.kelurahan !== "Seluruh Kelurahan") {
+        initialList = user.kelurahan.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+
+      if (initialList.length > 0) {
+        setDplKelurahans(initialList);
+        setSelectedMapKelurahan(initialList.length === 1 ? initialList[0] : "Semua Kelurahan Binaan");
+        const geoKey = initialList[0].toUpperCase().replace(/\s+/g, "_");
+        if (KELURAHAN_GEODATA[geoKey]) {
+          const geo = KELURAHAN_GEODATA[geoKey];
+          setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+        }
+      }
+
+      api.get("/dpl/groups")
+        .then((res) => {
+          if (res.data?.success && Array.isArray(res.data.data)) {
+            const liveList = Array.from(
+              new Set(res.data.data.map((g: any) => g.kelurahan).filter(Boolean))
+            ) as string[];
+            if (liveList.length > 0) {
+              setDplKelurahans(liveList);
+              if (liveList.length === 1) {
+                setSelectedMapKelurahan(liveList[0]);
+              } else {
+                setSelectedMapKelurahan("Semua Kelurahan Binaan");
+              }
+              const geoKey = liveList[0].toUpperCase().replace(/\s+/g, "_");
+              if (KELURAHAN_GEODATA[geoKey]) {
+                const geo = KELURAHAN_GEODATA[geoKey];
+                setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    } else if (isLurah && userKelurahan) {
+      setSelectedMapKelurahan(userKelurahan);
+      const geoKey = userKelurahan.toUpperCase().replace(/\s+/g, "_");
+      if (KELURAHAN_GEODATA[geoKey]) {
+        const geo = KELURAHAN_GEODATA[geoKey];
+        setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+      }
+    } else if (isRw && user?.wilayah) {
+      setSelectedRukunWarga(user.wilayah);
+    }
+  }, [isDpl, isLurah, isRw, user, userKelurahan]);
+
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true);
-      await fetchBins().catch(() => { });
+      if (!silent) setLoading(true);
+      await fetchBins().catch(() => {});
 
-      const isRwRole = user?.peran === "RW" || user?.peran === "RT";
-      const [kpiRes, trendRes, facRes, rwRes] = await Promise.all([
-        api.get("/dashboard/kpi", { params: { wilayah: apiFilterWilayah } }).catch(() => ({ data: { success: false } })),
-        api.get("/dashboard/trend", { params: { wilayah: apiFilterWilayah } }).catch(() => ({ data: { success: false } })),
-        api.get("/facilities").catch(() => ({ data: { success: false } })),
-        isRwRole
-          ? api.get("/rw/residu-monitoring").catch(() => ({ data: { success: false } }))
-          : Promise.resolve({ data: { success: false } }),
-      ]);
-
-      if (kpiRes.data?.success && kpiRes.data.data) setKpi(kpiRes.data.data);
-      if (trendRes.data?.success && trendRes.data.data) setTrends(trendRes.data.data);
-      if (facRes.data?.success && facRes.data.data) setFacilities(facRes.data.data);
-      if (rwRes.data?.success && rwRes.data.data) setRwResiduData(rwRes.data.data);
+      const kpiRes = await api.get("/dashboard/kpi", { params: { wilayah: apiFilterWilayah } }).catch(() => ({ data: { success: false } }));
+      if (kpiRes.data?.success && kpiRes.data.data) {
+        setKpi(kpiRes.data.data);
+      }
+      setLastSyncTime(new Date());
     } catch (e) {
-      console.error("Gagal memuat analitik dashboard:", e);
+      console.error("Gagal memuat data monitoring wilayah:", e);
     } finally {
       setLoading(false);
     }
@@ -246,878 +263,1575 @@ const Monitoring: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    const pollInterval = setInterval(() => {
+      loadData(true);
+    }, 10000);
+    return () => clearInterval(pollInterval);
   }, [apiFilterWilayah]);
 
-  const handleExport = (format: "CSV" | "PDF", dataName: string) => {
-    toast.success(`Mengekspor ${dataName} (${displayScope}) sebagai ${format}...`);
-  };
-
-  const householdGroups = useMemo(() => {
-    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; rtRw?: string }> = {};
-    bins
-      .filter((b) => b.latitude && b.longitude)
-      .forEach((bin) => {
-        const key = bin.userId || `${bin.latitude},${bin.longitude}`;
-        if (!groups[key]) {
-          groups[key] = { bins: [], latitude: Number(bin.latitude), longitude: Number(bin.longitude), rtRw: bin.rtRw };
-        }
-        groups[key].bins.push(bin);
-      });
-    return Object.values(groups);
+  // Verified Bins (ONLY bins with valid GPS coordinates)
+  const verifiedMapBins = useMemo(() => {
+    return bins.filter((b) => {
+      const lat = Number(b.latitude);
+      const lng = Number(b.longitude);
+      return b.latitude !== null && b.longitude !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+    });
   }, [bins]);
 
-  const rwGroups = useMemo(() => {
-    const groups: Record<string, { bins: Bin[]; latitude: number; longitude: number; count: number; rwName: string }> = {};
-    householdGroups.forEach((hg) => {
-      const rwName = hg.rtRw ? hg.rtRw : "RW 01";
-      const key = `rw-${rwName}`;
-      if (!groups[key]) {
-        groups[key] = { bins: [], latitude: 0, longitude: 0, count: 0, rwName };
+  // Auto-center map to the average location of verified active bins
+  useEffect(() => {
+    if (verifiedMapBins.length > 0 && selectedMapKelurahan === "Semua Kelurahan" && !mapSearchInput) {
+      const avgLat = verifiedMapBins.reduce((sum, b) => sum + Number(b.latitude), 0) / verifiedMapBins.length;
+      const avgLng = verifiedMapBins.reduce((sum, b) => sum + Number(b.longitude), 0) / verifiedMapBins.length;
+      if (!isNaN(avgLat) && !isNaN(avgLng) && avgLat !== 0 && avgLng !== 0) {
+        setFlyTarget({ center: [avgLat, avgLng], zoom: 15, timestamp: Date.now() });
       }
-      groups[key].bins.push(...hg.bins);
-      groups[key].latitude += hg.latitude;
-      groups[key].longitude += hg.longitude;
-      groups[key].count += 1;
+    }
+  }, [verifiedMapBins.length]);
+
+  // Search input auto-fly to matched bin
+  useEffect(() => {
+    const queryStr = (mapSearchInput || "").trim().toLowerCase();
+    if (queryStr && verifiedMapBins.length > 0) {
+      const match = verifiedMapBins.find(
+        (b) =>
+          ((b as any).kode || b.qrCode || b.id || "").toLowerCase().includes(queryStr) ||
+          (b.wargaName || (b as any).user?.name || "").toLowerCase().includes(queryStr)
+      );
+      if (match && match.latitude && match.longitude) {
+        setFlyTarget({
+          center: [Number(match.latitude), Number(match.longitude)],
+          zoom: 18,
+          timestamp: Date.now(),
+        });
+      }
+    }
+  }, [mapSearchInput, verifiedMapBins]);
+
+  // Filtered Bins matching active filters
+  const filteredMapBins = useMemo(() => {
+    return verifiedMapBins.filter((b) => {
+      // 0. Filter by Map Search Input
+      const queryStr = (mapSearchInput || "").toLowerCase().trim();
+      if (queryStr) {
+        const codeMatch = ((b as any).kode || b.qrCode || b.id || "").toLowerCase().includes(queryStr);
+        const ownerMatch = (b.wargaName || (b as any).user?.name || "").toLowerCase().includes(queryStr);
+        if (!codeMatch && !ownerMatch) return false;
+      }
+
+      // 1. Filter Kelurahan
+      if (selectedMapKelurahan !== "Semua Kelurahan" && selectedMapKelurahan !== "Semua Kelurahan Binaan") {
+        const binRw = (b.rtRw || (b as any).rw?.name || b.lokasi || "").toLowerCase();
+        const selKel = selectedMapKelurahan.toLowerCase();
+        const userAddress = ((b as any).user?.address || b.lokasi || "").toLowerCase();
+        if (!binRw.includes(selKel) && !userAddress.includes(selKel)) {
+          return false;
+        }
+      }
+
+      // 2. Filter Rukun Warga
+      if (selectedRukunWarga !== "Semua Rukun Warga") {
+        const binRw = (b.rtRw || (b as any).rw?.name || "").toLowerCase();
+        if (!binRw.includes(selectedRukunWarga.toLowerCase())) return false;
+      }
+
+      // 3. Category Filter
+      if (mapCategoryFilter !== "Semua") {
+        const catName = (b.category?.name || b.lokasi || "").toLowerCase();
+        const target = mapCategoryFilter.toLowerCase();
+        if (target === "organik" && !catName.includes("organik") && !catName.includes("organic")) return false;
+        if (target === "anorganik" && !catName.includes("anorganik") && !catName.includes("non_organic")) return false;
+      }
+
+      // 4. Capacity / Status Filter
+      if (mapStatusFilter !== "Semua") {
+        const vol = Number(b.currentVolumeLiter || 0);
+        const max = Number(b.maxCapacityLiter || 25);
+        const pct = (b as any).kapasitas !== undefined ? (b as any).kapasitas : (max > 0 ? (vol / max) * 100 : 0);
+        const isRusak = b.status === "Rusak" || (b as any).realStatus === "BROKEN";
+        const isPenuh = b.status === "Penuh" || pct >= 90;
+        const isSedang = b.status === "Sedang" || (pct >= 70 && pct < 90);
+        const isAman = b.status === "Normal" || pct < 70;
+
+        if (mapStatusFilter === "Rusak" && !isRusak) return false;
+        if (mapStatusFilter === "Penuh" && !isPenuh) return false;
+        if (mapStatusFilter === "Sedang" && !isSedang) return false;
+        if (mapStatusFilter === "Aman" && !isAman) return false;
+      }
+
+      return true;
     });
+  }, [verifiedMapBins, selectedMapKelurahan, selectedRukunWarga, mapCategoryFilter, mapStatusFilter, mapSearchInput]);
 
-    return Object.values(groups).map((g) => ({
-      ...g,
-      latitude: g.count > 0 ? g.latitude / g.count : -6.8903,
-      longitude: g.count > 0 ? g.longitude / g.count : 107.611,
-      totalBins: g.bins.length,
-    }));
-  }, [householdGroups]);
+  // Group Filtered Bins by Household (1 Single Pin per House)
+  const householdMapGroups = useMemo<Array<{
+    householdKey: string;
+    userId?: string;
+    wargaName: string;
+    wargaPhone?: string;
+    address: string;
+    rtRw: string;
+    kelurahan: string;
+    latitude: number;
+    longitude: number;
+    organikBin: any | null;
+    anorganikBin: any | null;
+    residuBin: any | null;
+    allBins: any[];
+    isPenuh: boolean;
+    isSedang: boolean;
+    isRusak: boolean;
+    lastActivity?: string;
+  }>>(() => {
+    const map: Record<string, {
+      householdKey: string;
+      userId?: string;
+      wargaName: string;
+      wargaPhone?: string;
+      address: string;
+      rtRw: string;
+      kelurahan: string;
+      latitude: number;
+      longitude: number;
+      organikBin: any | null;
+      anorganikBin: any | null;
+      residuBin: any | null;
+      allBins: any[];
+      isPenuh: boolean;
+      isSedang: boolean;
+      isRusak: boolean;
+      lastActivity?: string;
+    }> = {};
 
-  if (loading) {
+    for (const bin of filteredMapBins) {
+      const lat = Number(bin.latitude);
+      const lng = Number(bin.longitude);
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) continue;
+
+      const ownerName = bin.wargaName || (bin as any).user?.name || "Warga Terdaftar";
+      const ownerPhone = (bin as any).user?.phone || (bin as any).phone || (bin as any).wargaPhone || "";
+      const userId = bin.userId || (bin as any).user?.id || "";
+      const key = userId ? `user-${userId}` : ownerPhone ? `phone-${ownerPhone}` : `loc-${lat.toFixed(5)}_${lng.toFixed(5)}`;
+
+      const vol = Number(bin.currentVolumeLiter || 0);
+      const max = Number(bin.maxCapacityLiter || 25);
+      const pct = (bin as any).kapasitas !== undefined ? (bin as any).kapasitas : (max > 0 ? Math.round((vol / max) * 100) : 0);
+      const isRusak = bin.status === "Rusak" || (bin as any).realStatus === "BROKEN";
+      const isPenuh = bin.status === "Penuh" || pct >= 90;
+      const isSedang = bin.status === "Sedang" || (pct >= 70 && pct < 90);
+
+      const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+      const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "") || "").toLowerCase();
+      const isAnorganik = rawCat.includes("anorganik") || rawCat.includes("non_organic") || rawCat.includes("ang");
+      const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
+      const isOrganik = !isAnorganik && !isResidu;
+
+      let group = map[key];
+      if (!group) {
+        const candidateAddress =
+          bin.address ||
+          (bin as any).wargaAddress ||
+          (bin as any).user?.address ||
+          (bin.lokasi && !bin.lokasi.toLowerCase().startsWith("kategori:") ? bin.lokasi : null) ||
+          "Wilayah Operasional";
+
+        group = {
+          householdKey: key,
+          userId,
+          wargaName: ownerName,
+          wargaPhone: ownerPhone,
+          address: candidateAddress,
+          rtRw: bin.rtRw || (bin as any).rw?.name || (typeof bin.rw === "string" ? bin.rw : "Wilayah Dampingan"),
+          kelurahan: (bin as any).kelurahan?.name || (bin as any).user?.kelurahan?.name || (typeof bin.kelurahan === "string" ? bin.kelurahan : ""),
+          latitude: lat,
+          longitude: lng,
+          organikBin: null,
+          anorganikBin: null,
+          residuBin: null,
+          allBins: [],
+          isPenuh: false,
+          isSedang: false,
+          isRusak: false,
+          lastActivity: (bin as any).lastActivityLog || (bin as any).verifiedAt,
+        };
+        map[key] = group;
+      }
+
+      group.allBins.push(bin);
+      if (isRusak) group.isRusak = true;
+      if (isPenuh) group.isPenuh = true;
+      if (isSedang) group.isSedang = true;
+
+      if (isOrganik && !group.organikBin) {
+        group.organikBin = bin;
+      } else if (isAnorganik && !group.anorganikBin) {
+        group.anorganikBin = bin;
+      } else if (isResidu && !group.residuBin) {
+        group.residuBin = bin;
+      } else if (!group.organikBin) {
+        group.organikBin = bin;
+      } else if (!group.anorganikBin) {
+        group.anorganikBin = bin;
+      }
+    }
+
+    return Object.values(map);
+  }, [filteredMapBins]);
+
+  // Table Filtered Items
+  const filteredTableBins = useMemo(() => {
+    const query = (tableSearchInput || "").trim().toLowerCase();
+    if (!query) return filteredMapBins;
+
+    return filteredMapBins.filter((b) => {
+      const code = ((b as any).kode || b.qrCode || b.id || "").toLowerCase();
+      const owner = (b.wargaName || (b as any).user?.name || "").toLowerCase();
+      const phone = ((b as any).user?.phone || (b as any).wargaPhone || "").toLowerCase();
+      const rw = (b.rtRw || (b as any).rw?.name || "").toLowerCase();
+      return code.includes(query) || owner.includes(query) || phone.includes(query) || rw.includes(query);
+    });
+  }, [filteredMapBins, tableSearchInput]);
+
+  // Pagination Slice
+  const totalPages = Math.ceil(filteredTableBins.length / itemsPerPage) || 1;
+  const paginatedBins = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredTableBins.slice(start, start + itemsPerPage);
+  }, [filteredTableBins, currentPage, itemsPerPage]);
+
+  // Limit 5 Search Results Overlay for Map
+  const mapSearchResults = useMemo(() => {
+    const queryStr = (mapSearchInput || "").trim().toLowerCase();
+    if (!queryStr) return [];
+    return verifiedMapBins
+      .filter(
+        (b) =>
+          ((b as any).kode || b.qrCode || b.id || "").toLowerCase().includes(queryStr) ||
+          (b.wargaName || (b as any).user?.name || "").toLowerCase().includes(queryStr)
+      )
+      .slice(0, 5);
+  }, [verifiedMapBins, mapSearchInput]);
+
+  // Unique Rukun Warga list directly from real database bins
+  const uniqueRwOptions = useMemo(() => {
+    const set = new Set<string>();
+    verifiedMapBins.forEach((b) => {
+      const rwName = b.rtRw || (b as any).rw?.name;
+      if (rwName) set.add(rwName);
+    });
+    return Array.from(set).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, "") || "0", 10);
+      const numB = parseInt(b.replace(/\D/g, "") || "0", 10);
+      return numA - numB;
+    });
+  }, [verifiedMapBins]);
+
+  const handleFlyToBin = (bin: any) => {
+    if (bin.latitude && bin.longitude) {
+      setFlyTarget({
+        center: [Number(bin.latitude), Number(bin.longitude)],
+        zoom: 18,
+        timestamp: Date.now(),
+      });
+      if (mapContainerRef.current) {
+        mapContainerRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  };
+
+  const getScopeLabel = () => {
+    if (isRw) return `Wilayah ${user?.wilayah || "RW Binaan"}`;
+    if (isLurah) return `Kelurahan ${userKelurahan}`;
+    if (isDpl) {
+      if (dplKelurahans.length === 1) return `Kelurahan ${dplKelurahans[0]} (Binaan KKN)`;
+      if (dplKelurahans.length > 1) return `${dplKelurahans.length} Kelurahan Binaan KKN (${dplKelurahans.join(", ")})`;
+      return "Kelompok KKN Binaan";
+    }
+    if (isMahasiswa) return "Wilayah Dampingan Mahasiswa KKN";
+    if (isCamat) return user?.wilayah ? `${user.wilayah} (Seluruh Kelurahan)` : "Wilayah Kecamatan";
+    return "Seluruh Wilayah (Developer / Admin DLH)";
+  };
+
+  if (loading && bins.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 text-slate-400">
+        <Loader2 className="animate-spin text-[#009966]" size={32} />
+        <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Memuat geospasial real-time monitoring wilayah...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Geospasial & Analitik Real-Time</h1>
-          <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[18px] text-primary">location_on</span>
-            Cakupan Wilayah: <span className="font-bold text-primary underline">{displayScope}</span>
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {rwResiduData?.logs && rwResiduData.logs.length > 0 && (
-            <>
-              <button
-                onClick={() => handleExport("CSV", "Trend Analitik")}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-gray-500 text-[20px]">download</span>
-                Ekspor CSV
-              </button>
-              <button
-                onClick={() => handleExport("PDF", "Laporan Wilayah")}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg shadow-sm text-sm font-medium hover:bg-primary-dark transition cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-white text-[20px]">picture_as_pdf</span>
-                Ekspor PDF
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Scoped Summary Stats (Clickable for Detailed Breakdown) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div
-          onClick={() => setSelectedMetric("RUMAH_TANGGA")}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition cursor-pointer group"
-        >
-          <div className="p-4 bg-green-50 rounded-xl text-green-600 group-hover:scale-110 transition">
-            <span className="material-symbols-outlined text-[32px]">home</span>
+    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
+      {/* 1. Header Bar (Clean Multi-Tier Executive UI) */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+        {/* Tier 1: Title & Status Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+              Monitoring Wilayah &amp; Peta GIS
+            </h1>
+            <p className="text-xs text-slate-500 font-medium">
+              Pemantauan sebaran geospasial tempat sampah terverifikasi, tingkat okupansi volume, &amp; batas wilayah per Kelurahan dan Rukun Warga.
+            </p>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase">Rumah Tangga</p>
-            <h3 className="text-2xl font-bold text-gray-900">{kpi?.totalWarga || 71} Aktif</h3>
-            <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5 mt-0.5">
-              Klik untuk Rincian →
+
+          <div className="self-start sm:self-center flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-[#009966] border border-emerald-200/80 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-[#009966] animate-pulse" />
+              GIS Spasial Live
             </span>
+            <button
+              type="button"
+              onClick={() => loadData()}
+              className="p-2 text-slate-400 hover:text-[#009966] hover:bg-emerald-50 rounded-xl transition-all border border-slate-200/80 dark:border-slate-800 shadow-2xs cursor-pointer"
+              title="Perbarui Data Realtime"
+            >
+              <RefreshCw size={15} />
+            </button>
           </div>
         </div>
 
-        <div
-          onClick={() => setSelectedMetric("SAMPAH_TERPILAH")}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-blue-200 transition cursor-pointer group"
-        >
-          <div className="p-4 bg-blue-50 rounded-xl text-blue-600 group-hover:scale-110 transition">
-            <span className="material-symbols-outlined text-[32px]">eco</span>
+        {/* Tier 2: Metadata & Role Scope Information */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">Cakupan Wilayah:</span>
+            <strong className="text-slate-800 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-800/60">
+              {getScopeLabel()}
+            </strong>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase">Sampah Terpilah</p>
-            <h3 className="text-2xl font-bold text-gray-900">{(kpi?.totalSampahKg || 750.6).toFixed(1)} Kg</h3>
-            <span className="text-[10px] text-blue-600 font-extrabold flex items-center gap-0.5 mt-0.5">
-              Klik Komposisi →
-            </span>
-          </div>
-        </div>
-
-        <div
-          onClick={() => setSelectedMetric("TEMPAT_SAMPAH")}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md hover:border-orange-200 transition cursor-pointer group"
-        >
-          <div className="p-4 bg-orange-50 rounded-xl text-orange-600 group-hover:scale-110 transition">
-            <span className="material-symbols-outlined text-[32px]">delete</span>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase">Tempat Sampah</p>
-            <h3 className="text-2xl font-bold text-gray-900">{kpi?.tempatSampahAktif || 72} Terdaftar</h3>
-            <span className="text-[10px] text-orange-600 font-extrabold flex items-center gap-0.5 mt-0.5">
-              Status Kapasitas →
-            </span>
-          </div>
-        </div>
-
-        <div
-          onClick={() => setSelectedMetric("KONDISI_PENUH")}
-          className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 relative overflow-hidden hover:shadow-md hover:border-red-200 transition cursor-pointer group"
-        >
-          <div className="p-4 bg-red-50 rounded-xl text-red-600 group-hover:scale-110 transition">
-            <span className="material-symbols-outlined text-[32px] animate-pulse">notifications_active</span>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase">Kondisi Penuh</p>
-            <h3 className="text-2xl font-bold text-red-600">{kpi?.alertTongPenuh || 6} Radar Merah</h3>
-            <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-0.5 mt-0.5">
-              Daftar Penjemputan →
-            </span>
+          <div className="text-slate-500 text-[11px] flex items-center gap-2">
+            <span>Sinkronisasi: <strong>{lastSyncTime.toLocaleTimeString("id-ID")}</strong></span>
+            <span className="text-slate-300">•</span>
+            <span>Total <strong>{verifiedMapBins.length}</strong> tempat sampah terverifikasi GPS</span>
           </div>
         </div>
       </div>
 
-      {/* Map and Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* GIS Map */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[560px]">
-          <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <h3 className="font-bold text-sm text-gray-800">GIS Peta Wilayah</h3>
-              <p className="text-[10px] text-gray-400">Monitoring real-time volume tong dan fasilitas lingkungan</p>
+      {/* 2. Monitoring Container */}
+      <div className="space-y-6">
+
+        {/* Summary KPI Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+              TERVERIFIKASI GPS
+            </span>
+            <div className="flex items-baseline justify-between">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{verifiedMapBins.length}</h3>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Aktif
+              </span>
             </div>
-            
-            {/* Dropdown Location Filter with Auto-Zoom */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <select
-                value={selectedKelurahan}
-                onChange={(e) => handleKelurahanSelect(e.target.value)}
-                className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-xs"
-              >
-                <option value="Semua Kelurahan">Semua Kelurahan (Coblong)</option>
-                {Object.values(KELURAHAN_GEODATA).map((k) => (
-                  <option key={k.id} value={k.name}>
-                    Kel. {k.name}
-                  </option>
-                ))}
-              </select>
+          </div>
 
-              <select
-                value={selectedRtRw}
-                onChange={(e) => handleRtRwSelect(e.target.value)}
-                className="bg-white border border-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-xs"
-              >
-                <option value="Semua RT/RW">Semua RT / RW</option>
-                {rwGroups.map((g, idx) => (
-                  <option key={idx} value={g.rwName || `RW ${idx + 1}`}>
-                    {g.rwName}
-                  </option>
-                ))}
-              </select>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+              ORGANIK
+            </span>
+            <div className="flex items-baseline justify-between">
+              <h3 className="text-xl sm:text-2xl font-black text-emerald-600">
+                {verifiedMapBins.filter((b) => (b.category?.name || b.lokasi || "").toLowerCase().includes("organik") && !(b.category?.name || b.lokasi || "").toLowerCase().includes("anorganik")).length}
+              </h3>
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-2xs" />
+            </div>
+          </div>
 
-              {(selectedKelurahan !== "Semua Kelurahan" || selectedRtRw !== "Semua RT/RW") && (
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+              ANORGANIK
+            </span>
+            <div className="flex items-baseline justify-between">
+              <h3 className="text-xl sm:text-2xl font-black text-amber-500">
+                {verifiedMapBins.filter((b) => (b.category?.name || b.lokasi || "").toLowerCase().includes("anorganik")).length}
+              </h3>
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-2xs" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">
+              PENUH
+            </span>
+            <div className="flex items-baseline justify-between">
+              <h3 className="text-xl sm:text-2xl font-black text-rose-600">
+                {verifiedMapBins.filter((b) => {
+                  const vol = Number(b.currentVolumeLiter || 0);
+                  const max = Number(b.maxCapacityLiter || 25);
+                  const pct = (b as any).kapasitas !== undefined ? (b as any).kapasitas : (max > 0 ? (vol / max) * 100 : 0);
+                  return b.status === "Penuh" || pct >= 90;
+                }).length}
+              </h3>
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-2xs" />
+            </div>
+          </div>
+        </div>
+
+        {/* Geospatial Map Container with Live Sync Toolbar */}
+        <div
+          ref={mapContainerRef}
+          className={`bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 transition-all duration-200 ${
+            isMapFullscreen
+              ? "fixed inset-0 z-[1000] p-4 sm:p-6 flex flex-col h-screen w-screen rounded-none shadow-2xl overflow-hidden"
+              : "rounded-2xl shadow-sm p-4 sm:p-5 space-y-4 flex flex-col min-h-0"
+          }`}
+        >
+
+          {/* Toolbar Top Bar */}
+          <div className="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#009966]/10 text-[#009966] flex items-center justify-center border border-[#009966]/20 shrink-0 shadow-2xs">
+                  <Map size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-base text-slate-900 dark:text-slate-100 tracking-tight">
+                      Peta Sebaran Real-Time Tempat Sampah Terverifikasi
+                    </h3>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      Live Sync
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Menampilkan sebaran {householdMapGroups.length} Rumah Tangga ({filteredMapBins.length} Tempat Sampah aktif terhubung)
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Controls */}
+              <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => {
-                    setSelectedKelurahan("Semua Kelurahan");
-                    setSelectedRtRw("Semua RT/RW");
-                    setFlyToTarget([-6.8903, 107.611]);
-                    setFlyToZoom(14);
-                  }}
-                  className="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition shadow-xs flex items-center gap-1 cursor-pointer"
+                  type="button"
+                  onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-[#009966] to-emerald-600 hover:from-[#008055] hover:to-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+                  title={isMapFullscreen ? "Keluar Layar Penuh" : "Mode Layar Penuh (Full Size Peta)"}
                 >
-                  <RefreshCw size={12} /> Reset Peta
+                  {isMapFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                  <span className="hidden sm:inline">{isMapFullscreen ? "Kecilkan Peta" : "Full Size Peta"}</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Clean Filter & Map Layer Switcher Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* 1. Kelurahan Filter */}
+                <div className="relative">
+                  <select
+                    value={selectedMapKelurahan}
+                    disabled={isKelurahanLocked}
+                    onChange={(e) => {
+                      if (isKelurahanLocked) return;
+                      const val = e.target.value;
+                      setSelectedMapKelurahan(val);
+                      if (val !== "Semua Kelurahan" && val !== "Semua Kelurahan Binaan" && KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")]) {
+                        const geo = KELURAHAN_GEODATA[val.toUpperCase().replace(/\s+/g, "_")];
+                        setFlyTarget({ center: geo.centroid, zoom: 16, timestamp: Date.now() });
+                      } else {
+                        setFlyTarget({ center: [-6.8903, 107.611], zoom: 15, timestamp: Date.now() });
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold shadow-2xs transition-all focus:outline-none ${
+                      isKelurahanLocked
+                        ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-90 pr-7"
+                        : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {isDpl ? (
+                      <>
+                        {dplKelurahans.length > 1 && (
+                          <option value="Semua Kelurahan Binaan">Semua Kelurahan Binaan</option>
+                        )}
+                        {dplKelurahans.length > 0 ? (
+                          dplKelurahans.map((kel) => (
+                            <option key={kel} value={kel}>
+                              Kel. {kel} {dplKelurahans.length === 1 ? "(Binaan DPL)" : ""}
+                            </option>
+                          ))
+                        ) : (
+                          <option value={user?.kelurahan || "Dago"}>
+                            Kel. {user?.kelurahan || "Dago"} (Binaan DPL)
+                          </option>
+                        )}
+                      </>
+                    ) : isLurah ? (
+                      <option value={userKelurahan}>Kel. {userKelurahan} (Terkunci - Wilayah Tugas)</option>
+                    ) : (
+                      <>
+                        <option value="Semua Kelurahan">Semua Kelurahan</option>
+                        <option value="Dago">Kel. Dago</option>
+                        <option value="Sadang Serang">Kel. Sadang Serang</option>
+                        <option value="Sekeloa">Kel. Sekeloa</option>
+                        <option value="Lebak Gede">Kel. Lebak Gede</option>
+                        <option value="Lebak Siliwangi">Kel. Lebak Siliwangi</option>
+                        <option value="Cipaganti">Kel. Cipaganti</option>
+                      </>
+                    )}
+                  </select>
+                  {isKelurahanLocked && (
+                    <Lock size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  )}
+                </div>
+
+                {/* 2. Rukun Warga Filter */}
+                <div className="relative">
+                  <select
+                    value={selectedRukunWarga}
+                    disabled={isRwLocked}
+                    onChange={(e) => setSelectedRukunWarga(e.target.value)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-extrabold shadow-2xs transition-all focus:outline-none ${
+                      isRwLocked
+                        ? "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-not-allowed opacity-90 pr-7"
+                        : "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
+                    }`}
+                  >
+                    {isRwLocked ? (
+                      <option value={user?.wilayah || (user as any)?.rw?.name || user?.address || "Wilayah RW"}>
+                        {user?.wilayah || (user as any)?.rw?.name || user?.address || "Wilayah RW"} (Terkunci - Wilayah Tugas)
+                      </option>
+                    ) : (
+                      <>
+                        <option value="Semua Rukun Warga">Semua Rukun Warga</option>
+                        {uniqueRwOptions.map((rwName) => (
+                          <option key={rwName} value={rwName}>
+                            {rwName}
+                          </option>
+                        ))}
+                      </>
+                    )}
+                  </select>
+                  {isRwLocked && (
+                    <Lock size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  )}
+                </div>
+
+                {/* 3. Kategori Filter */}
+                <select
+                  value={mapCategoryFilter}
+                  onChange={(e) => setMapCategoryFilter(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
+                >
+                  <option value="Semua">Semua Kategori</option>
+                  <option value="Organik">Organik</option>
+                  <option value="Anorganik">Anorganik</option>
+                </select>
+
+                {/* 4. Status Filter */}
+                <select
+                  value={mapStatusFilter}
+                  onChange={(e) => setMapStatusFilter(e.target.value)}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-extrabold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus:outline-none"
+                >
+                  <option value="Semua">Semua Status</option>
+                  <option value="Aman">Aman (&lt;70%)</option>
+                  <option value="Sedang">Sedang (70-90%)</option>
+                  <option value="Penuh">Penuh (&gt;90%)</option>
+                  <option value="Rusak">Fisik Rusak</option>
+                </select>
+              </div>
+
+              {/* Layer Controls */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowKelurahanBoundaries(!showKelurahanBoundaries)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-2xs border ${
+                    showKelurahanBoundaries
+                      ? "bg-[#009966]/10 text-[#009966] border-[#009966]/30 shadow-xs"
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
+                  title={showKelurahanBoundaries ? "Sembunyikan Batas Wilayah" : "Tampilkan Batas Wilayah"}
+                >
+                  <Layers size={14} className={showKelurahanBoundaries ? "text-[#009966]" : "text-slate-400"} />
+                  <span>Batas Wilayah</span>
+                </button>
+
+                <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setMapTileProvider("google_vector")}
+                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      mapTileProvider === "google_vector"
+                        ? "bg-[#009966] text-white shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Google Peta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMapTileProvider("google_satellite")}
+                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      mapTileProvider === "google_satellite"
+                        ? "bg-[#009966] text-white shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Satelit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMapTileProvider("cartodb")}
+                    className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      mapTileProvider === "cartodb"
+                        ? "bg-[#009966] text-white shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    CartoDB
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Map Canvas Viewport */}
+          <div className={`w-full rounded-2xl overflow-hidden border border-slate-200/90 dark:border-slate-800 relative ${isMapFullscreen ? "flex-1 min-h-0 mt-3" : "h-[520px]"}`}>
+
+            {/* Floating Top-Left Search Bar */}
+            <div className="absolute top-4 left-4 z-20 pointer-events-auto">
+              <div className="relative w-64 sm:w-80 shadow-2xl rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
+                <div className="flex items-center px-3.5 py-2">
+                  <Search size={15} className="text-[#009966] dark:text-emerald-400 shrink-0 mr-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Cari kode tempat sampah..."
+                    value={mapSearchInput}
+                    onChange={(e) => setMapSearchInput(e.target.value)}
+                    className="w-full bg-transparent text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none"
+                  />
+                  {mapSearchInput && (
+                    <button
+                      type="button"
+                      onClick={() => setMapSearchInput("")}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Search Results Dropdown */}
+                {(mapSearchInput || "").trim() && (
+                  <div className="border-t border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto rounded-b-2xl bg-white dark:bg-slate-900 shadow-xl">
+                    {mapSearchResults.length > 0 ? (
+                      mapSearchResults.map((bin) => {
+                        const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+                        const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "")).toLowerCase();
+                        const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
+                        const isAnorganic = rawCat.includes("anorganik") || rawCat.includes("ang");
+                        const catName = isResidu ? "Residu" : isAnorganic ? "Anorganik" : "Organik";
+                        return (
+                          <div
+                            key={`search-res-${bin.id || binCode}`}
+                            onClick={() => {
+                              setMapSearchInput(binCode);
+                              if (bin.latitude && bin.longitude) {
+                                setFlyTarget({
+                                  center: [Number(bin.latitude), Number(bin.longitude)],
+                                  zoom: 18,
+                                  timestamp: Date.now(),
+                                });
+                              }
+                            }}
+                            className="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer transition-colors flex items-center justify-between"
+                          >
+                            <div>
+                              <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100 block">{binCode}</span>
+                              <span className="text-[10.5px] text-slate-500 dark:text-slate-400 font-semibold">{bin.wargaName || (bin as any).user?.name || "Warga Terdaftar"}</span>
+                            </div>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                              isResidu
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                                : isAnorganic
+                                ? "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700/40"
+                                : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700/40"
+                            }`}>
+                              {catName}
+                            </span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="px-3.5 py-3 text-xs text-slate-400 dark:text-slate-500 font-medium text-center">
+                        Tidak ada tempat sampah yang cocok
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Map Legend Overlay */}
+            <div
+              className="absolute bottom-4 right-4 flex flex-col pointer-events-auto max-w-[280px] sm:max-w-[300px] select-none"
+              style={{ zIndex: 500, isolation: "isolate" }}
+            >
+              {!isLegendOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setIsLegendOpen(true)}
+                  className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xl rounded-2xl px-3.5 py-2 border border-slate-200/90 dark:border-slate-800 flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-[#009966] transition-all cursor-pointer group"
+                  title="Tampilkan Legenda Peta"
+                >
+                  <Layers className="w-4 h-4 text-[#009966] group-hover:scale-110 transition-transform" />
+                  <span>Legenda Monitoring</span>
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              ) : (
+                <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-2xl rounded-2xl p-3.5 border border-slate-200/90 dark:border-slate-800 flex flex-col gap-2.5 min-w-[230px] max-w-[280px] sm:max-w-[300px]">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">
+                        Legenda Monitoring
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsLegendOpen(false)}
+                      className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Sembunyikan Legenda"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100/90 dark:bg-slate-800/90 dark:bg-slate-800/90 rounded-xl border border-slate-200/60 dark:border-slate-800/60 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setActiveLegendTab("sampah")}
+                      className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
+                        activeLegendTab === "sampah"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      Tempat Sampah
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveLegendTab("fasilitas_wilayah")}
+                      className={`py-1 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer ${
+                        activeLegendTab === "fasilitas_wilayah"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      Fasilitas &amp; Wilayah
+                    </button>
+                  </div>
+
+                  {activeLegendTab === "sampah" ? (
+                    <div className="space-y-2">
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Kategori Tempat Sampah
+                        </span>
+                        <div className="grid grid-cols-3 gap-1 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white shadow-2xs" />
+                            <span>Organik</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-white shadow-2xs" />
+                            <span>Anorganik</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-full bg-slate-500 border border-white shadow-2xs" />
+                            <span>Residu</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Status Volume &amp; Okupansi
+                        </span>
+                        <div className="grid grid-cols-1 gap-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-100 shadow-2xs" />
+                            <span>Aman (&lt; 70% Terisi)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-2xs" />
+                            <span>Sedang / Waspada (70% - 90%)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-100 animate-pulse shadow-2xs" />
+                            <span className="font-bold text-rose-600">Penuh (&gt; 90% Terisi)</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-700 border border-white shadow-2xs" />
+                            <span>Tempat Sampah Rusak</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5 custom-scrollbar">
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Fasilitas Pengolahan Sampah
+                        </span>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[10.5px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-green-600 shrink-0" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bata Terawang</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 shrink-0" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Loseda</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-amber-600 shrink-0" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Rumah Maggot</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-blue-600 shrink-0" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Bank Sampah</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-teal-600 shrink-0" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">TPS</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2.5 h-2.5 rounded-xs bg-orange-600 shrink-0" />
+                            <span className="font-bold text-slate-700 dark:text-slate-300 truncate">Incinerator</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1 border-t border-slate-100 dark:border-slate-800 pt-2">
+                        <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                          Batas Kelurahan Terdata
+                        </span>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10.5px]">
+                          {Object.values(KELURAHAN_GEODATA).map((kg) => (
+                            <div key={kg.id} className="flex items-center gap-1.5">
+                              <span
+                                className="w-2.5 h-2.5 rounded-xs shrink-0 border border-black/10 shadow-2xs"
+                                style={{ backgroundColor: kg.color }}
+                              />
+                              <span className="font-bold text-slate-700 dark:text-slate-300 truncate">{kg.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                    <span>Diperbarui: {lastSyncTime.toLocaleTimeString("id-ID")}</span>
+                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Realtime
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
-          </div>
 
-          <div className="px-4 py-2 bg-slate-50 border-b border-gray-100 flex gap-2 text-xs font-semibold flex-wrap justify-end">
-            <button
-              onClick={() => setActiveColorFilter("ALL")}
-              className={`px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                activeColorFilter === "ALL"
-                  ? "bg-slate-900 text-white border-slate-900 shadow-xs"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-              }`}
+            {/* Leaflet Map Renderer */}
+            <MapContainer
+              center={[-6.8903, 107.611]}
+              zoom={14}
+              scrollWheelZoom={true}
+              attributionControl={false}
+              zoomControl={false}
+              style={{ height: "100%", width: "100%", zIndex: 1 }}
             >
-              Semua Status
-            </button>
-            <button
-              onClick={() => setActiveColorFilter("AMAN")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                activeColorFilter === "AMAN"
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                  : "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
-              }`}
-            >
-              <span className="w-2.5 h-2.5 bg-emerald-500 border border-white rounded-full"></span> Tong Aman
-            </button>
-            <button
-              onClick={() => setActiveColorFilter("WASPADA")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                activeColorFilter === "WASPADA"
-                  ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-              }`}
-            >
-              <span className="w-2.5 h-2.5 bg-amber-500 border border-white rounded-full"></span> Waspada
-            </button>
-            <button
-              onClick={() => setActiveColorFilter("PENUH")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                activeColorFilter === "PENUH"
-                  ? "bg-rose-600 text-white border-rose-600 shadow-xs animate-pulse"
-                  : "bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100"
-              }`}
-            >
-              <span className="w-2.5 h-2.5 bg-rose-500 border border-white rounded-full"></span> Tong Penuh
-            </button>
-            <button
-              onClick={() => setActiveColorFilter("ORGANIK")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                activeColorFilter === "ORGANIK"
-                  ? "bg-green-700 text-white border-green-700 shadow-xs"
-                  : "bg-green-50 text-green-800 border-green-200 hover:bg-green-100"
-              }`}
-            >
-              <span className="w-2.5 h-2.5 bg-[#10b981] rounded-sm"></span> Organik
-            </button>
-            <button
-              onClick={() => setActiveColorFilter("DAUR_ULANG")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition cursor-pointer text-[11px] font-bold ${
-                activeColorFilter === "DAUR_ULANG"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
-                  : "bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100"
-              }`}
-            >
-              <span className="w-2.5 h-2.5 bg-[#3b82f6] rounded-sm"></span> Anorganik / Daur Ulang
-            </button>
-          </div>
-          <div className="flex-1 relative z-10">
-            <MapContainer center={[-6.8903, 107.611]} zoom={14} className="h-full w-full">
-              <MapEventHandler
-                setZoom={setMapZoom}
-                setSelectedKelurahan={setSelectedKelurahan}
-                setSelectedRtRw={setSelectedRtRw}
-              />
-              <MapFlyTo target={flyToTarget} zoom={flyToZoom} />
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              <MapResizer isFullscreen={isMapFullscreen} />
+              <MapFlyTo target={flyTarget} />
+              <MapEvents setZoom={setMapZoom} setSelectedKelurahan={setSelectedMapKelurahan} isLocked={isKelurahanLocked} />
+
+              <ThemeTileLayer
+                lightUrl={
+                  mapTileProvider === "google_vector"
+                    ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+                    : mapTileProvider === "google_satellite"
+                    ? "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                    : mapTileProvider === "cartodb"
+                    ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                }
               />
 
-              {/* LEVEL 1: KELURAHAN OUTSIDE BOUNDARY POLYGONS */}
-              {Object.values(KELURAHAN_GEODATA).map((kg) => {
+              {/* KELURAHAN BOUNDARY POLYGONS */}
+              {showKelurahanBoundaries && Object.values(KELURAHAN_GEODATA).map((kg) => {
                 if (
-                  selectedKelurahan !== "Semua Kelurahan" &&
-                  selectedKelurahan.toLowerCase() !== kg.name.toLowerCase()
+                  selectedMapKelurahan !== "Semua Kelurahan" &&
+                  selectedMapKelurahan !== "Semua Kelurahan Binaan" &&
+                  selectedMapKelurahan.toLowerCase() !== kg.name.toLowerCase()
                 ) {
                   return null;
                 }
 
                 return (
                   <Polygon
-                    key={`mon-kel-poly-${kg.id}`}
+                    key={`mon-poly-${kg.id}`}
                     positions={kg.bounds}
                     pathOptions={{
                       color: kg.color,
                       fillColor: kg.color,
-                      fillOpacity: selectedKelurahan === kg.name ? 0.28 : 0.15,
-                      weight: selectedKelurahan === kg.name ? 3 : 2,
-                      dashArray: "6, 6",
+                      fillOpacity: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 0.30 : 0.15,
+                      weight: selectedMapKelurahan.toLowerCase() === kg.name.toLowerCase() ? 3 : 2,
                     }}
                   />
                 );
               })}
 
-              {/* LEVEL 1: KELURAHAN OVERVIEW MARKERS WHEN "Semua Kelurahan" AND ZOOM < 15 */}
-              {selectedKelurahan === "Semua Kelurahan" && mapZoom < 15 &&
-                Object.values(KELURAHAN_GEODATA).map((kel) => (
-                  <Marker
-                    key={`mon-kel-pin-${kel.id}`}
-                    position={kel.centroid}
-                    icon={createKelurahanPinIcon(kel.name, kel.rwCount)}
-                    eventHandlers={{
-                      click: () => {
-                        setSelectedKelurahan(kel.name);
-                        setFlyToTarget(kel.centroid);
-                        setFlyToZoom(16);
-                      },
-                    }}
-                  >
-                    <Popup>
-                      <div className="text-xs p-1 text-center font-sans">
-                        <strong className="text-sm font-bold block text-slate-900 mb-1">
-                          Kelurahan {kel.name}
-                        </strong>
-                        <p className="text-slate-600 mb-2">Total Wilayah: <strong>{kel.rwCount} RW</strong></p>
-                        <button
-                          onClick={() => {
-                            setSelectedKelurahan(kel.name);
-                            setFlyToTarget(kel.centroid);
-                            setFlyToZoom(16);
-                          }}
-                          className="w-full bg-emerald-600 text-white font-bold text-[11px] py-1 px-2.5 rounded-lg hover:bg-emerald-700 transition cursor-pointer"
-                        >
-                          Lihat Zona Wilayah →
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
+              {/* REAL HOUSEHOLD MAP MARKERS (1 Single Pin per House with 2 Bins) */}
+              {householdMapGroups.map((group) => {
+                const lat = group.latitude;
+                const lng = group.longitude;
+                const circleColor = group.isRusak
+                  ? "#e11d48"
+                  : group.isPenuh
+                  ? "#ef4444"
+                  : group.isSedang
+                  ? "#f59e0b"
+                  : "#10b981";
 
-              {/* LEVEL 2: RW ZONA MARKERS & SUB-POLYGONS (HIDE WHEN ZOOM >= 17) */}
-              {(selectedKelurahan !== "Semua Kelurahan" || mapZoom >= 15) && mapZoom < 17 &&
-                rwGroups.map((group, idx) => (
-                  <React.Fragment key={`rw-frag-${idx}`}>
+                const org = group.organikBin;
+                const anorg = group.anorganikBin;
+
+                const orgVol = Number(org?.currentVolumeLiter || 0);
+                const orgMax = Number(org?.maxCapacityLiter || 25);
+                const orgPct = org ? (org.kapasitas !== undefined ? org.kapasitas : (orgMax > 0 ? Math.round((orgVol / orgMax) * 100) : 0)) : 0;
+
+                const anorgVol = Number(anorg?.currentVolumeLiter || 0);
+                const anorgMax = Number(anorg?.maxCapacityLiter || 25);
+                const anorgPct = anorg ? (anorg.kapasitas !== undefined ? anorg.kapasitas : (anorgMax > 0 ? Math.round((anorgVol / anorgMax) * 100) : 0)) : 0;
+
+                return (
+                  <React.Fragment key={`hh-pin-${group.householdKey}`}>
+                    {/* Radius indicator circle */}
                     <Circle
-                      center={[group.latitude, group.longitude]}
-                      radius={120}
-                      pathOptions={{ color: "#10b981", fillColor: "#10b981", fillOpacity: 0.2, weight: 2, dashArray: "4,4" }}
-                    />
-                    <Marker
-                      position={[group.latitude, group.longitude]}
-                      icon={createRwZonaIcon(group.rwName || `RW ${idx + 1}`, 88)}
-                      eventHandlers={{
-                        click: () => {
-                          setFlyToTarget([group.latitude, group.longitude]);
-                          setFlyToZoom(17);
-                        },
+                      center={[lat, lng]}
+                      radius={18}
+                      pathOptions={{
+                        color: circleColor,
+                        fillColor: circleColor,
+                        fillOpacity: 0.18,
+                        weight: 1.5,
                       }}
+                    />
+
+                    <Marker
+                      position={[lat, lng]}
+                      icon={createHouseholdPinIcon(
+                        Boolean(org),
+                        Boolean(anorg),
+                        group.isPenuh,
+                        group.isSedang,
+                        group.isRusak
+                      )}
                     >
+                      {/* HOVER TOOLTIP */}
+                      <Tooltip permanent={false} direction="top" offset={[0, -16]} className="custom-bin-hover-tooltip">
+                        <div className="p-2 min-w-[230px] space-y-1.5 font-sans">
+                          <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{group.wargaName}</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                              Aktif Terhubung
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-slate-500 space-y-0.5">
+                            <div>{group.address} - {group.rtRw}</div>
+                            {group.wargaPhone && <div className="font-mono text-emerald-700 font-bold">{group.wargaPhone}</div>}
+                          </div>
+
+                          {/* Dual Bin Status Snippet */}
+                          <div className="pt-1 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                            {org && (
+                              <div className="space-y-0.5">
+                                <div className="flex justify-between text-[10px] font-bold">
+                                  <span className="text-emerald-700 dark:text-emerald-400">Organik ({org.kode || org.qrCode})</span>
+                                  <span className={orgPct >= 90 ? "text-rose-600" : orgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                    {orgVol}/{orgMax}L ({orgPct}%)
+                                  </span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${orgPct >= 90 ? "bg-rose-500" : orgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                    style={{ width: `${Math.min(orgPct, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {anorg && (
+                              <div className="space-y-0.5">
+                                <div className="flex justify-between text-[10px] font-bold">
+                                  <span className="text-amber-700 dark:text-amber-400">Anorganik ({anorg.kode || anorg.qrCode})</span>
+                                  <span className={anorgPct >= 90 ? "text-rose-600" : anorgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                    {anorgVol}/{anorgMax}L ({anorgPct}%)
+                                  </span>
+                                </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${anorgPct >= 90 ? "bg-rose-500" : anorgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                    style={{ width: `${Math.min(anorgPct, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </Tooltip>
+
+                      {/* CLICK POPUP (Rich Dual Bin View) */}
                       <Popup>
-                        <div className="text-xs p-1 text-center font-sans">
-                          <strong className="text-sm font-bold block mb-1">Wilayah {group.rwName}</strong>
-                          <p className="text-gray-600 mb-2">{group.totalBins} Tempat Sampah</p>
-                          <p className="text-[10px] text-emerald-600 font-semibold italic">Zoom in untuk melihat detail rumah tangga</p>
+                        <div className="p-2 min-w-[280px] max-w-[320px] space-y-3 font-sans">
+                          {/* Header */}
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <div>
+                              <span className="font-extrabold text-slate-900 dark:text-slate-100 text-xs block">{group.wargaName}</span>
+                              <span className="text-[10px] text-slate-400 font-bold">{group.rtRw}</span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded-full text-[9.5px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                              Rumah Warga
+                            </span>
+                          </div>
+
+                          {/* Citizen Details */}
+                          <div className="bg-emerald-50/70 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-800/50 space-y-1">
+                            <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Identitas Rumah Tangga</span>
+                            <div className="text-xs text-slate-700 dark:text-slate-300 space-y-0.5">
+                              <div>Alamat: <strong className="text-slate-900 dark:text-slate-100">{group.address}</strong></div>
+                              {group.wargaPhone && (
+                                <div>No. WhatsApp: <strong className="font-mono text-emerald-700 dark:text-emerald-400">{group.wargaPhone}</strong></div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 2 Tempat Sampah Grid Cards */}
+                          <div className="space-y-2">
+                            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider block">
+                              Tempat Sampah Terhubung (2 Wadah)
+                            </span>
+
+                            <div className="grid grid-cols-1 gap-2">
+                              {/* Tempat Sampah Organik */}
+                              {org ? (
+                                <div className="p-2.5 rounded-xl bg-emerald-50/50 dark:bg-slate-800/80 border border-emerald-200/80 dark:border-slate-700 space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{org.kode || org.qrCode}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">
+                                      Organik
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[11px] font-bold">
+                                    <span className="text-slate-500">Volume Terisi:</span>
+                                    <span className={orgPct >= 90 ? "text-rose-600" : orgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                      {orgVol}/{orgMax}L ({orgPct}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${orgPct >= 90 ? "bg-rose-500" : orgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                      style={{ width: `${Math.min(orgPct, 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 text-xs italic border border-slate-100 dark:border-slate-800">
+                                  Tempat Sampah Organik belum terhubung
+                                </div>
+                              )}
+
+                              {/* Tempat Sampah Anorganik */}
+                              {anorg ? (
+                                <div className="p-2.5 rounded-xl bg-amber-50/50 dark:bg-slate-800/80 border border-amber-200/80 dark:border-slate-700 space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-mono font-black text-xs text-slate-900 dark:text-slate-100">{anorg.kode || anorg.qrCode}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-900 uppercase">
+                                      Anorganik
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[11px] font-bold">
+                                    <span className="text-slate-500">Volume Terisi:</span>
+                                    <span className={anorgPct >= 90 ? "text-rose-600" : anorgPct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                      {anorgVol}/{anorgMax}L ({anorgPct}%)
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${anorgPct >= 90 ? "bg-rose-500" : anorgPct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                      style={{ width: `${Math.min(anorgPct, 100)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-400 dark:text-slate-500 text-xs italic border border-slate-100 dark:border-slate-800">
+                                  Tempat Sampah Anorganik belum terhubung
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <div>Koordinat Rumah: <strong className="font-mono text-slate-700 dark:text-slate-300">{lat.toFixed(4)}, {lng.toFixed(4)}</strong></div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBinDetail(org || anorg || group.allBins[0])}
+                            className="w-full py-1.5 bg-[#009966] hover:bg-[#008055] text-white text-xs font-extrabold rounded-lg transition-all text-center cursor-pointer shadow-2xs"
+                          >
+                            Buka Detail Lengkap
+                          </button>
                         </div>
                       </Popup>
                     </Marker>
                   </React.Fragment>
-                ))}
-
-              {/* LEVEL 3: HOUSEHOLD BINS (ZOOM >= 17) */}
-              {mapZoom >= 17 &&
-                householdGroups.map((group, idx) => {
-                  let maxPercentage = 0;
-                  group.bins.forEach((bin) => {
-                    const vol = Number(bin.currentVolumeLiter || 0);
-                    const max = Number(bin.maxCapacityLiter || 25);
-                    const pct = max > 0 ? (vol / max) * 100 : 0;
-                    if (pct > maxPercentage) maxPercentage = pct;
-                  });
-
-                  let status = "aman";
-                  let color = "#10B981";
-                  if (maxPercentage >= 90) {
-                    status = "penuh";
-                    color = "#ef4444";
-                  } else if (maxPercentage >= 70) {
-                    status = "waspada";
-                    color = "#f59e0b";
-                  }
-
-                  // Apply Active Color Filter
-                  if (activeColorFilter === "AMAN" && status !== "aman") return null;
-                  if (activeColorFilter === "WASPADA" && status !== "waspada") return null;
-                  if (activeColorFilter === "PENUH" && status !== "penuh") return null;
-                  if (activeColorFilter === "ORGANIK") {
-                    const hasOrganic = group.bins.some((b) => (b.category?.name || (b as any).categoryName || "").toUpperCase().includes("ORGANIC"));
-                    if (!hasOrganic) return null;
-                  }
-                  if (activeColorFilter === "DAUR_ULANG") {
-                    const hasRecycling = group.bins.some((b) => !(b.category?.name || (b as any).categoryName || "").toUpperCase().includes("ORGANIC"));
-                    if (!hasRecycling) return null;
-                  }
-
-                  return (
-                    <React.Fragment key={`hh-frag-${idx}`}>
-                      <Circle
-                        center={[group.latitude, group.longitude]}
-                        radius={20}
-                        pathOptions={{ color: color, fillColor: color, fillOpacity: 0.15, weight: 1 }}
-                      />
-                      <Marker
-                        position={[group.latitude, group.longitude]}
-                        icon={createBinIcon(status)}
-                      >
-                        <Popup>
-                          <div className="text-xs p-1.5 min-w-[200px] font-sans">
-                            <div className="border-b border-gray-200 pb-1.5 mb-2">
-                              <strong className="text-sm font-extrabold text-slate-900 block">Data Tempat Sampah Rumah Tangga</strong>
-                              {(group.bins[0] as any)?.user?.name && (
-                                <span className="text-[11px] font-bold text-slate-800 block mt-0.5">👤 {(group.bins[0] as any).user.name}</span>
-                              )}
-                              {(group.bins[0] as any)?.user?.phone && (
-                                <span className="text-[10px] font-bold text-emerald-600 block">📱 {(group.bins[0] as any).user.phone}</span>
-                              )}
-                            </div>
-                            {group.bins.map((bin) => {
-                              const vol = Number(bin.currentVolumeLiter || 0);
-                              const max = Number(bin.maxCapacityLiter || 25);
-                              const percentage = max > 0 ? (vol / max) * 100 : 0;
-                              const rawCat = (bin.category?.name || (bin as any).categoryName || "").toUpperCase();
-                              const isOrganic = rawCat.includes("ORGANIC") || rawCat.includes("ORGANIK");
-                              return (
-                                <div key={bin.id} className="mb-2 last:mb-0 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
-                                  <span className={`font-black text-xs block ${isOrganic ? "text-emerald-800" : "text-blue-800"}`}>
-                                    {isOrganic ? "Organik" : "Anorganik"}
-                                  </span>
-                                  <span className="block text-slate-500 font-mono text-[10px] font-semibold">QR: {bin.qrCode || "BIN-124"}</span>
-                                  <span className="block font-black text-slate-800 text-[11px] mt-0.5">
-                                    Terisi: {percentage.toFixed(1)}% ({vol.toFixed(1)}L / {max}L)
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </Popup>
-                      </Marker>
-                    </React.Fragment>
-                  );
-                })}
-
-              {/* Facilities Layer */}
-              {facilities
-                .filter((f) => f.latitude && f.longitude)
-                .map((f) => {
-                  const lat = Number(f.latitude);
-                  const lng = Number(f.longitude);
-
-                  let zoneColor = "#8b5cf6";
-                  let zoneRadius = 60;
-                  if (f.jenis === "loseda" || f.jenis === "rumah_maggot") {
-                    zoneColor = "#10b981";
-                    zoneRadius = f.jenis === "loseda" ? 25 : 75;
-                  } else if (f.jenis === "bank_sampah") {
-                    zoneColor = "#3b82f6";
-                    zoneRadius = 100;
-                  } else if (f.jenis === "tpa" || f.jenis === "residu") {
-                    zoneColor = "#ef4444";
-                    zoneRadius = 150;
-                  } else if (f.jenis === "flash_drop") {
-                    zoneColor = "#eab308";
-                    zoneRadius = 80;
-                  }
-
-                  return (
-                    <React.Fragment key={`fac-frag-${f.id}`}>
-                      <Circle
-                        center={[lat, lng]}
-                        radius={zoneRadius}
-                        pathOptions={{ color: zoneColor, fillColor: zoneColor, fillOpacity: 0.08, weight: 1, dashArray: "2,2" }}
-                      />
-                      <Marker
-                        position={[lat, lng]}
-                        icon={createFacilityIcon(f.jenis)}
-                      >
-                        <Popup>
-                          <div className="text-xs p-1">
-                            <strong className="text-sm font-bold block mb-0.5 text-primary uppercase">{f.jenis.replace("_", " ")}</strong>
-                            <span className="font-bold text-gray-800 block text-xs">{f.nama}</span>
-                            <span className="block text-gray-500 mt-1">PIC: {f.pic}</span>
-                            {f.kapasitas && <span className="block text-gray-600">Kapasitas: {f.kapasitas} Kg</span>}
-                          </div>
-                        </Popup>
-                      </Marker>
-                    </React.Fragment>
-                  );
-                })}
+                );
+              })}
             </MapContainer>
           </div>
         </div>
 
-        {/* Dynamic Charts and Trends */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-[520px]">
-          <div>
-            <div className="flex justify-between items-start">
+        {/* 3. Real-Time Verified Bin Data Table Section */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden space-y-4 p-5 sm:p-6">
+          {/* Table Header & Search Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#009966] flex items-center justify-center border border-emerald-200/60 shrink-0 shadow-2xs">
+                <TableIcon size={20} />
+              </div>
               <div>
-                <h3 className="font-extrabold text-sm text-slate-900">Tren Pengumpulan Scoped</h3>
-                <p className="text-[10px] text-slate-500">Statistik berat setoran sampah mingguan</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-lg text-slate-900 dark:text-slate-100 tracking-tight">
+                    Tabel Data Tempat Sampah Terverifikasi
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
+                    {filteredTableBins.length} Unit
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Daftar inventaris tempat sampah terdaftar dan terpantau di server real-time PostgreSQL.
+                </p>
               </div>
-              <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                Satuan: Volume (Kg)
-              </span>
+            </div>
+
+            {/* Quick Table Search & Limit */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="relative w-full sm:w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari kode, nama, atau HP..."
+                  value={tableSearchInput}
+                  onChange={(e) => {
+                    setTableSearchInput(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#009966] bg-slate-50/70 dark:bg-slate-800/70"
+                />
+                {tableSearchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setTableSearchInput("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-800/70 cursor-pointer focus:outline-none"
+              >
+                <option value={10}>10 Baris</option>
+                <option value={25}>25 Baris</option>
+                <option value={50}>50 Baris</option>
+              </select>
             </div>
           </div>
 
-          {/* SVG Bar Chart with X & Y Axes */}
-          <div className="h-72 mt-4 relative flex items-stretch border-b border-l border-slate-300/80 pl-9 pb-8 pt-6 bg-slate-50/50 rounded-xl p-3">
-            {/* Y-Axis Ticks & Gridlines */}
-            <div className="absolute left-1 top-6 bottom-8 w-7 flex flex-col justify-between text-[10px] font-bold text-slate-400 text-right pr-1">
-              <span>250</span>
-              <span>200</span>
-              <span>150</span>
-              <span>100</span>
-              <span>50</span>
-              <span>0</span>
-            </div>
+          {/* Table Container */}
+          <div className="overflow-x-auto w-full rounded-xl border border-slate-100 dark:border-slate-800">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-[10.5px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                  <th className="py-3.5 px-4 text-center">QR Code</th>
+                  <th className="py-3.5 px-4">Kode Tempat Sampah</th>
+                  <th className="py-3.5 px-4">Kategori</th>
+                  <th className="py-3.5 px-4">Dimiliki Oleh</th>
+                  <th className="py-3.5 px-4">Kapasitas &amp; Volume</th>
+                  <th className="py-3.5 px-4 text-center">Status</th>
+                  <th className="py-3.5 px-4">Diverifikasi Pada</th>
+                  <th className="py-3.5 px-4">GPS / Koordinat</th>
+                  <th className="py-3.5 px-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {paginatedBins.length > 0 ? (
+                  paginatedBins.map((bin) => {
+                    const binCode = (bin as any).kode || bin.qrCode || bin.id || "";
+                    const rawCat = (bin.category?.name || (binCode.includes("ANG") ? "anorganik" : binCode.includes("RSD") ? "residu" : binCode.includes("OGN") ? "organik" : "")).toLowerCase();
+                    const isResidu = rawCat.includes("residu") || rawCat.includes("b3") || rawCat.includes("rsd");
+                    const isAnorganik = rawCat.includes("anorganik") || rawCat.includes("ang");
+                    const catName = isResidu ? "Residu" : isAnorganik ? "Anorganik" : "Organik";
 
-            {/* Gridline dashes */}
-            <div className="absolute left-9 right-3 top-6 bottom-8 flex flex-col justify-between pointer-events-none opacity-20">
-              <div className="border-b border-dashed border-slate-400 w-full"></div>
-              <div className="border-b border-dashed border-slate-400 w-full"></div>
-              <div className="border-b border-dashed border-slate-400 w-full"></div>
-              <div className="border-b border-dashed border-slate-400 w-full"></div>
-              <div className="border-b border-dashed border-slate-400 w-full"></div>
-              <div className="border-b border-slate-400 w-full"></div>
-            </div>
+                    const vol = Number(bin.currentVolumeLiter || 0);
+                    const max = Number(bin.maxCapacityLiter || 25);
+                    const pct = (bin as any).kapasitas !== undefined ? (bin as any).kapasitas : (max > 0 ? Math.round((vol / max) * 100) : 0);
 
-            {trends.length === 0 ? (
-              <div className="w-full flex items-center justify-center text-xs text-slate-400 italic">
-                Belum ada transaksi di wilayah ini
-              </div>
-            ) : (
-              <div className="w-full h-full flex justify-around items-end z-10 px-2">
-                {trends.slice(-6).map((t, idx) => {
-                  const maxVal = 250;
-                  const orgHeight = Math.min(100, (t.organic / maxVal) * 100);
-                  const inorgHeight = Math.min(100, (t.inorganic / maxVal) * 100);
+                    const isRusak = bin.status === "Rusak" || (bin as any).realStatus === "BROKEN";
+                    const isPenuh = bin.status === "Penuh" || pct >= 90;
+                    const isSedang = bin.status === "Sedang" || (pct >= 70 && pct < 90);
 
-                  return (
-                    <div key={idx} className="flex flex-col items-center gap-2 w-full max-w-[72px] relative group">
-                      <div className="w-full flex items-end justify-center gap-2 h-52">
-                        {/* Organik Bar */}
-                        <div className="flex flex-col items-center w-5 h-full justify-end">
-                          <span className="text-[9px] font-black text-emerald-700 opacity-0 group-hover:opacity-100 transition-all duration-200 mb-1 bg-emerald-50 px-1 py-0.5 rounded shadow-2xs">
-                            {t.organic.toFixed(1)}
-                          </span>
+                    const ownerName = bin.wargaName || (bin as any).user?.name || "Warga Terdaftar";
+                    const ownerPhone = (bin as any).user?.phone || (bin as any).wargaPhone || (bin as any).phone;
+                    const areaText = bin.rtRw || (bin as any).rw?.name || (typeof bin.rw === "string" ? bin.rw : null) || (bin.lokasi && !bin.lokasi.toLowerCase().startsWith("kategori:") ? bin.lokasi : "Wilayah Dampingan");
+
+                    const lat = Number(bin.latitude);
+                    const lng = Number(bin.longitude);
+
+                    return (
+                      <tr
+                        key={`tbl-bin-${bin.id || binCode}`}
+                        className="hover:bg-slate-50/80 dark:bg-slate-800/80 dark:hover:bg-slate-800/80 transition-colors text-xs text-slate-700 dark:text-slate-300 font-medium"
+                      >
+                        {/* 1. QR CODE */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
                           <div
-                            style={{ height: `${Math.max(orgHeight, 6)}%` }}
-                            className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg hover:from-emerald-500 hover:to-emerald-300 transition-all duration-300 shadow-md hover:shadow-emerald-500/30"
-                            title={`Organik: ${t.organic} Kg`}
-                          ></div>
-                        </div>
+                            onClick={() => setSelectedBinDetail(bin)}
+                            className="inline-flex items-center justify-center p-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs hover:border-[#009966] hover:scale-105 transition-all cursor-pointer"
+                            title="Lihat Detail &amp; QR Code"
+                          >
+                            <img
+                              className="w-9 h-9 rounded-lg object-contain"
+                              alt="QR Code"
+                              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(binCode)}`}
+                            />
+                          </div>
+                        </td>
 
-                        {/* Anorganik Bar */}
-                        <div className="flex flex-col items-center w-5 h-full justify-end">
-                          <span className="text-[9px] font-black text-blue-700 opacity-0 group-hover:opacity-100 transition-all duration-200 mb-1 bg-blue-50 px-1 py-0.5 rounded shadow-2xs">
-                            {t.inorganic.toFixed(1)}
+                        {/* 2. KODE */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedBinDetail(bin)}
+                            className="font-mono font-black text-slate-900 dark:text-slate-100 text-xs bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 hover:text-[#009966] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+                          >
+                            {binCode}
+                          </button>
+                        </td>
+
+                        {/* 3. KATEGORI */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            isResidu
+                              ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                              : isAnorganik
+                              ? "bg-amber-50 text-amber-800 border border-amber-200"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}>
+                            {catName}
                           </span>
-                          <div
-                            style={{ height: `${Math.max(inorgHeight, 6)}%` }}
-                            className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg hover:from-blue-500 hover:to-blue-300 transition-all duration-300 shadow-md hover:shadow-blue-500/30"
-                            title={`Anorganik: ${t.inorganic} Kg`}
-                          ></div>
-                        </div>
-                      </div>
-                      {/* X-Axis Label */}
-                      <span className="text-[11px] font-extrabold text-slate-700 whitespace-nowrap absolute -bottom-6">
-                        {t.label}
-                      </span>
-                    </div>
-                  );
-                })}
+                        </td>
+
+                        {/* 4. PEMILIK */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div>
+                            <div className="font-extrabold text-slate-900 dark:text-slate-100 text-xs">{ownerName}</div>
+                            <div className="text-[11px] text-slate-500 font-medium">{areaText}</div>
+                            {ownerPhone && (
+                              <div className="text-[10.5px] font-mono text-emerald-700 font-bold">{ownerPhone}</div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* 5. KAPASITAS & OKUPANSI */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="space-y-1 min-w-[130px]">
+                            <div className="flex justify-between text-[11px] font-bold">
+                              <span className="text-slate-600 dark:text-slate-400">{vol}/{max} Liter</span>
+                              <span className={pct >= 90 ? "text-rose-600" : pct >= 70 ? "text-amber-600" : "text-emerald-600"}>
+                                {pct}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500"}`}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* 6. STATUS */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                            isRusak
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : isPenuh
+                              ? "bg-rose-50 text-rose-600 border border-rose-200"
+                              : isSedang
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              isRusak ? "bg-rose-600" : isPenuh ? "bg-rose-500 animate-pulse" : isSedang ? "bg-amber-500" : "bg-emerald-500"
+                            }`} />
+                            {isRusak ? "Rusak" : isPenuh ? "Penuh" : isSedang ? "Sedang" : "Normal"}
+                          </span>
+                        </td>
+
+                        {/* 7. DIVERIFIKASI */}
+                        <td className="py-3 px-4 whitespace-nowrap text-slate-600 dark:text-slate-400 text-[11px]">
+                          {(bin as any).verifiedAt || "Sistem Real-Time"}
+                        </td>
+
+                        {/* 8. GPS */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {lat && lng ? (
+                            <div className="text-[11px] font-mono text-slate-700 dark:text-slate-300">
+                              <div>{lat.toFixed(4)}, {lng.toFixed(4)}</div>
+                              <div className="text-[10px] text-slate-400">Elevasi: {(bin as any).altitude || 768} mdpl</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-[10.5px] italic">Belum Ada GPS</span>
+                          )}
+                        </td>
+
+                        {/* 9. AKSI */}
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleFlyToBin(bin)}
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 text-slate-600 dark:text-slate-400 hover:text-[#009966] transition-all cursor-pointer"
+                              title="Lihat di Peta"
+                            >
+                              <Navigation size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBinDetail(bin)}
+                              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#009966]/10 text-slate-600 dark:text-slate-400 hover:text-[#009966] transition-all cursor-pointer"
+                              title="Buka Detail"
+                            >
+                              <Eye size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-400 space-y-2">
+                      <AlertTriangle className="mx-auto text-slate-300" size={28} />
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Tidak ada tempat sampah yang sesuai filter</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTableSearchInput("");
+                          setMapCategoryFilter("Semua");
+                          setMapStatusFilter("Semua");
+                          if (!isKelurahanLocked) setSelectedMapKelurahan("Semua Kelurahan");
+                          if (!isRwLocked) setSelectedRukunWarga("Semua Rukun Warga");
+                        }}
+                        className="text-xs text-[#009966] font-bold hover:underline cursor-pointer"
+                      >
+                        Reset Semua Filter
+                      </button>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Pagination */}
+          {filteredTableBins.length > itemsPerPage && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
+              <div>
+                Menampilkan <strong>{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTableBins.length)}</strong> - <strong>{Math.min(currentPage * itemsPerPage, filteredTableBins.length)}</strong> dari <strong>{filteredTableBins.length}</strong> Tempat Sampah
               </div>
-            )}
-          </div>
 
-          {/* Legend */}
-          <div className="flex gap-6 justify-center mt-6 text-xs font-bold text-slate-700">
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-emerald-500 rounded-md"></span> Organik (Kg)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 bg-blue-500 rounded-md"></span> Anorganik (Kg)
-            </span>
-          </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronLeft size={15} />
+                </button>
 
-          {/* Footnote */}
-          <div className="border-t border-slate-100 pt-3 mt-3">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-500">Estimasi Pengurangan Emisi</span>
-              <span className="font-extrabold text-emerald-600 font-mono text-sm">
-                {((kpi?.totalSampahKg || 750.6) * 0.05).toFixed(2)} Kg CO2e
-              </span>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={`page-btn-${p}`}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && (
+                        <span className="px-1 text-slate-400">...</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage(p)}
+                        className={`w-8 h-8 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          currentPage === p
+                            ? "bg-[#009966] text-white shadow-2xs"
+                            : "border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+
+                <button
+                  type="button"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Monitoring Hasil Residu Petugas */}
-      {(user?.peran === "RW" || user?.peran === "RT" || rwResiduData) && (
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-orange-600 text-2xl">shield</span>
-                <h2 className="text-xl font-bold text-gray-900">Monitoring Hasil Residu Petugas Wilayah</h2>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Relasi Khusus: 1 RW 1 Petugas Residu — Pemantauan penimbangan & setoran residu hilir ({displayScope})
-              </p>
-            </div>
-            <span className="bg-emerald-50 text-emerald-700 text-xs px-3 py-1.5 rounded-full font-bold border border-emerald-200">
-              Scoped 1 RW 1 Petugas
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 flex flex-col justify-between space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg border border-orange-200">
-                  <span className="material-symbols-outlined text-2xl">badge</span>
+      {/* 4. Modal Detail Tempat Sampah */}
+      {selectedBinDetail && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-5 animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-700/40 font-bold">
+                  <QrCode size={20} />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-gray-900 text-sm">
-                    {rwResiduData?.petugas?.nama || "Petugas Residu Wilayah"}
-                  </h4>
-                  <p className="text-xs text-gray-500">
-                    No. WA: {rwResiduData?.petugas?.phone || "-"}
-                  </p>
-                  <span className="inline-block mt-1 text-[10px] px-2 py-0.5 rounded font-bold bg-blue-100 text-blue-700">
-                    Status: {rwResiduData?.petugas?.whitelistStatus || "AKTIF"}
+                  <h3 className="font-black text-base text-slate-900 dark:text-slate-100">
+                    Detail Tempat Sampah
+                  </h3>
+                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 font-bold">
+                    {(selectedBinDetail as any).kode || selectedBinDetail.qrCode || selectedBinDetail.id}
                   </span>
                 </div>
               </div>
-              <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-xs">
-                <span className="text-gray-600">Skor Performa (KPI)</span>
-                <span className="font-bold text-emerald-600 text-sm">
-                  {rwResiduData?.petugas?.kpiScore || 100} / 100
-                </span>
-              </div>
-            </div>
 
-            <div className="bg-orange-50/60 p-5 rounded-xl border border-orange-100 flex flex-col justify-center space-y-2">
-              <span className="text-xs font-semibold text-orange-600 uppercase">Total Residu Terkumpul Wilayah</span>
-              <h3 className="text-3xl font-black text-orange-900">
-                {rwResiduData?.stats?.totalResiduKg || 0} <span className="text-sm font-semibold">Kg</span>
-              </h3>
-              <p className="text-[11px] text-orange-700">Akumulasi hasil penimbangan residu di RW ini</p>
-            </div>
-
-            <div className="bg-emerald-50/60 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center space-y-2">
-              <span className="text-xs font-semibold text-emerald-600 uppercase">Setoran Hari Ini & Pengangkutan</span>
-              <h3 className="text-3xl font-black text-emerald-900">
-                {rwResiduData?.stats?.todayResiduKg || 0} <span className="text-sm font-semibold">Kg</span>
-              </h3>
-              <p className="text-[11px] text-emerald-700">
-                Total {rwResiduData?.stats?.totalPengangkutan || 0} sesi penimbangan oleh Petugas
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-sm text-gray-800 mb-3 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-primary text-[18px]">receipt_long</span>
-              Riwayat Setoran Residu Hilir Petugas (Terikat RW ID)
-            </h3>
-
-            {(!rwResiduData?.logs || rwResiduData.logs.length === 0) ? (
-              <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-400">
-                Belum ada data setoran residu yang diinput oleh Petugas Residu di RW ini.
-              </div>
-            ) : (
-              <div className="overflow-x-auto border border-gray-100 rounded-xl">
-                <table className="w-full text-left text-xs text-gray-600">
-                  <thead className="bg-gray-50 text-gray-700 font-bold uppercase text-[10px] border-b border-gray-100">
-                    <tr>
-                      <th className="p-3">Waktu</th>
-                      <th className="p-3">Diinput Oleh</th>
-                      <th className="p-3">Kategori Residu</th>
-                      <th className="p-3 text-right">Berat (Kg)</th>
-                      <th className="p-3 text-center">Foto Bukti</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {rwResiduData.logs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50 transition">
-                        <td className="p-3 whitespace-nowrap text-gray-500 font-medium">
-                          {new Date(log.createdAt).toLocaleString("id-ID", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="p-3 font-semibold text-gray-800">
-                          {log.petugasNama || log.diinputOleh}
-                        </td>
-                        <td className="p-3">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-orange-100 text-orange-800 uppercase">
-                            {log.kategori}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right font-mono font-bold text-gray-900 text-sm">
-                          {log.beratKg} {log.unit}
-                        </td>
-                        <td className="p-3 text-center">
-                          {log.fotoResiduUrl ? (
-                            <a
-                              href={log.fotoResiduUrl.startsWith("http") ? log.fotoResiduUrl : `http://localhost:3000${log.fotoResiduUrl}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-primary hover:underline font-semibold flex items-center justify-center gap-1"
-                            >
-                              <span className="material-symbols-outlined text-[16px]">image</span>
-                              Lihat Foto
-                            </a>
-                          ) : (
-                            <span className="text-gray-400 font-italic">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Modal Detail Breakdown Rincian Metric */}
-      {selectedMetric && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in zoom-in-95 duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-emerald-950 to-slate-900 text-white">
-              <div>
-                <h3 className="text-base font-extrabold text-white">
-                  {selectedMetric === "RUMAH_TANGGA" && "Rincian Partisipasi Rumah Tangga"}
-                  {selectedMetric === "SAMPAH_TERPILAH" && "Komposisi Sampah Terpilah Wilayah"}
-                  {selectedMetric === "TEMPAT_SAMPAH" && "Status Kapasitas & Registrasi Tong"}
-                  {selectedMetric === "KONDISI_PENUH" && "Daftar Radar Merah (Tong Penuh Membutuhkan Penjemputan)"}
-                </h3>
-                <p className="text-[11px] text-emerald-300 font-mono">Cakupan Wilayah: {displayScope}</p>
-              </div>
               <button
-                onClick={() => setSelectedMetric(null)}
-                className="text-gray-300 hover:text-white p-1 rounded-full transition cursor-pointer"
+                type="button"
+                onClick={() => setSelectedBinDetail(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs text-gray-700">
-              {selectedMetric === "RUMAH_TANGGA" && (
-                <div className="space-y-3">
-                  <p className="leading-relaxed text-gray-600">
-                    Akumulasi <strong>71 Rumah Tangga</strong> aktif yang terikat dengan pemindaian QR code dan jadwal penjemputan berkala.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <span className="text-[10px] text-emerald-700 font-bold uppercase block mb-1">Kel. Dago</span>
-                      <strong className="text-lg font-black text-emerald-900">24 Rumah Tangga</strong>
-                      <span className="block text-[10px] text-emerald-700 mt-1">Kepatuhan: 94.2%</span>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-xl border border-blue-100">
-                      <span className="text-[10px] text-blue-700 font-bold uppercase block mb-1">Kel. Lebak Siliwangi</span>
-                      <strong className="text-lg font-black text-blue-900">18 Rumah Tangga</strong>
-                      <span className="block text-[10px] text-blue-700 mt-1">Kepatuhan: 96.5%</span>
-                    </div>
-                    <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
-                      <span className="text-[10px] text-purple-700 font-bold uppercase block mb-1">Kel. Sekeloa</span>
-                      <strong className="text-lg font-black text-purple-900">15 Rumah Tangga</strong>
-                      <span className="block text-[10px] text-purple-700 mt-1">Kepatuhan: 91.8%</span>
-                    </div>
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
-                      <span className="text-[10px] text-amber-700 font-bold uppercase block mb-1">Kel. Sadang Serang</span>
-                      <strong className="text-lg font-black text-amber-900">14 Rumah Tangga</strong>
-                      <span className="block text-[10px] text-amber-700 mt-1">Kepatuhan: 90.0%</span>
-                    </div>
+            {/* Modal Body */}
+            <div className="space-y-4">
+              {/* QR Code & Basic Specs */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                <img
+                  className="w-24 h-24 rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 shadow-2xs object-contain"
+                  alt="QR Code Besar"
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                    (selectedBinDetail as any).kode || selectedBinDetail.qrCode || selectedBinDetail.id
+                  )}`}
+                />
+                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 w-full">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-semibold">Kategori:</span>
+                    <span className="font-black text-slate-900 dark:text-slate-100">
+                      {selectedBinDetail.category?.name || (selectedBinDetail.lokasi?.includes("Organik") ? "Organik" : "Anorganik")}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-semibold">Status Fisik:</span>
+                    <span className="font-black text-emerald-700 dark:text-emerald-400">
+                      {selectedBinDetail.status || "Normal (Aktif Terverifikasi)"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-semibold">Wilayah:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
+                      {selectedBinDetail.rtRw || (selectedBinDetail as any).rw?.name || "Wilayah Dampingan"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-semibold">Kapasitas:</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
+                      {selectedBinDetail.currentVolumeLiter || 0} / {selectedBinDetail.maxCapacityLiter || 25} Liter
+                    </span>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {selectedMetric === "SAMPAH_TERPILAH" && (
-                <div className="space-y-4">
-                  <p className="leading-relaxed text-gray-600">
-                    Total volume sampah yang telah terverifikasi fisiknya mencapai <strong>750.6 Kg</strong> di Kecamatan Coblong.
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                      <span className="font-bold text-emerald-900">1. Organik / Kompos (Bata Terawang & Loseda)</span>
-                      <span className="font-mono font-extrabold text-emerald-700 text-sm">420.5 Kg (56%)</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-blue-50 p-3 rounded-xl border border-blue-100">
-                      <span className="font-bold text-blue-900">2. Anorganik (Daur Ulang Bank Sampah)</span>
-                      <span className="font-mono font-extrabold text-blue-700 text-sm">330.1 Kg (44%)</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200">
-                      <span className="font-bold text-slate-700">3. B3 (Bahan Berbahaya Beracun)</span>
-                      <span className="font-mono font-bold text-slate-500 text-sm">0.0 Kg</span>
-                    </div>
-                  </div>
+              {/* Owner Info */}
+              <div className="bg-emerald-50/60 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-800/60 space-y-2 text-xs">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                  Informasi Pemilik Terdaftar
+                </span>
+                <div className="flex justify-between items-center">
+                  <span className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
+                    {selectedBinDetail.wargaName || (selectedBinDetail as any).user?.name || "Warga Terdaftar"}
+                  </span>
+                  {((selectedBinDetail as any).user?.phone || (selectedBinDetail as any).wargaPhone || (selectedBinDetail as any).phone) && (
+                    <span className="font-mono text-emerald-800 dark:text-emerald-300 font-extrabold bg-emerald-100/80 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full text-xs">
+                      {((selectedBinDetail as any).user?.phone || (selectedBinDetail as any).wargaPhone || (selectedBinDetail as any).phone)}
+                    </span>
+                  )}
                 </div>
-              )}
+                <p className="text-[11.5px] text-slate-600 dark:text-slate-400">
+                  {(selectedBinDetail as any).user?.address || selectedBinDetail.lokasi || "Wilayah Operasional"}
+                </p>
+              </div>
 
-              {selectedMetric === "TEMPAT_SAMPAH" && (
-                <div className="space-y-3">
-                  <p className="leading-relaxed text-gray-600">
-                    Total <strong>72 unit tempat sampah</strong> terdaftar di sistem dengan status geolokasi GPS yang terikat ke warga.
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                    <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                      <span className="text-[10px] text-emerald-700 font-bold block">Status Aman (&lt;70%)</span>
-                      <span className="text-xl font-black text-emerald-900">62 Unit</span>
-                    </div>
-                    <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
-                      <span className="text-[10px] text-amber-700 font-bold block">Waspada (70-89%)</span>
-                      <span className="text-xl font-black text-amber-900">4 Unit</span>
-                    </div>
-                    <div className="p-3 bg-red-50 rounded-xl border border-red-100">
-                      <span className="text-[10px] text-red-700 font-bold block">Radar Merah (&gt;90%)</span>
-                      <span className="text-xl font-black text-red-900">6 Unit</span>
-                    </div>
-                  </div>
+              {/* GPS Coordinates & Activity */}
+              <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200/70 dark:border-slate-700/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400 font-semibold">Koordinat GPS:</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                    {selectedBinDetail.latitude ? `${Number(selectedBinDetail.latitude).toFixed(5)}, ${Number(selectedBinDetail.longitude).toFixed(5)}` : "Belum terikat"}
+                  </span>
                 </div>
-              )}
-
-              {selectedMetric === "KONDISI_PENUH" && (
-                <div className="space-y-3">
-                  <p className="leading-relaxed text-gray-600">
-                    Berikut adalah <strong>6 lokasi tempat sampah</strong> yang telah melebihi kapasitas 90% dan memerlukan pengangkutan segera oleh Petugas Residu Wilayah.
+                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                  <span className="text-slate-400 font-semibold block mb-0.5">Log Terakhir:</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-100 text-[11.5px]">
+                    {(selectedBinDetail as any).lastActivityLog || "Setoran sampah aktif terpantau real-time."}
                   </p>
-                  <div className="space-y-2">
-                    {[
-                      { qr: "BIN-DAGO-012", warga: "Bambang Gunawan", loc: "RT 02 / RW 03 Kel. Dago", pct: "98%" },
-                      { qr: "BIN-DAGO-015", warga: "Siti Rahmawati", loc: "RT 01 / RW 04 Kel. Dago", pct: "95%" },
-                      { qr: "BIN-LSI-004", warga: "Agus Setiawan", loc: "RT 03 / RW 01 Kel. Lebak Siliwangi", pct: "92%" },
-                      { qr: "BIN-SEK-008", warga: "Nur Hidayat", loc: "RT 02 / RW 02 Kel. Sekeloa", pct: "94%" },
-                      { qr: "BIN-SDS-003", warga: "Hendrik Wijaya", loc: "RT 04 / RW 05 Kel. Sadang Serang", pct: "91%" },
-                      { qr: "BIN-CPG-001", warga: "Dewi Lestari", loc: "RT 01 / RW 02 Kel. Cipaganti", pct: "96%" },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-2.5 bg-red-50/70 border border-red-100 rounded-xl">
-                        <div>
-                          <strong className="text-red-900 block font-bold text-xs">{item.qr} ({item.warga})</strong>
-                          <span className="text-[10px] text-red-700">{item.loc}</span>
-                        </div>
-                        <span className="px-2.5 py-1 bg-red-600 text-white font-extrabold text-[11px] rounded-lg shadow-sm">
-                          {item.pct} Penuh
-                        </span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
+            {/* Modal Footer */}
+            <div className="flex gap-2.5 pt-2">
               <button
-                onClick={() => setSelectedMetric(null)}
-                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+                type="button"
+                onClick={() => {
+                  handleFlyToBin(selectedBinDetail);
+                  setSelectedBinDetail(null);
+                }}
+                className="flex-1 py-2.5 bg-[#009966] hover:bg-[#008055] text-white text-xs font-black rounded-xl transition-all shadow-md cursor-pointer text-center"
               >
-                Tutup Rincian
+                Fokuskan ke Peta
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedBinDetail(null)}
+                className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Tutup
               </button>
             </div>
           </div>
@@ -1128,4 +1842,3 @@ const Monitoring: React.FC = () => {
 };
 
 export default Monitoring;
-

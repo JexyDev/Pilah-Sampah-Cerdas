@@ -1,4 +1,4 @@
-# ARCHITECTURE_FRONTEND.md — apps/frontend
+# ARCHITECTURE_FRONTEND.md — apps/web
 
 > Tech stack: React + Vite (sesuaikan jika beda, misal Next.js) + TypeScript
 > Pola: Feature-based architecture + separation of concerns (UI, state, API terpisah jelas)
@@ -8,7 +8,7 @@
 ## 1. Struktur Folder (WAJIB)
 
 ```
-apps/frontend/
+apps/web/
 ├── src/
 │   ├── app/                        # Setup aplikasi: routing, providers global
 │   │   ├── routes/
@@ -140,13 +140,13 @@ Tidak boleh ada komponen yang langsung asumsikan data selalu ada.
 ## 7. Portal Web Monitoring & Autentikasi Role
 
 ### 7.1 Form Login Universal (No HP +62)
-- Seluruh 9 Role (Super Admin, Admin DLH, Camat, Lurah, RW, DPL, Mahasiswa KKN, Petugas Residu, Warga) melakukan autentikasi melalui **Input Nomor Telepon (+62)** dan **OTP WhatsApp / Kredensial Password**.
+- Seluruh 9 Role (SUPER USER, Admin DLH, Camat, Lurah, RW, DPL, Mahasiswa KKN, Petugas Residu, Warga) melakukan autentikasi melalui **Input Nomor Telepon (+62)** dan **OTP WhatsApp / Kredensial Password**.
 - NIM (Mahasiswa) dan NIP (DPL) dapat ditampilkan pada Profil User / Badge UI.
 
 ### 7.2 Cakupan Dashboard Web (`apps/web`)
-1. **DPL (Dosen Pembimbing Lapangan):** Dashboard monitoring progres mahasiswa KKN bimbingan, verifikasi logbook, dan statistik dampingan warga.
+1. **DPL (Dosen Pendamping Lapangan):** Dashboard monitoring progres mahasiswa KKN dampingan, verifikasi logbook, dan statistik dampingan warga.
 2. **Petugas Residu:** Portal Web Monitoring timbulan residu, log hasil timbangan manual, dan monitoring pengaduan/eskalasi penjemputan.
 3. **Admin DLH & Camat & Lurah:** Portal Web Monitoring (Read-Only) berbasis scoping wilayah (Kota, Kecamatan, Kelurahan) + Modal Approval Diskrepansi AI khusus DLH.
 4. **RW & Mahasiswa KKN:** Portal pengelolaan aktivasi tempat sampah (QR Bins) & pendaftaran warga.
-5. **Super Admin:** Master data management (Bulk KKN/DPL, configurator sistem, audit log).
+5. **SUPER USER:** Master data management (Bulk KKN/DPL, configurator sistem, audit log).
 

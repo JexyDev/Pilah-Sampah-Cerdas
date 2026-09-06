@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -25,7 +25,7 @@ const router = Router();
  * @swagger
  * /api/v1/auth/login:
  *   post:
- *     summary: Login user
+ *     summary: Login user menggunakan nomor telepon atau NIM dan password
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -34,18 +34,19 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - phone
  *               - password
  *             properties:
- *               email:
+ *               phone:
  *                 type: string
- *                 example: admin@pilahsampah.id
+ *                 description: "Nomor HP (08xxx / +628xxx) atau NIM (8-12 digit angka murni)"
+ *                 example: "10124095"
  *               password:
  *                 type: string
  *                 example: password123
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login berhasil
  *         content:
  *           application/json:
  *             schema:
@@ -63,9 +64,9 @@ const router = Router();
  *                     refreshToken:
  *                       type: string
  *       400:
- *         description: Validation error
+ *         description: Validasi gagal
  *       401:
- *         description: Unauthorized (Invalid credentials)
+ *         description: Nomor HP / NIM atau password salah
  */
 router.post("/login", loginRateLimiter, authController.login);
 
@@ -211,6 +212,8 @@ router.post("/logout", authController.logout);
  *         description: Unauthorized
  */
 router.get("/me", authMiddleware, authController.getCurrentUser);
+router.put("/me", authMiddleware, authController.updateCurrentUserProfile);
+router.patch("/me", authMiddleware, authController.updateCurrentUserProfile);
 
 /**
  * @swagger
@@ -220,6 +223,16 @@ router.get("/me", authMiddleware, authController.getCurrentUser);
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Upload successful
@@ -230,6 +243,8 @@ router.post(
   uploadAvatarMiddleware.single("avatar"),
   authController.uploadAvatar
 );
+router.delete("/avatar", authMiddleware, authController.deleteAvatar);
+router.delete("/profile/photo", authMiddleware, authController.deleteAvatar);
 
 /**
  * @swagger
@@ -297,12 +312,62 @@ router.put("/profile", authMiddleware, authController.updateProfile);
  *         description: User not found
  */
 router.put("/password", authMiddleware, authController.updatePassword);
+
+/**
+ * @swagger
+ * /api/v1/auth/change-password:
+ *   post:
+ *     summary: Ubah kata sandi pengguna terotentikasi (Mobile Spec)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [oldPassword, newPassword]
+ *             properties:
+ *               oldPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Kata sandi berhasil diperbarui
+ *       400:
+ *         description: Kata sandi lama salah atau baru tidak valid
+ */
 router.post("/change-password", authMiddleware, authController.changePassword);
+
+/**
+ * @swagger
+ * /api/v1/auth/forgot-password:
+ *   post:
+ *     summary: Kirim OTP lupa kata sandi via WhatsApp (Alias untuk Mobile Spec)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [phone]
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "08123456789"
+ *     responses:
+ *       200:
+ *         description: OTP berhasil dikirim
+ */
+router.post("/forgot-password", authController.requestOtp);
 
 router.post(
   "/register/admin-dlh",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN"]),
+  roleMiddleware(["SUPER_USER"]),
   authController.registerAdminDlh
 );
 
@@ -341,11 +406,99 @@ router.post(
   authController.registerDpl
 );
 
+/**
+ * @swagger
+ * /api/v1/auth/register/petugas-residu:
+ *   post:
+ *     summary: Pendaftaran akun baru Petugas Residu
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, phone, password, nip]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               nip:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Akun Petugas Residu berhasil dibuat
+ */
 router.post("/register/petugas-residu", authController.registerPetugasResidu);
 
+/**
+ * @swagger
+ * /api/v1/auth/register/warga:
+ *   post:
+ *     summary: Pendaftaran akun Warga baru (No HP +62 + Password)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, phone, password, address, kelurahan, rtRw]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               kelurahan:
+ *                 type: string
+ *               rtRw:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Akun Warga berhasil dibuat
+ */
 router.post("/register/warga", authController.registerWarga);
 router.post("/register", authController.registerWarga);
 
+/**
+ * @swagger
+ * /api/v1/auth/register/mahasiswa-kkn:
+ *   post:
+ *     summary: Pendaftaran akun Mahasiswa KKN baru
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, phone, password, nim, universitas, kelurahan, rtRw]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               nim:
+ *                 type: string
+ *               universitas:
+ *                 type: string
+ *               kelurahan:
+ *                 type: string
+ *               rtRw:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Akun Mahasiswa KKN berhasil terdaftar (status pending whitelist/approval)
+ */
 router.post("/register/mahasiswa-kkn", authController.registerKkn);
 
 router.get(
@@ -360,6 +513,20 @@ router.patch(
   authMiddleware,
   roleMiddleware(["ADMIN_DLH"]),
   authController.approveKkn
+);
+
+// Online users (real-time via RefreshToken) — SUPER_USER & DEVELOPER
+router.get(
+  "/online-users",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  authController.getOnlineUsers
+);
+router.delete(
+  "/online-users/:userId",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER"]),
+  authController.forceLogoutUser
 );
 
 export default router;

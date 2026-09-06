@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -7,40 +7,100 @@
 
 import { Request, Response } from "express";
 import { transactionService } from "../services/transactionService.js";
+import { evaluateSortingStatus } from "../utils/sortingEvaluation.js";
 
 export const transactionController = {
   getDeposits: async (req: Request, res: Response) => {
     try {
       const { binCode } = req.query;
-      const deposits = await transactionService.getDeposits(binCode as string);
+      const { otomatisList, manualList } = await transactionService.getDeposits(binCode as string);
 
-      const mappedDeposits = deposits.map((d: any) => {
+      const mappedOtomatis = (otomatisList || []).map((d: any) => {
         let wargaName = d.warga?.name || "Warga Coblong";
-        wargaName = wargaName.replace(/^Warga\s+Binaan\s+/i, "").replace(/^Warga\s+Binaan\s*-\s*/i, "").trim();
+        wargaName = wargaName
+          .replace(/^Warga\s+Binaan\s+/i, "")
+          .replace(/^Warga\s+Binaan\s*-\s*/i, "")
+          .trim();
         if (!wargaName) wargaName = "Warga Coblong";
+
+        const rawConf =
+          d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
+        const confVal =
+          rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+        const rawClass = (d.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
+        const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+        const organikPercent = isOrgRaw ? confVal : 100 - confVal;
+        const anorganikPercent = 100 - organikPercent;
+        const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
+
+        const sortingStatus = evaluateSortingStatus(
+          d.confidenceAi,
+          d.discrepancy_status || d.discrepancyStatus,
+          d.hasilKlasifikasiAi,
+          d.bin?.category
+        );
 
         return {
           id: d.id,
           warga: wargaName,
           phone: d.warga?.phone || "-",
-          rtRw: d.warga?.rtRw?.name || "RT 01 / RW 01",
-          kelurahan: d.warga?.rtRw?.kelurahan?.name || "Coblong",
-          jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          rw: d.warga?.rw?.name || d.bin?.rw?.name || "RW 01",
+          kelurahan: d.warga?.rw?.kelurahan?.name || d.bin?.rw?.kelurahan?.name || "Coblong",
+          jenis: finalJenis,
           berat: Number(d.berat),
-          poin: Math.round(Number(d.poin)),
+          poin: Math.round(Number(d.poin || 0)),
           waktu: d.createdAt,
-          status: "Selesai",
+          status: d.status || "ACCEPTED",
           lokasi: `Tempat Sampah: ${d.bin?.qrCode || "QR-001"}`,
-          confidence: d.confidenceAi
-            ? Number(d.confidenceAi) <= 1
-              ? Math.round(Number(d.confidenceAi) * 100)
-              : Math.round(Number(d.confidenceAi))
-            : 90 + (Math.abs(d.id.charCodeAt(0) || 5) % 9),
-          fotoUrl: d.fotoSampahUrl || d.fotoUrl || null,
+          confidence: Math.max(organikPercent, anorganikPercent),
+          organikPercent,
+          anorganikPercent,
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
+          fotoUrl: d.fotoSampahUrl || null,
+          fotoProfil: d.warga?.fotoProfil || null,
+          isManual: false,
         };
       });
 
-      res.status(200).json({ success: true, data: mappedDeposits });
+      const mappedManual = (manualList || []).map((m: any) => {
+        return {
+          id: m.id,
+          warga: `Petugas: ${m.petugas?.name || "Petugas Residu"}`,
+          phone: m.petugas?.phone || "-",
+          rw: m.rw?.name || `RW ${m.rwId}`,
+          kelurahan: m.rw?.kelurahan?.name || "Coblong",
+          jenis: "Residu",
+          berat: Number(m.berat),
+          poin: 0,
+          waktu: m.createdAt,
+          status: m.status || "ACCEPTED",
+          lokasi: "Posko Penimbangan Lapangan",
+          confidence: null,
+          organikPercent: 0,
+          anorganikPercent: 0,
+          ai_confidence: null,
+          aiConfidence: null,
+          discrepancy_status: "NONE",
+          discrepancyStatus: "NONE",
+          is_correct: true,
+          isCorrect: true,
+          fotoUrl: m.fotoResiduUrl || null,
+          fotoProfil: m.petugas?.fotoProfil || null,
+          isManual: true,
+        };
+      });
+
+      // Combine and sort by date descending
+      const combined = [...mappedOtomatis, ...mappedManual].sort(
+        (a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime()
+      );
+
+      res.status(200).json({ success: true, data: combined });
     } catch (error) {
       console.error("[TransactionController] getDeposits error:", error);
       res.status(500).json({ success: false, message: "Gagal mengambil data setoran" });
@@ -54,27 +114,54 @@ export const transactionController = {
 
       const mappedDeposits = deposits.map((d: any) => {
         const poinVal = Number(d.poin || 0);
-        const areaName = d.bin?.rtRw?.name || "";
-        const kelName = d.bin?.rtRw?.kelurahan?.name || "";
+        const areaName = d.bin?.rw?.name || "";
+        const kelName = d.bin?.rw?.kelurahan?.name || "";
         const binCode = d.bin?.qrCode || "BIN";
         const addr =
           d.bin?.address || (areaName ? `Area ${areaName}` : `Tempat Sampah: ${binCode}`);
 
+        const rawConf =
+          d.confidenceAi !== null && d.confidenceAi !== undefined ? Number(d.confidenceAi) : null;
+        const confVal =
+          rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+        const rawClass = (d.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
+        const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+        const organikPercent = isOrgRaw ? confVal : 100 - confVal;
+        const anorganikPercent = 100 - organikPercent;
+        const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
+
+        const sortingStatus = evaluateSortingStatus(
+          d.confidenceAi,
+          d.discrepancy_status || d.discrepancyStatus,
+          d.hasilKlasifikasiAi,
+          d.bin?.category
+        );
+
         return {
           id: d.id,
-          jenis: d.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
+          jenis: finalJenis,
           berat: Number(d.berat || 0),
           volume: Number(d.volumeEstimate || 0),
           poin: poinVal,
           pointsAwarded: poinVal,
           waktu: d.createdAt,
           createdAt: d.createdAt,
-          status: "Selesai",
+          status: d.status || "ACCEPTED",
           lokasi: addr,
           address: addr,
-          rtRw: areaName || null,
+          rw: areaName || null,
           kelurahan: kelName || areaName || null,
           binQrCode: binCode,
+          confidenceAi: d.confidenceAi ? Number(d.confidenceAi) : null,
+          confidence: Math.max(organikPercent, anorganikPercent),
+          organikPercent,
+          anorganikPercent,
+          ai_confidence: sortingStatus.ai_confidence,
+          aiConfidence: sortingStatus.aiConfidence,
+          discrepancy_status: sortingStatus.discrepancy_status,
+          discrepancyStatus: sortingStatus.discrepancyStatus,
+          is_correct: sortingStatus.is_correct,
+          isCorrect: sortingStatus.isCorrect,
         };
       });
 
@@ -139,8 +226,8 @@ export const transactionController = {
     try {
       const user = req.user!;
       let rwId: number | undefined;
-      if (user.role === "RW" && user.rtRwId) {
-        rwId = user.rtRwId;
+      if (user.role === "RW" && user.rwId) {
+        rwId = user.rwId;
       }
       const deposits = await transactionService.getManualDeposits(rwId);
       res.status(200).json({ success: true, data: deposits });
@@ -160,25 +247,123 @@ export const transactionController = {
         res.status(404).json({ success: false, message: "Setoran tidak ditemukan" });
         return;
       }
+
+      const dep = deposit as any;
+
+      if (dep.isManual) {
+        const mappedManual = {
+          id: dep.id,
+          warga: `Petugas: ${dep.petugas?.name || "Petugas Residu"}`,
+          phone: dep.petugas?.phone || "-",
+          rw: dep.rw?.name || `RW ${dep.rwId}`,
+          kelurahan: dep.rw?.kelurahan?.name || "Coblong",
+          jenis: "Residu",
+          berat: Number(dep.berat),
+          poin: 0,
+          waktu: dep.createdAt,
+          status: dep.status || "ACCEPTED",
+          lokasi: "Posko Penimbangan Lapangan",
+          confidence: null,
+          organikPercent: 0,
+          anorganikPercent: 0,
+          ai_confidence: null,
+          aiConfidence: null,
+          discrepancy_status: "NONE",
+          discrepancyStatus: "NONE",
+          is_correct: true,
+          isCorrect: true,
+          gps: dep.lokasiGps,
+          fotoUrl: dep.fotoResiduUrl,
+          fotoProfil: dep.petugas?.fotoProfil || null,
+          isManual: true,
+          catatanPenolakan: dep.catatanPenolakan || null,
+        };
+        res.status(200).json({ success: true, data: mappedManual });
+        return;
+      }
+
+      const rawConf =
+        dep.confidenceAi !== null && dep.confidenceAi !== undefined
+          ? Number(dep.confidenceAi)
+          : null;
+      const confVal =
+        rawConf !== null ? (rawConf <= 1 ? Math.round(rawConf * 100) : Math.round(rawConf)) : 95;
+      const rawClass = (dep.hasilKlasifikasiAi || "ORGANIK").toLowerCase();
+      const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
+      const organikPercent = isOrgRaw ? confVal : 100 - confVal;
+      const anorganikPercent = 100 - organikPercent;
+      const finalJenis = organikPercent >= anorganikPercent ? "Organik" : "Anorganik";
+
+      const sortingStatus = evaluateSortingStatus(
+        dep.confidenceAi,
+        dep.discrepancy_status || dep.discrepancyStatus,
+        dep.hasilKlasifikasiAi,
+        dep.bin?.category
+      );
+
       const mappedDeposit = {
-        id: deposit.id,
-        warga: deposit.warga?.name || "Unknown",
-        phone: deposit.warga?.phone || "",
-        rtRw: deposit.bin?.rtRw?.name || "",
-        jenis: deposit.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
-        berat: Number(deposit.berat),
-        poin: Number(deposit.poin),
-        waktu: deposit.createdAt,
-        status: "Selesai",
-        lokasi: `Tempat Sampah: ${deposit.bin?.qrCode}`,
-        confidence: Number(deposit.confidenceAi),
-        gps: deposit.lokasiGps,
-        fotoUrl: deposit.fotoSampahUrl,
+        id: dep.id,
+        warga: dep.warga?.name || "Warga Coblong",
+        phone: dep.warga?.phone || "",
+        rw: dep.bin?.rw?.name || dep.warga?.rw?.name || "RW 01",
+        kelurahan: dep.bin?.rw?.kelurahan?.name || dep.warga?.rw?.kelurahan?.name || "Coblong",
+        jenis: finalJenis,
+        berat: Number(dep.berat),
+        poin: Math.round(Number(dep.poin || 0)),
+        waktu: dep.createdAt,
+        status: dep.status || "ACCEPTED",
+        lokasi: `Tempat Sampah: ${dep.bin?.qrCode || "QR-001"}`,
+        confidence: Math.max(organikPercent, anorganikPercent),
+        organikPercent,
+        anorganikPercent,
+        ai_confidence: sortingStatus.ai_confidence,
+        aiConfidence: sortingStatus.aiConfidence,
+        discrepancy_status: sortingStatus.discrepancy_status,
+        discrepancyStatus: sortingStatus.discrepancyStatus,
+        is_correct: sortingStatus.is_correct,
+        isCorrect: sortingStatus.isCorrect,
+        gps: dep.lokasiGps,
+        fotoUrl: dep.fotoSampahUrl,
+        fotoProfil: dep.warga?.fotoProfil || null,
+        isManual: false,
+        catatanPenolakan: dep.catatanPenolakan || null,
       };
       res.status(200).json({ success: true, data: mappedDeposit });
     } catch (error) {
       console.error("[TransactionController] getDepositDetails error:", error);
       res.status(500).json({ success: false, message: "Gagal mengambil detail setoran" });
+    }
+  },
+
+  updateStatus: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { status, catatanPenolakan } = req.body;
+
+      if (!status || !["ACCEPTED", "REJECTED", "PENDING"].includes(status.toUpperCase())) {
+        res.status(400).json({
+          success: false,
+          message: "Status wajib diisi dan harus bernilai 'ACCEPTED', 'REJECTED', atau 'PENDING'",
+        });
+        return;
+      }
+
+      const result = await transactionService.updateTransactionStatus(id, status, catatanPenolakan);
+
+      res.status(200).json({
+        success: true,
+        message: `Status transaksi berhasil diperbarui menjadi ${status.toUpperCase()}`,
+        data: result,
+      });
+    } catch (error: any) {
+      console.error("[TransactionController] updateStatus error:", error);
+      if (error.message === "TRANSACTION_NOT_FOUND") {
+        res.status(404).json({ success: false, message: "Transaksi setoran tidak ditemukan" });
+        return;
+      }
+      res
+        .status(500)
+        .json({ success: false, message: "Gagal memperbarui status transaksi setoran" });
     }
   },
 };

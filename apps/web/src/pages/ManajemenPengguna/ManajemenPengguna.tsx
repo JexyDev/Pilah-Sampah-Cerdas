@@ -1,26 +1,181 @@
-import { Search, Loader2, EyeOff, Eye, UserPlus, Download, User, Trash2, X, ChevronLeft, ChevronRight, AlertTriangle, Pencil, Phone, MapPin } from "lucide-react";
+import { Search, Loader2, EyeOff, Eye, UserPlus, Upload, User, Users, Trash2, X, AlertTriangle, Pencil, Phone, CheckCircle, Shield, Lock, Info, ChevronDown, MapPin } from "lucide-react";
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import React, { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import React, { useState, useEffect, useMemo } from "react";
+import { showToast } from "../../utils/showToast";
 import api from "../../services/api";
 import { useAuthStore } from "../../store/useAuthStore";
+import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
 
 import { useSearchParams } from "react-router-dom";
+import { Pagination } from "../../components/common/Pagination";
+import { EmptyTableState } from "../../components/common/EmptyTableState";
+import { sortKelompokList } from "../../utils/sortUtils";
+
+/** Pemetaan enum peran ke label bahasa Indonesia baku */
+const ROLE_LABEL_MAP: Record<string, string> = {
+  DEVELOPER: "Developer",
+  SUPER_USER: "Super User",
+  ADMIN_DLH: "Admin DLH",
+  CAMAT: "Camat",
+  LURAH: "Lurah",
+  RW: "Rukun Warga",
+  PEMIMPIN: "Pimpinan",
+  PIMPINAN: "Pimpinan",
+  PANITIA_TASKFORCE: "Task Force",
+  DPL: "Dosen Pendamping Lapangan",
+  PETUGAS_RESIDU: "Petugas Pemilah",
+  MAHASISWA_KKN: "Mahasiswa",
+  WARGA: "Warga",
+};
+
+const cleanKelurahanName = (raw: string | undefined | null) => {
+  if (!raw || raw === "-") return "-";
+  let clean = String(raw)
+    .replace(/^Kel\.\s*/i, "")
+    .replace(/^urahan\s*/i, "")
+    .replace(/^Kelurahan\s*/i, "")
+    .trim();
+
+  // If the raw text is actually a full address or too long, extract canonical kelurahan or return "-"
+  if (clean.includes(",") || clean.split(/\s+/).length > 3) {
+    const known = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+    for (const k of known) {
+      if (clean.toLowerCase().includes(k.toLowerCase())) return `Kel. ${k}`;
+    }
+    return "-";
+  }
+
+  return clean ? `Kel. ${clean}` : "-";
+};
+
+const detectKelurahanName = (u: any): string => {
+  if (u?.kelurahan && u.kelurahan !== "-" && u.kelurahan.trim() !== "") {
+    const cleaned = cleanKelurahanName(u.kelurahan);
+    if (cleaned !== "-") return cleaned;
+  }
+
+  const rwKelName = u?.rw?.kelurahan?.name || u?.studentProfile?.assignedRw?.kelurahan?.name || u?.studentProfile?.kelompok?.kelurahan;
+  if (rwKelName && rwKelName !== "-") {
+    return cleanKelurahanName(rwKelName);
+  }
+
+  const combinedText = `${u?.name || ""} ${u?.address || ""} ${u?.wilayah || ""} ${u?.rw || ""}`.toLowerCase();
+
+  const knownKelurahans = [
+    { name: "Sadang Serang", label: "Kel. Sadang Serang" },
+    { name: "Sedang Serang", label: "Kel. Sadang Serang" },
+    { name: "Cipaganti", label: "Kel. Cipaganti" },
+    { name: "Dago", label: "Kel. Dago" },
+    { name: "Lebak Gede", label: "Kel. Lebak Gede" },
+    { name: "Lebak Siliwangi", label: "Kel. Lebak Siliwangi" },
+    { name: "Sekeloa", label: "Kel. Sekeloa" },
+  ];
+
+  for (const k of knownKelurahans) {
+    if (combinedText.includes(k.name.toLowerCase())) {
+      return k.label;
+    }
+  }
+
+  return "-";
+};
+
+const getCleanKelName = (raw: string | undefined | null) => {
+  if (!raw || raw === "-" || raw === "Kel. -") return "";
+  let clean = String(raw)
+    .replace(/^Kel\.\s*/i, "")
+    .replace(/^urahan\s*/i, "")
+    .replace(/^Kelurahan\s*/i, "")
+    .trim();
+  return clean && clean !== "-" ? clean : "";
+};
+
+const formatKecamatanName = (raw: string | undefined | null, u?: any): string => {
+  if (raw && raw !== "-" && raw.trim() !== "") {
+    let clean = String(raw).trim();
+    clean = clean.replace(/^Kecamatan\s*amatan\s*/i, "").replace(/^Kecamatan\s*/i, "").trim();
+    if (clean && clean !== "-") return `Kecamatan ${clean}`;
+  }
+  const relKec = u?.rw?.kelurahan?.kecamatan?.name || u?.studentProfile?.kelompok?.kecamatan;
+  if (relKec && relKec !== "-") {
+    let cleanRel = String(relKec).replace(/^Kecamatan\s*/i, "").trim();
+    return `Kecamatan ${cleanRel}`;
+  }
+  return "-";
+};
+
+const getCleanKabupatenName = (raw: string | undefined | null): string => {
+  if (!raw || raw === "-" || raw.trim() === "") return "-";
+  return String(raw).trim();
+};
+
+
+const normalizeRoleFromUrl = (param: string | null): string => {
+  if (!param) return "SUPER_USER";
+  const p = param.trim().toLowerCase();
+  if (["developer", "dev"].includes(p)) return "DEVELOPER";
+  if (["su", "admin", "superuser", "super_user", "super-user"].includes(p)) return "SUPER_USER";
+  if (["pimpinan", "pemimpin", "rektor"].includes(p)) return "PEMIMPIN";
+  if (["taskforce", "task-force", "panitia_taskforce"].includes(p)) return "PANITIA_TASKFORCE";
+  if (["dpl", "dosen"].includes(p)) return "DPL";
+  if (["dlh", "admin_dlh", "admin-dlh", "dinas-lingkungan-hidup"].includes(p)) return "ADMIN_DLH";
+  if (["camat"].includes(p)) return "CAMAT";
+  if (["lurah"].includes(p)) return "LURAH";
+  if (["rw", "rukun-warga"].includes(p)) return "RW";
+  if (["petugas-pemilah", "petugas-residu", "petugas_residu", "petugas"].includes(p)) return "PETUGAS_RESIDU";
+  if (["mahasiswa", "mahasiswa-kkn", "mahasiswa_kkn"].includes(p)) return "MAHASISWA_KKN";
+  if (["warga"].includes(p)) return "WARGA";
+  return param.toUpperCase();
+};
 
 const ManajemenPengguna: React.FC = () => {
-  const { user } = useAuthStore();
-  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT"].includes(user?.peran || "");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const roleFromUrl = searchParams.get("role") || "Semua";
+  const { user, updateUser: updateStoreUser } = useAuthStore();
+  const isReadOnly = ["ADMIN_DLH", "CAMAT", "LURAH", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"].includes(user?.peran || "");
+  const [searchParams] = useSearchParams();
+
+  const allowedRoleTabs = useMemo(() => {
+    const peran = user?.peran || "";
+    if (peran === "DEVELOPER") {
+      return [
+        "DEVELOPER", "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
+        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
+      ];
+    }
+    if (peran === "SUPER_USER") {
+      return [
+        "SUPER_USER", "PEMIMPIN", "PANITIA_TASKFORCE", "DPL",
+        "ADMIN_DLH", "CAMAT", "LURAH", "RW", "PETUGAS_RESIDU", "MAHASISWA_KKN", "WARGA"
+      ];
+    }
+    if (peran === "PEMIMPIN" || peran === "PIMPINAN") {
+      return [
+        "PEMIMPIN",
+        "PANITIA_TASKFORCE",
+        "DPL",
+        "MAHASISWA_KKN",
+        "WARGA",
+        "PETUGAS_RESIDU",
+      ];
+    }
+    if (peran === "PANITIA_TASKFORCE") {
+      return ["PANITIA_TASKFORCE", "DPL", "MAHASISWA_KKN"];
+    }
+    if (peran === "RW") {
+      return ["WARGA", "PETUGAS_RESIDU"];
+    }
+    return ["WARGA"];
+  }, [user?.peran]);
+
+  const rawRoleParam = searchParams.get("role") || searchParams.get("roleName") || searchParams.get("type");
+  const roleFromUrl = rawRoleParam ? normalizeRoleFromUrl(rawRoleParam) : (allowedRoleTabs[0] || "SUPER_USER");
 
   const [users, setUsers] = useState<any[]>([]);
-  const [areas, setAreas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -29,42 +184,119 @@ const ManajemenPengguna: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState(roleFromUrl);
 
   useEffect(() => {
-    if (roleFromUrl !== selectedRole) {
-      setSelectedRole(roleFromUrl);
+    if (rawRoleParam) {
+      const normalized = normalizeRoleFromUrl(rawRoleParam);
+      if (normalized !== selectedRole) {
+        setSelectedRole(normalized);
+      }
+    } else if (!allowedRoleTabs.includes(selectedRole)) {
+      setSelectedRole(allowedRoleTabs[0] || "SUPER_USER");
     }
-  }, [roleFromUrl]);
-
-  const handleRoleTabChange = (role: string) => {
-    setSelectedRole(role);
-    if (role === "Semua") {
-      setSearchParams({});
-    } else {
-      setSearchParams({ role });
-    }
-  };
+  }, [rawRoleParam, allowedRoleTabs]);
   const [selectedStatus, setSelectedStatus] = useState("Semua");
-  const [selectedRw, setSelectedRw] = useState("Semua");
-  const [selectedRt, setSelectedRt] = useState("Semua");
-
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [kelompokList, setKelompokList] = useState<any[]>([]);
+  const [areasList, setAreasList] = useState<any[]>([]);
+  const [petugasResiduList, setPetugasResiduList] = useState<any[]>([]);
+  const [dplList, setDplList] = useState<any[]>([]);
+  const [provinsiList, setProvinsiList] = useState<any[]>([]);
+  const [kabupatenList, setKabupatenList] = useState<any[]>([]);
+  const [kecamatanList, setKecamatanList] = useState<any[]>([]);
+  const [kelurahanList, setKelurahanList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [resK, resA, resP, resD, resProv, resKab, resKec, resKel] = await Promise.all([
+          api.get("/kelompok?limit=0"),
+          api.get("/areas/rt-rw"),
+          api.get("/users?roleName=PETUGAS_RESIDU"),
+          api.get("/users?roleName=DPL"),
+          api.get("/areas/provinsi"),
+          api.get("/areas/kabupaten"),
+          api.get("/areas/kecamatan"),
+          api.get("/areas/kelurahan"),
+        ]);
+        const listK = sortKelompokList(resK.data?.groups || resK.data?.data || [], (k: any) => k.name || "");
+        setKelompokList(listK);
+        const listA = resA.data?.data || resA.data || [];
+        setAreasList(listA);
+        const listP = resP.data?.data || resP.data || [];
+        setPetugasResiduList(listP);
+        const listD = resD.data?.data || resD.data || [];
+        setDplList(listD);
+        const listProv = resProv.data?.data || resProv.data || [];
+        setProvinsiList(listProv.length > 0 ? listProv : [{ id: 1, name: "Jawa Barat" }]);
+        const listKab = resKab.data?.data || resKab.data || [];
+        setKabupatenList(listKab.length > 0 ? listKab : [{ id: 1, name: "Kota Bandung" }]);
+        const listKec = resKec.data?.data || resKec.data || [];
+        setKecamatanList(listKec.length > 0 ? listKec : [{ id: 1, name: "Kecamatan Terdaftar" }]);
+        const listKel = resKel.data?.data || resKel.data || [];
+        setKelurahanList(listKel);
+      } catch (err) {
+        console.error("Error fetching reference data:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
-
+    address: "",
     password: "",
+    confirmPassword: "",
     roleName: "WARGA",
     phone: "",
     status: "Aktif",
     rtRwId: "",
+    nim: "",
+    nip: "",
+    prodi: "S1 Manajemen",
+    jabatan: "",
+    selectedRws: [] as string[],
+    dplKelompokIds: [] as string[],
+    institusi: "",
+    jenjangPendidikan: "S1",
+    jumlahAnggotaKeluarga: "",
+    programStudi: "",
+    fotoProfil: "",
+    provinsi: "Jawa Barat",
+    kabupaten: "Kota Bandung",
+    wilayah: "Kota Bandung",
+    kecamatan: "Kecamatan Terdaftar",
+    petugasResiduId: "",
+    dplId: "",
   });
+
+  const formatPhone = (phone: string) => {
+    if (!phone) return "-";
+    let clean = phone.trim().replace(/[\s\-().]/g, "");
+    if (clean.startsWith("4127") || clean.startsWith("DPL_") || clean.startsWith("NIP") || clean.includes(".") || clean.length < 9) {
+      return "-";
+    }
+    if (clean.startsWith("0")) return "+62" + clean.slice(1);
+    if (clean.startsWith("62")) return "+" + clean;
+    if (clean.startsWith("8")) return "+62" + clean;
+    if (!clean.startsWith("+")) return "+62" + clean;
+    return clean;
+  };
+
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalKelurahan, setModalKelurahan] = useState("");
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Kelurahan Filter State
+  const [selectedKelurahanFilter, setSelectedKelurahanFilter] = useState<string>("Semua");
+  const [isKelurahanDropdownOpen, setIsKelurahanDropdownOpen] = useState(false);
 
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -73,99 +305,416 @@ const ManajemenPengguna: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError("");
       const params: any = {};
       if (searchQuery) params.search = searchQuery;
       if (selectedRole !== "Semua") params.roleName = selectedRole;
       if (selectedStatus !== "Semua") params.status = selectedStatus;
-      if (selectedRw !== "Semua") params.rw = selectedRw;
-      if (selectedRt !== "Semua") params.rt = selectedRt;
 
       const response = await api.get("/users", { params });
-      setUsers(response.data.data || []);
-    } catch (err) {
-      setError("Gagal memuat data pengguna dari server.");
-      toast.error("Gagal memuat data pengguna");
+      let dataUsers = response.data.data || [];
+
+      // Clean Lurah data formatting if Lurah role selected
+      if (selectedRole === "LURAH") {
+        dataUsers = dataUsers.map((u: any) => ({
+          ...u,
+          kelurahan: cleanKelurahanName(u.kelurahan || u.address),
+          address: cleanKelurahanName(u.address || u.kelurahan),
+        }));
+      }
+
+      setUsers(dataUsers);
+    } catch (err: any) {
+      console.error("[ManajemenPengguna] fetchUsers error:", err);
+      setError(err?.response?.data?.message || "Gagal memuat data pengguna dari server.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchAreas = async () => {
-    try {
-      const res = await api.get("/bins/areas");
-      setAreas(res.data?.data || []);
-    } catch (err) {
-      console.error("Failed to fetch areas:", err);
     }
   };
 
   useEffect(() => {
     setCurrentPage(1); // Reset page on filter change
     fetchUsers();
-  }, [searchQuery, selectedRole, selectedStatus, selectedRw, selectedRt]);
+  }, [searchQuery, selectedRole, selectedStatus]);
 
-  useEffect(() => {
-    fetchAreas();
-  }, []);
+  const filteredRwsByKelurahan = useMemo(() => {
+    const targetClean = getCleanKelName(modalKelurahan).toLowerCase();
+    const list = areasList.filter((a: any) => {
+      if (!targetClean || targetClean === "unassigned") return true;
+      const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
+      return areaKel === targetClean || areaKel.includes(targetClean) || targetClean.includes(areaKel);
+    });
 
-  // Parse RT and RW lists dynamically from backend database
-  const uniqueRws = Array.from(
-    new Set(
-      areas
-        .map((a) => {
-          // Supports "RW 01", "RW 1", "RW01", "RT 01 / RW 06", etc.
-          const match = a.name.match(/RW\s*(\d+)/i);
-          return match ? match[1].replace(/^0+/, "") || "1" : null;
-        })
-        .filter(Boolean)
-    )
-  ).sort((a, b) => parseInt(a) - parseInt(b)) as string[];
+    const seen = new Set<string>();
+    const uniqueList: any[] = [];
+    for (const item of (list.length > 0 ? list : areasList)) {
+      const rawName = (item.name || "").split("(")[0].trim();
+      const rwNum = rawName.replace(/\D/g, "").padStart(2, "0");
+      if (rwNum && rwNum !== "00" && !seen.has(rwNum)) {
+        seen.add(rwNum);
+        uniqueList.push({
+          ...item,
+          cleanName: `RW ${rwNum}`
+        });
+      }
+    }
 
-  const uniqueRts = Array.from(
-    new Set(
-      areas
-        .map((a) => {
-          const match = a.name.match(/RT\s*(\d+)/i);
-          return match ? match[1].replace(/^0+/, "") || "1" : null;
-        })
-        .filter(Boolean)
-    )
-  ).sort((a, b) => parseInt(a) - parseInt(b)) as string[];
+    return uniqueList.sort((a: any, b: any) => {
+      const numA = parseInt(a.cleanName.replace(/\D/g, "") || "0", 10);
+      const numB = parseInt(b.cleanName.replace(/\D/g, "") || "0", 10);
+      return numA - numB;
+    });
+  }, [areasList, modalKelurahan]);
+
+  // Helper to normalize kecamatan name (e.g. "Kecamatan Coblong" <-> "Coblong")
+  const normalizeKecamatan = (raw: string | undefined | null): string => {
+    if (!raw) return "";
+    return String(raw).trim().toLowerCase().replace(/^kecamatan\s*/i, "");
+  };
+
+  // Dynamically filter Kota / Kabupaten by selected Provinsi
+  const filteredKabupatenList = useMemo(() => {
+    if (!formData.provinsi || provinsiList.length === 0) return kabupatenList;
+    const selectedProv = provinsiList.find(
+      (p: any) => (p.name || p.nama || "").toLowerCase() === formData.provinsi.toLowerCase()
+    );
+    if (!selectedProv) return kabupatenList;
+    return kabupatenList.filter((kb: any) => {
+      const pId = kb.provinsiId || kb.provinsi?.id;
+      const pName = (kb.provinsi?.name || kb.provinsi?.nama || "").toLowerCase();
+      return Number(pId) === Number(selectedProv.id) || (pName && pName === formData.provinsi.toLowerCase());
+    });
+  }, [provinsiList, kabupatenList, formData.provinsi]);
+
+  // Dynamically filter Kecamatan by selected Kota / Kabupaten
+  const filteredKecamatanList = useMemo(() => {
+    if (!formData.kabupaten) return kecamatanList;
+    const kabClean = formData.kabupaten.toLowerCase();
+    const filtered = kecamatanList.filter((kc: any) => {
+      const kId = kc.kabupatenId || kc.kabupaten?.id;
+      const kName = (kc.kabupaten?.name || kc.kabupaten?.nama || "").toLowerCase();
+      return kName === kabClean || kName.includes(kabClean) || kabClean.includes(kName);
+    });
+    return filtered.length > 0 ? filtered : kecamatanList;
+  }, [kabupatenList, kecamatanList, formData.kabupaten]);
+
+  // Dynamically filter Kelurahan by selected Kecamatan
+  const filteredKelurahanList = useMemo(() => {
+    if (!formData.kecamatan) return kelurahanList;
+    const curKecRaw = formData.kecamatan;
+    const curKecNorm = normalizeKecamatan(curKecRaw);
+
+    const selectedKec = kecamatanList.find((kc: any) => {
+      const kNameNorm = normalizeKecamatan(kc.name || kc.nama);
+      return kNameNorm === curKecNorm || (kc.name || kc.nama || "").toLowerCase() === curKecRaw.toLowerCase();
+    });
+
+    const filtered = kelurahanList.filter((kl: any) => {
+      if (selectedKec) {
+        const kecId = kl.kecamatanId || kl.kecamatan?.id;
+        if (kecId && Number(kecId) === Number(selectedKec.id)) return true;
+      }
+      const klKecName = kl.kecamatanName || kl.kecamatan?.name || kl.kecamatan?.nama || "";
+      if (klKecName && normalizeKecamatan(klKecName) === curKecNorm) return true;
+      return false;
+    });
+
+    return filtered.length > 0 ? filtered : kelurahanList;
+  }, [kecamatanList, kelurahanList, formData.kecamatan]);
+
+  // Dynamic Kelurahan filter options for the table filter bar
+  const kelurahanFilterOptions = useMemo(() => {
+    const opts = [{ value: "Semua", label: "Semua Kelurahan" }];
+    if (Array.isArray(kelurahanList) && kelurahanList.length > 0) {
+      kelurahanList.forEach((k: any) => {
+        const name = (k.name || k.nama || "").trim();
+        if (name && !opts.some((o) => o.value.toLowerCase() === name.toLowerCase())) {
+          opts.push({ value: name, label: `Kel. ${name}` });
+        }
+      });
+    }
+    return opts;
+  }, [kelurahanList]);
+
+  const handleProvinsiSelect = (newProv: string) => {
+    const selectedProvObj = provinsiList.find(
+      (p: any) => (p.name || p.nama || "").toLowerCase() === newProv.toLowerCase()
+    );
+    const kabsForProv = selectedProvObj
+      ? kabupatenList.filter((kb: any) => Number(kb.provinsiId || kb.provinsi?.id) === Number(selectedProvObj.id))
+      : [];
+    const defaultKab = kabsForProv.length > 0 ? (kabsForProv[0].name || kabsForProv[0].nama) : "";
+
+    let defaultKec = "";
+    let defaultKel = "";
+    if (defaultKab) {
+      const selectedKabObj = kabupatenList.find(
+        (kb: any) => (kb.name || kb.nama || "").toLowerCase() === defaultKab.toLowerCase()
+      );
+      const kecsForKab = selectedKabObj
+        ? kecamatanList.filter((kc: any) => Number(kc.kabupatenId || kc.kabupaten?.id) === Number(selectedKabObj.id))
+        : [];
+      defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "";
+
+      if (defaultKec) {
+        const selectedKecObj = kecamatanList.find(
+          (kc: any) => (kc.name || kc.nama || "").toLowerCase() === defaultKec.toLowerCase()
+        );
+        const kelsForKec = selectedKecObj
+          ? kelurahanList.filter((kl: any) => Number(kl.kecamatanId || kl.kecamatan?.id) === Number(selectedKecObj.id))
+          : [];
+        defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+      }
+    }
+
+    setModalKelurahan(defaultKel ? getCleanKelName(defaultKel) : "");
+
+    setFormData((prev) => ({
+      ...prev,
+      provinsi: newProv,
+      kabupaten: defaultKab,
+      wilayah: defaultKab,
+      kecamatan: defaultKec,
+      rtRwId: "",
+      rw: "",
+    }));
+  };
+
+  const handleKabupatenSelect = (newKab: string) => {
+    const selectedKabObj = kabupatenList.find(
+      (kb: any) => (kb.name || kb.nama || "").toLowerCase() === newKab.toLowerCase()
+    );
+    const kecsForKab = selectedKabObj
+      ? kecamatanList.filter((kc: any) => Number(kc.kabupatenId || kc.kabupaten?.id) === Number(selectedKabObj.id))
+      : [];
+    const defaultKec = kecsForKab.length > 0 ? (kecsForKab[0].name || kecsForKab[0].nama) : "";
+
+    let defaultKel = "";
+    if (defaultKec) {
+      const selectedKecObj = kecamatanList.find(
+        (kc: any) => (kc.name || kc.nama || "").toLowerCase() === defaultKec.toLowerCase()
+      );
+      const kelsForKec = selectedKecObj
+        ? kelurahanList.filter((kl: any) => Number(kl.kecamatanId || kl.kecamatan?.id) === Number(selectedKecObj.id))
+        : [];
+      defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+    }
+
+    setModalKelurahan(defaultKel ? getCleanKelName(defaultKel) : "");
+
+    setFormData((prev) => ({
+      ...prev,
+      kabupaten: newKab,
+      wilayah: newKab,
+      kecamatan: defaultKec,
+      rtRwId: "",
+      rw: "",
+    }));
+  };
+
+  const handleKecamatanSelect = (newKec: string) => {
+    const newKecNorm = normalizeKecamatan(newKec);
+    const selectedKecObj = kecamatanList.find(
+      (kc: any) => normalizeKecamatan(kc.name || kc.nama) === newKecNorm || (kc.name || kc.nama || "").toLowerCase() === newKec.toLowerCase()
+    );
+    const kelsForKec = selectedKecObj
+      ? kelurahanList.filter((kl: any) => Number(kl.kecamatanId || kl.kecamatan?.id) === Number(selectedKecObj.id))
+      : [];
+    const defaultKel = kelsForKec.length > 0 ? (kelsForKec[0].name || kelsForKec[0].nama) : "";
+
+    setModalKelurahan(defaultKel ? getCleanKelName(defaultKel) : "");
+
+    setFormData((prev) => {
+      let newWilayah = prev.wilayah;
+      if (prev.roleName === "LURAH") {
+        newWilayah = defaultKel ? `Kel. ${defaultKel}` : newKec;
+      } else if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
+        newWilayah = defaultKel ? `${newKec}, Kel. ${defaultKel}` : newKec;
+      }
+      return {
+        ...prev,
+        kecamatan: newKec,
+        wilayah: newWilayah,
+        rtRwId: "",
+        rw: "",
+      };
+    });
+  };
+
+  const getRwListForKelurahan = (rawKel?: string) => {
+    if (!rawKel || rawKel === "-") return areasList.map((a: any) => a.name);
+    const clean = String(rawKel)
+      .replace(/^Kel\.?\s*/i, "")
+      .replace(/^Kelurahan\s*/i, "")
+      .trim()
+      .toLowerCase();
+
+    const matchedRws = areasList
+      .filter((a: any) => {
+        const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
+        return areaKel.includes(clean) || clean.includes(areaKel);
+      })
+      .map((a: any) => a.name)
+      .sort((a: string, b: string) => {
+        const numA = parseInt(a.replace(/\D/g, "") || "0", 10);
+        const numB = parseInt(b.replace(/\D/g, "") || "0", 10);
+        return numA - numB;
+      });
+
+    return matchedRws.length > 0 ? matchedRws : areasList.map((a: any) => a.name);
+  };
 
   const handleOpenAddModal = () => {
+    if (user?.peran === "SUPER_USER" && selectedRole === "DEVELOPER") {
+      showToast.error("Super User tidak memiliki izin membuat akun Developer");
+      return;
+    }
+    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(selectedRole)) {
+      showToast.error("Panitia Task Force hanya dapat mengelola akun Mahasiswa KKN dan DPL");
+      return;
+    }
+
     setModalType("add");
+    const defaultRole = selectedRole !== "Semua" ? selectedRole : "WARGA";
+    const initialKel = kelurahanList[0]?.name || kelurahanList[0]?.nama || "";
+    setModalKelurahan(initialKel);
     setFormData({
       name: "",
-
+      address: "",
       password: "",
-      roleName: "WARGA",
+      confirmPassword: "",
+      roleName: defaultRole,
       phone: "",
       status: "Aktif",
-      rtRwId: areas[0]?.id?.toString() || "",
+      rtRwId: "",
+      nim: "",
+      nip: "",
+      prodi: "",
+      jabatan: "",
+      selectedRws: [],
+      dplKelompokIds: [],
+      institusi: "",
+      jenjangPendidikan: "S1",
+      jumlahAnggotaKeluarga: "",
+      programStudi: "",
+      fotoProfil: "",
+      provinsi: provinsiList[0]?.name || provinsiList[0]?.nama || "",
+      kabupaten: kabupatenList[0]?.name || kabupatenList[0]?.nama || "",
+      wilayah: "",
+      kecamatan: kecamatanList[0]?.name || kecamatanList[0]?.nama || "",
+      petugasResiduId: "",
+      dplId: "",
     });
     setShowPassword(false);
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (user: any) => {
-    setModalType("edit");
-    setSelectedUser(user);
-    let matchedAreaId = "";
-    if (user.wilayah) {
-      const found = areas.find((a) => user.wilayah.includes(a.name));
-      if (found) matchedAreaId = found.id.toString();
+  const handleOpenEditModal = (u: any) => {
+    const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+    if (isDevTarget && user?.peran !== "DEVELOPER") {
+      showToast.error("Hanya Developer yang dapat mengedit akun Developer");
+      return;
     }
-    setFormData({
-      name: user.name,
+    if (user?.peran === "PANITIA_TASKFORCE" && !["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)) {
+      showToast.error("Panitia Task Force hanya dapat mengedit akun Mahasiswa KKN dan DPL");
+      return;
+    }
 
+    setModalType("edit");
+    setSelectedUser(u);
+    let matchedAreaId = u.rtRwId ? String(u.rtRwId) : u.rwId ? String(u.rwId) : u.studentProfile?.assignedRwId ? String(u.studentProfile?.assignedRwId) : "";
+    let foundKelurahan = u.kelurahan || u.rw?.kelurahan?.name || u.studentProfile?.assignedRw?.kelurahan?.name || u.studentProfile?.kelompok?.kelurahan || cleanKelurahanName(u.studentProfile?.kelompok?.name) || cleanKelurahanName(u.address) || "";
+    if (!matchedAreaId && u.rw && areasList.length > 0) {
+      const cleanTargetKel = getCleanKelName(foundKelurahan).toLowerCase();
+      const found = areasList.find((a: any) => {
+        const kelMatches = a.kelurahan?.name && a.kelurahan.name.toLowerCase().includes(cleanTargetKel);
+        const nameMatches = a.name.toLowerCase() === u.rw.toLowerCase() || a.name.replace(/\D/g, "") === u.rw.replace(/\D/g, "");
+        return kelMatches && nameMatches;
+      }) || areasList.find((a: any) => a.name.toLowerCase() === u.rw.toLowerCase());
+      if (found) {
+        matchedAreaId = String(found.id);
+        if (found.kelurahan?.name) {
+          foundKelurahan = found.kelurahan.name;
+        }
+      }
+    }
+    setModalKelurahan(getCleanKelName(foundKelurahan));
+
+    // Parse multi-select RWs (check u.wilayah first so individual student RW assignment takes precedence over group default)
+    let rwsArr: string[] = [];
+    const rawRw = u.wilayah || u.studentProfile?.kelompok?.cakupanRw || "";
+    let matches: string[] = [];
+    if (Array.isArray(rawRw)) {
+      matches = rawRw.map((r: any) => String(r));
+    } else if (typeof rawRw === "string") {
+      matches = rawRw.match(/\d+/g) || [];
+    } else if (typeof rawRw === "number") {
+      matches = [String(rawRw)];
+    }
+    if (matches.length > 0) {
+      rwsArr = Array.from(new Set(matches.map((m: string) => String(m).padStart(2, "0"))));
+    }
+
+    const mhsKelompokId = u.studentProfile?.kelompokId || u.studentProfile?.kelompok?.id || u.kelompokId;
+    const assignedKelompokIds = (u.role || selectedRole) === "MAHASISWA_KKN"
+      ? (mhsKelompokId ? [String(mhsKelompokId)] : [])
+      : (u.dplKelompok && Array.isArray(u.dplKelompok) ? u.dplKelompok.map((k: any) => String(k.id)) : []);
+
+    const isPimpinanOrTaskforce = ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(u.role || selectedRole);
+    const rawProdi = u.programStudi || u.prodi || u.studentProfile?.jurusan || (isPimpinanOrTaskforce ? "Universitas Komputer Indonesia" : "Manajemen");
+    const cleanedProdi = cleanProdiName(rawProdi);
+    const extractedJenjang = extractJenjang(rawProdi, u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan);
+
+    setFormData({
+      name: u.name || "",
+      address: u.address || "",
       password: "",
-      roleName: user.role || "WARGA",
-      phone: user.phone || "",
-      status: user.status || "Aktif",
+      confirmPassword: "",
+      roleName: u.role || selectedRole || "WARGA",
+      phone: u.phone || "",
+      status: u.status || "Aktif",
       rtRwId: matchedAreaId,
+      nim: u.studentProfile?.nim || u.nim || "",
+      nip: u.nip || u.studentProfile?.nip || u.dplNip || u.dplProfile?.nip || "",
+      prodi: cleanedProdi,
+      jabatan: u.jabatan || (u.role === "PEMIMPIN" ? "Rektor" : u.role === "PANITIA_TASKFORCE" ? "Anggota Task Force" : ""),
+      selectedRws: rwsArr,
+      dplKelompokIds: assignedKelompokIds,
+      institusi: u.institusi || (isPimpinanOrTaskforce ? "Universitas Komputer Indonesia" : cleanedProdi),
+      jenjangPendidikan: extractedJenjang,
+      jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga?.toString() || "",
+      programStudi: cleanedProdi,
+      fotoProfil: u.fotoProfil || "",
+      provinsi: u.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat"),
+      kabupaten: u.kabupaten || (kabupatenList[0]?.name || "Kota Bandung"),
+      wilayah: u.wilayah || (u.role === "ADMIN_DLH" ? "Kota Bandung" : ""),
+      kecamatan: u.kecamatan || u.rw?.kelurahan?.kecamatan?.name || kecamatanList[0]?.name || "Kecamatan Terdaftar",
+      petugasResiduId: u.petugasResidu?.id || "",
+      dplId: u.studentProfile?.kelompok?.dplId || u.studentProfile?.kelompok?.dpl?.id || u.dplId || "",
     });
     setShowPassword(false);
     setIsModalOpen(true);
+  };
+
+  const handleRwToggle = (rwVal: string) => {
+    setFormData((prev) => {
+      const exists = prev.selectedRws.includes(rwVal);
+      const updated = exists
+        ? prev.selectedRws.filter((r) => r !== rwVal)
+        : [...prev.selectedRws, rwVal];
+
+      const currentKel = getCleanKelName(modalKelurahan);
+      const formattedRws = updated.map((r) => r.replace(/\D/g, "").padStart(2, "0")).sort();
+      const newWilayahStr = formattedRws.length > 0
+        ? `RW ${formattedRws.join(", ")} (Kel. ${currentKel})`
+        : `Kel. ${currentKel}`;
+
+      return {
+        ...prev,
+        selectedRws: updated,
+        wilayah: newWilayahStr,
+      };
+    });
   };
 
   const handleCloseModal = () => {
@@ -175,31 +724,143 @@ const ManajemenPengguna: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const isSelfAccount = modalType === "edit" && user && selectedUser && (
+      selectedUser.id === user.id ||
+      selectedUser.id === (user as any).userId ||
+      (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+    );
+
+    if (isSelfAccount && (formData.status === "Nonaktif" || formData.status === "INACTIVE" || formData.status === "NONAKTIF")) {
+      showToast.error("Anda tidak dapat menonaktifkan akun Anda sendiri saat sedang login demi mencegah risiko tak sengaja terkunci dari sistem (lockout).");
+      return;
+    }
+
+    // Password validation check
+    if (!isPasswordValid) {
+      if (modalType === "add" && !formData.password) {
+        showToast.error("Kata sandi wajib diisi untuk pengguna baru");
+      } else if (formData.password && !passwordRules?.minLength) {
+        showToast.error("Kata sandi minimal 8 karakter");
+      } else if (formData.password && !passwordRules?.matches) {
+        showToast.error("Konfirmasi kata sandi tidak cocok");
+      } else {
+        showToast.error("Kata sandi belum memenuhi persyaratan keamanan");
+      }
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const payload = {
-        ...formData,
-        rtRwId: formData.rtRwId ? parseInt(formData.rtRwId) : null,
+      const parsedAreaId = formData.rtRwId ? parseInt(formData.rtRwId) : null;
+      let finalAddress = formData.address;
+      if (!finalAddress && modalKelurahan) {
+        const cleanKel = modalKelurahan.replace(/^Kel\.\s*/i, "").trim();
+        finalAddress = `Kel. ${cleanKel}`;
+      }
+
+      const payload: any = {
+        name: formData.name,
+        address: finalAddress,
+        phone: formatPhone(formData.phone),
+        roleName: formData.roleName,
+        status: formData.status,
+        rtRwId: parsedAreaId,
+        rwId: parsedAreaId,
+        provinsi: formData.provinsi,
+        kabupaten: formData.kabupaten,
       };
+
+      if (formData.password) {
+        payload.password = formData.password;
+      }
+      payload.fotoProfil = formData.fotoProfil || null;
+
+      if (formData.roleName === "MAHASISWA_KKN") {
+        if (formData.nim) payload.nim = formData.nim;
+        payload.programStudi = formData.prodi || formData.programStudi;
+        const selectedKelId = formData.dplKelompokIds?.[0] || null;
+        payload.kelompokId = selectedKelId;
+        payload.dplId = formData.dplId || null;
+        payload.studentProfile = {
+          nim: formData.nim,
+          jurusan: formData.prodi || formData.programStudi,
+          jenjangPendidikan: formData.jenjangPendidikan,
+          kelompokId: selectedKelId,
+          dplId: formData.dplId || null,
+        };
+        if (!selectedKelId) {
+          payload.wilayah = null;
+          payload.address = null;
+        } else {
+          const selectedKelObj = kelompokList.find((k: any) => k.id === selectedKelId);
+          if (selectedKelObj?.kelurahan) {
+            payload.wilayah = `Kel. ${cleanKelurahanName(selectedKelObj.kelurahan)}`;
+            payload.address = `Kel. ${cleanKelurahanName(selectedKelObj.kelurahan)}`;
+          }
+        }
+      } else if (formData.wilayah) {
+        payload.wilayah = formData.wilayah;
+      }
+
+      if (["PEMIMPIN", "PANITIA_TASKFORCE"].includes(formData.roleName)) {
+        payload.nip = formData.nip;
+        payload.institusi = formData.institusi;
+        payload.jabatan = formData.jabatan;
+        if (formData.roleName === "PEMIMPIN") {
+          payload.perguruanTinggi = formData.prodi;
+        }
+      }
+      if (formData.roleName === "DPL") {
+        payload.nip = formData.nip;
+        payload.programStudi = formData.prodi || formData.programStudi;
+        payload.jenjangPendidikan = formData.jenjangPendidikan;
+        payload.dplKelompokIds = formData.dplKelompokIds;
+      }
+      if (formData.roleName === "WARGA") {
+        payload.jumlahAnggotaKeluarga = formData.jumlahAnggotaKeluarga ? parseInt(formData.jumlahAnggotaKeluarga) : null;
+      }
+      if (formData.roleName === "MAHASISWA_KKN") {
+        payload.jenjangPendidikan = formData.jenjangPendidikan;
+      }
+      if (formData.roleName === "ADMIN_DLH") {
+        payload.wilayah = formData.wilayah || "Kota Bandung";
+        payload.address = formData.wilayah || "Kota Bandung";
+      }
+      if (formData.roleName === "CAMAT") {
+        payload.kecamatan = formData.kecamatan || "Kecamatan Coblong";
+        payload.address = formData.kecamatan || "Kecamatan Coblong";
+      }
+      if (formData.roleName === "RW") {
+        payload.petugasResiduId = formData.petugasResiduId || null;
+      }
 
       if (modalType === "add") {
         await api.post("/users", payload);
-        toast.success("Pengguna berhasil ditambahkan!");
+        showToast.success("Pengguna berhasil ditambahkan!");
       } else {
         await api.put(`/users/${selectedUser.id}`, payload);
-        toast.success("Data pengguna berhasil diperbarui!");
+        showToast.success("Data pengguna berhasil diperbarui!");
+        // Sync local auth store if logged-in user edited their own account!
+        if (user && selectedUser && selectedUser.id === user.id) {
+          updateStoreUser({
+            name: payload.name,
+            phone: payload.phone,
+            address: payload.address,
+            fotoProfil: payload.fotoProfil !== undefined ? payload.fotoProfil : null,
+          });
+        }
       }
       handleCloseModal();
-      fetchUsers();
+      await fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Terjadi kesalahan");
+      showToast.error(error.response?.data?.message || "Terjadi kesalahan");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDeleteClick = (user: any) => {
-    setUserToDelete(user);
+  const handleDeleteClick = (u: any) => {
+    setUserToDelete(u);
     setIsDeleteModalOpen(true);
   };
 
@@ -207,12 +868,12 @@ const ManajemenPengguna: React.FC = () => {
     if (!userToDelete) return;
     try {
       await api.delete(`/users/${userToDelete.id}`);
-      toast.success("Pengguna berhasil dihapus!");
+      showToast.success("Pengguna berhasil dihapus!");
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
-      fetchUsers();
+      await fetchUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Gagal menghapus pengguna");
+      showToast.error(error.response?.data?.message || "Gagal menghapus pengguna");
     }
   };
 
@@ -221,434 +882,896 @@ const ManajemenPengguna: React.FC = () => {
     setUserToDelete(null);
   };
 
-  // Pagination logic
-  const sortedUsers = [...users].sort((a, b) => {
-    if (a.status === "PENDING" && b.status !== "PENDING") return -1;
-    if (a.status !== "PENDING" && b.status === "PENDING") return 1;
-    return 0;
-  });
-  const totalPages = Math.ceil(sortedUsers.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedUsers = sortedUsers.slice(startIndex, startIndex + rowsPerPage);
+  // Kelurahan filtered users
+  const filteredUsers = useMemo(() => {
+    if (selectedKelurahanFilter === "Semua") return users;
+    const target = selectedKelurahanFilter.toLowerCase().trim();
+    return users.filter((u: any) => {
+      const kel = detectKelurahanName(u).toLowerCase();
+      const rawKel = (u.kelurahan || "").toLowerCase();
+      const addr = (u.address || "").toLowerCase();
+      const wil = (u.wilayah || "").toLowerCase();
+      return kel.includes(target) || rawKel.includes(target) || addr.includes(target) || wil.includes(target);
+    });
+  }, [users, selectedKelurahanFilter]);
 
-  const handleExportCSV = () => {
-    if (users.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
-      return;
+  // Pagination calculation
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage) || 1;
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
+  // Helper function for extracting degree level
+  const extractJenjang = (prodi?: string, fallbackJenjang?: string) => {
+    if (fallbackJenjang && ["S1", "S2", "S3", "D3", "D4"].includes(fallbackJenjang)) return fallbackJenjang;
+    if (!prodi) return "S1";
+    const match = prodi.match(/\b(S1|S2|S3|D3|D4)\b/i);
+    return match ? match[1].toUpperCase() : "S1";
+  };
+
+  // Helper function for cleaning redundant degree prefix from Program Studi name
+  const cleanProdiName = (prodi?: string) => {
+    if (!prodi || prodi.trim() === "" || prodi.trim() === "-") return "-";
+    const cleaned = prodi.replace(/\b(S1|S2|S3|D3|D4)\s*/gi, "").trim();
+    return cleaned.length > 0 ? cleaned : prodi;
+  };
+
+  // Helper function for cleaning redundant KKN Group names
+  const cleanKknDisplayName = (name?: string) => {
+    if (!name || name === "-") return "-";
+    let clean = name.trim();
+    clean = clean.replace(/\s*\([^)]*\)/g, ""); // strip existing parenthesized suffix e.g. (Dago) or (Kel. Dago)
+    clean = clean.replace(/\s+-\s+/g, " - "); // normalize dashes
+
+    // Normalize informal pattern like "Dago 1", "Dago 4", "Cipaganti 4" -> "Kelompok 1 Dago", "Kelompok 4 Dago"
+    const informalMatch = clean.match(/^([A-Za-z\s]+?)\s+(\d+)$/);
+    if (informalMatch) {
+      const place = informalMatch[1].replace(/^Kel\s*/i, "").trim();
+      const num = informalMatch[2];
+      return `Kelompok ${num} ${place}`;
+    }
+    return clean;
+  };
+
+  const formatCleanRw = (rwStr?: string): string => {
+    if (!rwStr || rwStr === "-") return "-";
+    const rawClean = rwStr.split("(")[0].trim();
+    const rwNum = rawClean.replace(/\D/g, "").padStart(2, "0");
+    return rwNum && rwNum !== "00" ? `RW ${rwNum}` : rawClean;
+  };
+
+  // Helper function for rendering Wilayah Penugasan as RW & Kelurahan badges
+  const renderWilayahBadges = (raw?: string) => {
+    if (!raw || raw === "-" || raw.trim() === "") return <span className="text-slate-400 font-medium">-</span>;
+
+    const str = String(raw).trim();
+
+    // Extract Kelurahan
+    const knownKels = ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"];
+    let foundKel = "";
+    for (const k of knownKels) {
+      if (str.toLowerCase().includes(k.toLowerCase())) {
+        foundKel = k;
+        break;
+      }
     }
 
-    const headers = [
-      "Nama Lengkap",
+    // Extract all numeric RW values from string
+    const rwNumbers: number[] = [];
+    const matches = str.match(/\d+/g);
+    if (matches) {
+      for (const m of matches) {
+        const num = parseInt(m, 10);
+        if (num > 0 && num <= 100) {
+          rwNumbers.push(num);
+        }
+      }
+    }
 
-      "No. Telfon",
-      "Peran",
-      "Wilayah",
-      "Setoran (Kg)",
-      "Status",
-      "Tanggal Terdaftar",
-    ];
+    const rwList = Array.from(new Set(rwNumbers)).sort((a, b) => a - b).map(n => `RW ${String(n).padStart(2, "0")}`);
 
-    const csvData = users.map((u) => [
-      u.name,
+    if (rwList.length === 0 && !foundKel) {
+      return <span className="text-slate-700 dark:text-slate-300 font-semibold">{str}</span>;
+    }
 
-      u.phone || "-",
-      u.role,
-      u.wilayah,
-      u.setoran,
-      u.status,
-      u.createdAt ? new Date(u.createdAt).toLocaleDateString("id-ID") : "-",
-    ]);
+    return (
+      <div className="flex flex-wrap items-center gap-1 max-w-xs">
+        {rwList.map((rwItem, idx) => (
+          <span key={idx} className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+            {rwItem}
+          </span>
+        ))}
+        {foundKel && (
+          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+            Kel. {foundKel}
+          </span>
+        )}
+      </div>
+    );
+  };
 
-    const csvContent = [
-      headers.join(","),
-      ...csvData.map((row) =>
-        row.map((cell) => `"${String(cell || "").replace(/"/g, '""')}"`).join(",")
-      ),
-    ].join("\n");
+  const renderPetugasResiduCell = (petugasData: any) => {
+    if (!petugasData) {
+      return <span className="text-slate-400 font-medium">-</span>;
+    }
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Data_Pengguna_${new Date().toISOString().split("T")[0]}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("CSV berhasil diunduh");
+    const name = typeof petugasData === "string" ? petugasData : petugasData.name || "Petugas Residu";
+    const photo = typeof petugasData === "object" ? petugasData.fotoProfil : null;
+    const initials = name
+      .split(" ")
+      .filter(Boolean)
+      .map((w: string) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "PR";
+
+    return (
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-full bg-[#009966] text-white font-extrabold text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-800 shadow-2xs">
+          {photo ? (
+            <img
+              src={getProfilePhotoUrl(photo, name)}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => handleAvatarError(e, name)}
+            />
+          ) : (
+            <span>{initials}</span>
+          )}
+        </div>
+        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs leading-tight">{name}</span>
+      </div>
+    );
+  };
+
+  const renderPhoneCell = (rawPhone?: string) => {
+    const formatted = formatPhone(rawPhone || "");
+    if (!rawPhone || formatted === "-" || formatted === "") {
+      return (
+        <div className="flex items-center gap-1.5 text-slate-400 font-mono text-xs">
+          <Phone size={12} className="text-slate-300 dark:text-slate-600 shrink-0" />
+          <span>-</span>
+        </div>
+      );
+    }
+
+    const cleanNum = formatted.replace(/\+/g, "").replace(/\s+/g, "");
+
+    return (
+      <a
+        href={`https://wa.me/${cleanNum}`}
+        target="_blank"
+        rel="noreferrer"
+        title="Hubungi via WhatsApp"
+        className="font-mono text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline inline-flex items-center gap-1.5 transition-colors font-bold"
+      >
+        <Phone size={12} className="text-emerald-500 shrink-0" />
+        <span>{formatted}</span>
+      </a>
+    );
+  };
+
+  const getMahasiswaWilayahStr = (u: any) => {
+    const studentProfile = u.studentProfile;
+    const kel = studentProfile?.kelompok;
+
+    // 1. Cek dari kelompok KKN jika terikat kelompok
+    if (kel) {
+      let rwStr = "";
+      if (kel.cakupanRw) {
+        let rws: any[] = [];
+        if (Array.isArray(kel.cakupanRw)) {
+          rws = kel.cakupanRw;
+        } else if (typeof kel.cakupanRw === "string") {
+          try { rws = JSON.parse(kel.cakupanRw); } catch { rws = [kel.cakupanRw]; }
+        } else if (typeof kel.cakupanRw === "number") {
+          rws = [kel.cakupanRw];
+        }
+        if (rws.length > 0) {
+          rwStr = `RW ${rws.map((r: any) => String(r).replace(/\D/g, "").padStart(2, "0")).filter(Boolean).join(", RW ")}`;
+        }
+      }
+      const kelStr = kel.kelurahan ? cleanKelurahanName(kel.kelurahan) : "";
+      if (rwStr || kelStr) {
+        return [rwStr, kelStr].filter(Boolean).join(" ");
+      }
+      if (kel.wilayahPenugasan) return kel.wilayahPenugasan;
+    }
+
+    // 2. Fallback ke u.address atau u.wilayah
+    if (u.address && u.address !== "-") return u.address;
+    if (u.wilayah && u.wilayah !== "-") return u.wilayah;
+
+    return "-";
+  };
+
+
+  // === ISO 27001 / NIST SP 800-63B Password Validation ===
+  const passwordRules = useMemo(() => {
+    const pw = formData.password;
+    if (!pw && modalType === "edit") return null; // Skip validation for edit if empty
+    return {
+      minLength: pw.length >= 8,
+      hasUppercase: /[A-Z]/.test(pw),
+      hasLowercase: /[a-z]/.test(pw),
+      hasNumber: /[0-9]/.test(pw),
+      hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?~`]/.test(pw),
+      matches: pw === formData.confirmPassword && pw.length > 0,
+    };
+  }, [formData.password, formData.confirmPassword, modalType]);
+
+  const passwordStrength = useMemo(() => {
+    if (!formData.password) return { level: 0, label: "", color: "" };
+    const rules = passwordRules;
+    if (!rules) return { level: 0, label: "", color: "" };
+    const passed = [rules.minLength, rules.hasUppercase, rules.hasLowercase, rules.hasNumber, rules.hasSpecial].filter(Boolean).length;
+    if (passed <= 2) return { level: 1, label: "Lemah", color: "bg-rose-500" };
+    if (passed <= 3) return { level: 2, label: "Sedang", color: "bg-amber-500" };
+    if (passed <= 4) return { level: 3, label: "Kuat", color: "bg-blue-500" };
+    return { level: 4, label: "Sangat Kuat", color: "bg-emerald-500" };
+  }, [formData.password, passwordRules]);
+
+  const isPasswordValid = useMemo(() => {
+    if (modalType === "edit" && !formData.password) return true; // Skip for edit if empty
+    if (modalType === "add" && !formData.password) return false;
+    if (!passwordRules) return true;
+    return passwordRules.minLength && passwordRules.hasUppercase && passwordRules.hasLowercase && passwordRules.hasNumber && passwordRules.matches;
+  }, [passwordRules, modalType, formData.password]);
+
+  const getNameInitials = (name?: string): string => {
+    if (!name) return "?";
+    const cleanName = name
+      .replace(/\b(Assoc\.|Prof\.|Dr\.|Dra\.|Drs\.|S\.Kom\.|M\.Kom\.|M\.Eng\.|S\.E\.|M\.Si\.|S\.T\.|M\.T\.|S\.Ds\.|M\.Ds\.|S\.H\.|M\.H\.|S\.Si\.|S\.Pd\.|M\.Pd\.|S\.IP\.|M\.I\.Pol\.|M\.I\.Kom\.|S\.Sos\.|S\.STP\.|M\.AP\.|A\.KS\.|Ph\.D\.|CIMA|CDMP|CSBA)\b/gi, "")
+      .trim();
+    const words = (cleanName || name).split(/\s+/).filter(Boolean);
+    if (words.length === 0) return "?";
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return words.slice(0, 3).map((w) => w[0].toUpperCase()).join("");
+  };
+
+  const renderAvatar = (u: any) => {
+    const name = typeof u === "string" ? u : u?.name || "?";
+    const foto = typeof u === "object" ? u?.fotoProfil : null;
+    const initials = getNameInitials(name);
+    const fontClass = initials.length >= 3
+      ? "text-[8px] font-black tracking-tighter"
+      : initials.length === 2
+      ? "text-[10px] font-black tracking-tight"
+      : "text-[11px] font-black";
+
+    return (
+      <div className="w-8 h-8 rounded-full bg-[#009966] text-white flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm font-sans">
+        {foto ? (
+          <img src={getProfilePhotoUrl(foto, name)} alt="" className="w-full h-full object-cover" onError={(e) => handleAvatarError(e, name)} />
+        ) : (
+          <span className={fontClass}>{initials}</span>
+        )}
+      </div>
+    );
+  };
+
+  const renderDplCell = (dplName: string | null | undefined, fotoProfil?: string | null) => {
+    if (!dplName || dplName === "-") {
+      return <span className="text-slate-400 font-medium">-</span>;
+    }
+    return (
+      <div className="flex items-center gap-2.5">
+        {renderAvatar({ name: dplName, fotoProfil })}
+        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">{dplName}</span>
+      </div>
+    );
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Manajemen Pengguna</h1>
-            <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-extrabold flex items-center gap-1">
-              <User size={13} /> Data Pengguna
-            </span>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* 1. Header Bar (Executive Standard UI) */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 flex items-center justify-center shrink-0 border border-[#009966]/15 dark:border-emerald-700/30 shadow-2xs">
+            <Users size={24} />
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Kelola data akun warga, petugas residu, pengurus RT/RW, & mahasiswa KKN di Kecamatan Coblong.
-          </p>
+          <div className="space-y-0.5">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
+              Pengguna
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Kelola daftar pengguna, peran sistem, hak akses wilayah, dan autentikasi akun secara terintegrasi.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {!isReadOnly && (
+        {!isReadOnly && (
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
             <button
               onClick={handleOpenAddModal}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white font-extrabold rounded-xl transition-all text-xs shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#009966] hover:bg-[#008855] active:scale-95 text-white font-extrabold text-xs rounded-full shadow-xs transition-all cursor-pointer"
             >
-              <UserPlus size={15} /> Tambah Pengguna
+              <UserPlus size={16} />
+              <span>Tambah Pengguna</span>
             </button>
-          )}
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-xs border border-slate-200 cursor-pointer"
-          >
-            <Download size={15} /> Ekspor CSV
-          </button>
-        </div>
-      </div>
-
-      {/* Master Role Switcher Tabs */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: "thin" }}>
-        {[
-          { key: "Semua", label: "Semua Peran", icon: "🌐" },
-          { key: "EKSEKUTIF", label: "Admin & Eksekutif", icon: "🏢" },
-          { key: "DPL", label: "DPL / Pimpinan Panitia", icon: "👨‍🏫" },
-          { key: "CAMAT", label: "Camat", icon: "🏛️" },
-          { key: "LURAH", label: "Lurah", icon: "🏢" },
-          { key: "RW", label: "Pengurus RW / RT", icon: "🛡️" },
-          { key: "PETUGAS_RESIDU", label: "Petugas Residu Hilir", icon: "🚚" },
-          { key: "MAHASISWA_KKN", label: "Mahasiswa KKN", icon: "🎓" },
-          { key: "WARGA", label: "Warga", icon: "🏠" },
-        ].map((tab) => {
-          const isActive = selectedRole === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => handleRoleTabChange(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
-                isActive
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Pengguna</p>
-          <p className="text-2xl font-black text-slate-800 mt-1">{users.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Status Aktif</p>
-          <p className="text-2xl font-black text-emerald-600 mt-1">
-            {users.filter((u) => u.status === "Aktif" || u.status === "ACTIVE").length}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Pending Verifikasi</p>
-          <p className="text-2xl font-black text-amber-600 mt-1">
-            {users.filter((u) => u.status === "PENDING" || u.status === "Pending" || u.status === "PENDING_APPROVAL").length}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Peran Terfilter</p>
-          <p className="text-base font-extrabold text-blue-700 mt-1 truncate">{selectedRole === "Semua" ? "Seluruh Role (10)" : selectedRole.replace("_", " ")}</p>
-        </div>
-      </div>
-
-      {/* Filters Card */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-        <div className="relative w-full lg:w-72">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 pl-10 pr-4 py-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            placeholder="Cari nama, No. HP..."
-            type="text"
-          />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
+          <div>
+            <p className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Total Pengguna
+            </p>
+            <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mt-1">
+              {filteredUsers.length}
+            </h3>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-200/60 dark:border-blue-800/60">
+            <User size={20} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 flex-1">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between">
           <div>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
-            >
-              <option value="Semua">Semua Peran</option>
-              <option value="SUPER_ADMIN">Super Admin</option>
-              <option value="ADMIN_DLH">Admin DLH</option>
-              <option value="DPL">Dosen Pembimbing (DPL)</option>
-              <option value="PEMIMPIN">Pimpinan & Panitia Taskforce</option>
-              <option value="CAMAT">Camat</option>
-              <option value="LURAH">Lurah</option>
-              <option value="RW">RW</option>
-              <option value="PETUGAS_RESIDU">Petugas Residu</option>
-              <option value="WARGA">Warga</option>
-              <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
-            </select>
+            <p className="text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Status Aktif
+            </p>
+            <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              {filteredUsers.filter((u) => u.status === "Aktif" || u.status === "ACTIVE" || !u.status).length}
+            </h3>
           </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/60 dark:border-emerald-800/60">
+            <CheckCircle size={20} />
+          </div>
+        </div>
 
-          <div>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="Semua">Semua Status</option>
-              <option value="Aktif">Aktif</option>
-              <option value="Nonaktif">Nonaktif</option>
-            </select>
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10.5px] sm:text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              Peran Terfilter
+            </p>
+            <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 mt-1 leading-snug break-words">
+              {ROLE_LABEL_MAP[selectedRole] || selectedRole}
+            </h3>
           </div>
-          <div>
-            <select
-              value={selectedRw}
-              onChange={(e) => setSelectedRw(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="Semua">Semua RW</option>
-              {uniqueRws.map((rw) => (
-                <option key={rw} value={rw}>
-                  RW {rw}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <select
-              value={selectedRt}
-              onChange={(e) => setSelectedRt(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            >
-              <option value="Semua">Semua RT</option>
-              {uniqueRts.map((rt) => (
-                <option key={rt} value={rt}>
-                  RT {rt}
-                </option>
-              ))}
-            </select>
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-200/60 dark:border-purple-800/60 shrink-0">
+            <User size={20} />
           </div>
         </div>
       </div>
 
-      {/* Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+      {/* Filter Bar */}
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative w-full md:w-80">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari nama, No. HP, NIP, institusi, wilayah..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            />
+          </div>
+
+          {/* Action Filters: Kelurahan & Status */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+            {/* Filter Kelurahan (6 Kelurahan di Coblong) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsKelurahanDropdownOpen(!isKelurahanDropdownOpen);
+                  setIsStatusDropdownOpen(false);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 border rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                  selectedKelurahanFilter !== "Semua"
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                }`}
+              >
+                <MapPin size={13} className={selectedKelurahanFilter !== "Semua" ? "text-[#009966] dark:text-emerald-400" : "text-slate-400"} />
+                <span>{selectedKelurahanFilter === "Semua" ? "Semua Kelurahan" : `Kel. ${selectedKelurahanFilter}`}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isKelurahanDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isKelurahanDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsKelurahanDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-48 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {kelurahanFilterOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedKelurahanFilter(opt.value);
+                          setIsKelurahanDropdownOpen(false);
+                          setCurrentPage(1);
+                        }}
+                        className={`flex items-center justify-between w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
+                          selectedKelurahanFilter === opt.value
+                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400 font-black"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {selectedKelurahanFilter === opt.value && (
+                          <CheckCircle size={13} className="text-[#009966] dark:text-emerald-400 shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Status Akun Filter Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStatusDropdownOpen(!isStatusDropdownOpen);
+                  setIsKelurahanDropdownOpen(false);
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all cursor-pointer"
+              >
+                <span className={`w-2 h-2 rounded-full ${
+                  selectedStatus === "Aktif" ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : selectedStatus === "Nonaktif" ? "bg-rose-500 shadow-xs shadow-rose-500/50" : "bg-slate-400"
+                }`} />
+                <span>{selectedStatus === "Semua" ? "Semua Status" : selectedStatus}</span>
+                <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isStatusDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {isStatusDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsStatusDropdownOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-40 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl shadow-lg z-30 p-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
+                    {[
+                      { value: "Semua", label: "Semua Status", color: "bg-slate-400" },
+                      { value: "Aktif", label: "Aktif", color: "bg-emerald-500" },
+                      { value: "Nonaktif", label: "Nonaktif", color: "bg-rose-500" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStatus(opt.value);
+                          setIsStatusDropdownOpen(false);
+                        }}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-xs font-extrabold rounded-lg transition-all text-left cursor-pointer ${
+                          selectedStatus === opt.value
+                            ? "bg-[#009966]/10 text-[#009966] dark:text-emerald-400"
+                            : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        }`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${opt.color}`} />
+                        <span>{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table Card (Desktop view) */}
+      <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead>
-              {selectedRole === "MAHASISWA_KKN" ? (
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
-                  <th className="py-3.5 px-4 w-12 text-center">No</th>
-                  <th className="py-3.5 px-4">Nama & NIM</th>
-                  <th className="py-3.5 px-4">Universitas / Fakultas</th>
-                  <th className="py-3.5 px-4">No. WhatsApp</th>
-                  <th className="py-3.5 px-4">Kelompok KKN</th>
-                  <th className="py-3.5 px-4">Wilayah Tugas</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
-                </tr>
-              ) : (
-                <tr className="bg-slate-50 text-[11px] font-black uppercase text-slate-400 tracking-wider border-b border-slate-200">
-                  <th className="py-3.5 px-4 w-16">Avatar</th>
-                  <th className="py-3.5 px-4">Nama Lengkap</th>
-                  <th className="py-3.5 px-4">No. HP</th>
-                  <th className="py-3.5 px-4">Peran</th>
-                  <th className="py-3.5 px-4">Wilayah</th>
-                  <th className="py-3.5 px-4 text-right">Setoran (Kg)</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                  {!isReadOnly && <th className="py-3.5 px-4 text-center w-24">Aksi</th>}
-                </tr>
-              )}
+            <thead className="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-md">
+              <tr className="text-[10.5px] font-black uppercase text-slate-400 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-800">
+                {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(selectedRole) ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NIP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">INSTITUSI</th>
+                    <th className="py-3 px-4">JABATAN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "DPL" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NIP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">PENDAMPING KELOMPOK</th>
+                    <th className="py-3 px-4">MENGAJAR JENJANG</th>
+                    <th className="py-3 px-4">PROGRAM STUDI</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "ADMIN_DLH" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">PROVINSI</th>
+                    <th className="py-3 px-4">KOTA / KABUPATEN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "CAMAT" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KOTA / KABUPATEN</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "LURAH" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "RW" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4">PETUGAS PEMILAH</th>
+                    <th className="py-3 px-4">ALAMAT LENGKAP</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "PETUGAS_RESIDU" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4">WILAYAH PENUGASAN</th>
+                    <th className="py-3 px-4">ALAMAT LENGKAP</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : selectedRole === "MAHASISWA_KKN" ? (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NIM</th>
+                    <th className="py-3 px-4">JENJANG PENDIDIKAN</th>
+                    <th className="py-3 px-4">PROGRAM STUDI</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KELOMPOK KKN</th>
+                    <th className="py-3 px-4">DOSEN PENDAMPING</th>
+                    <th className="py-3 px-4">WILAYAH PENUGASAN</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                ) : (
+                  <>
+                    <th className="py-3 px-4">NAMA LENGKAP</th>
+                    <th className="py-3 px-4">NO. HP</th>
+                    <th className="py-3 px-4">KECAMATAN</th>
+                    <th className="py-3 px-4">KELURAHAN</th>
+                    <th className="py-3 px-4">RUKUN WARGA</th>
+                    <th className="py-3 px-4">ALAMAT LENGKAP</th>
+                    <th className="py-3 px-4 text-center">JUMLAH ANGGOTA KELUARGA</th>
+                    <th className="py-3 px-4 text-center">STATUS</th>
+                    {!isReadOnly && <th className="py-3 px-4 text-center">AKSI</th>}
+                  </>
+                )}
+              </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody className="text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-on-surface-variant">
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-3">
-                      <Loader2 className="animate-spin text-primary" size={32} />
-                      <p>Memuat pengguna...</p>
+                      <Loader2 className="animate-spin text-blue-600" size={28} />
+                      <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">Memuat data pengguna...</p>
                     </div>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-error font-medium">
+                  <td colSpan={10} className="px-6 py-8 text-center text-rose-600 dark:text-rose-400 font-medium">
                     {error}
                   </td>
                 </tr>
               ) : paginatedUsers.length > 0 ? (
-                paginatedUsers.map((user, idx) =>
-                  selectedRole === "MAHASISWA_KKN" ? (
-                    <tr
-                      key={user.id}
-                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {(currentPage - 1) * rowsPerPage + idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <p className="font-bold text-slate-900">{user.name}</p>
-                        <p className="text-[10px] font-mono text-slate-400">
-                          NIM: {user.studentProfile?.nim || "-"}
-                        </p>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-semibold">
-                        {user.studentProfile?.fakultas || "UNIKOM"}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
-                        <a
-                          href={`https://wa.me/${(user.phone || "").replace(/\+/g, "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:text-emerald-600 hover:underline flex items-center gap-1"
-                        >
-                          <Phone size={12} className="text-emerald-500" />
-                          {user.phone || "-"}
-                        </a>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200 font-bold text-[10px] inline-block">
-                          {user.studentProfile?.kelompok?.name || "Belum Plotting"}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {user.wilayah && user.wilayah !== "-" ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin size={13} className="text-primary" />
-                            {user.wilayah}
+                paginatedUsers.map((u) => (
+                  <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        {renderAvatar(u)}
+                        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs">{u.name}</span>
+                      </div>
+                    </td>
+
+                    {["DEVELOPER", "SUPER_USER"].includes(selectedRole) ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                      </>
+                    ) : ["PEMIMPIN", "PANITIA_TASKFORCE"].includes(selectedRole) ? (
+                      <>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nip || "-"}</td>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{u.institusi || u.prodi || "Universitas Komputer Indonesia"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{u.jabatan || (selectedRole === "PEMIMPIN" ? "Rektor" : "Anggota Task Force")}</td>
+                      </>
+                    ) : selectedRole === "DPL" ? (
+                      <>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nip || "-"}</td>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                          {u.dplKelompok && u.dplKelompok.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {Array.from(
+                                new Map(
+                                  u.dplKelompok.map((k: any) => {
+                                    const cleaned = cleanKknDisplayName(k.name);
+                                    return [cleaned.toLowerCase(), cleaned];
+                                  })
+                                ).values()
+                              ).map((groupName: any, i: number) => (
+                                <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-200/80 dark:border-emerald-800/80 font-extrabold whitespace-nowrap inline-flex items-center gap-1.5 shadow-2xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  {groupName}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.programStudi || u.prodi, u.jenjangPendidikan)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.programStudi || u.prodi)}</td>
+                      </>
+                    ) : selectedRole === "ADMIN_DLH" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 px-2.5 py-0.5 rounded-md text-[10px] border border-teal-200/80 dark:border-teal-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {u.provinsi || "Jawa Barat"}
                           </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Belum diset</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            user.status === "Aktif" || user.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : "bg-rose-100 text-rose-800 border border-rose-200"
-                          }`}
-                        >
-                          {user.status || "Aktif"}
-                        </span>
-                      </td>
-                      {!isReadOnly && (
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex justify-center gap-1">
-                            <button
-                              onClick={() => handleOpenEditModal(user)}
-                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                              title="Edit"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(user)}
-                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                              title="Hapus"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 dark:border-sky-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {getCleanKabupatenName(u.kabupaten || u.wilayah)}
+                          </span>
+                        </td>
+                      </>
+                    ) : selectedRole === "CAMAT" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 px-2.5 py-0.5 rounded-md text-[10px] border border-sky-200/80 dark:border-sky-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {getCleanKabupatenName(u.kabupaten || u.wilayah)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          {(() => {
+                            const isCoblongKec = (u.kecamatan || "").toLowerCase().includes("coblong");
+                            const kels = isCoblongKec ? ["Cipaganti", "Dago", "Lebak Gede", "Lebak Siliwangi", "Sadang Serang", "Sekeloa"] : [];
+                            return kels.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-md">
+                                {kels.map((kel, i) => (
+                                  <span key={i} className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                                    Kel. {kel}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-500 font-medium text-xs">-</span>
+                            );
+                          })()}
+                        </td>
+                      </>
+                    ) : selectedRole === "LURAH" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <div className="flex flex-wrap gap-1 max-w-md">
+                            {getRwListForKelurahan(u.kelurahan || u.address).map((rwItem: string, i: number) => (
+                              <span key={i} className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                                {rwItem}
+                              </span>
+                            ))}
                           </div>
                         </td>
-                      )}
-                    </tr>
-                  ) : (
-                    <tr
-                      key={user.id}
-                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-400">
-                        {(currentPage - 1) * rowsPerPage + idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        {user.name}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
-                        {user.phone || "-"}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block px-2.5 py-1 ${
-                            ["SUPER_ADMIN", "ADMIN_DLH"].includes(user.role)
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : [
-                                  "CAMAT",
-                                  "LURAH",
-                                  "RW",
-                                  "RT",
-                                  "PETUGAS_RESIDU",
-                                  "MAHASISWA_KKN",
-                                ].includes(user.role)
-                              ? "bg-orange-50 text-orange-700 border border-orange-200"
-                              : "bg-green-50 text-green-700 border border-green-200"
-                          } rounded-md text-[10px] font-bold tracking-wide uppercase`}
-                        >
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-medium">
-                        {user.wilayah}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-slate-900">
-                        {user.setoran}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            user.status === "Aktif" || user.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              : "bg-rose-100 text-rose-800 border border-rose-200"
-                          }`}
-                        >
-                          {user.status || "Aktif"}
-                        </span>
-                      </td>
-                      {!isReadOnly && (
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex justify-center gap-1">
-                            <button
-                              onClick={() => handleOpenEditModal(user)}
-                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                              title="Edit"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(user)}
-                              className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-rose-600 hover:text-white transition-colors flex items-center justify-center cursor-pointer"
-                              title="Hapus"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
+                      </>
+                    ) : selectedRole === "RW" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
                         </td>
-                      )}
-                    </tr>
-                  )
-                )
+                        <td className="py-3 px-4">
+                          {u.rw && u.rw !== "-" ? (
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                              {formatCleanRw(u.rw)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">{renderPetugasResiduCell(u.petugasResidu)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                      </>
+                    ) : selectedRole === "PETUGAS_RESIDU" ? (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {u.rw && u.rw !== "-" ? (
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                              {formatCleanRw(u.rw)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.wilayah || (u.rw ? `${formatCleanRw(u.rw)}, ${detectKelurahanName(u)}` : detectKelurahanName(u)) || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{u.address || "-"}</td>
+                      </>
+                    ) : selectedRole === "MAHASISWA_KKN" ? (
+                      <>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-700 dark:text-slate-300">{u.nim || u.studentProfile?.nim || "-"}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-bold">{extractJenjang(u.studentProfile?.jurusan || u.prodi || u.programStudi, u.jenjangPendidikan || u.studentProfile?.jenjangPendidikan)}</td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{cleanProdiName(u.studentProfile?.jurusan || u.prodi || u.programStudi)}</td>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4">
+                          {u.studentProfile?.kelompok?.name && u.studentProfile.kelompok.name !== "-" ? (
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                              {cleanKknDisplayName(u.studentProfile.kelompok.name)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 font-medium">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">
+                          {renderDplCell(u.studentProfile?.kelompok?.dplName || u.studentProfile?.kelompok?.dpl?.name, u.studentProfile?.kelompok?.dplFotoProfil || u.studentProfile?.kelompok?.dpl?.fotoProfil)}
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{renderWilayahBadges(getMahasiswaWilayahStr(u))}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-3 px-4">{renderPhoneCell(u.phone)}</td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-[#009966]/20 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {formatKecamatanName(u.kecamatan, u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-md text-[10px] border border-emerald-200 dark:border-emerald-800/80 font-bold whitespace-nowrap inline-block shadow-2xs">
+                            {detectKelurahanName(u)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-800 dark:text-slate-100 font-bold">
+                          <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md text-[10px] border border-blue-200 dark:border-blue-800/80 font-extrabold whitespace-nowrap inline-block shadow-2xs">
+                            {formatCleanRw(u.rw)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-700 dark:text-slate-300 max-w-[240px] break-words whitespace-normal leading-relaxed">{u.address || "-"}</td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-100">{u.jumlahAnggotaKeluarga != null && u.jumlahAnggotaKeluarga !== "" ? u.jumlahAnggotaKeluarga : "-"}</td>
+                      </>
+                    )}
+
+                    <td className="py-3 px-4 text-center">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                          : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${
+                          (u.status === "Aktif" || u.status === "ACTIVE" || !u.status) ? "bg-emerald-500" : "bg-rose-500"
+                        }`} />
+                        {u.status || "Aktif"}
+                      </span>
+                    </td>
+
+                    {!isReadOnly && (
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex justify-center gap-1.5">
+                          {(() => {
+                            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+                            const canEdit =
+                              user?.peran === "DEVELOPER" ||
+                              (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
+
+                            if (!canEdit) return null;
+
+                            return (
+                              <button
+                                onClick={() => handleOpenEditModal(u)}
+                                className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100/80 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-900/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs"
+                                title="Edit Data Pengguna"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            );
+                          })()}
+                          {(() => {
+                            const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
+                            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+                            const canDelete =
+                              !isSelf &&
+                              (user?.peran === "DEVELOPER" ||
+                                (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)));
+
+                            if (!canDelete && !isSelf) return null;
+
+                            return (
+                              <button
+                                disabled={isSelf}
+                                onClick={() => {
+                                  if (isSelf) return;
+                                  handleDeleteClick(u);
+                                }}
+                                className={`w-8 h-8 rounded-xl border transition-all flex items-center justify-center active:scale-95 shadow-2xs ${
+                                  isSelf
+                                    ? "bg-slate-50 dark:bg-slate-800/40 text-slate-300 dark:text-slate-700 border-slate-200/60 dark:border-slate-800/60 opacity-50 cursor-not-allowed"
+                                    : "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100/80 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-900/40 cursor-pointer"
+                                }`}
+                                title={isSelf ? "Akun Anda Sendiri - Tidak dapat dihapus" : "Hapus Pengguna"}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
               ) : (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-6 py-8 text-center text-on-surface-variant font-medium"
-                  >
-                    Tidak ada data pengguna
-                  </td>
-                </tr>
+                <EmptyTableState
+                  colSpan={10}
+                  entityName={ROLE_LABEL_MAP[selectedRole] || "Pengguna"}
+                  isSearch={!!(searchQuery || selectedStatus !== "Semua")}
+                  searchQuery={searchQuery}
+                  onResetSearch={() => {
+                    setSearchQuery("");
+                    setSelectedStatus("Semua");
+                  }}
+                />
               )}
             </tbody>
           </table>
@@ -656,222 +1779,1032 @@ const ManajemenPengguna: React.FC = () => {
 
         {/* Pagination Controls */}
         {users.length > 0 && !loading && !error && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-outline-variant/30 bg-white">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-on-surface-variant">Tampilkan</span>
-              <select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="bg-surface-container-low border border-outline-variant/50 rounded-md px-2 py-1 text-sm focus:border-primary focus:outline-none cursor-pointer"
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-              <span className="text-sm text-on-surface-variant">data per halaman</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-on-surface-variant">
-                Menampilkan {startIndex + 1}-{Math.min(startIndex + rowsPerPage, users.length)} dari {users.length} data
-              </span>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="p-1 rounded-md hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft size={20} className="text-on-surface-variant" />
-                </button>
-                <div className="flex items-center px-2 text-sm font-medium text-on-surface">
-                  {currentPage} / {totalPages || 1}
-                </div>
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className="p-1 rounded-md hover:bg-surface-container-low disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronRight size={20} className="text-on-surface-variant" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={users.length}
+            itemsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setRowsPerPage}
+          />
         )}
       </div>
 
-      {/* Modal Tambah/Edit */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-low">
-              <h3 className="text-xl font-bold text-on-surface">
-                {modalType === "add" ? "Tambah Pengguna" : "Edit Pengguna"}
-              </h3>
-              <button
-                onClick={handleCloseModal}
-                className="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors cursor-pointer"
-              >
-                <X />
-              </button>
-            </div>
-            <form
-              onSubmit={handleSubmit}
-              className="p-6 flex flex-col gap-4 overflow-y-auto max-h-[85vh]"
-            >
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Nama Lengkap
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  No. Telfon
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-mono"
-                  placeholder="081234567890"
-                />
-              </div>
+      {/* Mobile Card List (Mobile View <640px) */}
+      <div className="block md:hidden space-y-4">
+        {loading ? (
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center gap-3">
+            <Loader2 className="animate-spin text-blue-600" size={28} />
+            <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">Memuat data pengguna...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-rose-50 text-rose-700 p-6 rounded-2xl border border-rose-200 text-center text-xs font-bold">
+            {error}
+          </div>
+        ) : paginatedUsers.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden">
+            <EmptyTableState
+              entityName={ROLE_LABEL_MAP[selectedRole] || "Pengguna"}
+              isSearch={!!(searchQuery || selectedStatus !== "Semua")}
+              searchQuery={searchQuery}
+              onResetSearch={() => {
+                setSearchQuery("");
+                setSelectedStatus("Semua");
+              }}
+            />
+          </div>
+        ) : (
+          paginatedUsers.map((u) => {
+            const isSelf = user && (u.id === user.id || (u.phone && user.phone && u.phone === user.phone));
+            const isDevTarget = (u.role || u.roleName || u.role?.name) === "DEVELOPER";
+            const canEdit =
+              user?.peran === "DEVELOPER" ||
+              (user?.peran === "SUPER_USER" && !isDevTarget) ||
+              (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName));
+            const canDelete =
+              !isSelf &&
+              (user?.peran === "DEVELOPER" ||
+                (user?.peran === "SUPER_USER" && !isDevTarget) ||
+                (user?.peran === "PANITIA_TASKFORCE" && ["MAHASISWA_KKN", "DPL"].includes(u.role || u.roleName)));
 
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Password{" "}
-                  {modalType === "edit" && (
-                    <span className="text-xs text-on-surface-variant font-normal">
-                      (Kosongkan jika tidak diubah)
-                    </span>
+            return (
+              <div key={u.id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+                {/* Profile Card Header */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {renderAvatar(u)}
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs">{u.name}</h4>
+                      <span className="text-[10px] bg-slate-50 dark:bg-slate-850 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-extrabold mt-1 inline-block">
+                        {ROLE_LABEL_MAP[u.role || selectedRole] || u.role}
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase ${
+                    (u.status === "Aktif" || u.status === "ACTIVE" || !u.status)
+                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80"
+                      : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80"
+                  }`}>
+                    {u.status || "Aktif"}
+                  </span>
+                </div>
+
+                {/* Details Info Grid */}
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
+                  <div>
+                    <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">No. Telepon</span>
+                    <span className="font-semibold block">{renderPhoneCell(u.phone)}</span>
+                  </div>
+
+                  {u.nip && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">NIP</span>
+                      <span className="font-bold font-mono text-slate-800 dark:text-slate-100 block">{u.nip}</span>
+                    </div>
                   )}
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required={modalType === "add"}
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full h-10 pl-3 pr-10 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface cursor-pointer flex items-center justify-center"
-                  >
-                    {showPassword ? <EyeOff className="text-[20px]" size={20}/> : <Eye className="text-[20px]" size={20}/>}
-                  </button>
+
+                  {u.nim && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">NIM</span>
+                      <span className="font-bold font-mono text-slate-800 dark:text-slate-100 block">{u.nim}</span>
+                    </div>
+                  )}
+
+                  {u.kecamatan && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kecamatan</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{formatKecamatanName(u.kecamatan)}</span>
+                    </div>
+                  )}
+
+                  {u.kelurahan && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Kelurahan</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{detectKelurahanName(u)}</span>
+                    </div>
+                  )}
+
+                  {u.rw && (
+                    <div>
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Rukun Warga</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">
+                        {formatCleanRw(u.rw)}
+                      </span>
+                    </div>
+                  )}
+
+                  {u.wilayah && (
+                    <div className="col-span-2">
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">
+                        {u.role === "WARGA" ? "Wilayah Domisili" : "Wilayah Penugasan"}
+                      </span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100">{renderWilayahBadges(u.wilayah)}</span>
+                    </div>
+                  )}
+
+                  {u.address && (
+                    <div className="col-span-2">
+                      <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[9px] mb-0.5">Alamat Lengkap</span>
+                      <span className="font-semibold block text-slate-800 dark:text-slate-100 leading-snug">{u.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Action Buttons */}
+                {!isReadOnly && (canEdit || canDelete) && (
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    {canEdit && (
+                      <button
+                        onClick={() => handleOpenEditModal(u)}
+                        className="px-4 py-2 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 border border-amber-200/80 dark:border-amber-900/40 text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                      >
+                        <Pencil size={13} />
+                        <span>Ubah</span>
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDeleteClick(u)}
+                        className="px-4 py-2 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 border border-rose-200/80 dark:border-rose-900/40 text-xs font-black rounded-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-2xs"
+                      >
+                        <Trash2 size={13} />
+                        <span>Hapus</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Modal Tambah/Edit — Standar ISO 27001 */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4" onClick={handleCloseModal}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800/80 dark:to-slate-900">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    modalType === "add"
+                      ? "bg-[#009966]/10 dark:bg-emerald-950/50 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-800/60"
+                      : "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60"
+                  }`}>
+                    {modalType === "add" ? <UserPlus size={20} /> : <Pencil size={20} />}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100">
+                      {modalType === "add" ? "Tambah Pengguna Baru" : "Edit Data Pengguna"}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
+                      {modalType === "add" ? "Isi formulir untuk mendaftarkan pengguna baru ke sistem" : `Perbarui informasi akun ${selectedUser?.name || ""}`}
+                    </p>
+                  </div>
+                </div>
+                <button type="button" onClick={handleCloseModal} className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[75vh]">
+              <div className="p-6 space-y-5">
+                {/* ── Section: Informasi Dasar ── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <User size={14} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Informasi Dasar</span>
+                  </div>
+                  <div className="space-y-3.5">
+                    {/* Foto Profil Input & Live Preview */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Foto Profil</label>
+                      <div className="flex items-center gap-3.5 bg-slate-50/90 dark:bg-slate-800/90 dark:bg-slate-800/90 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                        <div className="w-13 h-13 rounded-full bg-[#009966] text-white font-black text-xs flex items-center justify-center shrink-0 overflow-hidden border-2 border-white dark:border-slate-700 shadow-md font-sans tracking-wider">
+                          {formData.fotoProfil ? (
+                            <img
+                              src={getProfilePhotoUrl(formData.fotoProfil, formData.name)}
+                              alt="Preview Foto"
+                              className="w-full h-full object-cover"
+                              onError={(e) => handleAvatarError(e, formData.name)}
+                            />
+                          ) : (
+                            <span>{getNameInitials(formData.name)}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1.5">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={formData.fotoProfil}
+                              onChange={(e) => setFormData({ ...formData, fotoProfil: e.target.value })}
+                              placeholder="URL Foto (https://...) atau Unggah berkas"
+                              className="flex-1 h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-[#009966] focus:ring-1 focus:ring-[#009966] outline-none"
+                            />
+                            <label className="h-9 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-[#009966] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 shadow-2xs">
+                              <Upload size={13} />
+                              <span>Unggah</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      setFormData({ ...formData, fotoProfil: reader.result as string });
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }
+                                }}
+                              />
+                            </label>
+                            {formData.fotoProfil && (
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, fotoProfil: "" })}
+                                className="h-9 px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold transition-colors cursor-pointer"
+                                title="Reset Foto"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
+                            {formData.fotoProfil ? "Preview foto profil aktif" : `Default foto otomatis inisial nama: (${getNameInitials(formData.name)})`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Nama Lengkap <span className="text-rose-500">*</span></label>
+                      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Masukkan nama lengkap" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">No. Telepon <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        inputMode="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/[^\d+]/g, "") })}
+                        onBlur={() => {
+                          if (formData.phone) {
+                            setFormData((prev) => ({ ...prev, phone: formatPhone(prev.phone) }));
+                          }
+                        }}
+                        placeholder="+628xxxxxxxxxx"
+                        className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Peran Sistem</label>
+                      <input type="text" disabled value={ROLE_LABEL_MAP[formData.roleName] || formData.roleName} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs font-bold cursor-not-allowed" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Section: Data Khusus Peran ── */}
+                {(["DPL", "MAHASISWA_KKN", "PEMIMPIN", "PANITIA_TASKFORCE", "WARGA", "RW", "PETUGAS_RESIDU", "LURAH", "ADMIN_DLH", "CAMAT"].includes(formData.roleName)) && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Info size={14} className="text-slate-400 dark:text-slate-500" />
+                      <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Data Khusus Peran</span>
+                    </div>
+                    <div className="space-y-3">
+                      {/* DPL Fields */}
+                      {formData.roleName === "DPL" && (
+                        <>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
+                            <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.006" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Mengajar Jenjang</label>
+                              <select value={formData.jenjangPendidikan || "S1"} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                                <option value="S1">S1 (Sarjana)</option>
+                                <option value="D3">D3 (Diploma Tiga)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
+                              <input type="text" value={formData.programStudi || formData.prodi} onChange={(e) => setFormData({ ...formData, programStudi: e.target.value, prodi: e.target.value })} placeholder="Manajemen" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Pendamping Kelompok</label>
+                            <select
+                              value={formData.dplKelompokIds?.[0] || ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setFormData({ ...formData, dplKelompokIds: val ? [val] : [] });
+                              }}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                            >
+                               <option value="">-- Tidak Mendampingi Kelompok --</option>
+                              {kelompokList.map((k: any) => (
+                                <option key={k.id} value={k.id}>
+                                  {cleanKknDisplayName(k.name)}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Dipilih dari 32 kelompok KKN terintegrasi secara real-time dari database.</p>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Mahasiswa Fields */}
+                      {formData.roleName === "MAHASISWA_KKN" && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIM</label>
+                              <input type="text" inputMode="numeric" pattern="[0-9]*" value={formData.nim} onChange={(e) => setFormData({ ...formData, nim: e.target.value.replace(/\D/g, "") })} placeholder="10123047" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                                               <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelompok KKN</label>
+                              <select
+                                value={formData.dplKelompokIds?.[0] || ""}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  let autoDplId = "";
+                                  let autoKelName = "";
+                                  if (val) {
+                                    const foundKel = kelompokList.find((k: any) => k.id === val);
+                                    autoDplId = foundKel?.dplId || foundKel?.dpl?.id || "";
+                                    if (foundKel?.kelurahan || foundKel?.name) {
+                                      autoKelName = foundKel.kelurahan || cleanKelurahanName(foundKel.name);
+                                    }
+                                  }
+                                  if (autoKelName) setModalKelurahan(getCleanKelName(autoKelName));
+                                  setFormData({
+                                    ...formData,
+                                    dplKelompokIds: val ? [val] : [],
+                                    dplId: autoDplId,
+                                  });
+                                }}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              >
+                                <option value="">-- Tanpa Kelompok --</option>
+                                {kelompokList.map((k: any) => (
+                                  <option key={k.id} value={k.id}>
+                                    {cleanKknDisplayName(k.name)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Dosen Pendamping Lapangan</label>
+                            <input
+                              type="text"
+                              readOnly
+                              disabled
+                              value={
+                                (() => {
+                                  const selectedKelId = formData.dplKelompokIds?.[0];
+                                  if (!selectedKelId) return "Belum Ada Dosen Pendamping";
+                                  const foundKel = kelompokList.find((k: any) => k.id === selectedKelId);
+                                  const dplObj = foundKel?.dpl || dplList.find((d: any) => d.id === (foundKel?.dplId || formData.dplId));
+                                  return dplObj?.name || foundKel?.dplName || foundKel?.dplNamaMentah || "Belum Ada Dosen Pendamping";
+                                })()
+                              }
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-not-allowed outline-none select-none opacity-90"
+                            />
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Otomatis terhubung secara dinamis mengikuti DPL yang bertugas di kelompok KKN yang dipilih.</p>
+                          </div>            </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jenjang Pendidikan</label>
+                              <select value={formData.jenjangPendidikan} onChange={(e) => setFormData({...formData, jenjangPendidikan: e.target.value})} className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none">
+                                <option value="S1">S1 (Sarjana)</option>
+                                <option value="S2">S2 (Magister)</option>
+                                <option value="S3">S3 (Doktor)</option>
+                                <option value="D3">D3 (Diploma Tiga)</option>
+                                <option value="D4">D4 (Diploma Empat)</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Program Studi</label>
+                              <input type="text" value={formData.prodi} onChange={(e) => setFormData({ ...formData, prodi: e.target.value })} placeholder="S1 Teknik Informatika" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Pimpinan / Task Force Fields */}
+                      {["PEMIMPIN", "PANITIA_TASKFORCE"].includes(formData.roleName) && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">NIP</label>
+                              <input type="text" value={formData.nip} onChange={(e) => setFormData({ ...formData, nip: e.target.value })} placeholder="4127.34.02.001" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Institusi</label>
+                              <input type="text" value={formData.institusi || (formData.roleName === "PEMIMPIN" ? formData.prodi : "")} onChange={(e) => setFormData({ ...formData, institusi: e.target.value })} placeholder="Universitas Komputer Indonesia" className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jabatan</label>
+                            <input type="text" value={formData.jabatan || ""} onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })} placeholder={formData.roleName === "PEMIMPIN" ? "Rektor / Dekan / Pimpinan Utama" : "Ketua Task Force / Anggota Tim KKN"} className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* ADMIN_DLH Fields */}
+                      {formData.roleName === "ADMIN_DLH" && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
+                            <select
+                              value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
+                              onChange={(e) => handleProvinsiSelect(e.target.value)}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                            >
+                              {provinsiList.map((p: any) => (
+                                <option key={p.id} value={p.name || p.nama}>
+                                  {p.name || p.nama}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                            <select
+                              value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                              onChange={(e) => handleKabupatenSelect(e.target.value)}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                            >
+                              {filteredKabupatenList.length === 0 ? (
+                                <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
+                              ) : (
+                                filteredKabupatenList.map((kb: any) => (
+                                  <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CAMAT Location Controls */}
+                      {formData.roleName === "CAMAT" && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Provinsi Penugasan *</label>
+                              <select
+                                value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
+                                onChange={(e) => handleProvinsiSelect(e.target.value)}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              >
+                                {provinsiList.map((p: any) => (
+                                  <option key={p.id} value={p.name || p.nama}>
+                                    {p.name || p.nama}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kota / Kabupaten Penugasan *</label>
+                              <select
+                                value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                onChange={(e) => handleKabupatenSelect(e.target.value)}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              >
+                                {filteredKabupatenList.length === 0 ? (
+                                  <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
+                                ) : (
+                                  filteredKabupatenList.map((kb: any) => (
+                                    <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                  ))
+                                )}
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kecamatan Penugasan *</label>
+                            <select
+                              value={
+                                filteredKecamatanList.find((kc: any) => {
+                                  const cur = formData.kecamatan || "";
+                                  const name = kc.name || kc.nama || "";
+                                  return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
+                                })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
+                              }
+                              onChange={(e) => handleKecamatanSelect(e.target.value)}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                            >
+                              {filteredKecamatanList.map((kc: any) => (
+                                <option key={kc.id} value={kc.name || kc.nama}>
+                                  {kc.name || kc.nama}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Cakupan Kelurahan Bawahan (Semua Kelurahan)</label>
+                            {(() => {
+                              const curKec = formData.kecamatan || (filteredKecamatanList[0]?.name || "");
+                              const kelsModal = filteredKelurahanList.map((kl: any) => getCleanKelName(kl.name || kl.nama));
+                              return kelsModal.length > 0 ? (
+                                <>
+                                  <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60">
+                                    {kelsModal.map((kel: string) => (
+                                      <span key={kel} className="bg-emerald-100/80 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-2.5 py-1 rounded-lg text-[11px] border border-emerald-300/60 dark:border-emerald-700 font-extrabold shadow-2xs">
+                                        Kel. {kel}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 dark:text-slate-400 mt-1">Camat secara otomatis membawahi dan mengawasi seluruh {kelsModal.length} Kelurahan di {curKec}.</p>
+                                </>
+                              ) : (
+                                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs italic font-medium">
+                                  Belum ada data Kelurahan terdaftar untuk {curKec || "kecamatan penugasan"} di Master Data.
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Cascading Location Controls for Specific Location Roles (Lurah, RW, Petugas Residu, Warga) */}
+                      {["WARGA", "RW", "LURAH", "PETUGAS_RESIDU"].includes(formData.roleName) && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                {formData.roleName === "WARGA" ? "Provinsi Domisili *" : "Provinsi Penugasan *"}
+                              </label>
+                              <select
+                                value={formData.provinsi || (provinsiList[0]?.name || provinsiList[0]?.nama || "Jawa Barat")}
+                                onChange={(e) => handleProvinsiSelect(e.target.value)}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              >
+                                {provinsiList.map((p: any) => (
+                                  <option key={p.id} value={p.name || p.nama}>
+                                    {p.name || p.nama}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                {formData.roleName === "WARGA" ? "Kota / Kabupaten Domisili *" : "Kota / Kabupaten Penugasan *"}
+                              </label>
+                              <select
+                                value={formData.kabupaten || (filteredKabupatenList[0]?.name || "")}
+                                onChange={(e) => handleKabupatenSelect(e.target.value)}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              >
+                                {filteredKabupatenList.length === 0 ? (
+                                  <option value="">-- Belum ada Kota/Kabupaten di Master Data --</option>
+                                ) : (
+                                  filteredKabupatenList.map((kb: any) => (
+                                    <option key={kb.id} value={kb.name}>{kb.name}</option>
+                                  ))
+                                )}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* 1. Kecamatan (Dropdown) */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              {formData.roleName === "WARGA" ? "Kecamatan Domisili *" : "Kecamatan Penugasan *"}
+                            </label>
+                            <select
+                              value={
+                                filteredKecamatanList.find((kc: any) => {
+                                  const cur = formData.kecamatan || "";
+                                  const name = kc.name || kc.nama || "";
+                                  return name.toLowerCase() === cur.toLowerCase() || normalizeKecamatan(name) === normalizeKecamatan(cur);
+                                })?.name || (filteredKecamatanList[0]?.name || "Kecamatan Coblong")
+                              }
+                              onChange={(e) => handleKecamatanSelect(e.target.value)}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                            >
+                              {filteredKecamatanList.map((kc: any) => (
+                                <option key={kc.id} value={kc.name || kc.nama}>
+                                  {kc.name || kc.nama}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* 2. Kelurahan (Dropdown - Cascading Level 1) */}
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                              {formData.roleName === "WARGA" ? "Kelurahan Domisili *" : "Kelurahan Penugasan *"}
+                            </label>
+                            <select
+                              value={getCleanKelName(modalKelurahan)}
+                              onChange={(e) => {
+                                const selectedKel = e.target.value;
+                                setModalKelurahan(selectedKel);
+
+                                const cleanKel = selectedKel.toLowerCase();
+                                const matchedRws = areasList.filter((a: any) => {
+                                  const areaKel = (a.kelurahan?.name || "").toLowerCase().replace(/^kel\.\s*/i, "").trim();
+                                  return areaKel.includes(cleanKel) || cleanKel.includes(areaKel);
+                                });
+                                const firstRw = matchedRws.length > 0 ? matchedRws[0] : null;
+
+                                setFormData((prev) => {
+                                  const newRtRwId = firstRw ? firstRw.id.toString() : "";
+                                  const newRwName = firstRw ? firstRw.name : "";
+                                  const updatedSelectedRws = prev.roleName === "MAHASISWA_KKN" ? [] : prev.selectedRws;
+
+                                  let newWilayah = prev.wilayah;
+                                  if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
+                                    newWilayah = `${newRwName ? `${newRwName}, ` : ""}Kel. ${selectedKel}`;
+                                  } else if (prev.roleName === "LURAH" || prev.roleName === "MAHASISWA_KKN") {
+                                    newWilayah = `Kel. ${selectedKel}`;
+                                  }
+
+                                  return {
+                                    ...prev,
+                                    rtRwId: newRtRwId,
+                                    rw: newRwName,
+                                    selectedRws: updatedSelectedRws,
+                                    wilayah: newWilayah,
+                                  };
+                                });
+                              }}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              disabled={filteredKelurahanList.length === 0}
+                            >
+                              {filteredKelurahanList.map((kl: any) => {
+                                const kName = getCleanKelName(kl.name || kl.nama);
+                                return (
+                                  <option key={kl.id} value={kName}>
+                                    Kel. {kName}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+
+                          {/* 3. Rukun Warga (RW) */}
+                          {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
+                            <div>
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                                {formData.roleName === "WARGA" ? "Rukun Warga Domisili *" : "Rukun Warga Penugasan *"}
+                              </label>
+                              <select
+                                value={formData.rtRwId || (filteredRwsByKelurahan[0]?.id.toString() || "")}
+                                onChange={(e) => {
+                                  const selectedId = e.target.value;
+                                  const foundArea = areasList.find((a: any) => a.id.toString() === selectedId);
+                                  const rwName = foundArea ? foundArea.name : "";
+                                  const currentKel = getCleanKelName(foundArea?.kelurahan?.name || modalKelurahan);
+
+                                  setFormData((prev) => {
+                                    let newWilayah = prev.wilayah;
+                                    if (["PETUGAS_RESIDU", "RW", "WARGA"].includes(prev.roleName)) {
+                                      newWilayah = `${rwName ? `${rwName}, ` : ""}Kel. ${currentKel}`;
+                                    }
+
+                                    return {
+                                      ...prev,
+                                      rtRwId: selectedId,
+                                      rw: rwName,
+                                      wilayah: newWilayah,
+                                    };
+                                  });
+                                }}
+                                className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                                disabled={filteredRwsByKelurahan.length === 0}
+                              >
+                                {filteredRwsByKelurahan.map((a: any) => (
+                                  <option key={a.id} value={a.id.toString()}>
+                                    {a.cleanName || a.name.split("(")[0].trim()}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Petugas Residu Assignment for RW */}
+                      {formData.roleName === "RW" && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Petugas Pemilah</label>
+                          <select
+                            value={formData.petugasResiduId || ""}
+                            onChange={(e) => setFormData({ ...formData, petugasResiduId: e.target.value })}
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                          >
+                            <option value="">-- Belum Ditugaskan --</option>
+                            {petugasResiduList.map((p: any) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} ({p.phone})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      {/* PETUGAS_RESIDU Wilayah Penugasan */}
+                      {formData.roleName === "PETUGAS_RESIDU" && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Wilayah Penugasan</label>
+                          <input
+                            type="text"
+                            value={formData.wilayah}
+                            onChange={(e) => setFormData({ ...formData, wilayah: e.target.value })}
+                            placeholder="TPS 3R / Wilayah Penugasan Operasional"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                          />
+                        </div>
+                      )}
+
+                      {/* Address for WARGA, RW, PETUGAS_RESIDU */}
+                      {["WARGA", "RW", "PETUGAS_RESIDU"].includes(formData.roleName) && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Alamat Lengkap</label>
+                          <textarea rows={2} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Dipatiukur No. ..." className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none resize-none" />
+                        </div>
+                      )}
+
+                      {/* Warga: Jumlah Anggota Keluarga */}
+                      {formData.roleName === "WARGA" && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Jumlah Anggota Keluarga</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="30"
+                            value={formData.jumlahAnggotaKeluarga || ""}
+                            onChange={(e) => setFormData({ ...formData, jumlahAnggotaKeluarga: e.target.value })}
+                            placeholder="Contoh: 4"
+                            className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none"
+                          />
+                        </div>
+                      )}
+
+                      {/* Dynamic Multi-select RW for Mahasiswa */}
+                      {formData.roleName === "MAHASISWA_KKN" && (
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kelurahan Penugasan *</label>
+                            <select
+                              value={getCleanKelName(modalKelurahan)}
+                              onChange={(e) => {
+                                const selectedKel = e.target.value;
+                                setModalKelurahan(selectedKel);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  selectedRws: [],
+                                }));
+                              }}
+                              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer transition-all outline-none"
+                              disabled={filteredKelurahanList.length === 0}
+                            >
+                              {filteredKelurahanList.map((kl: any) => {
+                                const kName = getCleanKelName(kl.name || kl.nama);
+                                return (
+                                  <option key={kl.id} value={kName}>
+                                    Kel. {kName}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">Wilayah Penugasan</label>
+                              <span className="text-[10px] font-extrabold text-[#009966] dark:text-emerald-400 bg-[#009966]/10 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-[#009966]/20 dark:border-emerald-800/60">
+                                Kel. {getCleanKelName(modalKelurahan) || "-"}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 max-h-36 overflow-y-auto">
+                              {filteredRwsByKelurahan.length === 0 ? (
+                                <div className="col-span-5 text-center text-slate-400 dark:text-slate-500 text-xs py-4">
+                                  Belum ada data RW untuk kelurahan ini.
+                                </div>
+                              ) : (
+                                filteredRwsByKelurahan.map((area: any) => {
+                                  const rwNum = area.name.replace(/\D/g, "").padStart(2, "0");
+                                  const rwCleanName = area.cleanName || (area.name.split("(")[0].trim().startsWith("RW") ? area.name.split("(")[0].trim() : `RW ${rwNum}`);
+                                  const isChecked = formData.selectedRws.includes(rwNum) || formData.selectedRws.includes(rwCleanName);
+                                  return (
+                                    <label key={area.id || rwNum} className={`flex items-center justify-center gap-1 py-1.5 rounded-lg border text-[10px] font-bold cursor-pointer transition-all ${isChecked ? "bg-[#009966]/10 dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border-[#009966]/30 dark:border-emerald-800/80 shadow-2xs" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60"}`}>
+                                      <input type="checkbox" checked={isChecked} onChange={() => handleRwToggle(rwNum)} className="sr-only" />
+                                      {rwCleanName}
+                                    </label>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Section: Keamanan Akun ── */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield size={14} className="text-slate-400 dark:text-slate-500" />
+                    <span className="text-[11px] font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Keamanan Akun</span>
+                  </div>
+                  <div className="space-y-3">
+                    {/* Password */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                        Kata Sandi {modalType === "add" && <span className="text-rose-500">*</span>}
+                        {modalType === "edit" && <span className="text-[10px] text-slate-400 dark:text-slate-400 font-normal ml-1">(Kosongkan jika tidak diubah)</span>}
+                      </label>
+                      <div className="relative">
+                        <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                        <input type={showPassword ? "text" : "password"} required={modalType === "add"} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Minimal 8 karakter" className="w-full h-10 pl-10 pr-10 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 focus:border-[#009966] focus:ring-2 focus:ring-[#009966]/10 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-all outline-none" />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+
+                      {/* Password Strength Meter */}
+                      {formData.password && (
+                        <div className="mt-2">
+                          <div className="flex gap-1 mb-1.5">
+                            {[1, 2, 3, 4].map((i) => (
+                              <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= passwordStrength.level ? passwordStrength.color : "bg-slate-200 dark:bg-slate-700"}`} />
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[10px] font-bold ${passwordStrength.level <= 1 ? "text-rose-500" : passwordStrength.level <= 2 ? "text-amber-500" : passwordStrength.level <= 3 ? "text-blue-500" : "text-emerald-500"}`}>
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Password Rules Checklist */}
+                      {formData.password && passwordRules && (
+                        <div className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 space-y-1">
+                          {[
+                            { key: "minLength", label: "Minimal 8 karakter" },
+                            { key: "hasUppercase", label: "Mengandung huruf besar (A-Z)" },
+                            { key: "hasLowercase", label: "Mengandung huruf kecil (a-z)" },
+                            { key: "hasNumber", label: "Mengandung angka (0-9)" },
+                            { key: "hasSpecial", label: "Mengandung karakter khusus (!@#$...)" },
+                          ].map(({ key, label }) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${
+                                (passwordRules as any)[key] ? "bg-emerald-500 text-white" : "bg-slate-300 dark:bg-slate-700 text-white"
+                              }`}>
+                                {(passwordRules as any)[key] ? (
+                                  <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none"><path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                ) : (
+                                  <svg className="w-2 h-2" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                )}
+                              </div>
+                              <span className={`text-[10px] font-semibold ${(passwordRules as any)[key] ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}`}>{label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Confirm Password */}
+                    {(modalType === "add" || formData.password) && (
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                          Konfirmasi Kata Sandi <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                          <input type={showConfirmPassword ? "text" : "password"} required={modalType === "add" || !!formData.password} value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} placeholder="Ulangi kata sandi" className={`w-full h-10 pl-10 pr-10 rounded-xl border dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:bg-white dark:focus:bg-slate-800 text-xs font-semibold transition-all outline-none ${
+                            formData.confirmPassword
+                              ? (passwordRules?.matches ? "border-emerald-300 dark:border-emerald-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-950" : "border-rose-300 dark:border-rose-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-950")
+                              : "border-slate-200 dark:border-slate-700 focus:border-[#009966] focus:ring-[#009966]/10"
+                          }`} />
+                          <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                        {formData.confirmPassword && (
+                          <p className={`text-[10px] font-semibold mt-1 ${passwordRules?.matches ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                            {passwordRules?.matches ? "✓ Kata sandi cocok" : "✗ Kata sandi tidak cocok"}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Status */}
+                    {/* Status Akun Segmented Control */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Status Akun</label>
+                      {(() => {
+                        const isSelfAccountInModal = modalType === "edit" && user && selectedUser && (
+                          selectedUser.id === user.id ||
+                          selectedUser.id === (user as any).userId ||
+                          (selectedUser.phone && user.phone && selectedUser.phone === user.phone)
+                        );
+                        return (
+                          <>
+                            <div className="grid grid-cols-2 gap-2.5 p-1 bg-slate-100/80 dark:bg-slate-800/80 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => setFormData({ ...formData, status: "Aktif" })}
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                                  formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
+                                    ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-sm border border-emerald-200 dark:border-emerald-800/80 ring-2 ring-emerald-500/20"
+                                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50"
+                                }`}
+                              >
+                                <span className={`w-2.5 h-2.5 rounded-full ${
+                                  formData.status === "Aktif" || formData.status === "ACTIVE" || !formData.status
+                                    ? "bg-emerald-500 animate-pulse"
+                                    : "bg-slate-300 dark:bg-slate-600"
+                                }`} />
+                                <span>Aktif</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={isSelfAccountInModal}
+                                onClick={() => {
+                                  if (isSelfAccountInModal) return;
+                                  setFormData({ ...formData, status: "Nonaktif" });
+                                }}
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black transition-all ${
+                                  isSelfAccountInModal
+                                    ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-700 text-slate-400"
+                                    : formData.status === "Nonaktif"
+                                      ? "bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 shadow-sm border border-rose-200 dark:border-rose-800/80 ring-2 ring-rose-500/20 cursor-pointer"
+                                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 cursor-pointer"
+                                }`}
+                              >
+                                <span className={`w-2.5 h-2.5 rounded-full ${
+                                  formData.status === "Nonaktif"
+                                    ? "bg-rose-500 animate-pulse"
+                                    : "bg-slate-300 dark:bg-slate-600"
+                                }`} />
+                                <span>Nonaktif</span>
+                              </button>
+                            </div>
+                            {isSelfAccountInModal && (
+                              <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 p-2 rounded-xl border border-amber-200/80 dark:border-amber-800/60 flex items-center gap-1.5 mt-2">
+                                <AlertTriangle size={13} className="shrink-0 text-amber-500" />
+                                <span>Ini adalah akun Anda yang sedang login. Status akun tidak dapat dinonaktifkan demi keamanan.</span>
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Peran / Role
-                </label>
-                <select
-                  required
-                  value={formData.roleName}
-                  onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-bold cursor-pointer"
-                >
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                  <option value="ADMIN_DLH">Admin DLH</option>
-                  <option value="DPL">Dosen Pembimbing (DPL)</option>
-                  <option value="PEMIMPIN">Pimpinan</option>
-                  <option value="PANITIA_TASKFORCE">Panitia / Taskforce KKN</option>
-                  <option value="CAMAT">Camat</option>
-                  <option value="LURAH">Lurah</option>
-                  <option value="RW">Pengurus RW</option>
-                  <option value="RT">Pengurus RT</option>
-                  <option value="PETUGAS_RESIDU">Petugas Residu</option>
-                  <option value="WARGA">Warga</option>
-                  <option value="MAHASISWA_KKN">Mahasiswa KKN</option>
-                </select>
 
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">
-                  Wilayah RT/RW
-                </label>
-                <select
-                  value={formData.rtRwId}
-                  onChange={(e) => setFormData({ ...formData, rtRwId: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-semibold cursor-pointer"
-                >
-                  <option value="">Pilih Wilayah (opsional)</option>
-                  {areas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} (Kel. {a.kelurahan?.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-1">Status</label>
-                <select
-                  required
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-outline-variant/50 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-sm font-semibold cursor-pointer"
-                >
-                  <option value="Aktif">Aktif</option>
-                  <option value="Nonaktif">Nonaktif</option>
-                </select>
-              </div>
-              <div className="mt-4 flex justify-end gap-3 pt-4 border-t border-outline-variant/30">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 rounded-lg font-medium text-on-surface-variant hover:bg-surface-container-low cursor-pointer"
-                >
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 dark:bg-slate-800/50 flex items-center justify-end gap-2">
+                <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 rounded-xl font-extrabold text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                   Batal
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                >
-                  {isSubmitting && (
-                    <Loader2 className="animate-spin" size={18} />
-                  )}
-                  Simpan
+                <button type="submit" disabled={isSubmitting || !isPasswordValid} className="px-5 py-2.5 bg-[#009966] hover:bg-[#008855] text-white rounded-xl font-extrabold text-xs disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95">
+                  {isSubmitting && <Loader2 className="animate-spin" size={14} />}
+                  {modalType === "add" ? "Tambah Pengguna" : "Simpan Perubahan"}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
-
-      {/* Modal Hapus */}
+      )}      {/* Delete Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4 animate-in fade-in zoom-in-95 duration-150" onClick={closeDeleteModal}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col p-6 text-center border border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-200 dark:border-rose-800/80">
               <AlertTriangle size={24} />
             </div>
-            <h3 className="text-lg font-bold text-on-surface mb-2">Hapus Pengguna</h3>
-            <p className="text-sm text-on-surface-variant mb-6">
-              Apakah Anda yakin ingin menghapus akun <strong>{userToDelete?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 mb-1">Hapus Pengguna</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
+              Apakah Anda yakin ingin menghapus akun <strong>{userToDelete?.name}</strong>?
             </p>
             <div className="flex justify-center gap-3">
               <button
                 onClick={closeDeleteModal}
-                className="flex-1 px-4 py-2 rounded-lg font-medium border border-outline-variant text-on-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors"
+                className="flex-1 px-4 py-2 rounded-xl font-extrabold text-xs border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Batal
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 cursor-pointer transition-colors"
+                className="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-extrabold text-xs cursor-pointer shadow-xs"
               >
                 Hapus
               </button>

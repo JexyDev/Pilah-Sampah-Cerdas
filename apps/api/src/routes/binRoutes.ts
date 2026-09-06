@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -10,6 +10,7 @@ import { binController } from "../controllers/binController.js";
 import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { dataScopeMiddleware } from "../middlewares/dataScopeMiddleware.js";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/", binController.getAllBins);
+router.get("/", authMiddleware, binController.getAllBins);
 router.get("/next-qr", authMiddleware, binController.getNextQr);
 
 /**
@@ -50,7 +51,7 @@ router.post(
     if (role === "WARGA" || role === "MAHASISWA_KKN") {
       return binController.registerWargaBin(req, res);
     }
-    return roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"])(req, res, next);
+    return roleMiddleware(["SUPER_USER", "ADMIN_DLH"])(req, res, next);
   },
   binController.createBin
 );
@@ -67,7 +68,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.updateBin
 );
 
@@ -83,14 +84,14 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteBin
 );
 
 router.put(
   "/:qrCode/broken",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
   binController.markBinAsBroken
 );
 
@@ -119,6 +120,20 @@ router.get("/locations", binController.getLocations);
  *         description: Berhasil mengambil daftar tempat sampah aktif milik Warga
  */
 router.get("/my-bins", authMiddleware, binController.getMyBins);
+
+/**
+ * @swagger
+ * /api/v1/bins/my:
+ *   get:
+ *     summary: Menampilkan tempat sampah milik Warga (Alias Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Berhasil mendapatkan daftar tempat sampah
+ */
+router.get("/my", authMiddleware, binController.getMyBins);
 /**
  * @swagger
  * /api/v1/bins/kelurahans:
@@ -151,7 +166,7 @@ router.get("/areas", authMiddleware, binController.getAreas);
  * @swagger
  * /api/v1/bins/kelurahans:
  *   post:
- *     summary: Tambah Kelurahan Baru (Admin DLH / Super Admin)
+ *     summary: Tambah Kelurahan Baru (Admin DLH / SUPER USER)
  *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
@@ -173,7 +188,7 @@ router.get("/areas", authMiddleware, binController.getAreas);
 router.post(
   "/kelurahans",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.createKelurahan
 );
 
@@ -181,7 +196,7 @@ router.post(
  * @swagger
  * /api/v1/bins/kelurahans/{id}:
  *   delete:
- *     summary: Hapus Kelurahan (Admin DLH / Super Admin)
+ *     summary: Hapus Kelurahan (Admin DLH / SUPER USER)
  *     tags: [Kelurahan & Wilayah]
  *     security:
  *       - bearerAuth: []
@@ -198,26 +213,49 @@ router.post(
 router.delete(
   "/kelurahans/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteKelurahan
 );
+/**
+ * @swagger
+ * /api/v1/bins/measure:
+ *   post:
+ *     summary: Mengukur / kalkulasi estimasi volume tempat sampah (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               height:
+ *                 type: number
+ *               width:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Estimasi volume berhasil dihitung
+ */
 router.post("/measure", authMiddleware, binController.measure);
 router.post(
   "/areas",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.createArea
 );
 router.put(
   "/areas/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
   binController.updateArea
 );
 router.delete(
   "/areas/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.deleteArea
 );
 
@@ -285,6 +323,7 @@ router.post("/scan", authMiddleware, roleMiddleware(["WARGA"]), binController.sc
  *         description: Success
  */
 router.get("/:id/status", binController.getStatus);
+router.get("/:identifier/poster", binController.getPoster);
 
 /**
  * @swagger
@@ -307,68 +346,160 @@ router.get("/:id/status", binController.getStatus);
 router.post(
   "/:id/empty",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.emptyBin
 );
 
 router.get("/reset-request/status", authMiddleware, binController.getResetRequestStatus);
 router.get("/reset/my-requests", authMiddleware, binController.getResetRequestStatus);
+
+/**
+ * @swagger
+ * /api/v1/bins/reset/petugas-status:
+ *   get:
+ *     summary: Cek status petugas tetap warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Status petugas tetap warga
+ */
+router.get(
+  "/reset/petugas-status",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.getPetugasStatus
+);
+
+/**
+ * @swagger
+ * /api/v1/bins/reset/petugas-wilayah:
+ *   get:
+ *     summary: Daftar petugas di wilayah RW warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/reset/petugas-wilayah",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.getPetugasByWilayah
+);
+
+router.get("/reset/debug-petugas", binController.debugPetugas);
+
+/**
+ * @swagger
+ * /api/v1/bins/reset/set-default-petugas:
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [petugasId]
+ *             properties:
+ *               petugasId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Petugas tetap berhasil disimpan
+ *       403:
+ *         description: Petugas tidak bertugas di wilayah warga
+ */
+router.post(
+  "/reset/set-default-petugas",
+  authMiddleware,
+  roleMiddleware(["WARGA"]),
+  binController.setDefaultPetugas
+);
+
 router.post(
   "/reset-request",
   authMiddleware,
   roleMiddleware(["WARGA"]),
   binController.createResetRequest
 );
+
 router.get("/reset-request/:id", authMiddleware, binController.getResetRequest);
 router.put(
   "/reset-request/:id/review",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.reviewResetRequest
 );
 
 router.post(
   "/qr-batch",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.createQrBatch
 );
 
 router.get(
   "/qr-batch",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW"]),
   binController.getAllQrBatches
 );
 
 router.put(
   "/qr-batch/:id/assign",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH"]),
   binController.assignQrBatch
 );
 
 router.post(
   "/dispatch/:id/claim",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
   binController.claimDispatch
 );
 
 router.get(
   "/dispatch/optimized-route",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU"]),
   binController.getOptimizedRoute
 );
 
 router.put(
   "/:id/approve-activation",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "RW"]),
+  roleMiddleware(["SUPER_USER", "RW"]),
   binController.approveActivation
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/activate:
+ *   post:
+ *     summary: Aktivasi tempat sampah warga (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [qrCode]
+ *             properties:
+ *               qrCode:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tempat sampah berhasil diajukan untuk aktivasi
+ */
 router.post(
   "/activate",
   authMiddleware,
@@ -379,7 +510,7 @@ router.post(
 router.put(
   "/:id/reject-activation",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "RW"]),
+  roleMiddleware(["SUPER_USER", "RW"]),
   binController.rejectActivation
 );
 
@@ -400,7 +531,7 @@ router.post(
 router.put(
   "/:id/capacity",
   authMiddleware,
-  roleMiddleware(["WARGA", "SUPER_ADMIN", "RW"]),
+  roleMiddleware(["WARGA", "SUPER_USER", "RW"]),
   binController.updateCapacity
 );
 
@@ -411,6 +542,31 @@ router.post(
   binController.registerWargaBin
 );
 
+/**
+ * @swagger
+ * /api/v1/bins/reset:
+ *   post:
+ *     summary: Pengajuan reset tempat sampah (Mobile Spec)
+ *     tags: [Bins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [binId]
+ *             properties:
+ *               binId:
+ *                 type: string
+ *               evidence:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Pengajuan reset berhasil dikirim
+ */
 router.post(
   "/reset",
   authMiddleware,
@@ -422,15 +578,37 @@ router.post(
 router.get(
   "/reset-requests",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.listResetRequests
+);
+
+router.post(
+  "/:id/reactivate",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "DEVELOPER", "RW"]),
+  dataScopeMiddleware,
+  binController.reactivateBin
 );
 
 router.put(
   "/reset/:id/approve",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "PETUGAS_RESIDU"]),
   binController.approveResetRequest
+);
+
+router.post(
+  "/:id/reset-ownership",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW"]),
+  binController.resetOwnership
+);
+
+router.post(
+  "/reset-ownership/:id",
+  authMiddleware,
+  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "MAHASISWA_KKN", "RW"]),
+  binController.resetOwnership
 );
 
 export default router;

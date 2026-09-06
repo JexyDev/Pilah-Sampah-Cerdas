@@ -1,7 +1,7 @@
 const API_BASE = "http://localhost:3000/api/v1";
 
 const testRoles = [
-  { role: "Super Admin", phone: "+628111111111", pass: "password123" },
+  { role: "SUPER USER", phone: "+628111111111", pass: "password123" },
   { role: "Admin DLH", phone: "+628111111112", pass: "password123" },
   { role: "DPL (Dosen)", phone: "+6281300000001", pass: "123456" },
   { role: "Camat Coblong", phone: "+628111111113", pass: "password123" },

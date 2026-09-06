@@ -1,5 +1,5 @@
 /**
- * Project: TrashCare
+ * Project: BERSEKA
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -12,7 +12,7 @@ export interface KPI {
   totalWarga: number;
   totalSampahKg: number;
   averageAiAccuracy: number;
-  alertTongPenuh: number;
+  alertTempatSampahPenuh?: number;
   tempatSampahAktif: number;
   lokasiTerdaftar: number;
   setoranHariIniKg: number;
