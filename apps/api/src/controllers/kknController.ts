@@ -1,6 +1,5 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -8,9 +7,6 @@ import { prisma } from "../lib/prisma.js";
 
 import { Request, Response } from "express";
 import { kknService } from "../services/kknService.js";
-import { facilityService } from "../services/facilityService.js";
-import { timelineKknService } from "../services/timelineKknService.js";
-import { extractUploadedFileUrls } from "../middlewares/uploadMiddleware.js";
 
 export class KknController {
   async validateQrMaster(req: Request, res: Response): Promise<void> {
@@ -20,46 +16,31 @@ export class KknController {
         res.status(400).json({ error: "BAD_REQUEST", message: "QR Code diperlukan." });
         return;
       }
+      const { PrismaClient } = await import("@prisma/client");
+      const prisma = new PrismaClient();
+
       const existingBin = await prisma.bin.findUnique({
-        where: { qrCode: String(qrCode).trim() },
-        include: { qrBatch: true },
+        where: { qrCode },
       });
 
-      if (!existingBin) {
-        res.status(404).json({
-          error: "QR_NOT_FOUND",
-          message:
-            "QR Code Master tidak ditemukan dalam database sistem. Pastikan QR dicetak melalui sistem BERSEKA.",
-        });
+      if (existingBin && ["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
+        res
+          .status(400)
+          .json({ error: "QR_IN_USE", message: "QR Code ini sudah terdaftar pada tong lain." });
         return;
       }
 
-      if (["ACTIVE_BOUND", "PENDING_APPROVAL"].includes(existingBin.status)) {
+      // Validasi terhadap master QR (asumsi master QR format valid jika memenuhi kriteria misal diawali TS- atau ada di tabel Master)
+      // Untuk MVP TrashCare, kita simulasikan validasi format TS-XXXX
+      if (!qrCode.toUpperCase().startsWith("TS-")) {
         res.status(400).json({
-          error: "QR_IN_USE",
-          message: "QR Code ini sudah terdaftar dan aktif pada Tempat Sampah lain.",
+          error: "INVALID_QR",
+          message: "Format QR Master tidak valid. Harus diawali TS-",
         });
         return;
       }
 
-      if (existingBin.status === "BROKEN") {
-        res.status(400).json({
-          error: "QR_BROKEN",
-          message: "QR Code ini telah ditandai rusak.",
-        });
-        return;
-      }
-
-      res.status(200).json({
-        success: true,
-        message: "QR Code Master Valid dan belum digunakan.",
-        data: {
-          qrCode: existingBin.qrCode,
-          status: existingBin.status,
-          binId: existingBin.id,
-          batchCode: existingBin.qrBatch?.batchCode || null,
-        },
-      });
+      res.status(200).json({ success: true, message: "QR Code Master Valid dan belum digunakan." });
     } catch (error: any) {
       console.error("[KknController] validateQrMaster error:", error);
       res
@@ -82,10 +63,10 @@ export class KknController {
   async getRegisteredWarga(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const rwId = req.query.rwId ? parseInt(req.query.rwId as string, 10) : undefined;
+      const rtRwId = req.query.rtRwId ? parseInt(req.query.rtRwId as string, 10) : undefined;
       const search = req.query.search as string | undefined;
 
-      const data = await kknService.getRegisteredWarga(kknUserId, { rwId, search });
+      const data = await kknService.getRegisteredWarga(kknUserId, { rtRwId, search });
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getRegisteredWarga error:", error);
@@ -97,30 +78,12 @@ export class KknController {
     try {
       const kknUserId = req.user!.userId;
       const { wargaId } = req.params;
-      if (
-        !wargaId ||
-        typeof wargaId !== "string" ||
-        !wargaId.trim() ||
-        wargaId === "undefined" ||
-        wargaId === "null"
-      ) {
-        return res.status(404).json({ success: false, message: "Warga tidak ditemukan." });
-      }
-      const data = await kknService.getWargaDetail(kknUserId, wargaId.trim());
+      const data = await kknService.getWargaDetail(kknUserId, wargaId);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaDetail error:", error);
-      if (error.message === "WARGA_NOT_FOUND") {
-        return res.status(404).json({ success: false, message: "Warga tidak ditemukan." });
-      }
-      if (error.message === "FORBIDDEN_SCOPE") {
-        return res.status(403).json({
-          success: false,
-          error: "FORBIDDEN_SCOPE",
-          message: "Warga berada di luar wilayah tugas KKN Anda.",
-        });
-      }
-      res.status(500).json({ success: false, message: error.message });
+      const code = error.message === "UNAUTHORIZED_ACCESS_SCOPE" ? 403 : 500;
+      res.status(code).json({ success: false, message: error.message });
     }
   }
 
@@ -129,10 +92,10 @@ export class KknController {
       const kknUserId = req.user!.userId;
       const status = req.query.status as string;
       const kelurahan = req.query.kelurahan as string;
-      const rwId = req.query.rw ? parseInt(req.query.rw as string, 10) : undefined;
+      const rtRwId = req.query.rtRw ? parseInt(req.query.rtRw as string, 10) : undefined;
       const search = req.query.search as string;
 
-      const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rwId, search });
+      const data = await kknService.getWargaList(kknUserId, { status, kelurahan, rtRwId, search });
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getWargaList error:", error);
@@ -167,12 +130,7 @@ export class KknController {
       });
     } catch (error: any) {
       console.error("[KknController] activateByScan error:", error);
-      let errorMsg = error.message || "Gagal mengaktivasi tempat sampah warga.";
-      if (errorMsg === "BIN_NOT_FOUND" || errorMsg.startsWith("BIN_NOT_FOUND:")) {
-        errorMsg =
-          "QR Code atau Tempat Sampah tidak terdaftar di sistem. Pastikan QR Code yang Anda scan benar.";
-      }
-      res.status(400).json({ success: false, message: errorMsg });
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 
@@ -209,61 +167,21 @@ export class KknController {
   async createLeaveRequest(req: Request, res: Response) {
     try {
       const studentId = req.user!.userId;
-      let fotoBuktiUrl =
-        req.body.fotoBuktiUrl || req.body.evidenceUrl || req.body.fotoUrl || req.body.evidence;
-
-      const uploadedUrls = extractUploadedFileUrls(req);
-      if (uploadedUrls.length > 0) {
-        fotoBuktiUrl = uploadedUrls[0];
-      } else if (req.file) {
+      let fotoBuktiUrl = req.body.fotoBuktiUrl;
+      if (req.file) {
         fotoBuktiUrl = `/uploads/${req.file.filename}`;
-      } else if (req.files) {
-        if (Array.isArray(req.files) && req.files.length > 0) {
-          fotoBuktiUrl = `/uploads/${(req.files[0] as any).filename}`;
-        } else if (typeof req.files === "object") {
-          const allFiles = Object.values(req.files).flat();
-          if (allFiles.length > 0) {
-            fotoBuktiUrl = `/uploads/${(allFiles[0] as any).filename}`;
-          }
-        }
       }
-
       const data = await kknService.createLeaveRequest(studentId, {
         ...req.body,
         fotoBuktiUrl,
       });
       res.status(201).json({
         success: true,
-        message:
-          "Pengajuan izin berhasil dikirim. Menunggu verifikasi Dosen Pendamping Lapangan (DPL).",
+        message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi Admin DLH.",
         data,
       });
     } catch (error: any) {
       console.error("[KknController] createLeaveRequest error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async getLeaveRequests(req: Request, res: Response) {
-    try {
-      const studentId = req.user!.userId;
-      const data = await kknService.getLeaveRequests(studentId);
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] getLeaveRequests error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async cancelLeaveRequest(req: Request, res: Response) {
-    try {
-      const studentId = req.user!.userId;
-      const leaveRequestId = req.params.id;
-      const reason = req.body?.alasan || req.body?.reason;
-      const result = await kknService.cancelLeaveRequest(studentId, leaveRequestId, reason);
-      res.status(200).json(result);
-    } catch (error: any) {
-      console.error("[KknController] cancelLeaveRequest error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
@@ -282,8 +200,8 @@ export class KknController {
   async handover(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      const { toKknUserId, rwId, notes } = req.body;
-      const data = await kknService.handover(kknUserId, toKknUserId, Number(rwId), notes);
+      const { toKknUserId, rtRwId, notes } = req.body;
+      const data = await kknService.handover(kknUserId, toKknUserId, Number(rtRwId), notes);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] handover error:", error);
@@ -294,34 +212,10 @@ export class KknController {
   async inputFacility(req: Request, res: Response) {
     try {
       const kknUserId = req.user!.userId;
-      let fotoUrl = req.body.foto;
-      if (req.file) {
-        fotoUrl = `/uploads/${req.file.filename}`;
-      }
-
-      const payload = {
-        ...req.body,
-        foto: fotoUrl,
-        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
-        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
-        rwId: req.body.rwId,
-        kapasitas: req.body.kapasitas != null ? Number(req.body.kapasitas) : undefined,
-      };
-
-      const data = await kknService.bantuInputFasilitas(kknUserId, payload);
+      const data = await kknService.bantuInputFasilitas(kknUserId, req.body);
       res.status(201).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] inputFacility error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async getJenisFasilitas(req: Request, res: Response) {
-    try {
-      const data = await facilityService.getJenisFasilitas();
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] getJenisFasilitas error:", error);
       res.status(400).json({ success: false, message: error.message });
     }
   }
@@ -378,33 +272,7 @@ export class KknController {
   async createPemanfaatanSampah(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-
-      const uploadedUrls = extractUploadedFileUrls(req);
-      let fotoDokumentasiUrl: string | undefined = undefined;
-
-      if (uploadedUrls.length > 0) {
-        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
-      } else {
-        const bodyFoto =
-          req.body.fotoDokumentasiUrl ||
-          req.body.fotoBukti ||
-          req.body.fotoUrl ||
-          req.body.evidencePhotoUrl;
-        if (
-          bodyFoto &&
-          typeof bodyFoto === "string" &&
-          bodyFoto.trim() !== "" &&
-          bodyFoto !== "null"
-        ) {
-          fotoDokumentasiUrl = bodyFoto.trim();
-        }
-      }
-
-      const data = await kknService.createPemanfaatanSampah(kknUserId, {
-        ...req.body,
-        fotoDokumentasiUrl,
-      });
-
+      const data = await kknService.createPemanfaatanSampah(kknUserId, req.body);
       res.status(201).json({
         success: true,
         message: "Laporan pemanfaatan sampah berhasil disimpan dan tercatat di Web Monitoring.",
@@ -441,823 +309,14 @@ export class KknController {
   async getActiveZone(req: Request, res: Response): Promise<void> {
     try {
       const kknUserId = req.user!.userId;
-      const lat = req.query.latitude
-        ? parseFloat(req.query.latitude as string)
-        : req.query.lat
-          ? parseFloat(req.query.lat as string)
-          : undefined;
-      const lng = req.query.longitude
-        ? parseFloat(req.query.longitude as string)
-        : req.query.lng
-          ? parseFloat(req.query.lng as string)
-          : undefined;
-
-      const data = await kknService.getActiveZone(kknUserId, lat, lng);
+      const data = await kknService.getActiveZone(kknUserId);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[KknController] getActiveZone error:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
-
-  async getDampakRw(req: Request, res: Response): Promise<void> {
-    try {
-      const kknUserId = req.user!.userId;
-      const data = await kknService.getDampakStatistik(kknUserId, "rw");
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] getDampakRw error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async getDampakKelurahan(req: Request, res: Response): Promise<void> {
-    try {
-      const kknUserId = req.user!.userId;
-      const data = await kknService.getDampakStatistik(kknUserId, "kelurahan");
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] getDampakKelurahan error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async registerPosko(req: Request, res: Response): Promise<void> {
-    try {
-      const kknUserId = req.user!.userId;
-      let fotoUrl = req.body.foto || req.body.fotoUrl;
-      if (req.file) {
-        fotoUrl = `/uploads/${req.file.filename}`;
-      }
-      const parsedRadius =
-        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
-      const payload = {
-        ...req.body,
-        foto: fotoUrl,
-        fotoUrl: fotoUrl,
-        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
-        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
-        rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
-        radius: parsedRadius,
-      };
-
-      const data = await kknService.registerPoskoKkn(kknUserId, payload);
-      const resData = {
-        ...data,
-        foto: (data as any).fotoUrl || (data as any).foto || null,
-        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 500,
-      };
-      res.status(201).json({
-        success: true,
-        message: "Pendaftaran Posko KKN berhasil dikirim dan menunggu verifikasi RW.",
-        data: resData,
-      });
-    } catch (error: any) {
-      console.error("[KknController] registerPosko error:", error);
-      const statusCode = error.statusCode || 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  async updateMyPosko(req: Request, res: Response): Promise<void> {
-    try {
-      const kknUserId = req.user!.userId;
-      let fotoUrl = req.body.foto || req.body.fotoUrl;
-      if (req.file) {
-        fotoUrl = `/uploads/${req.file.filename}`;
-      }
-      const parsedRadius =
-        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : undefined;
-      const payload = {
-        ...req.body,
-        foto: fotoUrl,
-        fotoUrl: fotoUrl,
-        latitude: req.body.latitude != null ? Number(req.body.latitude) : undefined,
-        longitude: req.body.longitude != null ? Number(req.body.longitude) : undefined,
-        rwId: req.body.rwId != null ? Number(req.body.rwId) : undefined,
-        radius: parsedRadius,
-      };
-
-      const data = await kknService.updatePoskoKkn(kknUserId, payload);
-      const resData = {
-        ...data,
-        foto: (data as any).fotoUrl || (data as any).foto || null,
-        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 500,
-      };
-      res.status(200).json({
-        success: true,
-        message: "Data Posko KKN berhasil diperbarui.",
-        data: resData,
-      });
-    } catch (error: any) {
-      console.error("[KknController] updatePosko error:", error);
-      const statusCode = error.statusCode || 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  async getMyPosko(req: Request, res: Response): Promise<void> {
-    try {
-      const kknUserId = req.user!.userId;
-      const data = await kknService.getMyPosko(kknUserId);
-      if (!data) {
-        res.status(200).json({
-          success: true,
-          message: "Data posko belum terdaftar",
-          data: null,
-        });
-        return;
-      }
-      const poskoAny = (data as any).posko;
-      const enrichedData = {
-        ...data,
-        posko: poskoAny
-          ? {
-              ...poskoAny,
-              foto: poskoAny.fotoUrl || poskoAny.foto || null,
-              fotoUrl: poskoAny.fotoUrl || poskoAny.foto || null,
-              radius: Number(poskoAny.radius) || 500,
-            }
-          : null,
-      };
-      res.status(200).json({
-        success: true,
-        message: data.posko ? "Data posko berhasil diambil" : "Data posko belum terdaftar",
-        data: enrichedData,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getMyPosko error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async getAllPosko(req: Request, res: Response): Promise<void> {
-    try {
-      const kelurahan = req.query.kelurahan as string | undefined;
-      const search = req.query.search as string | undefined;
-      const userId = (req as any).user?.userId;
-      const role = (req as any).user?.role || (req as any).user?.peran;
-      const data = await kknService.getAllPoskoKkn({ kelurahan, search, userId, role });
-      res.status(200).json({
-        success: true,
-        message: "Data posko KKN berhasil dimuat",
-        data,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getAllPosko error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async createPosko(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user!.userId;
-      let fotoUrl = req.body.foto || req.body.fotoUrl;
-      if (req.file) {
-        fotoUrl = `/uploads/${req.file.filename}`;
-      }
-      const parsedRadius =
-        req.body.radius != null && req.body.radius !== "" ? Number(req.body.radius) : 500;
-      const payload = {
-        nama: req.body.nama,
-        alamat: req.body.alamat,
-        kelompokId: req.body.kelompokId || undefined,
-        rwId: req.body.rwId != null && req.body.rwId !== "" ? Number(req.body.rwId) : undefined,
-        latitude: req.body.latitude != null ? Number(req.body.latitude) : 0,
-        longitude: req.body.longitude != null ? Number(req.body.longitude) : 0,
-        foto: fotoUrl,
-        fotoUrl: fotoUrl,
-        radius: parsedRadius,
-        pic: req.body.pic,
-        kontak: req.body.kontak,
-        statusApproval: req.body.statusApproval || "APPROVED",
-      };
-
-      const data = await kknService.createPoskoAdmin(userId, payload);
-      const resData = {
-        ...data,
-        foto: (data as any).fotoUrl || (data as any).foto || null,
-        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 500,
-      };
-      res.status(201).json({
-        success: true,
-        message: "Posko KKN berhasil ditambahkan.",
-        data: resData,
-      });
-    } catch (error: any) {
-      console.error("[KknController] createPosko error:", error);
-      const statusCode = error.statusCode || 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  async updatePosko(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const userId = req.user!.userId;
-      let fotoUrl = req.body.foto || req.body.fotoUrl;
-      if (req.file) {
-        fotoUrl = `/uploads/${req.file.filename}`;
-      }
-      const payload: any = {
-        ...req.body,
-      };
-      if (fotoUrl !== undefined) {
-        payload.foto = fotoUrl;
-        payload.fotoUrl = fotoUrl;
-      }
-      if (req.body.latitude != null && req.body.latitude !== "") {
-        payload.latitude = Number(req.body.latitude);
-      }
-      if (req.body.longitude != null && req.body.longitude !== "") {
-        payload.longitude = Number(req.body.longitude);
-      }
-      if (req.body.rwId != null && req.body.rwId !== "") {
-        payload.rwId = Number(req.body.rwId);
-      }
-      if (req.body.radius != null && req.body.radius !== "") {
-        payload.radius = Number(req.body.radius);
-      }
-
-      const data = await kknService.updatePoskoAdmin(id, userId, payload);
-      const resData = {
-        ...data,
-        foto: (data as any).fotoUrl || (data as any).foto || null,
-        fotoUrl: (data as any).fotoUrl || (data as any).foto || null,
-        radius: Number((data as any).radius) || 500,
-      };
-      res.status(200).json({
-        success: true,
-        message: "Posko KKN berhasil diperbarui.",
-        data: resData,
-      });
-    } catch (error: any) {
-      console.error("[KknController] updatePosko error:", error);
-      const statusCode = error.statusCode || 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  async getUnifiedZones(req: Request, res: Response): Promise<void> {
-    try {
-      const { poskoKknService } = await import("../services/poskoKknService.js");
-      const user = (req as any).user;
-      const kelompokId = req.query.kelompokId as string | undefined;
-      const kelurahan = req.query.kelurahan as string | undefined;
-
-      const data = await poskoKknService.getUnifiedZones({
-        kelompokId,
-        kelurahan,
-        userId: user?.userId,
-        role: user?.role,
-      });
-
-      res.status(200).json({
-        success: true,
-        message: "Data peta zona KKN terpadu berhasil dimuat",
-        totalGroups: data.length,
-        data,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getUnifiedZones error:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async deletePosko(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const userId = req.user?.userId;
-      const data = await kknService.deletePoskoAdmin(id, userId);
-      res.status(200).json({
-        success: true,
-        message: "Posko KKN berhasil dihapus.",
-        data,
-      });
-    } catch (error: any) {
-      console.error("[KknController] deletePosko error:", error);
-      const statusCode = error.statusCode || 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // 3 Pilar KKN (Perencanaan, Aksi, Panen)
-  // ──────────────────────────────────────────────────────────
-
-  async createProgramKerja(req: Request, res: Response) {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id || "";
-      const payload = { ...req.body };
-      const uploadedUrls = extractUploadedFileUrls(req);
-      if (uploadedUrls.length > 0) {
-        payload.attachmentFile = uploadedUrls[0];
-        payload.linkGoogleDrive = payload.linkGoogleDrive || uploadedUrls[0];
-        payload.attachmentUrls = uploadedUrls;
-      } else if (req.file) {
-        const fileUrl = `/uploads/${req.file.filename}`;
-        payload.attachmentFile = fileUrl;
-        payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
-        payload.attachmentUrls = [fileUrl];
-      }
-
-      const data = await kknService.createProgramKerja(userId, payload);
-
-      try {
-        const { notificationIntegrationService } =
-          await import("../services/notificationIntegrationService.js");
-        const title = "Pengajuan Program Kerja ✅";
-        const message = `Program ${data.judul} berhasil diajukan dan sedang direview oleh DPL.`;
-
-        await prisma.notification
-          .create({
-            data: {
-              userId,
-              title,
-              message,
-              isRead: false,
-            },
-          })
-          .catch(() => {});
-
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (user?.fcmToken) {
-          await notificationIntegrationService
-            .sendPushNotification(user.fcmToken, title, message)
-            .catch(() => {});
-        }
-      } catch (e) {
-        console.error("Failed to send notification for program kerja", e);
-      }
-
-      res.status(201).json({ success: true, message: "Program Kerja berhasil diajukan.", data });
-    } catch (error: any) {
-      console.error("[KknController] createProgramKerja error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async getProgramKerja(req: Request, res: Response) {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id || "";
-      const targetGroupId = (req.query.groupId || req.query.kelompokId) as string | undefined;
-      const { kategori, statusUsulan, statusPelaksanaan, search } = req.query;
-      const data = await kknService.getProgramKerja(userId, targetGroupId, {
-        kategori: kategori as string,
-        statusUsulan: statusUsulan as string,
-        statusPelaksanaan: statusPelaksanaan as string,
-        search: search as string,
-      });
-      res.status(200).json({ success: true, total: Array.isArray(data) ? data.length : 0, data });
-    } catch (error: any) {
-      console.error("[KknController] getProgramKerja error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async getProgramKerjaById(req: Request, res: Response) {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id || "";
-      const { id } = req.params;
-      const data = await kknService.getProgramKerjaById(userId, id);
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] getProgramKerjaById error:", error);
-      const statusCode = error.message?.includes("tidak ditemukan") ? 404 : 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  async updateProgramKerja(req: Request, res: Response) {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id || "";
-      const { id } = req.params;
-      const payload = { ...req.body };
-      const uploadedUrls = extractUploadedFileUrls(req);
-      if (uploadedUrls.length > 0) {
-        payload.attachmentFile = uploadedUrls[0];
-        payload.linkGoogleDrive = payload.linkGoogleDrive || uploadedUrls[0];
-        payload.attachmentUrls = uploadedUrls;
-      } else if (req.file) {
-        const fileUrl = `/uploads/${req.file.filename}`;
-        payload.attachmentFile = fileUrl;
-        payload.linkGoogleDrive = payload.linkGoogleDrive || fileUrl;
-        payload.attachmentUrls = [fileUrl];
-      }
-      const data = await kknService.updateProgramKerja(userId, id, payload);
-      res.status(200).json({ success: true, message: "Program Kerja berhasil diperbarui.", data });
-    } catch (error: any) {
-      console.error("[KknController] updateProgramKerja error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async deleteProgramKerja(req: Request, res: Response) {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id || "";
-      const { id } = req.params;
-      const result = await kknService.deleteProgramKerja(userId, id);
-      res.status(200).json(result);
-    } catch (error: any) {
-      console.error("[KknController] deleteProgramKerja error:", error);
-      const statusCode = error.message?.includes("tidak ditemukan")
-        ? 404
-        : error.message?.includes("Akses ditolak")
-          ? 403
-          : 400;
-      res.status(statusCode).json({ success: false, message: error.message });
-    }
-  }
-
-  async createLogbookPemanfaatan(req: Request, res: Response) {
-    try {
-      const uploadedUrls = extractUploadedFileUrls(req);
-      let fotoDokumentasiUrl: string | undefined = undefined;
-
-      if (uploadedUrls.length > 0) {
-        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
-      } else {
-        const bodyFoto = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
-        if (
-          bodyFoto &&
-          typeof bodyFoto === "string" &&
-          bodyFoto.trim() !== "" &&
-          bodyFoto !== "null"
-        ) {
-          fotoDokumentasiUrl = bodyFoto.trim();
-        }
-      }
-
-      const payload = { ...req.body, fotoDokumentasiUrl };
-      const data = await kknService.createLogbookPemanfaatan(req.user!.userId, payload);
-      res.status(201).json({ success: true, message: "Aksi Pemanfaatan berhasil dicatat.", data });
-    } catch (error: any) {
-      console.error("[KknController] createLogbookPemanfaatan error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async updateLogbookPemanfaatan(req: Request, res: Response) {
-    try {
-      const uploadedUrls = extractUploadedFileUrls(req);
-      let fotoDokumentasiUrl: string | undefined = undefined;
-
-      if (uploadedUrls.length > 0) {
-        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
-      } else {
-        const bodyFoto =
-          req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.foto;
-        if (
-          bodyFoto &&
-          typeof bodyFoto === "string" &&
-          bodyFoto.trim() !== "" &&
-          bodyFoto !== "null"
-        ) {
-          fotoDokumentasiUrl = bodyFoto.trim();
-        }
-      }
-
-      const payload = { ...req.body, fotoDokumentasiUrl };
-      const data = await kknService.updateLogbookPemanfaatan(
-        req.user!.userId,
-        req.params.id,
-        payload
-      );
-      res
-        .status(200)
-        .json({ success: true, message: "Logbook pemanfaatan sampah berhasil diperbarui", data });
-    } catch (error: any) {
-      console.error("[KknController] updateLogbookPemanfaatan error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async deleteLogbookPemanfaatan(req: Request, res: Response) {
-    try {
-      const result = await kknService.deleteLogbookPemanfaatan(req.user!.userId, req.params.id);
-      res.status(200).json(result);
-    } catch (error: any) {
-      console.error("[KknController] deleteLogbookPemanfaatan error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async getUnharvestedLogbooks(req: Request, res: Response) {
-    try {
-      const data = await kknService.getUnharvestedLogbooks(req.user!.userId);
-      res.status(200).json({ success: true, data });
-    } catch (error: any) {
-      console.error("[KknController] getUnharvestedLogbooks error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async createPanenHasil(req: Request, res: Response) {
-    try {
-      const uploadedUrls = extractUploadedFileUrls(req);
-      let fotoDokumentasiUrl: string | undefined = undefined;
-
-      if (uploadedUrls.length > 0) {
-        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
-      } else {
-        const bodyFoto = req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl;
-        if (
-          bodyFoto &&
-          typeof bodyFoto === "string" &&
-          bodyFoto.trim() !== "" &&
-          bodyFoto !== "null"
-        ) {
-          fotoDokumentasiUrl = bodyFoto.trim();
-        }
-      }
-
-      const payload = { ...req.body, fotoDokumentasiUrl };
-      const data = await kknService.createPanenHasil(req.user!.userId, payload);
-      res.status(201).json({ success: true, message: "Hasil Panen berhasil dicatat.", data });
-    } catch (error: any) {
-      console.error("[KknController] createPanenHasil error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async updatePanenHasil(req: Request, res: Response) {
-    try {
-      const uploadedUrls = extractUploadedFileUrls(req);
-      let fotoDokumentasiUrl: string | undefined = undefined;
-
-      if (uploadedUrls.length > 0) {
-        fotoDokumentasiUrl = uploadedUrls.length === 1 ? uploadedUrls[0] : uploadedUrls.join(",");
-      } else {
-        const bodyFoto =
-          req.body.fotoDokumentasiUrl || req.body.fotoBuktiUrl || req.body.fotoUrl || req.body.foto;
-        if (
-          bodyFoto &&
-          typeof bodyFoto === "string" &&
-          bodyFoto.trim() !== "" &&
-          bodyFoto !== "null"
-        ) {
-          fotoDokumentasiUrl = bodyFoto.trim();
-        }
-      }
-
-      const targetId = req.params.id || req.body?.id || req.body?.pemanfaatanId;
-      const payload = { ...req.body, fotoDokumentasiUrl };
-      const data = await kknService.updatePanenHasil(req.user!.userId, targetId, payload);
-      res.status(200).json({ success: true, message: "Hasil panen berhasil diperbarui.", data });
-    } catch (error: any) {
-      console.error("[KknController] updatePanenHasil error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async deletePanenHasil(req: Request, res: Response) {
-    try {
-      const targetId = req.params.id || req.body?.id || req.body?.pemanfaatanId;
-      const result = await kknService.deletePanenHasil(req.user!.userId, targetId);
-      res.status(200).json(result);
-    } catch (error: any) {
-      console.error("[KknController] deletePanenHasil error:", error);
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async claimWargaMandiri(req: Request, res: Response): Promise<void> {
-    try {
-      const kknUserId = req.user!.userId;
-      const { wargaId } = req.params;
-
-      const result = await kknService.claimWargaMandiri(kknUserId, wargaId);
-      res.status(200).json({
-        success: true,
-        message: "Berhasil mengklaim warga menjadi dampingan.",
-        data: result,
-      });
-    } catch (error: any) {
-      console.error("[KknController] claimWargaMandiri error:", error);
-      if (error.message === "WARGA_NOT_FOUND") {
-        res
-          .status(404)
-          .json({ success: false, error: "WARGA_NOT_FOUND", message: "Warga tidak ditemukan." });
-        return;
-      }
-      if (error.message === "NO_ACTIVE_BINS") {
-        res.status(400).json({
-          success: false,
-          error: "NO_ACTIVE_BINS",
-          message: "Warga ini belum memiliki tempat sampah aktif untuk diklaim.",
-        });
-        return;
-      }
-      if (error.message === "ALREADY_CLAIMED") {
-        res.status(400).json({
-          success: false,
-          error: "ALREADY_CLAIMED",
-          message: "Warga ini sudah menjadi dampingan mahasiswa lain.",
-        });
-        return;
-      }
-      res.status(400).json({ success: false, message: error.message });
-    }
-  }
-
-  async getTimelineMahasiswa(req: Request, res: Response): Promise<void> {
-    try {
-      const userRole = String(req.user?.role || "").toUpperCase();
-      const userId = req.user?.userId || (req.user as any)?.id;
-      const {
-        kelompokId,
-        kelurahan,
-        bidangKegiatan,
-        fase,
-        statusPelaksanaan,
-        search,
-        startDate,
-        endDate,
-      } = req.query;
-
-      const result = await timelineKknService.getTimelineMahasiswa(
-        {
-          kelompokId: kelompokId ? String(kelompokId) : undefined,
-          kelurahan: kelurahan ? String(kelurahan) : undefined,
-          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
-          fase: fase ? String(fase) : undefined,
-          statusPelaksanaan: statusPelaksanaan ? String(statusPelaksanaan) : undefined,
-          search: search ? String(search) : undefined,
-          startDate: startDate ? String(startDate) : undefined,
-          endDate: endDate ? String(endDate) : undefined,
-        },
-        userId,
-        userRole
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Berhasil memuat linimasa program KKN beserta rekomendasi dan pertanyaan kritis",
-        summary: result.summary,
-        fases: result.fases,
-        data: result.data,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getTimelineMahasiswa error:", error);
-      res.status(500).json({ success: false, message: error.message || "Internal server error" });
-    }
-  }
-
-  async getActiveTimelineMahasiswa(req: Request, res: Response): Promise<void> {
-    try {
-      const userRole = String(req.user?.role || "").toUpperCase();
-      const userId = req.user?.userId || (req.user as any)?.id;
-      const { kelompokId, kelurahan, bidangKegiatan, fase, search } = req.query;
-
-      const result = await timelineKknService.getActiveTimelineMahasiswa(
-        {
-          kelompokId: kelompokId ? String(kelompokId) : undefined,
-          kelurahan: kelurahan ? String(kelurahan) : undefined,
-          bidangKegiatan: bidangKegiatan ? String(bidangKegiatan) : undefined,
-          fase: fase ? String(fase) : undefined,
-          search: search ? String(search) : undefined,
-        },
-        userId,
-        userRole
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Berhasil memuat tahapan linimasa KKN yang sedang berlangsung",
-        summary: result.summary,
-        activeFaseSummary: result.activeFaseSummary,
-        data: result.data,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getActiveTimelineMahasiswa error:", error);
-      res.status(500).json({ success: false, message: error.message || "Internal server error" });
-    }
-  }
-
-  // Alias yang kompatibel dengan naming dari mobile dev
-  async getActiveTimeline(req: Request, res: Response): Promise<void> {
-    return this.getActiveTimelineMahasiswa(req, res);
-  }
-
-  /**
-   * GET /api/v1/kkn/wilayah-kelompok
-   * Mengambil data batas geografis (Polygon/Radius) serta titik pusat posko dari kelompok KKN mahasiswa yang sedang login.
-   */
-  async getWilayahKelompok(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id;
-      if (!userId) {
-        res.status(401).json({ success: false, message: "Pengguna tidak terautentikasi" });
-        return;
-      }
-
-      const result = await kknService.getWilayahKelompok(userId);
-      res.status(200).json({
-        success: true,
-        message: "Berhasil memuat wilayah kelompok",
-        data: result,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getWilayahKelompok error:", error);
-      if (error.message === "STUDENT_NOT_FOUND" || error.message === "KELOMPOK_NOT_FOUND") {
-        res.status(404).json({
-          success: false,
-          message: "Data kelompok KKN mahasiswa tidak ditemukan",
-        });
-        return;
-      }
-      res.status(500).json({
-        success: false,
-        message: error.message || "Gagal memuat wilayah kelompok",
-      });
-    }
-  }
-
-  /**
-   * GET /api/v1/kkn/my-kelompok/qr-codes
-   * Endpoint khusus Mobile App: Ambil 20 QR Code alokasi kelompok (Strict Isolation)
-   */
-  async getMyKelompokQrCodes(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id;
-      const userRole = req.user?.role || "";
-      const requestedKelompokId = req.query.kelompokId as string | undefined;
-
-      if (!userId) {
-        res.status(401).json({ error: "UNAUTHORIZED", message: "Pengguna tidak terautentikasi" });
-        return;
-      }
-
-      const data = await kknService.getMyKelompokQrCodes(userId, userRole, requestedKelompokId);
-      res.status(200).json({
-        success: true,
-        message: "Data alokasi QR Code kelompok berhasil dimuat.",
-        data,
-      });
-    } catch (error: any) {
-      console.error("[KknController] getMyKelompokQrCodes error:", error);
-      if (error.message === "KELOMPOK_NOT_ASSIGNED") {
-        res.status(404).json({
-          error: "KELOMPOK_NOT_ASSIGNED",
-          message:
-            "Anda belum terdaftar dalam kelompok KKN manapun. Silakan hubungi DPL atau Panitia Taskforce.",
-        });
-        return;
-      }
-      if (error.message === "FORBIDDEN_KELOMPOK_ACCESS") {
-        res.status(403).json({
-          error: "FORBIDDEN",
-          message: "Anda tidak memiliki akses ke data QR kelompok ini.",
-        });
-        return;
-      }
-      res.status(500).json({
-        error: "INTERNAL_SERVER_ERROR",
-        message: error.message || "Gagal memuat QR Code kelompok.",
-      });
-    }
-  }
-
-  /**
-   * GET /api/v1/kkn/my-kelompok/qr-codes/export-print
-   * Endpoint khusus Percetakan: Dokumen HTML 10x15cm siap cetak / simpan PDF
-   */
-  async exportMyKelompokQrCodesPrint(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId || (req.user as any)?.id;
-      const userRole = req.user?.role || "";
-      const requestedKelompokId = req.query.kelompokId as string | undefined;
-
-      if (!userId) {
-        res.status(401).send("<h1>401 - Pengguna tidak terautentikasi</h1>");
-        return;
-      }
-
-      const { kelompokNama, htmlContent } = await kknService.exportMyKelompokQrHtml(
-        userId,
-        userRole,
-        requestedKelompokId
-      );
-
-      const sanitizedName = kelompokNama.replace(/[^a-zA-Z0-9_-]/g, "_");
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader(
-        "Content-Disposition",
-        `inline; filename="Stiker_BERSEKA_10x15cm_${sanitizedName}.html"`
-      );
-      res.send(htmlContent);
-    } catch (error: any) {
-      console.error("[KknController] exportMyKelompokQrCodesPrint error:", error);
-      if (error.message === "KELOMPOK_NOT_ASSIGNED") {
-        res.status(404).send("<h1>404 - Anda belum terdaftar dalam kelompok KKN manapun.</h1>");
-        return;
-      }
-      res.status(500).send("<h1>500 - Gagal menyiapkan dokumen cetak stiker kelompok.</h1>");
-    }
-  }
 }
 
 export const kknController = new KknController();
+

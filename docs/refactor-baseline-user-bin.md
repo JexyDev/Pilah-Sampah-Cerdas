@@ -1,4 +1,4 @@
-﻿# Refactor Baseline Snapshot - userController & binController
+# Refactor Baseline Snapshot - userController & binController
 
 File ini berisi baseline snapshot untuk semua endpoint di `userController.ts` dan `binController.ts`. Nilai dinamis seperti UUID, Token, dan Tanggal telah disensor (`MASKED_*`) agar perbandingan diff setelah refactor konsisten.
 
@@ -53,7 +53,7 @@ Jumlah Skenario: 22
     },
     {
       "id": "MASKED_UUID",
-      "name": "SUPER USER",
+      "name": "Super Admin",
       "email": "admin@pilahsampah.id",
       "role": "ADMIN",
       "nik": "-",
@@ -533,7 +533,7 @@ Jumlah Skenario: 22
 ```json
 {
   "error": "INTERNAL_SERVER_ERROR",
-  "message": "Gagal membuat Tempat Sampah"
+  "message": "Gagal membuat tong sampah"
 }
 ```
 
@@ -543,7 +543,7 @@ Jumlah Skenario: 22
 ```json
 {
   "error": "RESOURCE_NOT_FOUND",
-  "message": "Tempat Sampah tidak ditemukan"
+  "message": "Tong sampah tidak ditemukan"
 }
 ```
 
@@ -553,7 +553,7 @@ Jumlah Skenario: 22
 ```json
 {
   "error": "RESOURCE_NOT_FOUND",
-  "message": "Tempat Sampah tidak ditemukan"
+  "message": "Tong sampah tidak ditemukan"
 }
 ```
 

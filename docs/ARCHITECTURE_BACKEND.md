@@ -1,4 +1,4 @@
-# Backend Architecture — BERSEKA API (`apps/api`)
+# Backend Architecture — Trashcare API (`apps/api`)
 
 ## 1. Ikhtisar Arsitektur
 Aplikasi backend `apps/api` dikembangkan menggunakan **Node.js**, **Express.js**, **TypeScript**, dan **Prisma ORM** (MySQL/PostgreSQL) dengan mengimplementasikan **Clean Architecture**.
@@ -19,7 +19,7 @@ apps/api/src/
 ## 2. Aturan Autentikasi & Autorisasi (RBAC)
 
 ### 2.1 Identitas Auth Universal (Phone Number +62)
-- **Kredensial Utama:** SELURUH role (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, SUPER USER) menggunakan **Nomor Telepon (+62)** untuk login / penerimaan OTP WhatsApp.
+- **Kredensial Utama:** SELURUH role (Warga, Mahasiswa KKN, DPL, Petugas Residu, RW, Lurah, Camat, Admin DLH, Super Admin) menggunakan **Nomor Telepon (+62)** untuk login / penerimaan OTP WhatsApp.
 - **NIM & NIP:** Digunakan sebagai data profil / metadata Mahasiswa KKN (NIM) dan DPL (NIP).
 - **Penghapusan NIK:** Sesuai Aturan AGENTS.md #9, NIK **dihapus total** dari seluruh tabel database & endpoint API.
 
@@ -43,9 +43,9 @@ apps/api/src/
 - `GET /api/v1/kkn/dashboard` — Metric dashboard KKN (Dampingan Warga, QR Assigned)
 - `POST /api/v1/kkn/scan-qr` — Scan & bind QR Tempat Sampah Warga
 
-### 3.3 DPL (Dosen Pendamping Lapangan) (`/dpl`)
-- `GET /api/v1/dpl/dashboard` — Ringkasan progress Mahasiswa KKN dampingan
-- `GET /api/v1/dpl/mahasiswa` — Daftar Mahasiswa KKN di bawah dampingan NIP DPL
+### 3.3 DPL (Dosen Pembimbing Lapangan) (`/dpl`)
+- `GET /api/v1/dpl/dashboard` — Ringkasan progress Mahasiswa KKN bimbingan
+- `GET /api/v1/dpl/mahasiswa` — Daftar Mahasiswa KKN di bawah bimbingan NIP DPL
 - `GET /api/v1/dpl/logbook` — Review & monitoring logbook kegiatan mahasiswa
 
 ### 3.4 Petugas Residu (`/petugas-residu`)

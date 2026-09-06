@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;

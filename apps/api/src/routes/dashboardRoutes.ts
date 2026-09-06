@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -44,7 +44,12 @@ const router = Router();
  *       200:
  *         description: Success
  */
-router.get("/kpi", authMiddleware, dashboardController.getKpi);
+router.get(
+  "/kpi",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]),
+  dashboardController.getKpi
+);
 
 /**
  * @swagger
@@ -58,7 +63,12 @@ router.get("/kpi", authMiddleware, dashboardController.getKpi);
  *       200:
  *         description: Success
  */
-router.get("/transactions", authMiddleware, dashboardController.getTransactions);
+router.get(
+  "/transactions",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT", "PETUGAS_RESIDU"]),
+  dashboardController.getTransactions
+);
 
 /**
  * @swagger
@@ -86,7 +96,12 @@ router.get("/summary", authMiddleware, dashboardController.getSummary);
  *       200:
  *         description: Success
  */
-router.get("/analytics", authMiddleware, dashboardController.getAnalytics);
+router.get(
+  "/analytics",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]),
+  dashboardController.getAnalytics
+);
 
 /**
  * @swagger
@@ -100,7 +115,12 @@ router.get("/analytics", authMiddleware, dashboardController.getAnalytics);
  *       200:
  *         description: CSV/Excel dataset file download
  */
-router.get("/export-dataset", authMiddleware, dashboardController.exportDataset);
+router.get(
+  "/export-dataset",
+  authMiddleware,
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "RT"]),
+  dashboardController.exportDataset
+);
 
 /**
  * @swagger

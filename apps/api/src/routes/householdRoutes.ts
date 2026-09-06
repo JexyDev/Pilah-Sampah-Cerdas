@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -42,7 +42,7 @@ const router = Router();
  *               address:
  *                 type: string
  *                 example: Jl. Titiran Dalam No. 10
- *               rwId:
+ *               rtRwId:
  *                 type: integer
  *                 example: 1
  *               latitude:
@@ -65,7 +65,7 @@ const router = Router();
 router.post(
   "/register",
   authMiddleware,
-  roleMiddleware(["WARGA", "SUPER_USER", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]),
+  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "PETUGAS_RESIDU", "RW", "LURAH"]),
   householdController.register
 );
 
@@ -81,11 +81,7 @@ router.post(
  *       200:
  *         description: Success
  */
-import { authController } from "../controllers/authController.js";
-
 router.get("/me", authMiddleware, householdController.getMyHouseholds);
-router.put("/me", authMiddleware, authController.updateCurrentUserProfile);
-router.patch("/me", authMiddleware, authController.updateCurrentUserProfile);
 router.get("/me/bins/summary", authMiddleware, householdController.getBinsSummary);
 router.get("/bins/summary", authMiddleware, householdController.getBinsSummary);
 
@@ -93,7 +89,7 @@ router.get(
   "/",
   authMiddleware,
   roleMiddleware([
-    "SUPER_USER",
+    "SUPER_ADMIN",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",

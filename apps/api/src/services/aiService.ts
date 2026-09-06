@@ -1,6 +1,5 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -9,132 +8,136 @@ import { prisma } from "../lib/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { aiRepository } from "../repositories/aiRepository.js";
 import { redisService } from "./redisService.js";
+import { PrismaClient } from "@prisma/client";
 import { configService } from "./configService.js";
 import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
 
+const prisma = new PrismaClient();
+
 export class AiService {
   /**
-   * AI Detection using WasteAiAdapterFactory with Redis Queue
+   * Mock AI Detection using Redis Queue with strict limits
    */
-  async detectWasteMock(userId: string, imageUrl: string, imagePath?: string) {
+  async detectWasteMock(userId: string, imageUrl: string) {
+    // 1. Check Quota via Redis
     const hasQuota = await redisService.checkAndUseQuota(userId);
-    if (!hasQuota) throw new Error("QUOTA_EXCEEDED");
+    if (!hasQuota) {
+      throw new Error("QUOTA_EXCEEDED");
+    }
 
     const requestId = uuidv4();
     const finalImageUrl = imageUrl || "http://mock-storage/waste.jpg";
 
     try {
-      const result: any = await redisService.enqueueAiTask(async () => {
-        const adapter = WasteAiAdapterFactory.getAdapter();
-        const aiResult = await adapter.classifyWaste({ imageUrl, imagePath });
+      // 2. Enqueue the AI Task into FIFO Queue (max 2 concurrent from redisService)
+      const result = await redisService.enqueueAiTask(() => {
+        return new Promise((resolve, reject) => {
+          // Decide AI computation duration (15% chance of timeout > 2000ms)
+          const isTimeout = Math.random() < 0.15;
+          const duration = isTimeout ? 2500 : 1200;
 
-        const detections = aiResult.detections || [];
-        const orgDet = detections.filter((d: any) => d.detectedType === "ORGANIC");
-        const nonOrgDet = detections.filter((d: any) => d.detectedType === "NON_ORGANIC");
-        const orgVol = orgDet.reduce((s: number, d: any) => s + (d.volumeEstimate || 0), 0);
-        const nonOrgVol = nonOrgDet.reduce((s: number, d: any) => s + (d.volumeEstimate || 0), 0);
-        const totalVol = orgVol + nonOrgVol;
+          // 20% chance of image unreadable failure
+          const isUnreadable = Math.random() < 0.2;
 
-        const rawPercent = (aiResult.rawPayload as any) || {};
-        let organik_percent = rawPercent.organik_percent;
-        let non_organik_percent = rawPercent.non_organik_percent;
-        if (organik_percent === undefined || non_organik_percent === undefined) {
-          if (totalVol > 0) {
-            organik_percent = Math.round((orgVol / totalVol) * 100);
-            non_organik_percent = 100 - organik_percent;
-          } else {
-            const isOrg =
-              String(aiResult.detectedType).toUpperCase() === "ORGANIC" ||
-              String(aiResult.detectedType).toUpperCase() === "ORGANIK";
-            organik_percent = isOrg ? 95 : 5;
-            non_organik_percent = 100 - organik_percent;
-          }
-        }
+          const timeoutId = setTimeout(() => {
+            if (isTimeout) {
+              reject(new Error("AI_TIMEOUT"));
+            } else if (isUnreadable) {
+              reject(new Error("IMAGE_UNREADABLE"));
+            } else {
+              // 80% chance of mixture, 10% organic only, 10% inorganic only
+              const rand = Math.random();
+              const detections = [];
+              if (rand < 0.8) {
+                // Mixture
+                detections.push({
+                  detectedType: "ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 3 + 1.0).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)), // 80%-100%
+                });
+                detections.push({
+                  detectedType: "NON_ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 3 + 1.0).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)), // 80%-100%
+                });
+              } else if (rand < 0.9) {
+                // Organic only
+                detections.push({
+                  detectedType: "ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 4.5 + 1.5).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)),
+                });
+              } else {
+                // Inorganic only
+                detections.push({
+                  detectedType: "NON_ORGANIC",
+                  volumeEstimate: parseFloat((Math.random() * 4.5 + 1.5).toFixed(2)),
+                  confidence: parseFloat((Math.random() * 0.2 + 0.8).toFixed(2)),
+                });
+              }
 
-        // Smart Hybrid AI Classification Logic:
-        // 1. High confidence inorganic items (Bottles, Cans, Phones) -> ANORGANIK 90%
-        // 2. Organic detection signals (Leaves, Fruit, Food) -> ORGANIC 88%
-        // 3. Ambiguous/Blurry fallback -> ORGANIC 75%
-        const orgDetections = detections.filter(
-          (d: any) => d.detectedType === "ORGANIC" || d.detectedType === "ORGANIK"
-        );
-        const nonOrgDetections = detections.filter(
-          (d: any) => d.detectedType === "NON_ORGANIC" || d.detectedType === "ANORGANIK"
-        );
+              const dominant = detections.reduce((prev, current) =>
+                prev.volumeEstimate > current.volumeEstimate ? prev : current
+              );
+              const orgDet = detections.find((d) => d.detectedType === "ORGANIC");
+              const nonOrgDet = detections.find((d) => d.detectedType === "NON_ORGANIC");
+              const orgVol = orgDet ? orgDet.volumeEstimate : 0;
+              const nonOrgVol = nonOrgDet ? nonOrgDet.volumeEstimate : 0;
+              const totalVol = orgVol + nonOrgVol;
 
-        const isStrongInorganic =
-          nonOrgDetections.some((d: any) => Number(d.confidence) >= 0.60) &&
-          orgDetections.length === 0;
+              let organik_percent = 0;
+              let non_organik_percent = 0;
+              if (totalVol > 0) {
+                organik_percent = Math.round((orgVol / totalVol) * 100);
+                non_organik_percent = 100 - organik_percent;
+              } else if (dominant.detectedType === "ORGANIC") {
+                organik_percent = 100;
+              } else {
+                non_organik_percent = 100;
+              }
 
-        if (isStrongInorganic) {
-          organik_percent = 10;
-          non_organik_percent = 90;
-        } else if (
-          orgDetections.length > 0 ||
-          String(aiResult.detectedType).toUpperCase().includes("ORGANIC")
-        ) {
-          organik_percent = 88;
-          non_organik_percent = 12;
-        } else if (process.env.DEMO_EMERGENCY_MODE !== "false") {
-          organik_percent = 75;
-          non_organik_percent = 25;
-        }
+              resolve({
+                requestId,
+                detectedType: dominant.detectedType,
+                volumeEstimate: dominant.volumeEstimate,
+                confidence: dominant.confidence,
+                detections,
+                isBlurry: false,
+                organik_percent,
+                non_organik_percent,
+                recommended_bin:
+                  dominant.detectedType.toLowerCase() === "organic" ? "organik" : "anorganik",
+              });
+            }
+          }, duration);
 
-        const isOrgMajority = Number(organik_percent) >= Number(non_organik_percent);
-        const finalDetectedType = isOrgMajority ? "ORGANIC" : "NON_ORGANIC";
-        const finalRecommendedBin = isOrgMajority ? "organik" : "anorganik";
-
-        return {
-          requestId,
-          detectedType: finalDetectedType,
-          volumeEstimate: aiResult.estimatedVolumeLiter || 2.5,
-          confidence: aiResult.confidenceScore || 0.92,
-          detections,
-          isBlurry: false,
-          organik_percent,
-          non_organik_percent,
-          recommended_bin: finalRecommendedBin,
-          vendorName: aiResult.vendorName,
-          annotatedImageBase64: aiResult.annotatedImageBase64,
-        };
+          // Standard 2-second threshold for client response timeout
+          setTimeout(() => {
+            clearTimeout(timeoutId);
+            reject(new Error("AI_TIMEOUT"));
+          }, 2000);
+        });
       });
 
+      // 3. Write Success Log
       await aiRepository.logRequest(userId, requestId, finalImageUrl, "SUCCESS").catch((err) => {
         console.warn("Failed to write AI success log to DB:", err.message);
       });
 
       return result;
     } catch (error: any) {
-      if (process.env.DEMO_EMERGENCY_MODE !== "false" && error.message !== "QUOTA_EXCEEDED") {
-        console.warn("[AiService] Demo Emergency Fallback triggered for error:", error.message);
-        await aiRepository.logRequest(userId, requestId, finalImageUrl, "SUCCESS").catch(() => {});
-        return {
-          requestId,
-          detectedType: "ORGANIC",
-          volumeEstimate: 2.5,
-          confidence: 0.92,
-          detections: [
-            {
-              detectedType: "ORGANIC",
-              volumeEstimate: 2.5,
-              confidence: 0.92,
-            },
-          ],
-          isBlurry: false,
-          organik_percent: 88,
-          non_organik_percent: 12,
-          recommended_bin: "organik",
-          vendorName: "BERSEKA-SmartHybrid-v1",
-          annotatedImageBase64: undefined,
-        };
-      }
-
+      // Handle Failure
       const isTimeout = error.message === "AI_TIMEOUT";
       const failureStatus = isTimeout ? "TIMEOUT" : "IMAGE_UNREADABLE";
+
+      // Write Failed Log
       await aiRepository
         .logRequest(userId, requestId, finalImageUrl, failureStatus)
         .catch(() => {});
+
+      // Refund Quota
       await redisService.refundQuota(userId);
+
       throw error;
     }
   }

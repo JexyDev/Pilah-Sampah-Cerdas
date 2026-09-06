@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  *
@@ -9,7 +9,6 @@
 export interface AiClassificationRequest {
   imageUrl: string;
   userId?: string;
-  imagePath?: string;
 }
 
 export interface WasteDetectionItem {
@@ -25,7 +24,6 @@ export interface AiClassificationResponse {
   estimatedVolumeLiter: number;
   detections: WasteDetectionItem[];
   vendorName: string;
-  annotatedImageBase64?: string;
   rawPayload?: Record<string, any>;
 }
 

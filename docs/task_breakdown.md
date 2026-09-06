@@ -1,14 +1,14 @@
-﻿# Task Breakdown & MoM Implementation — BERSEKA
+# Task Breakdown & MoM Implementation — Pilah Sampah Cerdas
 
 ## 1. Rangkuman MoM (Kamis, 09 Juli 2026)
 
 ### 1.1 Penamaan Proyek & Monorepo
-*   **Nama Resmi Proyek:** "BERSEKA" (Repository: `pilah-sampah-cerdas`).
+*   **Nama Resmi Proyek:** "Pilah Sampah Cerdas" (Repository: `pilah-sampah-cerdas`).
 *   **Struktur Repositori:** Monorepo dengan default branch `backend`. Ditambah 2 branch independen: `frontend` dan `mobile`.
 
 ### 1.2 Target Pengguna & Platform Role Scoping
 1. **Aplikasi Mobile (Thin-Client):** Digunakan eksklusif oleh **Warga**, **Mahasiswa KKN**, dan **Petugas Residu**.
-2. **Aplikasi Web (Superset Dashboard):** Digunakan oleh **SUPER USER, Admin Kecamatan, Admin Kelurahan, DPL, Pengangkut, Petugas RW, Petugas RT**, serta **Warga, Mahasiswa KKN, Petugas Residu** (untuk monitoring visual & analytics).
+2. **Aplikasi Web (Superset Dashboard):** Digunakan oleh **Super Admin, Admin Kecamatan, Admin Kelurahan, DPL, Pengangkut, Petugas RW, Petugas RT**, serta **Warga, Mahasiswa KKN, Petugas Residu** (untuk monitoring visual & analytics).
 
 ---
 

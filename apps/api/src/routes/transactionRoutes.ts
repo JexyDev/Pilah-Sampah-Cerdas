@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -17,7 +17,7 @@ router.get(
   "/deposits",
   authMiddleware,
   roleMiddleware([
-    "SUPER_USER",
+    "SUPER_ADMIN",
     "ADMIN_DLH",
     "RW",
     "RT",
@@ -25,10 +25,6 @@ router.get(
     "LURAH",
     "CAMAT",
     "MAHASISWA_KKN",
-    "PEMIMPIN",
-    "PANITIA_TASKFORCE",
-    "DPL",
-    "WARGA",
   ]),
   transactionController.getDeposits
 );
@@ -54,7 +50,7 @@ router.get(
 router.post(
   "/manual",
   authMiddleware,
-  roleMiddleware(["PETUGAS_RESIDU", "SUPER_USER"]),
+  roleMiddleware(["PETUGAS_RESIDU", "SUPER_ADMIN"]),
   uploadAvatarMiddleware.single("image"),
   transactionController.createManualDeposit
 );
@@ -62,25 +58,10 @@ router.post(
 router.get(
   "/manual",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT", "PETUGAS_RESIDU"]),
   transactionController.getManualDeposits
 );
 
 router.get("/:id", authMiddleware, transactionController.getDepositDetails);
-
-router.patch(
-  "/:id/status",
-  authMiddleware,
-  roleMiddleware([
-    "PETUGAS_RESIDU",
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "DEVELOPER",
-    "PANITIA_TASKFORCE",
-    "RW",
-    "RT",
-  ]),
-  transactionController.updateStatus
-);
 
 export default router;

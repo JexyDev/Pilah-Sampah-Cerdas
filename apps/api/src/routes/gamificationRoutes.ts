@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -24,7 +24,7 @@ router.get("/recycle-ideas", authMiddleware, gamificationController.getIdeas);
 router.put(
   "/recycle-ideas/:id/approve",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW"]),
   gamificationController.approveIdea
 );
 

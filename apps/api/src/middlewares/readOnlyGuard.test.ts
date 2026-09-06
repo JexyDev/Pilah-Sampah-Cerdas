@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -95,8 +95,8 @@ describe("readOnlyGuard middleware tests", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("should allow any operations for SUPER_USER", () => {
-    const token = generateAccessToken({ userId: "sa-1", role: "SUPER_USER" });
+  it("should allow any operations for SUPER_ADMIN", () => {
+    const token = generateAccessToken({ userId: "sa-1", role: "SUPER_ADMIN" });
     const req = {
       method: "POST",
       originalUrl: "/api/v1/users",

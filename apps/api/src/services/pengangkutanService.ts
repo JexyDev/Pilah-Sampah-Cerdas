@@ -1,23 +1,24 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
-import { DispatchStatus } from "@prisma/client";
+import { PrismaClient, DispatchStatus } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class PengangkutanService {
-  async getAll(filters?: { status?: string; rwId?: number }) {
+  async getAll(filters?: { status?: string; rtRwId?: number }) {
     const whereClause: any = {};
 
     if (filters?.status) {
       whereClause.status = filters.status as DispatchStatus;
     }
 
-    if (filters?.rwId) {
+    if (filters?.rtRwId) {
       whereClause.bin = {
-        rwId: filters.rwId,
+        rtRwId: filters.rtRwId,
       };
     }
 
@@ -26,7 +27,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rw: {
+            rtRw: {
               include: {
                 kelurahan: true,
               },
@@ -48,7 +49,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rw: {
+            rtRw: {
               include: {
                 kelurahan: true,
               },
@@ -86,7 +87,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rw: {
+            rtRw: {
               include: {
                 kelurahan: true,
               },
@@ -126,7 +127,7 @@ export class PengangkutanService {
       include: {
         bin: {
           include: {
-            rw: {
+            rtRw: {
               include: {
                 kelurahan: true,
               },

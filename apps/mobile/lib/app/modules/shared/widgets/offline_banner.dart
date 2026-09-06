@@ -1,0 +1,50 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_strings.dart';
+import '../../../core/values/app_dimensions.dart';
+import '../controllers/connectivity_controller.dart';
+
+/// Banner merah yang muncul di bagian atas layar saat offline.
+/// Sesuai ui_ux_flow.md §5.3 dan srs.md NFR-05.
+class OfflineBanner extends ConsumerWidget {
+  const OfflineBanner({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bool isOnline = ref.watch(isOnlineProvider);
+
+    if (isOnline) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      height: AppDimensions.offlineBannerHeight,
+      color: AppColors.offlineBanner,
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.wifi_off_rounded,
+            color: AppColors.offlineBannerText,
+            size: AppDimensions.iconSm,
+          ),
+          SizedBox(width: AppDimensions.sm),
+          Flexible(
+            child: Text(
+              AppStrings.offlineBannerMessage,
+              style: TextStyle(
+                color: AppColors.offlineBannerText,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

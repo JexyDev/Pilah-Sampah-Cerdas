@@ -1,200 +1,68 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
+import { PrismaClient } from "@prisma/client";
 import { redisService } from "./redisService.js";
 
-interface ResolvedAreaContext {
-  isFiltered: boolean;
-  rwIds: number[];
-  kelurahanIds: string[];
-  kelurahanNames: string[];
-}
+const prisma = new PrismaClient();
 
-function isWilayahFiltered(wilayah?: string): boolean {
-  if (!wilayah) return false;
-  const cleaned = wilayah.trim().toLowerCase();
+async function resolveAreaIds(wilayah?: string): Promise<number[]> {
+  if (!wilayah) return [];
   if (
-    !cleaned ||
-    cleaned === "undefined" ||
-    cleaned === "null" ||
-    cleaned === "kecamatan coblong" ||
-    cleaned === "kecamatan coblong (semua)" ||
-    cleaned === "cakupan seluruh kecamatan" ||
-    cleaned === "sistem pusat" ||
-    cleaned === "dinas lingkungan hidup" ||
-    cleaned === "semua wilayah" ||
-    cleaned === "seluruh wilayah" ||
-    cleaned === "sistem kota (semua wilayah)" ||
-    cleaned === "sistem kota" ||
-    cleaned === "kota bandung" ||
-    cleaned === "semua kelurahan" ||
-    cleaned === "semua" ||
-    cleaned === "all" ||
-    cleaned.includes("semua wilayah") ||
-    cleaned.includes("seluruh wilayah") ||
-    cleaned.includes("seluruh kecamatan") ||
-    cleaned.includes("sistem kota")
+    wilayah === "Kecamatan Coblong" ||
+    wilayah === "Sistem Pusat" ||
+    wilayah === "Area KKN Dago" ||
+    wilayah === "Dinas Lingkungan Hidup"
   ) {
-    return false;
-  }
-  return true;
-}
-
-// ponytail: majority-rule classification, mirrors transactionController.ts. Extract to shared util if a 3rd module needs it.
-function isOrganikMajority(log: {
-  hasilKlasifikasiAi?: string | null;
-  confidenceAi?: any;
-}): boolean {
-  const conf =
-    log.confidenceAi !== null && log.confidenceAi !== undefined ? Number(log.confidenceAi) : 95;
-  const confVal = conf <= 1 ? conf * 100 : conf;
-  const rawClass = (log.hasilKlasifikasiAi || "organik").toLowerCase();
-  const isOrgRaw = rawClass.includes("organik") && !rawClass.includes("anorganik");
-  const organikPercent = isOrgRaw ? confVal : 100 - confVal;
-  return organikPercent >= 50;
-}
-
-async function resolveAreaContext(wilayah?: string): Promise<ResolvedAreaContext> {
-  if (!isWilayahFiltered(wilayah)) {
-    return { isFiltered: false, rwIds: [], kelurahanIds: [], kelurahanNames: [] };
+    return [];
   }
 
-  const parts = wilayah!
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
-  const foundRwIds = new Set<number>();
-  const foundKelIds = new Set<string>();
-  const foundKelNames = new Set<string>();
+  const match = wilayah.match(/(\d+)/);
+  const rwNum = match ? match[1].padStart(2, "0") : null;
+  const rawNum = match ? parseInt(match[1]).toString() : null;
 
-  for (const part of parts) {
-    // 1. Direct UUID match (Kelurahan ID)
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) {
-      const kel = await prisma.kelurahan.findUnique({
-        where: { id: part },
-        include: { rws: { select: { id: true } } },
-      });
-      if (kel) {
-        foundKelIds.add(kel.id);
-        foundKelNames.add(kel.name);
-        kel.rws.forEach((r) => foundRwIds.add(r.id));
-        continue;
-      }
-    }
+  const areas = await prisma.rtRwArea.findMany({
+    where: {
+      OR: [
+        { name: { contains: wilayah, mode: "insensitive" } },
+        ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
+        ...(rawNum ? [{ name: { contains: `RW ${rawNum}`, mode: "insensitive" as const } }] : []),
+      ],
+    },
+    select: { id: true },
+  });
 
-    // 2. Clean prefixes
-    const stripped = part
-      .replace(/^(kelurahan|kel\.|kel|kecamatan|kec\.|desa)\s*/i, "")
-      .replace(/\s*\(.*\)$/, "")
-      .trim();
-
-    // 3. Search in Kelurahan table
-    const matchedKelurahans = await prisma.kelurahan.findMany({
-      where: {
-        OR: [
-          { name: { equals: stripped, mode: "insensitive" } },
-          { name: { contains: stripped, mode: "insensitive" } },
-          { name: { equals: part, mode: "insensitive" } },
-          { name: { contains: part, mode: "insensitive" } },
-        ],
-      },
-      include: { rws: { select: { id: true } } },
-    });
-
-    for (const kel of matchedKelurahans) {
-      foundKelIds.add(kel.id);
-      foundKelNames.add(kel.name);
-      kel.rws.forEach((r) => foundRwIds.add(r.id));
-    }
-
-    // 4. Search in RW table
-    const matchRwNum = part.match(/(?:rw|rw\.)?\s*0*(\d+)/i);
-    const rwNum = matchRwNum ? matchRwNum[1].padStart(2, "0") : null;
-    const rawRwNum = matchRwNum ? parseInt(matchRwNum[1], 10).toString() : null;
-
-    const matchedRws = await prisma.rw.findMany({
-      where: {
-        OR: [
-          { name: { contains: part, mode: "insensitive" } },
-          { name: { contains: stripped, mode: "insensitive" } },
-          ...(rwNum ? [{ name: { contains: `RW ${rwNum}`, mode: "insensitive" as const } }] : []),
-          ...(rawRwNum
-            ? [{ name: { contains: `RW ${rawRwNum}`, mode: "insensitive" as const } }]
-            : []),
-        ],
-      },
-      select: { id: true, kelurahanId: true, kelurahan: { select: { name: true } } },
-    });
-
-    for (const rw of matchedRws) {
-      foundRwIds.add(rw.id);
-      if (rw.kelurahanId) foundKelIds.add(rw.kelurahanId);
-      if (rw.kelurahan?.name) foundKelNames.add(rw.kelurahan.name);
-    }
-  }
-
-  return {
-    isFiltered: true,
-    rwIds: Array.from(foundRwIds),
-    kelurahanIds: Array.from(foundKelIds),
-    kelurahanNames: Array.from(foundKelNames),
-  };
+  return areas.map((a) => a.id);
 }
 
 export const dashboardService = {
-  getKpi: async (wilayah?: string, period?: string, startDate?: string, endDate?: string) => {
-    const areaCtx = await resolveAreaContext(wilayah);
-    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
+  getKpi: async (wilayah?: string, period?: string) => {
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago" &&
+      wilayah !== "Dinas Lingkungan Hidup";
 
-    const getRtRwMatch = () => {
-      if (!isFiltered) return undefined;
-      const conditions: any[] = [];
-      if (rwIds.length > 0) conditions.push({ id: { in: rwIds } });
-      if (kelurahanIds.length > 0) conditions.push({ kelurahanId: { in: kelurahanIds } });
-      if (kelurahanNames.length > 0)
-        conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-      return conditions.length > 0
-        ? conditions.length === 1
-          ? conditions[0]
-          : { OR: conditions }
-        : undefined;
+    const areaIds = isFiltered ? await resolveAreaIds(wilayah) : [];
+
+    const getRtRwMatch = (wilayahStr: string) => {
+      if (areaIds.length > 0) return { id: { in: areaIds } };
+      return { name: { contains: wilayahStr, mode: "insensitive" as const } };
     };
 
-    const getBinMatch = () => {
-      if (!isFiltered) return undefined;
-      const conditions: any[] = [];
-      if (rwIds.length > 0) conditions.push({ rwId: { in: rwIds } });
-      if (kelurahanIds.length > 0) {
-        conditions.push({ kelurahanId: { in: kelurahanIds } });
-        conditions.push({ rw: { kelurahanId: { in: kelurahanIds } } });
-      }
-      if (kelurahanNames.length > 0) {
-        conditions.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-        conditions.push({
-          rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
-        });
-      }
-      return conditions.length > 0
-        ? conditions.length === 1
-          ? conditions[0]
-          : { OR: conditions }
-        : undefined;
+    const getRtRwIdMatch = (wilayahStr: string) => {
+      if (areaIds.length > 0) return { rtRwId: { in: areaIds } };
+      return { rtRw: { name: { contains: wilayahStr, mode: "insensitive" as const } } };
     };
-
-    const rtRwMatch = getRtRwMatch();
-    const binMatch = getBinMatch();
 
     let dateFilter: any = undefined;
     const now = new Date();
-
-    if (startDate && endDate) {
-      dateFilter = { gte: new Date(startDate), lte: new Date(endDate) };
-    } else if (period === "harian") {
+    if (period === "harian") {
       const start = new Date(now);
       start.setHours(0, 0, 0, 0);
       const end = new Date(now);
@@ -220,30 +88,26 @@ export const dashboardService = {
       end.setHours(23, 59, 59, 999);
       dateFilter = { gte: start, lte: end };
     }
-
     // 1. Total Warga Aktif
     const wargaWhere: any = { role: { name: "WARGA" } };
-    if (isFiltered && rtRwMatch) {
-      wargaWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
-    }
+    if (isFiltered)
+      wargaWhere.OR = [
+        { rtRw: getRtRwMatch(wilayah) },
+        { households: { some: { rtRw: getRtRwMatch(wilayah) } } },
+      ];
     if (dateFilter) wargaWhere.createdAt = dateFilter;
 
     const totalWarga = await prisma.user.count({
       where: wargaWhere,
     });
 
-    const hhWhere: any = {};
-    if (isFiltered && rtRwMatch) hhWhere.rw = rtRwMatch;
-    if (dateFilter) hhWhere.createdAt = dateFilter;
-    const totalRumahTangga = await prisma.household.count({
-      where: hhWhere,
-    });
-
     // Total Users
     const usersWhere: any = {};
-    if (isFiltered && rtRwMatch) {
-      usersWhere.OR = [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }];
-    }
+    if (isFiltered)
+      usersWhere.OR = [
+        { rtRw: getRtRwMatch(wilayah) },
+        { households: { some: { rtRw: getRtRwMatch(wilayah) } } },
+      ];
     if (dateFilter) usersWhere.createdAt = dateFilter;
 
     const totalUsers = await prisma.user.count({
@@ -252,12 +116,7 @@ export const dashboardService = {
 
     // 2. Sampah Terkumpul (Kg)
     const wasteLogsWhere: any = {};
-    if (isFiltered) {
-      const orWaste: any[] = [];
-      if (rtRwMatch) orWaste.push({ warga: { rw: rtRwMatch } });
-      if (binMatch) orWaste.push({ bin: binMatch });
-      if (orWaste.length > 0) wasteLogsWhere.OR = orWaste;
-    }
+    if (isFiltered) wasteLogsWhere.warga = { rtRw: getRtRwMatch(wilayah) };
     if (dateFilter) wasteLogsWhere.createdAt = dateFilter;
 
     const wasteLogs = await prisma.setoranOtomatis.aggregate({
@@ -268,30 +127,32 @@ export const dashboardService = {
     });
     const totalSampahKg = wasteLogs._sum.berat ? Number(wasteLogs._sum.berat) : 0;
 
-    // 3. Rata-rata Akurasi AI
+    // 3. Rata-rata Akurasi AI (Simulated using % of SUCCESS)
     const aiWhere: any = {};
-    if (isFiltered && rtRwMatch) {
+    if (isFiltered)
       aiWhere.user = {
-        OR: [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }],
+        OR: [{ rtRw: getRtRwMatch(wilayah) }, { households: { some: { rtRw: getRtRwMatch(wilayah) } } }],
       };
-    }
     if (dateFilter) aiWhere.createdAt = dateFilter;
 
     const totalAiLogs = await prisma.aiRequestLog.count({
       where: aiWhere,
     });
-    const successAiWhere: any = { ...aiWhere, resultStatus: "SUCCESS" };
+    const successAiWhere: any = { resultStatus: "SUCCESS" };
+    if (isFiltered)
+      successAiWhere.user = {
+        OR: [{ rtRw: getRtRwMatch(wilayah) }, { households: { some: { rtRw: getRtRwMatch(wilayah) } } }],
+      };
+    if (dateFilter) successAiWhere.createdAt = dateFilter;
 
     const successAiLogs = await prisma.aiRequestLog.count({
       where: successAiWhere,
     });
     const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
 
-    // 4. Peringatan Tempat Sampah Penuh (volume > 90% of maxCapacity)
+    // 4. Peringatan Tong Penuh (volume > 90% of maxCapacity)
     const binsWhere: any = {};
-    if (isFiltered && binMatch) {
-      binsWhere.OR = [binMatch, ...(rtRwMatch ? [{ rw: rtRwMatch }] : [])];
-    }
+    if (isFiltered) binsWhere.rtRw = getRtRwMatch(wilayah);
     if (dateFilter) binsWhere.createdAt = dateFilter;
 
     const bins = await prisma.bin.findMany({
@@ -316,15 +177,16 @@ export const dashboardService = {
 
     // 6. Lokasi Terdaftar (RT/RW)
     const lokasiWhere: any = {};
-    if (isFiltered && rtRwMatch) {
-      lokasiWhere.OR = [rtRwMatch];
-    }
+    if (isFiltered) lokasiWhere.OR = [getRtRwMatch(wilayah)];
     if (dateFilter) lokasiWhere.createdAt = dateFilter;
 
-    const lokasiTerdaftar = await prisma.rw.count({ where: lokasiWhere });
+    const lokasiTerdaftar = await prisma.rtRwArea.count({ where: lokasiWhere });
 
-    // 7. Setoran Hari Ini (Kg) (Using dateFilter or Today)
-    const setoranHariIniWhere: any = { ...wasteLogsWhere };
+    // 7. Setoran Hari Ini (Kg) (Using dateFilter)
+    const setoranHariIniWhere: any = {};
+    if (isFiltered) setoranHariIniWhere.warga = { rtRw: getRtRwMatch(wilayah) };
+    if (dateFilter) setoranHariIniWhere.createdAt = dateFilter;
+
     const wasteLogsToday = await prisma.setoranOtomatis.aggregate({
       where: setoranHariIniWhere,
       _sum: {
@@ -335,11 +197,10 @@ export const dashboardService = {
 
     // 8. Total Poin Warga
     const pointsWhere: any = {};
-    if (isFiltered && rtRwMatch) {
+    if (isFiltered)
       pointsWhere.user = {
-        OR: [{ rw: rtRwMatch }, { households: { some: { rw: rtRwMatch } } }],
+        OR: [{ rtRw: getRtRwMatch(wilayah) }, { households: { some: { rtRw: getRtRwMatch(wilayah) } } }],
       };
-    }
     if (dateFilter) pointsWhere.createdAt = dateFilter;
 
     const pointHistory = await prisma.pointHistory.aggregate({
@@ -351,16 +212,21 @@ export const dashboardService = {
     const totalPoin = pointHistory._sum.points ? Number(pointHistory._sum.points) : 0;
 
     // 9. Komposisi Sampah (Organik vs Anorganik)
-    const catWhere: any = { ...wasteLogsWhere };
+    const catWhere: any = {};
+    if (isFiltered) catWhere.warga = { rtRw: getRtRwMatch(wilayah) };
+    if (dateFilter) catWhere.createdAt = dateFilter;
 
     const wasteByCategory = await prisma.setoranOtomatis.findMany({
       where: catWhere,
     });
 
     const residuWhere: any = {};
-    if (isFiltered && rtRwMatch) {
-      residuWhere.OR = [{ rw: rtRwMatch }, { petugas: { rw: rtRwMatch } }];
-    }
+    if (isFiltered)
+      residuWhere.OR = [
+        { rw: getRtRwMatch(wilayah) },
+        { petugas: { rtRw: getRtRwMatch(wilayah) } },
+      ];
+    if (dateFilter) residuWhere.createdAt = dateFilter;
     if (dateFilter) residuWhere.createdAt = dateFilter;
 
     const residuLogs = await prisma.setoranManual.findMany({
@@ -373,7 +239,7 @@ export const dashboardService = {
 
     wasteByCategory.forEach((log: any) => {
       const kg = Number(log.berat);
-      if (isOrganikMajority(log)) {
+      if (log.hasilKlasifikasiAi === "organik") {
         organikKg += kg;
       } else {
         anorganikKg += kg;
@@ -392,225 +258,12 @@ export const dashboardService = {
       where: { ...jadwalWhere, status: "COMPLETED" },
     });
 
-    // 11. Sesi Pengguna Online Real-time (Token Sesi Login Aktif)
-    const activeRefreshTokens = await prisma.refreshToken.findMany({
-      where: { expiresAt: { gte: new Date() } },
-      select: { userId: true },
-    });
-
-    const activeUserIds = Array.from(new Set(activeRefreshTokens.map((t) => t.userId)));
-
-    let activeAdmin = 0;
-    let activeOperator = 0;
-    let activeRw = 0;
-    let activeDpl = 0;
-    let activeResidu = 0;
-    let activeKkn = 0;
-    let activeWarga = 0;
-
-    if (activeUserIds.length > 0) {
-      const activeUsers = await prisma.user.findMany({
-        where: { id: { in: activeUserIds } },
-        include: {
-          role: true,
-          studentProfile: { select: { id: true } },
-          petugasProfile: { select: { id: true } },
-          dplKelompok: { select: { id: true } },
-        },
-      });
-
-      activeUsers.forEach((u) => {
-        const roleName = (u.role?.name || "").toUpperCase();
-
-        // 1. Mahasiswa KKN (Role MAHASISWA_KKN atau memiliki studentProfile)
-        const isKkn =
-          roleName === "MAHASISWA_KKN" ||
-          roleName.includes("KKN") ||
-          roleName.includes("MAHASISWA") ||
-          Boolean(u.studentProfile);
-
-        // 2. Dosen DPL (Role DPL / DOSEN / PENDAMPING / MPL atau memiliki kelompok bimbingan KKN)
-        const isDpl =
-          !isKkn &&
-          (roleName === "DPL" ||
-            roleName === "DOSEN_PEMBIMBING" ||
-            roleName === "DOSEN_PENDAMPING" ||
-            roleName === "DOSEN_PENDAMPING_LAPANGAN" ||
-            roleName.includes("DPL") ||
-            roleName.includes("DOSEN") ||
-            roleName.includes("PENDAMPING") ||
-            roleName.includes("MPL") ||
-            (u.dplKelompok && u.dplKelompok.length > 0));
-
-        // 3. Operator (DLH / Camat / Lurah / Pemimpin / Pimpinan)
-        const isOperator =
-          !isKkn &&
-          !isDpl &&
-          (roleName === "ADMIN_DLH" ||
-            roleName === "CAMAT" ||
-            roleName === "LURAH" ||
-            roleName === "PEMIMPIN" ||
-            roleName.includes("DLH") ||
-            roleName.includes("CAMAT") ||
-            roleName.includes("LURAH") ||
-            roleName.includes("PEMIMPIN") ||
-            roleName.includes("PIMPINAN") ||
-            roleName.includes("OPERATOR"));
-
-        // 4. Petugas Residu & Pengangkut
-        const isResidu =
-          !isKkn &&
-          !isDpl &&
-          !isOperator &&
-          (roleName === "PETUGAS_RESIDU" ||
-            roleName === "PENGANGKUT" ||
-            roleName.includes("RESIDU") ||
-            roleName.includes("PENGANGKUT") ||
-            roleName.includes("PETUGAS") ||
-            Boolean(u.petugasProfile));
-
-        // 5. Rukun Warga & RT (RW / RT)
-        const isRw =
-          !isKkn &&
-          !isDpl &&
-          !isOperator &&
-          !isResidu &&
-          (roleName === "RW" ||
-            roleName === "RT" ||
-            roleName.includes("RW") ||
-            roleName.includes("RT"));
-
-        // 6. Admin / Task Force / Developer
-        const isAdmin =
-          !isKkn &&
-          !isDpl &&
-          !isOperator &&
-          !isResidu &&
-          !isRw &&
-          (roleName === "SUPER_USER" ||
-            roleName === "DEVELOPER" ||
-            roleName === "PANITIA_TASKFORCE" ||
-            roleName.includes("SUPER") ||
-            roleName.includes("DEVELOPER") ||
-            roleName.includes("TASKFORCE") ||
-            roleName.includes("TASK_FORCE") ||
-            roleName.includes("PANITIA") ||
-            roleName.includes("ADMIN") ||
-            roleName.includes("DEV"));
-
-        // 7. Warga / Nasabah / Masyarakat Umum
-        const isWarga =
-          !isKkn &&
-          !isDpl &&
-          !isOperator &&
-          !isResidu &&
-          !isRw &&
-          !isAdmin;
-
-        if (isKkn) {
-          activeKkn += 1;
-        } else if (isDpl) {
-          activeDpl += 1;
-        } else if (isOperator) {
-          activeOperator += 1;
-        } else if (isResidu) {
-          activeResidu += 1;
-        } else if (isRw) {
-          activeRw += 1;
-        } else if (isAdmin) {
-          activeAdmin += 1;
-        } else if (isWarga) {
-          activeWarga += 1;
-        } else {
-          activeWarga += 1;
-        }
-      });
-    }
-
-    const totalActiveSessions =
-      activeAdmin + activeOperator + activeRw + activeDpl + activeResidu + activeKkn + activeWarga;
-
-    // 12. Tingkat Kepatuhan Pemilahan Sampah (Verifikasi Tempat Sampah vs Deteksi AI)
-    const setoranWithBin = await prisma.setoranOtomatis.findMany({
-      where: catWhere,
-      select: {
-        hasilKlasifikasiAi: true,
-        bin: {
-          select: {
-            category: {
-              select: { name: true },
-            },
-          },
-        },
-      },
-    });
-
-    let compliantCount = 0;
-    let nonCompliantCount = 0;
-    let organikBinTotal = 0;
-    let organikBinCorrect = 0;
-    let anorganikBinTotal = 0;
-    let anorganikBinCorrect = 0;
-
-    setoranWithBin.forEach((log: any) => {
-      const targetCategory = (log.bin?.category?.name || "Organik").toLowerCase();
-
-      // Ambil nilai akurasi (pastikan formatnya persentase 0-100)
-      const conf =
-        log.confidenceAi !== null && log.confidenceAi !== undefined
-          ? Number(log.confidenceAi)
-          : 100;
-      const accuracy = conf > 1 ? conf : conf * 100;
-      // RULE BARU: Benar jika >= 50%, Gagal/Salah jika < 50%
-      const isMatch = accuracy >= 50;
-      if (targetCategory.includes("organik") && !targetCategory.includes("anorganik")) {
-        organikBinTotal++;
-        if (isMatch) organikBinCorrect++;
-      } else if (targetCategory.includes("anorganik")) {
-        anorganikBinTotal++;
-        if (isMatch) anorganikBinCorrect++;
-      }
-      if (isMatch) {
-        compliantCount++; // Masuk Statistik Benar
-      } else {
-        nonCompliantCount++; // Masuk Statistik Salah/Gagal
-      }
-    });
-
-    const totalCheck = setoranWithBin.length;
-    const sortingComplianceRate =
-      totalCheck > 0 ? parseFloat(((compliantCount / totalCheck) * 100).toFixed(2)) : 0;
-    const organikComplianceRate =
-      organikBinTotal > 0
-        ? parseFloat(((organikBinCorrect / organikBinTotal) * 100).toFixed(2))
-        : 0;
-    const anorganikComplianceRate =
-      anorganikBinTotal > 0
-        ? parseFloat(((anorganikBinCorrect / anorganikBinTotal) * 100).toFixed(2))
-        : 0;
-
-    // Real count of bins by category in filtered area
-    const realOrganikBinCount = await prisma.bin.count({
-      where: {
-        ...binsWhere,
-        category: { name: { contains: "Organik", mode: "insensitive" } },
-      },
-    });
-    const realAnorganikBinCount = await prisma.bin.count({
-      where: {
-        ...binsWhere,
-        category: { name: { contains: "Anorganik", mode: "insensitive" } },
-      },
-    });
-
     return {
       totalWarga,
-      totalRumahTangga,
       totalUsers,
       totalSampahKg,
       averageAiAccuracy,
       alertTongPenuh: fullBinsCount,
-      alertTempatSampahPenuh: fullBinsCount,
       tempatSampahAktif,
       lokasiTerdaftar,
       setoranHariIniKg,
@@ -622,76 +275,25 @@ export const dashboardService = {
       },
       jadwalTotal,
       jadwalSelesai,
-      activeSessions: {
-        total: totalActiveSessions,
-        admin: activeAdmin,
-        operator: activeOperator,
-        rw: activeRw,
-        dpl: activeDpl,
-        residu: activeResidu,
-        kkn: activeKkn,
-        warga: activeWarga,
-      },
-      kepatuhanPemilahan: {
-        rate: sortingComplianceRate,
-        compliantCount: compliantCount,
-        nonCompliantCount: nonCompliantCount,
-        totalCount: totalCheck,
-        organikRate: organikComplianceRate,
-        anorganikRate: anorganikComplianceRate,
-        organikBinTotal: realOrganikBinCount,
-        anorganikBinTotal: realAnorganikBinCount,
-      },
     };
   },
 
   getRecentTransactions: async (wilayah?: string) => {
-    const areaCtx = await resolveAreaContext(wilayah);
-    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
-
-    const rwCondition: any[] = [];
-    if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
-    if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
-    if (kelurahanNames.length > 0)
-      rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-
-    const rwFilter =
-      rwCondition.length > 0
-        ? rwCondition.length === 1
-          ? rwCondition[0]
-          : { OR: rwCondition }
-        : undefined;
-
-    const binCondition: any[] = [];
-    if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
-    if (kelurahanIds.length > 0) {
-      binCondition.push({ kelurahanId: { in: kelurahanIds } });
-      binCondition.push({ rw: { kelurahanId: { in: kelurahanIds } } });
-    }
-    if (kelurahanNames.length > 0) {
-      binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-      binCondition.push({
-        rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
-      });
-    }
-    const binFilter =
-      binCondition.length > 0
-        ? binCondition.length === 1
-          ? binCondition[0]
-          : { OR: binCondition }
-        : undefined;
-
-    const transactionsWhere: any = {};
-    if (isFiltered) {
-      const orConditions: any[] = [];
-      if (rwFilter) orConditions.push({ warga: { rw: rwFilter } });
-      if (binFilter) orConditions.push({ bin: binFilter });
-      if (orConditions.length > 0) transactionsWhere.OR = orConditions;
-    }
-
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago" &&
+      wilayah !== "Dinas Lingkungan Hidup";
     const transactions = await prisma.setoranOtomatis.findMany({
-      where: isFiltered ? transactionsWhere : undefined,
-      take: 10,
+      where: isFiltered
+        ? {
+            warga: {
+              rtRw: { name: wilayah },
+            },
+          }
+        : undefined,
+      take: 5,
       orderBy: {
         createdAt: "desc",
       },
@@ -706,90 +308,53 @@ export const dashboardService = {
 
     return transactions.map((trx: any) => ({
       id: trx.id,
-      nama: trx.warga?.name || "Warga",
+      nama: trx.warga.name,
       waktu: trx.createdAt,
-      tipe: isOrganikMajority(trx) ? "Organik" : "Anorganik",
+      tipe: trx.hasilKlasifikasiAi === "organik" ? "Organik" : "Anorganik",
       volume: "-",
       poin: `+${trx.poin}`,
     }));
   },
 
   getTrend: async (weeks: number = 8, wilayah?: string) => {
-    const areaCtx = await resolveAreaContext(wilayah);
-    const { isFiltered, rwIds, kelurahanIds, kelurahanNames } = areaCtx;
-
-    const rwCondition: any[] = [];
-    if (rwIds.length > 0) rwCondition.push({ id: { in: rwIds } });
-    if (kelurahanIds.length > 0) rwCondition.push({ kelurahanId: { in: kelurahanIds } });
-    if (kelurahanNames.length > 0)
-      rwCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-    const rwFilter =
-      rwCondition.length > 0
-        ? rwCondition.length === 1
-          ? rwCondition[0]
-          : { OR: rwCondition }
-        : undefined;
-
-    const binCondition: any[] = [];
-    if (rwIds.length > 0) binCondition.push({ rwId: { in: rwIds } });
-    if (kelurahanIds.length > 0) {
-      binCondition.push({ kelurahanId: { in: kelurahanIds } });
-      binCondition.push({ rw: { kelurahanId: { in: kelurahanIds } } });
-    }
-    if (kelurahanNames.length > 0) {
-      binCondition.push({ kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } });
-      binCondition.push({
-        rw: { kelurahan: { name: { in: kelurahanNames, mode: "insensitive" } } },
-      });
-    }
-    const binFilter =
-      binCondition.length > 0
-        ? binCondition.length === 1
-          ? binCondition[0]
-          : { OR: binCondition }
-        : undefined;
-
-    const filterOr: any[] = [];
-    if (isFiltered) {
-      if (rwFilter) filterOr.push({ warga: { rw: rwFilter } });
-      if (binFilter) filterOr.push({ bin: binFilter });
-    }
-
+    const isFiltered =
+      wilayah &&
+      wilayah !== "Kecamatan Coblong" &&
+      wilayah !== "Sistem Pusat" &&
+      wilayah !== "Area KKN Dago" &&
+      wilayah !== "Dinas Lingkungan Hidup";
     const result = [];
     const now = new Date();
 
+    // Jika "Semua Periode" (weeks=100) atau > 12 minggu, gunakan maksimal 12 titik sampel agar visual grafik tidak menumpuk/eror
     const effectiveWeeks = weeks > 12 ? 12 : weeks;
 
     for (let i = effectiveWeeks - 1; i >= 0; i--) {
       const endOfWeek = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
       const startOfWeek = new Date(endOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-      const logsWhere: any = {
-        createdAt: {
-          gte: startOfWeek,
-          lte: endOfWeek,
-        },
-      };
-      if (isFiltered && filterOr.length > 0) {
-        logsWhere.OR = filterOr;
-      }
-
       const logs = await prisma.setoranOtomatis.findMany({
-        where: logsWhere,
+        where: {
+          createdAt: {
+            gte: startOfWeek,
+            lte: endOfWeek,
+          },
+          warga: isFiltered
+            ? {
+                rtRw: { name: wilayah },
+              }
+            : undefined,
+        },
       });
 
-      const residuWhere: any = {
-        createdAt: {
-          gte: startOfWeek,
-          lte: endOfWeek,
-        },
-      };
-      if (isFiltered && rwFilter) {
-        residuWhere.OR = [{ rw: rwFilter }, { petugas: { rw: rwFilter } }];
-      }
-
       const residuLogs = await prisma.setoranManual.findMany({
-        where: residuWhere,
+        where: {
+          createdAt: {
+            gte: startOfWeek,
+            lte: endOfWeek,
+          },
+          rw: isFiltered ? { name: wilayah } : undefined,
+        },
       });
 
       let organicWeight = 0;
@@ -798,7 +363,7 @@ export const dashboardService = {
 
       logs.forEach((log: any) => {
         const kg = Number(log.berat);
-        if (isOrganikMajority(log)) {
+        if (log.hasilKlasifikasiAi === "organik") {
           organicWeight += kg;
         } else {
           inorganicWeight += kg;
@@ -819,10 +384,10 @@ export const dashboardService = {
 
       result.push({
         label: `Mng ${weekNumber}`,
-        weight: parseFloat(totalWeight.toFixed(2)),
-        organic: parseFloat(organicWeight.toFixed(2)),
-        inorganic: parseFloat(inorganicWeight.toFixed(2)),
-        residu: parseFloat(residuWeight.toFixed(2)),
+        weight: parseFloat(totalWeight.toFixed(1)),
+        organic: parseFloat(organicWeight.toFixed(1)),
+        inorganic: parseFloat(inorganicWeight.toFixed(1)),
+        residu: parseFloat(residuWeight.toFixed(1)),
       });
     }
 
@@ -837,6 +402,7 @@ export const dashboardService = {
     });
     const poin = pointHistory._sum.points ? Number(pointHistory._sum.points) : 0;
 
+    // Asumsi Saldo = Poin * 100
     const saldo = poin * 100;
 
     // 2. Get Total Organik and Anorganik
@@ -849,7 +415,7 @@ export const dashboardService = {
 
     wasteLogs.forEach((log: any) => {
       const kg = Number(log.berat);
-      if (isOrganikMajority(log)) {
+      if (log.hasilKlasifikasiAi === "organik") {
         organikKg += kg;
       } else {
         anorganikKg += kg;
@@ -861,8 +427,8 @@ export const dashboardService = {
     return {
       poin,
       saldo,
-      organik: parseFloat(organikKg.toFixed(2)),
-      anorganik: parseFloat(anorganikKg.toFixed(2)),
+      organik: parseFloat(organikKg.toFixed(1)),
+      anorganik: parseFloat(anorganikKg.toFixed(1)),
       quotaRemaining,
     };
   },
@@ -874,9 +440,10 @@ export const dashboardService = {
     });
     const averageAiAccuracy = totalAiLogs > 0 ? (successAiLogs / totalAiLogs) * 100 : 0;
 
+    // Generate realistic historical AI accuracy for chart (last 7 days)
     const aiAccuracyTrend = [90, 92, 91, 94, averageAiAccuracy > 0 ? averageAiAccuracy : 95];
 
-    // 2. Cache hits / misses
+    // 2. Cache hits / misses (mocked based on realistic system behavior since no direct redis stats)
     const cacheMetrics = Array.from({ length: 14 }).map((_, i) => {
       const hits = 80 + Math.floor(Math.random() * 15);
       return { day: String(i + 1), hits, misses: 100 - hits };
@@ -885,7 +452,7 @@ export const dashboardService = {
     // 3. System Uptime & Load
     const os = await import("os");
     const uptimeSeconds = process.uptime();
-    const uptimePercent = 99.98;
+    const uptimePercent = 99.98; // Service availability SLA
 
     const cpus = os.cpus();
     const loadAvg = os.loadavg();
@@ -904,17 +471,17 @@ export const dashboardService = {
       peakLatency,
       cacheMetrics,
       activeConnections: 120 + Math.floor(Math.random() * 50),
-      networkIncoming: (10 + Math.random() * 40).toFixed(2),
-      networkOutgoing: (5 + Math.random() * 20).toFixed(2),
+      networkIncoming: (10 + Math.random() * 40).toFixed(1),
+      networkOutgoing: (5 + Math.random() * 20).toFixed(1),
     };
   },
   getRegions: async () => {
-    const kelurahans = await prisma.kelurahan.findMany({
+    const regions = await prisma.rtRwArea.findMany({
       select: { name: true },
       orderBy: { name: "asc" },
     });
-    const kelNames = kelurahans.map((k) => `Kel. ${k.name}`);
-    return ["Kecamatan Coblong (Semua)", ...kelNames];
+    const names = regions.map((r) => r.name);
+    return [...Array.from(new Set(names)), "Kecamatan Coblong"];
   },
   exportDataset: async () => {
     return "id,berat_kg,volume_liter,tanggal\n1,10,20,2026-07-20\n";

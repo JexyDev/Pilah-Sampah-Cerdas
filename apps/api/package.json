@@ -1,7 +1,7 @@
 {
   "name": "@pilahsampah/api",
-  "version": "1.1.0",
-  "description": "Backend service for BERSEKA (Bersih, Sehat, Kampung Asri) — Intelligent Waste Management System",
+  "version": "1.0.0",
+  "description": "Backend service for pilahsampah.id - Intelligent Waste Management System",
   "author": "Jeremy Darrell & Muhammad Habil Putrawan",
   "license": "UNLICENSED",
   "type": "module",
@@ -15,15 +15,12 @@
     "bulk-insert-kkn": "tsx scripts/bulk-insert-kkn.ts"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.3",
+    "@prisma/client": "^6.11.0",
     "@types/node-cron": "^3.0.11",
     "bcryptjs": "^2.4.3",
-    "bullmq": "^6.1.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.18.3",
-    "firebase-admin": "^14.2.0",
-    "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
     "node-cron": "^4.6.0",
@@ -60,11 +57,6 @@
     "vitest": "^4.1.10"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
-  "overrides": {
-    "bullmq": {
-      "redis": "$redis"
-    }
+    "seed": "tsx prisma/seed_demo_bandung.ts"
   }
 }

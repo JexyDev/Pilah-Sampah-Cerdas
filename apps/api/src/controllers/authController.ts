@@ -1,6 +1,5 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -9,8 +8,6 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { z } from "zod";
 import { authService } from "../services/authService.js";
-import { clearLoginAttempts } from "../middlewares/rateLimiter.js";
-import { strongPasswordSchema } from "../utils/passwordValidator.js";
 
 /**
  * Normalize phone: 08xxx → +628xxx, 628xxx → +628xxx
@@ -25,8 +22,8 @@ function normalizePhone(phone: string): string {
 
 // Validation Schemas
 const loginSchema = z.object({
-  phone: z.string().min(1, "Nomor HP atau NIM diperlukan"),
-  password: z.string().min(1, "Password diperlukan"),
+  phone: z.string().min(1, "Nomor HP diperlukan"),
+  password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
 const refreshSchema = z.object({
@@ -38,20 +35,16 @@ const updateProfileSchema = z.object({
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   fotoProfil: z.string().optional().nullable(),
-  jumlahAnggotaKeluarga: z
-    .union([z.number().int(), z.string().transform((v) => parseInt(v, 10))])
-    .optional()
-    .nullable(),
 });
 
 const updatePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Password lama diperlukan"),
-  newPassword: strongPasswordSchema,
+  currentPassword: z.string().min(6, "Password lama diperlukan"),
+  newPassword: z.string().min(6, "Password baru minimal 6 karakter"),
 });
 
 const registerStaffSchema = z.object({
   name: z.string().min(1, "Nama diperlukan"),
-  password: strongPasswordSchema,
+  password: z.string().min(6, "Password minimal 6 karakter"),
   phone: z.string().min(1, "No. Telfon diperlukan"),
   address: z.string().optional(),
 });
@@ -59,25 +52,17 @@ const registerStaffSchema = z.object({
 const registerWargaSchema = z.object({
   name: z.string().min(1, "Nama diperlukan").optional(),
   nama: z.string().min(1).optional(), // alias for name (mobile compat)
-  password: strongPasswordSchema,
+  password: z.string().min(6, "Password minimal 6 karakter"),
   phone: z.string().min(1, "No. Telfon diperlukan"),
   noWa: z.string().optional(), // alias for phone whatsapp
   address: z.string().optional(),
   qrCode: z.string().optional(),
   wargaSubtype: z.enum(["UTAMA", "TAMBAHAN"]).optional(),
-  rwId: z.number().int().optional(),
-  rw: z.string().optional(), // string "01/02" from mobile
+  rtRwId: z.number().int().optional(),
+  rtRw: z.string().optional(), // string "01/02" from mobile
   kelurahan: z.string().optional(), // kelurahan name from mobile
-  kecamatan: z.string().optional().nullable(),
-  kota: z.string().optional().nullable(),
-  kabupaten: z.string().optional().nullable(),
-  provinsi: z.string().optional().nullable(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  jumlahAnggotaKeluarga: z
-    .union([z.number().int(), z.string().transform((v) => parseInt(v, 10))])
-    .optional()
-    .nullable(),
 });
 
 const registerKknSchema = registerStaffSchema.extend({
@@ -93,24 +78,16 @@ const registerKknSchema = registerStaffSchema.extend({
     .string()
     .optional()
     .refine((val) => !val || !isNaN(Date.parse(val)), "Format tanggal selesai tidak valid"),
-  assignedRwId: z.number().int().optional(),
+  assignedPolygonId: z.number().int().optional(),
   kelurahan: z.string().optional(),
-  rw: z.string().optional(),
-  kecamatan: z.string().optional().nullable(),
-  kota: z.string().optional().nullable(),
-  kabupaten: z.string().optional().nullable(),
-  provinsi: z.string().optional().nullable(),
+  rtRw: z.string().optional(),
 });
 
 const registerPetugasSchema = registerStaffSchema.extend({
   noWa: z.string().min(1, "WhatsApp diperlukan"),
   assignedZone: z.string().optional(),
-  rw: z.string().optional(),
+  rtRw: z.string().optional(),
   kelurahan: z.string().optional(),
-  kecamatan: z.string().optional().nullable(),
-  kota: z.string().optional().nullable(),
-  kabupaten: z.string().optional().nullable(),
-  provinsi: z.string().optional().nullable(),
 });
 
 export class AuthController {
@@ -130,7 +107,7 @@ export class AuthController {
         res.status(400).json({
           success: false,
           code: "VALIDATION_ERROR",
-          message: "Format nomor HP/NIM atau password tidak valid",
+          message: "Format nomor HP atau password tidak valid",
           fields: parsed.error.format(),
         });
         return;
@@ -140,11 +117,7 @@ export class AuthController {
       // 2. Call Service
       const result = await authService.login(phone, password);
 
-      // 3. Clear rate limit attempts on success
-      const ip = (req.ip || req.headers["x-forwarded-for"] || "unknown").toString();
-      clearLoginAttempts(ip, phone);
-
-      // 4. Set HttpOnly Cookie for Web (Access Token)
+      // 3. Set HttpOnly Cookie for Web (Access Token)
       res.cookie("accessToken", result.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -152,7 +125,7 @@ export class AuthController {
         maxAge: 60 * 60 * 1000, // 1 hour
       });
 
-      // 5. Return response (Include refresh token in body for Mobile client to store securely)
+      // 4. Return response (Include refresh token in body for Mobile client to store securely)
       res.status(200).json({
         message: "Login berhasil",
         data: {
@@ -177,29 +150,26 @@ export class AuthController {
           code: "SERVICE_UNAVAILABLE",
           message: "Server sedang bermasalah, coba lagi nanti",
         });
-      } else if (error.message === "USER_NOT_FOUND" || error.message?.includes("USER_NOT_FOUND")) {
+      } else if (error.message === "USER_NOT_FOUND") {
         res.status(401).json({
           success: false,
           code: "USER_NOT_FOUND",
-          message: "Nomor HP atau NIM tidak terdaftar di sistem BERSEKA",
+          message: "User tidak ditemukan",
         });
-      } else if (error.message === "WRONG_PASSWORD" || error.message?.includes("WRONG_PASSWORD")) {
+      } else if (error.message === "WRONG_PASSWORD") {
         res.status(401).json({
           success: false,
           code: "WRONG_PASSWORD",
-          message: "Kata sandi salah. Coba lagi atau gunakan 'Lupa Kata Sandi'.",
+          message: "Password salah",
         });
-      } else if (
-        error.message === "USER_PENDING_APPROVAL" ||
-        error.message?.includes("USER_PENDING_APPROVAL")
-      ) {
+      } else if (error.message === "USER_PENDING_APPROVAL") {
         res.status(401).json({
           success: false,
           code: "USER_PENDING_APPROVAL",
           message:
             "Akun Anda belum disetujui oleh pengurus RW setempat. Silakan hubungi pengurus RW untuk proses verifikasi & aktivasi.",
         });
-      } else if (error.message === "USER_INACTIVE" || error.message?.includes("USER_INACTIVE")) {
+      } else if (error.message === "USER_INACTIVE") {
         res.status(403).json({
           success: false,
           code: "USER_INACTIVE",
@@ -210,7 +180,7 @@ export class AuthController {
         res.status(500).json({
           success: false,
           code: "INTERNAL_SERVER_ERROR",
-          message: error?.message || "Terjadi kesalahan pada server",
+          message: "Terjadi kesalahan pada server",
         });
       }
     }
@@ -284,116 +254,6 @@ export class AuthController {
     }
   }
   /**
-   * Handle Update Current User Profile (PUT / PATCH /api/v1/auth/me)
-   */
-  async updateCurrentUserProfile(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId || (req as any).user?.id;
-      if (!userId) {
-        res
-          .status(401)
-          .json({ success: false, message: "Token otentikasi tidak valid atau tidak ditemukan." });
-        return;
-      }
-
-      // Accept aliases from body
-      const rawName = req.body.name ?? req.body.nama;
-      const rawPhone = req.body.phone ?? req.body.noWa ?? req.body.noTelepon;
-      const rawAddress = req.body.address ?? req.body.alamat;
-      const rawFoto =
-        req.body.fotoProfil !== undefined
-          ? req.body.fotoProfil
-          : req.body.foto !== undefined
-            ? req.body.foto
-            : undefined;
-      const rawFamilySize = req.body.familySize ?? req.body.jumlahAnggotaKeluarga;
-
-      let familySizeNum: number | undefined = undefined;
-
-      if (rawFamilySize !== undefined && rawFamilySize !== null) {
-        if (typeof rawFamilySize === "number") {
-          if (isNaN(rawFamilySize) || rawFamilySize < 0) {
-            res.status(400).json({
-              success: false,
-              message:
-                "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka positif.",
-            });
-            return;
-          }
-          familySizeNum = Math.floor(rawFamilySize);
-        } else if (typeof rawFamilySize === "string") {
-          const trimmed = rawFamilySize.trim();
-          const parsed = parseInt(trimmed, 10);
-          if (isNaN(parsed) || !/^\d+$/.test(trimmed)) {
-            res.status(400).json({
-              success: false,
-              message:
-                "Tipe data familySize (jumlah anggota keluarga) tidak valid. Harus berupa angka murni.",
-            });
-            return;
-          }
-          familySizeNum = parsed;
-        } else {
-          res.status(400).json({
-            success: false,
-            message: "Tipe data familySize tidak valid.",
-          });
-          return;
-        }
-      }
-
-      const isDeleteFoto =
-        req.body.deleteFoto === true ||
-        req.body.hapusFoto === true ||
-        rawFoto === null ||
-        rawFoto === "";
-      const finalFoto = isDeleteFoto
-        ? null
-        : rawFoto !== undefined
-          ? String(rawFoto)
-          : undefined;
-
-      const updatedUser = await authService.updateProfile(
-        userId,
-        rawName ? String(rawName).trim() : undefined,
-        rawPhone ? normalizePhone(String(rawPhone)) : undefined,
-        rawAddress ? String(rawAddress).trim() : undefined,
-        finalFoto,
-        familySizeNum
-      );
-
-      const fSize = (updatedUser as any).jumlahAnggotaKeluarga ?? familySizeNum ?? 1;
-
-      res.status(200).json({
-        success: true,
-        message: "Profil berhasil diperbarui",
-        data: {
-          user: {
-            id: updatedUser.id,
-            name: updatedUser.name,
-            phone: updatedUser.phone,
-            address: (updatedUser as any).address,
-            fotoProfil: (updatedUser as any).fotoProfil,
-            familySize: fSize,
-            jumlahAnggotaKeluarga: fSize,
-            role: (updatedUser as any).role?.name || "WARGA",
-          },
-        },
-      });
-    } catch (error: any) {
-      if (error.message === "USER_NOT_FOUND") {
-        res.status(404).json({ success: false, message: "User tidak ditemukan" });
-      } else {
-        console.error("[updateCurrentUserProfile Error]", error);
-        res.status(500).json({
-          success: false,
-          message: error.message || "Terjadi kesalahan pada server saat memperbarui profil",
-        });
-      }
-    }
-  }
-
-  /**
    * Handle Update Profile
    */
   async updateProfile(req: Request, res: Response): Promise<void> {
@@ -408,15 +268,14 @@ export class AuthController {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { name, phone, address, fotoProfil, jumlahAnggotaKeluarga } = parsed.data;
+      const { name, phone, address, fotoProfil } = parsed.data;
 
       const updatedUser = await authService.updateProfile(
         req.user.userId,
         name,
         phone ?? undefined,
         address ?? undefined,
-        fotoProfil ?? undefined,
-        jumlahAnggotaKeluarga ?? undefined
+        fotoProfil ?? undefined
       );
 
       res.status(200).json({
@@ -428,7 +287,6 @@ export class AuthController {
             phone: updatedUser.phone,
             address: (updatedUser as any).address,
             fotoProfil: (updatedUser as any).fotoProfil,
-            jumlahAnggotaKeluarga: (updatedUser as any).jumlahAnggotaKeluarga,
           },
         },
       });
@@ -519,9 +377,7 @@ export class AuthController {
       } else if (error.message === "USER_NOT_FOUND") {
         res.status(404).json({ success: false, message: "User tidak ditemukan" });
       } else {
-        res
-          .status(500)
-          .json({ success: false, message: error.message || "Terjadi kesalahan pada server" });
+        res.status(500).json({ success: false, message: error.message || "Terjadi kesalahan pada server" });
       }
     }
   }
@@ -537,24 +393,10 @@ export class AuthController {
       }
 
       const user = await authService.getCurrentUser(req.user.userId);
-      const fSize = (user as any).jumlahAnggotaKeluarga || (user as any).familySize || 1;
-
-      const formattedUser = {
-        ...user,
-        familySize: fSize,
-        jumlahAnggotaKeluarga: fSize,
-      };
-
       res.status(200).json({
         success: true,
         message: "Authenticated",
-        familySize: fSize,
-        jumlahAnggotaKeluarga: fSize,
-        data: {
-          ...formattedUser,
-          user: formattedUser,
-        },
-        user: formattedUser,
+        user,
       });
     } catch (error: any) {
       if (error.message === "USER_NOT_FOUND") {
@@ -599,39 +441,6 @@ export class AuthController {
         res
           .status(500)
           .json({ error: "INTERNAL_SERVER_ERROR", message: "Gagal mengunggah foto profil" });
-      }
-    }
-  }
-
-  /**
-   * Handle Profile Picture Deletion
-   * DELETE /api/v1/auth/avatar or DELETE /api/v1/auth/profile/photo
-   */
-  async deleteAvatar(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.userId || (req as any).user?.id;
-      if (!userId) {
-        res.status(401).json({ error: "UNAUTHORIZED", message: "Tidak memiliki akses" });
-        return;
-      }
-
-      await authService.updateProfile(userId, undefined, undefined, undefined, null);
-
-      res.status(200).json({
-        success: true,
-        message: "Foto profil berhasil dihapus",
-        data: {
-          fotoProfil: null,
-        },
-      });
-    } catch (error: any) {
-      if (error.message === "USER_NOT_FOUND") {
-        res.status(404).json({ error: "NOT_FOUND", message: "User tidak ditemukan" });
-      } else {
-        res.status(500).json({
-          error: "INTERNAL_SERVER_ERROR",
-          message: error.message || "Gagal menghapus foto profil",
-        });
       }
     }
   }
@@ -710,7 +519,7 @@ export class AuthController {
           password: z.string().min(6),
           phone: z.string().min(1),
           address: z.string().optional(),
-          rwId: z.number().int(),
+          rtRwId: z.number().int(),
         })
         .safeParse(req.body);
 
@@ -737,7 +546,7 @@ export class AuthController {
           password: z.string().min(6),
           phone: z.string().min(1),
           address: z.string().optional(),
-          rwId: z.number().int(),
+          rtRwId: z.number().int(),
         })
         .safeParse(req.body);
 
@@ -803,11 +612,9 @@ export class AuthController {
       const {
         qrCode,
         wargaSubtype,
-        rwId,
-        rw: rwName,
+        rtRwId,
+        rtRw,
         kelurahan,
-        kecamatan,
-        kota,
         latitude,
         longitude,
         nama: _nama,
@@ -816,17 +623,16 @@ export class AuthController {
       } = parsed.data;
       void _nama;
       void _noWa;
-      void kecamatan;
 
-      // Resolve rwId from string if needed
-      let resolvedRwId = rwId;
-      if (!resolvedRwId) {
-        resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
+      // Resolve rtRwId from string if needed
+      let resolvedRtRwId = rtRwId;
+      if (!resolvedRtRwId) {
+        resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
       }
 
       const householdData = {
         address: userData.address || "",
-        rwId: resolvedRwId,
+        rtRwId: resolvedRtRwId,
         latitude: latitude || 0,
         longitude: longitude || 0,
       };
@@ -846,10 +652,8 @@ export class AuthController {
         } catch {}
       }
 
-      const finalKabupaten = userData.kabupaten || kota || undefined;
-
       const result = await authService.registerWarga(
-        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId },
+        { ...userData, rtRwId: resolvedRtRwId },
         householdData,
         qrCode || undefined,
         wargaSubtype,
@@ -889,23 +693,8 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const {
-        nim,
-        jurusan,
-        fakultas,
-        noWa,
-        startDate,
-        endDate,
-        assignedRwId,
-        kelurahan,
-        rw: rwName,
-        kecamatan,
-        kota,
-        ...userData
-      } = parsed.data;
-      void kecamatan;
-      const finalKabupaten = userData.kabupaten || kota || undefined;
-
+      const { nim, jurusan, fakultas, noWa, startDate, endDate, assignedPolygonId, kelurahan, rtRw, ...userData } =
+        parsed.data;
       const kknData = {
         nim,
         jurusan,
@@ -913,17 +702,13 @@ export class AuthController {
         noWa: noWa || userData.phone || "-",
         startDate: startDate ? new Date(startDate) : new Date(),
         endDate: endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        assignedRwId,
+        assignedPolygonId,
       };
 
-      const result = await authService.registerKkn(
-        { ...userData, kabupaten: finalKabupaten },
-        kknData
-      );
+      const result = await authService.registerKkn(userData, kknData);
       res.status(201).json({
         success: true,
-        message:
-          "Pendaftaran akun Mahasiswa KKN berhasil. Akun Anda sedang menunggu verifikasi (whitelist) Admin DLH.",
+        message: "Pendaftaran akun Mahasiswa KKN berhasil. Akun Anda sedang menunggu verifikasi (whitelist) Admin DLH.",
         data: { id: result.user.id, name: result.user.name, role: "MAHASISWA_KKN" },
       });
     } catch (error: any) {
@@ -950,14 +735,11 @@ export class AuthController {
           .json({ success: false, code: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { noWa, assignedZone, rw: rwName, kelurahan, kecamatan, kota, ...userData } =
-        parsed.data;
-      void kecamatan;
-      const finalKabupaten = userData.kabupaten || kota || undefined;
+      const { noWa, assignedZone, rtRw, kelurahan, ...userData } = parsed.data;
 
-      let resolvedRwId: number | undefined;
-      if (rwName || kelurahan) {
-        resolvedRwId = await authService.resolveRtRwId(rwName, kelurahan);
+      let resolvedRtRwId: number | undefined;
+      if (rtRw || kelurahan) {
+        resolvedRtRwId = await authService.resolveRtRwId(rtRw, kelurahan);
       }
 
       const petugasData = {
@@ -967,7 +749,7 @@ export class AuthController {
       };
 
       const result = await authService.registerPetugasResidu(
-        { ...userData, kabupaten: finalKabupaten, rwId: resolvedRwId },
+        { ...userData, rtRwId: resolvedRtRwId },
         petugasData
       );
       res.status(201).json({ success: true, data: { id: result.user.id, name: result.user.name } });
@@ -1037,9 +819,9 @@ export class AuthController {
 
   async resetPassword(req: Request, res: Response): Promise<void> {
     try {
-      const { phone, email, token, otp, resetToken, newPassword } = req.body;
+      const { phone, email, token, otp, newPassword } = req.body;
       const target = phone || email;
-      const verificationCode = resetToken || otp || token;
+      const verificationCode = otp || token;
 
       if (!target || !newPassword) {
         res.status(400).json({
@@ -1068,6 +850,8 @@ export class AuthController {
       }
     }
   }
+
+
 
   /**
    * Request OTP via WhatsApp (Fonnte)
@@ -1136,102 +920,6 @@ export class AuthController {
           message: error.message || "Gagal memverifikasi OTP",
         });
       }
-    }
-  }
-
-  /**
-   * GET /auth/online-users
-   * Daftar user dengan RefreshToken aktif (belum expired) = sedang login
-   * Akses: SUPER_USER saja
-   */
-  async getOnlineUsers(_req: Request, res: Response): Promise<void> {
-    try {
-      const now = new Date();
-      const tokens = await prisma.refreshToken.findMany({
-        where: { expiresAt: { gt: now } },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              phone: true,
-              nip: true,
-              role: { select: { name: true } },
-              studentProfile: { select: { nim: true } },
-              dplKelompok: { select: { id: true, name: true } },
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      // De-duplicate: satu user bisa punya beberapa token (multi-device)
-      const seen = new Set<string>();
-      const users = tokens
-        .filter((t) => {
-          if (seen.has(t.userId)) return false;
-          seen.add(t.userId);
-          return true;
-        })
-        .map((t) => {
-          let roleName: string = (t.user as any)?.role?.name ?? "";
-          if (!roleName) {
-            if ((t.user as any)?.studentProfile) {
-              roleName = "MAHASISWA_KKN";
-            } else if ((t.user as any)?.dplKelompok?.length > 0 || (t.user as any)?.nip) {
-              roleName = "DPL";
-            } else {
-              roleName = "PENGGUNA";
-            }
-          }
-
-          const isMobile = [
-            "WARGA",
-            "PETUGAS_RESIDU",
-            "MAHASISWA_KKN",
-            "RT",
-            "RW",
-            "PENGANGKUT",
-          ].includes(roleName.toUpperCase());
-
-          const identifier =
-            (t.user as any)?.studentProfile?.nim ??
-            (t.user as any)?.nip ??
-            (t.user as any)?.phone ??
-            t.userId.slice(0, 8);
-
-          return {
-            id: t.userId,
-            name: (t.user as any)?.name ?? "-",
-            phone: (t.user as any)?.phone ?? "-",
-            role: roleName,
-            device: isMobile ? "Mobile App (Android)" : "Website (Desktop)",
-            identifier,
-            loginTime: t.createdAt.toISOString(),
-            tokenExpiresAt: t.expiresAt.toISOString(),
-          };
-        });
-
-      res.status(200).json({ success: true, data: users, total: users.length });
-    } catch (err) {
-      console.error("[getOnlineUsers]", err);
-      res.status(500).json({ success: false, message: "Gagal mengambil data pengguna online" });
-    }
-  }
-
-  /**
-   * DELETE /auth/online-users/:userId
-   * Paksa logout — hapus semua RefreshToken user
-   * Akses: SUPER_USER saja
-   */
-  async forceLogoutUser(req: Request, res: Response): Promise<void> {
-    try {
-      const { userId } = req.params;
-      await prisma.refreshToken.deleteMany({ where: { userId } });
-      res.status(200).json({ success: true, message: "Sesi pengguna berhasil dihapus" });
-    } catch (err) {
-      console.error("[forceLogoutUser]", err);
-      res.status(500).json({ success: false, message: "Gagal menghapus sesi" });
     }
   }
 }

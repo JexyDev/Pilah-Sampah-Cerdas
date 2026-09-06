@@ -1,205 +1,42 @@
-name: BERSEKA CI/CD — Production Deployment
+name: Deploy to VPS
 
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'scratch/**'
-      - '.agent/**'
-      - '.gitignore'
-      - 'mobile/**'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate TypeScript & Code Integrity
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install Monorepo Dependencies
-        run: npm ci --prefer-offline 2>/dev/null || npm install --legacy-peer-deps
-
-      - name: Generate Prisma Client
-        run: npm run prisma:generate
-
-      - name: Type Check Backend API (apps/api)
-        run: cd apps/api && npx tsc --noEmit
-
-      - name: Type Check Web Dashboard (apps/web)
-        run: cd apps/web && npx tsc --noEmit
-
   deploy:
-    name: Deploy to Production VPS
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: validate
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: 'apps/web/package-lock.json'
-
-      - name: Build & Package Frontend Web
-        run: |
-          cd apps/web
-          npm ci --prefer-offline --no-audit 2>/dev/null || npm install --silent --legacy-peer-deps
-          VITE_API_BASE_URL=/api/v1 npm run build
-          test -f dist/index.html || { echo "Build failed: dist/index.html missing"; exit 1; }
-          tar -czf dist.tar.gz -C dist .
-
-      - name: Install sshpass
-        run: |
-          if ! command -v sshpass &> /dev/null; then
-            sudo apt-get install -y --no-install-recommends sshpass 2>/dev/null || (sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sshpass)
-          fi
-
-      - name: Upload Frontend Archive to VPS
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
-        run: |
-          sshpass -p "$VPS_PASS" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "cat > /tmp/frontend-dist.tar.gz" < apps/web/dist.tar.gz
-
-      - name: Update Backend & Deploy Web on VPS
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USERNAME }}
-          VPS_PASS: ${{ secrets.VPS_PASSWORD }}
-        run: |
-          sshpass -p "$VPS_PASS" ssh -T -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o PreferredAuthentications=password -o PubkeyAuthentication=no "$VPS_USER@$VPS_HOST" "VPS_PASS='$VPS_PASS' bash -s" << 'EOF'
-            set -e
-            NODE_BIN_DIR=$(ls -d ~/.nvm/versions/node/v* 2>/dev/null | tail -n 1)/bin
-            export PATH=$PATH:/usr/local/bin:$NODE_BIN_DIR
-            PM2_BIN="$NODE_BIN_DIR/pm2"
-            if ! command -v "$PM2_BIN" &> /dev/null; then PM2_BIN="pm2"; fi
-            
-            echo "=== 1. Pulling Latest Code from Git ==="
-            if [ -d ~/Pilah-Sampah-Cerdas-new ]; then REPO_DIR=~/Pilah-Sampah-Cerdas-new; else REPO_DIR=~/Pilah-Sampah-Cerdas; fi
-            cd "$REPO_DIR" || { echo "Directory not found"; exit 1; }
-            
-            # Backup existing .env if present before git reset
-            if [ -f "$REPO_DIR/apps/api/.env" ]; then
-              cp "$REPO_DIR/apps/api/.env" /tmp/apps_api_env_backup 2>/dev/null || true
-            elif [ -f "$REPO_DIR/.env" ]; then
-              cp "$REPO_DIR/.env" /tmp/apps_api_env_backup 2>/dev/null || true
-            fi
-
-            git fetch --depth=1 origin main
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd ~/Pilah-Sampah-Cerdas
+            git fetch origin main
             git reset --hard origin/main
 
-            # Restore or create .env for apps/api
-            if [ -f /tmp/apps_api_env_backup ]; then
-              cp /tmp/apps_api_env_backup "$REPO_DIR/apps/api/.env"
-              cp /tmp/apps_api_env_backup "$REPO_DIR/.env"
-            fi
-
-            if [ ! -f "$REPO_DIR/apps/api/.env" ]; then
-              echo "Recreating production .env for backend on VPS..."
-              echo "DATABASE_URL=postgresql://psc_user:psc_password@localhost:5432/psc_db" > "$REPO_DIR/apps/api/.env"
-              echo "REDIS_URL=redis://localhost:6379" >> "$REPO_DIR/apps/api/.env"
-              echo "JWT_SECRET=ganti_ini_dengan_string_random_minimal_32_karakter" >> "$REPO_DIR/apps/api/.env"
-              echo "JWT_EXPIRES_IN=24h" >> "$REPO_DIR/apps/api/.env"
-              echo "PORT=3000" >> "$REPO_DIR/apps/api/.env"
-              echo "NODE_ENV=production" >> "$REPO_DIR/apps/api/.env"
-              echo "FRONTEND_URL=https://psc.makerindo.com" >> "$REPO_DIR/apps/api/.env"
-              echo "GOOGLE_APPLICATION_CREDENTIALS=./firebase-service-account.json" >> "$REPO_DIR/apps/api/.env"
-              echo "AI_VENDOR_PROVIDER=VENDOR" >> "$REPO_DIR/apps/api/.env"
-              echo "AI_VENDOR_ENDPOINT=http://localhost:8000/predict" >> "$REPO_DIR/apps/api/.env"
-              cp "$REPO_DIR/apps/api/.env" "$REPO_DIR/.env" 2>/dev/null || true
-            fi
-
-            export DATABASE_URL="postgresql://psc_user:psc_password@localhost:5432/psc_db"
-
-            echo "=== 2. Updating Backend (apps/api) ==="
-            cd "$REPO_DIR"
-            npm install --silent --legacy-peer-deps --prefer-offline 2>/dev/null || true
-            npx prisma generate --schema=apps/api/prisma/schema.prisma 2>/dev/null || true
-            cd "$REPO_DIR/apps/api"
-            npx prisma generate
-            if [ -d "$REPO_DIR/apps/api/node_modules" ] && [ -d "$REPO_DIR/node_modules/@prisma" ]; then
-              mkdir -p "$REPO_DIR/apps/api/node_modules/@prisma" "$REPO_DIR/apps/api/node_modules/.prisma"
-              cp -r "$REPO_DIR/node_modules/@prisma/." "$REPO_DIR/apps/api/node_modules/@prisma/" 2>/dev/null || true
-              cp -r "$REPO_DIR/node_modules/.prisma/." "$REPO_DIR/apps/api/node_modules/.prisma/" 2>/dev/null || true
-            fi
-            echo "Executing Prisma Migration Deploy..."
-            npx prisma migrate deploy
+            # Backend
+            cd apps/api
+            npm install
             npm run build
+            npx prisma generate
+            npx prisma migrate deploy
+            cd ../..
 
-            echo "=== 3. Reloading PM2 Backend ==="
-            $PM2_BIN reload psc-backend 2>/dev/null || $PM2_BIN restart psc-backend 2>/dev/null || $PM2_BIN start dist/index.js --name psc-backend --cwd "$REPO_DIR/apps/api"
-            $PM2_BIN save || true
-            sleep 1
-            $PM2_BIN status psc-backend
+            # Frontend (Zero-Downtime Atomic Deployment)
+            cd apps/web
+            npm install
+            npx vite build --outDir dist-temp
+            rm -rf dist-old
+            mv dist dist-old 2>/dev/null || true
+            mv dist-temp dist
+            rm -rf dist-old
+            cd ../..
 
-            echo "=== 4. Deploying Frontend Web to Nginx ==="
-            echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist
-            mkdir -p "$REPO_DIR/apps/web/dist"
-
-            if [ -f /tmp/frontend-dist.tar.gz ] && tar -tzf /tmp/frontend-dist.tar.gz &>/dev/null; then
-              echo "Extracting frontend archive from GitHub Actions..."
-              tar -xzf /tmp/frontend-dist.tar.gz -C "$REPO_DIR/apps/web/dist/"
-
-              # Backup APK dari semua lokasi yang mungkin sebelum rm -rf
-              APK_NAME="berseka-release-arm64-v8a.apk"
-              APK_TMP="/tmp/$APK_NAME"
-              if [ -f "/var/www/html/downloads/$APK_NAME" ]; then
-                cp "/var/www/html/downloads/$APK_NAME" "$APK_TMP"
-                echo "APK backed up from /var/www/html/downloads/"
-              elif [ -f "$REPO_DIR/apps/api/uploads/$APK_NAME" ]; then
-                cp "$REPO_DIR/apps/api/uploads/$APK_NAME" "$APK_TMP"
-                echo "APK backed up from apps/api/uploads/"
-              fi
-
-              echo "$VPS_PASS" | sudo -S rm -rf /var/www/html/* /var/www/pilah-sampah-cerdas/frontend/dist/*
-              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/html/
-              echo "$VPS_PASS" | sudo -S cp -r "$REPO_DIR/apps/web/dist"/* /var/www/pilah-sampah-cerdas/frontend/dist/
-
-              # Restore APK dari backup /tmp (prioritas) atau uploads
-              echo "$VPS_PASS" | sudo -S mkdir -p /var/www/html/downloads /var/www/pilah-sampah-cerdas/frontend/dist/downloads
-              if [ -f "$APK_TMP" ]; then
-                echo "Restoring APK from backup..."
-                echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/html/downloads/$APK_NAME
-                echo "$VPS_PASS" | sudo -S cp "$APK_TMP" /var/www/pilah-sampah-cerdas/frontend/dist/downloads/$APK_NAME
-                # Sync balik ke uploads agar konsisten
-                mkdir -p "$REPO_DIR/apps/api/uploads"
-                cp "$APK_TMP" "$REPO_DIR/apps/api/uploads/$APK_NAME"
-                rm -f "$APK_TMP"
-              else
-                echo "WARNING: APK tidak ditemukan di semua lokasi. Download page akan kosong sampai mobile CI jalan."
-              fi
-              rm -f /tmp/frontend-dist.tar.gz
-            fi
-
-            test -f /var/www/html/index.html || { echo "Frontend missing index.html"; exit 1; }
-
-            echo "=== 5. Fixing Permissions & Reloading Nginx ==="
-            echo "$VPS_PASS" | sudo -S chown -R www-data:www-data /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S chmod -R 755 /var/www/html /var/www/pilah-sampah-cerdas/frontend/dist 2>/dev/null || true
-            echo "$VPS_PASS" | sudo -S systemctl reload nginx || echo "$VPS_PASS" | sudo -S systemctl restart nginx || true
-
-            echo "=== 6. Verification & Status ==="
-            test -f /var/www/html/index.html && echo "Deployment verified: /var/www/html/index.html exists"
-          EOF
+            # Restart services
+            pm2 restart all

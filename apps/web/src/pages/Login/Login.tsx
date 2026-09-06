@@ -4,73 +4,59 @@
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  Lock,
-  EyeOff,
-  Eye,
-  AlertTriangle,
-  RefreshCcw,
-  Phone,
-  LogIn,
-  Download,
-  ShieldAlert,
-  Smartphone,
-} from "lucide-react";
+import toast from "react-hot-toast";
+import { Server, WifiOff, Lock, EyeOff, Eye, AlertCircle, AlertTriangle, X, CheckCircle2, RefreshCcw, Phone, LogIn, ShieldCheck, Trash2, Award, Sparkles } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
-import { useThemeStore } from "../../store/useThemeStore";
-import showToast from "../../utils/showToast";
 
-// Official High-Resolution BERSEKA Full Logo Asset
-const BersekaLogoIcon: React.FC<{ className?: string }> = ({ className = "h-10 sm:h-11 w-auto" }) => (
-  <img
-    src="/logos/berseka/berseka-logo-full.png"
-    alt="BERSEKA"
-    className={`${className} object-contain shrink-0`}
-  />
+// Exact Vector SVG Icon matching the TrashCare logo
+const TrashCareLogoIcon: React.FC<{ className?: string }> = ({ className = "w-12 h-12" }) => (
+  <svg viewBox="-6 -8 112 116" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path
+      d="M 25 54 A 31 31 0 1 1 76 34"
+      fill="none"
+      stroke="#0284c7"
+      strokeWidth="7.5"
+      strokeLinecap="round"
+    />
+    <polygon points="76,20 88,36 68,36" fill="#0284c7" />
+    <path
+      d="M 76 46 A 31 31 0 0 1 25 64"
+      fill="none"
+      stroke="#16a34a"
+      strokeWidth="7.5"
+      strokeLinecap="round"
+    />
+    <rect x="36" y="27" width="28" height="6" rx="2" fill="#0284c7" />
+    <path d="M43 27 C43 23 57 23 57 27 Z" fill="#0284c7" />
+    <path d="M38 35 L41 68 C41 71 44 73 48 73 L52 73 L48 55 C48 45 58 40 62 35 Z" fill="#0284c7" />
+    <path
+      d="M 46 68 C 46 47 70 41 70 41 C 70 41 74 61 58 68 C 50 71 46 68 46 68 Z"
+      fill="#16a34a"
+    />
+    <path
+      d="M 48 66 Q 58 56 68 43"
+      fill="none"
+      stroke="#ffffff"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    />
+  </svg>
 );
 
-// Hanya menerima format nomor telepon Indonesia: 08xxx, 628xxx, +628xxx, 8xxx
-// Minimal 9 digit, maksimal 14 digit.
-const PHONE_REGEX = /^\+628[0-9]\d{6,11}$/;
-
-function normalizePhone(val: string): string {
-  let t = val.trim();
-  if (t.includes(".")) return t; // Return DPL NIP as is
-  t = t.replace(/[\s\-().]/g, "");
-  if (t.startsWith("08")) return "+62" + t.slice(1);
-  if (t.startsWith("8")) return "+62" + t;
-  if (t.startsWith("628") && !t.startsWith("+")) return "+" + t;
-  return t;
-}
-
-function isPhoneValid(val: string): boolean {
-  const t = val.trim();
-  // If it's a DPL NIP (contains dot or starts with 4127)
-  if (t.startsWith("4127") || t.includes(".")) {
-    return true;
-  }
-  // Allow NIM
-  if (/^\d{6,12}$/.test(t)) {
-    return true;
-  }
-  return PHONE_REGEX.test(normalizePhone(val));
-}
-
-// ─── Main Login Component ─────────────────────────────────────────────────────
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login, isLoading: isStoreLoading } = useAuthStore();
 
   // Login State
-  const [identifier, setIdentifier] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Phone
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
+  
   // UX State
   const [isLocalLoading, setIsLocalLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   // Validation States
   const [identifierError, setIdentifierError] = useState("");
@@ -78,19 +64,68 @@ const Login: React.FC = () => {
 
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
-  // Force light mode on login page unconditionally
-  useEffect(() => {
-    useThemeStore.getState().setInsideMainLayout(false);
-    useThemeStore.getState().resetThemeToLight();
-  }, []);
+  const DEMO_ACCOUNTS = [
+    { role: "Super Admin", label: "Super Admin (Full Akses)", phone: "+628111111111", pass: "password123", badge: "bg-indigo-600" },
+    { role: "Admin DLH", label: "Admin DLH Bandung", phone: "+628111111112", pass: "password123", badge: "bg-blue-600" },
+    { role: "Camat", label: "Camat Coblong", phone: "+628111111113", pass: "password123", badge: "bg-purple-600" },
+    { role: "Lurah", label: "Lurah Dago", phone: "+628111111114", pass: "password123", badge: "bg-pink-600" },
+    { role: "RW", label: "Pengurus RW 06", phone: "+628111111115", pass: "password123", badge: "bg-teal-600" },
+    { role: "RT", label: "Pengurus RT 01", phone: "+628111111116", pass: "password123", badge: "bg-cyan-600" },
+    { role: "Petugas Residu", label: "Petugas Residu Hilir", phone: "+628111111117", pass: "password123", badge: "bg-orange-600" },
+    { role: "Mahasiswa KKN", label: "Mahasiswa KKN (Andi)", phone: "+628111111118", pass: "password123", badge: "bg-amber-600" },
+    { role: "Warga", label: "Warga Mandiri (Siti)", phone: "+6282100000001", pass: "password123", badge: "bg-emerald-600" },
+    { role: "DPL KKN", label: "DPL (Dosen Pembimbing)", phone: "+6281300000001", pass: "123456", badge: "bg-rose-600" },
+  ];
+
+  const handleDemoClick = (phone: string, pass: string, autoSubmit = false) => {
+    setIdentifier(phone);
+    setPassword(pass);
+    setIdentifierError("");
+    setPasswordError("");
+    toast.success(`Demo akun terisi: ${phone}`);
+    if (autoSubmit) {
+      setIsLocalLoading(true);
+      login(phone, pass).then((success) => {
+        setIsLocalLoading(false);
+        if (success) {
+          setShowSuccessOverlay(true);
+          setTimeout(() => navigate("/dashboard"), 1200);
+        } else {
+          toast.error("Gagal login dengan akun demo");
+        }
+      });
+    }
+  };
+
+  // Helper phone normalizer (+62 format)
+  const normalizePhone = (val: string) => {
+    let trimmed = val.trim();
+    if (trimmed.startsWith("08")) {
+      return "+628" + trimmed.slice(2);
+    }
+    if (trimmed.startsWith("8")) {
+      return "+628" + trimmed.slice(1);
+    }
+    if (trimmed.startsWith("62")) {
+      return "+" + trimmed;
+    }
+    return trimmed;
+  };
+
+  const isPhoneValid = (val: string) => {
+    const normalized = normalizePhone(val);
+    return /^\+628\d{8,12}$/.test(normalized);
+  };
 
   const handleIdentifierBlur = () => {
     const normalized = normalizePhone(identifier);
-    if (normalized !== identifier && normalized) setIdentifier(normalized);
+    if (normalized !== identifier && normalized) {
+      setIdentifier(normalized);
+    }
     if (!normalized) {
       setIdentifierError("Nomor HP wajib diisi");
     } else if (!isPhoneValid(normalized)) {
-      setIdentifierError("Format nomor HP tidak valid (Contoh: 08123456789 atau +628123456789)");
+      setIdentifierError("Format nomor HP tidak valid (+628xxx)");
     } else {
       setIdentifierError("");
     }
@@ -98,368 +133,335 @@ const Login: React.FC = () => {
 
   const handlePasswordBlur = () => {
     const trimmed = password.trim();
-    if (!trimmed) { setPasswordError("Kata sandi wajib diisi"); return; }
-    if (trimmed.length < 6) { setPasswordError("Kata sandi salah. Silakan coba lagi."); return; }
-    setPasswordError("");
+    if (!trimmed) setPasswordError("Password wajib diisi");
+    else if (trimmed.length < 6) setPasswordError("Password minimal 6 karakter");
+    else setPasswordError("");
   };
-
+  
   const isFormInvalid = !identifier.trim() || !password.trim() || !!identifierError || !!passwordError;
-  const isBtnDisabled = isStoreLoading || isLocalLoading || isFormInvalid;
+  const isBtnDisabled = isStoreLoading || isLocalLoading || showSuccessOverlay || isFormInvalid;
 
-  const triggerToast = (message: string, type: "error" | "warning" | "server" | "network" = "error") => {
-    if (type === "warning") {
-      showToast.warning(message);
-    } else {
-      showToast.error(message);
-    }
+  const showToast = (message: string, type: "error" | "warning" | "server" | "network" = "error", retryAction?: () => void) => {
+    toast.custom(
+      (t) => (
+        <div className={`${t.visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"} transform transition-all duration-300 max-w-sm w-full bg-white shadow-xl rounded-xl pointer-events-auto flex border border-slate-200 p-4 gap-3 items-center`}>
+          <div className="flex-shrink-0 flex items-center">
+            {type === "error" && <AlertCircle className="text-red-500" size={24} />}
+            {type === "warning" && <AlertTriangle className="text-amber-500" size={24} />}
+            {type === "server" && <Server className="text-red-500 animate-pulse" size={24} />}
+            {type === "network" && <WifiOff className="text-red-500 animate-pulse" size={24} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-gray-800 leading-normal">{message}</p>
+            {retryAction && (
+              <button type="button" onClick={() => { toast.dismiss(t.id); retryAction(); }} className="mt-2 text-[10px] text-emerald-600 hover:text-emerald-700 font-bold underline cursor-pointer">Coba Lagi</button>
+            )}
+          </div>
+          <button type="button" onClick={() => toast.dismiss(t.id)} className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors w-6 h-6 rounded-full flex items-center justify-center hover:bg-slate-100 cursor-pointer">
+            <X size={16} />
+          </button>
+        </div>
+      ),
+      { position: "top-right", duration: type === "server" || type === "network" ? 7000 : 4000 }
+    );
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (isStoreLoading || isLocalLoading) return;
+    if (isStoreLoading || isLocalLoading || showSuccessOverlay) return;
 
     const idVal = normalizePhone(identifier);
-    if (idVal !== identifier) setIdentifier(idVal);
+    if (idVal !== identifier) {
+      setIdentifier(idVal);
+    }
     const passVal = password.trim();
     let hasError = false;
-
+    
     if (!idVal) {
       setIdentifierError("Nomor HP wajib diisi");
       hasError = true;
     } else if (!isPhoneValid(idVal)) {
-      setIdentifierError("Format nomor HP tidak valid (Contoh: 08123456789 atau +628123456789)");
+      setIdentifierError("Format nomor HP tidak valid (+628xxx)");
       hasError = true;
     }
-
-    if (!passVal) { 
-      setPasswordError("Kata sandi wajib diisi"); 
-      hasError = true; 
-    } else if (passVal.length < 6) {
-      setPasswordError("Kata sandi salah. Silakan coba lagi."); 
-      hasError = true; 
-    } else { 
-      setPasswordError(""); 
-    }
-
+    
+    if (!passVal) { setPasswordError("Password wajib diisi"); hasError = true; } 
+    else if (passVal.length < 6) { setPasswordError("Password minimal 6 karakter"); hasError = true; }
+    
     if (hasError) return;
 
     setIsLocalLoading(true);
-    const success = await login(idVal, passVal, rememberMe);
-    setIsLocalLoading(false);
+    const startTime = Date.now();
+    const success = await login(idVal, passVal);
+    
+    const elapsedTime = Date.now() - startTime;
+    const minDelay = 1000;
+    const remainingTime = Math.max(0, minDelay - elapsedTime);
 
-    if (success) {
-      const user = useAuthStore.getState().user;
-      const roleLabelMap: Record<string, string> = {
-        DEVELOPER: "Developer",
-        SUPER_USER: "Admin",
-        ADMIN_DLH: "Admin DLH",
-        CAMAT: "Camat",
-        LURAH: "Lurah",
-        RW: "Pengurus RW",
-        RT: "Pengurus RT",
-        DPL: "Dosen Pendamping Lapangan (DPL)",
-        PEMIMPIN: "Pimpinan",
-        PIMPINAN: "Pimpinan",
-        PANITIA_TASKFORCE: "Task Force",
-        MAHASISWA_KKN: "Mahasiswa KKN",
-      };
-      const displayRole = user?.peran ? (roleLabelMap[user.peran] || user.peran) : "Pengguna";
-      const displayName = user?.name || displayRole;
-      
-      showToast.success(`Selamat datang kembali, ${displayName}!`);
-      navigate("/dasbor");
-    } else {
-      const storeErr = useAuthStore.getState().error;
-      if (storeErr === "USER_NOT_FOUND") {
-        setIdentifierError("Nomor HP tidak terdaftar di sistem");
-      } else if (storeErr === "WRONG_PASSWORD") {
-        setPasswordError("Kata sandi salah. Silakan coba lagi.");
-        setPassword("");
-        setTimeout(() => passwordInputRef.current?.focus(), 50);
-      } else if (storeErr === "MAHASISWA_MUST_USE_IOS_SAFARI") {
-        triggerToast("Akses Mahasiswa KKN diwajibkan menggunakan perangkat Apple iPhone dengan peramban Safari.", "error");
-        setIdentifierError("Khusus iPhone + Safari (Android & Desktop dilarang)");
-      } else if (storeErr === "ROLE_NOT_ALLOWED_ON_WEB") {
-        triggerToast("Akses Web khusus Pengelola dan Dosen Pendamping Lapangan (DPL). Warga dan Petugas Pemilah hanya dapat menggunakan aplikasi seluler.", "warning");
-        setIdentifierError("Akses Web ditutup untuk peran ini (Gunakan Aplikasi Seluler)");
-      } else if (storeErr === "USER_INACTIVE") {
-        triggerToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");
-      } else if (storeErr === "USER_PENDING_APPROVAL") {
-        triggerToast("Akun Anda belum disetujui oleh pengurus RW setempat.", "warning");
-        setIdentifierError("Akun belum disetujui RW setempat");
-      } else if (storeErr === "SERVICE_UNAVAILABLE") {
-        triggerToast("Server sedang bermasalah, silakan coba lagi nanti", "server");
-      } else if (storeErr === "TOO_MANY_ATTEMPTS") {
-        triggerToast("Terlalu banyak percobaan, silakan coba lagi dalam 1 menit", "warning");
-      } else if (storeErr === "NETWORK_ERROR") {
-        triggerToast("Tidak dapat terhubung ke server, periksa koneksi internet Anda", "network");
+    setTimeout(() => {
+      setIsLocalLoading(false);
+      if (success) {
+        setShowSuccessOverlay(true);
+        setTimeout(() => navigate("/dashboard"), 1500);
       } else {
-        triggerToast("Gagal masuk ke sistem. Silakan coba lagi.", "error");
+        const storeErr = useAuthStore.getState().error;
+        if (storeErr === "USER_NOT_FOUND") {
+          setIdentifierError("Nomor HP tidak terdaftar");
+        } else if (storeErr === "WRONG_PASSWORD") {
+          setPasswordError("Password salah");
+          setPassword(""); 
+          setTimeout(() => passwordInputRef.current?.focus(), 50);
+        } else if (storeErr === "USER_INACTIVE") {
+          showToast("Akun Anda belum aktif atau telah dinonaktifkan.", "warning");
+        } else if (storeErr === "USER_PENDING_APPROVAL") {
+          showToast("Akun Anda belum disetujui oleh pengurus RW setempat.", "warning");
+          setIdentifierError("Akun belum disetujui RW setempat");
+        } else if (storeErr === "SERVICE_UNAVAILABLE") {
+          showToast("Server sedang bermasalah, silakan coba lagi nanti", "server", handleSubmit);
+        } else if (storeErr === "TOO_MANY_ATTEMPTS") {
+          showToast("Terlalu banyak percobaan, silakan coba lagi dalam 1 menit", "warning");
+        } else if (storeErr === "NETWORK_ERROR") {
+          showToast("Tidak dapat terhubung ke server, periksa koneksi internet Anda", "network", handleSubmit);
+        } else {
+          showToast("Gagal masuk ke sistem. Silakan coba lagi.", "error");
+        }
       }
-    }
+    }, remainingTime);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-100 p-4 sm:p-8 relative overflow-hidden font-sans">
-
+      
       {/* Background Decorative Blur Spheres */}
       <div className="absolute top-[-10%] left-[-10%] w-[450px] h-[450px] rounded-full bg-emerald-300/30 blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-sky-300/30 blur-3xl pointer-events-none"></div>
 
+      {showSuccessOverlay && (
+        <div className="fixed inset-0 bg-gradient-to-br from-emerald-600 to-teal-800 flex flex-col items-center justify-center z-50 transition-all duration-500 animate-in fade-in">
+          <div className="flex flex-col items-center gap-6 text-center text-white px-6">
+            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center animate-bounce shadow-lg border border-white/30">
+              <CheckCircle2 className="text-white" size={64} />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black tracking-tight mb-2">Login Berhasil!</h2>
+              <p className="text-sm text-emerald-100 max-w-sm mx-auto leading-relaxed font-medium">
+                Mempersiapkan dashboard pemilahan sampah...
+              </p>
+            </div>
+            <div className="flex items-center gap-2 mt-4 text-xs font-bold text-emerald-200">
+              <RefreshCcw className="animate-spin text-lg" />
+              <span>Memuat Halaman...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Split Container Card */}
-      <div className="w-full max-w-[1120px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-500 animate-fade-in-up">
-
-        {/* Left Side: Rich Eco Feature Panel (Desktop Eco-Monitoring Showcase) */}
-        <div className="hidden md:flex md:col-span-6 bg-gradient-to-br from-[#035941] via-[#024633] to-[#013325] text-white p-8 sm:p-10 flex-col justify-between relative overflow-hidden">
-          {/* Background Decorative Animated Element */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-[#58A621]/20 rounded-full blur-3xl pointer-events-none animate-float" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#0468BF]/15 rounded-full blur-3xl pointer-events-none animate-float" style={{ animationDelay: "2s" }} />
-
-          <div className="relative z-10 space-y-6 my-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-extrabold tracking-wide shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#58A621] animate-pulse shrink-0"></span>
-              <span>Web Monitoring BERSEKA</span>
+      <div className="w-full max-w-[880px] bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12 z-10 transition-all duration-300">
+        
+        {/* Left Side: Rich Eco Feature Panel (Desktop) */}
+        <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white p-8 flex-col justify-between relative overflow-hidden">
+          
+          <div className="space-y-6 relative z-10">
+            {/* Top Active Emerald Brand Tag */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-emerald-200/30 text-white text-xs font-extrabold tracking-wide shadow-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-300 animate-pulse shrink-0"></span>
+              <span>Sistem Pemilahan Sampah Cerdas</span>
             </div>
 
-            <div className="space-y-3">
-              <h2 className="text-3xl sm:text-4xl font-black leading-tight tracking-tight text-white">
-                Bersih, Sehat,<br />Kampung Asri.
+            <div className="space-y-3 pt-2">
+              <h2 className="text-3xl font-black leading-tight tracking-tight text-white">
+                Sampah Tertata, Lingkungan Terdata.
               </h2>
               <p className="text-xs text-emerald-100/90 leading-relaxed font-medium">
-                Sistem pemantauan dan tata kelola sampah terpadu BERSEKA (Bersih, Sehat, Kampung Asri) dalam kerangka kegiatan KKN Berdampak Universitas Komputer Indonesia dan Pemerintah Kecamatan Coblong.
+                Platform monitoring terintegrasi untuk Warga, Mahasiswa KKN, RW, dan Petugas Residu.
               </p>
             </div>
 
-            {/* Feature Highlights Showcase List */}
-            <div className="pt-4 space-y-3 border-t border-white/15">
-              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
-                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
-                  <span className="material-symbols-outlined text-sm">analytics</span>
+            {/* 3 Key Feature Bullets */}
+            <div className="space-y-3 pt-4 text-xs font-semibold">
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                <div className="w-8 h-8 rounded-lg bg-emerald-400/20 flex items-center justify-center shrink-0">
+                  <ShieldCheck size={18} className="text-emerald-200" />
                 </div>
-                <div>
-                  <p className="font-extrabold text-white text-xs">Pemantauan Real-Time</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Pemantauan volume sampah organik &amp; anorganik.</p>
-                </div>
+                <span>Login Aman WhatsApp OTP (+62)</span>
               </div>
 
-              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
-                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
-                  <span className="material-symbols-outlined text-sm">stars</span>
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                <div className="w-8 h-8 rounded-lg bg-emerald-400/20 flex items-center justify-center shrink-0">
+                  <Trash2 size={18} className="text-emerald-200" />
                 </div>
-                <div>
-                  <p className="font-extrabold text-white text-xs">Transparansi Audit Poin</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Buku besar poin terpisah bagi insentif warga.</p>
-                </div>
+                <span>Maksimal 2 Bin Mandiri (Organik &amp; Anorganik)</span>
               </div>
 
-              <div className="flex items-start gap-3 text-xs text-emerald-100/90">
-                <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0 text-emerald-300 mt-0.5">
-                  <span className="material-symbols-outlined text-sm">handshake</span>
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                <div className="w-8 h-8 rounded-lg bg-emerald-400/20 flex items-center justify-center shrink-0">
+                  <Award size={18} className="text-amber-300" />
                 </div>
-                <div>
-                  <p className="font-extrabold text-white text-xs">Sinergi Berkelanjutan</p>
-                  <p className="text-[11px] text-emerald-200/80 font-medium">Kolaborasi pemerintah daerah, kampus &amp; warga.</p>
-                </div>
+                <span>Point-Based Ledger Gamification</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 relative z-10 text-[11px] text-emerald-200/80 font-medium">
-            © 2026 Universitas Komputer Indonesia. All Rights Reserved.
+          <div className="pt-8 border-t border-white/15 relative z-10 text-[11px] text-emerald-200/80 font-medium">
+            © 2026 UNIKOM. All rights reserved.
           </div>
+
         </div>
 
         {/* Right Side: Clean Modern Login Form */}
-        <div className="col-span-12 md:col-span-6 p-5 sm:p-8 md:p-10 flex flex-col justify-between bg-white space-y-6">
-
-          <div className="space-y-5">
-
+        <div className="col-span-12 md:col-span-7 p-8 sm:p-10 flex flex-col justify-between bg-white space-y-6">
+          
+          <div className="space-y-6">
+            
             {/* Header Brand Block */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <Link to="/" className="flex items-center gap-2 group">
-                <BersekaLogoIcon className="h-10 sm:h-11 w-auto transition-transform group-hover:scale-105 shrink-0" />
+            <div className="flex items-center justify-between">
+              <Link to="/" className="flex items-center gap-2.5 group">
+                <TrashCareLogoIcon className="w-10 h-10 transition-transform group-hover:scale-105" />
+                <div className="flex flex-col text-left">
+                  <span className="text-xl font-black tracking-tight leading-none">
+                    <span className="text-sky-600">Trash</span>
+                    <span className="text-emerald-600">Care</span>
+                  </span>
+                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mt-0.5">
+                    Pilah Sampah Cerdas
+                  </span>
+                </div>
               </Link>
 
-              <Link to="/" className="text-xs font-extrabold text-[#035941] hover:text-[#024633] transition">
+              <Link to="/" className="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 transition">
                 Kembali ke Beranda →
               </Link>
             </div>
 
-            <div className="space-y-2 text-left pt-1">
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Masuk ke Akun</h1>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Silakan masukkan nomor HP terdaftar dan kata sandi akun Anda.
+            <div className="space-y-1 text-left pt-2">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Selamat Datang</h1>
+              <p className="text-xs text-slate-500 font-medium">
+                Masukkan nomor telepon terdaftar dan kata sandi Anda.
               </p>
-            </div>
-
-            {/* Warning Khusus iOS Safari untuk Mahasiswa KKN */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-rose-50/80 to-amber-50/70 border border-rose-200/90 shadow-xs flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-600 mt-0.5">
-                <ShieldAlert size={18} />
-              </div>
-              <div className="space-y-0.5 text-left min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-xs font-black text-rose-900 tracking-tight">
-                    Khusus Mahasiswa KKN
-                  </p>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-rose-600 text-white tracking-wider">
-                    Wajib iPhone &amp; Safari
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-700 leading-snug font-medium">
-                  Portal presensi &amp; logbook mahasiswa hanya dapat diakses melalui peramban resmi <strong className="text-slate-900 font-extrabold">Apple iPhone (Safari)</strong>. Akses via Android / non-Safari otomatis diblokir sistem.
-                </p>
-              </div>
             </div>
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
-
+              
               {/* Phone Input */}
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Nomor Telepon
+                  Nomor HP
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
-                    id="login-phone"
-                    autoFocus
-                    className={`w-full pl-10 pr-4 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-[#035941] focus:ring-2 focus:ring-[#035941]/20"} rounded-xl text-sm font-semibold outline-none transition-all shadow-2xs`}
-                    placeholder="08123456789 atau +6281234567890"
+                    className={`w-full pl-10 pr-4 h-12 bg-slate-50 border ${identifierError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                    placeholder="+628..."
                     type="text"
                     value={identifier}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^\d+]/g, "");
-                      setIdentifier(val);
-                      if (val.trim()) setIdentifierError("");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.ctrlKey || e.metaKey) return;
-                      const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter", "Home", "End"];
-                      if (!/^[0-9+]$/.test(e.key) && !allowed.includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
+                    onChange={(e) => { setIdentifier(e.target.value); if(e.target.value.trim()) setIdentifierError(""); }}
                     onBlur={handleIdentifierBlur}
                     disabled={isStoreLoading || isLocalLoading}
                   />
                 </div>
-
-                {identifierError && (
-                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
-                    <AlertTriangle size={11} />
-                    {identifierError}
-                  </p>
-                )}
+                {identifierError && <p className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1"><AlertTriangle size={12}/>{identifierError}</p>}
               </div>
 
               {/* Password Input */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
-                  Kata Sandi
-                </label>
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Kata Sandi</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
-                    id="login-password"
                     ref={passwordInputRef}
-                    className={`w-full pl-10 pr-11 h-12 bg-white text-slate-900 placeholder:text-slate-400 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-[#035941] focus:ring-2 focus:ring-[#035941]/20"} rounded-xl text-sm font-semibold outline-none transition-all shadow-2xs`}
-                    placeholder="Masukkan kata sandi akun"
+                    className={`w-full pl-10 pr-10 h-12 bg-slate-50 border ${passwordError ? "border-rose-500 focus:ring-rose-500" : "border-slate-200 focus:border-emerald-600"} rounded-xl text-sm font-medium focus:ring-1 outline-none transition-all`}
+                    placeholder="Masukkan kata sandi..."
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); if (e.target.value.trim()) setPasswordError(""); }}
+                    onChange={(e) => { setPassword(e.target.value); if(e.target.value.trim()) setPasswordError(""); }}
                     onBlur={handlePasswordBlur}
                     disabled={isStoreLoading || isLocalLoading}
-                    autoComplete="current-password"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-slate-200/60 transition cursor-pointer"
-                    disabled={isStoreLoading || isLocalLoading}
-                    title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-600 transition" disabled={isStoreLoading || isLocalLoading}>
+                    {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
                 </div>
-
-                {passwordError && (
-                  <p className="text-[10px] text-rose-500 font-bold flex items-center gap-1 pt-0.5">
-                    <AlertTriangle size={11} />
-                    {passwordError}
-                  </p>
-                )}
-              </div>
-
-              {/* Row: Ingat Saya */}
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    role="checkbox"
-                    aria-checked={rememberMe}
-                    onClick={() => setRememberMe(!rememberMe)}
-                    className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
-                      rememberMe
-                        ? "bg-[#035941] border-[#035941] text-white shadow-xs"
-                        : "bg-white border-slate-300 hover:border-[#035941]"
-                    }`}
-                  >
-                    {rememberMe && (
-                      <svg viewBox="0 0 12 12" fill="none" className="w-3 h-3">
-                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </button>
-                  <label
-                    className="text-xs text-slate-600 font-bold select-none cursor-pointer flex items-center gap-1"
-                    onClick={() => setRememberMe(!rememberMe)}
-                  >
-                    <span>Ingat Saya</span>
-                  </label>
-                </div>
+                {passwordError && <p className="text-[10px] text-rose-500 font-bold mt-1 flex items-center gap-1"><AlertTriangle size={12}/>{passwordError}</p>}
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                id="login-submit-btn"
                 disabled={isBtnDisabled}
-                className="w-full h-12 bg-[#035941] hover:bg-[#024633] text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-[#035941]/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-4 cursor-pointer"
+                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-extrabold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 mt-4 cursor-pointer"
               >
                 {isLocalLoading || isStoreLoading ? (
                   <><RefreshCcw className="animate-spin" size={16} /><span>Memproses...</span></>
                 ) : (
-                  <><LogIn size={18} /><span>Masuk</span></>
+                  <><LogIn size={18} /><span>Masuk Sistem</span></>
                 )}
               </button>
             </form>
+
+            {/* Quick Demo Login Scrollable Box */}
+            <div className="pt-3 border-t border-slate-100 space-y-2 text-left">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-800 uppercase tracking-wider">
+                  <Sparkles size={14} className="text-amber-500 animate-pulse" />
+                  <span>Akses Cepat Demo (Semua Role)</span>
+                </div>
+                <span className="text-[10px] text-emerald-600 font-extrabold">1-Click Auto Fill</span>
+              </div>
+
+              {/* Scrollable Container with Custom Scrollbar */}
+              <div className="max-h-44 overflow-y-auto pr-1 space-y-1.5 rounded-xl border border-slate-200/80 p-1.5 bg-slate-50/50">
+                {DEMO_ACCOUNTS.map((acc, i) => (
+                  <div
+                    key={i}
+                    onClick={() => handleDemoClick(acc.phone, acc.pass)}
+                    className="group flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/70 hover:border-emerald-500 hover:bg-emerald-50/60 transition-all cursor-pointer text-left shadow-2xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg ${acc.badge} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs uppercase`}>
+                        {acc.role.slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-slate-900 truncate leading-tight group-hover:text-emerald-700">
+                          {acc.label}
+                        </p>
+                        <p className="text-[10px] font-semibold text-slate-400 truncate">
+                          {acc.phone} • {acc.pass}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDemoClick(acc.phone, acc.pass, true);
+                      }}
+                      className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shrink-0 shadow-2xs cursor-pointer"
+                    >
+                      Login →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Footer Area */}
+          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500 space-y-1">
+            <p>
+              Belum memiliki akun?{" "}
+              <Link to="/register" className="text-emerald-600 font-extrabold hover:underline">
+                Daftar Sekarang
+              </Link>
+            </p>
+            <p className="font-medium text-[11px] text-slate-400">© 2026 UNIKOM. All rights reserved.</p>
           </div>
 
         </div>
 
-      </div>
-
-      {/* Floating Action Button: Download Aplikasi Seluler APK */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-10 z-50 group flex items-center justify-center pointer-events-auto">
-        <div className="relative flex items-center justify-center">
-          {/* Outer Animated Ping Ripple Effect */}
-          <span className="absolute -inset-1.5 rounded-full bg-[#035941]/30 animate-ping opacity-75 pointer-events-none" />
-          
-          <Link
-            to="/download"
-            className="relative w-12 h-12 sm:w-14 sm:h-14 bg-[#035941] hover:bg-[#024633] text-white rounded-full flex items-center justify-center shadow-2xl shadow-[#035941]/40 hover:scale-110 active:scale-95 transition-all duration-300 border-2 border-white/80 cursor-pointer shrink-0"
-            aria-label="Unduh Aplikasi Seluler BERSEKA (APK)"
-          >
-            <Download size={20} className="sm:w-[22px] sm:h-[22px] text-white group-hover:rotate-12 transition-transform" />
-            
-            {/* Tooltip on Hover */}
-            <span className="absolute right-16 top-1/2 -translate-y-1/2 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-black tracking-wide whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:translate-x-0 translate-x-2 transition-all duration-300 shadow-xl border border-slate-800 hidden sm:block">
-              Unduh Aplikasi Seluler BERSEKA (APK)
-            </span>
-          </Link>
-        </div>
       </div>
     </div>
   );

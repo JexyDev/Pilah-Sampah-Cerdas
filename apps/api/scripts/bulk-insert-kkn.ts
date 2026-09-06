@@ -122,7 +122,6 @@ async function main() {
   const colKelompok = headers.findIndex(h => h.includes('kelompok'));
   const colRw = headers.findIndex(h => h.includes('rw') || h.includes('lokasi'));
   const colNama = headers.findIndex(h => h.includes('nama mahasiswa') || h.includes('nama mhs') || (h.includes('nama') && !h.includes('kelompok')));
-  const colNim = headers.findIndex(h => h === 'nim' || h.includes('nim'));
   const colPhone = headers.findIndex(h => h.includes('hp') || h.includes('telp') || h.includes('telepon') || h.includes('no wa') || h.includes('no. wa') || h === 'wa');
   const colProdi = headers.findIndex(h => h.includes('prodi') || h.includes('program studi') || h.includes('jurusan'));
   const colDpl = headers.findIndex(h => h.includes('dpl'));
@@ -133,7 +132,6 @@ async function main() {
   console.log(`   • Kelompok    : Col ${colKelompok}`);
   console.log(`   • Lokasi (RW) : Col ${colRw}`);
   console.log(`   • Nama Mhs    : Col ${colNama}`);
-  console.log(`   • NIM         : Col ${colNim}`);
   console.log(`   • No. HP      : Col ${colPhone}`);
   console.log(`   • Prodi       : Col ${colProdi}`);
   console.log(`   • DPL         : Col ${colDpl}\n`);
@@ -199,9 +197,8 @@ async function main() {
     if (cellDpl && !cellDpl.toLowerCase().includes('jumlah')) lastDpl = cellDpl;
 
     const cellProdi = colProdi !== -1 ? cleanText(rawRow[colProdi]) : '';
-    const cellNim = colNim !== -1 ? cleanText(rawRow[colNim]) : null;
 
-    let phoneNorm = normalizePhone(cellPhone);
+    const phoneNorm = normalizePhone(cellPhone);
 
     // Validations
     if (!cellNama) {
@@ -209,13 +206,31 @@ async function main() {
       continue;
     }
 
-    // If phone is missing or duplicate in file, generate a unique random fallback phone number
-    if (!phoneNorm || phoneSeenInFile.has(phoneNorm)) {
-      phoneNorm = `+628999${String(Date.now()).slice(-4)}${String(rowNum).padStart(3, '0')}`;
+    if (!phoneNorm) {
+      skippedRows.push({ rowNum, namaMahasiswa: cellNama, phone: '(Kosong)', reason: 'No. HP tidak diisi/kosong di file Excel' });
+      continue;
+    }
+
+    // Parse RW
+    const rwList = parseRwString(lastRw);
+    if (!rwList) {
+      skippedRows.push({ rowNum, namaMahasiswa: cellNama, phone: phoneNorm, reason: `Gagal parse lokasi RW: "${lastRw}"` });
+      continue;
+    }
+
+    // Check duplicate phone in file with detailed mapping
+    if (phoneSeenInFile.has(phoneNorm)) {
+      const prev = phoneSeenInFile.get(phoneNorm)!;
+      skippedRows.push({
+        rowNum,
+        namaMahasiswa: cellNama,
+        phone: phoneNorm,
+        reason: `Duplikat No. HP dengan Baris #${prev.rowNum} ("${prev.namaMahasiswa}")`,
+        duplicateWith: prev
+      });
+      continue;
     }
     phoneSeenInFile.set(phoneNorm, { rowNum, namaMahasiswa: cellNama });
-    // Parse RW (fallback RW 1 if missing)
-    const rwList = parseRwString(lastRw) || [1];
 
     // Check Kelurahan match with DB master
     if (validKelurahanNames.size > 0 && !validKelurahanNames.has(lastKelurahan.toLowerCase().trim())) {
@@ -242,11 +257,11 @@ async function main() {
       programStudi: cellProdi,
       dplNama: lastDpl,
       isKetua: false,
-      nim: cellNim || null
+      nim: null
     });
   }
 
-  // Check Tab Data Ketua if present in workbook
+  // Check Tab 2 (Data Ketua) if present in workbook
   const ketuaSheetName = workbook.SheetNames.find((s: string) => s.toLowerCase().includes('ketua'));
   let ketuaCount = 0;
   if (ketuaSheetName) {
@@ -258,7 +273,7 @@ async function main() {
       const kRowStr = JSON.stringify(kRow).toLowerCase();
       for (const row of cleanedRows) {
         const phoneSub = row.phoneNormalized.replace('+62', '');
-        const nameSub = row.namaMahasiswa.toLowerCase().trim();
+        const nameSub = row.namaMahasiswa.toLowerCase();
         if (kRowStr.includes(phoneSub) || (nameSub.length >= 4 && kRowStr.includes(nameSub))) {
           row.isKetua = true;
           const nimMatch = JSON.stringify(kRow).match(/\b\d{7,14}\b/);
@@ -271,31 +286,6 @@ async function main() {
       }
     }
     console.log(`   -> Total ${ketuaCount} Mahasiswa berhasil ditandai sebagai Ketua Kelompok.`);
-  }
-
-  // Check Tab Data Keseluruhan Peserta if present for NIM matching
-  const pesertaSheetName = workbook.SheetNames.find((s: string) => s.toLowerCase().includes('keseluruhan') || s.toLowerCase().includes('peserta'));
-  let nimCount = 0;
-  if (pesertaSheetName) {
-    console.log(`📌 Tab Peserta Terdeteksi: "${pesertaSheetName}" -> Mencocokkan NIM Mahasiswa...`);
-    const pesertaSheet = workbook.Sheets[pesertaSheetName];
-    const pesertaRawRows: any[] = xlsxLib.utils.sheet_to_json(pesertaSheet, { header: 1, defval: '' });
-
-    for (const pRow of pesertaRawRows) {
-      const pRowStr = JSON.stringify(pRow).toLowerCase();
-      for (const row of cleanedRows) {
-        const phoneSub = row.phoneNormalized.replace('+62', '');
-        const nameSub = row.namaMahasiswa.toLowerCase().trim();
-        if (pRowStr.includes(phoneSub) || (nameSub.length >= 4 && pRowStr.includes(nameSub))) {
-          const nimMatch = JSON.stringify(pRow).match(/\b\d{7,14}\b/);
-          if (nimMatch && !row.nim) {
-            row.nim = nimMatch[0];
-            nimCount++;
-          }
-        }
-      }
-    }
-    console.log(`   -> Total ${nimCount} NIM Mahasiswa berhasil dicocokkan dari tab peserta.`);
   }
 
   const uniqueKelompok = new Set(cleanedRows.map(r => r.namaKelompok)).size;
@@ -390,160 +380,66 @@ async function main() {
           });
 
           if (!existingRw) {
-            try {
-              const rwPassword = await bcrypt.hash(rwPhone, 10);
-              await prisma.user.create({
-                data: {
-                  name: `Pengurus RW ${rwPadded} - Kel. ${row.kelurahan}`,
-                  phone: rwPhone,
-                  password: rwPassword,
-                  roleId: rwRole.id,
-                  status: 'Aktif',
-                  mustChangePassword: false,
-                } as any
-              });
-              createdRwCount++;
-            } catch (e) {
-              // Ignore idempotent existing RW creation
-            }
+            const rwPassword = await bcrypt.hash(rwPhone, 10);
+            await prisma.user.create({
+              data: {
+                name: `Pengurus RW ${rwPadded} - Kel. ${row.kelurahan}`,
+                phone: rwPhone,
+                password: rwPassword,
+                roleId: rwRole.id,
+                status: 'Aktif',
+                mustChangePassword: false,
+              } as any
+            });
+            createdRwCount++;
           }
         }
       }
     }
 
-    // 1. Lookup DPL User for relation
-    let dplUser = null;
-    if (row.dplNama) {
-      const dplTokens = [
-        "Umi Narimawati", "Agus Riyanto", "Raeni Dwi Santy", "Linna Ismawati", "Adam Mukharil",
-        "Hanhan Maulana", "Alif Finandhita", "Richi Dwi Agustia", "Wartika", "Rangga Sidik",
-        "Wendi Zarman", "Iyan Andriana", "Amilia Widya", "Ayub Subandi", "Siswanti Zuraida",
-        "Muhammad Aksan", "Hery Dwi Yulianto", "Myrna Dwi Rahmatya", "John Adler", "Agus Mulyana",
-        "Sri Dewi Anggadini", "Tatang Supriyadi", "Henike Primawati", "Manap Solihat", "Olih Solihin",
-        "Tatik Fidowaty", "Wahyudi", "Arif Try Cahyadi", "Cherry Dharmawan", "Rini Maulina",
-        "Nungki Heriyati", "Fenny Febriant"
-      ];
-      for (const token of dplTokens) {
-        if (row.dplNama.toLowerCase().includes(token.toLowerCase())) {
-          dplUser = await prisma.user.findFirst({
-            where: {
-              role: { name: 'DPL' },
-              name: { contains: token, mode: 'insensitive' }
-            }
-          });
-          if (dplUser) break;
-        }
-      }
-    }
-
-    // 2. Create or get KelompokKkn with dplId relation
+    // 1. Create or get KelompokKkn
     let kelompok = await prisma.kelompokKkn.findUnique({ where: { name: row.namaKelompok } });
     if (!kelompok) {
-      try {
-        kelompok = await prisma.kelompokKkn.create({
-          data: {
-            name: row.namaKelompok,
-            kelurahan: row.kelurahan,
-            cakupanRw: row.rwList as any,
-            dplNamaMentah: row.dplNama,
-            dplId: dplUser?.id || undefined,
-          } as any
-        });
-        createdKelompokCount++;
-      } catch (e) {
-        kelompok = await prisma.kelompokKkn.findUnique({ where: { name: row.namaKelompok } });
-      }
-    }
-    if (kelompok && dplUser && !kelompok.dplId) {
-      try {
-        kelompok = await prisma.kelompokKkn.update({
-          where: { id: kelompok.id },
-          data: { dplId: dplUser.id, dplNamaMentah: row.dplNama }
-        });
-      } catch (e) {
-        // Ignore update error
-      }
-    }
-
-    // 2. Lookup primary RW Record in DB for relation
-    const primaryRwNum = row.rwList[0];
-    const kelurahanDb = await prisma.kelurahan.findFirst({ where: { name: row.kelurahan } });
-    let rwRecord = null;
-    if (kelurahanDb && primaryRwNum) {
-      rwRecord = await prisma.rw.findFirst({
-        where: {
-          kelurahanId: kelurahanDb.id,
-          name: { contains: `RW ${primaryRwNum}`, mode: "insensitive" },
-        },
+      kelompok = await prisma.kelompokKkn.create({
+        data: {
+          name: row.namaKelompok,
+          kelurahan: row.kelurahan,
+          cakupanRw: row.rwList as any,
+          dplNamaMentah: row.dplNama,
+        } as any
       });
+      createdKelompokCount++;
     }
 
-    // 3. Hash password (prefer NIM, fallback phone)
-    const loginSecret = row.nim || row.phoneNormalized;
-    const hashedPassword = await bcrypt.hash(loginSecret, 10);
+    // 2. Hash password (username = password = normalized phone)
+    const hashedPassword = await bcrypt.hash(row.phoneNormalized, 10);
 
-    // 4. Create User with mustChangePassword = true (Check existing by phone first)
-    const userName = row.isKetua ? `👑 ${row.namaMahasiswa} (Ketua Kelompok)` : row.namaMahasiswa;
-    let user = await prisma.user.findFirst({
-      where: { phone: row.phoneNormalized }
+    // 3. Create User with mustChangePassword = true
+    const user = await prisma.user.create({
+      data: {
+        name: row.namaMahasiswa,
+        phone: row.phoneNormalized,
+        password: hashedPassword,
+        roleId: kknRole.id,
+        status: 'Aktif',
+        mustChangePassword: true,
+      } as any
     });
 
-    if (!user) {
-      try {
-        user = await prisma.user.create({
-          data: {
-            name: userName,
-            phone: row.phoneNormalized,
-            password: hashedPassword,
-            roleId: kknRole.id,
-            status: 'Aktif',
-            mustChangePassword: true,
-            address: row.nim ? `NIM: ${row.nim} | ${row.programStudi}` : row.programStudi,
-          } as any
-        });
-      } catch (err) {
-        user = await prisma.user.findFirst({ where: { phone: row.phoneNormalized } });
-        if (!user) continue;
-      }
-    }
-
-    // 5. Create / Update StudentKkn profile
-    let studentNim = row.nim ? String(row.nim).trim() : null;
-
-    try {
-      const existingStudent = await prisma.studentKkn.findFirst({ where: { userId: user.id } });
-      if (!existingStudent) {
-        if (studentNim) {
-          const existingNim = await prisma.studentKkn.findFirst({ where: { nim: studentNim } });
-          if (existingNim) studentNim = null;
-        }
-        await prisma.studentKkn.create({
-          data: {
-            userId: user.id,
-            nim: studentNim,
-            jurusan: row.programStudi || 'Belum diisi',
-            fakultas: '-',
-            noWa: row.phoneNormalized,
-            kelompokId: kelompok.id,
-            assignedRwId: rwRecord?.id || undefined,
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
-            isKetua: row.isKetua || false,
-            whitelistStatus: 'APPROVED'
-          } as any
-        });
-      } else if (studentNim && !existingStudent.nim) {
-        const existingNim = await prisma.studentKkn.findFirst({ where: { nim: studentNim } });
-        if (!existingNim) {
-          await prisma.studentKkn.update({
-            where: { id: existingStudent.id },
-            data: { nim: studentNim }
-          });
-        }
-      }
-    } catch (e) {
-      // Ignore idempotent duplicate error
-    }
+    // 4. Create StudentKkn profile
+    await prisma.studentKkn.create({
+      data: {
+        userId: user.id,
+        nim: row.nim ? String(row.nim) : "",
+        jurusan: row.programStudi || 'Belum diisi',
+        fakultas: '-',
+        noWa: row.phoneNormalized,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
+        isKetua: row.isKetua || false,
+        whitelistStatus: 'APPROVED'
+      } as any
+    });
 
     createdUsersCount++;
   }

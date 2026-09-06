@@ -1,6 +1,6 @@
 import { CheckCircle2, RefreshCw, AlertTriangle, Save, Pencil } from "lucide-react";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -139,13 +139,13 @@ export const ManageConfigs: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Config Parameter Table */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
             <h3 className="font-bold text-gray-800 text-sm">Daftar Parameter System</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-              <thead className="bg-gray-50 dark:bg-slate-800 text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+              <thead className="bg-gray-50 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-3">Nama Kunci (Key)</th>
                   <th className="px-6 py-3">Nilai Konfigurasi</th>
@@ -155,7 +155,7 @@ export const ManageConfigs: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {configs.map((c, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition">
+                  <tr key={idx} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4 font-mono text-xs text-primary font-bold">{c.key}</td>
                     <td className="px-6 py-4 font-medium text-gray-900 max-w-[200px] truncate">{c.value}</td>
                     <td className="px-6 py-4 text-gray-500 max-w-xs truncate">{c.deskripsi || "-"}</td>
@@ -181,7 +181,7 @@ export const ManageConfigs: React.FC = () => {
         {/* Edit Parameter Panel / Workflow Designer */}
         <div className="space-y-6">
           {/* Game Rules & Gamification Configurator */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
             <div>
               <h3 className="font-bold text-gray-800 text-sm">Aturan Poin & Jam Operasional</h3>
               <p className="text-xs text-gray-500 mt-1">Konfigurasi reward warga, penalty, dan jam setor agar dapet poin.</p>
@@ -191,7 +191,7 @@ export const ManageConfigs: React.FC = () => {
               {/* Point Multipliers */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-600 uppercase">Organik (Poin per Kg)</label>
+                  <label className="text-[11px] font-bold text-gray-600 uppercase">Organik (Poin/Kg)</label>
                   <input
                     type="text"
                     value={organicMultiplier}
@@ -200,7 +200,7 @@ export const ManageConfigs: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-gray-600 uppercase">Anorganik (Poin per Kg)</label>
+                  <label className="text-[11px] font-bold text-gray-600 uppercase">Anorganik (Poin/Kg)</label>
                   <input
                     type="text"
                     value={nonorganicMultiplier}
@@ -277,7 +277,7 @@ export const ManageConfigs: React.FC = () => {
 
           {/* Edit Parameter Panel */}
           {selectedConfig && (
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/20 dark:border-emerald-700/40 shadow-md space-y-4">
+            <div className="bg-white p-6 rounded-2xl border border-primary/20 shadow-md space-y-4">
               <div>
                 <span className="text-[10px] uppercase font-bold text-primary">Edit Parameter</span>
                 <h3 className="text-sm font-extrabold text-gray-900 font-mono mt-1">{selectedConfig.key}</h3>
@@ -294,7 +294,7 @@ export const ManageConfigs: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedConfig(null)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
                 >
                   Batal
                 </button>
@@ -309,7 +309,7 @@ export const ManageConfigs: React.FC = () => {
           )}
 
           {/* Escalation Workflow Configurator */}
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
             <div>
               <h3 className="font-bold text-gray-800 text-sm">Approval Berjenjang Otomatis</h3>
               <p className="text-xs text-gray-500 mt-1">Atur eskalasi otomatis pengajuan fasilitas warga.</p>
@@ -332,7 +332,7 @@ export const ManageConfigs: React.FC = () => {
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-700">Hierarki Tingkat Approval</label>
-                <div className="space-y-2 bg-gray-50 dark:bg-slate-850 p-3 rounded-xl border border-gray-100 dark:border-slate-800">
+                <div className="space-y-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
                   <div className="flex items-center justify-between text-xs font-medium text-gray-700">
                     <span>1. Input (Mahasiswa)</span>
                     <CheckCircle2 className="text-green-500" size={16} />

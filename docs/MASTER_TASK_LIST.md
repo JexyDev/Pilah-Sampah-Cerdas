@@ -1,7 +1,7 @@
-﻿# 📋 MASTER TASK LIST — BERSEKA (BERSEKA)
+# 📋 MASTER TASK LIST — TrashCare (Pilah Sampah Cerdas)
 > **1 dokumen, 4 bagian tim.** Setiap tim mengisi bagian masing-masing.
 > Status: 🔴 Belum | 🟡 Sedang | 🟢 Selesai & Terverifikasi | ⚪ Sengaja Disembunyikan
-> **Aturan 🟢:** Hanya boleh diisi jika sudah DITES SUNGGUHAN (bukan sekadar baca kode), data dari backend REAL, tidak ada kata "Tempat Sampah" tersisa.
+> **Aturan 🟢:** Hanya boleh diisi jika sudah DITES SUNGGUHAN (bukan sekadar baca kode), data dari backend REAL, tidak ada kata "tong" tersisa.
 
 ---
 ---
@@ -17,29 +17,29 @@
 | 3 | Semua | Refresh Token | 🔴 | | POST /auth/refresh | | |
 | 4 | Semua | Logout & invalidate token | 🔴 | | POST /auth/logout | | |
 | 5 | Semua | GET /auth/me — info user login | 🔴 | | GET /auth/me | | |
-| **SUPER USER — WEB** | | | | | | | |
-| 6 | SUPER USER | Dashboard aggregated (warga aktif / setoran total / kelompok KKN) | 🔴 | | GET /super-user/dashboard | | |
-| 7 | SUPER USER | Manajemen Pengguna — list semua role | 🔴 | | GET /users | | |
-| 8 | SUPER USER | Manajemen Pengguna — tambah user | 🔴 | | POST /auth/register | | |
-| 9 | SUPER USER | Manajemen Pengguna — edit user | 🔴 | | PUT /users/:id | | |
-| 10 | SUPER USER | Manajemen Pengguna — hapus/nonaktif user | 🔴 | | DELETE /users/:id | | |
-| 11 | SUPER USER | Register Admin DLH | 🔴 | | POST /auth/register/admin-dlh | | |
-| 12 | SUPER USER | Register Camat | 🔴 | | POST /auth/register/camat | | |
-| 13 | SUPER USER | Register Lurah | 🔴 | | POST /auth/register/lurah | | |
-| 14 | SUPER USER | Register RW | 🔴 | | POST /auth/register/rw | | |
-| 15 | SUPER USER | Register RT | 🔴 | | POST /auth/register/rt | | |
-| 16 | SUPER USER | Register DPL | 🔴 | | POST /auth/register/dpl | | |
-| 17 | SUPER USER | QR Master — generate batch | 🔴 | | POST /super-user/bins/generate-qr | | |
-| 18 | SUPER USER | QR Master — download PDF | 🔴 | | GET /super-user/bins/qr-master | | |
-| 19 | SUPER USER | QR Master — replace bin BROKEN | 🔴 | | POST /super-user/bins/:id/replace | | |
-| 20 | SUPER USER | QR Master — hapus bin permanen | 🔴 | | DELETE /super-user/bins/:id | | |
-| 21 | SUPER USER | Reaktivasi bin kadaluarsa | 🔴 | | PUT /super-user/bins/:id/reactivate | | |
-| 22 | SUPER USER | Update status bin manual (override) | 🔴 | | PUT /super-user/bins/:id/status | | |
-| 23 | SUPER USER | KKN Handover (serah terima mahasiswa) | 🔴 | | POST /super-user/kkn/handover | | |
-| 24 | SUPER USER | KKN Handover — lihat histori kronologis | 🔴 | | GET /super-user/kkn/handover-history | | |
-| 25 | SUPER USER | Approval whitelist Mahasiswa KKN | 🔴 | | PATCH /auth/kkn/whitelist/:id | | |
-| 26 | SUPER USER | Audit Trail log semua aksi kritis | 🔴 | | GET /super-user/audit-trail | | |
-| 27 | SUPER USER | Ekspor data CSV/Excel (semua tabel utama) | 🔴 | | — (frontend) | | |
+| **SUPER ADMIN — WEB** | | | | | | | |
+| 6 | Super Admin | Dashboard aggregated (warga aktif / setoran total / kelompok KKN) | 🔴 | | GET /super-admin/dashboard | | |
+| 7 | Super Admin | Manajemen Pengguna — list semua role | 🔴 | | GET /users | | |
+| 8 | Super Admin | Manajemen Pengguna — tambah user | 🔴 | | POST /auth/register | | |
+| 9 | Super Admin | Manajemen Pengguna — edit user | 🔴 | | PUT /users/:id | | |
+| 10 | Super Admin | Manajemen Pengguna — hapus/nonaktif user | 🔴 | | DELETE /users/:id | | |
+| 11 | Super Admin | Register Admin DLH | 🔴 | | POST /auth/register/admin-dlh | | |
+| 12 | Super Admin | Register Camat | 🔴 | | POST /auth/register/camat | | |
+| 13 | Super Admin | Register Lurah | 🔴 | | POST /auth/register/lurah | | |
+| 14 | Super Admin | Register RW | 🔴 | | POST /auth/register/rw | | |
+| 15 | Super Admin | Register RT | 🔴 | | POST /auth/register/rt | | |
+| 16 | Super Admin | Register DPL | 🔴 | | POST /auth/register/dpl | | |
+| 17 | Super Admin | QR Master — generate batch | 🔴 | | POST /super-admin/bins/generate-qr | | |
+| 18 | Super Admin | QR Master — download PDF | 🔴 | | GET /super-admin/bins/qr-master | | |
+| 19 | Super Admin | QR Master — replace bin BROKEN | 🔴 | | POST /super-admin/bins/:id/replace | | |
+| 20 | Super Admin | QR Master — hapus bin permanen | 🔴 | | DELETE /super-admin/bins/:id | | |
+| 21 | Super Admin | Reaktivasi bin kadaluarsa | 🔴 | | PUT /super-admin/bins/:id/reactivate | | |
+| 22 | Super Admin | Update status bin manual (override) | 🔴 | | PUT /super-admin/bins/:id/status | | |
+| 23 | Super Admin | KKN Handover (serah terima mahasiswa) | 🔴 | | POST /super-admin/kkn/handover | | |
+| 24 | Super Admin | KKN Handover — lihat histori kronologis | 🔴 | | GET /super-admin/kkn/handover-history | | |
+| 25 | Super Admin | Approval whitelist Mahasiswa KKN | 🔴 | | PATCH /auth/kkn/whitelist/:id | | |
+| 26 | Super Admin | Audit Trail log semua aksi kritis | 🔴 | | GET /super-admin/audit-trail | | |
+| 27 | Super Admin | Ekspor data CSV/Excel (semua tabel utama) | 🔴 | | — (frontend) | | |
 | **PIMPINAN (ADMIN DLH) — WEB** | | | | | | | |
 | 28 | Admin DLH | Dashboard monitoring seluruh kota (read-only) | 🔴 | | GET /dashboard/summary | | |
 | 29 | Admin DLH | Grafik tren timbulan per kelurahan | 🔴 | | GET /dashboard/analytics | | |
@@ -144,7 +144,7 @@
 | 118 | Sistem | Hapus sisa role Pengangkut (dispatch_tasks / routing / UI) | 🔴 | | Cleanup total | | |
 | 119 | Sistem | QR auto-active: audit dampak ke RW Portal approval bin | 🔴 | | — | | Poin berubah timing |
 | 120 | Sistem | Semua dashboard connect ke data REAL (bukan dummy) | 🔴 | | Semua GET /dashboard/* | | ⚠️ Prioritas tinggi |
-| 121 | Sistem | Bersihkan semua kata "Tempat Sampah" dari UI / API response / notifikasi | 🔴 | | — | | |
+| 121 | Sistem | Bersihkan semua kata "tong" dari UI / API response / notifikasi | 🔴 | | — | | |
 | 122 | Sistem | Buku Panduan per role tersedia di landing page | 🔴 | | — | | |
 | 123 | Sistem | Zero NIK — tidak ada sisa NIK di DB / API / UI | 🔴 | | — | | |
 
@@ -199,10 +199,10 @@
 | P-04 | Petugas | Submit hilir tanpa QR (hanya foto + berat) | Happy Path | Tersimpan dengan flag HILIR | | 🔴 | High | | | |
 | **LINTAS SISTEM** | | | | | | | | | | |
 | L-01 | Sistem | Tidak ada kolom NIK di API response mana pun | Security | Tidak ada field nik/NIK | | 🔴 | Critical | | | |
-| L-02 | Sistem | Tidak ada kata "Tempat Sampah" di UI/notifikasi | QC Text | Zero hasil pencarian "Tempat Sampah" | | 🔴 | Medium | | | |
+| L-02 | Sistem | Tidak ada kata "tong" di UI/notifikasi | QC Text | Zero hasil pencarian "tong" | | 🔴 | Medium | | | |
 | L-03 | Sistem | Dashboard menampilkan data REAL (bukan dummy/0) | Data | Grafik bergerak sesuai data DB | | 🔴 | Critical | | | |
 | L-04 | Sistem | Format HP: sistem menerima 08xx (bukan hanya +62) | Regression | Login/register dengan 08xx berhasil | | 🔴 | Critical | | | |
-| L-05 | Sistem | Tidak ada sisa fitur/UI Pengangkut di BERSEKA | Cleanup | Zero elemen Pengangkut di UI & route | | 🔴 | Medium | | | |
+| L-05 | Sistem | Tidak ada sisa fitur/UI Pengangkut di Trashcare | Cleanup | Zero elemen Pengangkut di UI & route | | 🔴 | Medium | | | |
 
 ---
 ---
@@ -241,21 +241,21 @@
 | U-21 | KKN | Durasi akumulasi tampil sebagai progress (bukan hanya angka mentah) | Mobile | 🔴 | | | |
 | U-22 | KKN | Transisi animasi saat masuk/keluar zona | Mobile | 🔴 | | | |
 | **DASHBOARD WEB** | | | | | | | |
-| U-23 | SUPER USER | Dashboard: widget ringkasan tidak terlihat kosong (data real) | Web | 🔴 | | | |
-| U-24 | SUPER USER | Grafik: label sumbu X/Y jelas, legenda ada, tooltips informatif | Web | 🔴 | | | |
-| U-25 | SUPER USER | Tabel pengguna: kolom tidak terpotong di layar 1366px | Web | 🔴 | | | |
-| U-26 | SUPER USER | Pagination tabel berfungsi dan tidak lompat ke atas | Web | 🔴 | | | |
+| U-23 | Super Admin | Dashboard: widget ringkasan tidak terlihat kosong (data real) | Web | 🔴 | | | |
+| U-24 | Super Admin | Grafik: label sumbu X/Y jelas, legenda ada, tooltips informatif | Web | 🔴 | | | |
+| U-25 | Super Admin | Tabel pengguna: kolom tidak terpotong di layar 1366px | Web | 🔴 | | | |
+| U-26 | Super Admin | Pagination tabel berfungsi dan tidak lompat ke atas | Web | 🔴 | | | |
 | U-27 | RW | Tombol approve/reject: warna berbeda jelas (hijau/merah) | Web | 🔴 | | | |
 | U-28 | RW | Modal konfirmasi muncul sebelum aksi destructive (reject/broken) | Web | 🔴 | | | |
 | **NOTIFIKASI** | | | | | | | |
-| U-29 | Semua | Push notification teks: tidak ada kata "Tempat Sampah" | Mobile + Web | 🔴 | | | |
+| U-29 | Semua | Push notification teks: tidak ada kata "tong" | Mobile + Web | 🔴 | | | |
 | U-30 | Semua | Notifikasi in-app: bisa di-dismiss, badge count akurat | Mobile + Web | 🔴 | | | |
 | **AKSESIBILITAS** | | | | | | | |
 | U-31 | Semua | Ukuran font minimum 14sp (mobile) / 14px (web) — ramah lansia | Mobile + Web | 🔴 | | | |
 | U-32 | Semua | Tombol minimum touch area 44×44dp (mobile) | Mobile | 🔴 | | | |
 | U-33 | Semua | Kontras teks vs background ≥ 4.5:1 (WCAG AA) | Mobile + Web | 🔴 | | | |
 | **KONTEN & COPY** | | | | | | | |
-| U-34 | Semua | Zero kata "Tempat Sampah" di seluruh UI (gunakan "tempat sampah") | Web + Mobile | 🔴 | | | |
+| U-34 | Semua | Zero kata "tong" di seluruh UI (gunakan "tempat sampah") | Web + Mobile | 🔴 | | | |
 | U-35 | Semua | Teks error/informasi dalam Bahasa Indonesia yang mudah dipahami | Web + Mobile | 🔴 | | | |
 | U-36 | Semua | Nama label field konsisten antar halaman | Web + Mobile | 🔴 | | | |
 
@@ -274,7 +274,7 @@
 | D-03 | | Format HP login | Sistem menerima +62 dan 08 | | authService normalisasi | 🔴 | |
 | D-04 | | Peta Sebaran DPL | DI-HIDE sementara (bukan bug) | | Frontend hide component | 🔴 | |
 | D-05 | | Fitur Penilaian Formal DPL | DI-HIDE sementara (bukan bug) | | Frontend hide component | 🔴 | |
-| D-06 | | Role Pengangkut | Dihapus total dari BERSEKA (punya app sendiri) | | Cleanup seluruh sistem | 🔴 | |
+| D-06 | | Role Pengangkut | Dihapus total dari Trashcare (punya app sendiri) | | Cleanup seluruh sistem | 🔴 | |
 | D-07 | | Scope Taskforce | Belum terdefinisi — perlu keputusan tim | | — | ⚠️ Open | |
 | D-08 | | Approval bin oleh RW | Jadi obsolete karena auto-active — repurpose atau hapus? | | rwRoutes + frontend | 🔴 | |
 
@@ -290,7 +290,7 @@
 | R-04 | | Format HP migrasi | +62 → 08 di seluruh DB (43 data mahasiswa) | | Script SQL + authService | P1 | 🔴 | |
 | R-05 | | Scope notifikasi | Global → per-UserID & per-Role | | notificationService | P1 | 🟢 | |
 | R-06 | | Laporan Pemanfaatan KKN | Fitur baru: scope ketat per kelompok | | kknService + dplRoutes | P1 | 🔴 | |
-| R-07 | | Istilah "Tempat Sampah" | Rename ke "tempat sampah" di seluruh sistem | | UI + API response + notifikasi | P2 | 🔴 | |
+| R-07 | | Istilah "tong" | Rename ke "tempat sampah" di seluruh sistem | | UI + API response + notifikasi | P2 | 🔴 | |
 
 ---
 

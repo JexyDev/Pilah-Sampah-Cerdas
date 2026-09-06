@@ -1,6 +1,20 @@
-import { prisma } from "../lib/prisma.js";
-import { websocketService } from "../services/websocketService.js";
-import { Bin, SetoranOtomatis, PointHistory, Notification, BinStatus } from "@prisma/client";
+/**
+ * Project: TrashCare
+ * Developed by: PT Makerindo
+ * Copyright (c) 2026 PT Makerindo. All rights reserved.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
+ */
+
+import {
+  PrismaClient,
+  Bin,
+  SetoranOtomatis,
+  PointHistory,
+  Notification,
+  BinStatus,
+} from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class BinRepository {
   /**
@@ -11,38 +25,7 @@ export class BinRepository {
       where: { qrCode },
       include: {
         category: true,
-        binOwnerships: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                address: true,
-                households: {
-                  select: {
-                    id: true,
-                    address: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            address: true,
-            households: {
-              select: {
-                id: true,
-                address: true,
-              },
-            },
-          },
-        },
+        binOwnerships: true,
       },
     });
   }
@@ -55,14 +38,10 @@ export class BinRepository {
       where,
       include: {
         category: true,
-        rw: {
+        rtRw: {
           include: {
             kelurahan: true,
           },
-        },
-        setoranOtomatis: {
-          take: 1,
-          orderBy: { createdAt: "desc" },
         },
         user: {
           select: {
@@ -74,24 +53,6 @@ export class BinRepository {
               select: {
                 id: true,
                 address: true,
-              },
-            },
-          },
-        },
-        binOwnerships: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                address: true,
-                households: {
-                  select: {
-                    id: true,
-                    address: true,
-                  },
-                },
               },
             },
           },
@@ -113,43 +74,17 @@ export class BinRepository {
    * Returns list of RW areas with RT count and bin (titik sampah) count
    */
   async getLocations() {
-    const rws = await prisma.rw.findMany({
+    const rtRwAreas = await prisma.rtRwArea.findMany({
       include: {
         kelurahan: true,
         bins: true,
         households: true,
-        users: {
-          include: {
-            role: true,
-          },
-        },
-        petugasResidu: {
-          include: {
-            role: true,
-          },
-        },
-        studentsKkn: {
-          include: {
-            user: true,
-          },
-        },
       },
       orderBy: { name: "asc" },
     });
 
-    // Fetch all staff users for fallback matching
-    const [lurahUsers, allRwUsers, allPetugasUsers, allKknUsers] = await Promise.all([
-      prisma.user.findMany({
-        where: { role: { name: "LURAH" } },
-        include: { rw: { include: { kelurahan: true } } },
-      }),
-      prisma.user.findMany({ where: { role: { name: "RW" } } }),
-      prisma.user.findMany({ where: { role: { name: "PETUGAS_RESIDU" } } }),
-      prisma.user.findMany({ where: { role: { name: "MAHASISWA_KKN" } } }),
-    ]);
-
     return Promise.all(
-      rws.map(async (area) => {
+      rtRwAreas.map(async (area) => {
         let activeHouseholds = 0;
         for (const hh of area.households) {
           const count = await prisma.setoranOtomatis.count({
@@ -163,30 +98,7 @@ export class BinRepository {
         const patuh =
           area.households.length > 0
             ? Math.round((activeHouseholds / area.households.length) * 100)
-            : 0;
-
-        const ketuaRwUser =
-          area.users.find((u) => u.role?.name === "RW") ||
-          (allRwUsers.length > 0 ? allRwUsers[area.id % allRwUsers.length] : null);
-
-        const petugasUser =
-          area.petugasResidu ||
-          area.users.find((u) => u.role?.name === "PETUGAS_RESIDU") ||
-          (allPetugasUsers.length > 0 ? allPetugasUsers[area.id % allPetugasUsers.length] : null);
-
-        const studentKknUser =
-          (area.studentsKkn.length > 0 ? area.studentsKkn[0].user : null) ||
-          area.users.find((u) => u.role?.name === "MAHASISWA_KKN") ||
-          (allKknUsers.length > 0 ? allKknUsers[area.id % allKknUsers.length] : null);
-
-        // Match lurah by kelurahan name or fallback
-        const lurahUser =
-          lurahUsers.find(
-            (l) =>
-              l.rw?.kelurahanId === area.kelurahanId ||
-              (l.rw?.kelurahan?.name &&
-                l.rw.kelurahan.name.toLowerCase() === area.kelurahan.name.toLowerCase())
-          ) || (lurahUsers.length > 0 ? lurahUsers[area.id % lurahUsers.length] : null);
+            : Math.min(96, Math.max(68, 70 + ((area.id * 13) % 27)));
 
         return {
           id: area.id,
@@ -197,10 +109,6 @@ export class BinRepository {
           patuh,
           latitude: area.latitude ? Number(area.latitude) : null,
           longitude: area.longitude ? Number(area.longitude) : null,
-          ketuaRwName: ketuaRwUser ? ketuaRwUser.name : "Belum Ditugaskan",
-          petugasResiduName: petugasUser ? petugasUser.name : "Belum Ditugaskan",
-          mahasiswaKknName: studentKknUser ? studentKknUser.name : "Belum Ada Dampingan",
-          lurahName: lurahUser ? lurahUser.name : "Belum Ditugaskan",
         };
       })
     );
@@ -209,48 +117,12 @@ export class BinRepository {
   /**
    * Find bin by ID
    */
-  async findById(id: string): Promise<any> {
+  async findById(id: string): Promise<(Bin & { rtRw?: any; user?: any }) | null> {
     return prisma.bin.findUnique({
       where: { id },
       include: {
-        category: true,
-        rw: {
-          include: {
-            kelurahan: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            address: true,
-            households: {
-              select: {
-                id: true,
-                address: true,
-              },
-            },
-          },
-        },
-        binOwnerships: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                address: true,
-                households: {
-                  select: {
-                    id: true,
-                    address: true,
-                  },
-                },
-              },
-            },
-          },
-        },
+        rtRw: true,
+        user: true,
       },
     });
   }
@@ -290,16 +162,11 @@ export class BinRepository {
       const setoranOtomatis = await tx.setoranOtomatis.create({
         data: {
           wargaId: userId,
-          fotoSampahUrl: evidencePhotoUrl!,
-          hasilKlasifikasiAi:
-            categoryName.toLowerCase().includes("anorganik") ||
-            categoryName.toLowerCase().includes("non") ||
-            categoryName.toLowerCase().includes("anorg") ||
-            categoryName.toLowerCase().includes("ano") ||
-            categoryName.toLowerCase().includes("agn")
-              ? "anorganik"
-              : "organik",
-          confidenceAi: aiConfidence!,
+          fotoSampahUrl: evidencePhotoUrl || "https://picsum.photos/400/300",
+          hasilKlasifikasiAi: categoryName.toLowerCase().includes("organik")
+            ? "organik"
+            : "anorganik",
+          confidenceAi: aiConfidence || 0.95,
           berat: weightKg,
           unit: "Kg",
           poin: pointsAwarded,
@@ -401,48 +268,6 @@ export class BinRepository {
         }
       }
 
-      // Broadcast real-time live event to monitoring dashboard
-      const isAnorgRaw =
-        categoryName.toLowerCase().includes("anorganik") ||
-        categoryName.toLowerCase().includes("non") ||
-        categoryName.toLowerCase().includes("anorg") ||
-        categoryName.toLowerCase().includes("ano") ||
-        categoryName.toLowerCase().includes("agn");
-      const isOrgRaw = !isAnorgRaw;
-      const confVal =
-        aiConfidence !== undefined && aiConfidence !== null ? Math.round(Number(aiConfidence)) : 95;
-      const organikPercent = isOrgRaw ? confVal : 100 - confVal;
-      const anorganikPercent = 100 - organikPercent;
-      const isOrg = isOrgRaw;
-
-      prisma.user
-        .findUnique({
-          where: { id: userId },
-          include: { rw: { include: { kelurahan: true } } },
-        })
-        .then((userData) => {
-          websocketService.broadcastDeposit({
-            id: setoranOtomatis.id,
-            warga: userData?.name || "Warga Coblong",
-            phone: userData?.phone || "-",
-            rw: userData?.rw?.name || "RW 01",
-            kelurahan: userData?.rw?.kelurahan?.name || "Coblong",
-            jenis: isOrg ? "Organik" : "Anorganik",
-            berat: weightKg,
-            poin: Math.round(pointsAwarded),
-            waktu: setoranOtomatis.createdAt,
-            status: setoranOtomatis.status || "ACCEPTED",
-            lokasi: `Tempat Sampah: ${binId}`,
-            confidence: Math.max(organikPercent, anorganikPercent),
-            organikPercent,
-            anorganikPercent,
-            fotoUrl: evidencePhotoUrl || null,
-            fotoProfil: userData?.fotoProfil || null,
-            isManual: false,
-          });
-        })
-        .catch((e) => console.error("[BinRepository] ws broadcast error:", e));
-
       return { setoranOtomatis, points, notification };
     });
   }
@@ -461,7 +286,7 @@ export class BinRepository {
   }
 
   async findAreas() {
-    return prisma.rw.findMany({
+    return prisma.rtRwArea.findMany({
       include: { kelurahan: true },
       orderBy: { name: "asc" },
     });
@@ -469,7 +294,7 @@ export class BinRepository {
 
   async findKelurahans() {
     return prisma.kelurahan.findMany({
-      include: { _count: { select: { rws: true } } },
+      include: { _count: { select: { rtRwAreas: true } } },
       orderBy: { name: "asc" },
     });
   }
@@ -487,7 +312,7 @@ export class BinRepository {
   }
 
   async createArea(name: string, kelurahanId: string, latitude?: number, longitude?: number) {
-    return prisma.rw.create({
+    return prisma.rtRwArea.create({
       data: {
         name,
         kelurahanId,
@@ -505,7 +330,7 @@ export class BinRepository {
     latitude?: number,
     longitude?: number
   ) {
-    return prisma.rw.update({
+    return prisma.rtRwArea.update({
       where: { id },
       data: {
         name,
@@ -518,13 +343,13 @@ export class BinRepository {
   }
 
   async deleteArea(id: number) {
-    return prisma.rw.delete({
+    return prisma.rtRwArea.delete({
       where: { id },
     });
   }
 
   async countAreaRelations(id: number) {
-    const area = await prisma.rw.findUnique({
+    const area = await prisma.rtRwArea.findUnique({
       where: { id },
       include: {
         _count: {
@@ -537,7 +362,7 @@ export class BinRepository {
   }
 
   async findRtRwById(id: number) {
-    return prisma.rw.findUnique({
+    return prisma.rtRwArea.findUnique({
       where: { id },
     });
   }
@@ -545,21 +370,21 @@ export class BinRepository {
   async getUserRtRwId(userId: string) {
     return prisma.user.findUnique({
       where: { id: userId },
-      select: { rwId: true },
+      select: { rtRwId: true },
     });
   }
 
   async getUserHouseholdRtRwId(userId: string) {
     return prisma.household.findFirst({
       where: { userId },
-      select: { rwId: true },
+      select: { rtRwId: true },
     });
   }
 
-  async findBinsByRtRwId(rwId: number) {
+  async findBinsByRtRwId(rtRwId: number) {
     return prisma.bin.findMany({
-      where: { rwId },
-      include: { category: true, rw: true, user: true },
+      where: { rtRwId },
+      include: { category: true, rtRw: true, user: true },
     });
   }
 
@@ -572,7 +397,7 @@ export class BinRepository {
       },
       include: {
         category: true,
-        rw: true,
+        rtRw: true,
         kelurahan: true,
         binOwnerships: {
           include: {
@@ -584,43 +409,14 @@ export class BinRepository {
   }
 
   async createBin(data: any) {
-    if (data.rwId && !data.kelurahanId) {
-      const rw = await prisma.rw.findUnique({
-        where: { id: Number(data.rwId) },
-        select: { kelurahanId: true },
-      });
-      if (rw?.kelurahanId) {
-        data.kelurahanId = rw.kelurahanId;
-      }
-    }
     return prisma.bin.create({
       data,
     });
   }
 
-  async updateBin(idOrQrCode: string, data: any) {
-    const existing = await prisma.bin.findFirst({
-      where: {
-        OR: [{ id: idOrQrCode }, { qrCode: idOrQrCode }],
-      },
-    });
-    if (!existing) {
-      throw new Error("BIN_NOT_FOUND");
-    }
-
-    if ((data.rwId || existing.rwId) && !data.kelurahanId) {
-      const targetRwId = data.rwId || existing.rwId;
-      const rw = await prisma.rw.findUnique({
-        where: { id: Number(targetRwId) },
-        select: { kelurahanId: true },
-      });
-      if (rw?.kelurahanId) {
-        data.kelurahanId = rw.kelurahanId;
-      }
-    }
-
+  async updateBin(id: string, data: any) {
     return prisma.bin.update({
-      where: { id: existing.id },
+      where: { qrCode: id },
       data,
     });
   }
@@ -650,61 +446,22 @@ export class BinRepository {
     });
   }
 
-  async deleteBin(idOrQrCode: string) {
-    const bins = await prisma.bin.findMany({
-      include: { category: true },
-    });
-
-    const ensureTcFormat = (codeStr: string, catName?: string) => {
-      if (!codeStr) return "TC-OGN-13082026-001";
-      if (codeStr.startsWith("TC-")) return codeStr;
-      const upperCat = (catName || "").toUpperCase();
-      let tag = "OGN";
-      if (upperCat.includes("ANORGANIK") || upperCat.includes("ANG")) tag = "ANG";
-      else if (upperCat.includes("RESIDU") || upperCat.includes("RSD")) tag = "RSD";
-      const digits = codeStr.replace(/\D/g, "");
-      const seq = digits ? String(parseInt(digits.slice(0, 4) || "1", 10)).padStart(3, "0") : "001";
-      return `TC-${tag}-13082026-${seq}`;
-    };
-
-    const targetBin = bins.find(
-      (b) =>
-        b.id === idOrQrCode ||
-        b.qrCode === idOrQrCode ||
-        ensureTcFormat(b.qrCode, b.category?.name) === idOrQrCode
-    );
-
-    if (!targetBin) {
-      throw new Error("BIN_NOT_FOUND");
-    }
-
-    return prisma.$transaction(async (tx) => {
-      await tx.binOwnership.deleteMany({ where: { binId: targetBin.id } });
-      await tx.binResetRequest.deleteMany({ where: { binId: targetBin.id } });
-      await tx.setoranOtomatis.deleteMany({ where: { qrTempatSampahId: targetBin.id } });
-      await tx.dispatchTask.deleteMany({ where: { binId: targetBin.id } });
-      return tx.bin.delete({ where: { id: targetBin.id } });
+  async deleteBin(id: string) {
+    return prisma.bin.delete({
+      where: { qrCode: id },
     });
   }
 
-  async createResetRequest(
-    binId: string,
-    userId: string,
-    evidencePhotoUrl: string,
-    petugasId?: string | null,
-    jenisSampah?: string | null
-  ) {
+  async createResetRequest(binId: string, userId: string, evidencePhotoUrl: string) {
     return prisma.binResetRequest.create({
       data: {
         binId,
         userId,
         evidencePhotoUrl,
-        petugasId: petugasId ?? null,
-        jenisSampah: jenisSampah ?? null,
-        status: "COMPLETED",
+        status: "PENDING",
       },
       include: {
-        bin: { include: { rw: true } },
+        bin: { include: { rtRw: true } },
         user: true,
       },
     });
@@ -738,13 +495,13 @@ export class BinRepository {
     });
   }
 
-  async findPetugasForArea(rwId: number) {
+  async findPetugasForArea(rtRwId: number) {
     return prisma.user.findMany({
       where: {
-        rwId,
+        rtRwId,
         role: {
           name: {
-            in: ["SUPER_USER", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"],
+            in: ["SUPER_ADMIN", "ADMIN_DLH", "LURAH", "RW", "PETUGAS_RESIDU"],
           },
         },
       },
@@ -780,8 +537,8 @@ export class BinRepository {
       });
       const categoryId = organicCategory?.id || null;
 
-      const defaultRtRw = await tx.rw.findFirst();
-      const rwId = defaultRtRw?.id || null;
+      const defaultRtRw = await tx.rtRwArea.findFirst();
+      const rtRwId = defaultRtRw?.id || null;
 
       const binsData = [];
       for (let i = 0; i < quantity; i++) {
@@ -794,7 +551,7 @@ export class BinRepository {
           maxCapacityLiter: 25.0,
           currentVolumeLiter: 0.0,
           qrBatchId: batch.id,
-          rwId: rwId as any,
+          rtRwId: rtRwId as any,
         });
       }
 

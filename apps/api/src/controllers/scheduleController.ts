@@ -1,51 +1,31 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma.js";
 import { scheduleService } from "../services/scheduleService.js";
-
-function toWibDateString(d: Date): string {
-  const wibDate = new Date(d.getTime() + 7 * 60 * 60 * 1000);
-  return wibDate.toISOString().slice(0, 10);
-}
 
 export const scheduleController = {
   getAllSchedules: async (req: Request, res: Response) => {
     try {
-      const userRole = String(req.user?.role || "").toUpperCase();
-      const userId = req.user?.userId || (req.user as any)?.id;
-
-      const schedules = await scheduleService.getAllSchedules(userId, userRole);
+      const schedules = await scheduleService.getAllSchedules();
       res.status(200).json({
         success: true,
         data: schedules,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("[ScheduleController] getAllSchedules error:", error);
-      res.status(500).json({ success: false, message: error?.message || "Internal server error" });
+      res.status(500).json({ success: false, message: "Internal server error" });
     }
   },
 
   createSchedule: async (req: Request, res: Response) => {
     try {
-      const {
-        title,
-        date,
-        time,
-        category,
-        location,
-        latitude,
-        longitude,
-        radius,
-        polygon,
-        kelompokId,
-        isActive,
-      } = req.body;
+      const { title, date, time, category, location, latitude, longitude, radius, polygon } =
+        req.body;
       if (!title || !date || !category) {
         res.status(400).json({
           success: false,
@@ -65,72 +45,6 @@ export const scheduleController = {
         return;
       }
 
-      // Validasi waktu mulai tidak boleh di masa lalu (kurang dari hari ini dalam WIB)
-      const now = new Date();
-      const wibNowStr = toWibDateString(now);
-      const wibActivityStr = toWibDateString(parsedDate);
-
-      if (wibActivityStr < wibNowStr) {
-        res.status(400).json({
-          success: false,
-          error: "VALIDATION_ERROR",
-          message: "Waktu/tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)",
-        });
-        return;
-      }
-
-      let resolvedKelompokId =
-        kelompokId && kelompokId !== "ALL" && kelompokId !== "" ? kelompokId : undefined;
-      const userRole = String(req.user?.role || "").toUpperCase();
-      const isDpl = ["DPL", "DOSEN_PEMBIMBING"].includes(userRole);
-      const isMahasiswa = userRole === "MAHASISWA_KKN";
-
-      if (isDpl && !resolvedKelompokId) {
-        const userDpl = await prisma.user.findUnique({
-          where: { id: req.user?.userId },
-          select: { id: true, name: true },
-        });
-        const dplGroup = await prisma.kelompokKkn.findFirst({
-          where: {
-            OR: [
-              { dplId: req.user?.userId },
-              ...(userDpl?.name
-                ? [{ dplNamaMentah: { equals: userDpl.name.trim(), mode: "insensitive" as const } }]
-                : []),
-            ],
-          },
-          select: { id: true },
-        });
-        if (dplGroup) {
-          resolvedKelompokId = dplGroup.id;
-        } else {
-          res.status(403).json({
-            success: false,
-            error: "FORBIDDEN",
-            message: "DPL belum terhubung dengan kelompok KKN",
-          });
-          return;
-        }
-      }
-
-      if (req.user?.userId) {
-        if (isMahasiswa && !resolvedKelompokId) {
-          const studentProfile = await prisma.studentKkn.findUnique({
-            where: { userId: req.user.userId },
-            select: { kelompokId: true },
-          });
-          if (studentProfile?.kelompokId) {
-            resolvedKelompokId = studentProfile.kelompokId;
-          } else {
-            res.status(403).json({
-              success: false,
-              message: "Mahasiswa tidak memiliki kelompok KKN, tidak dapat membuat jadwal",
-            });
-            return;
-          }
-        }
-      }
-
       const schedule = await scheduleService.createSchedule({
         title,
         date: parsedDate,
@@ -141,8 +55,6 @@ export const scheduleController = {
         longitude: longitude ? Number(longitude) : undefined,
         radius: radius ? Number(radius) : undefined,
         polygon: polygon ? polygon : undefined,
-        kelompokId: resolvedKelompokId,
-        isActive: isActive !== undefined ? Boolean(isActive) : true,
       });
       res.status(201).json({
         success: true,
@@ -157,58 +69,6 @@ export const scheduleController = {
   deleteSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userRole = String(req.user?.role || "").toUpperCase();
-      const userId = req.user?.userId || (req.user as any)?.id;
-
-      if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
-        const schedule = await prisma.schedule.findUnique({
-          where: { id },
-          include: { kelompok: true },
-        });
-        if (!schedule) {
-          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
-          return;
-        }
-        const userDpl = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { id: true, name: true },
-        });
-        const isMentoring =
-          schedule.kelompok &&
-          (schedule.kelompok.dplId === userId ||
-            (userDpl?.name && schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
-        if (!isMentoring) {
-          res.status(403).json({
-            success: false,
-            error: "FORBIDDEN_SCOPE",
-            message: "Role DPL hanya dapat mengelola kegiatan kelompok bimbingan sendiri",
-          });
-          return;
-        }
-      }
-
-      if (userRole === "MAHASISWA_KKN") {
-        const schedule = await prisma.schedule.findUnique({ where: { id } });
-        if (!schedule) {
-          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
-          return;
-        }
-        if (!schedule.kelompokId) {
-          res.status(403).json({
-            success: false,
-            message: "FORBIDDEN_SCOPE",
-            error: "Tidak dapat menghapus jadwal acara bersama",
-          });
-          return;
-        }
-        // Verify ownership
-        const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
-        if (schedule.kelompokId !== studentProfile?.kelompokId) {
-          res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
-          return;
-        }
-      }
-
       await scheduleService.deleteSchedule(id);
       res.status(200).json({
         success: true,
@@ -223,72 +83,8 @@ export const scheduleController = {
   updateSchedule: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const {
-        title,
-        date,
-        time,
-        category,
-        location,
-        latitude,
-        longitude,
-        radius,
-        polygon,
-        kelompokId,
-        isActive,
-      } = req.body;
-
-      const userRole = String(req.user?.role || "").toUpperCase();
-      const userId = req.user?.userId || (req.user as any)?.id;
-
-      if (["DPL", "DOSEN_PEMBIMBING"].includes(userRole)) {
-        const schedule = await prisma.schedule.findUnique({
-          where: { id },
-          include: { kelompok: true },
-        });
-        if (!schedule) {
-          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
-          return;
-        }
-        const userDpl = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { id: true, name: true },
-        });
-        const isMentoring =
-          schedule.kelompok &&
-          (schedule.kelompok.dplId === userId ||
-            (userDpl?.name && schedule.kelompok.dplNamaMentah?.toLowerCase() === userDpl.name.toLowerCase()));
-        if (!isMentoring) {
-          res.status(403).json({
-            success: false,
-            error: "FORBIDDEN_SCOPE",
-            message: "Role DPL hanya dapat mengelola kegiatan kelompok bimbingan sendiri",
-          });
-          return;
-        }
-      }
-
-      if (userRole === "MAHASISWA_KKN") {
-        const schedule = await prisma.schedule.findUnique({ where: { id } });
-        if (!schedule) {
-          res.status(404).json({ success: false, message: "Jadwal tidak ditemukan" });
-          return;
-        }
-        if (!schedule.kelompokId) {
-          res.status(403).json({
-            success: false,
-            message: "FORBIDDEN_SCOPE",
-            error: "Tidak dapat mengedit jadwal acara bersama",
-          });
-          return;
-        }
-        // Verify ownership
-        const studentProfile = await prisma.studentKkn.findUnique({ where: { userId } });
-        if (schedule.kelompokId !== studentProfile?.kelompokId) {
-          res.status(403).json({ success: false, message: "FORBIDDEN_SCOPE" });
-          return;
-        }
-      }
-
+      const { title, date, time, category, location, latitude, longitude, radius, polygon } =
+        req.body;
       let parsedDate;
       if (date) {
         parsedDate = new Date(date);
@@ -300,28 +96,9 @@ export const scheduleController = {
           });
           return;
         }
-
-        const now = new Date();
-        const wibNowStr = toWibDateString(now);
-        const wibActivityStr = toWibDateString(parsedDate);
-
-        const existingSchedule = await prisma.schedule.findUnique({
-          where: { id },
-          select: { date: true },
-        });
-        const existingWibStr = existingSchedule?.date ? toWibDateString(existingSchedule.date) : null;
-
-        if (wibActivityStr < wibNowStr && wibActivityStr !== existingWibStr) {
-          res.status(400).json({
-            success: false,
-            error: "VALIDATION_ERROR",
-            message: "Waktu/tanggal mulai kegiatan tidak boleh pada hari sebelumnya (masa lalu)",
-          });
-          return;
-        }
       }
 
-      const updatedSchedule = await scheduleService.updateSchedule(id, {
+      const schedule = await scheduleService.updateSchedule(id, {
         title,
         date: parsedDate,
         time,
@@ -331,35 +108,15 @@ export const scheduleController = {
         longitude: longitude !== undefined ? Number(longitude) : undefined,
         radius: radius !== undefined ? Number(radius) : undefined,
         polygon: polygon !== undefined ? polygon : undefined,
-        kelompokId: kelompokId !== undefined ? kelompokId : undefined,
-        isActive: isActive !== undefined ? Boolean(isActive) : undefined,
       });
 
       res.status(200).json({
         success: true,
-        data: updatedSchedule,
+        data: schedule,
       });
     } catch (error) {
       console.error("[ScheduleController] updateSchedule error:", error);
       res.status(500).json({ success: false, message: "Gagal mengupdate jadwal" });
-    }
-  },
-
-  syncDailySchedules: async (req: Request, res: Response) => {
-    try {
-      const { date } = req.body || {};
-      const cleanResult = await scheduleService
-        .cleanAllDuplicateSchedules()
-        .catch(() => ({ removedDuplicatesCount: 0 }));
-      const result = await scheduleService.syncDailySchedulesForToday(date);
-      res.status(200).json({
-        success: true,
-        message: `Berhasil sinkronisasi jadwal kegiatan harian (${result.date})${cleanResult.removedDuplicatesCount > 0 ? ` (${cleanResult.removedDuplicatesCount} duplikat dibersihkan)` : ""}`,
-        data: { ...result, totalDuplicatesCleaned: cleanResult.removedDuplicatesCount },
-      });
-    } catch (error: any) {
-      console.error("[ScheduleController] syncDailySchedules error:", error);
-      res.status(500).json({ success: false, message: error?.message || "Internal server error" });
     }
   },
 };

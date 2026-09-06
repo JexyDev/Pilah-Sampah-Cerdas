@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -7,27 +7,20 @@
 
 import { create } from "zustand";
 import api from "../utils/api";
-import { useThemeStore } from "./useThemeStore";
-import { checkIsIOSSafari } from "../utils/deviceValidation";
 
 export type UserRole =
-  | "DEVELOPER"
-  | "SUPER_USER"
+  | "SUPER_ADMIN"
   | "ADMIN_DLH"
   | "CAMAT"
   | "LURAH"
   | "RW"
+  | "RT"
   | "PETUGAS_RESIDU"
   | "WARGA"
   | "MAHASISWA_KKN"
   | "DPL"
   | "DOSEN_PEMBIMBING"
-  | "DOSEN_PENDAMPING"
-  | "DOSEN_PENDAMPING_LAPANGAN"
-  | "MPL"
-  | "PIMPINAN"
   | "PEMIMPIN"
-  | "TASK_FORCE"
   | "PANITIA_TASKFORCE";
 
 export interface User {
@@ -35,17 +28,7 @@ export interface User {
   name: string;
   email: string;
   peran: UserRole;
-  role?: string;
   wilayah: string;
-  kelurahan?: string;
-  kecamatan?: string;
-  rw?: string;
-  dplKelompok?: Array<{
-    id: string;
-    name: string;
-    kelurahan: string;
-    cakupanRw?: any;
-  }>;
   avatar: string;
   avatarBg: string;
   avatarColor: string;
@@ -60,7 +43,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (phone: string, password: string, rememberMe?: boolean) => Promise<boolean>;
+  login: (phone: string, password: string) => Promise<boolean>;
   requestOtp: (phone: string) => Promise<boolean>;
   verifyOtp: (phone: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -69,23 +52,19 @@ interface AuthState {
 }
 
 const normalizeRole = (role: string): UserRole => {
-  if (["DEVELOPER", "Developer", "developer", "dev"].includes(role)) return "DEVELOPER";
   if (["DLH", "DLH_ADMIN", "Admin DLH"].includes(role)) return "ADMIN_DLH";
   if (["ADMIN_KECAMATAN", "Camat", "CAMAT_ADMIN"].includes(role)) return "CAMAT";
   if (["ADMIN_KELURAH", "Lurah", "LURAH_ADMIN"].includes(role)) return "LURAH";
-  if (["DOSEN_PEMBIMBING", "DOSEN_PENDAMPING", "DOSEN_PENDAMPING_LAPANGAN", "DPL"].includes(role)) return "DPL";
-  if (["MPL", "Mitra Pendamping", "MITRA_PENDAMPING_LAPANGAN", "MITRA_PEMBIMBING_LAPANGAN"].includes(role)) return "MPL";
-  if (["PEMIMPIN", "PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PIMPINAN";
-  if (["TASKFORCE", "Panitia", "TASK_FORCE", "Panitia/Taskforce", "PANITIA_TASKFORCE"].includes(role)) return "TASK_FORCE";
+  if (["DOSEN_PEMBIMBING", "DPL"].includes(role)) return "DPL";
+  if (["PIMPINAN", "Pemimpin", "Pimpinan"].includes(role)) return "PEMIMPIN";
+  if (["TASKFORCE", "Panitia", "TASK_FORCE", "Panitia/Taskforce"].includes(role)) return "PANITIA_TASKFORCE";
   return role as UserRole;
 };
 
 const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: string } => {
   const role = normalizeRole(rawRole);
   switch (role) {
-    case "DEVELOPER":
-      return { avatarBg: "bg-emerald-100", avatarColor: "text-[#009966]" };
-    case "SUPER_USER":
+    case "SUPER_ADMIN":
       return { avatarBg: "bg-indigo-100", avatarColor: "text-indigo-700" };
     case "ADMIN_DLH":
       return { avatarBg: "bg-blue-100", avatarColor: "text-blue-700" };
@@ -95,6 +74,8 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
       return { avatarBg: "bg-pink-100", avatarColor: "text-pink-700" };
     case "RW":
       return { avatarBg: "bg-teal-100", avatarColor: "text-teal-700" };
+    case "RT":
+      return { avatarBg: "bg-cyan-100", avatarColor: "text-cyan-700" };
     case "PETUGAS_RESIDU":
       return { avatarBg: "bg-orange-100", avatarColor: "text-orange-700" };
     case "WARGA":
@@ -106,136 +87,40 @@ const getAvatarConfig = (rawRole: string): { avatarBg: string; avatarColor: stri
   }
 };
 
-const getWilayahByRole = (role: string, kelurahan?: string, kecamatan?: string, rw?: string): string => {
-  if (rw && kelurahan) return `RW ${rw} ${kelurahan}`;
-  if (kelurahan) return `Kelurahan ${kelurahan}`;
-  if (kecamatan) return `Kecamatan ${kecamatan}`;
-
+const getWilayahByRole = (role: string): string => {
   switch (role) {
-    case "DEVELOPER":
-    case "SUPER_USER":
+    case "SUPER_ADMIN":
+      return "Kecamatan Coblong";
     case "ADMIN_DLH":
-    case "PIMPINAN":
-    case "PEMIMPIN":
-      return "Sistem Terpusat";
+      return "Kecamatan Coblong";
     case "CAMAT":
-      return "Tingkat Kecamatan";
+      return "Kecamatan Coblong";
     case "LURAH":
-      return "Tingkat Kelurahan";
+      return "Kelurahan Dago";
     case "RW":
+      return "RW 06 Dago";
+    case "RT":
+      return "RT 04 / RW 06 Dago";
     case "PETUGAS_RESIDU":
+      return "RT 02 / RW 06";
     case "WARGA":
-      return "Tingkat Rukun Warga";
+      return "RT 04 / RW 06";
     case "MAHASISWA_KKN":
-      return "Area KKN Tematik";
+      return "Area KKN Dago";
     default:
-      return "Wilayah Operasional";
+      return "Kecamatan Coblong";
   }
 };
-
-export const computeAvatarInitials = (name: string = "User"): string => {
-  if (!name) return "U";
-  const cleanName = name
-    .replace(/\b(Assoc\.|Prof\.|Dr\.|Dra\.|Drs\.|S\.Kom\.|M\.Kom\.|M\.Eng\.|S\.E\.|M\.Si\.|S\.T\.|M\.T\.|S\.Ds\.|M\.Ds\.|S\.H\.|M\.H\.|S\.Si\.|S\.Pd\.|M\.Pd\.|S\.IP\.|M\.I\.Pol\.|M\.I\.Kom\.|S\.Sos\.|S\.STP\.|M\.AP\.|A\.KS\.|Ph\.D\.|CIMA|CDMP|CSBA)\b/gi, "")
-    .trim();
-  const words = (cleanName || name).split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "U";
-  if (words.length === 1) return words[0][0].toUpperCase();
-  return words.slice(0, 3).map((w) => w[0].toUpperCase()).join("");
-};
-
-export const WEB_DISABLED_ROLES: UserRole[] = ["WARGA", "PETUGAS_RESIDU"];
-
-// ─── Helper: Storage abstraction (localStorage vs sessionStorage) ─────────────
-const TOKEN_KEYS = ["psc_access_token", "psc_refresh_token", "psc_user"] as const;
-
-function getActiveStorage(): Storage {
-  // Jika flag remember_me disimpan di localStorage → localStorage, else → sessionStorage
-  return localStorage.getItem("psc_remember_me") === "1" ? localStorage : sessionStorage;
-}
-
-function getStoredItem(key: string): string | null {
-  return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? null;
-}
-
-function setStoredItem(key: string, value: string, remember: boolean): void {
-  if (remember) {
-    localStorage.setItem(key, value);
-    sessionStorage.removeItem(key); // cleanup other storage
-  } else {
-    sessionStorage.setItem(key, value);
-    localStorage.removeItem(key); // cleanup other storage
-  }
-}
-
-function clearAllStoredItems(): void {
-  TOKEN_KEYS.forEach((key) => {
-    localStorage.removeItem(key);
-    sessionStorage.removeItem(key);
-  });
-  localStorage.removeItem("psc_remember_me");
-}
 
 const getInitialUser = (): User | null => {
   try {
-    const stored = getStoredItem("psc_user");
+    const stored = localStorage.getItem("psc_user");
     if (!stored) return null;
     const user = JSON.parse(stored);
-    if (!user) return null;
-
-    let modified = false;
-
-    if (user.peran) {
-      const norm = normalizeRole(user.peran);
-      if (user.peran !== norm) {
-        user.peran = norm;
-        modified = true;
-      }
+    if (user && (user.wilayah === "Sistem Pusat" || user.wilayah === "Dinas Lingkungan Hidup")) {
+      user.wilayah = "Kecamatan Coblong";
+      localStorage.setItem("psc_user", JSON.stringify(user));
     }
-    if (user.role && typeof user.role === "string") {
-      const normRole = normalizeRole(user.role);
-      if (user.role !== normRole) {
-        user.role = normRole;
-        modified = true;
-      }
-    }
-
-    if (user && WEB_DISABLED_ROLES.includes(user.peran)) {
-      clearAllStoredItems();
-      return null;
-    }
-    if (user && user.peran === "MAHASISWA_KKN") {
-      const dev = checkIsIOSSafari();
-      if (!dev.isValid) {
-        clearAllStoredItems();
-        return null;
-      }
-    }
-    if (
-      user &&
-      (user.wilayah === "Sistem Pusat" ||
-        user.wilayah === "Sistem Terpusat" ||
-        user.wilayah === "Wilayah Operasional" ||
-        user.wilayah === "Dinas Lingkungan Hidup" ||
-        user.wilayah === "PT Makerindo" ||
-        user.peran === "PIMPINAN" ||
-        user.peran === "PEMIMPIN" ||
-        user.peran === "SUPER_USER" ||
-        user.peran === "ADMIN_DLH" ||
-        user.peran === "DEVELOPER" ||
-        !user.wilayah)
-    ) {
-      if (user.wilayah !== "Semua Wilayah") {
-        user.wilayah = "Semua Wilayah";
-        modified = true;
-      }
-    }
-
-    if (modified) {
-      const storage = getActiveStorage();
-      storage.setItem("psc_user", JSON.stringify(user));
-    }
-
     return user;
   } catch {
     return null;
@@ -244,11 +129,11 @@ const getInitialUser = (): User | null => {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: getInitialUser(),
-  isAuthenticated: !!getStoredItem("psc_access_token") && (!getInitialUser() ? false : true),
+  isAuthenticated: !!localStorage.getItem("psc_access_token"),
   isLoading: false,
   error: null,
 
-  login: async (phone: string, password: string, rememberMe: boolean = true) => {
+  login: async (phone: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
       // Axios returns { data, status, ... }; backend body is { message, data: { user, accessToken, refreshToken } }
@@ -261,64 +146,23 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const { user: backendUser, accessToken, refreshToken } = payload;
-      const normalizedRole = normalizeRole(backendUser.role);
 
-      if (WEB_DISABLED_ROLES.includes(normalizedRole)) {
-        clearAllStoredItems();
-        set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
-        return false;
-      }
-
-      if (normalizedRole === "MAHASISWA_KKN") {
-        const devCheck = checkIsIOSSafari();
-        if (!devCheck.isValid) {
-          clearAllStoredItems();
-          set({
-            isLoading: false,
-            error: "MAHASISWA_MUST_USE_IOS_SAFARI",
-            isAuthenticated: false,
-            user: null,
-          });
-          return false;
-        }
-      }
-
-      // Simpan flag remember_me di localStorage (selalu persisten sebagai referensi)
-      if (rememberMe) {
-        localStorage.setItem("psc_remember_me", "1");
-      } else {
-        localStorage.removeItem("psc_remember_me");
-      }
-
-      // Simpan token berdasarkan pilihan "Ingat Saya"
-      setStoredItem("psc_access_token", accessToken, rememberMe);
+      // Simpan token
+      localStorage.setItem("psc_access_token", accessToken);
       if (refreshToken) {
-        setStoredItem("psc_refresh_token", refreshToken, rememberMe);
+        localStorage.setItem("psc_refresh_token", refreshToken);
       }
 
       // Buat user object untuk store
+      const normalizedRole = normalizeRole(backendUser.role);
       const avatarConfig = getAvatarConfig(normalizedRole);
       const user: User = {
         id: backendUser.id,
         name: backendUser.name,
         email: backendUser.email,
         peran: normalizedRole,
-        role: backendUser.role,
-        wilayah:
-          ["PIMPINAN", "DEVELOPER", "SUPER_USER", "ADMIN_DLH"].includes(normalizedRole)
-            ? "Semua Wilayah"
-            : backendUser.wilayah ||
-              getWilayahByRole(
-                normalizedRole,
-                backendUser.kelurahan,
-                backendUser.kecamatan,
-                backendUser.rw
-              ),
-        kelurahan: backendUser.kelurahan,
-        kecamatan: backendUser.kecamatan || "",
-        rw: backendUser.rw,
-        dplKelompok: backendUser.dplKelompok,
-        avatar: computeAvatarInitials(backendUser.name),
+        wilayah: getWilayahByRole(normalizedRole),
+        avatar: backendUser.name.substring(0, 2).toUpperCase(),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
         address: backendUser.address,
@@ -326,9 +170,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         ...avatarConfig,
       };
 
-      setStoredItem("psc_user", JSON.stringify(user), rememberMe);
+      localStorage.setItem("psc_user", JSON.stringify(user));
       set({ user, isAuthenticated: true, isLoading: false, error: null });
-      useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
@@ -361,41 +204,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const { user: backendUser, accessToken, refreshToken } = payload;
-      const normalizedRole = normalizeRole(backendUser.role);
-
-      if (WEB_DISABLED_ROLES.includes(normalizedRole)) {
-        localStorage.removeItem("psc_access_token");
-        localStorage.removeItem("psc_refresh_token");
-        localStorage.removeItem("psc_user");
-        set({ isLoading: false, error: "ROLE_NOT_ALLOWED_ON_WEB", isAuthenticated: false, user: null });
-        return false;
-      }
 
       localStorage.setItem("psc_access_token", accessToken);
       if (refreshToken) {
         localStorage.setItem("psc_refresh_token", refreshToken);
       }
 
+      const normalizedRole = normalizeRole(backendUser.role);
       const avatarConfig = getAvatarConfig(normalizedRole);
       const user: User = {
         id: backendUser.id,
         name: backendUser.name,
         email: backendUser.email,
         peran: normalizedRole,
-        role: backendUser.role,
-        wilayah:
-          backendUser.wilayah ||
-          getWilayahByRole(
-            normalizedRole,
-            backendUser.kelurahan,
-            backendUser.kecamatan,
-            backendUser.rw
-          ),
-        kelurahan: backendUser.kelurahan,
-        kecamatan: backendUser.kecamatan || "",
-        rw: backendUser.rw,
-        dplKelompok: backendUser.dplKelompok,
-        avatar: computeAvatarInitials(backendUser.name),
+        wilayah: getWilayahByRole(normalizedRole),
+        avatar: backendUser.name.substring(0, 2).toUpperCase(),
         fotoProfil: backendUser.fotoProfil,
         phone: backendUser.phone,
         address: backendUser.address,
@@ -405,7 +228,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       localStorage.setItem("psc_user", JSON.stringify(user));
       set({ user, isAuthenticated: true, isLoading: false, error: null });
-      useThemeStore.getState().initTheme();
       return true;
     } catch (err: any) {
       const code = err?.response?.data?.code || (err?.response ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
@@ -416,14 +238,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      const refreshToken = getStoredItem("psc_refresh_token");
+      const refreshToken = localStorage.getItem("psc_refresh_token");
       if (refreshToken) {
         await api.post("/auth/logout", { refreshToken }).catch(() => {});
       }
     } finally {
-      clearAllStoredItems();
-      useThemeStore.getState().setInsideMainLayout(false);
-      useThemeStore.getState().resetThemeToLight();
+      localStorage.removeItem("psc_access_token");
+      localStorage.removeItem("psc_refresh_token");
+      localStorage.removeItem("psc_user");
       set({ user: null, isAuthenticated: false, error: null });
     }
   },
@@ -432,8 +254,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, wilayah: newWilayah };
-      const remember = localStorage.getItem("psc_remember_me") === "1";
-      setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
+      localStorage.setItem("psc_user", JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
   },
@@ -442,8 +263,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return state;
       const updatedUser = { ...state.user, ...updatedFields };
-      const remember = localStorage.getItem("psc_remember_me") === "1";
-      setStoredItem("psc_user", JSON.stringify(updatedUser), remember);
+      localStorage.setItem("psc_user", JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
   },

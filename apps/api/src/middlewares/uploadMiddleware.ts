@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -7,204 +7,52 @@
 
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { Request, Response, NextFunction } from "express";
+import { Request } from "express";
 
-// Storage Configuration with auto-mkdir
+// Storage Configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(process.cwd(), "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
+    const ext = path.extname(file.originalname);
     const uniqueName = `${Date.now()}-${uuidv4()}${ext}`;
     cb(null, uniqueName);
   },
 });
 
-// File Filter (JPEG, PNG, WEBP, PDF)
-const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/jpg",
-    "application/octet-stream",
-    "application/pdf",
-    "application/x-pdf",
-  ];
-  const mimetypeLower = (file.mimetype || "").toLowerCase();
-  const extLower = path.extname(file.originalname || "").toLowerCase();
-
-  if (
-    allowedMimeTypes.includes(mimetypeLower) ||
-    [".jpg", ".jpeg", ".png", ".webp", ".pdf"].includes(extLower) ||
-    !file.mimetype
-  ) {
+// File Filter (JPEG, PNG, WEBP only)
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
     cb(
-      new Error(
-        "Format file tidak valid. Hanya JPG, PNG, WEBP, dan PDF yang diperbolehkan."
-      ) as any,
+      new Error("Format file tidak valid. Hanya JPG, PNG, dan WEBP yang diperbolehkan.") as any,
       false
     );
   }
 };
 
-export const upload = multer({
+export const uploadAvatarMiddleware = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB safe limit
+    fileSize: 2 * 1024 * 1024, // 2MB limit
   },
 });
-
-export const uploadAvatarMiddleware = upload;
 
 export const uploadSingleImage = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB safe limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit
   },
 });
-
-export const safeUploadSingleImage = (fieldName: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    uploadSingleImage.single(fieldName)(req, res, (err: any) => {
-      if (err) {
-        console.error(`[UploadMiddleware] Upload error on field '${fieldName}':`, err.message);
-        return res.status(400).json({
-          success: false,
-          message: err.message || "Gagal mengunggah berkas foto bukti.",
-        });
-      }
-      next();
-    });
-  };
-};
 
 export const uploadResiduImage = uploadSingleImage.fields([
   { name: "image", maxCount: 1 },
   { name: "evidence", maxCount: 1 },
   { name: "evidencePhotoUrl", maxCount: 1 },
 ]);
-
-export const uploadPemanfaatanImage = uploadSingleImage.any();
-
-export const safeUploadPemanfaatanImage = (req: Request, res: Response, next: NextFunction) => {
-  uploadPemanfaatanImage(req, res, (err: any) => {
-    if (err) {
-      console.error("[UploadMiddleware] Upload error on pemanfaatan/activity logs:", err.message);
-      return res.status(400).json({
-        success: false,
-        message: err.message || "Gagal mengunggah berkas foto bukti.",
-      });
-    }
-    next();
-  });
-};
-
-import { execSync } from "child_process";
-
-/**
- * Konversi otomatis file HEIC/HEIF (dari kamera iPhone/iOS) menjadi file JPEG/JPG standar
- * agar gambar dapat dirender di semua web browser.
- */
-export function ensureWebCompatibleImageFile(filename: string): string {
-  const ext = path.extname(filename).toLowerCase();
-  if (ext !== ".heic" && ext !== ".heif") {
-    return filename;
-  }
-
-  const uploadDir = path.join(process.cwd(), "uploads");
-  const srcPath = path.join(uploadDir, filename);
-  const baseNoExt = filename.substring(0, filename.length - ext.length);
-  const jpgFilename = `${baseNoExt}.jpg`;
-  const dstPath = path.join(uploadDir, jpgFilename);
-
-  if (fs.existsSync(srcPath)) {
-    try {
-      execSync(`heif-convert "${srcPath}" "${dstPath}"`);
-      if (fs.existsSync(dstPath)) {
-        try { fs.chmodSync(dstPath, 0o644); } catch {}
-        return jpgFilename;
-      }
-    } catch {
-      try {
-        execSync(`magick "${srcPath}" "${dstPath}"`);
-        if (fs.existsSync(dstPath)) {
-          try { fs.chmodSync(dstPath, 0o644); } catch {}
-          return jpgFilename;
-        }
-      } catch {
-        // Fallback jika tools konversi belum tersedia
-      }
-    }
-  }
-  return filename;
-}
-
-/**
- * Ekstraksi aman untuk seluruh URL file yang diunggah dari req.file atau req.files
- * Mendukung format Multer: .single(), .array(), .fields(), dan .any()
- * Mencegah duplikasi file yang sama di req.file dan req.files
- */
-export function extractUploadedFileUrls(req: Request): string[] {
-  const urls = new Set<string>();
-  if (req.file && req.file.filename) {
-    const finalFilename = ensureWebCompatibleImageFile(req.file.filename);
-    urls.add(`/uploads/${finalFilename}`);
-  }
-  if (req.files) {
-    if (Array.isArray(req.files)) {
-      for (const f of req.files) {
-        if (f && f.filename) {
-          const finalFilename = ensureWebCompatibleImageFile(f.filename);
-          urls.add(`/uploads/${finalFilename}`);
-        }
-      }
-    } else if (typeof req.files === "object") {
-      const filesObj = req.files as { [fieldname: string]: any[] };
-      for (const key of Object.keys(filesObj)) {
-        const arr = filesObj[key];
-        if (Array.isArray(arr)) {
-          for (const f of arr) {
-            if (f && f.filename) {
-              const finalFilename = ensureWebCompatibleImageFile(f.filename);
-              urls.add(`/uploads/${finalFilename}`);
-            }
-          }
-        }
-      }
-    }
-  }
-  return Array.from(urls);
-}
-
-/**
- * Mengambil URL file pertama yang diunggah, atau fallback dari body jika tidak ada file fisik
- */
-export function extractFirstUploadedFileUrl(
-  req: Request,
-  fallbackUrls?: Array<string | undefined | null>
-): string | undefined {
-  const uploaded = extractUploadedFileUrls(req);
-  if (uploaded.length > 0) {
-    return uploaded[0];
-  }
-  if (fallbackUrls) {
-    for (const u of fallbackUrls) {
-      if (u && typeof u === "string" && u.trim() !== "" && u !== "null" && u !== "undefined") {
-        return u.trim();
-      }
-    }
-  }
-  return undefined;
-}

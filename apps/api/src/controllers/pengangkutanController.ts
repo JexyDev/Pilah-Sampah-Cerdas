@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  */
@@ -11,18 +11,18 @@ export class PengangkutanController {
   async getAll(req: Request, res: Response): Promise<void> {
     try {
       const user = req.user;
-      let rwId: number | undefined;
+      let rtRwId: number | undefined;
 
       // Restrict to user's RW area if they are RT/RW
       if (user && (user.role === "RW" || user.role === "RT")) {
-        rwId = user.rwId;
-      } else if (req.query.rwId) {
-        rwId = parseInt(req.query.rwId as string, 10);
+        rtRwId = user.rtRwId;
+      } else if (req.query.rtRwId) {
+        rtRwId = parseInt(req.query.rtRwId as string, 10);
       }
 
       const status = req.query.status as string | undefined;
 
-      const tasks = await pengangkutanService.getAll({ status, rwId });
+      const tasks = await pengangkutanService.getAll({ status, rtRwId });
       res.status(200).json({ success: true, data: tasks });
     } catch (error: any) {
       res.status(500).json({

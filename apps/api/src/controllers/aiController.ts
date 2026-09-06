@@ -1,6 +1,5 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -9,7 +8,6 @@ import { prisma } from "../lib/prisma.js";
 import { Request, Response } from "express";
 import { aiService } from "../services/aiService.js";
 import { redisService } from "../services/redisService.js";
-import { WasteAiAdapterFactory } from "../infrastructure/ai/WasteAiAdapterFactory.js";
 
 export class AiController {
   /**
@@ -43,7 +41,7 @@ export class AiController {
           error: "AI_TIMEOUT",
           message: "Waktu deteksi AI habis (Timeout > 2000ms). Silakan coba lagi.",
         });
-      } else if (error.message === "IMAGE_UNREADABLE" || error.message === "NO_WASTE_DETECTED") {
+      } else if (error.message === "IMAGE_UNREADABLE") {
         res.status(422).json({
           error: "IMAGE_UNREADABLE",
           message: "Gambar buram atau jenis sampah tidak teridentifikasi.",
@@ -95,11 +93,10 @@ export class AiController {
       }
 
       const filePath = `/uploads/${req.file.filename}`;
-      const evidencePhotoUrl = `${req.protocol}://${req.get("host")}${filePath}`;
-      const result = await aiService.detectWasteMock(userId, filePath, req.file.path);
+      const result = await aiService.detectWasteMock(userId, filePath);
       const quotaRemaining = await redisService.getRemainingQuota(userId);
 
-      const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(2)) || 1.0;
+      const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(1)) || 1.0;
       const confidence = (result as any).confidence || 0.94;
       const organicPercentage = ((result as any).organik_percent ?? 94) / 100;
       const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || 85;
@@ -117,7 +114,6 @@ export class AiController {
           isBlurry: (result as any).isBlurry || false,
           requestId: (result as any).requestId,
           quotaRemaining,
-          evidencePhotoUrl,
           ...result,
         },
       });
@@ -133,7 +129,7 @@ export class AiController {
           error: "AI_TIMEOUT",
           message: "Waktu deteksi AI habis (Timeout > 2000ms). Silakan coba lagi.",
         });
-      } else if (error.message === "IMAGE_UNREADABLE" || error.message === "NO_WASTE_DETECTED") {
+      } else if (error.message === "IMAGE_UNREADABLE") {
         res.status(422).json({
           error: "IMAGE_UNREADABLE",
           message: "Gambar buram atau jenis sampah tidak teridentifikasi.",
@@ -232,7 +228,8 @@ export class AiController {
    */
   async getCo2eStats(req: Request, res: Response): Promise<void> {
     try {
-      const organicLogs = await prisma.setoranOtomatis.findMany({
+      const prismaClient = new (await import("@prisma/client")).PrismaClient();
+      const organicLogs = await prismaClient.setoranOtomatis.findMany({
         where: {
           hasilKlasifikasiAi: "organik",
         },
@@ -288,71 +285,6 @@ export class AiController {
       res
         .status(500)
         .json({ success: false, error: "INTERNAL_SERVER_ERROR", message: error.message });
-    }
-  }
-
-  /**
-   * Mock AI classification for BantuWargaForm and other features
-   */
-  async classifyMock(req: Request, res: Response): Promise<void> {
-    try {
-      let imageUrl = req.body.imageUrl || "";
-      let imagePath = "";
-
-      if (req.file) {
-        imageUrl = `/uploads/${req.file.filename}`;
-        imagePath = req.file.path;
-      }
-
-      const adapter = WasteAiAdapterFactory.getAdapter();
-      const result = await adapter.classifyWaste({ imageUrl, imagePath });
-
-      // Calculate organik & non-organik percentages if not calculated by adapter (fallback)
-      // NOTE: adapter berbeda mengembalikan format berbeda -- VendorWasteAiAdapter (model asli)
-      // pakai Bahasa Inggris uppercase ("ORGANIC"/"NON_ORGANIC"), sedangkan MockWasteAiAdapter
-      // (fallback saat AI_VENDOR_PROVIDER tidak di-set) pakai Bahasa Indonesia lowercase
-      // ("organik"/"anorganik"). toUpperCase() saja TIDAK cukup karena "organik".toUpperCase()
-      // = "ORGANIK" (beda ejaan dari "ORGANIC", C vs K) -- makanya pakai startsWith("ORGAN")
-      // yang cocok untuk kedua bahasa ("ORGANIC" & "ORGANIK" sama-sama diawali "ORGAN",
-      // sedangkan "NON_ORGANIC" & "ANORGANIK" tidak).
-      const isOrganicType = result.detectedType.toUpperCase().startsWith("ORGAN");
-      const organik_percent =
-        (result.rawPayload as any)?.organik_percent ?? (isOrganicType ? 100 : 0);
-      const non_organik_percent =
-        (result.rawPayload as any)?.non_organik_percent ?? (isOrganicType ? 0 : 100);
-
-      res.status(200).json({
-        success: true,
-        data: {
-          detectedType: result.detectedType,
-          confidenceScore: result.confidenceScore,
-          estimatedVolumeLiter: result.estimatedVolumeLiter,
-          organik_percent,
-          non_organik_percent,
-          vendorName: result.vendorName,
-          annotatedImageBase64: result.annotatedImageBase64,
-          imageUrl,
-        },
-      });
-    } catch (error: any) {
-      if (error.message === "NO_WASTE_DETECTED") {
-        res.status(422).json({
-          success: false,
-          code: "NO_WASTE_DETECTED",
-          message:
-            "Tidak terdeteksi objek sampah pada gambar (Tingkat Keyakinan AI < 40%). Coba foto objek sampah dengan pencahayaan dan jarak yang lebih jelas.",
-        });
-      } else if (error.message === "IMAGE_UNREADABLE") {
-        res.status(422).json({
-          success: false,
-          code: "IMAGE_UNREADABLE",
-          message: "Gambar buram atau tidak dapat dibaca oleh AI.",
-        });
-      } else {
-        res
-          .status(500)
-          .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
-      }
     }
   }
 }

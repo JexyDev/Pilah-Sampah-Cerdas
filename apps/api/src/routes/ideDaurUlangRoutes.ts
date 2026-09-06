@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { ideDaurUlangController } from "../controllers/ideDaurUlangController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
@@ -6,68 +6,60 @@ import { uploadAvatarMiddleware } from "../middlewares/uploadMiddleware.js";
 
 const router = Router();
 
-// Submit ide — WARGA + MAHASISWA_KKN + Admin
+// Endpoint for Warga and Admins to submit ide
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware(["WARGA", "MAHASISWA_KKN", "SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["WARGA", "SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
   uploadAvatarMiddleware.single("foto"),
   ideDaurUlangController.submitIde.bind(ideDaurUlangController)
 );
 
-// Social feed — semua authenticated
+// Endpoint for everyone to view all ideas (Social Feed)
 router.get(
   "/",
   authMiddleware,
   ideDaurUlangController.getIdeDaurUlang.bind(ideDaurUlangController)
 );
 
-// Ide milik user sendiri
+// Endpoint for Warga to view their own ideas
 router.get(
   "/me",
   authMiddleware,
-  roleMiddleware(["WARGA", "MAHASISWA_KKN"]),
+  roleMiddleware(["WARGA"]),
   ideDaurUlangController.getMyIde.bind(ideDaurUlangController)
 );
 
-// RW approve ide dari WARGA (+50 poin)
+// Endpoint for RW to approve ideas
 router.put(
   "/:id/approve",
   authMiddleware,
-  roleMiddleware(["RW", "RT", "SUPER_USER", "ADMIN_DLH"]),
+  roleMiddleware(["RW", "RT", "SUPER_ADMIN"]),
   ideDaurUlangController.approve.bind(ideDaurUlangController)
 );
 
-// DPL approve ide dari MAHASISWA_KKN (+30 poin)
-router.put(
-  "/:id/approve-dpl",
-  authMiddleware,
-  roleMiddleware(["DPL", "DOSEN_PEMBIMBING", "SUPER_USER"]),
-  ideDaurUlangController.approveDpl.bind(ideDaurUlangController)
-);
-
-// RW / Admin reject ide
+// Endpoint for RW to reject ideas
 router.put(
   "/:id/reject",
   authMiddleware,
-  roleMiddleware(["RW", "RT", "SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING"]),
+  roleMiddleware(["RW", "RT", "SUPER_ADMIN"]),
   ideDaurUlangController.reject.bind(ideDaurUlangController)
 );
 
-// Update ide
+// Endpoint for Admin to update ideas
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
   uploadAvatarMiddleware.single("foto"),
   ideDaurUlangController.updateIde.bind(ideDaurUlangController)
 );
 
-// Hapus ide
+// Endpoint for Admin to delete ideas
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "RW", "RT"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN_DLH", "RW", "RT"]),
   ideDaurUlangController.deleteIde.bind(ideDaurUlangController)
 );
 

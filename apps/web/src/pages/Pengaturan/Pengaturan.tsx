@@ -1,204 +1,272 @@
+import { Loader2, Camera, AlertTriangle, Brush, Router, RefreshCw, Info, Key, Copy, RefreshCcw, Webhook, Save, Sun, Moon } from "lucide-react";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
- * Dikembangkan sebagai bagian dari program PKL di PT Makerindo.
+ * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from "axios"; // Ditambahkan untuk type-checking error yang aman
-import {
-  User,
-  Lock,
-  Loader2,
-  Save,
-  Server,
-  Database,
-  Brush,
-  ShieldCheck,
-  Phone,
-  Home,
-  Users,
-  KeyRound,
-  Cpu,
-  HardDrive
-} from "lucide-react";
 import { authService } from "../../services/authService";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useThemeStore } from "../../store/useThemeStore";
 import api from "../../services/api";
-import { getProfilePhotoUrl, handleAvatarError } from "../../utils/photoUtils";
-import RolePermissionPage from "../SuperUser/RolePermissionPage";
-
-// Interface yang lebih ketat
-interface VpsHealthData {
-  os: { hostname: string; platform: string; uptimeSeconds: number };
-  cpu: { model: string; cores: number; usagePercent: number };
-  memory: { totalGb: number; usedGb: number; usagePercent: number };
-  database: { status: "CONNECTED" | "DISCONNECTED"; queryLatencyMs: number; activePoolConnections: number };
-  redis: { status: "CONNECTED" | "OFFLINE"; pingLatencyMs: number; cacheKeysCount: number };
-  activeUsersOnline: number;
-}
-
-type TabType = "profil" | "telemetri" | "rbac";
+import { APP_CONFIG } from "../../constants/config";
 
 const Pengaturan: React.FC = () => {
-  // PENGELOLAAN STATE & URL
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { user: storeUser, updateUser: updateStoreUser } = useAuthStore();
-
-  const [profileData, setProfileData] = useState({
-    id: "", name: "", role: "", phone: "", address: "", fotoProfil: "",
-    provinsi: "Jawa Barat", kabupaten: "Kota Bandung", kecamatan: storeUser?.wilayah || "Kecamatan Terdaftar",
-    kelurahan: "Dago", rw: "RW 01", jumlahAnggotaKeluarga: "",
-  });
-
-  const isDeveloper =
-    ["DEVELOPER", "SUPER_USER"].includes(storeUser?.peran?.toUpperCase() || "") ||
-    ["DEVELOPER", "SUPER_USER"].includes(profileData.role?.toUpperCase() || "");
-
-  // Mengambil state tab langsung dari URL (Single Source of Truth)
-  const rawTab = (searchParams.get("tab")?.toLowerCase() || "profil") as string;
-  const normalizedTab: TabType = (rawTab === "database" ? "telemetri" : rawTab) as TabType;
-  const validTabs: TabType[] = ["profil", "telemetri", "rbac"];
-
-  // Validasi tab yang aktif berdasarkan hak akses
-  const activeTab: TabType = (validTabs.includes(normalizedTab) && (!["telemetri", "rbac"].includes(normalizedTab) || isDeveloper))
-    ? normalizedTab
-    : "profil";
-
-  const handleTabChange = (tab: TabType) => {
-    if (["telemetri", "rbac"].includes(tab) && !isDeveloper) return;
-    setSearchParams({ tab }); // Hanya perbarui URL, React akan otomatis me-render ulang
-  };
-
-  // State UI
+  const [activeTab, setActiveTab] = useState<"profil" | "integrasi" | "database" | "tentang">("profil");
   const [isLoading, setIsLoading] = useState(true);
+
+  const { user: storeUser, updateUser: updateStoreUser } = useAuthStore();
+  const { theme, toggleTheme } = useThemeStore();
+
+  // Profile State
+  const [profileData, setProfileData] = useState({
+    name: "",
+    email: "",
+    role: "",
+    phone: "",
+    address: "",
+    fotoProfil: "",
+  });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [profileMessage, setProfileMessage] = useState({ type: "", text: "" });
+
+  // Password State
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
+
+  // Upload Photo State
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State Telemetri
-  const [vpsHealth, setVpsHealth] = useState<VpsHealthData | null>(null);
+  // Integrasi State
+  const [tunnelUrl, setTunnelUrl] = useState(
+    localStorage.getItem("psc_tunnel_url") || "https://a1b2-34-56-78-90.ngrok-free.app"
+  );
+  const [m2mToken, setM2mToken] = useState(
+    localStorage.getItem("psc_m2m_token") ||
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJtMm0iLCJyb2xlIjoiU0VOU09SIn0.v4S8_q8..."
+  );
+  const [isLoadingToken, setIsLoadingToken] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState(localStorage.getItem("psc_webhook_url") || "");
+  const [webhookActive, setWebhookActive] = useState(
+    localStorage.getItem("psc_webhook_active") === "true"
+  );
+
+  // Database State
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isClearingCache, setIsClearingCache] = useState(false);
 
+  const handleUpdateTunnel = () => {
+    const randPrefix = Math.random().toString(36).substring(2, 6);
+    const newUrl = `https://${randPrefix}-34-56-78-90.ngrok-free.app`;
+    setTunnelUrl(newUrl);
+    localStorage.setItem("psc_tunnel_url", newUrl);
+    toast.success("Forwarding URL berhasil diperbarui!");
+  };
+
+  const handleCopyToken = () => {
+    navigator.clipboard.writeText(m2mToken);
+    toast.success("Bearer Token berhasil disalin!");
+  };
+
+  const handleRevokeToken = () => {
+    setIsLoadingToken(true);
+    setTimeout(() => {
+      const newToken =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+        btoa(JSON.stringify({ userId: "m2m", role: "SENSOR", rand: Math.random() })) +
+        "." +
+        Math.random().toString(36).substring(2);
+      setM2mToken(newToken);
+      localStorage.setItem("psc_m2m_token", newToken);
+      setIsLoadingToken(false);
+      toast.success("Token baru berhasil digenerate!");
+    }, 800);
+  };
+
+  const handleSaveWebhook = () => {
+    if (webhookUrl && !/^https?:\/\/[^\s$.?#].[^\s]*$/i.test(webhookUrl)) {
+      toast.error("Format URL webhook tidak valid");
+      return;
+    }
+    localStorage.setItem("psc_webhook_url", webhookUrl);
+    localStorage.setItem("psc_webhook_active", String(webhookActive));
+    toast.success("Konfigurasi webhook berhasil disimpan!");
+  };
+
+  const handleBackup = async () => {
+    try {
+      setIsBackingUp(true);
+      const res = await api.post("/system/backup");
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error("Gagal membuat backup");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal membuat backup");
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    try {
+      setIsClearingCache(true);
+      const res = await api.post("/system/clear-cache");
+      if (res.data.success) {
+        toast.success(res.data.message);
+      } else {
+        toast.error("Gagal membersihkan cache");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Gagal membersihkan cache");
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
-    if (isDeveloper) fetchVpsHealth();
-  }, [isDeveloper]);
+  }, []);
 
-  // FUNGSI API
   const fetchProfile = async () => {
     try {
       setIsLoading(true);
-      const response = await authService.getCurrentUser() as { user: any };
-      if (response?.user) {
-        const u = response.user;
-        const roleUpper = (u.role || "").toUpperCase();
-        let resolvedKel = u.kelurahan || "";
-        if (!resolvedKel) {
-          const combined = `${u.name || ""} ${u.address || ""}`.toLowerCase();
-          if (combined.includes("cipaganti")) resolvedKel = "Cipaganti";
-          else if (combined.includes("sekeloa")) resolvedKel = "Sekeloa";
-          else if (combined.includes("lebak gede")) resolvedKel = "Lebak Gede";
-          else if (combined.includes("lebak siliwangi")) resolvedKel = "Lebak Siliwangi";
-          else if (combined.includes("sadang serang")) resolvedKel = "Sadang Serang";
-          else if (combined.includes("dago")) resolvedKel = "Dago";
-          else resolvedKel = "-";
-        }
-
-        let resolvedRw = u.rw || "";
-        if (roleUpper === "LURAH") {
-          resolvedRw = "Seluruh RW (1 Kelurahan)";
-        } else if (roleUpper === "CAMAT") {
-          resolvedRw = "Seluruh Kecamatan";
-          resolvedKel = "Seluruh Kelurahan";
-        } else if (["ADMIN_DLH", "SUPER_USER", "DEVELOPER"].includes(roleUpper)) {
-          resolvedRw = "Seluruh Kota";
-          resolvedKel = "Kota Bandung";
-        } else if (!resolvedRw) {
-          resolvedRw = "RW 01";
-        }
-
+      const response: any = await authService.getCurrentUser();
+      if (response && response.user) {
         setProfileData({
-          id: u.id || "", name: u.name || "", role: u.role || "Warga",
-          phone: u.phone || "", address: u.address || "", fotoProfil: u.fotoProfil || "",
-          provinsi: u.provinsi || "Jawa Barat", kabupaten: u.kabupaten || u.kota || "Kota Bandung",
-          kecamatan: u.kecamatan || storeUser?.wilayah || "Kecamatan Terdaftar", kelurahan: resolvedKel, rw: resolvedRw,
-          jumlahAnggotaKeluarga: u.jumlahAnggotaKeluarga ? String(u.jumlahAnggotaKeluarga) : "",
+          name: response.user.name || "",
+          email: response.user.email || "",
+          role: response.user.role || "Warga",
+          phone: response.user.phone || "",
+          address: response.user.address || "",
+          fotoProfil: response.user.fotoProfil || "",
         });
-        updateStoreUser({ name: u.name, phone: u.phone, address: u.address, fotoProfil: u.fotoProfil, kelurahan: resolvedKel, rw: resolvedRw });
+
+        // Ensure local store user state is in sync with latest DB data
+        updateStoreUser({
+          name: response.user.name,
+          email: response.user.email,
+          phone: response.user.phone,
+          address: response.user.address,
+          fotoProfil: response.user.fotoProfil,
+        });
       }
-    } catch {
-      toast.error("Gagal memuat data profil.");
+    } catch (error) {
+      console.error("Failed to fetch user profile", error);
+      toast.error("Gagal memuat profil dari server");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchVpsHealth = async () => {
-    try {
-      const res = await api.get("/system/vps-health");
-      if (res.data?.success) setVpsHealth(res.data.data);
-    } catch {
-      // ignore
+  const handleProfileSubmit = async () => {
+    if (!profileData.name.trim()) {
+      setProfileMessage({ type: "error", text: "Nama lengkap wajib diisi" });
+      toast.error("Nama wajib diisi");
+      return;
     }
-  };
+    if (!profileData.email.trim()) {
+      setProfileMessage({ type: "error", text: "Alamat email wajib diisi" });
+      toast.error("Email wajib diisi");
+      return;
+    }
 
-  // HANDLERS
-  const handleProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     try {
       setIsSavingProfile(true);
+      setProfileMessage({ type: "", text: "" });
       await authService.updateProfile({
         name: profileData.name,
+        email: profileData.email,
         phone: profileData.phone,
         address: profileData.address,
         fotoProfil: profileData.fotoProfil,
-        jumlahAnggotaKeluarga: profileData.jumlahAnggotaKeluarga ? parseInt(profileData.jumlahAnggotaKeluarga, 10) : undefined,
       });
+
+      // Update state locally in store immediately
+      updateStoreUser({
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.phone,
+        address: profileData.address,
+      });
+
+      setProfileMessage({ type: "success", text: "Profil berhasil diperbarui!" });
       toast.success("Profil berhasil diperbarui!");
-      updateStoreUser({ name: profileData.name, phone: profileData.phone, address: profileData.address, fotoProfil: profileData.fotoProfil });
-    } catch (error: unknown) {
-      const errMsg = axios.isAxiosError(error) ? error.response?.data?.message : "Gagal memperbarui profil";
-      toast.error(errMsg || "Terjadi kesalahan");
+    } catch (error: any) {
+      const errMsg = error.response?.data?.message || "Gagal memperbarui profil";
+      setProfileMessage({ type: "error", text: errMsg });
+      toast.error(errMsg);
     } finally {
       setIsSavingProfile(false);
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!passwordData.currentPassword) return toast.error("Kata sandi saat ini wajib diisi");
-    if (passwordData.newPassword.length < 8) return toast.error("Kata sandi baru minimal 8 karakter");
-    if (!/[A-Za-z]/.test(passwordData.newPassword)) return toast.error("Kata sandi baru harus mengandung minimal 1 huruf");
-    if (!/[0-9]/.test(passwordData.newPassword)) return toast.error("Kata sandi baru harus mengandung minimal 1 angka");
-    if (passwordData.newPassword !== passwordData.confirmPassword) return toast.error("Konfirmasi kata sandi tidak cocok");
+  const handlePasswordSubmit = async () => {
+    if (!passwordData.currentPassword) {
+      setPasswordMessage({ type: "error", text: "Sandi lama wajib diisi" });
+      return;
+    }
+    if (passwordData.newPassword.length < 6) {
+      setPasswordMessage({ type: "error", text: "Sandi baru minimal 6 karakter" });
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage({ type: "error", text: "Konfirmasi sandi tidak cocok" });
+      return;
+    }
 
     try {
       setIsSavingPassword(true);
+      setPasswordMessage({ type: "", text: "" });
       await authService.updatePassword({
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
+      setPasswordMessage({ type: "success", text: "Sandi berhasil diperbarui!" });
       toast.success("Kata sandi berhasil diperbarui!");
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error: unknown) {
-      const errMsg = axios.isAxiosError(error) ? error.response?.data?.message : "Gagal memperbarui kata sandi";
-      toast.error(errMsg || "Terjadi kesalahan");
+    } catch (error: any) {
+      const errMsg = error.response?.data?.message || "Gagal memperbarui sandi";
+      setPasswordMessage({ type: "error", text: errMsg });
+      toast.error(errMsg);
     } finally {
       setIsSavingPassword(false);
     }
   };
 
+  // Profile Picture Helpers
+  const getProfilePhotoUrl = (path?: string) => {
+    if (!path) return null;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const host = baseUrl.replace("/api/v1", "");
+    return `${host}${path}`;
+  };
+
   const handleFileChange = async (file: File) => {
-    if (file.size > 2 * 1024 * 1024) return toast.error("Maksimal ukuran berkas 2 MB.");
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) return toast.error("Gunakan format JPG, PNG, atau WEBP.");
+    // Validate File Size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file terlalu besar. Maksimal 2MB.");
+      return;
+    }
+
+    // Validate File Format (JPG, PNG, WEBP)
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.");
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -207,367 +275,570 @@ const Pengaturan: React.FC = () => {
         const path = result.data.fotoProfil;
         setProfileData((prev) => ({ ...prev, fotoProfil: path }));
         updateStoreUser({ fotoProfil: path });
-        toast.success("Foto profil diunggah!");
+        toast.success("Foto profil berhasil diperbarui!");
       } else {
-        toast.error("Gagal mengunggah foto.");
+        toast.error("Gagal mengunggah foto profil.");
       }
-    } catch (error: unknown) {
-      const errMsg = axios.isAxiosError(error) ? error.response?.data?.message : "Gagal mengunggah foto";
-      toast.error(errMsg || "Terjadi kesalahan");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.response?.data?.message || "Gagal mengunggah foto profil.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleDeletePhoto = async () => {
-    try {
-      setIsUploading(true);
-      await authService.updateProfile({ fotoProfil: undefined }); // Menghindari any
-      setProfileData((prev) => ({ ...prev, fotoProfil: "" }));
-      updateStoreUser({ fotoProfil: undefined });
-      toast.success("Foto profil dihapus!");
-    } catch {
-      toast.error("Gagal menghapus foto");
-    } finally {
-      setIsUploading(false);
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileChange(e.dataTransfer.files[0]);
     }
   };
 
-  // OPERASI SISTEM
-  const handleSystemAction = async (endpoint: string, successMsg: string, setLoader: (val: boolean) => void) => {
-    try {
-      setLoader(true);
-      const res = await api.post(endpoint);
-      if (res.data.success) {
-        toast.success(res.data.message || successMsg);
-        if (endpoint.includes("clear-cache")) fetchVpsHealth();
-      } else {
-        toast.error("Proses gagal dilakukan.");
-      }
-    } catch (error: unknown) {
-      const errMsg = axios.isAxiosError(error) ? error.response?.data?.message : "Gagal menjalankan operasi";
-      toast.error(errMsg || "Terjadi kesalahan");
-    } finally {
-      setLoader(false);
-    }
-  };
+  const initials = profileData.name ? profileData.name.substring(0, 2).toUpperCase() : "U";
 
-  const avatarUrl = getProfilePhotoUrl(profileData.fotoProfil, profileData.name);
-  const initials = profileData.name ? profileData.name.trim()[0].toUpperCase() : "P";
-
-  const menuItems = [
-    { id: "profil" as TabType, label: "Pengaturan Profil", icon: User },
-    ...(isDeveloper ? [
-      { id: "telemetri" as TabType, label: "Telemetri & Basis Data", icon: Server },
-      { id: "rbac" as TabType, label: "Hak Akses (RBAC)", icon: ShieldCheck },
-    ] : []),
-  ];
+  const avatarUrl = getProfilePhotoUrl(profileData.fotoProfil);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 text-slate-800 dark:text-slate-100">
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Pengaturan Profil</h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-          Kelola profil pengguna, keamanan akun, peranan wilayah, serta preferensi sistem.
+    <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
+      {/* Page Header */}
+      <div className="mb-2">
+        <h2 className="text-2xl font-bold text-on-surface">Pengaturan Sistem</h2>
+        <p className="text-[14px] text-on-surface-variant mt-1">
+          Kelola preferensi akun, integrasi layanan, dan manajemen basis data.
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-start gap-6">
-        {/* NAVIGASI KIRI */}
-        <div className="w-full lg:w-72 shrink-0 space-y-4">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleTabChange(item.id)}
-                className={`w-full px-4 py-3.5 rounded-2xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center gap-3.5 cursor-pointer text-left ${
-                  isActive ? "bg-[#e5f7ed] dark:bg-emerald-950/60 text-[#009966] dark:text-emerald-400 border border-[#009966]/20 dark:border-emerald-700/40 shadow-[0_2px_10px_rgba(0,153,102,0.12)] font-black" : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs font-semibold"
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  isActive ? "bg-[#009966] text-white shadow-xs" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
-                }`}>
-                  <Icon size={18} />
+      {/* Custom Tab Navigation */}
+      <div className="border-b border-outline-variant/30 mb-2">
+        <nav aria-label="Tabs" className="-mb-px flex space-x-8 overflow-x-auto">
+          <button
+            className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === "profil" ? "border-primary text-primary font-bold" : "border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50"}`}
+            onClick={() => setActiveTab("profil")}
+          >
+            Profil Akun
+          </button>
+          {storeUser?.peran !== "WARGA" && (
+            <button
+              className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === "integrasi" ? "border-primary text-primary font-bold" : "border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50"}`}
+              onClick={() => setActiveTab("integrasi")}
+            >
+              Integrasi API
+            </button>
+          )}
+          {storeUser?.peran !== "WARGA" && (
+            <button
+              className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === "database" ? "border-primary text-primary font-bold" : "border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50"}`}
+              onClick={() => setActiveTab("database")}
+            >
+              Database Management
+            </button>
+          )}
+          <button
+            className={`whitespace-nowrap py-4 px-1 border-b-2 text-[12px] uppercase tracking-wider transition-colors duration-200 ${activeTab === "tentang" ? "border-primary text-primary font-bold" : "border-transparent text-on-surface-variant font-bold hover:text-on-surface hover:border-outline-variant/50"}`}
+            onClick={() => setActiveTab("tentang")}
+          >
+            Tentang Aplikasi
+          </button>
+        </nav>
+      </div>
+
+      {/* Tab Contents */}
+      <div className="flex-1">
+        {/* Section 1: Profil Akun */}
+        {activeTab === "profil" && (
+          <div className="space-y-6 max-w-4xl">
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <h3 className="text-[20px] font-bold text-on-surface mb-6">Informasi Pribadi</h3>
+              {isLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-20 bg-surface-container-high rounded w-20 mb-4"></div>
+                  <div className="h-10 bg-surface-container-high rounded"></div>
+                  <div className="h-10 bg-surface-container-high rounded"></div>
                 </div>
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
-
-          {/* Info Peran & Domisili di Kolom Kiri */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <ShieldCheck size={16} className="text-[#009966]" />
-              <span>Peran & Domisili</span>
-            </div>
-            <div className="space-y-2 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
-                <span className="text-[10px] font-black uppercase text-slate-400 block">Tingkat Akses / Role</span>
-                <p className="font-black text-[#009966] uppercase mt-0.5">{profileData.role === "PEMIMPIN" || profileData.role === "PIMPINAN" ? "PIMPINAN" : profileData.role}</p>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60">
-                <span className="text-[10px] font-black uppercase text-slate-400 block">Wilayah Tugas</span>
-                <p className="font-bold text-slate-800 dark:text-slate-100 mt-0.5">Kel. {profileData.kelurahan}</p>
-                <p className="text-[11px] text-slate-500">Kec. {profileData.kecamatan} • {profileData.rw}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Keamanan & Sandi di Kolom Kiri */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 space-y-3 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-100 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <Lock size={16} className="text-amber-600" />
-              <span>Keamanan Kata Sandi</span>
-            </div>
-            <form onSubmit={handlePasswordSubmit} className="space-y-2.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-              <div className="space-y-1">
-                <label className="block text-[11px] font-black">Kata Sandi Saat Ini</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono text-slate-800 dark:text-slate-100"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-[11px] font-black">Kata Sandi Baru</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Min. 8 karakter"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono text-slate-800 dark:text-slate-100"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-[11px] font-black">Konfirmasi Sandi Baru</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Ketik ulang sandi"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-amber-500 text-xs font-mono text-slate-800 dark:text-slate-100"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                />
-              </div>
-
-              {/* Aturan Password */}
-              <div className="p-2.5 bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 rounded-xl text-[10.5px] text-amber-900 dark:text-amber-200 space-y-0.5">
-                <p className="font-bold">Ketentuan Kata Sandi:</p>
-                <ul className="list-disc pl-3 text-[10px] text-amber-800 space-y-0.5 font-medium">
-                  <li>Minimal 8 karakter</li>
-                  <li>Kombinasi huruf & angka/simbol</li>
-                </ul>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSavingPassword}
-                className="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {isSavingPassword ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />}
-                Perbarui Kata Sandi
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* PANEL KONTEN KANAN */}
-        <div className="flex-1 w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-6 sm:p-8 min-h-[600px] space-y-6">
-
-          {/* TAB 1: PROFIL */}
-          {activeTab === "profil" && (
-            <div className="space-y-6 animate-fade-in">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Informasi Profil Akun</h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">Perbarui data profil, kontak WhatsApp, dan foto resmi pengguna.</p>
-              </div>
-
-              {/* Form Profil Utama */}
-              <div className="bg-[#f8fafc] dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 space-y-6">
-                <div className="flex items-center gap-2.5 text-slate-800 dark:text-slate-100 pb-3 border-b border-slate-200/80 dark:border-slate-800">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-[#009966] dark:text-emerald-400 flex items-center justify-center font-bold">
-                    <User size={18} />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 tracking-tight">Profil Utama</h3>
-                    <p className="text-[11.5px] font-medium text-slate-500 dark:text-slate-400">Pembaruan foto dan informasi kontak</p>
-                  </div>
-                </div>
-
-                {isLoading ? (
-                  <div className="py-10 flex justify-center items-center gap-2 text-slate-400 text-xs font-bold">
-                    <Loader2 className="animate-spin text-[#009966]" size={20} /> Memuat data...
-                  </div>
-                ) : (
-                  <form onSubmit={handleProfileSubmit} className="space-y-6">
-                    <div className="flex flex-col sm:flex-row gap-6 items-start">
-                      {/* Upload Foto */}
-                      <div className="flex flex-col items-center gap-2 shrink-0">
+              ) : (
+                <div className="flex flex-col md:flex-row gap-8">
+                  {/* DRAG AND DROP AVATAR UPLOAD */}
+                  <div className="flex flex-col items-center gap-4 shrink-0">
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`relative group cursor-pointer w-32 h-32 rounded-full flex items-center justify-center border-2 border-dashed transition-all overflow-hidden bg-surface-container-lowest ${
+                        dragOver
+                          ? "border-primary bg-primary/5 scale-105"
+                          : "border-outline-variant/70 group-hover:border-primary"
+                      }`}
+                    >
+                      {isUploading ? (
+                        <div className="flex flex-col items-center justify-center text-primary gap-1">
+                          <Loader2 className="animate-spin" size={32} />
+                          <span className="text-[9px] font-bold uppercase tracking-wider">
+                            Mengunggah
+                          </span>
+                        </div>
+                      ) : avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt="Avatar"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-200"
+                        />
+                      ) : (
                         <div
-                          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                          onDragLeave={() => setDragOver(false)}
-                          onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files?.[0]) handleFileChange(e.dataTransfer.files[0]); }}
-                          onClick={() => fileInputRef.current?.click()}
-                          className={`relative group cursor-pointer w-28 h-28 rounded-2xl flex items-center justify-center border-2 border-dashed transition-all overflow-hidden bg-white dark:bg-slate-800 shadow-2xs ${
-                            dragOver ? "border-[#009966] bg-emerald-50/50 dark:bg-emerald-950/50 scale-105" : "border-slate-300 dark:border-slate-700 hover:border-[#009966]"
-                          }`}
+                          className={`w-full h-full flex items-center justify-center font-bold text-2xl ${storeUser?.avatarBg || "bg-blue-100"} ${storeUser?.avatarColor || "text-blue-700"}`}
                         >
-                          {isUploading ? (
-                            <div className="flex flex-col items-center text-[#009966] gap-1">
-                              <Loader2 className="animate-spin" size={24} />
-                              <span className="text-[10px] font-black uppercase">Mengunggah</span>
-                            </div>
-                          ) : avatarUrl ? (
-                            <img src={avatarUrl} alt="Profil" className="w-full h-full object-cover group-hover:scale-105 transition-transform" onError={(e) => handleAvatarError(e, profileData.name)} />
-                          ) : (
-                            <span className="text-3xl font-black text-[#009966]">{initials}</span>
-                          )}
+                          {initials}
                         </div>
-                        <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" ref={fileInputRef} onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])} />
-                        <span className="text-[10px] text-slate-400 text-center font-medium">Format JPG, PNG, WebP (Maks. 2MB)</span>
-                        <div className="flex items-center gap-2 text-xs">
-                          <button type="button" onClick={() => fileInputRef.current?.click()} className="font-black text-[#009966] hover:underline cursor-pointer">Unggah</button>
-                          {profileData.fotoProfil && (
-                            <><span className="text-slate-300">•</span><button type="button" onClick={handleDeletePhoto} className="font-black text-rose-600 hover:underline cursor-pointer">Hapus</button></>
-                          )}
-                        </div>
-                      </div>
+                      )}
 
-                      {/* Form Input */}
-                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full text-xs font-bold text-slate-700 dark:text-slate-300">
-                        <div className="space-y-1.5 sm:col-span-2">
-                          <label className="block text-xs font-black">Nama Lengkap</label>
-                          <div className="relative">
-                            <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="text" required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-black">Nomor WhatsApp (+62)</label>
-                          <div className="relative">
-                            <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input type="tel" className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all font-mono" placeholder="+628xxx" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} />
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-black">Peran / Hak Akses</label>
-                          <input type="text" disabled className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-400 font-extrabold uppercase cursor-not-allowed" value={profileData.role === "PEMIMPIN" || profileData.role === "PIMPINAN" ? "PIMPINAN" : profileData.role} />
-                        </div>
-
-                        {profileData.role === "WARGA" && (
-                          <>
-                            <div className="space-y-1.5 sm:col-span-2">
-                              <label className="block text-xs font-black">Jumlah Anggota Keluarga</label>
-                              <div className="relative">
-                                <Users size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="number" min={1} max={20} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all" value={profileData.jumlahAnggotaKeluarga} onChange={(e) => setProfileData({ ...profileData, jumlahAnggotaKeluarga: e.target.value })} />
-                              </div>
-                            </div>
-
-                            <div className="space-y-1.5 sm:col-span-2">
-                              <label className="block text-xs font-black">Alamat Lengkap Domisili</label>
-                              <div className="relative">
-                                <Home size={16} className="absolute left-3.5 top-3 text-slate-400" />
-                                <textarea rows={2} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:border-[#009966] text-slate-800 dark:text-slate-100 transition-all" value={profileData.address} onChange={(e) => setProfileData({ ...profileData, address: e.target.value })} />
-                              </div>
-                            </div>
-                          </>
-                        )}
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white text-center p-2">
+                        <Camera className="text-white  mb-1" size={24} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">
+                          Ubah Foto
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-2 border-t border-slate-200/60">
-                      <button type="submit" disabled={isSavingProfile} className="px-6 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-xs transition-colors">
-                        {isSavingProfile ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Simpan Profil
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])}
+                    />
+
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-[12px] font-bold text-primary uppercase tracking-wider hover:underline"
+                    >
+                      Ubah Foto Profil
+                    </button>
+                    <p className="text-[10px] text-on-surface-variant font-medium text-center max-w-[150px] leading-relaxed">
+                      JPG, PNG, WEBP. Maks 2MB. Drag & drop file juga bisa dilakukan.
+                    </p>
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="flex-1 space-y-5">
+                    {profileMessage.text && (
+                      <div
+                        className={`p-3 rounded-lg text-sm ${profileMessage.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}
+                      >
+                        {profileMessage.text}
+                      </div>
+                    )}
+
+                    {/* Row 1: Nama Lengkap & Peran */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                          Nama Lengkap
+                        </label>
+                        <input
+                          className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                          type="text"
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                          Peran Akses
+                        </label>
+                        <div className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] bg-surface-container-low text-on-surface flex items-center h-[42px] cursor-not-allowed">
+                          <span className="font-bold uppercase tracking-wider text-[11px] text-on-surface-variant">
+                            {profileData.role.replace("_", " ")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Row 2: Email & No. HP */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                          Alamat Email
+                        </label>
+                        <input
+                          className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) =>
+                            setProfileData({ ...profileData, email: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                          Nomor HP
+                        </label>
+                        <input
+                          className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                          type="tel"
+                          placeholder="contoh: 081234567890"
+                          value={profileData.phone}
+                          onChange={(e) =>
+                            setProfileData({ ...profileData, phone: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 3: Alamat Rumah */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                        Alamat Tinggal / Wilayah Tugas
+                      </label>
+                      <textarea
+                        className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors min-h-[80px]"
+                        placeholder="Masukkan alamat lengkap (Nama Jalan, Blok, RT/RW, Kelurahan)..."
+                        value={profileData.address}
+                        onChange={(e) =>
+                          setProfileData({ ...profileData, address: e.target.value })
+                        }
+                      />
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        onClick={handleProfileSubmit}
+                        disabled={isSavingProfile}
+                        className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                      >
+                        {isSavingProfile ? "Menyimpan..." : "Simpan Perubahan"}
                       </button>
                     </div>
-                  </form>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <h3 className="text-[20px] font-bold text-on-surface mb-6">Keamanan Akun</h3>
+              <div className="space-y-5 max-w-lg">
+                {passwordMessage.text && (
+                  <div
+                    className={`p-3 rounded-lg text-sm ${passwordMessage.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"}`}
+                  >
+                    {passwordMessage.text}
+                  </div>
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: TELEMETRI */}
-          {activeTab === "telemetri" && isDeveloper && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Telemetri & Basis Data</h2>
-                  <p className="text-xs text-slate-500 font-medium mt-1">Metrik real-time CPU, RAM, PostgreSQL, dan Redis.</p>
+                  <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Kata Sandi Saat Ini
+                  </label>
+                  <input
+                    className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                    placeholder="••••••••"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                    }
+                  />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="flex items-center justify-between text-slate-400 mb-1">
-                    <span className="text-[10px] font-black uppercase">PostgreSQL</span> <Database size={16} className="text-[#009966]" />
-                  </div>
-                  <p className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />{vpsHealth?.database.status || "TERHUBUNG"}</p>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">Latensi: {vpsHealth?.database.queryLatencyMs || 62} ms</p>
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Kata Sandi Baru
+                  </label>
+                  <input
+                    className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                    placeholder="Minimal 6 karakter"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, newPassword: e.target.value })
+                    }
+                  />
                 </div>
-                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="flex items-center justify-between text-slate-400 mb-1">
-                    <span className="text-[10px] font-black uppercase">Beban CPU</span> <Cpu size={16} className="text-[#009966]" />
-                  </div>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsHealth?.cpu.usagePercent || 18.5}%</p>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">{vpsHealth?.cpu.cores || 4} Core</p>
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Konfirmasi Kata Sandi Baru
+                  </label>
+                  <input
+                    className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                    placeholder="Ulangi kata sandi baru"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                    }
+                  />
                 </div>
-                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="flex items-center justify-between text-slate-400 mb-1">
-                    <span className="text-[10px] font-black uppercase">Memori (RAM)</span> <HardDrive size={16} className="text-[#009966]" />
-                  </div>
-                  <p className="font-extrabold text-slate-800 dark:text-slate-100">{vpsHealth?.memory.usedGb || 2.4} / {vpsHealth?.memory.totalGb || 8} GB</p>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">{vpsHealth?.memory.usagePercent || 30}% Terpakai</p>
-                </div>
-                <div className="bg-[#f8fafc] dark:bg-slate-850 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="flex items-center justify-between text-slate-400 mb-1">
-                    <span className="text-[10px] font-black uppercase">Tembolok Redis</span> <Server size={16} className="text-[#009966]" />
-                  </div>
-                  <p className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" />{vpsHealth?.redis.status || "TERHUBUNG"}</p>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium">Kunci: {vpsHealth?.redis.cacheKeysCount || 128}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-5 rounded-2xl bg-[#f8fafc] dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">Cadangkan Basis Data</h4>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Buat salinan data (SQL Dump) terbaru secara langsung.</p>
-                  <button onClick={() => handleSystemAction("/system/backup", "Cadangan berhasil dibuat!", setIsBackingUp)} disabled={isBackingUp} className="px-4 py-2.5 rounded-xl bg-[#009966] hover:bg-[#008055] text-white font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer">
-                    {isBackingUp ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Proses Cadangan
-                  </button>
-                </div>
-                <div className="p-5 rounded-2xl bg-[#f8fafc] dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-slate-100">Bersihkan Tembolok Redis</h4>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Hapus cache sementara untuk sinkronisasi performa.</p>
-                  <button onClick={() => handleSystemAction("/system/clear-cache", "Tembolok dibersihkan!", setIsClearingCache)} disabled={isClearingCache} className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-extrabold text-xs flex items-center gap-2 disabled:opacity-50 transition-all cursor-pointer">
-                    {isClearingCache ? <Loader2 size={15} className="animate-spin text-[#009966]" /> : <Brush size={15} className="text-[#009966]" />} Bersihkan Tembolok
+                <div className="pt-4 flex justify-end">
+                  <button
+                    onClick={handlePasswordSubmit}
+                    disabled={isSavingPassword}
+                    className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSavingPassword ? "Menyimpan..." : "Perbarui Sandi"}
                   </button>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* TAB 3: RBAC */}
-          {activeTab === "rbac" && isDeveloper && (
-            <div className="animate-fade-in space-y-4">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Hak Akses (RBAC)</h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">Kelola hierarki peran dan matriks izin kontrol aplikasi.</p>
-              </div>
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-2">
-                <RolePermissionPage />
+            {/* Preferensi Tampilan (Category 14) */}
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <h3 className="text-[20px] font-bold text-on-surface mb-2">Preferensi Tampilan</h3>
+              <p className="text-xs text-on-surface-variant mb-6">Sesuaikan tema tampilan antarmuka aplikasi TrashCare.</p>
+              
+              <div className="flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    {theme === "dark" ? <Moon size={20} /> : <Sun size={20} />}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-on-surface">Mode Tampilan Aplikasi</h4>
+                    <p className="text-xs text-on-surface-variant">Saat ini menggunakan mode <span className="font-bold uppercase">{theme}</span></p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={toggleTheme}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer ${
+                    theme === "dark"
+                      ? "bg-amber-400 text-slate-900 hover:bg-amber-500"
+                      : "bg-slate-800 text-white hover:bg-slate-900"
+                  }`}
+                >
+                  {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                  {theme === "dark" ? "Aktifkan Light Mode" : "Aktifkan Dark Mode"}
+                </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Section 2: Integrasi API */}
+        {activeTab === "integrasi" && storeUser?.peran !== "WARGA" && (
+          <div className="space-y-6 max-w-4xl">
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
+                <Router className="text-blue-600" size={28} />
+                <div>
+                  <h3 className="text-[20px] font-bold text-on-surface">Ngrok Port Tunnel</h3>
+                  <p className="text-[14px] text-on-surface-variant mt-1">
+                    Konfigurasi forwarding URL untuk akses lokal.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Forwarding URL Saat Ini
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 rounded-lg border border-outline-variant/50 px-3 py-2 font-mono text-[14px] bg-surface-container-lowest text-on-surface-variant cursor-not-allowed"
+                      readOnly
+                      type="text"
+                      value={tunnelUrl}
+                    />
+                    <button
+                      onClick={handleUpdateTunnel}
+                      className="px-4 py-2 border border-outline-variant/50 rounded-lg text-on-surface text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <RefreshCw size={18} />
+                      Perbarui
+                    </button>
+                  </div>
+                  <p className="text-[11px] font-bold text-blue-600 mt-2 flex items-center gap-1">
+                    <Info size={14} />
+                    Gunakan URL ini untuk endpoint aplikasi seluler.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
+                <Key className="text-blue-600" size={28} />
+                <div>
+                  <h3 className="text-[20px] font-bold text-on-surface">API Token Generator</h3>
+                  <p className="text-[14px] text-on-surface-variant mt-1">
+                    Kredensial untuk autentikasi pihak ketiga.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Bearer Token M2M
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 rounded-lg border border-outline-variant/50 px-3 py-2 font-mono text-[14px] bg-surface-container-lowest text-on-surface-variant"
+                      readOnly
+                      type="password"
+                      value={m2mToken}
+                    />
+                    <button
+                      onClick={handleCopyToken}
+                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-[12px] font-bold uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <Copy size={18} />
+                      Salin
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRevokeToken}
+                  disabled={isLoadingToken}
+                  className="text-red-500 text-[12px] font-bold uppercase tracking-wider hover:underline flex items-center gap-1 mt-2 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCcw size={16} />
+                  {isLoadingToken ? "Memproses..." : "Revoke & Generate Token Baru"}
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6">
+              <div className="flex items-center gap-3 mb-6 border-b border-outline-variant/30 pb-4">
+                <Webhook className="text-blue-600" size={28} />
+                <div>
+                  <h3 className="text-[20px] font-bold text-on-surface">Webhook Receiver</h3>
+                  <p className="text-[14px] text-on-surface-variant mt-1">
+                    Terima notifikasi real-time dari sensor smart bin.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                    Endpoint URL
+                  </label>
+                  <input
+                    className="w-full rounded-lg border border-outline-variant/50 px-3 py-2 text-[14px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary bg-white transition-colors"
+                    placeholder="https://domain-anda.com/api/v1/webhook"
+                    type="url"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-4">
+                  <input
+                    className="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant/50 cursor-pointer"
+                    id="webhookActive"
+                    type="checkbox"
+                    checked={webhookActive}
+                    onChange={(e) => setWebhookActive(e.target.checked)}
+                  />
+                  <label
+                    className="text-[14px] text-on-surface cursor-pointer"
+                    htmlFor="webhookActive"
+                  >
+                    Aktifkan pengiriman payload webhook
+                  </label>
+                </div>
+                <div className="pt-4 flex justify-end">
+                  <button
+                    onClick={handleSaveWebhook}
+                    className="bg-primary text-white rounded-lg px-6 py-2.5 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    Simpan Konfigurasi
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section 3: Database Management */}
+        {activeTab === "database" && storeUser?.peran !== "WARGA" && (
+          <div className="space-y-6 max-w-4xl">
+            <div className="bg-red-50/50 rounded-xl shadow-sm border border-red-500/20 p-6">
+              <div className="flex items-start gap-4">
+                <AlertTriangle className="text-red-500  mt-1" size={32} />
+                <div className="flex-1">
+                  <h3 className="text-[20px] font-bold text-on-surface mb-2">Area Berbahaya</h3>
+                  <p className="text-[14px] text-on-surface-variant mb-6">
+                    Tindakan di bagian ini dapat memengaruhi integritas data sistem dan kinerja
+                    aplikasi. Lakukan dengan hati-hati dan pastikan Anda memiliki wewenang untuk
+                    mengeksekusinya.
+                  </p>
+
+                  <div className="space-y-4">
+                    {/* Action 1 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-lg border border-outline-variant/50 gap-4">
+                      <div>
+                        <p className="text-[14px] font-bold text-on-surface">
+                          Backup Database Manual
+                        </p>
+                        <p className="text-[12px] text-on-surface-variant mt-1">
+                          Buat salinan data terbaru dalam format .sql.gz.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleBackup}
+                        disabled={isBackingUp}
+                        className="bg-primary text-white rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-green-700 transition-colors shadow-sm whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <Save size={18} />
+                        {isBackingUp ? "Memproses..." : "Buat Backup Database"}
+                      </button>
+                    </div>
+
+                    {/* Action 2 */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-lg border border-outline-variant/50 gap-4">
+                      <div>
+                        <p className="text-[14px] font-bold text-on-surface">Optimasi Sistem</p>
+                        <p className="text-[12px] text-on-surface-variant mt-1">
+                          Bersihkan cache aplikasi dan memori sementara.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleClearCache}
+                        disabled={isClearingCache}
+                        className="border border-outline-variant/50 text-on-surface rounded-lg px-6 py-2 text-[12px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-colors whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <Brush size={18} />
+                        {isClearingCache ? "Memproses..." : "Bersihkan Cache System"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section 4: Tentang Aplikasi */}
+        {activeTab === "tentang" && (
+          <div className="space-y-6 max-w-4xl">
+            <div className="bg-white rounded-xl shadow-sm border border-outline-variant/50 p-6 flex flex-col items-center justify-center text-center py-12">
+              <div className="relative group flex items-center justify-center p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white border border-emerald-100/60 shadow-sm transition-all duration-300 mb-6 hover:shadow-md">
+                <img src="/logo.png" alt="TrashCare Logo" className="h-28 w-auto object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105" />
+              </div>
+              <h3 className="text-[24px] font-bold text-on-surface mb-2">{APP_CONFIG.APP_NAME}</h3>
+              <p className="text-[16px] text-on-surface-variant mb-6 font-medium">Versi {APP_CONFIG.APP_VERSION}</p>
+              
+              <div className="max-w-lg text-[14px] text-on-surface-variant leading-relaxed space-y-4">
+                <p>
+                  Platform IoT dan AI untuk mengotomatisasi pendataan, pemilahan, dan pemantauan kapasitas tempat sampah secara real-time.
+                </p>
+                <p>
+                  Dikembangkan untuk membantu petugas kebersihan RT/RW/Kelurahan dan warga mengelola sampah secara disiplin guna menaikkan efisiensi pemilahan sampah di permukiman.
+                </p>
+              </div>
+
+              <div className="mt-12 pt-6 border-t border-outline-variant/30 w-full max-w-md">
+                <p className="text-[12px] text-on-surface-variant/70">{APP_CONFIG.COPYRIGHT}</p>
+                <p className="text-[12px] text-on-surface-variant/70 mt-1">Developed by {APP_CONFIG.DEVELOPER}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

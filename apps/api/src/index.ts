@@ -1,26 +1,12 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Load environment variables from apps/api/.env with root .env fallback
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-dotenv.config();
-
-import { prisma } from "./lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
-// Release sync: AI ONNX adapter, Student NIM password reset, printed QR codes restoration, and UI rules alignment
 
 import express from "express";
+import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import fs from "fs";
 
@@ -43,10 +29,9 @@ import bankSampahRouter from "./routes/bankSampahRoutes.js";
 import notificationIntegrationRouter from "./routes/notificationIntegrationRoutes.js";
 import kknRouter from "./routes/kknRoutes.js";
 import residuRouter from "./routes/residuRoutes.js";
-import superUserRouter from "./routes/superUserRoutes.js";
+import superAdminRouter from "./routes/superAdminRoutes.js";
 import rwRouter from "./routes/rwRoutes.js";
 import ideDaurUlangRouter from "./routes/ideDaurUlangRoutes.js";
-import poskoKknRouter from "./routes/poskoKknRoutes.js";
 import areaRouter from "./routes/areaRoutes.js";
 import adminMahasiswaRouter from "./routes/adminMahasiswaRoutes.js";
 import kknAttendanceRouter from "./routes/kknAttendanceRoutes.js";
@@ -54,149 +39,36 @@ import pemanfaatanRouter from "./routes/pemanfaatanRoutes.js";
 import pengangkutanRouter from "./routes/pengangkutanRoutes.js";
 import kelompokRouter from "./routes/kelompokRoutes.js";
 import dplRouter from "./routes/dplRoutes.js";
-import permissionRouter from "./routes/permissionRoutes.js";
-import surveiKknRouter from "./routes/surveiKknRoutes.js";
-import evaluasiDampakRouter from "./routes/evaluasiDampakRoutes.js";
-import datasetKlasifikasiRouter from "./routes/datasetKlasifikasiRoutes.js";
-import panduanRouter from "./routes/panduanRoutes.js";
-import masterKegiatanRouter from "./routes/masterKegiatanRoutes.js";
-import penilaianKknRouter from "./routes/penilaianKknRoutes.js";
-import timelineKknRouter from "./routes/timelineKknRoutes.js";
-import logbookRouter from "./routes/logbookRoutes.js";
-import beritaRouter from "./routes/beritaRoutes.js";
-import presensiMandiriRouter from "./routes/presensiMandiriRoutes.js";
-import { systemController } from "./controllers/systemController.js";
-import { kknAttendanceController } from "./controllers/kknAttendanceController.js";
-import { kknController } from "./controllers/kknController.js";
-import { configController } from "./controllers/configController.js";
-import { authMiddleware } from "./middlewares/authMiddleware.js";
-import { roleMiddleware } from "./middlewares/roleMiddleware.js";
-import { safeUploadSingleImage, safeUploadPemanfaatanImage } from "./middlewares/uploadMiddleware.js";
-
 import { setupSwagger } from "./swagger.js";
 import { readOnlyGuard } from "./middlewares/readOnlyGuard.js";
-import { auditMiddleware } from "./middlewares/audit.middleware.js";
-import "./workers/audit.worker.js";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable CORS with Dynamic Preflight Reflection & Tunnel Header Support
+// Enable CORS
 app.use((req, res, next) => {
-  const origin = req.headers.origin || "*";
-  res.setHeader("Access-Control-Allow-Origin", origin);
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-
-  // Dynamically reflect requested headers from preflight OPTIONS request
-  const requestedHeaders = req.headers["access-control-request-headers"];
-  if (requestedHeaders) {
-    res.setHeader("Access-Control-Allow-Headers", requestedHeaders);
-  } else {
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, bypass-tunnel-reminder, *"
-    );
-  }
-
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, x-request-id, ngrok-skip-browser-warning, Bypass-Tunnel-Reminder"
+  );
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
   next();
 });
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(express.json());
 app.use(cookieParser());
 app.use(readOnlyGuard);
-app.use(auditMiddleware("Global"));
-
-// Disable HTTP Caching on all API routes to prevent mobile client stale data issues
-app.use("/api", (req, res, next) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  res.setHeader("Surrogate-Control", "no-store");
-  next();
-});
 
 // Create uploads folder if not exists
 fs.mkdirSync("uploads", { recursive: true });
-
-const staticCacheOptions = {
-  maxAge: process.env.NODE_ENV === "production" ? "7d" : "1h",
-  immutable: true,
-  etag: true,
-  lastModified: true,
-};
-
-// Statically serve uploads and downloads folders with multi-directory fallback
-app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
-app.use(
-  "/uploads",
-  express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions)
-);
-app.use("/uploads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
-app.use("/uploads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
-app.use("/uploads", express.static(path.resolve(process.cwd(), "../uploads"), staticCacheOptions));
-app.use(
-  "/uploads",
-  express.static(path.resolve(process.cwd(), "apps/web/public/uploads"), staticCacheOptions)
-);
-
-// Fallback for missing local uploads / downloads (e.g. database synced from VPS or HEIC requests)
-app.use("/uploads", (req, res, next) => {
-  if (req.method === "GET" || req.method === "HEAD") {
-    // Jika meminta .heic/.heif tapi versi .jpg ada di disk, kirim file .jpg
-    const requestedPath = req.path || "";
-    if (/\.(heic|heif)$/i.test(requestedPath)) {
-      const jpgRelativePath = requestedPath.replace(/\.(heic|heif)$/i, ".jpg");
-      const localJpg = path.resolve(process.cwd(), "uploads", jpgRelativePath.replace(/^\//, ""));
-      if (fs.existsSync(localJpg)) {
-        return res.sendFile(localJpg);
-      }
-    }
-
-    // Pada environment lokal: fallback ke CDN produksi berseka.id melalui HTTPS
-    const isLocalDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
-    if (isLocalDev && req.hostname === "localhost") {
-      const vpsUploadUrl = `https://berseka.id/uploads${req.path}`;
-      return res.redirect(307, vpsUploadUrl);
-    }
-  }
-  next();
-});
-
-app.use("/downloads", express.static(path.resolve(process.cwd(), "uploads"), staticCacheOptions));
-app.use(
-  "/downloads",
-  express.static(path.resolve(process.cwd(), "apps/api/uploads"), staticCacheOptions)
-);
-app.use("/downloads", express.static(path.resolve(__dirname, "../uploads"), staticCacheOptions));
-app.use("/downloads", express.static(path.resolve(__dirname, "../../uploads"), staticCacheOptions));
-
-app.use("/downloads", (req, res, next) => {
-  if (req.method === "GET" || req.method === "HEAD") {
-    const isLocalDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
-    if (isLocalDev && req.hostname === "localhost") {
-      const vpsDownloadUrl = `https://berseka.id/downloads${req.path}`;
-      return res.redirect(307, vpsDownloadUrl);
-    }
-  }
-  next();
-});
-
-// Statically serve /image folder (public assets like QR templates) with multi-directory fallback
-app.use("/image", express.static(path.resolve(process.cwd(), "apps/web/public/image"), staticCacheOptions));
-app.use("/image", express.static(path.resolve(process.cwd(), "../web/public/image"), staticCacheOptions));
-app.use("/image", express.static(path.resolve(__dirname, "../../web/public/image"), staticCacheOptions));
-app.use("/image", express.static(path.resolve(__dirname, "../../../apps/web/public/image"), staticCacheOptions));
-
-// In-App Version Checking Endpoints (Direct Root & /v1 for Mobile Updater)
-app.get("/api/v1/app-version", (req, res) => systemController.getAppVersion(req, res));
-app.get("/api/app-version", (req, res) => systemController.getAppVersion(req, res));
+// Statically serve uploads folder
+app.use("/uploads", express.static("uploads"));
 
 // Main APIs
 app.use("/api/v1/auth", authRouter);
@@ -212,10 +84,7 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/transactions", transactionRouter);
 app.use("/api/v1/schedules", scheduleRouter);
 app.use("/api/v1/system", systemRouter);
-app.use("/api/v1/config", configRouter);
 app.use("/api/v1/configs", configRouter);
-app.use("/api/config", configRouter);
-app.use("/api/configs", configRouter);
 app.use("/api/v1/gamification", gamificationRouter);
 app.use("/api/v1/facilities", facilityRouter);
 app.use("/api/v1/bank-sampah", bankSampahRouter);
@@ -223,237 +92,28 @@ app.use("/api/v1/notifications/integration", notificationIntegrationRouter);
 app.use("/api/v1/kkn", kknRouter);
 app.use("/api/v1/residu", residuRouter);
 app.use("/api/v1/petugas-residu", residuRouter);
-app.use("/api/v1/petugas-pemilahan", residuRouter);
-app.use("/api/v1/pemilahan", residuRouter);
-app.use("/api/v1/super-user", superUserRouter);
+app.use("/api/v1/super-admin", superAdminRouter);
 app.use("/api/v1/rw", rwRouter);
 app.use("/api/v1/rt", rwRouter);
 app.use("/api/v1/ide-daur-ulang", ideDaurUlangRouter);
-app.use("/api/v1/posko-kkn", poskoKknRouter);
 app.use("/api/v1/areas", areaRouter);
-app.use("/api/v1/wilayah", areaRouter);
 app.use("/api/v1/admin/mahasiswa", adminMahasiswaRouter);
-app.use("/api/v1/kkn-attendance", kknAttendanceRouter);
-// REMOVED: app.use("/api/v1", kknAttendanceRouter) — root wildcard mount dihapus, digantikan explicit dedicated endpoints di bawah
+app.use("/api/v1", kknAttendanceRouter);
 app.use("/api/v1/pemanfaatan", pemanfaatanRouter);
 app.use("/api/v1/pengangkutan", pengangkutanRouter);
 app.use("/api/v1/kelompok", kelompokRouter);
 app.use("/api/v1/dpl", dplRouter);
-app.use("/api/v1/permissions", permissionRouter);
-app.use("/api/v1/survei-kkn", surveiKknRouter);
-app.use("/api/v1/evaluasi-dampak", evaluasiDampakRouter);
-app.use("/api/v1", datasetKlasifikasiRouter);
-app.use("/api/v1/panduan", panduanRouter);
-app.use("/api/v1/master-kegiatan", masterKegiatanRouter);
-app.use("/api/v1/penilaian-kkn", penilaianKknRouter);
-app.use("/api/v1/timeline-kkn", timelineKknRouter);
-app.use("/api/v1/logbook", logbookRouter);
-app.use("/api/v1/berita", beritaRouter);
-app.use("/api/v1/presensi", presensiMandiriRouter);
 
 // Master API Spec Alias Mounts (Compatibility for mobile client without /v1 prefix)
 app.use("/api/v1/user", userRouter);
 app.use("/api/kkn", kknRouter);
-app.use("/api/logbook", logbookRouter);
-app.use("/api/berita", beritaRouter);
-app.use("/api/kkn-attendance", kknAttendanceRouter);
+app.use("/api", kknAttendanceRouter);
 app.use("/api/residu", residuRouter);
 app.use("/api/petugas-residu", residuRouter);
-app.use("/api/petugas-pemilahan", residuRouter);
-app.use("/api/pemilahan", residuRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/rw", rwRouter);
 app.use("/api/rt", rwRouter);
-app.use("/api/areas", areaRouter);
-app.use("/api/wilayah", areaRouter);
-app.use("/api/penilaian-kkn", penilaianKknRouter);
-
-// Dedicated Direct Endpoints for Web Dashboard Monitoring & Mobile Background Worker
-// (Explicitly mapped without root wildcards to eliminate router collision while guaranteeing 100% compatibility)
-app.post(
-  ["/api/v1/location-ping", "/api/location-ping"],
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER"]),
-  kknAttendanceController.pingLocation
-);
-app.get(
-  ["/api/v1/mahasiswa/lokasi-aktif", "/api/mahasiswa/lokasi-aktif"],
-  authMiddleware,
-  roleMiddleware([
-    "SUPER_USER",
-    "DEVELOPER",
-    "ADMIN_DLH",
-    "CAMAT",
-    "LURAH",
-    "RW",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  kknAttendanceController.getActiveStudentsLocations
-);
-app.get(
-  ["/api/v1/timesheet/summary", "/api/timesheet/summary"],
-  authMiddleware,
-  roleMiddleware([
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "CAMAT",
-    "LURAH",
-    "RW",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-    "MAHASISWA_KKN",
-    "DEVELOPER",
-  ]),
-  kknAttendanceController.getTimesheetSummary
-);
-app.get(
-  ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
-  authMiddleware,
-  roleMiddleware([
-    "SUPER_USER",
-    "DEVELOPER",
-    "ADMIN_DLH",
-    "CAMAT",
-    "LURAH",
-    "RW",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  kknAttendanceController.getAttendanceList
-);
-app.get(
-  ["/api/v1/kegiatan/:id/lokasi", "/api/kegiatan/:id/lokasi"],
-  authMiddleware,
-  roleMiddleware(["SUPER_USER", "ADMIN_DLH", "CAMAT", "LURAH", "RW", "MAHASISWA_KKN"]),
-  kknAttendanceController.getActivityLocation
-);
-app.post(
-  ["/api/v1/kegiatan/:id/absen", "/api/kegiatan/:id/absen"],
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  safeUploadSingleImage("foto"),
-  kknAttendanceController.recordAttendance
-);
-app.post(
-  [
-    "/api/v1/kegiatan/:id/check-out",
-    "/api/v1/kegiatan/:id/checkout",
-    "/api/kegiatan/:id/check-out",
-    "/api/kegiatan/:id/checkout",
-  ],
-  authMiddleware,
-  roleMiddleware(["MAHASISWA_KKN"]),
-  safeUploadSingleImage("foto"),
-  kknAttendanceController.checkOutAttendance
-);
-app.get(
-  [
-    "/api/v1/laporan-rekap",
-    "/api/laporan-rekap",
-    "/api/v1/laporan-presensi",
-    "/api/laporan-presensi",
-  ],
-  authMiddleware,
-  roleMiddleware([
-    "DEVELOPER",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "SUPER_USER",
-    "ADMIN_DLH",
-    "CAMAT",
-    "LURAH",
-    "RW",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  kknAttendanceController.getLaporanPresensi
-);
-
-// Direct Panen Hasil Endpoints for Mobile Client
-app.post(
-  ["/api/v1/panen-hasil", "/api/panen-hasil", "/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
-  authMiddleware,
-  roleMiddleware([
-    "MAHASISWA_KKN",
-    "SUPER_USER",
-    "DEVELOPER",
-    "ADMIN_DLH",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  safeUploadPemanfaatanImage,
-  kknController.updatePanenHasil
-);
-app.put(
-  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
-  authMiddleware,
-  roleMiddleware([
-    "MAHASISWA_KKN",
-    "SUPER_USER",
-    "DEVELOPER",
-    "ADMIN_DLH",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  safeUploadPemanfaatanImage,
-  kknController.updatePanenHasil
-);
-app.patch(
-  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
-  authMiddleware,
-  roleMiddleware([
-    "MAHASISWA_KKN",
-    "SUPER_USER",
-    "DEVELOPER",
-    "ADMIN_DLH",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  safeUploadPemanfaatanImage,
-  kknController.updatePanenHasil
-);
-app.delete(
-  ["/api/v1/panen-hasil/:id", "/api/panen-hasil/:id"],
-  authMiddleware,
-  roleMiddleware([
-    "MAHASISWA_KKN",
-    "SUPER_USER",
-    "DEVELOPER",
-    "ADMIN_DLH",
-    "DPL",
-    "DOSEN_PEMBIMBING",
-    "PANITIA_TASKFORCE",
-    "PEMIMPIN",
-  ]),
-  kknController.deletePanenHasil
-);
-
-// Public Mobile Force Update App Version Endpoint
-app.get(
-  [
-    "/api/v1/config/app-version",
-    "/api/v1/configs/app-version",
-    "/api/config/app-version",
-    "/api/configs/app-version",
-    "/api/app-version",
-    "/api/v1/app-version",
-  ],
-  configController.getAppVersion
-);
 
 // Global Error Handler Middleware
 app.use((err: any, req: any, res: any, _next: any) => {
@@ -468,8 +128,8 @@ app.use((err: any, req: any, res: any, _next: any) => {
 // Initialize Swagger Docs
 setupSwagger(app);
 
-// Health check (supports /health, /api/health, /api/v1/health)
-app.get(["/health", "/api/health", "/api/v1/health"], (_req, res) => {
+// Health check
+app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
 });
 
@@ -479,347 +139,19 @@ const server = app.listen(PORT, () => {
   console.log(`===============================================`);
 });
 
-server.on("error", (err: any) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(
-      `[Server Warning] Port ${PORT} is already in use. Please check running Node processes.`
-    );
-  } else {
-    console.error("[Server Error]", err);
-  }
-});
-
 // Initialize WebSocket Server
 import { websocketService } from "./services/websocketService.js";
 websocketService.init(server);
 
-// Initialize Cron Scheduler Service (Only on primary instance in PM2 Cluster Mode)
+// Initialize Cron Scheduler Service
 import { cronService } from "./services/cronService.js";
-import { archiveAuditLogsCron } from "./cron/archive.cron.js";
+cronService.start();
 
-const isPrimaryWorker = !process.env.NODE_APP_INSTANCE || process.env.NODE_APP_INSTANCE === "0";
-if (isPrimaryWorker) {
-  console.log(
-    `[CronService] Initializing cron scheduler on primary worker instance (${process.env.NODE_APP_INSTANCE || "single-process"})...`
-  );
-  cronService.start();
-  archiveAuditLogsCron.start();
-} else {
-  console.log(
-    `[CronService] Skipping cron initialization on secondary worker instance (${process.env.NODE_APP_INSTANCE}) to avoid duplicated tasks.`
-  );
-}
-
-// Auto-migrate missing database columns on startup
+// Auto-sanitize RT/RW names to human names if dummy names exist in DB
 (async () => {
   try {
-    const alterStatements = [
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rw" INTEGER;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "id_rt" INTEGER;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "harus_ganti_password" BOOLEAN DEFAULT false;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "subtipe_warga" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "nip" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "institusi" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jabatan" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "program_studi" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "provinsi" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "kabupaten" TEXT;',
-      'ALTER TABLE "pengguna" ADD COLUMN IF NOT EXISTS "jumlah_anggota_keluarga" INTEGER;',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian_dpl" DECIMAL(5,2) DEFAULT 0.0;',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "is_ketua" BOOLEAN DEFAULT false;',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "jenjang_pendidikan" TEXT;',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "catatan_penilaian_dpl" TEXT;',
-      'ALTER TABLE "mahasiswa_kkn" ADD COLUMN IF NOT EXISTS "sudah_dinilai" BOOLEAN DEFAULT false;',
-      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "id_dpl" TEXT;',
-      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "kelurahan" TEXT;',
-      // QC-27: Link Google Drive per kelompok
-      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "link_google_drive" TEXT;',
-      'ALTER TABLE "kelompok_kkn" ADD COLUMN IF NOT EXISTS "qr_diunduh_pada" TIMESTAMP(3);',
-      'ALTER TABLE "tempat_sampah" ADD COLUMN IF NOT EXISTS "id_kelompok" TEXT;',
-      'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "is_aktif" BOOLEAN NOT NULL DEFAULT true;',
-      // QC-36: Advance scheduling — bulan efektif polygon area kerja
-      'ALTER TABLE "jadwal" ADD COLUMN IF NOT EXISTS "effective_month" TEXT;',
-      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "durasi_aktual_dalam_zona_menit" INTEGER;',
-      'ALTER TABLE "kehadiran_kegiatan" ADD COLUMN IF NOT EXISTS "log_jeda" JSONB;',
-      'ALTER TABLE "jejak_audit" ADD COLUMN IF NOT EXISTS "hash" TEXT;',
-      'ALTER TABLE "jejak_audit" ADD COLUMN IF NOT EXISTS "previous_hash" TEXT;',
-      'ALTER TABLE "fasilitas" ADD COLUMN IF NOT EXISTS "id_pendaftar" TEXT;',
-      'ALTER TABLE "pemanfaatan_sampah" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
-      'ALTER TABLE "pemanfaatan_sampah" ALTER COLUMN "id_rw" DROP NOT NULL;',
-      'ALTER TABLE "kritik_saran_pemanfaatan" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
-      'UPDATE "fasilitas" SET "status_persetujuan" = \'APPROVED\' WHERE "status_persetujuan" = \'PENDING\';',
-      `DO $$ BEGIN
-        CREATE TYPE "StatusProker" AS ENUM ('BELUM_DISETUJUI', 'DITERIMA', 'DITOLAK', 'SEDANG_BERJALAN', 'SELESAI');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `DO $$ BEGIN
-        CREATE TYPE "StatusPenilaianKkn" AS ENUM ('DRAFT', 'TERSIMPAN', 'FINAL');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `DO $$ BEGIN
-        ALTER TYPE "FacilityType" ADD VALUE IF NOT EXISTS 'posko_kkn';
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `DO $$ BEGIN
-        ALTER TYPE "StatusProker" ADD VALUE IF NOT EXISTS 'SEDANG_BERJALAN';
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `DO $$ BEGIN
-        ALTER TYPE "StatusProker" ADD VALUE IF NOT EXISTS 'SELESAI';
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `CREATE TABLE IF NOT EXISTS "program_kerja_kkn" (
-        "id" TEXT PRIMARY KEY,
-        "id_kelompok" TEXT NOT NULL,
-        "nomor" INTEGER,
-        "deskripsi" TEXT NOT NULL,
-        "kategori" TEXT DEFAULT 'LAINNYA',
-        "sumber" TEXT DEFAULT 'MAHASISWA',
-        "waktu_pelaksanaan" TEXT,
-        "link_google_drive" TEXT,
-        "kebutuhan_biaya" DECIMAL(12,2) NOT NULL DEFAULT 0.00,
-        "status" "StatusProker" NOT NULL DEFAULT 'BELUM_DISETUJUI',
-        "catatan_dpl" TEXT,
-        "id_pereview" TEXT,
-        "direview_pada" TIMESTAMP(3),
-        "skor_penilaian" DECIMAL(5,2),
-        "evaluasi_dpl" TEXT,
-        "aspek_penilaian" JSONB,
-        "predikat" TEXT,
-        "status_penilaian" TEXT DEFAULT 'BELUM_DINILAI',
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `DO $$ BEGIN 
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='kegiatan_harian_kkn') THEN 
-          ALTER TABLE "kegiatan_harian_kkn" ALTER COLUMN "foto_bukti_url" DROP NOT NULL; 
-        END IF; 
-      END $$;`,
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "judul" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "nomor" INTEGER;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "id_mahasiswa" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "kategori" TEXT DEFAULT \'LAINNYA\';',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "sumber" TEXT DEFAULT \'MAHASISWA\';',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "waktu_pelaksanaan" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "link_google_drive" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "kebutuhan_biaya" DECIMAL(12,2) DEFAULT 0.00;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "catatan_dpl" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "id_pereview" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "direview_pada" TIMESTAMP(3);',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "skor_penilaian" DECIMAL(5,2);',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "evaluasi_dpl" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "aspek_penilaian" JSONB;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "predikat" TEXT;',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "status_penilaian" TEXT DEFAULT \'BELUM_DINILAI\';',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "status_usulan" TEXT DEFAULT \'BELUM_DISETUJUI\';',
-      'ALTER TABLE "program_kerja_kkn" ADD COLUMN IF NOT EXISTS "status_pelaksanaan" TEXT DEFAULT \'BELUM_MULAI\';',
-      `UPDATE "program_kerja_kkn" SET "status_usulan" = 'DISETUJUI', "status_pelaksanaan" = 'SELESAI' WHERE "status"::text = 'SELESAI' AND ("status_pelaksanaan" IS NULL OR "status_pelaksanaan" = 'BELUM_MULAI');`,
-      `UPDATE "program_kerja_kkn" SET "status_usulan" = 'DISETUJUI', "status_pelaksanaan" = 'SEDANG_BERJALAN' WHERE "status"::text = 'SEDANG_BERJALAN' AND ("status_pelaksanaan" IS NULL OR "status_pelaksanaan" = 'BELUM_MULAI');`,
-      `UPDATE "program_kerja_kkn" SET "status_usulan" = 'DISETUJUI' WHERE "status"::text IN ('DITERIMA', 'DISETUJUI') AND ("status_usulan" IS NULL OR "status_usulan" = 'BELUM_DISETUJUI');`,
-      `UPDATE "program_kerja_kkn" SET "status_usulan" = 'DITOLAK' WHERE "status"::text IN ('DITOLAK', 'TIDAK_DISETUJUI') AND ("status_usulan" IS NULL OR "status_usulan" = 'BELUM_DISETUJUI');`,
-      `UPDATE "program_kerja_kkn" SET "status_usulan" = 'BELUM_DISETUJUI' WHERE "status_usulan" IS NULL;`,
-      `UPDATE "program_kerja_kkn" SET "status_pelaksanaan" = 'BELUM_MULAI' WHERE "status_pelaksanaan" IS NULL;`,
-      `CREATE TABLE IF NOT EXISTS "buku_panduan" (
-        "id" TEXT PRIMARY KEY,
-        "judul" TEXT NOT NULL,
-        "kategori_peran" TEXT NOT NULL,
-        "deskripsi" TEXT,
-        "file_url" TEXT,
-        "link_url" TEXT,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `CREATE TABLE IF NOT EXISTS "master_kegiatan_sampah" (
-        "id" TEXT PRIMARY KEY,
-        "nama" TEXT NOT NULL UNIQUE,
-        "kategori" TEXT NOT NULL,
-        "deskripsi" TEXT,
-        "status_aktif" BOOLEAN NOT NULL DEFAULT true,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `CREATE TABLE IF NOT EXISTS "penilaian_kkn_mahasiswa" (
-        "id" TEXT PRIMARY KEY,
-        "id_mahasiswa" TEXT NOT NULL UNIQUE,
-        "id_kelompok" TEXT,
-        "id_dpl" TEXT,
-        "id_mitra" TEXT,
-        "nama_mitra_penilai" TEXT,
-        "skor_mitra_kehadiran" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_warga_binaan" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_proker" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_komunikasi" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_tanggung_jawab" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_bukti_kegiatan" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_dampak" INTEGER NOT NULL DEFAULT 0,
-        "skor_mitra_inisiatif" INTEGER NOT NULL DEFAULT 0,
-        "subtotal_mitra" DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-        "skor_dpl_perencanaan" INTEGER NOT NULL DEFAULT 0,
-        "skor_dpl_kontribusi" INTEGER NOT NULL DEFAULT 0,
-        "skor_dpl_logbook" INTEGER NOT NULL DEFAULT 0,
-        "skor_dpl_analisis" INTEGER NOT NULL DEFAULT 0,
-        "skor_dpl_output" INTEGER NOT NULL DEFAULT 0,
-        "skor_dpl_laporan_akhir" INTEGER NOT NULL DEFAULT 0,
-        "subtotal_dpl" DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-        "nilai_akhir" DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-        "kategori_nilai" TEXT,
-        "catatan_dpl" TEXT,
-        "catatan_mitra" TEXT,
-        "status" "StatusPenilaianKkn" NOT NULL DEFAULT 'DRAFT',
-        "is_finalized" BOOLEAN NOT NULL DEFAULT false,
-        "difinalisasi_pada" TIMESTAMP(3),
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `CREATE TABLE IF NOT EXISTS "kritik_saran_pemanfaatan" (
-        "id" TEXT PRIMARY KEY,
-        "id_pengguna" TEXT NOT NULL,
-        "warga_nama" TEXT NOT NULL,
-        "id_program_kerja" TEXT,
-        "kategori" TEXT DEFAULT 'Pemanfaatan Sampah',
-        "judul" TEXT NOT NULL,
-        "isi_kritik_saran" TEXT NOT NULL,
-        "rating" INTEGER DEFAULT 5,
-        "status" TEXT DEFAULT 'MENUNGGU',
-        "tanggapan" TEXT,
-        "ditanggapi_oleh" TEXT,
-        "ditanggapi_pada" TIMESTAMP(3),
-        "foto_bukti_url" TEXT,
-        "id_rw" INTEGER,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `CREATE TABLE IF NOT EXISTS "pemanfaatan_sampah" (
-        "id" TEXT PRIMARY KEY,
-        "id_rw" INTEGER,
-        "id_program_kerja" TEXT,
-        "nomor_cara_pemanfaatan" TEXT NOT NULL,
-        "program" TEXT NOT NULL,
-        "teknologi" TEXT NOT NULL,
-        "bahan_baku" TEXT NOT NULL,
-        "volume_bahan_baku" DECIMAL(10,2) NOT NULL,
-        "unit_bahan_baku" TEXT NOT NULL,
-        "hasil" DECIMAL(10,2) NOT NULL,
-        "unit_hasil" TEXT NOT NULL,
-        "foto_dokumentasi_url" TEXT NOT NULL,
-        "tanggal_pencatatan" TIMESTAMP(3) NOT NULL,
-        "jenis_komoditas" TEXT,
-        "luas_lahan_m2" DECIMAL(8,2),
-        "volume_pupuk_dipakai_kg" DECIMAL(8,2),
-        "bibit_telur_gram" DECIMAL(8,2),
-        "hasil_kasgot_kg" DECIMAL(8,2),
-        "volume_bioaktivator_liter" DECIMAL(8,2),
-        "masa_fermentasi_hari" INTEGER,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `CREATE TABLE IF NOT EXISTS "timeline_kkn" (
-        "id" TEXT PRIMARY KEY,
-        "tahap_minggu" TEXT NOT NULL,
-        "tanggal" TEXT NOT NULL,
-        "tanggal_mulai" TIMESTAMP(3),
-        "tanggal_selesai" TIMESTAMP(3),
-        "fase" TEXT NOT NULL,
-        "kegiatan_utama" TEXT NOT NULL,
-        "output_target" TEXT NOT NULL,
-        "pic_keterangan" TEXT NOT NULL,
-        "status_pelaksanaan" TEXT NOT NULL DEFAULT 'BELUM_DIMULAI',
-        "id_kelompok" TEXT,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      'ALTER TABLE "timeline_kkn" ADD COLUMN IF NOT EXISTS "tanggal_mulai" TIMESTAMP(3);',
-      'ALTER TABLE "timeline_kkn" ADD COLUMN IF NOT EXISTS "tanggal_selesai" TIMESTAMP(3);',
-      'CREATE INDEX IF NOT EXISTS "timeline_kkn_id_kelompok_idx" ON "timeline_kkn"("id_kelompok");',
-      'CREATE INDEX IF NOT EXISTS "timeline_kkn_fase_idx" ON "timeline_kkn"("fase");',
-      'CREATE INDEX IF NOT EXISTS "timeline_kkn_status_pelaksanaan_idx" ON "timeline_kkn"("status_pelaksanaan");',
-      `DO $$ BEGIN
-        CREATE TYPE "TipeAktivitasKkn" AS ENUM ('KELOMPOK', 'INDIVIDU');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `DO $$ BEGIN
-        CREATE TYPE "StatusLogbookKkn" AS ENUM ('MENUNGGU_PERSETUJUAN_KETUA', 'DITOLAK_KETUA', 'MENUNGGU_VERIFIKASI_DPL', 'DISETUJUI_DPL', 'PERLU_REVISI_DPL');
-      EXCEPTION
-        WHEN duplicate_object THEN null;
-      END $$;`,
-      `CREATE TABLE IF NOT EXISTS "logbook_kkn" (
-        "id" TEXT PRIMARY KEY,
-        "nomor" INTEGER,
-        "id_kelompok" TEXT NOT NULL,
-        "id_penulis" TEXT NOT NULL,
-        "tanggal_kegiatan" DATE NOT NULL,
-        "waktu_mulai" TEXT,
-        "waktu_selesai" TEXT,
-        "tempat" TEXT NOT NULL,
-        "deskripsi" TEXT NOT NULL,
-        "foto_bukti_url" TEXT NOT NULL,
-        "tipe_aktivitas" "TipeAktivitasKkn" NOT NULL DEFAULT 'KELOMPOK',
-        "id_program_kerja" TEXT,
-        "id_fasilitas" TEXT,
-        "status_persetujuan" "StatusLogbookKkn" NOT NULL DEFAULT 'MENUNGGU_PERSETUJUAN_KETUA',
-        "id_ketua_penyetuju" TEXT,
-        "disetujui_ketua_pada" TIMESTAMP(3),
-        "catatan_ketua" TEXT,
-        "id_dpl_verifikator" TEXT,
-        "diverifikasi_dpl_pada" TIMESTAMP(3),
-        "catatan_dpl" TEXT,
-        "pekan_ke" INTEGER NOT NULL DEFAULT 1,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      `CREATE TABLE IF NOT EXISTS "logbook_dpl" (
-        "id" TEXT PRIMARY KEY,
-        "id_dpl" TEXT NOT NULL,
-        "id_kelompok" TEXT NOT NULL,
-        "tanggal" DATE NOT NULL,
-        "pekan_ke" INTEGER NOT NULL,
-        "tempat" TEXT NOT NULL,
-        "deskripsi" TEXT NOT NULL,
-        "arahan_evaluasi" TEXT,
-        "foto_bukti_url" TEXT,
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "waktu_mulai" TEXT;',
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "waktu_selesai" TEXT;',
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "kategori" TEXT DEFAULT \'Kunjungan Lapangan\';',
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "id_program_kerja" TEXT;',
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "status" TEXT DEFAULT \'TERKIRIM\';',
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "durasi_menit" INTEGER DEFAULT 120;',
-      'ALTER TABLE "logbook_dpl" ADD COLUMN IF NOT EXISTS "simpan_lokasi" BOOLEAN DEFAULT true;',
-      'CREATE INDEX IF NOT EXISTS "logbook_kkn_id_kelompok_tanggal_idx" ON "logbook_kkn"("id_kelompok", "tanggal_kegiatan" DESC);',
-      'CREATE INDEX IF NOT EXISTS "logbook_kkn_id_penulis_idx" ON "logbook_kkn"("id_penulis");',
-      'CREATE INDEX IF NOT EXISTS "logbook_kkn_status_persetujuan_idx" ON "logbook_kkn"("status_persetujuan");',
-      `CREATE TABLE IF NOT EXISTS "sinkronisasi_notifikasi_user" (
-        "id" TEXT PRIMARY KEY,
-        "id_pengguna" TEXT NOT NULL UNIQUE,
-        "terakhir_sinkron" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "status" TEXT DEFAULT 'SYNCED',
-        "dibuat_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "diperbarui_pada" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );`,
-      'CREATE INDEX IF NOT EXISTS "logbook_dpl_id_dpl_pekan_idx" ON "logbook_dpl"("id_dpl", "pekan_ke");',
-      'CREATE INDEX IF NOT EXISTS "lokasi_mahasiswa_id_mahasiswa_direkam_pada_idx" ON "lokasi_mahasiswa"("id_mahasiswa", "direkam_pada" DESC);',
-    ];
-
-    await Promise.allSettled(alterStatements.map((stmt) => prisma.$executeRawUnsafe(stmt)));
-    console.log("[AutoMigration] Database columns checked and synced successfully.");
-
-    // Auto-heal & synchronize Posko KKN photos with facilities records
-    try {
-      const { poskoKknService } = await import("./services/poskoKknService.js");
-      await poskoKknService.syncPoskoPhotosWithFacilities();
-    } catch (syncErr) {
-      console.warn("[AutoMigration] Posko photo sync error:", syncErr);
-    }
-
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
     const dummyUser = await prisma.user.findFirst({
       where: {
         OR: [
@@ -833,11 +165,12 @@ if (isPrimaryWorker) {
       },
     });
     if (dummyUser) {
-      console.log(
-        "[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Please run naming sanitization scripts manually."
-      );
+      console.log("[AutoSanitize] Found dummy RT/RW/Lurah/Camat names in DB. Sanitizing to human names...");
+      const { exec } = await import("child_process");
+      exec("npx tsx scripts/fix-rt-rw-human-names.ts");
+      exec("npx tsx scripts/fix-executive-human-names.ts");
     }
-  } catch (e: any) {
-    console.error("[AutoMigration Log]", e?.message || e);
+  } catch (e) {
+    // Non-blocking catch
   }
 })();

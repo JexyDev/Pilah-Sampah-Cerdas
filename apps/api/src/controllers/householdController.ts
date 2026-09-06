@@ -1,6 +1,5 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -13,7 +12,7 @@ import { householdService } from "../services/householdService.js";
 // Validation Schema for Registration
 const registerSchema = z.object({
   address: z.string().min(5, "Alamat terlalu pendek"),
-  rwId: z.number().int().positive("Area RT/RW tidak valid"),
+  rtRwId: z.number().int().positive("Area RT/RW tidak valid"),
   latitude: z.number().min(-90).max(90, "Latitude tidak valid"),
   longitude: z.number().min(-180).max(180, "Longitude tidak valid"),
 });
@@ -33,13 +32,13 @@ export class HouseholdController {
         res.status(400).json({ error: "VALIDATION_ERROR", details: parsed.error.format() });
         return;
       }
-      const { address, rwId, latitude, longitude } = parsed.data;
+      const { address, rtRwId, latitude, longitude } = parsed.data;
 
       // 2. Call Service
       const household = await householdService.registerHousehold(
         userId,
         address,
-        rwId,
+        rtRwId,
         latitude,
         longitude
       );
@@ -68,23 +67,11 @@ export class HouseholdController {
   async getMyHouseholds(req: Request, res: Response): Promise<void> {
     try {
       const userId = req.user!.userId;
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { jumlahAnggotaKeluarga: true },
-      });
-      const familySize = user?.jumlahAnggotaKeluarga || 1;
       const households = await householdService.getHouseholdsByUser(userId);
 
       res.status(200).json({
-        success: true,
         message: "Berhasil mengambil data",
-        familySize,
-        jumlahAnggotaKeluarga: familySize,
         data: households,
-        user: {
-          familySize,
-          jumlahAnggotaKeluarga: familySize,
-        },
       });
     } catch (error) {
       console.error("[HouseholdController] getMyHouseholds error:", error);

@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -7,7 +7,6 @@
 
 import { Request, Response } from "express";
 import { facilityService } from "../services/facilityService.js";
-import { prisma } from "../lib/prisma.js";
 
 export class FacilityController {
   /**
@@ -15,14 +14,7 @@ export class FacilityController {
    */
   async createFacility(req: Request, res: Response): Promise<void> {
     try {
-      let { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude, alamat, rwId } =
-        req.body;
-      if (req.file) {
-        foto = `/uploads/${req.file.filename}`;
-      }
-      const userId = (req as any).user?.userId;
-      const peran = (req as any).user?.role;
-
+      const { jenis, nama, pic, foto, kontak, kapasitas, latitude, longitude } = req.body;
       if (!jenis || !nama || !pic) {
         res.status(400).json({
           success: false,
@@ -31,99 +23,15 @@ export class FacilityController {
         });
         return;
       }
-
-      // Auto-resolve kelompokId & rwId jika MAHASISWA_KKN
-      let kelompokId: string | undefined;
-      let targetRwId: number | undefined =
-        rwId !== undefined && !isNaN(Number(rwId)) && Number(rwId) > 0 ? Number(rwId) : undefined;
-
-      if (peran === "MAHASISWA_KKN" && userId) {
-        const student = await prisma.studentKkn.findUnique({
-          where: { userId },
-          include: { kelompok: true, assignedRw: true },
-        });
-        kelompokId = student?.kelompokId ?? undefined;
-        const kelurahanName = student?.kelompok?.kelurahan;
-
-        // Jika targetRwId terisi (misal angka 8), pastikan di-resolve ke record RW di Kelurahan mahasiswa
-        if (targetRwId && kelurahanName) {
-          const rwMatch = await prisma.rw.findFirst({
-            where: {
-              kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } },
-              OR: [
-                { id: targetRwId },
-                { name: { contains: String(targetRwId).padStart(2, "0") } },
-                { name: { contains: `RW ${targetRwId}` } },
-                { name: { contains: `RW ${String(targetRwId).padStart(2, "0")}` } },
-              ],
-            },
-          });
-          if (rwMatch) {
-            targetRwId = rwMatch.id;
-          }
-        }
-
-        if (!targetRwId) {
-          if (student?.assignedRwId) {
-            targetRwId = student.assignedRwId;
-          } else if (kelurahanName) {
-            let firstRwNum: string | number | undefined;
-            if (student?.kelompok?.cakupanRw) {
-              try {
-                const parsed =
-                  typeof student.kelompok.cakupanRw === "string"
-                    ? JSON.parse(student.kelompok.cakupanRw)
-                    : student.kelompok.cakupanRw;
-                if (Array.isArray(parsed) && parsed.length > 0) firstRwNum = parsed[0];
-              } catch (_) {}
-            }
-            if (firstRwNum) {
-              const rwMatch = await prisma.rw.findFirst({
-                where: {
-                  kelurahan: { name: { equals: kelurahanName, mode: "insensitive" } },
-                  OR: [
-                    { name: { contains: String(firstRwNum).padStart(2, "0") } },
-                    { name: { contains: `RW ${firstRwNum}` } },
-                  ],
-                },
-              });
-              if (rwMatch) targetRwId = rwMatch.id;
-            }
-          }
-        }
-      }
-
-      if (!targetRwId && (req as any).user?.rwId) {
-        targetRwId = Number((req as any).user.rwId);
-      }
-
-      // Sanitasi input numerik agar tidak overflow pada database
-      const safeKapasitas =
-        kapasitas !== undefined &&
-        kapasitas !== null &&
-        kapasitas !== "" &&
-        !isNaN(Number(kapasitas))
-          ? Math.min(Math.max(Number(kapasitas), 0), 99999999)
-          : undefined;
-
-      const safeLat = latitude !== undefined && !isNaN(Number(latitude)) ? Number(latitude) : 0.0;
-      const safeLng =
-        longitude !== undefined && !isNaN(Number(longitude)) ? Number(longitude) : 0.0;
-
       const facility = await facilityService.createFacility(
         jenis,
         nama,
         pic,
         foto,
         kontak,
-        safeKapasitas,
-        safeLat,
-        safeLng,
-        userId,
-        kelompokId,
-        alamat,
-        targetRwId,
-        "APPROVED"
+        kapasitas,
+        latitude,
+        longitude
       );
       res.status(201).json({ success: true, message: "Fasilitas berhasil dibuat", data: facility });
     } catch (error: any) {
@@ -139,8 +47,7 @@ export class FacilityController {
   async getFacilities(req: Request, res: Response): Promise<void> {
     try {
       const { jenis } = req.query;
-      const user = (req as any).user;
-      const list = await facilityService.getFacilities(jenis as string, user);
+      const list = await facilityService.getFacilities(jenis as string);
       res.status(200).json({ success: true, data: list });
     } catch (error: any) {
       res
@@ -174,24 +81,6 @@ export class FacilityController {
         userId
       );
       res.status(201).json({ success: true, message: "Pencatatan produksi berhasil", data: log });
-    } catch (error: any) {
-      res
-        .status(400)
-        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
-    }
-  }
-
-  /**
-   * Verifikasi log produksi oleh RW/Petugas
-   */
-  async verifyProduction(req: Request, res: Response): Promise<void> {
-    try {
-      const { logId } = req.params;
-      const verifiedByUserId = (req as any).user?.userId;
-      const log = await facilityService.verifyProduction(logId, verifiedByUserId);
-      res
-        .status(200)
-        .json({ success: true, message: "Log produksi berhasil diverifikasi", data: log });
     } catch (error: any) {
       res
         .status(400)
@@ -256,20 +145,6 @@ export class FacilityController {
       res
         .status(201)
         .json({ success: true, message: "Distribusi produk maggot berhasil dicatat", data: log });
-    } catch (error: any) {
-      res
-        .status(400)
-        .json({ success: false, code: error.message || "BAD_REQUEST", message: error.message });
-    }
-  }
-
-  /**
-   * Get master data jenis fasilitas
-   */
-  async getJenisFasilitas(req: Request, res: Response): Promise<void> {
-    try {
-      const data = await facilityService.getJenisFasilitas();
-      res.status(200).json({ success: true, data });
     } catch (error: any) {
       res
         .status(400)

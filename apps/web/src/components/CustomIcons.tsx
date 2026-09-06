@@ -79,7 +79,7 @@ export const LosedaIcon = (props: LucideProps) => (
   </svg>
 );
 
-export const TempatSampahOrganikIcon = (props: LucideProps) => (
+export const TongOrganikIcon = (props: LucideProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={props.size || 24}
@@ -99,7 +99,7 @@ export const TempatSampahOrganikIcon = (props: LucideProps) => (
   </svg>
 );
 
-export const TempatSampahNonOrganikIcon = (props: LucideProps) => (
+export const TongNonOrganikIcon = (props: LucideProps) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={props.size || 24}

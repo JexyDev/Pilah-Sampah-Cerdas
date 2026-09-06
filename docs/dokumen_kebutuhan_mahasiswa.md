@@ -1,4 +1,4 @@
-﻿# **DOKUMEN KEBUTUHAN PENGEMBANGAN APLIKASI MOBILE MAHASISWA KKN**
+# **DOKUMEN KEBUTUHAN PENGEMBANGAN APLIKASI MOBILE MAHASISWA KKN**
 
 ## **1. Pendahuluan**
 
@@ -14,7 +14,7 @@ berkala sebagai pengganti mekanisme absensi manual.
 
 Berdasarkan requirement terbaru dari backend, terdapat perubahan pada
 alur sistem. Fitur yang sebelumnya menggunakan mekanisme pemindaian QR
-Code untuk melakukan klaim atau aktivasi Tempat Sampah dihapus dan tidak
+Code untuk melakukan klaim atau aktivasi tong sampah dihapus dan tidak
 lagi digunakan.
 
 Fokus utama aplikasi mobile Mahasiswa KKN adalah:
@@ -70,7 +70,7 @@ Pengembangan aplikasi ini memiliki beberapa tujuan utama, yaitu:
 Pada sistem yang baru, mahasiswa KKN memiliki peran sebagai **pendamping
 warga**.
 
-Mahasiswa tidak lagi bertugas untuk melakukan klaim atau aktivasi Tempat Sampah
+Mahasiswa tidak lagi bertugas untuk melakukan klaim atau aktivasi tong
 sampah menggunakan QR Code.
 
 Peran utama mahasiswa adalah:
@@ -204,7 +204,7 @@ Backend bertanggung jawab untuk:
 
 -   Menghitung apakah mahasiswa berada di dalam zona yang ditentukan.
 
--   Menghitung durasi jam kerja aktif presensi mahasiswa di zona penugasan.
+-   Menghitung durasi keberadaan mahasiswa di zona.
 
 -   Melakukan validasi kehadiran.
 
@@ -1270,23 +1270,23 @@ dikembangkan.
 
 Berdasarkan requirement terbaru, fitur berikut tidak lagi digunakan:
 
-1.  Scan QR Code Tempat Sampah.
+1.  Scan QR Code tong sampah.
 
-2.  Claim Tempat Sampah.
+2.  Claim tong sampah.
 
-3.  Perubahan status Tempat Sampah menjadi ASSIGNED_TO_PIC.
+3.  Perubahan status tong menjadi ASSIGNED_TO_PIC.
 
 4.  Status PENDING_APPROVAL untuk proses claim.
 
-5.  Aktivasi Tempat Sampah melalui QR Code.
+5.  Aktivasi tong sampah melalui QR Code.
 
-6.  Flow approval Tempat Sampah.
+6.  Flow approval tong sampah.
 
 7.  UI Scanner QR Code.
 
-8.  API Claim Tempat Sampah.
+8.  API Claim Tong Sampah.
 
-9.  Logika PIC terhadap kepemilikan Tempat Sampah.
+9.  Logika PIC terhadap kepemilikan tong sampah.
 
 Fitur tersebut harus dihapus atau tidak digunakan lagi dalam flow
 aplikasi mahasiswa KKN.
@@ -1485,7 +1485,7 @@ ke backend.
 # **20. Kesimpulan**
 
 Berdasarkan requirement terbaru, aplikasi mobile Modul Mahasiswa KKN
-mengalami perubahan fokus dari sistem klaim atau aktivasi Tempat Sampah
+mengalami perubahan fokus dari sistem klaim atau aktivasi tong sampah
 menjadi sistem pendampingan warga.
 
 Mahasiswa KKN memiliki tiga fungsi utama dalam aplikasi, yaitu:
@@ -1576,14 +1576,14 @@ PERFORMA BAIK PERLU EDUKASI
 MONITORING EDUKASI ULANG
 
 Dengan demikian, **aktivasi dalam konteks requirement terbaru bukan lagi
-aktivasi atau klaim Tempat Sampah**. Mahasiswa KKN berfungsi sebagai
+aktivasi atau klaim tong sampah**. Mahasiswa KKN berfungsi sebagai
 **pendamping warga**, sedangkan hubungan antara mahasiswa dan warga
 dibentuk melalui proses **registrasi warga dan binding otomatis oleh
 backend**.
 
 Dari sisi Flutter, pengembangan paling penting yang perlu diprioritaskan
 adalah **integrasi JWT, background location, registrasi warga, dan
-dashboard monitoring**. Sementara itu, fitur **QR Scanner, Claim Tempat Sampah
+dashboard monitoring**. Sementara itu, fitur **QR Scanner, Claim Tong
 Sampah, ASSIGNED_TO_PIC, dan PENDING_APPROVAL harus dihapus dari alur
 aplikasi mahasiswa KKN**.
 
@@ -1633,12 +1633,12 @@ Untuk menampung hasil ping dari Background Service Mobile.
 
 -   recordedAt (DateTime) - Waktu titik ini ditangkap
 
-C. Relasi Warga Dampingan (Tabel Bin / Tempat Sampah)
+C. Relasi Warga Dampingan (Tabel Bin / Tong Sampah)
 
 Untuk memetakan warga mana yang dibantu registrasi oleh mahasiswa mana.
 
 -   registeredByStudentId (String, nullable) - Jika form
-    registrasi/aktivasi Tempat Sampah di-submit melalui akun mahasiswa, ID
+    registrasi/aktivasi tong di-submit melalui akun mahasiswa, ID
     mahasiswa akan tercatat di field ini.
 
 2\. Daftar Endpoint API (Mobile Integration)
@@ -1681,7 +1681,7 @@ Authorization: Bearer \<TOKEN_MAHASISWA\>
 
 -   \[\
     {\
-    \"binId\": \"uuid-Tempat Sampah-sampah\",\
+    \"binId\": \"uuid-tong-sampah\",\
     \"wargaName\": \"Bapak Budi\",\
     \"address\": \"Jl. Cisitu Indah No. 12\",\
     \"recentLogs\": \[\
@@ -1721,9 +1721,9 @@ Authorization: Bearer \<TOKEN_MAHASISWA\>
 
 ⚠️ **FITUR YANG DIHAPUS DARI MOBILE:**
 
--   Hapus *flow* Mahasiswa Scan QR Code Tempat Sampah Kosong.
+-   Hapus *flow* Mahasiswa Scan QR Code Tong Kosong.
 
--   Hapus UI status Tempat Sampah \"ASSIGNED_TO_PIC\" (Pegang Tempat Sampah).
+-   Hapus UI Status Tong \"ASSIGNED_TO_PIC\" (Pegang Tong).
 
 -   Hapus Button/Approval \"PENDING_APPROVAL\".
 

@@ -1,12 +1,13 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
-import { Household, Prisma } from "@prisma/client";
+import { PrismaClient, Household, Prisma } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class HouseholdRepository {
   /**
@@ -16,7 +17,7 @@ export class HouseholdRepository {
     return prisma.household.create({
       data,
       include: {
-        rw: true,
+        rtRw: true,
       },
     });
   }
@@ -28,7 +29,7 @@ export class HouseholdRepository {
     return prisma.household.findUnique({
       where: { id },
       include: {
-        rw: {
+        rtRw: {
           include: { kelurahan: true },
         },
       },
@@ -38,20 +39,12 @@ export class HouseholdRepository {
   /**
    * Get all households for a user.
    */
-  async findHouseholdsByUserId(userId: string): Promise<any[]> {
+  async findHouseholdsByUserId(userId: string): Promise<Household[]> {
     return prisma.household.findMany({
       where: { userId },
       include: {
-        rw: {
+        rtRw: {
           include: { kelurahan: true },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            jumlahAnggotaKeluarga: true,
-          },
         },
       },
     });
@@ -60,11 +53,11 @@ export class HouseholdRepository {
   /**
    * Check if user already registered a household in the same area.
    */
-  async findHouseholdByUserAndArea(userId: string, rwId: number): Promise<Household | null> {
+  async findHouseholdByUserAndArea(userId: string, rtRwId: number): Promise<Household | null> {
     return prisma.household.findFirst({
       where: {
         userId,
-        rwId,
+        rtRwId,
       },
     });
   }
@@ -75,7 +68,7 @@ export class HouseholdRepository {
   async findAll(): Promise<any[]> {
     return prisma.household.findMany({
       include: {
-        rw: {
+        rtRw: {
           include: { kelurahan: true },
         },
         user: {

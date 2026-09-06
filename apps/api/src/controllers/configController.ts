@@ -1,5 +1,5 @@
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
@@ -37,74 +37,6 @@ export class ConfigController {
       }
       const updated = await configService.updateConfig(key, String(value));
       res.status(200).json({ success: true, data: updated });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
-    }
-  }
-  /**
-   * Get Rule Engine structured configs
-   */
-  async getRuleEngine(req: Request, res: Response): Promise<void> {
-    try {
-      const data = await configService.getRuleEngineConfigs();
-      res
-        .status(200)
-        .json({ success: true, message: "Berhasil mengambil aturan Rule Engine", data });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
-    }
-  }
-
-  /**
-   * Update Rule Engine structured configs in batch
-   */
-  async updateRuleEngine(req: Request, res: Response): Promise<void> {
-    try {
-      const updated = await configService.updateRuleEngineConfigs(req.body);
-      res
-        .status(200)
-        .json({ success: true, message: "Berhasil memperbarui aturan Rule Engine", data: updated });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ success: false, code: "INTERNAL_SERVER_ERROR", message: error.message });
-    }
-  }
-
-  /**
-   * Get dynamic App Version config for Mobile Force Update (Public - No Auth Required)
-   */
-  async getAppVersion(req: Request, res: Response): Promise<void> {
-    try {
-      const data = await configService.getAppVersionConfig();
-      res.status(200).json(data);
-    } catch (error: any) {
-      console.error("[ConfigController] getAppVersion error:", error);
-      res.status(200).json({
-        min_required_version: process.env.APP_MIN_REQUIRED_VERSION || "1.0.0",
-        latest_version: process.env.APP_LATEST_VERSION || "1.0.0",
-        update_url:
-          process.env.APP_UPDATE_URL ||
-          "https://berseka.id/downloads/berseka-release-arm64-v8a.apk",
-      });
-    }
-  }
-
-  /**
-   * Update App Version config (Admin / Developer)
-   */
-  async updateAppVersion(req: Request, res: Response): Promise<void> {
-    try {
-      const updated = await configService.updateAppVersionConfig(req.body);
-      res.status(200).json({
-        success: true,
-        message: "Berhasil memperbarui konfigurasi versi aplikasi",
-        data: updated,
-      });
     } catch (error: any) {
       res
         .status(500)

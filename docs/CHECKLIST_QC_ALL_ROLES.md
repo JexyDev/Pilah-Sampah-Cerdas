@@ -1,27 +1,28 @@
-# DOKUMEN CHECKLIST & SPESIFIKASI TESTING QC BERSEKA (SEMUA ROLE & FITUR)
+# DOKUMEN CHECKLIST & SPESIFIKASI TESTING QC TRASHCARE (SEMUA ROLE & FITUR)
 
 > **Versi Dokumen:** 2.0 (Final Comprehensive QC Checklist)  
 > **Tanggal Pembaruan:** 31 Juli 2026  
-> **Target Aplikasi:** BERSEKA (Web App & Mobile App Monorepo)  
-> **Standar Bahasa:** Bahasa Indonesia Baku (Sesuai KBBI & Spec Final BERSEKA)  
+> **Target Aplikasi:** Trashcare (Web App & Mobile App Monorepo)  
+> **Standar Bahasa:** Bahasa Indonesia Baku (Sesuai KBBI & Spec Final Trashcare)  
 
 ---
 
 ## 1. Matriks Hak Akses & Role (RBAC Matrix)
 
-Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses data yang terisolasi secara ketat:
+Sistem Trashcare mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses data yang terisolasi secara ketat:
 
 | No | Peran / Role | Metode Login (Saat Ini) | Scope Data | Batasan Operasi (Read/Write) |
 |---|---|---|---|---|
 | 1 | **Warga** | No HP (+62) + OTP/Password | Rumah Tangga Sendiri | Read/Write (Setoran, Bin, Ide Daur Ulang) |
 | 2 | **Mahasiswa KKN** | No HP (+62) + Password (Profile: NIM) | Zona KKN & Warga Dampingan | Read/Write (Binding Warga, Location Ping) |
-| 3 | **DPL (Dosen Pendamping)** | No HP (+62) + Password (Profile: NIP) | Mahasiswa Dampingan KKN | Read/Write (Web Monitoring KKN & Logbook) |
+| 3 | **DPL (Dosen Pembimbing)** | No HP (+62) + Password (Profile: NIP) | Mahasiswa Bimbingan KKN | Read/Write (Web Monitoring KKN & Logbook) |
 | 4 | **Petugas Residu** | No HP (+62) + Password | TPS / TPA Hilir & Web Portal | Read/Write (Web Monitoring Residu & Input Timbangan Manual) |
 | 5 | **RW** | No HP (+62) + Password | Wilayah RW Sendiri | Read/Write (Approval Bin, Pemanfaatan, Approval Ide) |
 | 6 | **Lurah** | No HP (+62) + Password | Se-Kelurahan | **Read-Only** (Strict Guard 403 write attempt) |
 | 7 | **Camat** | No HP (+62) + Password | Se-Kecamatan | **Read-Only** (Strict Guard 403 write attempt) |
 | 8 | **Admin DLH** | No HP (+62) + Password | Se-Kota | **Read-Only** (Kecuali Approval Diskrepansi AI) |
-| 9 | **SUPER USER** | No HP (+62) + Password | System Wide (Se-Kota) | Akses Penuh (Raw Data, System Config, Admin CRUD, Bulk KKN) |
+| 9 | **Super Admin** | No HP (+62) + Password | System Wide (Se-Kota) | Akses Penuh (Raw Data, System Config, Admin CRUD, Bulk KKN) |
+
 
 ---
 
@@ -104,7 +105,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 - [ ] **12.3 Proteksi System Default**: Kategori bawaan sistem tidak dapat dihapus dari UI.
 
 ### Modul 13: Notifikasi System & Notification Center
-- [ ] **13.1 List Alert System**: Menampilkan daftar notifikasi (contoh: Alert Tempat Sampah Penuh >90%, Eskalasi Penjemputan).
+- [ ] **13.1 List Alert System**: Menampilkan daftar notifikasi (contoh: Alert Tong Penuh >90%, Eskalasi Penjemputan).
 - [ ] **13.2 State Read/Unread**: Visualisasi pembeda jelas antara notifikasi belum dibaca (Bold/Highlight) dan sudah dibaca.
 - [ ] **13.3 Mark All as Read**: Tombol "Tandai Semua Dibaca" memperbarui state seluruh notifikasi user.
 - [ ] **13.4 Navigasi Klik Notifikasi**: Mengklik item notifikasi langsung mengarah ke halaman/detail terkait.
@@ -156,7 +157,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 - [ ] **21.3 Filter Tampilan Pemanfaatan**: Filter data pemanfaatan berbasis Realtime, Mingguan, Bulanan, dan Wilayah RW.
 
 ### Modul 22: Pengangkutan Sampah & Eskalasi Berjenjang
-- [ ] **22.1 Trigger Alert Notif Tempat Sampah Penuh**: Notifikasi push ke Petugas & RW + Marker merah pada peta saat tempat sampah >90%.
+- [ ] **22.1 Trigger Alert Notif Tong Penuh**: Notifikasi push ke Petugas & RW + Marker merah pada peta saat tempat sampah >90%.
 - [ ] **22.2 Flow Status Pengangkutan**: Transisi status penjemputan (`Menunggu` → `Diterima` → `Dalam Perjalanan` → `Selesai` / `Dibatalkan`).
 - [ ] **22.3 Eskalasi Otomatis Berjenjang**: Notifikasi eskalasi otomatis jika melebihi jam operasional (06:00-08:00 & 16:00-18:00) berjenjang: RW → Lurah → Camat → Admin DLH.
 - [ ] **22.4 Routing Petugas Pengangkut**: Auto-assign petugas pengangkut terdekat berdasarkan zona polygon.
@@ -205,7 +206,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 | W-01 | Auth WA OTP | Login menggunakan Nomor HP (+62) dan OTP WhatsApp | Berhasil masuk & menerima token JWT | [ ] |
 | W-02 | Registrasi Bin | Mendaftarkan tempat sampah miliknya (Maks 2: Organik & Anorganik) | Status Bin menjadi `PENDING_APPROVAL` | [ ] |
 | W-03 | Setor Sampah AI | Mengunggah foto sampah → AI klasifikasi → Scan QR tempat sampah | Transaksi setoran tercatat, poin dihitung otomatis | [ ] |
-| W-04 | Notif Tempat Sampah Penuh | Mengunggah foto tempat sampah penuh | Push notification terkirim ke Petugas & RW | [ ] |
+| W-04 | Notif Tong Penuh | Mengunggah foto tempat sampah penuh | Push notification terkirim ke Petugas & RW | [ ] |
 | W-05 | Histori & Poin | Melihat saldo poin dan histori mutasi setoran | Poin akurat sesuai rumus (`Kg x Confidence x 0.9`) | [ ] |
 | W-06 | Ide Daur Ulang | Mengajukan ide daur ulang baru + foto | Status pengajuan `PENDING_APPROVAL_RW` | [ ] |
 | W-07 | Leaderboard | Melihat posisi ranking warga berdasarkan poin | Nama & poin tampil di leaderboard publik | [ ] |
@@ -228,7 +229,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 ### 3.4 Role: PETUGAS PENGANGKUT
 | ID Test | Fitur / Modul | Skenario Pengujian | Ekspektasi Hasil | Status |
 |---|---|---|---|---|
-| PG-01 | Alert Notif Penuh | Menerima notifikasi Tempat Sampah Penuh di area polygon penugasan | Marker merah tampil pada peta rute penjemputan | [ ] |
+| PG-01 | Alert Notif Penuh | Menerima notifikasi tong penuh di area polygon penugasan | Marker merah tampil pada peta rute penjemputan | [ ] |
 | PG-02 | Status Penjemputan | Update status pengangkutan (`Menunggu` → `Diterima` → `Dalam Perjalanan` → `Selesai`) | Warga menerima push notif perubahan status | [ ] |
 | PG-03 | Laporan Window Waktu | Mendokumentasikan pengambilan dalam window 06-08 / 16-18 | KPI waktu lapor tercatat tinggi | [ ] |
 
@@ -247,10 +248,10 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 | M-04 | Handover KKN | Menyerahkan data warga & batch QR ke mahasiswa periode baru | Record histori tersimpan di `kkn_handover_history` | [ ] |
 | M-05 | Monitoring Dampingan | Memantau grafik kepatuhan warga dampingan | Flagging edukasi ulang muncul pada warga bermasalah | [ ] |
 
-### 3.7 Role: DPL (DOSEN PENDAMPING LAPANGAN)
+### 3.7 Role: DPL (DOSEN PEMBIMBING LAPANGAN)
 | ID Test | Fitur / Modul | Skenario Pengujian | Ekspektasi Hasil | Status |
 |---|---|---|---|---|
-| D-01 | Monitoring Absensi | Melihat rekapitulasi kehadiran mahasiswa dampingannya | Tampilan durasi & status hadir valid/di luar zona | [ ] |
+| D-01 | Monitoring Absensi | Melihat rekapitulasi kehadiran mahasiswa bimbingannya | Tampilan durasi & status hadir valid/di luar zona | [ ] |
 | D-02 | Penilaian Aktivitas | Mengisi form assessment performa mahasiswa KKN | Nilai & catatan evaluasi tersimpan | [ ] |
 
 ### 3.8 Role: ADMIN KELURAHAN
@@ -265,7 +266,7 @@ Sistem BERSEKA mendukung **10 Peran (Role)** dengan tingkat otorisasi dan akses 
 | AC-01 | Monitoring Scoping | Akses dashboard monitoring se-Kecamatan | Visualisasi data mencakup seluruh Kelurahan di Kecamatan | [ ] |
 | AC-02 | Read-Only Guard | Mengirim request ubah data via API/UI | Akses ditolak dengan respon `HTTP 403 Forbidden` | [ ] |
 
-### 3.10 Role: SUPER USER
+### 3.10 Role: SUPER ADMIN
 | ID Test | Fitur / Modul | Skenario Pengujian | Ekspektasi Hasil | Status |
 |---|---|---|---|---|
 | SA-01 | Akses Data Mentah | Mengakses menu Aktivitas Pemilahan Sampah (Audit Log) | Menampilkan log transaksi mentah seluruh kota | [ ] |

@@ -30,7 +30,7 @@ async function main() {
 
   // 1. Ensure Roles exist
   const roles = [
-    "SUPER_USER",
+    "SUPER_ADMIN",
     "ADMIN_DLH",
     "CAMAT",
     "LURAH",
@@ -71,33 +71,7 @@ async function main() {
     return `+62812999${phoneCounter}`;
   };
 
-  // 3. Seed Super User, Camat, & Admin DLH Accounts
-  await prisma.user.upsert({
-    where: { phone: "+628111111111" },
-    update: { roleId: roleMap["SUPER_USER"], password: DEFAULT_PASSWORD_HASH },
-    create: {
-      name: "Super User Taskforce DLH",
-      phone: "+628111111111",
-      password: DEFAULT_PASSWORD_HASH,
-      roleId: roleMap["SUPER_USER"],
-      address: "Pusat Komando TrashCare, Kota Bandung",
-      status: "Aktif",
-    },
-  });
-
-  await prisma.user.upsert({
-    where: { phone: "+6281200000000" },
-    update: { roleId: roleMap["SUPER_USER"], password: DEFAULT_PASSWORD_HASH },
-    create: {
-      name: "Administrator Utama TrashCare",
-      phone: "+6281200000000",
-      password: DEFAULT_PASSWORD_HASH,
-      roleId: roleMap["SUPER_USER"],
-      address: "Pusat Komando TrashCare, Kota Bandung",
-      status: "Aktif",
-    },
-  });
-
+  // 3. Seed Camat & Admin DLH Accounts
   await prisma.user.upsert({
     where: { phone: "+6281200000001" },
     update: { roleId: roleMap["CAMAT"], password: DEFAULT_PASSWORD_HASH },
@@ -124,18 +98,18 @@ async function main() {
     },
   });
 
-  console.log("✅ Akun Super User, Camat, & Admin DLH siap.");
+  console.log("✅ Akun Camat & Admin DLH siap.");
 
   // 4. Seed Kelurahan, Lurah Accounts, RWs & RW Accounts
   let fallbackOfficialAreaId: number | null = null;
 
   const kelurahanCenterMap: Record<string, { lat: number; lng: number }> = {
-    "Dago": { lat: -6.8750079, lng: 107.6159521 },
-    "Sadang Serang": { lat: -6.8916671, lng: 107.626937 },
-    "Sekeloa": { lat: -6.8864841, lng: 107.620447 },
-    "Lebak Gede": { lat: -6.8947907, lng: 107.6152105 },
-    "Lebak Siliwangi": { lat: -6.8920097, lng: 107.6103326 },
-    "Cipaganti": { lat: -6.8866719, lng: 107.6029364 },
+    "Dago": { lat: -6.8850, lng: 107.6140 },
+    "Sadang Serang": { lat: -6.8930, lng: 107.6250 },
+    "Sekeloa": { lat: -6.8910, lng: 107.6180 },
+    "Lebak Gede": { lat: -6.8890, lng: 107.6100 },
+    "Lebak Siliwangi": { lat: -6.8870, lng: 107.6060 },
+    "Cipaganti": { lat: -6.8950, lng: 107.6030 },
   };
 
   for (const kelData of kelurahanMaster) {
@@ -174,19 +148,15 @@ async function main() {
       const rwLat = Number((center.lat + Math.sin(angle) * radiusOffset).toFixed(7));
       const rwLng = Number((center.lng + Math.cos(angle) * radiusOffset).toFixed(7));
 
-      let area = await prisma.rw.findFirst({
+      let area = await prisma.rtRwArea.findFirst({
         where: {
           kelurahanId: kel.id,
-          OR: [
-            { name: fullName },
-            { name: rwCode },
-            { name: { startsWith: rwCode } },
-          ],
+          name: fullName,
         },
       });
 
       if (!area) {
-        area = await prisma.rw.create({
+        area = await prisma.rtRwArea.create({
           data: {
             kelurahanId: kel.id,
             name: fullName,
@@ -195,11 +165,10 @@ async function main() {
           },
         });
         totalRwCreated++;
-      } else {
-        area = await prisma.rw.update({
+      } else if (!area.latitude || !area.longitude) {
+        area = await prisma.rtRwArea.update({
           where: { id: area.id },
           data: {
-            name: fullName,
             latitude: rwLat,
             longitude: rwLng,
           },
@@ -216,13 +185,13 @@ async function main() {
         const rwHumanName = rwNamesPool[totalRwCreated % rwNamesPool.length];
         await prisma.user.upsert({
           where: { phone: rwPhone },
-          update: { rwId: area.id, roleId: roleMap["RW"] },
+          update: { rtRwId: area.id, roleId: roleMap["RW"] },
           create: {
             name: rwHumanName,
             phone: rwPhone,
             password: DEFAULT_PASSWORD_HASH,
             roleId: roleMap["RW"],
-            rwId: area.id,
+            rtRwId: area.id,
             address: `Jl. Wilayah ${rwCode}, Kel. ${kel.name}, Coblong`,
             status: "Aktif",
           },
@@ -233,13 +202,13 @@ async function main() {
         const rtHumanName = rtNamesPool[totalRwCreated % rtNamesPool.length];
         await prisma.user.upsert({
           where: { phone: rtPhone },
-          update: { rwId: area.id, roleId: roleMap["RT"] },
+          update: { rtRwId: area.id, roleId: roleMap["RT"] },
           create: {
             name: rtHumanName,
             phone: rtPhone,
             password: DEFAULT_PASSWORD_HASH,
             roleId: roleMap["RT"],
-            rwId: area.id,
+            rtRwId: area.id,
             address: `RT 01 / ${rwCode}, Kel. ${kel.name}, Coblong`,
             status: "Aktif",
           },
@@ -249,19 +218,19 @@ async function main() {
         const petugasPhone = getNextPhone();
         const petugasUser = await prisma.user.upsert({
           where: { phone: petugasPhone },
-          update: { rwId: area.id, roleId: roleMap["PETUGAS_RESIDU"] },
+          update: { rtRwId: area.id, roleId: roleMap["PETUGAS_RESIDU"] },
           create: {
             name: `Petugas Residu ${rwCode} ${kel.name}`,
             phone: petugasPhone,
             password: DEFAULT_PASSWORD_HASH,
             roleId: roleMap["PETUGAS_RESIDU"],
-            rwId: area.id,
+            rtRwId: area.id,
             address: `Pos Residu ${rwCode}, Kel. ${kel.name}, Coblong`,
             status: "Aktif",
           },
         });
 
-        await prisma.rw.update({
+        await prisma.rtRwArea.update({
           where: { id: area.id },
           data: { petugasResiduId: petugasUser.id },
         });
@@ -269,9 +238,59 @@ async function main() {
     }
   }
 
+  // 5. Clean dirty RT/RW areas cleanly after official areas are created
+  const allCurrentAreas = await prisma.rtRwArea.findMany();
+  const dirtyAreas = allCurrentAreas.filter(
+    (a) => !a.name.match(/^RW \d{2} \(.+\)$/) && !a.name.match(/^RT \d{2} \/ RW \d{2} \(.+\)$/)
+  );
 
+  if (dirtyAreas.length > 0 && fallbackOfficialAreaId) {
+    console.log(`🧹 Membersihkan ${dirtyAreas.length} data RT/RW acak/dirty...`);
+    const dirtyIds = dirtyAreas.map((a) => a.id);
 
-  const totalRtRwInDb = await prisma.rw.count();
+    // Re-link connected records to fallback official area
+    await prisma.user.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.household.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.bin.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.facility.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.studentKkn.updateMany({
+      where: { assignedPolygonId: { in: dirtyIds } },
+      data: { assignedPolygonId: fallbackOfficialAreaId },
+    });
+
+    await prisma.pemanfaatan.updateMany({
+      where: { rwId: { in: dirtyIds } },
+      data: { rwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.kknHandoverHistory.updateMany({
+      where: { rtRwId: { in: dirtyIds } },
+      data: { rtRwId: fallbackOfficialAreaId },
+    });
+
+    await prisma.rtRwArea.deleteMany({
+      where: { id: { in: dirtyIds } },
+    });
+    console.log("✅ Data RT/RW acak berhasil re-link & dibersihkan dari DB.");
+  }
+
+  const totalRtRwInDb = await prisma.rtRwArea.count();
   const totalUsersInDb = await prisma.user.count();
 
   console.log(`\n==================================================`);

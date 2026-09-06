@@ -1,38 +1,16 @@
-import { prisma } from "../lib/prisma.js";
 /**
- * Project: BERSEKA
+ * Project: TrashCare
  * Developed by: PT Makerindo
  * Copyright (c) 2026 PT Makerindo. All rights reserved.
  * Dikembangkan sebagai bagian dari program PKL di PT Makerindo, tanpa perjanjian tertulis mengenai kepemilikan hak cipta.
  */
 
 import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { notificationSyncController } from "../controllers/notificationSyncController.js";
 
 const router = Router();
-
-/**
- * @swagger
- * /api/v1/notifications/sync:
- *   get:
- *     summary: Mendapatkan status sinkronisasi cache notifikasi HP (Cloud Sync)
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- */
-router.get("/sync", authMiddleware, notificationSyncController.getSyncState);
-
-/**
- * @swagger
- * /api/v1/notifications/sync:
- *   put:
- *     summary: Update status sinkronisasi cache notifikasi HP (Cloud Sync)
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- */
-router.put("/sync", authMiddleware, notificationSyncController.updateSyncState);
+const prisma = new PrismaClient();
 
 // Helper to map DB Notification to Frontend format
 const mapNotification = (n: any) => {
@@ -50,16 +28,14 @@ const mapNotification = (n: any) => {
     iconBg = "bg-yellow-100";
     iconColor = "text-yellow-500";
   } else if (
-    titleUpper.includes("TEMPAT SAMPAH") ||
     titleUpper.includes("TONG") ||
     titleUpper.includes("KRITIS") ||
     titleUpper.includes("PENUH") ||
-    messageUpper.includes("TEMPAT SAMPAH") ||
     messageUpper.includes("TONG") ||
     messageUpper.includes("KRITIS") ||
     messageUpper.includes("PENUH")
   ) {
-    type = "TEMPAT_SAMPAH_PENUH";
+    type = "TONG_PENUH";
     icon = "warning";
     iconBg = "bg-red-100";
     iconColor = "text-red-500";
@@ -103,7 +79,6 @@ const mapNotification = (n: any) => {
     desc: n.message,
     isRead: n.isRead,
     time,
-    createdAt: n.createdAt,
     icon,
     iconBg,
     iconColor,
@@ -136,108 +111,8 @@ router.get("/", authMiddleware, async (req, res) => {
 
     let formattedNotifications: any[] = [];
 
-    // Fetch user sync state (persistent read/delete timestamps & read IDs)
-    const syncState = userId
-      ? await prisma.userNotificationSync.findUnique({ where: { userId } }).catch(() => null)
-      : null;
-    const markAllTimestamp = syncState ? Number(syncState.markAllTimestamp) : 0;
-    const deleteAllTimestamp = syncState ? Number(syncState.deleteAllTimestamp) : 0;
-    let readIds: string[] = [];
-    try {
-      readIds = syncState?.readIds ? JSON.parse(syncState.readIds) : [];
-      if (!Array.isArray(readIds)) readIds = [];
-    } catch {
-      readIds = [];
-    }
-
-    const isItemRead = (item: any) => {
-      if (item.isRead) return true;
-      if (readIds.includes(item.id)) return true;
-      if (markAllTimestamp > 0 && item.createdAt) {
-        const itemTs = new Date(item.createdAt).getTime();
-        if (!isNaN(itemTs) && itemTs <= markAllTimestamp) return true;
-      }
-      return false;
-    };
-
-    const isDplRole = role === "DPL" || role === "DOSEN_PEMBIMBING";
-
-    if (isDplRole && userId) {
-      // 1. Ambil seluruh mahasiswa di kelompok dampingan DPL ini
-      const dplGroups = await prisma.kelompokKkn.findMany({
-        where: { OR: [{ dplId: userId }, { dpl: { id: userId } }] },
-        select: { students: { select: { userId: true, user: { select: { name: true } } } } },
-      });
-      const studentUserIds = dplGroups.flatMap((g) => g.students.map((s) => s.userId));
-
-      // 2. Ambil pengajuan izin (Leave Request) mahasiswa dampingan DPL
-      let leaveNotifs: any[] = [];
-      if (studentUserIds.length > 0) {
-        const pendingLeave = await prisma.studentLeaveRequest.findMany({
-          where: { studentId: { in: studentUserIds }, status: "PENDING" },
-          include: { student: { select: { name: true } } },
-          orderBy: { createdAt: "desc" },
-          take: 15,
-        });
-
-        leaveNotifs = pendingLeave.map((r) => {
-          const diffMs = Date.now() - new Date(r.createdAt).getTime();
-          const diffMins = Math.floor(diffMs / (1000 * 60));
-          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          let time = "Baru saja";
-          if (diffDays > 0) time = `${diffDays} hari lalu`;
-          else if (diffHours > 0) time = `${diffHours} jam lalu`;
-          else if (diffMins > 0) time = `${diffMins} menit lalu`;
-
-          return {
-            id: `leave-req-${r.id}`,
-            type: "PENGAJUAN_IZIN",
-            title: `Pengajuan ${r.type === "SAKIT" ? "Izin Sakit" : "Izin Meninggalkan Tempat"}`,
-            desc: `Mahasiswa ${r.student?.name || "Dampingan"} mengajukan ${r.type}: "${r.reason}". Mohon review/persetujuan DPL.`,
-            isRead: false,
-            time,
-            createdAt: r.createdAt,
-            icon: "event_note",
-            iconBg: "bg-amber-100",
-            iconColor: "text-amber-600",
-          };
-        });
-      }
-
-      // 3. Ambil notifikasi DB langsung untuk ID user DPL
-      const dbNotifs = await prisma.notification.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      });
-
-      const userNotifs = dbNotifs.map(mapNotification);
-      const allDplNotifs = [...leaveNotifs, ...userNotifs]
-        .filter((n) => {
-          if (!deleteAllTimestamp || !n.createdAt) return true;
-          const itemTs = new Date(n.createdAt).getTime();
-          return isNaN(itemTs) || itemTs > deleteAllTimestamp;
-        })
-        .map((n) => ({
-          ...n,
-          isRead: isItemRead(n),
-        }));
-
-      res.status(200).json({
-        success: true,
-        data: allDplNotifs,
-        unreadCount: allDplNotifs.filter((n) => !n.isRead).length,
-      });
-      return;
-    }
-
     const isAdminOrPetugas = [
-      "DEVELOPER",
-      "SUPER_USER",
-      "PEMIMPIN",
-      "PANITIA_TASKFORCE",
-      "DPL",
+      "SUPER_ADMIN",
       "ADMIN_DLH",
       "CAMAT",
       "LURAH",
@@ -253,21 +128,11 @@ router.get("/", authMiddleware, async (req, res) => {
     if (userId) {
       dbUser = await prisma.user.findUnique({
         where: { id: userId },
-        include: {
-          rw: {
-            include: {
-              kelurahan: {
-                include: {
-                  kecamatan: true,
-                },
-              },
-            },
-          },
-        },
+        include: { rtRw: true },
       });
 
-      if (dbUser?.rwId) {
-        const area = dbUser.rw;
+      if (dbUser?.rtRwId) {
+        const area = dbUser.rtRw;
         if (area) {
           const rwPart =
             area.name
@@ -275,7 +140,7 @@ router.get("/", authMiddleware, async (req, res) => {
               .map((s) => s.trim())
               .find((s) => s.startsWith("RW")) || area.name;
 
-          const matchingAreas = await prisma.rw.findMany({
+          const matchingAreas = await prisma.rtRwArea.findMany({
             where: {
               kelurahanId: area.kelurahanId,
               name: { contains: rwPart },
@@ -284,7 +149,7 @@ router.get("/", authMiddleware, async (req, res) => {
           });
           areaIds = matchingAreas.map((a) => a.id);
         }
-        if (areaIds.length === 0) areaIds = [dbUser.rwId];
+        if (areaIds.length === 0) areaIds = [dbUser.rtRwId];
       }
     }
 
@@ -294,14 +159,12 @@ router.get("/", authMiddleware, async (req, res) => {
         let reqWhere: any = { status: "PENDING" };
         if (["RW", "RT", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
           if (areaIds.length > 0) {
-            reqWhere.bin = { rwId: { in: areaIds } };
+            reqWhere.bin = { rtRwId: { in: areaIds } };
           } else {
-            reqWhere.bin = { rwId: -1 };
+            reqWhere.bin = { rtRwId: -1 };
           }
-        } else if (role === "LURAH" && dbUser?.rw?.kelurahanId) {
-          reqWhere.bin = { rw: { kelurahanId: dbUser.rw.kelurahanId } };
-        } else if (role === "CAMAT" && dbUser?.rw?.kelurahan?.kecamatanId) {
-          reqWhere.bin = { rw: { kelurahan: { kecamatanId: dbUser.rw.kelurahan.kecamatanId } } };
+        } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
+          reqWhere.bin = { rtRw: { kelurahanId: dbUser.rtRw.kelurahanId } };
         }
 
         const requests = await prisma.binResetRequest.findMany({
@@ -309,7 +172,7 @@ router.get("/", authMiddleware, async (req, res) => {
           include: {
             bin: {
               include: {
-                rw: true,
+                rtRw: true,
                 category: true,
               },
             },
@@ -332,41 +195,55 @@ router.get("/", authMiddleware, async (req, res) => {
 
           const binCategory = r.bin?.category?.name || "Organik";
           const binQr = r.bin?.qrCode || "BIN";
-          const area = r.bin?.rw?.name || "RW 04";
+          const area = r.bin?.rtRw?.name || "RT 01 / RW 04";
 
           return {
             id: `req-${r.id}`,
             type: "PENGAJUAN_PENGOSONGAN",
             title: "Pengajuan Pengosongan Baru",
-            desc: `Warga (${r.user?.name || "Warga"}) mengajukan pengosongan Tempat Sampah ${binCategory} (${binQr}) di ${area}. [REQ-${r.id}]`,
+            desc: `Warga (${r.user?.name || "Warga"}) mengajukan pengosongan tong ${binCategory} (${binQr}) di ${area}. [REQ-${r.id}]`,
             isRead: r.status !== "PENDING",
             time,
-            createdAt: r.createdAt,
             icon: "delete_sweep",
             iconBg: "bg-orange-100",
             iconColor: "text-orange-500",
           };
         });
 
-        // 2. Fetch real full bins (>90% volume capacity) scoped by area/role
+        // 2. Active Shift Notification
+        const currentHour = (new Date().getUTCHours() + 7) % 24;
+        const isMorning = currentHour >= 6 && currentHour < 12;
+        const scheduleNotif = {
+          id: `sched-active-shift-${new Date().toISOString().slice(0, 10)}`,
+          type: "JADWAL_JEMPUT",
+          title: isMorning ? "Jadwal Jemput Pagi" : "Jadwal Jemput Sore",
+          desc: `Terdapat tempat sampah warga yang perlu diangkut pada shift ${
+            isMorning ? "Pagi (06:00 - 08:00 WIB)" : "Sore (16:00 - 18:00 WIB)"
+          }.`,
+          isRead: false,
+          time: "Shift Aktif Hari Ini",
+          icon: "local_shipping",
+          iconBg: "bg-emerald-100",
+          iconColor: "text-emerald-600",
+        };
+
+        // 3. Fetch real full bins (>90% volume capacity) scoped by area/role
         let criticalBinNotifs: any[] = [];
         try {
           let binWhere: any = {};
-          if (["RW", "PETUGAS_RESIDU", "MAHASISWA_KKN"].includes(role)) {
+          if (["RW", "RT", "PETUGAS_RESIDU"].includes(role)) {
             if (areaIds.length > 0) {
-              binWhere.rwId = { in: areaIds };
+              binWhere.rtRwId = { in: areaIds };
             } else {
-              binWhere.rwId = -1;
+              binWhere.rtRwId = -1;
             }
-          } else if (role === "LURAH" && dbUser?.rw?.kelurahanId) {
-            binWhere.rw = { kelurahanId: dbUser.rw.kelurahanId };
-          } else if (role === "CAMAT" && dbUser?.rw?.kelurahan?.kecamatanId) {
-            binWhere.rw = { kelurahan: { kecamatanId: dbUser.rw.kelurahan.kecamatanId } };
+          } else if (role === "LURAH" && dbUser?.rtRw?.kelurahanId) {
+            binWhere.rtRw = { kelurahanId: dbUser.rtRw.kelurahanId };
           }
 
           const fullBins = await prisma.bin.findMany({
             where: binWhere,
-            include: { rw: true, category: true },
+            include: { rtRw: true, category: true },
             take: 10,
           });
           const realCriticalBins = fullBins.filter(
@@ -381,11 +258,10 @@ router.get("/", authMiddleware, async (req, res) => {
             return {
               id: `crit-bin-${b.id}`,
               type: "TONG_PENUH",
-              title: "Kapasitas Tempat Sampah Kritis",
-              desc: `Tempat Sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rw?.name || "Wilayah"} telah mencapai ${pct}%!`,
+              title: "Kapasitas Tong Kritis",
+              desc: `Tempat sampah ${b.category?.name || ""} (${b.qrCode}) di ${b.rtRw?.name || "Wilayah"} telah mencapai ${pct}%!`,
               isRead: false,
               time: "Status Real-time",
-              createdAt: b.updatedAt,
               icon: "warning",
               iconBg: "bg-red-100",
               iconColor: "text-red-500",
@@ -395,7 +271,7 @@ router.get("/", authMiddleware, async (req, res) => {
           console.error("[NotificationRoute] Error fetching critical bins:", e);
         }
 
-        // 3. User direct DB notifications
+        // 4. User direct DB notifications
         let userNotifs: any[] = [];
         if (userId) {
           try {
@@ -419,7 +295,12 @@ router.get("/", authMiddleware, async (req, res) => {
           }
         }
 
-        formattedNotifications = [...criticalBinNotifs, ...reqNotifications, ...userNotifs];
+        formattedNotifications = [
+          scheduleNotif,
+          ...criticalBinNotifs,
+          ...reqNotifications,
+          ...userNotifs,
+        ];
       } catch (err) {
         console.error("[NotificationRoute] Error fetching admin notifications:", err);
       }
@@ -456,7 +337,6 @@ router.get("/", authMiddleware, async (req, res) => {
                 desc: `Tempat sampah ${b.category?.name || ""} Anda hampir penuh (${pct}%).`,
                 isRead: false,
                 time: "Status Real-time",
-                createdAt: b.updatedAt,
                 icon: "warning",
                 iconBg: "bg-red-100",
                 iconColor: "text-red-500",
@@ -469,27 +349,13 @@ router.get("/", authMiddleware, async (req, res) => {
       }
     }
 
-    const finalNotifications = formattedNotifications
-      .filter((n) => {
-        if (!deleteAllTimestamp || !n.createdAt) return true;
-        const itemTs = new Date(n.createdAt).getTime();
-        return isNaN(itemTs) || itemTs > deleteAllTimestamp;
-      })
-      .map((n) => ({
-        ...n,
-        isRead: isItemRead(n),
-      }));
-
     res.status(200).json({
-      success: true,
       status: "success",
-      data: finalNotifications,
-      unreadCount: finalNotifications.filter((n) => !n.isRead).length,
+      data: formattedNotifications,
     });
   } catch (error) {
     console.error("Fetch Notifications Error:", error);
     res.status(500).json({
-      success: false,
       status: "error",
       message: "Gagal memuat notifikasi dari server",
     });
@@ -508,30 +374,17 @@ router.get("/", authMiddleware, async (req, res) => {
  *       200:
  *         description: Semua notifikasi berhasil ditandai dibaca
  */
-router.all(["/read-all", "/mark-all-read"], authMiddleware, async (req, res) => {
+router.put("/read-all", authMiddleware, async (req, res) => {
   try {
     const userId = req.user!.userId;
-    const nowTs = Date.now();
-    await Promise.all([
-      prisma.notification.updateMany({
-        where: { userId },
-        data: { isRead: true },
-      }).catch(() => {}),
-      prisma.userNotificationSync.upsert({
-        where: { userId },
-        update: { markAllTimestamp: BigInt(nowTs) },
-        create: {
-          userId,
-          markAllTimestamp: BigInt(nowTs),
-          readIds: "[]",
-          deleteAllTimestamp: 0n,
-        },
-      }),
-    ]);
-    res.status(200).json({ success: true, status: "success", message: "Semua notifikasi berhasil ditandai dibaca" });
-  } catch (error: any) {
+    await prisma.notification.updateMany({
+      where: { userId },
+      data: { isRead: true },
+    });
+    res.status(200).json({ status: "success", message: "Semua notifikasi ditandai dibaca" });
+  } catch (error) {
     console.error("Update Notifications Error:", error);
-    res.status(500).json({ success: false, status: "error", message: "Gagal mengupdate notifikasi" });
+    res.status(500).json({ status: "error", message: "Gagal mengupdate notifikasi" });
   }
 });
 
@@ -554,66 +407,22 @@ router.all(["/read-all", "/mark-all-read"], authMiddleware, async (req, res) => 
  *       200:
  *         description: Notifikasi berhasil ditandai dibaca
  */
-router.all(["/:id/read", "/:id/mark-read"], authMiddleware, async (req, res) => {
+router.put("/:id/read", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user!.userId;
     await prisma.notification.updateMany({
       where: { id, userId },
       data: { isRead: true },
-    }).catch(() => {});
-
-    const syncState = await prisma.userNotificationSync.findUnique({ where: { userId } }).catch(() => null);
-    let readIds: string[] = [];
-    try {
-      readIds = syncState?.readIds ? JSON.parse(syncState.readIds) : [];
-      if (!Array.isArray(readIds)) readIds = [];
-    } catch {
-      readIds = [];
-    }
-    if (!readIds.includes(id)) {
-      readIds.push(id);
-      await prisma.userNotificationSync.upsert({
-        where: { userId },
-        update: { readIds: JSON.stringify(readIds) },
-        create: {
-          userId,
-          readIds: JSON.stringify(readIds),
-          markAllTimestamp: 0n,
-          deleteAllTimestamp: 0n,
-        },
-      });
-    }
-
-    res.status(200).json({ success: true, status: "success", message: "Notifikasi berhasil ditandai dibaca" });
-  } catch (error: any) {
+    });
+    res.status(200).json({ status: "success", message: "Notifikasi berhasil ditandai dibaca" });
+  } catch (error) {
     console.error("Mark Single Notification Read Error:", error);
-    res.status(500).json({ success: false, status: "error", message: "Gagal menandai notifikasi" });
+    res.status(500).json({ status: "error", message: "Gagal menandai notifikasi" });
   }
 });
 
-/**
- * @swagger
- * /api/v1/notifications/device-token:
- *   post:
- *     summary: Registrasi FCM Push Notification Device Token (Mobile Spec)
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [token]
- *             properties:
- *               token:
- *                 type: string
- *     responses:
- *       200:
- *         description: Device token disimpan
- */
+// POST /api/v1/notifications/device-token
 router.post("/device-token", authMiddleware, async (req, res) => {
   try {
     const { token } = req.body;
@@ -636,19 +445,8 @@ router.post("/device-token", authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/v1/notifications/unregister-token:
- *   post:
- *     summary: Hapus registrasi FCM Push Notification Device Token (Mobile Spec)
- *     tags: [Notifications]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Device token berhasil dihapus
- */
-router.post(["/unregister-token", "/fcm-token/unregister"], authMiddleware, async (req, res) => {
+// POST /api/v1/notifications/unregister-token
+router.post("/unregister-token", authMiddleware, async (req, res) => {
   try {
     const userId = req.user!.userId;
     await prisma.user.update({
@@ -666,29 +464,13 @@ router.post(["/unregister-token", "/fcm-token/unregister"], authMiddleware, asyn
 router.delete("/all", authMiddleware, async (req, res) => {
   try {
     const userId = req.user!.userId;
-    const nowTs = Date.now();
-    await Promise.all([
-      prisma.notification.deleteMany({
-        where: { userId },
-      }).catch(() => {}),
-      prisma.userNotificationSync.upsert({
-        where: { userId },
-        update: {
-          deleteAllTimestamp: BigInt(nowTs),
-          markAllTimestamp: BigInt(nowTs),
-        },
-        create: {
-          userId,
-          deleteAllTimestamp: BigInt(nowTs),
-          markAllTimestamp: BigInt(nowTs),
-          readIds: "[]",
-        },
-      }),
-    ]);
-    res.status(200).json({ success: true, status: "success", message: "Semua notifikasi berhasil dihapus" });
-  } catch (error: any) {
+    await prisma.notification.deleteMany({
+      where: { userId },
+    });
+    res.status(200).json({ status: "success", message: "Semua notifikasi dihapus" });
+  } catch (error) {
     console.error("Delete Notifications Error:", error);
-    res.status(500).json({ success: false, status: "error", message: "Gagal menghapus notifikasi" });
+    res.status(500).json({ status: "error", message: "Gagal menghapus notifikasi" });
   }
 });
 
