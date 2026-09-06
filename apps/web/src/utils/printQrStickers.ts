@@ -546,14 +546,20 @@ export const downloadKelompokZip = async (
   };
 
   // Sort items: Organik first, then Anorganik
-  const organikItems = items.filter((item) => {
-    const cat = (item.category?.name || "").toUpperCase();
-    return !cat.includes("ANORGANIK") && !cat.includes("NON_ORGANIC") && !item.qrCode.includes("-AGN-");
-  });
-  const anorganikItems = items.filter((item) => {
-    const cat = (item.category?.name || "").toUpperCase();
-    return cat.includes("ANORGANIK") || cat.includes("NON_ORGANIC") || item.qrCode.includes("-AGN-");
-  });
+  const isAnorganikSticker = (item: QrStickerItem): boolean => {
+    const catName = (item.category?.name || "").toUpperCase();
+    const qr = (item.qrCode || "").toUpperCase();
+    return (
+      catName.includes("ANORGANIK") ||
+      catName.includes("NON_ORGANIC") ||
+      catName.includes("ANORG") ||
+      catName.includes("AGN") ||
+      qr.includes("-AGN-")
+    );
+  };
+
+  const anorganikItems = items.filter(isAnorganikSticker);
+  const organikItems = items.filter((item) => !isAnorganikSticker(item));
 
   const sortedItems = [...organikItems, ...anorganikItems];
 
@@ -580,12 +586,7 @@ export const downloadKelompokZip = async (
 
   for (let i = 0; i < sortedItems.length; i++) {
     const item = sortedItems[i];
-    const catName = (item.category?.name || "").toUpperCase();
-    const isAnorg =
-      catName.includes("ANORGANIK") ||
-      catName.includes("NON_ORGANIC") ||
-      catName.includes("AGN") ||
-      item.qrCode.includes("-AGN-");
+    const isAnorg = isAnorganikSticker(item);
 
     const categoryPrefix = isAnorg ? "ANORGANIK" : "ORGANIK";
     const orderNum = String(i + 1).padStart(2, "0");
@@ -637,10 +638,10 @@ export const downloadKelompokZip = async (
 
     if (isAnorg) {
       ctx.fillStyle = "#000000";
-      ctx.fillText(serial, 1850, 4000);
+      ctx.fillText(serial, 1850, 3356);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(serial, 1850, 4000);
+      ctx.fillText(serial, 1850, 3356);
     }
 
     // Convert canvas to blob and add to ZIP

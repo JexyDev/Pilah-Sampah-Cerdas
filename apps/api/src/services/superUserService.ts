@@ -1442,19 +1442,27 @@ export class SuperUserService {
       orderBy: { name: "asc" },
     });
 
+    const isAnorganikBin = (b: any) => {
+      const cat = (b.category?.name || "").toUpperCase();
+      const qr = (b.qrCode || "").toUpperCase();
+      return (
+        cat.includes("ANORGANIK") ||
+        cat.includes("NON_ORGANIC") ||
+        cat.includes("ANORG") ||
+        cat.includes("AGN") ||
+        qr.includes("-AGN-")
+      );
+    };
+
+    const isOrganikBin = (b: any) => {
+      return !isAnorganikBin(b);
+    };
+
     const enriched = kelompokList.map((k) => {
       const bins = k.bins || [];
       const totalBins = bins.length;
-      const organikBins = bins.filter((b) =>
-        (b.category?.name || "").toUpperCase().includes("ORGANIK") ||
-        (b.category?.name || "").toUpperCase().includes("ORGANIC") ||
-        b.qrCode.includes("-OGN-")
-      );
-      const anorganikBins = bins.filter((b) =>
-        (b.category?.name || "").toUpperCase().includes("ANORGANIK") ||
-        (b.category?.name || "").toUpperCase().includes("NON_ORGANIC") ||
-        b.qrCode.includes("-AGN-")
-      );
+      const organikBins = bins.filter(isOrganikBin);
+      const anorganikBins = bins.filter(isAnorganikBin);
 
       let statusDistribusi = "BELUM_GENERATE";
       if (totalBins >= 20) {
@@ -1474,12 +1482,17 @@ export class SuperUserService {
         dpl: k.dpl,
         dplNamaMentah: k.dplNamaMentah,
         linkGoogleDrive: k.linkGoogleDrive,
-        qrDownloadedAt: k.qrDownloadedAt,
+        qrDownloadedAt: k.qrDownloadedAt ? k.qrDownloadedAt.toISOString() : null,
         totalBins,
         organikCount: organikBins.length,
         anorganikCount: anorganikBins.length,
         statusDistribusi,
-        bins: sortedBins,
+        bins: sortedBins.map((b) => ({
+          id: b.id,
+          qrCode: b.qrCode,
+          category: b.category,
+          status: b.status,
+        })),
       };
     });
 
@@ -1512,19 +1525,21 @@ export class SuperUserService {
         throw new Error("Kelompok KKN tidak ditemukan.");
       }
 
+      const isAnorganikBin = (b: any) => {
+        const cat = (b.category?.name || "").toUpperCase();
+        const qr = (b.qrCode || "").toUpperCase();
+        return (
+          cat.includes("ANORGANIK") ||
+          cat.includes("NON_ORGANIC") ||
+          cat.includes("ANORG") ||
+          cat.includes("AGN") ||
+          qr.includes("-AGN-")
+        );
+      };
+
       const existingBins = kelompok.bins || [];
-      const currentOrganik = existingBins.filter(
-        (b) =>
-          (b.category?.name || "").toUpperCase().includes("ORGANIK") ||
-          (b.category?.name || "").toUpperCase().includes("ORGANIC") ||
-          b.qrCode.includes("-OGN-")
-      ).length;
-      const currentAnorganik = existingBins.filter(
-        (b) =>
-          (b.category?.name || "").toUpperCase().includes("ANORGANIK") ||
-          (b.category?.name || "").toUpperCase().includes("NON_ORGANIC") ||
-          b.qrCode.includes("-AGN-")
-      ).length;
+      const currentAnorganik = existingBins.filter(isAnorganikBin).length;
+      const currentOrganik = existingBins.length - currentAnorganik;
 
       if (currentOrganik >= 10 && currentAnorganik >= 10) {
         throw new Error(
