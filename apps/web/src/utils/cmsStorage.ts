@@ -563,10 +563,10 @@ export const DEFAULT_CMS_CONTENT: LandingContentPayload = {
 };
 
 const DB_NAME = "berseka_cms_db";
-const DB_VERSION = 2;
+const DB_VERSION = 3; // bumped: force clear stale program imageUrl cache
 const STORE_NAME = "landing_cms";
 const KEY = "current_content";
-const LS_FALLBACK_KEY = "berseka_landing_cms_content_v2";
+const LS_FALLBACK_KEY = "berseka_landing_cms_content_v3";
 
 export interface StoredPayload {
   data: LandingContentPayload;
