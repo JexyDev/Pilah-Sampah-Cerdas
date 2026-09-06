@@ -264,7 +264,7 @@ export const generatePosterHtml = (
           display: block;
         }
 
-        /* Serial Code Text Overlay (Precision calibrated: Left 54.72%, Width 38.36%, Height 4.16%) */
+        /* Serial Code Text Overlay (Precision calibrated: Left 52.00%, Width 41.12%, Height 4.41%) */
         .pill-overlay {
           position: absolute;
           z-index: 10;
@@ -274,26 +274,27 @@ export const generatePosterHtml = (
           font-family: 'JetBrains Mono', 'Plus Jakarta Sans', monospace, sans-serif;
           font-weight: 900;
           text-align: center;
-          letter-spacing: 0.3px;
+          letter-spacing: 0.6px;
           white-space: nowrap;
           line-height: 1;
           box-sizing: border-box;
-          left: 54.72%;
-          width: 38.36%;
-          top: 86.05%;
-          height: 4.16%;
+          width: 41.12%;
+          left: 52.00%;
+          height: 4.41%;
         }
 
         /* Organik Pill Badge Position & Styling */
         .pill-organik {
+          top: 85.7%;
           color: #ffffff;
-          font-size: 7pt;
+          font-size: 8.5pt;
         }
 
         /* Anorganik Pill Badge Position & Styling */
         .pill-anorganik {
+          top: 86.0%;
           color: #000000;
-          font-size: 7pt;
+          font-size: 8.5pt;
         }
 
         /* A4 Multi-grid mode */
@@ -453,16 +454,16 @@ export const generatePosterHtml = (
             });
 
             // Draw Serial text on pill
-            ctx.font = '900 68px "JetBrains Mono", "Plus Jakarta Sans", monospace, sans-serif';
+            ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             if (isAnorg) {
               ctx.fillStyle = '#000000';
-              ctx.fillText(serial, 1848, 3356);
+              ctx.fillText(serial, 1814, 3357);
             } else {
               ctx.fillStyle = '#ffffff';
-              ctx.fillText(serial, 1848, 3356);
+              ctx.fillText(serial, 1814, 3348);
             }
 
             // Trigger download
@@ -631,16 +632,16 @@ export const downloadKelompokZip = async (
     }
 
     // 3. Draw Serial Number on Pill
-    ctx.font = '900 68px "JetBrains Mono", "Plus Jakarta Sans", monospace, sans-serif';
+    ctx.font = '900 80px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     if (isAnorg) {
       ctx.fillStyle = "#000000";
-      ctx.fillText(serial, 1848, 3356);
+      ctx.fillText(serial, 1814, 3357);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(serial, 1848, 3356);
+      ctx.fillText(serial, 1814, 3348);
     }
 
     // Convert canvas to blob and add to ZIP
