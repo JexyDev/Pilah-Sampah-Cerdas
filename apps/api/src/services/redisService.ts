@@ -46,57 +46,14 @@ class RedisService {
     }
   }
 
-  // Check and decrement daily quota
+  // Check and decrement daily quota (UNLIMITED FOR CITIZENS)
   async checkAndUseQuota(userId: string): Promise<boolean> {
-    const today = new Date().toISOString().split("T")[0];
-    const key = `quota:${userId}:${today}`;
-    const limit = 50; // Max 50 request AI per day
-
-    if (this.isConnected) {
-      try {
-        const countStr = await this.client.get(key);
-        const count = countStr ? parseInt(countStr, 10) : 0;
-        if (count >= limit) {
-          return false;
-        }
-        await this.client.set(key, (count + 1).toString(), {
-          EX: 86400, // Expire in 1 day
-        });
-        return true;
-      } catch (err) {
-        console.error("Redis error checking quota, using memory fallback", err);
-      }
-    }
-
-    // In-memory fallback
-    const memKey = `${userId}:${today}`;
-    const count = this.memoryQuota[memKey] || 0;
-    if (count >= limit) {
-      return false;
-    }
-    this.memoryQuota[memKey] = count + 1;
     return true;
   }
 
-  // Get remaining quota for the user today
+  // Get remaining quota for the user today (UNLIMITED = 9999)
   async getRemainingQuota(userId: string): Promise<number> {
-    const today = new Date().toISOString().split("T")[0];
-    const key = `quota:${userId}:${today}`;
-    const limit = 50;
-
-    if (this.isConnected) {
-      try {
-        const countStr = await this.client.get(key);
-        const count = countStr ? parseInt(countStr, 10) : 0;
-        return Math.max(0, limit - count);
-      } catch (err) {
-        console.error("Redis error getting quota, using memory fallback", err);
-      }
-    }
-
-    const memKey = `${userId}:${today}`;
-    const count = this.memoryQuota[memKey] || 0;
-    return Math.max(0, limit - count);
+    return 9999;
   }
 
   // Refund quota (e.g. if request times out or is invalid)
