@@ -1421,14 +1421,21 @@ export class BinService {
       throw new Error("DUPLICATE_REQUEST");
     }
 
-    // 4. Resolve petugasId dari defaultPetugasId warga jika tidak dikirim
+    // 4. Resolve petugasId dari defaultPetugasId warga atau auto-resolve Petugas RW jika tidak dikirim
     let resolvedPetugasId = petugasId ?? null;
     if (!resolvedPetugasId) {
       const warga = await prisma.user.findUnique({
         where: { id: userId },
-        select: { defaultPetugasId: true },
+        select: { defaultPetugasId: true, rwId: true },
       });
       resolvedPetugasId = warga?.defaultPetugasId ?? null;
+
+      if (!resolvedPetugasId && warga?.rwId) {
+        const rwPetugas = await prisma.user.findFirst({
+          where: { rwId: warga.rwId, role: { name: "PETUGAS_RESIDU" }, status: "Aktif" },
+        });
+        resolvedPetugasId = rwPetugas?.id ?? null;
+      }
     }
 
     const request = await binRepository.createResetRequest(
@@ -1439,21 +1446,15 @@ export class BinService {
       jenisSampah
     );
 
-    // Langsung eksekusi reset kapasitas tempat sampah ke 0L (instan tanpa approval)
-    await prisma.bin.update({
-      where: { id: binId },
-      data: { currentVolumeLiter: 0 },
-    });
-
     const binQr = request.bin?.qrCode || "Tempat Sampah";
 
-    // Notifikasi konfirmasi ke warga
+    // Notifikasi konfirmasi pengajuan ke warga (Volume di-reset ke 0L saat verifikasi Petugas Hilir)
     await prisma.notification
       .create({
         data: {
           userId,
-          title: "Pengosongan Tempat Sampah Berhasil",
-          message: `Tempat sampah ${binQr} telah berhasil dikosongkan secara otomatis. Kapasitas kembali 0L.`,
+          title: "Pengajuan Pengosongan Terkirim",
+          message: `Pengajuan pengosongan tempat sampah ${binQr} telah terkirim ke Petugas Pemilah. Menunggu verifikasi di hilir.`,
         },
       })
       .catch(() => {});

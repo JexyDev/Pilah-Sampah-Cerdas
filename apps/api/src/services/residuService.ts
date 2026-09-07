@@ -804,9 +804,28 @@ export class ResiduService {
     };
   }
 
-  async getPengajuanResetBin() {
+  async getPengajuanResetBin(petugasUserId?: string) {
+    let rwId: number | undefined;
+    if (petugasUserId) {
+      const user = await prisma.user.findUnique({
+        where: { id: petugasUserId },
+        select: { rwId: true },
+      });
+      if (user?.rwId) {
+        rwId = user.rwId;
+      } else {
+        const assignedRw = await prisma.rw.findFirst({
+          where: { petugasResiduId: petugasUserId },
+        });
+        if (assignedRw) rwId = assignedRw.id;
+      }
+    }
+
     return prisma.binResetRequest.findMany({
-      where: { status: "PENDING" },
+      where: {
+        status: "PENDING",
+        ...(rwId ? { bin: { rwId } } : {}),
+      },
       include: {
         bin: { include: { category: true, rw: true } },
         user: true,

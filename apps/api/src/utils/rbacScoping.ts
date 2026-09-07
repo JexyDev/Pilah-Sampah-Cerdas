@@ -367,13 +367,16 @@ export async function getScopingFilters(user: {
     }
   }
 
-  // 5b. PETUGAS_RESIDU can see WARGA users for manual deposits
+  // 5b. PETUGAS_RESIDU can see WARGA users for manual deposits and bin requests scoped by their RW
   if (role === "PETUGAS_RESIDU") {
+    const userRwId = dbUser.rwId;
     return {
-      userFilter: { role: { name: "WARGA" } },
-      binFilter: {},
-      householdFilter: {},
-      wasteLogFilter: {},
+      userFilter: userRwId
+        ? { role: { name: "WARGA" }, rwId: userRwId }
+        : { role: { name: "WARGA" } },
+      binFilter: userRwId ? { rwId: userRwId } : {},
+      householdFilter: userRwId ? { rwId: userRwId } : {},
+      wasteLogFilter: userRwId ? { bin: { rwId: userRwId } } : {},
       pemanfaatanFilter: { id: "none" },
       facilityFilter: { id: "none" },
       kelompokKknFilter: { id: "none" },
