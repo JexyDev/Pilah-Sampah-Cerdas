@@ -2179,7 +2179,7 @@ export const LogbookKknPage: React.FC = () => {
           6. MODAL: PREVIEW FOTO LIGHTBOX
           ───────────────────────────────────────────── */}
       {previewPhotoUrl && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={closePreview}>
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewPhotoUrl(null)}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-slate-800 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-150">
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
               <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 truncate pr-4">
