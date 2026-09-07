@@ -16,6 +16,7 @@ import {
   uploadSingleImage,
   safeUploadSingleImage,
   uploadPemanfaatanImage,
+  safeUploadPemanfaatanImage,
   upload,
 } from "../middlewares/uploadMiddleware.js";
 
