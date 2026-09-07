@@ -23,6 +23,7 @@ import { prisma } from "./lib/prisma.js";
 import express from "express";
 import cookieParser from "cookie-parser";
 import fs from "fs";
+import { execSync } from "child_process";
 
 import authRouter from "./routes/authRoutes.js";
 import householdRouter from "./routes/householdRoutes.js";
@@ -149,11 +150,35 @@ app.use(
 // Fallback for missing local uploads / downloads (e.g. database synced from VPS or HEIC requests)
 app.use("/uploads", (req, res, next) => {
   if (req.method === "GET" || req.method === "HEAD") {
-    // Jika meminta .heic/.heif tapi versi .jpg ada di disk, kirim file .jpg
     const requestedPath = req.path || "";
+    const uploadDir = path.resolve(process.cwd(), "uploads");
+
+    // Case 1: User requests .jpg but .jpg is missing on disk -> Check if .heic/.heif exists & convert on the fly
+    if (/\.jpg$/i.test(requestedPath)) {
+      const localJpg = path.resolve(uploadDir, requestedPath.replace(/^\//, ""));
+      if (!fs.existsSync(localJpg)) {
+        const baseName = requestedPath.replace(/\.jpg$/i, "");
+        for (const altExt of [".heic", ".heif", ".HEIC", ".HEIF"]) {
+          const altLocal = path.resolve(uploadDir, `${baseName}${altExt}`.replace(/^\//, ""));
+          if (fs.existsSync(altLocal)) {
+            try {
+              execSync(`ffmpeg -y -i "${altLocal}" "${localJpg}"`);
+              if (fs.existsSync(localJpg)) {
+                try { fs.chmodSync(localJpg, 0o644); } catch {}
+                return res.sendFile(localJpg);
+              }
+            } catch (err: any) {
+              console.error("[Uploads Fallback] Failed to convert HEIC/HEIF on the fly:", err.message);
+            }
+          }
+        }
+      }
+    }
+
+    // Case 2: User requests .heic/.heif directly -> serve converted .jpg version if available
     if (/\.(heic|heif)$/i.test(requestedPath)) {
       const jpgRelativePath = requestedPath.replace(/\.(heic|heif)$/i, ".jpg");
-      const localJpg = path.resolve(process.cwd(), "uploads", jpgRelativePath.replace(/^\//, ""));
+      const localJpg = path.resolve(uploadDir, jpgRelativePath.replace(/^\//, ""));
       if (fs.existsSync(localJpg)) {
         return res.sendFile(localJpg);
       }

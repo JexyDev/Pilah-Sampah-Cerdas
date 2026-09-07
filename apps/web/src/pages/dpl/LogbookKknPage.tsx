@@ -2203,10 +2203,25 @@ export const LogbookKknPage: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="p-4 bg-slate-950 flex items-center justify-center max-h-[75vh] overflow-auto">
+            <div className="p-4 bg-slate-950 flex items-center justify-center min-h-[260px] max-h-[75vh] overflow-auto relative">
               <img
                 src={previewPhotoUrl}
                 alt="Preview Bukti"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = "none";
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector(".modal-image-fallback")) {
+                    const fallback = document.createElement("div");
+                    fallback.className = "modal-image-fallback flex flex-col items-center justify-center p-6 text-center text-slate-300 space-y-2";
+                    fallback.innerHTML = `
+                      <svg class="w-12 h-12 text-slate-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                      <p class="font-bold text-sm text-white">Gambar Bukti Membutuhkan Waktu Konversi Server</p>
+                      <p class="text-xs text-slate-400 max-w-sm">File gambar ini diunggah dalam format iOS (HEIF/HEIC). Silakan klik tombol <span class="font-bold text-emerald-400">"Unduh Foto"</span> di atas untuk mengunduh dan melihat file asli di perangkat Anda.</p>
+                    `;
+                    parent.appendChild(fallback);
+                  }
+                }}
                 className="max-h-[70vh] w-auto object-contain rounded-lg shadow-lg"
               />
             </div>

@@ -55,7 +55,7 @@ const router = Router();
 router.post(
   "/detect-mock",
   authMiddleware,
-  roleMiddleware(["WARGA"]), // REKAP-01 FIX: Only WARGA can submit waste for detection
+  roleMiddleware(["WARGA", "PETUGAS_RESIDU", "PETUGAS_TPS", "SUPER_USER"]),
   aiController.detect
 );
 
@@ -81,7 +81,7 @@ router.post(
 router.post(
   "/detect",
   authMiddleware,
-  roleMiddleware(["WARGA"]),
+  roleMiddleware(["WARGA", "PETUGAS_RESIDU", "PETUGAS_TPS", "SUPER_USER"]),
   uploadAvatarMiddleware.single("image"),
   aiController.detectCombined
 );
