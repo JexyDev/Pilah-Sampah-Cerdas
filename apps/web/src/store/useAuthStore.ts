@@ -205,11 +205,7 @@ const getInitialUser = (): User | null => {
       return null;
     }
     if (user && user.peran === "MAHASISWA_KKN") {
-      const dev = checkIsIOSSafari();
-      if (!dev.isValid) {
-        clearAllStoredItems();
-        return null;
-      }
+      // Tidak menghapus sesi pengguna saat refresh halaman agar tidak terjadi blank screen / loop logout
     }
     if (
       user &&

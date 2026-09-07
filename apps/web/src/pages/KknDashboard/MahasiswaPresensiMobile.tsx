@@ -28,6 +28,7 @@ import api from "../../utils/api";
 import showToast from "../../utils/showToast";
 import { compressImage } from "../../utils/compressImage";
 import { useAuthStore } from "../../store/useAuthStore";
+import { safeFormatDateShort, safeFormatTime, safeToDateString } from "../../utils/safeDateUtils";
 
 // Haversine Formula untuk menghitung jarak dalam meter
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -276,7 +277,8 @@ export const MahasiswaPresensiMobile: React.FC = () => {
 
     if (startWaktu && !isTerjeda && isOngoing) {
       const updateTimer = () => {
-        const start = new Date(startWaktu);
+        const start = parseSafeDate(startWaktu);
+        if (!start) return;
         const startTime = start.getTime();
 
         // Batas Cutoff Jam 18:00:00 pada tanggal kegiatan presensi
@@ -978,19 +980,25 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="flex justify-between items-center text-xs pt-2 border-t border-emerald-200/40 dark:border-emerald-900/40">
               <span className="text-slate-500 dark:text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(() => {
-                  const t = primaryKegiatan?.attendedAt || todayHistoryItem?.waktuCheckin || todayHistoryItem?.checkInAt || todayHistoryItem?.jamMasuk || todayHistoryItem?.waktuAbsen;
-                  return t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB" : "-";
-                })()}
+                {safeFormatTime(
+                  primaryKegiatan?.attendedAt ||
+                    todayHistoryItem?.waktuCheckin ||
+                    todayHistoryItem?.checkInAt ||
+                    todayHistoryItem?.jamMasuk ||
+                    todayHistoryItem?.waktuAbsen
+                )}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-2 border-t border-emerald-200/40 dark:border-emerald-900/40">
               <span className="text-slate-500 dark:text-slate-400">Waktu Pulang (Check-Out):</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(() => {
-                  const t = primaryKegiatan?.checkOutAt || primaryKegiatan?.waktuCheckout || todayHistoryItem?.waktuCheckout || todayHistoryItem?.checkOutAt || todayHistoryItem?.jamPulang;
-                  return t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB" : "-";
-                })()}
+                {safeFormatTime(
+                  primaryKegiatan?.checkOutAt ||
+                    primaryKegiatan?.waktuCheckout ||
+                    todayHistoryItem?.waktuCheckout ||
+                    todayHistoryItem?.checkOutAt ||
+                    todayHistoryItem?.jamPulang
+                )}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-2 border-t border-emerald-200/40 dark:border-emerald-900/40">
@@ -1074,11 +1082,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
             <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
               <span className="text-slate-400">Waktu Masuk:</span>
               <span className="font-bold text-slate-800 dark:text-slate-200">
-                {(activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt)
-                  ? new Date(
-                      activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt
-                    ).toLocaleTimeString("id-ID")
-                  : "-"}
+                {safeFormatTime(
+                  activeSession?.jamMasuk || activeSession?.checkInAt || primaryKegiatan?.attendedAt
+                )}
               </span>
             </div>
             <div className="flex justify-between items-center text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
@@ -1326,9 +1332,9 @@ export const MahasiswaPresensiMobile: React.FC = () => {
                     {item.deskripsiKegiatan || "Aktivitas Lapangan"}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "-"}{" "}
-                    • Masuk: {(item.jamMasuk || item.checkInAt) ? new Date(item.jamMasuk || item.checkInAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
-                    {item.jamPulang ? ` • Pulang: ${new Date(item.jamPulang).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : ""}
+                    {safeFormatDateShort(item.jamMasuk || item.checkInAt || item.waktuAbsen || item.createdAt)}{" "}
+                    • Masuk: {safeFormatTime(item.jamMasuk || item.checkInAt || item.waktuAbsen || item.waktuCheckin)}
+                    {Boolean(item.jamPulang || item.checkOutAt || item.waktuCheckout) ? ` • Pulang: ${safeFormatTime(item.jamPulang || item.checkOutAt || item.waktuCheckout)}` : ""}
                     {item.durasiJedaMenit && item.durasiJedaMenit > 0 ? ` • Jeda: ${item.durasiJedaFormatted || `${item.durasiJedaMenit}m`}` : ""}
                   </p>
                 </div>

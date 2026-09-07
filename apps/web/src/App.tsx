@@ -8,8 +8,10 @@
 import React, { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { ErrorBoundary } from "react-error-boundary";
 import AppRoutes from "./routes/AppRoutes";
 import { useThemeStore } from "./store/useThemeStore";
+import ErrorBoundaryFallback from "./components/common/ErrorBoundaryFallback";
 import "./App.css";
 
 const App: React.FC = () => {
@@ -55,7 +57,9 @@ const App: React.FC = () => {
           },
         }}
       />
-      <AppRoutes />
+      <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
+        <AppRoutes />
+      </ErrorBoundary>
     </BrowserRouter>
   );
 };

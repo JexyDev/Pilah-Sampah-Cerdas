@@ -3551,6 +3551,7 @@ export class KknAttendanceService {
         durasiJedaMenit: jedaMins,
         durasiJedaFormatted: jedaFormatted,
         attendedAt: att?.attendedAt ? att.attendedAt.toISOString() : null,
+        checkOutAt: att?.checkOutAt ? att.checkOutAt.toISOString() : null,
         time: `${jamMulai} - ${jamSelesai}`,
         kelompok: {
           id: sch.kelompok?.id || student?.kelompok?.id || "KLP-001",

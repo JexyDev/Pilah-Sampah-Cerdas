@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from "../../store/useAuthStore";
 import api from "../../utils/api";
 import { logbookApiService, type LogbookMahasiswaItem } from "../../services/logbookService";
+import { safeFormatDateShort } from "../../utils/safeDateUtils";
 
 interface MahasiswaMobileHomeProps {
   onNavigateTab: (tab: "beranda" | "presensi" | "logbook" | "proker" | "profil") => void;
@@ -33,6 +34,17 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
 
   const [recentLogbooks, setRecentLogbooks] = useState<LogbookMahasiswaItem[]>([]);
   const [activeAttendance, setActiveAttendance] = useState<any | null>(null);
+  const [todayAttendanceState, setTodayAttendanceState] = useState<{
+    status: "SELESAI" | "AKTIF" | "TERJEDA" | "BELUM_ABSEN";
+    label: string;
+    description: string;
+    actionText: string;
+  }>({
+    status: "BELUM_ABSEN",
+    label: "Belum Absen",
+    description: "Kamera iPhone & GPS Otomatis",
+    actionText: "Lakukan Presensi Mandiri Sekarang",
+  });
   const [stats, setStats] = useState({
     totalLogbooks: 0,
     approvedLogbooks: 0,
@@ -49,10 +61,12 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
     try {
       setIsLoading(true);
 
-      const [logbooks, presensiRes, prokerRes] = await Promise.allSettled([
+      const [logbooks, presensiRes, prokerRes, kegiatanRes, timesheetRes] = await Promise.allSettled([
         logbookApiService.getMahasiswaLogbooks(),
         api.get("/presensi/mandiri/saya"),
         api.get("/kkn/program-kerja"),
+        api.get("/kkn/kegiatan-aktif"),
+        api.get("/timesheet/summary"),
       ]);
 
       let logsList: LogbookMahasiswaItem[] = [];
@@ -61,22 +75,117 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
         setRecentLogbooks(logsList.slice(0, 3));
       }
 
-      let attendedCount = 0;
+      let presensiList: any[] = [];
       if (presensiRes.status === "fulfilled") {
         const presensiData = presensiRes.value.data?.data;
-        const presensiList = Array.isArray(presensiData)
+        presensiList = Array.isArray(presensiData)
           ? presensiData
           : Array.isArray(presensiData?.items)
           ? presensiData.items
           : [];
-        attendedCount = presensiList.length;
-        const active = presensiList.find(
+      }
+
+      // Check kegiatan aktif resmi hari ini
+      let primaryKegiatan: any = null;
+      if (kegiatanRes.status === "fulfilled") {
+        const kegiatanData = kegiatanRes.value.data?.data;
+        if (Array.isArray(kegiatanData) && kegiatanData.length > 0) {
+          primaryKegiatan = kegiatanData[0];
+        }
+      }
+
+      // Check timesheet summary untuk kalkulasi sesi hadir akurat
+      let tsSummary: any = null;
+      if (timesheetRes.status === "fulfilled") {
+        const tsData = timesheetRes.value.data?.data;
+        tsSummary = Array.isArray(tsData) ? tsData[0] : (tsData?.students?.[0] || tsData);
+      }
+
+      // Hitung sesi hadir yang valid/memenuhi target
+      let attendedCount = 0;
+      if (tsSummary && typeof tsSummary.fulfilledTargetDays === "number" && tsSummary.fulfilledTargetDays > 0) {
+        attendedCount = tsSummary.fulfilledTargetDays;
+      } else if (tsSummary && typeof tsSummary.totalDaysAttended === "number" && tsSummary.totalDaysAttended > 0) {
+        attendedCount = tsSummary.totalDaysAttended;
+      } else {
+        const fulfilledFromList = presensiList.filter(
           (p: any) =>
-            p.status === "AKTIF" ||
-            p.statusPresensi === "AKTIF" ||
-            (!p.checkOutAt && !p.jamPulang)
+            p.status === "HADIR_MEMENUHI" ||
+            p.statusPresensi === "HADIR_MEMENUHI" ||
+            (typeof p.durasiMenit === "number" && p.durasiMenit >= 240)
+        ).length;
+        attendedCount = fulfilledFromList > 0 ? fulfilledFromList : presensiList.length;
+      }
+
+      // Cek apakah ada sesi yang SEDANG AKTIF
+      const active = presensiList.find(
+        (p: any) =>
+          p.status === "AKTIF" ||
+          p.statusPresensi === "AKTIF" ||
+          (!p.checkOutAt && !p.jamPulang && (p.status === "BERLANGSUNG" || p.status === "DI_ZONA"))
+      );
+      setActiveAttendance(active || null);
+
+      // Cek apakah hari ini SUDAH SELESAI ABSEN
+      const isKegiatanCompleted =
+        primaryKegiatan?.statusKehadiran === "HADIR_MEMENUHI" ||
+        primaryKegiatan?.statusKehadiran === "HADIR" ||
+        primaryKegiatan?.statusKehadiran === "SELESAI" ||
+        primaryKegiatan?.statusKehadiran === "HADIR_TIDAK_MEMENUHI" ||
+        Boolean(primaryKegiatan?.checkOutAt);
+
+      const todayDateStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const todayHistoryItem = presensiList.find((p: any) => {
+        const rawDate = p.checkInAt || p.waktuCheckin || p.jamMasuk || p.waktuAbsen;
+        if (!rawDate) return false;
+        const itemWib = new Date(new Date(rawDate).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        return itemWib === todayDateStr && (
+          Boolean(p.checkOutAt) ||
+          Boolean(p.waktuCheckout) ||
+          Boolean(p.jamPulang) ||
+          p.status === "HADIR_MEMENUHI" ||
+          p.status === "SELESAI" ||
+          p.status === "HADIR"
         );
-        setActiveAttendance(active || null);
+      });
+
+      if (isKegiatanCompleted || todayHistoryItem) {
+        const durasi = primaryKegiatan?.actualInZoneMinutes || todayHistoryItem?.durasiMenit || 0;
+        const isMemenuhi =
+          primaryKegiatan?.statusKehadiran === "HADIR_MEMENUHI" ||
+          todayHistoryItem?.status === "HADIR_MEMENUHI" ||
+          durasi >= 240;
+        setTodayAttendanceState({
+          status: "SELESAI",
+          label: isMemenuhi ? "Hadir & Memenuhi" : "Presensi Selesai",
+          description: `Total ${durasi} Menit${isMemenuhi ? " • Memenuhi Target" : ""}`,
+          actionText: "Presensi Hari Ini Selesai • Lihat Detail",
+        });
+      } else if (
+        primaryKegiatan?.statusKehadiran === "BERLANGSUNG" ||
+        primaryKegiatan?.statusKehadiran === "DI_ZONA" ||
+        active
+      ) {
+        setTodayAttendanceState({
+          status: "AKTIF",
+          label: "Sedang Aktif",
+          description: "Kamera iPhone & GPS Otomatis",
+          actionText: "Lihat Sesi Presensi / Check-Out",
+        });
+      } else if (primaryKegiatan?.statusKehadiran === "TERJEDA") {
+        setTodayAttendanceState({
+          status: "TERJEDA",
+          label: "Terjeda",
+          description: "Sesi Di Luar Posko / GPS Terputus",
+          actionText: "Lanjutkan Presensi Lapangan",
+        });
+      } else {
+        setTodayAttendanceState({
+          status: "BELUM_ABSEN",
+          label: "Belum Absen",
+          description: "Kamera iPhone & GPS Otomatis",
+          actionText: "Lakukan Presensi Mandiri Sekarang",
+        });
       }
 
       let prokerCount = 0;
@@ -137,7 +246,15 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-2xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                todayAttendanceState.status === "SELESAI" || todayAttendanceState.status === "AKTIF"
+                  ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300"
+                  : todayAttendanceState.status === "TERJEDA"
+                  ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+              }`}
+            >
               <MapPin size={16} />
             </div>
             <div>
@@ -148,12 +265,16 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
 
           <span
             className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-              activeAttendance
+              todayAttendanceState.status === "SELESAI"
+                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                : todayAttendanceState.status === "AKTIF"
                 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 animate-pulse"
+                : todayAttendanceState.status === "TERJEDA"
+                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                 : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
             }`}
           >
-            {activeAttendance ? "Sedang Aktif" : "Belum Absen"}
+            {todayAttendanceState.label}
           </span>
         </div>
 
@@ -163,9 +284,9 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
         >
           <div className="text-left">
             <p className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
-              {activeAttendance ? "Lihat Sesi Presensi / Check-Out" : "Lakukan Presensi Mandiri Sekarang"}
+              {todayAttendanceState.actionText}
             </p>
-            <p className="text-[10px] text-slate-400">Kamera iPhone &amp; GPS Otomatis</p>
+            <p className="text-[10px] text-slate-400">{todayAttendanceState.description}</p>
           </div>
           <ChevronRight size={16} className="text-slate-400 group-hover:translate-x-1 transition-transform" />
         </button>
@@ -266,7 +387,7 @@ export const MahasiswaMobileHome: React.FC<MahasiswaMobileHomeProps> = ({
                   </p>
                   <p className="text-[10px] text-slate-400 flex items-center gap-1">
                     <Calendar size={11} />
-                    {new Date(log.tanggalKegiatan).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                    {safeFormatDateShort(log.tanggalKegiatan)}
                     <span>• {log.waktuMulai} - {log.waktuSelesai}</span>
                   </p>
                 </div>

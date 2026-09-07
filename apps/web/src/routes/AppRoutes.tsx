@@ -83,15 +83,30 @@ const KelolaPoinPengguna = React.lazy(() => import("../pages/KelolaPoinPengguna/
 const ZonaInspectorPage = React.lazy(() => import("../pages/Developer/ZonaInspectorPage"));
 const KelolaLogbookPage = React.lazy(() => import("../pages/Developer/KelolaLogbookPage"));
 
-// Scroll Restoration Helper Component
+// Scroll Restoration Helper Component (Safari WebKit & Cross-Browser Safe)
 export const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
 
   React.useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
 
   return null;
+};
+
+// Route Handler cerdas untuk Logbook KKN:
+// Jika MAHASISWA_KKN, alihkan langsung ke portal mobile tab logbook (/dasbor?tab=logbook)
+// Jika DPL / Super User / Admin, tampilkan halaman tabel pengawasan (LogbookKknPage)
+const LogbookKknRouteHandler: React.FC = () => {
+  const { user } = useAuthStore();
+  if (user?.peran === "MAHASISWA_KKN") {
+    return <Navigate to="/dasbor?tab=logbook" replace />;
+  }
+  return <LogbookKknPage />;
 };
 
 // Branded Minimalist Loading Spinner for Lazy Chunk Transitions — Dynamic Role Text
@@ -800,7 +815,7 @@ const AppRoutes: React.FC = () => {
           path="/dpl/logbook"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
-              <LogbookKknPage />
+              <LogbookKknRouteHandler />
             </ProtectedRoute>
           }
         />
@@ -808,7 +823,7 @@ const AppRoutes: React.FC = () => {
           path="/logbook-kkn"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
-              <LogbookKknPage />
+              <LogbookKknRouteHandler />
             </ProtectedRoute>
           }
         />
@@ -816,7 +831,7 @@ const AppRoutes: React.FC = () => {
           path="/log-aktivitas/mahasiswa"
           element={
             <ProtectedRoute allowedRoles={["SUPER_USER", "ADMIN_DLH", "DPL", "DOSEN_PEMBIMBING", "PIMPINAN", "PANITIA_TASKFORCE", "DEVELOPER", "MAHASISWA_KKN", "LURAH", "CAMAT", "RW"]}>
-              <LogbookKknPage />
+              <LogbookKknRouteHandler />
             </ProtectedRoute>
           }
         />
