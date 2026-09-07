@@ -236,9 +236,8 @@ export const LaporanPresensiPage: React.FC = () => {
     setDatePreset("ALL");
     setStartDate("");
     setEndDate("");
-    setActiveTab("LOG_DETAIL");
     setPage(1);
-    toast.success(`Menampilkan log presensi harian untuk: ${studentName}`);
+    toast.success(`Menampilkan rekapitulasi untuk: ${studentName}`);
   };
 
   // Presensi CRUD & Manipulation Modals
@@ -848,9 +847,9 @@ export const LaporanPresensiPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-4 sm:p-6 lg:p-8">
+    <div className="space-y-4 sm:space-y-5 text-slate-800 dark:text-slate-100 w-full min-w-0 max-w-full overflow-x-hidden">
       {/* Header & Page Title */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs w-full min-w-0 max-w-full overflow-hidden">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
@@ -1238,44 +1237,18 @@ export const LaporanPresensiPage: React.FC = () => {
       <div className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs overflow-hidden mb-6">
         {/* Table Toolbar & View Switcher */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-slate-50/70 dark:bg-slate-800/50">
-          {/* Dual Tabs */}
+          {/* Single Tab (Log Presensi Detail Hidden) */}
           <div className="w-full md:w-auto overflow-x-auto scrollbar-none -mx-1 px-1">
             <div className="inline-flex items-center gap-1.5 bg-slate-200/70 dark:bg-slate-900/80 p-1 rounded-xl min-w-max">
-              <button
-                type="button"
-                onClick={() => setActiveTab("REKAP_MAHASISWA")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${
-                  activeTab === "REKAP_MAHASISWA"
-                    ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                }`}
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition whitespace-nowrap bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs cursor-default"
               >
                 <BarChart3 size={14} className="shrink-0" />
                 <span>Rekapitulasi Akumulasi Mahasiswa</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold shrink-0 ${
-                  activeTab === "REKAP_MAHASISWA" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-300 dark:bg-slate-800 text-slate-600"
-                }`}>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold shrink-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                   {filteredStudentAggregates.length} Mahasiswa
                 </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("LOG_DETAIL")}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${
-                  activeTab === "LOG_DETAIL"
-                    ? "bg-white dark:bg-slate-800 text-emerald-700 dark:text-emerald-400 shadow-2xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-                }`}
-              >
-                <ListFilter size={14} className="shrink-0" />
-                <span>Log Presensi Detail</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold shrink-0 ${
-                  activeTab === "LOG_DETAIL" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-300 dark:bg-slate-800 text-slate-600"
-                }`}>
-                  {totalCount} Sesi
-                </span>
-              </button>
+              </div>
             </div>
           </div>
 
