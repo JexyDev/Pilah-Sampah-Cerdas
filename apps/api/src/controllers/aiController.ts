@@ -105,8 +105,15 @@ export class AiController {
       const estimatedVol = Number((result as any).volumeEstimate) || 2.5;
 
       const weightKg = Number((estimatedVol * densityFactor).toFixed(2)) || (isOrganic ? 1.0 : 0.5);
-      const confidence = (result as any).confidence || 0.94;
-      const organicPercentage = ((result as any).organik_percent ?? 94) / 100;
+      const rawConfidence = (result as any).confidence || 0.94;
+      const confidence = rawConfidence > 1 ? Number((rawConfidence / 100).toFixed(2)) : Number(Number(rawConfidence).toFixed(2));
+      const confidencePercentage = Math.round(confidence * 100);
+
+      const rawOrgPercent = (result as any).organik_percent;
+      const integerOrgPercent = rawOrgPercent !== undefined ? Math.min(100, Math.max(0, Math.round(Number(rawOrgPercent)))) : confidencePercentage;
+      const organicPercentage = Number((integerOrgPercent / 100).toFixed(2));
+      const nonOrganicPercentage = 100 - integerOrgPercent;
+
       const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || (isOrganic ? 85 : 42);
 
       res.status(200).json({
@@ -117,7 +124,10 @@ export class AiController {
           volumeEstimate: (result as any).volumeEstimate || 2.5,
           weightKg,
           confidence,
+          confidencePercentage,
           organicPercentage,
+          organik_percent: integerOrgPercent,
+          non_organik_percent: nonOrganicPercentage,
           estimatedPoints,
           isBlurry: (result as any).isBlurry || false,
           requestId: (result as any).requestId,
