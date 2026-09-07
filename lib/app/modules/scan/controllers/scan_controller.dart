@@ -8,6 +8,7 @@ import '../../../data/models/petugas_status_response.dart';
 import '../../../data/repositories/bin_repository.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/models/user_entity.dart';
+import '../../../core/values/app_config.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 // ─── Bins Provider ────────────────────────────────────────────────────────────
@@ -167,13 +168,18 @@ class ScanFlowNotifier extends StateNotifier<ScanFlowState> {
   void updateAiDetectedType(WasteType newType) {
     if (state.aiResult != null) {
       final old = state.aiResult!;
+      final newDensity = newType == WasteType.organic
+          ? AppConfig.organicDensityKgPerLiter
+          : AppConfig.nonOrganicDensityKgPerLiter;
+      final newWeight = double.parse((old.volumeEstimate * newDensity).toStringAsFixed(2));
+
       final updated = AiDetectionEntity(
         detectedType: newType,
         volumeEstimate: old.volumeEstimate,
         isBlurry: old.isBlurry,
-        weightKg: old.weightKg,
+        weightKg: newWeight,
         confidence: old.confidence,
-        organicPercentage: old.organicPercentage,
+        organicPercentage: newType == WasteType.organic ? 0.95 : 0.05,
         estimatedPoints: old.estimatedPoints,
         requestId: old.requestId,
         evidencePhotoUrl: old.evidencePhotoUrl,

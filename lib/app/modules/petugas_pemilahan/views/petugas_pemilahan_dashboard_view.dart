@@ -57,15 +57,6 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     }
   }
 
-  String _kpiGradeLabel(double score) {
-    if (score >= 90) return 'Kinerja Sangat Baik';
-    if (score >= 75) return 'Kinerja Baik';
-    if (score >= 60) return 'Kinerja Cukup';
-    if (score >= 40) return 'Kinerja Kurang';
-    if (score == 0) return 'Belum Ada Data';
-    return 'Kinerja Buruk';
-  }
-
 
   Widget _buildHeaderAvatarImage(String? fotoPath) {
     if (fotoPath == null || fotoPath.isEmpty) {
@@ -274,19 +265,19 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
     );
   }
 
-  Widget _buildKpiCard(double kpiScore) {
+  Widget _buildPointsCard(int totalPoints) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primaryBlueDark, AppColors.primaryBlue],
+          colors: [AppColors.primaryGreen, AppColors.primaryBlueDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withValues(alpha: 0.3),
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -295,27 +286,59 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Indeks Kinerja (KPI)', style: TextStyle(color: Colors.white70, fontSize: 13)),
-              const SizedBox(height: 4),
-              Text(
-                '${kpiScore.toStringAsFixed(1)} / 100',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
-                child: Text(
-                  _kpiGradeLabel(kpiScore),
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Poin Insentif Pemilahan',
+                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '$totalPoints',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 30, color: Colors.white),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Poin',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.warningYellow),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Perolehan Poin Timbangan & Validasi Warga',
+                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const Icon(Icons.stars_rounded, color: Colors.white, size: 48),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.stars_rounded, color: AppColors.warningYellow, size: 40),
+          ),
         ],
       ),
     );
@@ -394,8 +417,8 @@ class _PetugasPemilahanDashboardViewState extends ConsumerState<PetugasPemilahan
               padding: const EdgeInsets.all(AppDimensions.md),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Kinerja KPI
-                  _buildKpiCard(dashboard?.kpiScore ?? 0),
+                  // Poin Insentif Petugas
+                  _buildPointsCard(dashboard?.totalPoints ?? 0),
                   const SizedBox(height: 18),
 
                   // Matriks Statistik: Kg Hari Ini & Akumulasi Bulanan (2 Kolom)

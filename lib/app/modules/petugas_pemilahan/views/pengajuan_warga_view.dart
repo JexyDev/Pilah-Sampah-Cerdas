@@ -94,7 +94,9 @@ class PengajuanWargaView extends ConsumerWidget {
     final alasan = pengajuan['alasan'] ?? '';
     final binCode = pengajuan['binCode'] ?? '';
     final alamat = pengajuan['address'] ?? pengajuan['alamat'] ?? '';
+    final rtRw = pengajuan['rtRw']?.toString() ?? '';
     final createdAt = pengajuan['createdAt'] ?? '';
+    final evidencePhotoUrl = pengajuan['evidencePhotoUrl']?.toString() ?? '';
 
     return Container(
       decoration: BoxDecoration(
@@ -168,12 +170,111 @@ class PengajuanWargaView extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDetailRow(Icons.delete_rounded, 'Kode Bin', binCode),
+                _buildDetailRow(Icons.delete_outline_rounded, 'Tempat Sampah', binCode),
+                if (rtRw.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildDetailRow(Icons.location_on_outlined, 'Wilayah', rtRw),
+                ],
                 const SizedBox(height: 8),
-                _buildDetailRow(Icons.notes_rounded, 'Keterangan', alasan),
+                _buildDetailRow(Icons.notes_rounded, 'Keterangan', alasan.isNotEmpty ? alasan : 'Pengosongan Tempat Sampah'),
                 if (createdAt.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _buildDetailRow(Icons.access_time_rounded, 'Waktu Pengajuan', createdAt),
+                ],
+                if (evidencePhotoUrl.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Foto Bukti Tempat Sampah Kosong:',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => Dialog(
+                          backgroundColor: Colors.transparent,
+                          insetPadding: const EdgeInsets.all(16),
+                          child: Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: InteractiveViewer(
+                                  child: Image.network(
+                                    evidencePhotoUrl,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: Colors.white,
+                                      padding: const EdgeInsets.all(24),
+                                      child: const Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey),
+                                          SizedBox(height: 8),
+                                          Text('Gagal memuat foto bukti.'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                icon: const CircleAvatar(
+                                  backgroundColor: Colors.black54,
+                                  child: Icon(Icons.close, color: Colors.white, size: 20),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        height: 120,
+                        width: double.infinity,
+                        color: Colors.grey.shade100,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              evidencePhotoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.broken_image_rounded, color: Colors.grey, size: 32),
+                              ),
+                              loadingBuilder: (_, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                              },
+                            ),
+                            Positioned(
+                              bottom: 6,
+                              right: 6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
+                                    SizedBox(width: 4),
+                                    Text('Perbesar Foto', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 16),
 

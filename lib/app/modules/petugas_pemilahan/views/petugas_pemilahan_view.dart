@@ -60,8 +60,8 @@ class PetugasPemilahanView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // KPI Badge Card
-                    _buildKpiCard(dashboard?.kpiScore ?? 0.0),
+                    // Poin Insentif Petugas
+                    _buildPointsCard(dashboard?.totalPoints ?? 0),
                     const SizedBox(height: AppDimensions.md),
 
                     // Grid Stat Cards
@@ -283,19 +283,19 @@ class PetugasPemilahanView extends ConsumerWidget {
     );
   }
 
-  Widget _buildKpiCard(double kpiScore) {
+  Widget _buildPointsCard(int totalPoints) {
     return Container(
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primaryBlueDark, AppColors.primaryBlue],
+          colors: [AppColors.primaryGreen, AppColors.primaryBlueDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryBlue.withValues(alpha: 0.25),
+            color: AppColors.primaryGreen.withValues(alpha: 0.25),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -309,18 +309,18 @@ class PetugasPemilahanView extends ConsumerWidget {
               color: Colors.white.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.stars_rounded, color: AppColors.warningYellow, size: 32),
+            child: const Icon(Icons.monetization_on_rounded, color: AppColors.warningYellow, size: 32),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Skor Kinerja Petugas (KPI)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Text('Total Poin Insentif', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 2),
                 Text(
-                  '${kpiScore.toStringAsFixed(1)}% / Sangat Baik',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  '$totalPoints Poin',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ],
             ),
@@ -331,7 +331,7 @@ class PetugasPemilahanView extends ConsumerWidget {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text('GRADE A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+            child: const Text('Aktif', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
           ),
         ],
       ),

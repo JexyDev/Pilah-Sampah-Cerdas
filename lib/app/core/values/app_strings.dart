@@ -41,7 +41,7 @@ class AppStrings {
   static const String scanStep1Subtitle = 'Ambil foto sampah yang akan dibuang';
   static const String scanStep2Title = 'Verifikasi AI';
   static const String scanStep2Subtitle = 'Mendeteksi jenis & volume sampah';
-  static const String scanStep3Title = 'Scan QR Tong';
+  static const String scanStep3Title = 'Scan QR Tempat Sampah';
   static const String scanStep3Subtitle = 'Pindai QR Code pada tempat sampah';
   static const String scanStep4Title = 'Selesai';
   static const String scanStep4Subtitle = 'Sampah berhasil tercatat';

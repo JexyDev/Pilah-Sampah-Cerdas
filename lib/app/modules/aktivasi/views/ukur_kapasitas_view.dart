@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
+import '../../../core/values/app_config.dart';
 import '../../../routes/app_routes.dart';
 import '../../scan/controllers/scan_controller.dart';
 
@@ -61,10 +62,11 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    double parseCapacity(String mode, String standardSize, TextEditingController p, TextEditingController l, TextEditingController t) {
+    double parseCapacity(String mode, String standardSize, TextEditingController p, TextEditingController l, TextEditingController t, bool isOrganic) {
       if (mode == 'Standar') {
         final kg = double.tryParse(standardSize.replaceAll(' KG', '').replaceAll(' Kg', '')) ?? 25.0;
-        return kg / 0.3; // Convert Kg ke Liter (karena entitas Bin akan * 0.3 untuk kembali jadi Kg)
+        final density = isOrganic ? AppConfig.organicDensityKgPerLiter : AppConfig.nonOrganicDensityKgPerLiter;
+        return kg / density; // Convert Kg ke Liter (agar entitas Bin yang dikalikan densityKgPerLiter kembali tepat jadi Kg)
       }
       final double pp = double.tryParse(p.text) ?? 0.0;
       final double ll = double.tryParse(l.text) ?? 0.0;
@@ -72,8 +74,8 @@ class _UkurKapasitasViewState extends ConsumerState<UkurKapasitasView> {
       return (pp * ll * tt) / 1000.0; // cm3 to Liter
     }
 
-    final orgCap = _activateOrganic ? parseCapacity(_organicMode, _organicStandardSize, _orgPanjangCtrl, _orgLebarCtrl, _orgTinggiCtrl) : 0.0;
-    final anorgCap = _activateAnorganic ? parseCapacity(_nonOrganicMode, _nonOrganicStandardSize, _nonOrgPanjangCtrl, _nonOrgLebarCtrl, _nonOrgTinggiCtrl) : 0.0;
+    final orgCap = _activateOrganic ? parseCapacity(_organicMode, _organicStandardSize, _orgPanjangCtrl, _orgLebarCtrl, _orgTinggiCtrl, true) : 0.0;
+    final anorgCap = _activateAnorganic ? parseCapacity(_nonOrganicMode, _nonOrganicStandardSize, _nonOrgPanjangCtrl, _nonOrgLebarCtrl, _nonOrgTinggiCtrl, false) : 0.0;
 
     // Lanjut ke aktivasi (scan barcode)
     Navigator.pushReplacementNamed(

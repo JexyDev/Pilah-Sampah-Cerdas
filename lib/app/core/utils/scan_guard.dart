@@ -4,12 +4,20 @@ import 'package:flutter/foundation.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../modules/scan/controllers/scan_controller.dart';
+import '../../modules/auth/controllers/auth_controller.dart';
+import '../../data/models/user_entity.dart';
 import '../../data/models/bin_entity.dart';
 import '../../routes/app_routes.dart';
 import '../values/app_colors.dart';
 
 class ScanGuard {
   static void handleScanNavigation(BuildContext context, WidgetRef ref) {
+    final user = ref.read(authProvider).user;
+    if (user?.role == UserRole.petugasPemilahan) {
+      Navigator.pushNamed(context, AppRoutes.timbanganPemilahan);
+      return;
+    }
+
     if (kIsWeb) {
       showDialog(
         context: context,

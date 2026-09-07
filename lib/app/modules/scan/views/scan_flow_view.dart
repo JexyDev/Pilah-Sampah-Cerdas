@@ -825,6 +825,8 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     );
     final double maxVol = activeBin.maxCapacityL > 0 ? activeBin.maxCapacityL : 25.0;
     final double pct = (maxVol > 0 ? newVol / maxVol : 0.0).clamp(0.0, 1.0);
+    final double currentBinWeightKg = newVol * activeBin.densityKgPerLiter;
+    final double maxWeightKg = activeBin.maxWeightKg;
 
     return Container(
       color: Colors.black54,
@@ -958,14 +960,14 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'Total Maks Tempat Sampah',
+                            'Kapasitas Tempat Sampah',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
-                            '${newVol.toStringAsFixed(1)} kg',
+                            '${currentBinWeightKg.toStringAsFixed(1)} kg',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -1002,7 +1004,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                                 ),
                               ),
                               Text(
-                                '${maxVol.toStringAsFixed(0)} kg',
+                                '${maxWeightKg.toStringAsFixed(1)} kg',
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: AppColors.textHint,
@@ -1011,7 +1013,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                             ],
                           ),
                           Text(
-                            '${(pct * 100).toStringAsFixed(0)}% Tercapai',
+                            '${(pct * 100).toStringAsFixed(0)}% Terisi',
                             style: const TextStyle(
                               fontSize: 10,
                               color: AppColors.textSecondary,
@@ -1348,7 +1350,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
     final aiResult = ref.read(scanFlowProvider).aiResult;
     final String detectedName = aiResult?.detectedType.displayName ?? 'Organik';
     // Tempat sampah yang salah = kebalikan dari yang terdeteksi
-    final String tongName = aiResult?.detectedType == WasteType.organic
+    final String binName = aiResult?.detectedType == WasteType.organic
         ? 'Anorganik'
         : 'Organik';
 
@@ -1356,7 +1358,7 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
       context: context,
       builder: (_) => _MismatchDialog(
         sampahType: detectedName,
-        tongType: tongName,
+        binType: binName,
         onScanUlang: () {
           Navigator.of(context).pop();
           ref.read(scanFlowProvider.notifier).clearError();
@@ -1720,13 +1722,13 @@ class _AiSuccessSheet extends StatelessWidget {
 class _MismatchDialog extends StatelessWidget {
   const _MismatchDialog({
     required this.sampahType,
-    required this.tongType,
+    required this.binType,
     required this.onScanUlang,
     required this.onBatal,
   });
 
   final String sampahType;
-  final String tongType;
+  final String binType;
   final VoidCallback onScanUlang;
   final VoidCallback onBatal;
 
@@ -1828,7 +1830,7 @@ class _MismatchDialog extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                tongType.toUpperCase(),
+                                binType.toUpperCase(),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
