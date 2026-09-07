@@ -146,7 +146,15 @@ export function ensureWebCompatibleImageFile(filename: string): string {
           return jpgFilename;
         }
       } catch {
-        // Fallback jika tools konversi belum tersedia
+        try {
+          execSync(`ffmpeg -y -i "${srcPath}" "${dstPath}"`);
+          if (fs.existsSync(dstPath)) {
+            try { fs.chmodSync(dstPath, 0o644); } catch {}
+            return jpgFilename;
+          }
+        } catch (err: any) {
+          console.warn("[UploadMiddleware] Failed to convert HEIC/HEIF via ffmpeg:", err.message);
+        }
       }
     }
   }
