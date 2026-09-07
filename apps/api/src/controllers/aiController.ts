@@ -99,10 +99,15 @@ export class AiController {
       const result = await aiService.detectWasteMock(userId, filePath, req.file.path);
       const quotaRemaining = await redisService.getRemainingQuota(userId);
 
-      const weightKg = Number((((result as any).volumeEstimate || 2.5) * 0.4).toFixed(2)) || 1.0;
+      const detectedTypeStr = String((result as any).detectedType || "ORGANIC").toUpperCase();
+      const isOrganic = detectedTypeStr === "ORGANIC";
+      const densityFactor = isOrganic ? 0.4 : 0.2;
+      const estimatedVol = Number((result as any).volumeEstimate) || 2.5;
+
+      const weightKg = Number((estimatedVol * densityFactor).toFixed(2)) || (isOrganic ? 1.0 : 0.5);
       const confidence = (result as any).confidence || 0.94;
       const organicPercentage = ((result as any).organik_percent ?? 94) / 100;
-      const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || 85;
+      const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || (isOrganic ? 85 : 42);
 
       res.status(200).json({
         success: true,

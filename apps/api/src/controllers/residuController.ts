@@ -236,7 +236,8 @@ export class ResiduController {
 
   async getPengajuan(req: Request, res: Response): Promise<void> {
     try {
-      const data = await residuService.getPengajuanResetBin();
+      const petugasUserId = req.user?.userId;
+      const data = await residuService.getPengajuanResetBin(petugasUserId);
       res.status(200).json({ success: true, data });
     } catch (error: any) {
       console.error("[ResiduController] getPengajuan error:", error);

@@ -517,20 +517,20 @@ export class SuperUserService {
       white-space: nowrap;
       line-height: 1;
       box-sizing: border-box;
-      left: 54.72%;
-      width: 38.36%;
-      top: 86.05%;
-      height: 4.16%;
+      width: 42.0%;
+      left: 51.5%;
+      height: 4.4%;
+      top: 85.7%;
     }
 
     .pill-organik {
       color: #ffffff;
-      font-size: 7pt;
+      font-size: 7.2pt;
     }
 
     .pill-anorganik {
       color: #000000;
-      font-size: 7pt;
+      font-size: 7.2pt;
     }
 
     body.layout-a4-grid .print-canvas {
@@ -684,16 +684,16 @@ export class SuperUserService {
           img.src = qrImg.src;
         });
 
-        ctx.font = '900 68px "JetBrains Mono", "Plus Jakarta Sans", monospace, sans-serif';
+        ctx.font = '900 58px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         if (isAnorg) {
           ctx.fillStyle = '#000000';
-          ctx.fillText(serial, 1848, 3356);
+          ctx.fillText(serial, 1814, 3357);
         } else {
           ctx.fillStyle = '#ffffff';
-          ctx.fillText(serial, 1848, 3356);
+          ctx.fillText(serial, 1814, 3348);
         }
 
         const dataUrl = canvas.toDataURL('image/png');
@@ -1442,19 +1442,27 @@ export class SuperUserService {
       orderBy: { name: "asc" },
     });
 
+    const isAnorganikBin = (b: any) => {
+      const cat = (b.category?.name || "").toUpperCase();
+      const qr = (b.qrCode || "").toUpperCase();
+      return (
+        cat.includes("ANORGANIK") ||
+        cat.includes("NON_ORGANIC") ||
+        cat.includes("ANORG") ||
+        cat.includes("AGN") ||
+        qr.includes("-AGN-")
+      );
+    };
+
+    const isOrganikBin = (b: any) => {
+      return !isAnorganikBin(b);
+    };
+
     const enriched = kelompokList.map((k) => {
       const bins = k.bins || [];
       const totalBins = bins.length;
-      const organikBins = bins.filter((b) =>
-        (b.category?.name || "").toUpperCase().includes("ORGANIK") ||
-        (b.category?.name || "").toUpperCase().includes("ORGANIC") ||
-        b.qrCode.includes("-OGN-")
-      );
-      const anorganikBins = bins.filter((b) =>
-        (b.category?.name || "").toUpperCase().includes("ANORGANIK") ||
-        (b.category?.name || "").toUpperCase().includes("NON_ORGANIC") ||
-        b.qrCode.includes("-AGN-")
-      );
+      const organikBins = bins.filter(isOrganikBin);
+      const anorganikBins = bins.filter(isAnorganikBin);
 
       let statusDistribusi = "BELUM_GENERATE";
       if (totalBins >= 20) {
@@ -1474,12 +1482,17 @@ export class SuperUserService {
         dpl: k.dpl,
         dplNamaMentah: k.dplNamaMentah,
         linkGoogleDrive: k.linkGoogleDrive,
-        qrDownloadedAt: k.qrDownloadedAt,
+        qrDownloadedAt: k.qrDownloadedAt ? k.qrDownloadedAt.toISOString() : null,
         totalBins,
         organikCount: organikBins.length,
         anorganikCount: anorganikBins.length,
         statusDistribusi,
-        bins: sortedBins,
+        bins: sortedBins.map((b) => ({
+          id: b.id,
+          qrCode: b.qrCode,
+          category: b.category,
+          status: b.status,
+        })),
       };
     });
 
@@ -1512,19 +1525,21 @@ export class SuperUserService {
         throw new Error("Kelompok KKN tidak ditemukan.");
       }
 
+      const isAnorganikBin = (b: any) => {
+        const cat = (b.category?.name || "").toUpperCase();
+        const qr = (b.qrCode || "").toUpperCase();
+        return (
+          cat.includes("ANORGANIK") ||
+          cat.includes("NON_ORGANIC") ||
+          cat.includes("ANORG") ||
+          cat.includes("AGN") ||
+          qr.includes("-AGN-")
+        );
+      };
+
       const existingBins = kelompok.bins || [];
-      const currentOrganik = existingBins.filter(
-        (b) =>
-          (b.category?.name || "").toUpperCase().includes("ORGANIK") ||
-          (b.category?.name || "").toUpperCase().includes("ORGANIC") ||
-          b.qrCode.includes("-OGN-")
-      ).length;
-      const currentAnorganik = existingBins.filter(
-        (b) =>
-          (b.category?.name || "").toUpperCase().includes("ANORGANIK") ||
-          (b.category?.name || "").toUpperCase().includes("NON_ORGANIC") ||
-          b.qrCode.includes("-AGN-")
-      ).length;
+      const currentAnorganik = existingBins.filter(isAnorganikBin).length;
+      const currentOrganik = existingBins.length - currentAnorganik;
 
       if (currentOrganik >= 10 && currentAnorganik >= 10) {
         throw new Error(

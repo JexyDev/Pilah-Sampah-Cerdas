@@ -21,6 +21,17 @@ const DENSITY = {
   NON_ORGANIC: 0.2, // Non-organic is lighter
 };
 
+export function checkIsOrganicCategory(categoryName?: string | null): boolean {
+  if (!categoryName) return false;
+  const upper = categoryName.toUpperCase().trim();
+  return upper.includes("ORGAN") && !upper.includes("ANORGAN") && !upper.includes("NON");
+}
+
+export function isSameCategory(catA?: string | null, catB?: string | null): boolean {
+  if (!catA || !catB) return false;
+  return checkIsOrganicCategory(catA) === checkIsOrganicCategory(catB);
+}
+
 // Helper to find local RW/RT and Petugas staff for a given bin area
 async function getStaffForBin(binRwId: number | null) {
   if (!binRwId) return [];
@@ -330,10 +341,10 @@ export class BinService {
 
       for (const det of detections) {
         // Find matching bin for this detection category
-        let targetBin = userBins.find((b) => b.category?.name === det.detectedType);
+        let targetBin = userBins.find((b) => isSameCategory(b.category?.name, det.detectedType));
 
         // If not found in user's bins, try to see if the scanned bin matches
-        if (!targetBin && bin.category?.name === det.detectedType) {
+        if (!targetBin && isSameCategory(bin.category?.name, det.detectedType)) {
           targetBin = bin;
         }
 
@@ -418,7 +429,7 @@ export class BinService {
         }
 
         // Weight
-        const isOrganic = targetBin.category?.name === "ORGANIC";
+        const isOrganic = checkIsOrganicCategory(targetBin.category?.name);
         const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
         const weightKg = parseFloat((vol * factor).toFixed(2));
 
@@ -540,7 +551,7 @@ export class BinService {
     }
 
     // 3. Validate trash type matching (Fallback for single detection)
-    if (bin.category.name !== detectedType) {
+    if (!isSameCategory(bin.category.name, detectedType)) {
       const error = new Error("BIN_TYPE_MISMATCH");
       (error as any).binType = bin.category.name;
       throw error;
@@ -592,7 +603,7 @@ export class BinService {
 
     // 6. Convert liters to weight based on density
     // Use fixed multiplier for Organic vs Non-Organic for now (simplified)
-    const isOrganic = bin.category.name === "ORGANIC";
+    const isOrganic = checkIsOrganicCategory(bin.category.name);
     const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
     const weightKg = parseFloat((estimatedVolume * factor).toFixed(2));
 
@@ -797,8 +808,8 @@ export class BinService {
             include: { category: true },
           });
 
-          const hasOrganik = currentBins.some((b) => b.category?.name === "ORGANIC");
-          const hasNonOrganik = currentBins.some((b) => b.category?.name === "NON_ORGANIC");
+          const hasOrganik = currentBins.some((b) => checkIsOrganicCategory(b.category?.name));
+          const hasNonOrganik = currentBins.some((b) => b.category?.name && !checkIsOrganicCategory(b.category?.name));
           const onboardingComplete = hasOrganik && hasNonOrganik;
 
           // Check duplicate category in the request payload itself
@@ -810,10 +821,11 @@ export class BinService {
           // 2. Enforce onboarding rules
           if (!onboardingComplete) {
             const catName = bin.category?.name || "";
-            if (catName === "ORGANIC" && hasOrganik) {
+            const isCatOrg = checkIsOrganicCategory(catName);
+            if (isCatOrg && hasOrganik) {
               throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:ORGANIC");
             }
-            if (catName === "NON_ORGANIC" && hasNonOrganik) {
+            if (!isCatOrg && hasNonOrganik) {
               throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:NON_ORGANIC");
             }
           }
@@ -1410,7 +1422,19 @@ export class BinService {
       throw new Error("BIN_NOT_OWNED");
     }
 
-    // 3. check if duplicate pending request
+    // 3. check minimum capacity fill ratio (Minimal 70%)
+    const currentVol = Number(bin.currentVolumeLiter ?? 0);
+    const maxCap = Number(bin.maxCapacityLiter ?? 25.0);
+    const fillRatio = maxCap > 0 ? currentVol / maxCap : 0;
+
+    if (fillRatio < 0.70) {
+      const currentPercent = Math.round(fillRatio * 100);
+      const error = new Error(`BIN_CAPACITY_NOT_ENOUGH:${currentPercent}`);
+      (error as any).currentPercent = currentPercent;
+      throw error;
+    }
+
+    // 4. check if duplicate pending request
     const existing = await prisma.binResetRequest.findFirst({
       where: {
         binId,
@@ -1421,14 +1445,21 @@ export class BinService {
       throw new Error("DUPLICATE_REQUEST");
     }
 
-    // 4. Resolve petugasId dari defaultPetugasId warga jika tidak dikirim
+    // 4. Resolve petugasId dari defaultPetugasId warga atau auto-resolve Petugas RW jika tidak dikirim
     let resolvedPetugasId = petugasId ?? null;
     if (!resolvedPetugasId) {
       const warga = await prisma.user.findUnique({
         where: { id: userId },
-        select: { defaultPetugasId: true },
+        select: { defaultPetugasId: true, rwId: true },
       });
       resolvedPetugasId = warga?.defaultPetugasId ?? null;
+
+      if (!resolvedPetugasId && warga?.rwId) {
+        const rwPetugas = await prisma.user.findFirst({
+          where: { rwId: warga.rwId, role: { name: "PETUGAS_RESIDU" }, status: "Aktif" },
+        });
+        resolvedPetugasId = rwPetugas?.id ?? null;
+      }
     }
 
     const request = await binRepository.createResetRequest(
@@ -1439,21 +1470,15 @@ export class BinService {
       jenisSampah
     );
 
-    // Langsung eksekusi reset kapasitas tempat sampah ke 0L (instan tanpa approval)
-    await prisma.bin.update({
-      where: { id: binId },
-      data: { currentVolumeLiter: 0 },
-    });
-
     const binQr = request.bin?.qrCode || "Tempat Sampah";
 
-    // Notifikasi konfirmasi ke warga
+    // Notifikasi konfirmasi pengajuan ke warga (Volume di-reset ke 0L saat verifikasi Petugas Hilir)
     await prisma.notification
       .create({
         data: {
           userId,
-          title: "Pengosongan Tempat Sampah Berhasil",
-          message: `Tempat sampah ${binQr} telah berhasil dikosongkan secara otomatis. Kapasitas kembali 0L.`,
+          title: "Pengajuan Pengosongan Terkirim",
+          message: `Pengajuan pengosongan tempat sampah ${binQr} telah terkirim ke Petugas Pemilah. Menunggu verifikasi di hilir.`,
         },
       })
       .catch(() => {});

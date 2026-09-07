@@ -264,7 +264,7 @@ export const generatePosterHtml = (
           display: block;
         }
 
-        /* Serial Code Text Overlay (Precision calibrated: Left 54.72%, Width 38.36%, Height 4.16%) */
+        /* Serial Code Text Overlay (Unified & Identical for Organik & Anorganik) */
         .pill-overlay {
           position: absolute;
           z-index: 10;
@@ -278,22 +278,22 @@ export const generatePosterHtml = (
           white-space: nowrap;
           line-height: 1;
           box-sizing: border-box;
-          left: 54.72%;
-          width: 38.36%;
-          top: 86.05%;
-          height: 4.16%;
+          width: 42.0%;
+          left: 51.5%;
+          height: 4.4%;
+          top: 85.7%;
         }
 
-        /* Organik Pill Badge Position & Styling */
+        /* Organik Pill Badge Styling */
         .pill-organik {
           color: #ffffff;
-          font-size: 7pt;
+          font-size: 7.2pt;
         }
 
-        /* Anorganik Pill Badge Position & Styling */
+        /* Anorganik Pill Badge Styling */
         .pill-anorganik {
           color: #000000;
-          font-size: 7pt;
+          font-size: 7.2pt;
         }
 
         /* A4 Multi-grid mode */
@@ -453,16 +453,16 @@ export const generatePosterHtml = (
             });
 
             // Draw Serial text on pill
-            ctx.font = '900 68px "JetBrains Mono", "Plus Jakarta Sans", monospace, sans-serif';
+            ctx.font = '900 58px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             if (isAnorg) {
               ctx.fillStyle = '#000000';
-              ctx.fillText(serial, 1848, 3356);
+              ctx.fillText(serial, 1814, 3356);
             } else {
               ctx.fillStyle = '#ffffff';
-              ctx.fillText(serial, 1848, 3356);
+              ctx.fillText(serial, 1814, 3356);
             }
 
             // Trigger download
@@ -546,14 +546,20 @@ export const downloadKelompokZip = async (
   };
 
   // Sort items: Organik first, then Anorganik
-  const organikItems = items.filter((item) => {
-    const cat = (item.category?.name || "").toUpperCase();
-    return !cat.includes("ANORGANIK") && !cat.includes("NON_ORGANIC") && !item.qrCode.includes("-AGN-");
-  });
-  const anorganikItems = items.filter((item) => {
-    const cat = (item.category?.name || "").toUpperCase();
-    return cat.includes("ANORGANIK") || cat.includes("NON_ORGANIC") || item.qrCode.includes("-AGN-");
-  });
+  const isAnorganikSticker = (item: QrStickerItem): boolean => {
+    const catName = (item.category?.name || "").toUpperCase();
+    const qr = (item.qrCode || "").toUpperCase();
+    return (
+      catName.includes("ANORGANIK") ||
+      catName.includes("NON_ORGANIC") ||
+      catName.includes("ANORG") ||
+      catName.includes("AGN") ||
+      qr.includes("-AGN-")
+    );
+  };
+
+  const anorganikItems = items.filter(isAnorganikSticker);
+  const organikItems = items.filter((item) => !isAnorganikSticker(item));
 
   const sortedItems = [...organikItems, ...anorganikItems];
 
@@ -580,12 +586,7 @@ export const downloadKelompokZip = async (
 
   for (let i = 0; i < sortedItems.length; i++) {
     const item = sortedItems[i];
-    const catName = (item.category?.name || "").toUpperCase();
-    const isAnorg =
-      catName.includes("ANORGANIK") ||
-      catName.includes("NON_ORGANIC") ||
-      catName.includes("AGN") ||
-      item.qrCode.includes("-AGN-");
+    const isAnorg = isAnorganikSticker(item);
 
     const categoryPrefix = isAnorg ? "ANORGANIK" : "ORGANIK";
     const orderNum = String(i + 1).padStart(2, "0");
@@ -631,16 +632,16 @@ export const downloadKelompokZip = async (
     }
 
     // 3. Draw Serial Number on Pill
-    ctx.font = '900 68px "JetBrains Mono", "Plus Jakarta Sans", monospace, sans-serif';
+    ctx.font = '900 58px "JetBrains Mono", "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     if (isAnorg) {
       ctx.fillStyle = "#000000";
-      ctx.fillText(serial, 1848, 3356);
+      ctx.fillText(serial, 1814, 3356);
     } else {
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(serial, 1848, 3356);
+      ctx.fillText(serial, 1814, 3356);
     }
 
     // Convert canvas to blob and add to ZIP
