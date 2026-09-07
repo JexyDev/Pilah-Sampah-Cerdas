@@ -1422,7 +1422,19 @@ export class BinService {
       throw new Error("BIN_NOT_OWNED");
     }
 
-    // 3. check if duplicate pending request
+    // 3. check minimum capacity fill ratio (Minimal 70%)
+    const currentVol = Number(bin.currentVolumeLiter ?? 0);
+    const maxCap = Number(bin.maxCapacityLiter ?? 25.0);
+    const fillRatio = maxCap > 0 ? currentVol / maxCap : 0;
+
+    if (fillRatio < 0.70) {
+      const currentPercent = Math.round(fillRatio * 100);
+      const error = new Error(`BIN_CAPACITY_NOT_ENOUGH:${currentPercent}`);
+      (error as any).currentPercent = currentPercent;
+      throw error;
+    }
+
+    // 4. check if duplicate pending request
     const existing = await prisma.binResetRequest.findFirst({
       where: {
         binId,

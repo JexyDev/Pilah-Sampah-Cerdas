@@ -1410,6 +1410,12 @@ export class BinController {
           error: "DUPLICATE_REQUEST",
           message: "Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini",
         });
+      } else if (error.message && error.message.startsWith("BIN_CAPACITY_NOT_ENOUGH")) {
+        const percent = error.currentPercent ?? (error.message.includes(":") ? error.message.split(":")[1] : 0);
+        res.status(400).json({
+          error: "BIN_NOT_FULL",
+          message: `Tempat sampah belum penuh (minimal 70%). Kapasitas saat ini baru ${percent}%.`,
+        });
       } else {
         res
           .status(500)
@@ -1793,6 +1799,12 @@ export class BinController {
         res.status(400).json({
           error: "DUPLICATE_REQUEST",
           message: "Sudah ada pengajuan pengosongan aktif untuk tempat sampah ini",
+        });
+      } else if (error.message && error.message.startsWith("BIN_CAPACITY_NOT_ENOUGH")) {
+        const percent = error.currentPercent ?? (error.message.includes(":") ? error.message.split(":")[1] : 0);
+        res.status(400).json({
+          error: "BIN_NOT_FULL",
+          message: `Tempat sampah belum penuh (minimal 70%). Kapasitas saat ini baru ${percent}%.`,
         });
       } else {
         res
