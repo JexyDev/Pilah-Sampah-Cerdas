@@ -28,7 +28,7 @@ import api from "../../utils/api";
 import showToast from "../../utils/showToast";
 import { compressImage } from "../../utils/compressImage";
 import { useAuthStore } from "../../store/useAuthStore";
-import { safeFormatDateShort, safeFormatTime, safeToDateString } from "../../utils/safeDateUtils";
+import { parseSafeDate, safeFormatDateShort, safeFormatTime, safeToDateString } from "../../utils/safeDateUtils";
 
 // Haversine Formula untuk menghitung jarak dalam meter
 function calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -75,7 +75,7 @@ export const MahasiswaPresensiMobile: React.FC = () => {
   const todayHistoryItem = historyList.find((item: any) => {
     const rawDate = item.waktuAbsen || item.waktuCheckin || item.checkInAt || item.jamMasuk || item.createdAt;
     if (!rawDate) return false;
-    const itemDateStr = new Date(rawDate).toDateString();
+    const itemDateStr = safeToDateString(rawDate);
     const todayDateStr = new Date().toDateString();
     return itemDateStr === todayDateStr && (
       Boolean(item.checkOutAt) ||
