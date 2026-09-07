@@ -1399,6 +1399,11 @@ export const LogbookKknPage: React.FC = () => {
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                       const target = e.currentTarget;
+                                      if (!target.dataset.retried && item.fotoBuktiUrl && /\.(heic|heif)$/i.test(item.fotoBuktiUrl)) {
+                                        target.dataset.retried = "true";
+                                        target.src = resolveImageUrl(item.fotoBuktiUrl, false);
+                                        return;
+                                      }
                                       target.style.display = "none";
                                       const parent = target.parentElement;
                                       if (parent && !parent.querySelector(".fallback-label")) {
@@ -1803,11 +1808,17 @@ export const LogbookKknPage: React.FC = () => {
                             src={resolveImageUrl(photoUrl)}
                             alt={`Dokumentasi Kegiatan ${pIdx + 1}`}
                             onError={(e) => {
-                              (e.target as HTMLElement).style.display = "none";
-                              const parent = (e.target as HTMLElement).parentElement;
-                              if (parent) {
+                              const target = e.currentTarget;
+                              if (!target.dataset.retried && photoUrl && /\.(heic|heif)$/i.test(photoUrl)) {
+                                target.dataset.retried = "true";
+                                target.src = resolveImageUrl(photoUrl, false);
+                                return;
+                              }
+                              target.style.display = "none";
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector(".fallback-label")) {
                                 const fallback = document.createElement("div");
-                                fallback.className = "text-slate-400 text-xs italic p-4 text-center";
+                                fallback.className = "fallback-label text-slate-400 text-xs italic p-4 text-center";
                                 fallback.innerText = "Foto tidak dapat dimuat.";
                                 parent.appendChild(fallback);
                               }
@@ -2209,6 +2220,11 @@ export const LogbookKknPage: React.FC = () => {
                 alt="Preview Bukti"
                 onError={(e) => {
                   const target = e.currentTarget;
+                  if (!target.dataset.retried && previewPhotoUrl && /\.jpg$/i.test(previewPhotoUrl)) {
+                    target.dataset.retried = "true";
+                    target.src = previewPhotoUrl.replace(/\.jpg$/i, ".heif");
+                    return;
+                  }
                   target.style.display = "none";
                   const parent = target.parentElement;
                   if (parent && !parent.querySelector(".modal-image-fallback")) {
