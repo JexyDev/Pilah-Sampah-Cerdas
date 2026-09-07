@@ -23,6 +23,7 @@ class LocationPingState {
     this.errorMessage,
     this.detectedZoneArea,
     this.pendingOfflineCount = 0,
+    this.isGpsGlitching = false,
   });
 
   final bool isTracking;
@@ -35,6 +36,12 @@ class LocationPingState {
   final String? detectedZoneArea;
   final int pendingOfflineCount;
 
+  /// True saat backend mendeteksi GPS glitch (koordinat melenceng sesaat) dan
+  /// sedang dalam grace period 90 detik sebelum memvonis TERJEDA.
+  /// Backend menyisipkan entri PENDING_PAUSE di jedaLogs pada kondisi ini.
+  /// Status presensi utama tetap BERLANGSUNG — ini hanya sinyal peringatan ringan.
+  final bool isGpsGlitching;
+
   LocationPingState copyWith({
     bool? isTracking,
     double? lastLatitude,
@@ -45,6 +52,7 @@ class LocationPingState {
     String? errorMessage,
     String? detectedZoneArea,
     int? pendingOfflineCount,
+    bool? isGpsGlitching,
   }) {
     return LocationPingState(
       isTracking: isTracking ?? this.isTracking,
@@ -56,6 +64,7 @@ class LocationPingState {
       errorMessage: errorMessage ?? this.errorMessage,
       detectedZoneArea: detectedZoneArea ?? this.detectedZoneArea,
       pendingOfflineCount: pendingOfflineCount ?? this.pendingOfflineCount,
+      isGpsGlitching: isGpsGlitching ?? this.isGpsGlitching,
     );
   }
 }
@@ -252,13 +261,37 @@ class LocationPingNotifier extends StateNotifier<LocationPingState> {
           _ref.read(kknLocationProvider.notifier).syncWithPingData(data);
         }
 
+        // [GRACE PERIOD] Deteksi PENDING_PAUSE dari jedaLogs backend.
+        // Backend menggunakan mekanisme grace period 90 detik sebelum memvonis TERJEDA.
+        // Jika GPS glitch terdeteksi, backend menyisipkan entri PENDING_PAUSE (confirmed: false)
+        // di jedaLogs TANPA mengubah attendanceStatus. Mobile membacanya untuk menampilkan
+        // peringatan ringan ke user bahwa sinyal GPS sedang tidak stabil.
+        bool hasGpsGlitch = false;
+        final jedaLogs = data['jedaLogs'];
+        if (jedaLogs is List) {
+          hasGpsGlitch = jedaLogs.any(
+            (log) =>
+                log is Map &&
+                log['type'] == 'PENDING_PAUSE' &&
+                log['confirmed'] == false,
+          );
+        }
+
         state = state.copyWith(
           lastLatitude: lat,
           lastLongitude: lng,
           lastPingTime: DateTime.now(),
           detectedZoneArea: poskoArea,
           errorMessage: null,
+          isGpsGlitching: hasGpsGlitch,
         );
+
+        if (hasGpsGlitch) {
+          debugPrint(
+            '[LocationPing] ⚠️ GPS glitch terdeteksi — backend dalam grace period, '
+            'status tetap BERLANGSUNG. PENDING_PAUSE aktif di jedaLogs.',
+          );
+        }
       }
     } catch (e) {
       // Ping gagal — kemungkinan tidak ada koneksi internet.

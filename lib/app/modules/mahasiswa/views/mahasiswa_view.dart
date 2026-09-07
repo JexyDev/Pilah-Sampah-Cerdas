@@ -42,6 +42,47 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
         // Cek status kegiatan KKN terbaru dari server. Jika ada yang aktif, otomatis resume.
         ref.read(kknLocationProvider.notifier).fetchKegiatanAktif();
       }
+
+      // [GRACE PERIOD] Pantau isGpsGlitching dari backend.
+      // Saat backend mendeteksi GPS glitch (koordinat melenceng sesaat), backend
+      // menyisipkan PENDING_PAUSE di jedaLogs tanpa mengubah status BERLANGSUNG.
+      // Mobile menampilkan toast peringatan ringan agar mahasiswa tahu GPS-nya lemah.
+      // Toast otomatis hilang saat GPS kembali normal (isGpsGlitching kembali false).
+      ref.listen<LocationPingState>(locationPingControllerProvider, (previous, next) {
+        if (!mounted) return;
+        final wasGlitching = previous?.isGpsGlitching ?? false;
+        final isGlitching = next.isGpsGlitching;
+
+        if (!wasGlitching && isGlitching) {
+          // GPS baru saja terdeteksi glitch oleh backend
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.gps_not_fixed, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Sinyal GPS tidak stabil. Pastikan Anda berada di area posko.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Color(0xFFE65100),
+              duration: Duration(seconds: 5),
+              behavior: SnackBarBehavior.floating,
+              margin: EdgeInsets.all(12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
+              ),
+            ),
+          );
+        } else if (wasGlitching && !isGlitching) {
+          // GPS kembali normal — tutup snackbar peringatan jika masih tampil
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+      });
     });
   }
 
