@@ -12,15 +12,17 @@ import { getApiBaseUrl } from "./api";
  * Mengubah path relatif (seperti '/uploads/foto.jpg' atau 'uploads/foto.jpg')
  * menjadi URL absolut yang valid mengarah ke backend server.
  */
-export function resolveImageUrl(path?: string | null): string {
+export function resolveImageUrl(path?: string | null, convertHeic: boolean = true): string {
   if (!path || typeof path !== "string" || path.trim() === "") {
     return "";
   }
 
   let trimmed = path.trim();
 
-  // Otomatis ubah ekstensi .heic / .heif menjadi .jpg agar selalu kompatibel di browser web
-  trimmed = trimmed.replace(/\.(heic|heif)$/i, ".jpg");
+  // Otomatis ubah ekstensi .heic / .heif menjadi .jpg agar selalu kompatibel di browser web jika convertHeic = true
+  if (convertHeic) {
+    trimmed = trimmed.replace(/\.(heic|heif)$/i, ".jpg");
+  }
 
   // Konversi link Google Drive menjadi direct image thumbnail
   if (trimmed.includes("drive.google.com")) {

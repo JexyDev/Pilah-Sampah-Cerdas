@@ -95,41 +95,67 @@ export async function downloadImageFile(
     return;
   }
 
-  const resolved = resolveImageUrl(url);
+  const rawUrl = url.trim();
+  const resolvedJpg = resolveImageUrl(rawUrl);
+
+  // 1. Try fetching resolved .jpg image
   try {
-    const response = await fetch(resolved, { mode: "cors" });
-    if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-    const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
+    const response = await fetch(resolvedJpg, { mode: "cors" });
+    if (response.ok) {
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
 
-    let filename = defaultFilename;
-    const urlClean = resolved.split("?")[0];
-    const parts = urlClean.split("/");
-    const lastPart = parts[parts.length - 1];
-    if (lastPart && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(lastPart)) {
-      filename = lastPart;
-    } else if (blob.type) {
-      const ext = blob.type.split("/")[1] || "jpg";
-      if (!filename.includes(".")) {
-        filename = `${filename}.${ext}`;
+      let filename = defaultFilename;
+      const urlClean = resolvedJpg.split("?")[0];
+      const parts = urlClean.split("/");
+      const lastPart = parts[parts.length - 1];
+      if (lastPart && /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(lastPart)) {
+        filename = lastPart;
+      } else if (blob.type) {
+        const ext = blob.type.split("/")[1] || "jpg";
+        if (!filename.includes(".")) {
+          filename = `${filename}.${ext}`;
+        }
       }
-    }
 
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (err) {
-    console.warn("[downloadImageFile] Fetch blob failed, triggering direct download fallback:", err);
-    const link = document.createElement("a");
-    link.href = resolved;
-    link.target = "_blank";
-    link.download = defaultFilename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      return;
+    }
+  } catch {}
+
+  // 2. Fallback if .jpg returned 404: Try fetching original raw file (.heif / .heic)
+  const heifExtMatch = rawUrl.match(/\.(heic|heif)$/i);
+  if (heifExtMatch) {
+    const rawHeifUrl = resolvedJpg.replace(/\.jpg$/i, heifExtMatch[0]);
+    try {
+      const responseRaw = await fetch(rawHeifUrl, { mode: "cors" });
+      if (responseRaw.ok) {
+        const blob = await responseRaw.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = defaultFilename.replace(/\.jpg$/i, heifExtMatch[0]);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+        return;
+      }
+    } catch {}
   }
+
+  // 3. Final fallback: trigger direct window open with download attribute
+  const link = document.createElement("a");
+  link.href = resolvedJpg;
+  link.target = "_blank";
+  link.download = defaultFilename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
