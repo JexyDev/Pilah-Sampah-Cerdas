@@ -907,6 +907,7 @@ export class KknService {
     let studentAssignedRwId: number | undefined = undefined;
     let studentKelompokKelurahan: string | undefined = undefined;
     let studentGroupUserIds: string[] = [];
+    let targetRwIds: number[] = [];
 
     if (!isSuperOrAdmin) {
       const student = await prisma.studentKkn?.findUnique?.({
@@ -929,8 +930,41 @@ export class KknService {
         studentGroupUserIds =
           student.kelompok?.students?.map((s: any) => s.userId) || [kknUserId];
 
+        // Resolve all RW IDs in group's cakupanRw dynamically
+        if (!targetRwId && student.kelompok?.cakupanRw) {
+          try {
+            const rawCakupan = student.kelompok.cakupanRw;
+            const parsedCakupan =
+              typeof rawCakupan === "string" ? JSON.parse(rawCakupan) : rawCakupan;
+
+            if (Array.isArray(parsedCakupan) && parsedCakupan.length > 0) {
+              const rwNumbers = parsedCakupan
+                .map((r: any) => String(r).replace(/[^\d]/g, "").trim())
+                .filter(Boolean);
+
+              if (rwNumbers.length > 0) {
+                const matchedRws = await prisma.rw.findMany({
+                  where: {
+                    ...(student.assignedRw?.kelurahanId
+                      ? { kelurahanId: student.assignedRw.kelurahanId }
+                      : {}),
+                    OR: rwNumbers.flatMap((num) => [
+                      { name: { equals: num, mode: "insensitive" } },
+                      { name: { equals: `RW ${num}`, mode: "insensitive" } },
+                      { name: { equals: `RW ${num.padStart(2, "0")}`, mode: "insensitive" } },
+                      { name: { equals: num.padStart(2, "0"), mode: "insensitive" } },
+                    ]),
+                  },
+                  select: { id: true },
+                });
+                targetRwIds = matchedRws.map((r) => r.id);
+              }
+            }
+          } catch (_) {}
+        }
+
         // Default scoping if not explicitly filtered
-        if (!targetRwId && studentAssignedRwId) {
+        if (!targetRwId && targetRwIds.length === 0 && studentAssignedRwId) {
           targetRwId = studentAssignedRwId;
         }
         if (!targetKelurahan && studentKelompokKelurahan) {
@@ -941,12 +975,16 @@ export class KknService {
 
     const where: any = { role: { name: "WARGA" } };
 
-    if (targetRwId || targetKelurahan || studentGroupUserIds.length > 0) {
+    if (targetRwId || targetRwIds.length > 0 || targetKelurahan || studentGroupUserIds.length > 0) {
       const orConditions: any[] = [];
       if (targetRwId) {
         orConditions.push({ rwId: targetRwId });
         orConditions.push({ households: { some: { rwId: targetRwId } } });
         orConditions.push({ binOwnerships: { some: { bin: { rwId: targetRwId } } } });
+      } else if (targetRwIds.length > 0) {
+        orConditions.push({ rwId: { in: targetRwIds } });
+        orConditions.push({ households: { some: { rwId: { in: targetRwIds } } } });
+        orConditions.push({ binOwnerships: { some: { bin: { rwId: { in: targetRwIds } } } } });
       }
       if (targetKelurahan) {
         orConditions.push({

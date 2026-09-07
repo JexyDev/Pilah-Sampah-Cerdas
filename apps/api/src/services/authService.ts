@@ -131,16 +131,15 @@ export class AuthService {
     if (cRw) {
       if (Array.isArray(cRw)) {
         kelompokRwName = cRw
-          .map((r: any) =>
-            String(r)
-              .replace(/^RW\s*/i, "")
-              .trim()
-          )
+          .map((item: any) => {
+            const digits = String(item).replace(/[^\d]/g, "").trim();
+            return digits ? digits.padStart(2, "0") : String(item).trim();
+          })
+          .filter(Boolean)
           .join(", ");
       } else if (typeof cRw === "string" || typeof cRw === "number") {
-        kelompokRwName = String(cRw)
-          .replace(/^RW\s*/i, "")
-          .trim();
+        const digits = String(cRw).replace(/[^\d]/g, "").trim();
+        kelompokRwName = digits ? digits.padStart(2, "0") : String(cRw).trim();
       }
     }
 
@@ -152,12 +151,21 @@ export class AuthService {
       matchedKelurahan ||
       "";
 
-    let rwName =
-      anyUser.rw?.name ||
-      anyUser.studentProfile?.assignedRw?.name ||
-      kelompokRwName ||
-      anyUser.households?.[0]?.rw?.name ||
-      "";
+    let rwName = "";
+    if (userRoleName === "MAHASISWA_KKN") {
+      rwName =
+        kelompokRwName ||
+        anyUser.studentProfile?.assignedRw?.name ||
+        anyUser.rw?.name ||
+        "";
+    } else {
+      rwName =
+        anyUser.rw?.name ||
+        anyUser.studentProfile?.assignedRw?.name ||
+        kelompokRwName ||
+        anyUser.households?.[0]?.rw?.name ||
+        "";
+    }
     let dplAssignment = "";
 
     let dplGroupsList: any[] = [];
@@ -576,16 +584,15 @@ export class AuthService {
     if (cRw) {
       if (Array.isArray(cRw)) {
         kelompokRwName = cRw
-          .map((r: any) =>
-            String(r)
-              .replace(/^RW\s*/i, "")
-              .trim()
-          )
+          .map((item: any) => {
+            const digits = String(item).replace(/[^\d]/g, "").trim();
+            return digits ? digits.padStart(2, "0") : String(item).trim();
+          })
+          .filter(Boolean)
           .join(", ");
       } else if (typeof cRw === "string" || typeof cRw === "number") {
-        kelompokRwName = String(cRw)
-          .replace(/^RW\s*/i, "")
-          .trim();
+        const digits = String(cRw).replace(/[^\d]/g, "").trim();
+        kelompokRwName = digits ? digits.padStart(2, "0") : String(cRw).trim();
       }
     }
 
@@ -598,12 +605,21 @@ export class AuthService {
       matchedKelurahan ||
       "";
 
-    let rwName =
-      user.rw?.name ||
-      user.studentProfile?.assignedRw?.name ||
-      kelompokRwName ||
-      user.households?.[0]?.rw?.name ||
-      "";
+    let rwName = "";
+    if (roleName === "MAHASISWA_KKN") {
+      rwName =
+        kelompokRwName ||
+        user.studentProfile?.assignedRw?.name ||
+        user.rw?.name ||
+        "";
+    } else {
+      rwName =
+        user.rw?.name ||
+        user.studentProfile?.assignedRw?.name ||
+        kelompokRwName ||
+        user.households?.[0]?.rw?.name ||
+        "";
+    }
     if (roleName === "LURAH") {
       rwName = "Seluruh RW";
     } else if (roleName === "CAMAT") {
