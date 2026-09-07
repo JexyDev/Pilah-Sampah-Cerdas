@@ -107,8 +107,13 @@ jobs:
               cp "$REPO_DIR/.env" /tmp/apps_api_env_backup 2>/dev/null || true
             fi
 
-            git fetch --depth=1 origin main
-            git reset --hard origin/main
+            # Force IPv4 resolution and add retries for git fetch to handle VPS network glitches
+            git config extra.http.ipresolve 4 2>/dev/null || true
+            for i in 1 2 3; do
+              git fetch --depth=1 origin main && break || sleep 3
+            done || echo "WARNING: git fetch timed out on VPS network, continuing with existing workspace code..."
+
+            git reset --hard origin/main 2>/dev/null || true
 
             # Restore or create .env for apps/api
             if [ -f /tmp/apps_api_env_backup ]; then
