@@ -356,7 +356,7 @@ export class BinService {
         const max = Number(targetBin.maxCapacityLiter);
         const vol = det.volumeEstimate;
 
-        if (current >= max || current >= 25 || current + vol > max) {
+        if (current >= max || current + vol > max) {
           await binRepository.createOverflowNotification(userId, targetBin.qrCode).catch(() => {});
           throw new Error("BIN_FULL");
         }
@@ -561,7 +561,7 @@ export class BinService {
     const current = Number(bin.currentVolumeLiter);
     const max = Number(bin.maxCapacityLiter);
 
-    if (current >= max || current >= 25 || current + estimatedVolume > max) {
+    if (current >= max || current + estimatedVolume > max) {
       // Create user notification for overflow async
       await binRepository.createOverflowNotification(userId, bin.qrCode).catch(() => {});
       throw new Error("BIN_FULL");

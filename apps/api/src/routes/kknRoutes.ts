@@ -16,6 +16,7 @@ import {
   uploadSingleImage,
   safeUploadSingleImage,
   uploadPemanfaatanImage,
+  safeUploadPemanfaatanImage,
   upload,
 } from "../middlewares/uploadMiddleware.js";
 
@@ -784,7 +785,7 @@ router.post(
   ["/program-kerja", "/proker"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
-  uploadPemanfaatanImage,
+  safeUploadPemanfaatanImage,
   kknController.createProgramKerja
 );
 
@@ -792,7 +793,7 @@ router.put(
   "/program-kerja/:id",
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL"]),
-  upload.single("filePdf"),
+  safeUploadPemanfaatanImage,
   kknController.updateProgramKerja
 );
 
@@ -830,7 +831,7 @@ router.put(
   ["/program-kerja/:id", "/proker/:id"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
-  uploadPemanfaatanImage,
+  safeUploadPemanfaatanImage,
   kknController.updateProgramKerja
 );
 
@@ -838,7 +839,7 @@ router.patch(
   ["/program-kerja/:id", "/proker/:id"],
   authMiddleware,
   roleMiddleware(["MAHASISWA_KKN", "SUPER_USER", "DEVELOPER", "DPL", "DOSEN_PEMBIMBING"]),
-  uploadPemanfaatanImage,
+  safeUploadPemanfaatanImage,
   kknController.updateProgramKerja
 );
 

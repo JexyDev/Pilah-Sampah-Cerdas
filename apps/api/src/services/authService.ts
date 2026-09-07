@@ -126,19 +126,17 @@ export class AuthService {
       if (found) matchedKelurahan = found;
     }
 
-    // STEP 1: Fungsi helper generik untuk merangkai cakupan RW kelompok (100% Data-Driven)
     let kelompokRwName = "";
     const cRw = anyUser.studentProfile?.kelompok?.cakupanRw;
     if (cRw) {
       if (Array.isArray(cRw)) {
         kelompokRwName = cRw
           .map((item: any) => {
-            // Ambil hanya digit angka dan format selalu 2 digit (misal: 1 -> "01", 9 -> "09", 10 -> "10")
             const digits = String(item).replace(/[^\d]/g, "").trim();
             return digits ? digits.padStart(2, "0") : String(item).trim();
           })
           .filter(Boolean)
-          .join(", "); // Otomatis dipisahkan koma jika multi-RW
+          .join(", ");
       } else if (typeof cRw === "string" || typeof cRw === "number") {
         const digits = String(cRw).replace(/[^\d]/g, "").trim();
         kelompokRwName = digits ? digits.padStart(2, "0") : String(cRw).trim();
@@ -153,19 +151,14 @@ export class AuthService {
       matchedKelurahan ||
       "";
 
-    // STEP 2: Evaluasi field rwName sesuai peran (Role-Aware)
     let rwName = "";
     if (userRoleName === "MAHASISWA_KKN") {
-      // KHUSUS MAHASISWA KKN:
-      // Prioritaskan seluruh cakupan RW kelompoknya (jika kelompok punya cakupan multi-RW)
       rwName =
         kelompokRwName ||
         anyUser.studentProfile?.assignedRw?.name ||
         anyUser.rw?.name ||
         "";
     } else {
-      // UNTUK ROLE LAIN (Warga, Petugas RT, Petugas RW):
-      // Tetap prioritaskan RW domisili tunggal masing-masing
       rwName =
         anyUser.rw?.name ||
         anyUser.studentProfile?.assignedRw?.name ||
@@ -264,7 +257,6 @@ export class AuthService {
         fotoProfil: user.fotoProfil,
         kelurahan: kelurahanName,
         rw: rwName,
-        rwName: rwName,
         wilayah: dplAssignment || undefined,
         dplKelompok: dplGroupsList.length > 0 ? dplGroupsList : (anyUser as any).dplKelompok || [],
         provinsi: user.provinsi || "Jawa Barat",
@@ -587,19 +579,17 @@ export class AuthService {
       if (found) matchedKelurahan = found;
     }
 
-    // STEP 1: Fungsi helper generik untuk merangkai cakupan RW kelompok (100% Data-Driven)
     let kelompokRwName = "";
     const cRw = user.studentProfile?.kelompok?.cakupanRw;
     if (cRw) {
       if (Array.isArray(cRw)) {
         kelompokRwName = cRw
           .map((item: any) => {
-            // Ambil hanya digit angka dan format selalu 2 digit (misal: 1 -> "01", 9 -> "09", 10 -> "10")
             const digits = String(item).replace(/[^\d]/g, "").trim();
             return digits ? digits.padStart(2, "0") : String(item).trim();
           })
           .filter(Boolean)
-          .join(", "); // Otomatis dipisahkan koma jika multi-RW
+          .join(", ");
       } else if (typeof cRw === "string" || typeof cRw === "number") {
         const digits = String(cRw).replace(/[^\d]/g, "").trim();
         kelompokRwName = digits ? digits.padStart(2, "0") : String(cRw).trim();
@@ -615,19 +605,14 @@ export class AuthService {
       matchedKelurahan ||
       "";
 
-    // STEP 2: Evaluasi field rwName sesuai peran (Role-Aware)
     let rwName = "";
     if (roleName === "MAHASISWA_KKN") {
-      // KHUSUS MAHASISWA KKN:
-      // Prioritaskan seluruh cakupan RW kelompoknya (jika kelompok punya cakupan multi-RW)
       rwName =
         kelompokRwName ||
         user.studentProfile?.assignedRw?.name ||
         user.rw?.name ||
         "";
     } else {
-      // UNTUK ROLE LAIN (Warga, Petugas RT, Petugas RW):
-      // Tetap prioritaskan RW domisili tunggal masing-masing
       rwName =
         user.rw?.name ||
         user.studentProfile?.assignedRw?.name ||

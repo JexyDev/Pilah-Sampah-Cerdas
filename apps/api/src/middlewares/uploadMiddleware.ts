@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// File Filter (JPEG, PNG, WEBP, PDF)
+// File Filter (JPEG, PNG, WEBP, HEIF, HEIC, PDF)
 const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
   const allowedMimeTypes = [
     "image/jpeg",
@@ -37,20 +37,22 @@ const fileFilter = (req: Request, file: any, cb: multer.FileFilterCallback) => {
     "application/octet-stream",
     "application/pdf",
     "application/x-pdf",
+    "image/heic",
+    "image/heif",
   ];
   const mimetypeLower = (file.mimetype || "").toLowerCase();
   const extLower = path.extname(file.originalname || "").toLowerCase();
 
   if (
     allowedMimeTypes.includes(mimetypeLower) ||
-    [".jpg", ".jpeg", ".png", ".webp", ".pdf"].includes(extLower) ||
+    [".jpg", ".jpeg", ".png", ".webp", ".pdf", ".heic", ".heif"].includes(extLower) ||
     !file.mimetype
   ) {
     cb(null, true);
   } else {
     cb(
       new Error(
-        "Format file tidak valid. Hanya JPG, PNG, WEBP, dan PDF yang diperbolehkan."
+        "File format is not allowed. Only JPEG, PNG, WEBP, HEIF, HEIC, and PDF are permitted."
       ) as any,
       false
     );
