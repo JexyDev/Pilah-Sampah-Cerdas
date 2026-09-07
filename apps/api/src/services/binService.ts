@@ -21,6 +21,17 @@ const DENSITY = {
   NON_ORGANIC: 0.2, // Non-organic is lighter
 };
 
+export function checkIsOrganicCategory(categoryName?: string | null): boolean {
+  if (!categoryName) return false;
+  const upper = categoryName.toUpperCase().trim();
+  return upper.includes("ORGAN") && !upper.includes("ANORGAN") && !upper.includes("NON");
+}
+
+export function isSameCategory(catA?: string | null, catB?: string | null): boolean {
+  if (!catA || !catB) return false;
+  return checkIsOrganicCategory(catA) === checkIsOrganicCategory(catB);
+}
+
 // Helper to find local RW/RT and Petugas staff for a given bin area
 async function getStaffForBin(binRwId: number | null) {
   if (!binRwId) return [];
@@ -330,10 +341,10 @@ export class BinService {
 
       for (const det of detections) {
         // Find matching bin for this detection category
-        let targetBin = userBins.find((b) => b.category?.name === det.detectedType);
+        let targetBin = userBins.find((b) => isSameCategory(b.category?.name, det.detectedType));
 
         // If not found in user's bins, try to see if the scanned bin matches
-        if (!targetBin && bin.category?.name === det.detectedType) {
+        if (!targetBin && isSameCategory(bin.category?.name, det.detectedType)) {
           targetBin = bin;
         }
 
@@ -418,7 +429,7 @@ export class BinService {
         }
 
         // Weight
-        const isOrganic = targetBin.category?.name === "ORGANIC";
+        const isOrganic = checkIsOrganicCategory(targetBin.category?.name);
         const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
         const weightKg = parseFloat((vol * factor).toFixed(2));
 
@@ -540,7 +551,7 @@ export class BinService {
     }
 
     // 3. Validate trash type matching (Fallback for single detection)
-    if (bin.category.name !== detectedType) {
+    if (!isSameCategory(bin.category.name, detectedType)) {
       const error = new Error("BIN_TYPE_MISMATCH");
       (error as any).binType = bin.category.name;
       throw error;
@@ -592,7 +603,7 @@ export class BinService {
 
     // 6. Convert liters to weight based on density
     // Use fixed multiplier for Organic vs Non-Organic for now (simplified)
-    const isOrganic = bin.category.name === "ORGANIC";
+    const isOrganic = checkIsOrganicCategory(bin.category.name);
     const factor = isOrganic ? DENSITY.ORGANIC : DENSITY.NON_ORGANIC;
     const weightKg = parseFloat((estimatedVolume * factor).toFixed(2));
 
@@ -797,8 +808,8 @@ export class BinService {
             include: { category: true },
           });
 
-          const hasOrganik = currentBins.some((b) => b.category?.name === "ORGANIC");
-          const hasNonOrganik = currentBins.some((b) => b.category?.name === "NON_ORGANIC");
+          const hasOrganik = currentBins.some((b) => checkIsOrganicCategory(b.category?.name));
+          const hasNonOrganik = currentBins.some((b) => b.category?.name && !checkIsOrganicCategory(b.category?.name));
           const onboardingComplete = hasOrganik && hasNonOrganik;
 
           // Check duplicate category in the request payload itself
@@ -810,10 +821,11 @@ export class BinService {
           // 2. Enforce onboarding rules
           if (!onboardingComplete) {
             const catName = bin.category?.name || "";
-            if (catName === "ORGANIC" && hasOrganik) {
+            const isCatOrg = checkIsOrganicCategory(catName);
+            if (isCatOrg && hasOrganik) {
               throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:ORGANIC");
             }
-            if (catName === "NON_ORGANIC" && hasNonOrganik) {
+            if (!isCatOrg && hasNonOrganik) {
               throw new Error("ONBOARDING_INCOMPLETE_WRONG_CATEGORY:NON_ORGANIC");
             }
           }
