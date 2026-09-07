@@ -157,15 +157,19 @@ class LocalNotificationCacheService {
   String _resolveDefaultIcon(String type) {
     final typeUpper = type.toUpperCase();
     if (typeUpper.contains('POIN')) return 'star';
-    if (typeUpper.contains('TONG') || typeUpper.contains('KRITIS'))
+    if (typeUpper.contains('TONG') || typeUpper.contains('KRITIS')) {
       return 'warning';
-    if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN'))
+    }
+    if (typeUpper.contains('TIMBANGAN') || typeUpper.contains('PEMILAHAN')) {
       return 'scale';
-    if (typeUpper.contains('IZIN') || typeUpper.contains('DPL'))
+    }
+    if (typeUpper.contains('IZIN') || typeUpper.contains('DPL')) {
       return 'assignment_turned_in';
+    }
     if (typeUpper.contains('PRESENSI')) return 'location_on';
-    if (typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN'))
+    if (typeUpper.contains('AKTIVASI') || typeUpper.contains('BIN')) {
       return 'qr_code_scanner';
+    }
     return 'info';
   }
 }

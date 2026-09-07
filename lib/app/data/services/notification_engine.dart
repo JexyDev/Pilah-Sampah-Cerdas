@@ -100,8 +100,9 @@ class NotificationEngine {
           6,
           40,
         );
-        if (scheduledPagi.isBefore(now))
+        if (scheduledPagi.isBefore(now)) {
           scheduledPagi = scheduledPagi.add(const Duration(days: 1));
+        }
 
         const AndroidNotificationDetails androidPagi =
             AndroidNotificationDetails(
@@ -133,8 +134,9 @@ class NotificationEngine {
           15,
           40,
         );
-        if (scheduledSore.isBefore(now))
+        if (scheduledSore.isBefore(now)) {
           scheduledSore = scheduledSore.add(const Duration(days: 1));
+        }
 
         const AndroidNotificationDetails androidSore =
             AndroidNotificationDetails(
@@ -167,8 +169,9 @@ class NotificationEngine {
           6,
           0,
         );
-        if (scheduledPetugas.isBefore(now))
+        if (scheduledPetugas.isBefore(now)) {
           scheduledPetugas = scheduledPetugas.add(const Duration(days: 1));
+        }
 
         const AndroidNotificationDetails androidPetugas =
             AndroidNotificationDetails(

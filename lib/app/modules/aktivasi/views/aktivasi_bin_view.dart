@@ -33,6 +33,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   bool _argsLoaded = false;
   bool _hasOrganic = false;
   bool _hasAnorganic = false;
+  DateTime? _lastStepChangeTime;
 
   @override
   void initState() {
@@ -174,6 +175,12 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
   Future<bool> _onQrDetected(String qr) async {
     if (_bothBinsDetected) return false;
 
+    // Cooldown setelah step berubah — beri waktu user mengarahkan kamera ke QR berikutnya
+    if (_lastStepChangeTime != null &&
+        DateTime.now().difference(_lastStepChangeTime!) < const Duration(milliseconds: 1500)) {
+      return false;
+    }
+
     final detected = qr.trim();
     final error = _validateBinQr(detected, _step);
     if (error != null) {
@@ -188,6 +195,7 @@ class _AktivasiBinViewState extends ConsumerState<AktivasiBinView> {
           _bothBinsDetected = true; // Selesai jika Anorganik sudah ada
         } else {
           _step = 2; // Lanjut ke scan Anorganik
+          _lastStepChangeTime = DateTime.now(); // Mulai cooldown
         }
       } else if (_step == 2) {
         _qrAnorganik = detected;

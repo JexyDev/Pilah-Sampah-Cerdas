@@ -161,8 +161,9 @@ class _MonitoringWargaViewState extends ConsumerState<MonitoringWargaView> {
               .replaceAll(RegExp(r',?\s*RT\s*,?'), '')
               .replaceAll(RegExp(r',?\s*Kel\.?\s*$'), '')
               .trim();
-          if (cleaned.endsWith(','))
+          if (cleaned.endsWith(',')) {
             cleaned = cleaned.substring(0, cleaned.length - 1).trim();
+          }
           formattedAddr =
               '$cleaned, RW $targetRw, $kelDisplay, Kec. $targetKec';
         } else if (!formattedAddr.toLowerCase().contains('rw') &&

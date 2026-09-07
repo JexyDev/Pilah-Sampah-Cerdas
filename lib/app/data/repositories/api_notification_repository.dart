@@ -141,10 +141,12 @@ class ApiNotificationRepository implements NotificationRepository {
     try {
       final payload = <String, dynamic>{};
       if (readIds != null) payload['readIds'] = readIds;
-      if (markAllTimestamp != null)
+      if (markAllTimestamp != null) {
         payload['markAllTimestamp'] = markAllTimestamp;
-      if (deleteAllTimestamp != null)
+      }
+      if (deleteAllTimestamp != null) {
         payload['deleteAllTimestamp'] = deleteAllTimestamp;
+      }
 
       await apiClient.dio.put('/notifications/sync', data: payload);
     } catch (_) {

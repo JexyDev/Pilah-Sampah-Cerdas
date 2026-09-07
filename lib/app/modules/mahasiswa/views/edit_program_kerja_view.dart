@@ -65,8 +65,9 @@ class _EditProgramKerjaViewState extends ConsumerState<EditProgramKerjaView> {
     try {
       final repo = ref.read(kknRepositoryProvider);
       final detail = await repo.getProgramKerjaDetail(widget.prokerId);
-      if (detail == null)
+      if (detail == null) {
         throw Exception('Data program kerja tidak ditemukan.');
+      }
       _prokerData = detail;
       _prefillForm(detail);
     } catch (e) {

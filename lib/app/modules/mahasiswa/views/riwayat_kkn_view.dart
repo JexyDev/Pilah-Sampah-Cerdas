@@ -192,8 +192,9 @@ class _RiwayatKknViewState extends ConsumerState<RiwayatKknView> {
   }
 
   String _formatSubtitle(String subtitle) {
-    if (subtitle == 'MENUNGGU_VERIFIKASI_DPL')
+    if (subtitle == 'MENUNGGU_VERIFIKASI_DPL') {
       return '⏳ Menunggu Verifikasi DPL';
+    }
     if (subtitle == 'DISETUJUI') return '✅ Disetujui';
     if (subtitle == 'DITOLAK') return '❌ Ditolak';
     if (subtitle == 'MENUNGGU_VERIFIKASI_KETUA') return '⏳ Menunggu Verifikasi';

@@ -477,39 +477,49 @@ class _NotificationTile extends StatelessWidget {
 
   Color _resolveIconColor(String type) {
     final t = type.toUpperCase();
-    if (t.contains('POIN') || t == 'POIN_BERTAMBAH')
+    if (t.contains('POIN') || t == 'POIN_BERTAMBAH') {
       return const Color(0xFFF59E0B);
+    }
     if (t.contains('PENUH') ||
         t.contains('TONG') ||
         t.contains('KAPASITAS') ||
-        t.contains('DITOLAK'))
+        t.contains('DITOLAK')) {
       return const Color(0xFFEF4444);
-    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN'))
+    }
+    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN')) {
       return const Color(0xFFF97316);
+    }
     if (t.contains('DISETUJUI')) return const Color(0xFF10B981);
-    if (t.contains('PUNISHMENT') || t.contains('PENALTI'))
+    if (t.contains('PUNISHMENT') || t.contains('PENALTI')) {
       return const Color(0xFFEF4444);
-    if (t.contains('JADWAL') || t.contains('SCHEDULE'))
+    }
+    if (t.contains('JADWAL') || t.contains('SCHEDULE')) {
       return const Color(0xFF6366F1);
+    }
     return AppColors.primaryGreen;
   }
 
   Color _resolveIconBg(String type) {
     final t = type.toUpperCase();
-    if (t.contains('POIN') || t == 'POIN_BERTAMBAH')
+    if (t.contains('POIN') || t == 'POIN_BERTAMBAH') {
       return const Color(0xFFFEF3C7);
+    }
     if (t.contains('PENUH') ||
         t.contains('TONG') ||
         t.contains('KAPASITAS') ||
-        t.contains('DITOLAK'))
+        t.contains('DITOLAK')) {
       return const Color(0xFFFEE2E2);
-    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN'))
+    }
+    if (t.contains('PENGOSONGAN') || t.contains('PENGAJUAN')) {
       return const Color(0xFFFFEDD5);
+    }
     if (t.contains('DISETUJUI')) return const Color(0xFFD1FAE5);
-    if (t.contains('PUNISHMENT') || t.contains('PENALTI'))
+    if (t.contains('PUNISHMENT') || t.contains('PENALTI')) {
       return const Color(0xFFFEE2E2);
-    if (t.contains('JADWAL') || t.contains('SCHEDULE'))
+    }
+    if (t.contains('JADWAL') || t.contains('SCHEDULE')) {
       return const Color(0xFFEDE9FE);
+    }
     return AppColors.primaryGreen.withValues(alpha: 0.1);
   }
 }

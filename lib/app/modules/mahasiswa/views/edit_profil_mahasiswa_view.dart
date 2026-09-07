@@ -843,10 +843,12 @@ class _EditProfilMahasiswaViewState
                                 hintText: 'Ketik ulang kata sandi baru',
                               ),
                               validator: (v) {
-                                if (v == null || v.trim().isEmpty)
+                                if (v == null || v.trim().isEmpty) {
                                   return 'Wajib diisi';
-                                if (v != _newPasswordController.text)
+                                }
+                                if (v != _newPasswordController.text) {
                                   return 'Kata sandi tidak cocok';
+                                }
                                 return null;
                               },
                             ),

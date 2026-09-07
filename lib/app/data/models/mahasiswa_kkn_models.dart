@@ -639,10 +639,12 @@ class RegisterWargaRequest {
     if (qrCode != null && qrCode!.isNotEmpty) map['qrCode'] = qrCode;
     if (rwId != null && rwId!.isNotEmpty) map['rwId'] = rwId;
     if (rw != null && rw!.isNotEmpty) map['rw'] = rw;
-    if (kecamatan != null && kecamatan!.isNotEmpty)
+    if (kecamatan != null && kecamatan!.isNotEmpty) {
       map['kecamatan'] = kecamatan;
-    if (kelurahan != null && kelurahan!.isNotEmpty)
+    }
+    if (kelurahan != null && kelurahan!.isNotEmpty) {
       map['kelurahan'] = kelurahan;
+    }
     if (latitude != null) map['latitude'] = latitude;
     if (longitude != null) map['longitude'] = longitude;
     if (familySize != null) map['familySize'] = familySize;

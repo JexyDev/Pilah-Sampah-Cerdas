@@ -138,8 +138,9 @@ class _ForceChangePasswordViewState
 
         if (!_hasUnsavedChanges()) {
           ref.read(authProvider.notifier).logout();
-          if (context.mounted)
+          if (context.mounted) {
             Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+          }
           return;
         }
 

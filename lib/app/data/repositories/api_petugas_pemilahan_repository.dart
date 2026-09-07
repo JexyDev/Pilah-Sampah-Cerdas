@@ -96,9 +96,12 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
     String? rw,
   }) async {
     final Map<String, dynamic> queryParams = {};
-    if (kelurahan != null && kelurahan.isNotEmpty)
+    if (kelurahan != null && kelurahan.isNotEmpty) {
       queryParams['kelurahan'] = kelurahan;
-    if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
+    }
+    if (rw != null && rw.isNotEmpty) {
+      queryParams['rw'] = rw;
+    }
 
     try {
       final response = await apiClient.dio.get(
@@ -161,7 +164,7 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
         'classification': classification,
         'image': await MultipartFile.fromFile(
           compressedPhotoPath,
-          filename: compressedPhotoPath.split('/').last,
+          filename: compressedPhotoPath.split(RegExp(r'[\\/]')).last,
           contentType: MediaType('image', 'jpeg'),
         ),
         'isGlobalBin': true,
@@ -285,55 +288,32 @@ class ApiPetugasPemilahanRepository implements PetugasPemilahanRepository {
           rawList = response.data as List<dynamic>;
         }
 
-        return rawList
-            .map((e) {
-              if (e is Map<String, dynamic>) {
-                final user = e['user'] as Map<String, dynamic>? ?? {};
-                final bin = e['bin'] as Map<String, dynamic>? ?? {};
-                final rtRw =
-                    bin['rw'] as Map<String, dynamic>? ??
-                    user['rtRw'] as Map<String, dynamic>? ??
-                    {};
-                final kelurahan =
-                    bin['kelurahan'] as Map<String, dynamic>? ??
-                    user['kelurahan'] as Map<String, dynamic>? ??
-                    {};
+        return rawList.map((e) {
+          if (e is Map<String, dynamic>) {
+            final user = e['user'] as Map<String, dynamic>? ?? {};
+            final bin = e['bin'] as Map<String, dynamic>? ?? {};
+            final category = bin['category'] as Map<String, dynamic>? ?? {};
+            final rtRw = bin['rw'] as Map<String, dynamic>? ?? user['rtRw'] as Map<String, dynamic>? ?? {};
+            final kelurahan = bin['kelurahan'] as Map<String, dynamic>? ?? user['kelurahan'] as Map<String, dynamic>? ?? {};
+            final categoryName = category['name']?.toString() ?? e['jenisSampah']?.toString() ?? bin['binType']?.toString() ?? 'Organik';
 
-                return {
-                  'id': e['id']?.toString() ?? '',
-                  'wargaName':
-                      user['name']?.toString() ??
-                      e['wargaName']?.toString() ??
-                      '',
-                  'binCode':
-                      bin['qrCode']?.toString() ??
-                      e['binCode']?.toString() ??
-                      e['binId']?.toString() ??
-                      '',
-                  'alasan':
-                      e['alasan']?.toString() ?? e['reason']?.toString() ?? '',
-                  'address':
-                      user['address']?.toString() ??
-                      e['address']?.toString() ??
-                      e['alamat']?.toString() ??
-                      '',
-                  'rtRw': rtRw['name']?.toString() ?? e['rw']?.toString() ?? '',
-                  'kelurahan':
-                      kelurahan['name']?.toString() ??
-                      e['kelurahan']?.toString() ??
-                      '',
-                  'createdAt': e['createdAt']?.toString() ?? '',
-                  'status': e['status']?.toString() ?? 'PENDING',
-                  'evidencePhotoUrl':
-                      e['evidencePhotoUrl']?.toString() ??
-                      e['photoUrl']?.toString() ??
-                      '',
-                };
-              }
-              return <String, dynamic>{};
-            })
-            .where((m) => m.isNotEmpty && m['status'] == 'PENDING')
-            .toList();
+            return {
+              'id': e['id']?.toString() ?? '',
+              'binId': bin['id']?.toString() ?? e['binId']?.toString() ?? '',
+              'wargaName': user['name']?.toString() ?? e['wargaName']?.toString() ?? '',
+              'binCode': bin['qrCode']?.toString() ?? e['binCode']?.toString() ?? e['binId']?.toString() ?? '',
+              'category': categoryName,
+              'alasan': e['alasan']?.toString() ?? e['reason']?.toString() ?? '',
+              'address': user['address']?.toString() ?? e['address']?.toString() ?? e['alamat']?.toString() ?? '',
+              'rtRw': rtRw['name']?.toString() ?? e['rw']?.toString() ?? '',
+              'kelurahan': kelurahan['name']?.toString() ?? e['kelurahan']?.toString() ?? '',
+              'createdAt': e['createdAt']?.toString() ?? '',
+              'status': e['status']?.toString() ?? 'PENDING',
+              'evidencePhotoUrl': e['evidencePhotoUrl']?.toString() ?? e['photoUrl']?.toString() ?? '',
+            };
+          }
+          return <String, dynamic>{};
+        }).where((m) => m.isNotEmpty && m['status'] == 'PENDING').toList();
       }
       return [];
     } on DioException catch (e) {

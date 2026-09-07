@@ -125,8 +125,9 @@ class _MultiPoskoFormViewState extends ConsumerState<MultiPoskoFormView> {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied)
+        if (permission == LocationPermission.denied) {
           throw Exception('Izin lokasi ditolak.');
+        }
       }
       if (permission == LocationPermission.deniedForever) {
         await Geolocator.openAppSettings();

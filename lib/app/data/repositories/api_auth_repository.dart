@@ -176,8 +176,9 @@ class ApiAuthRepository implements AuthRepository {
     try {
       String endpoint = '/auth/register/warga'; // Default
       if (role == 'Mahasiswa') endpoint = '/auth/register/mahasiswa-kkn';
-      if (role == 'Petugas Pemilahan' || role == 'Petugas')
+      if (role == 'Petugas Pemilahan' || role == 'Petugas') {
         endpoint = '/auth/register/petugas-residu';
+      }
 
       final response = await apiClient.dio.post(endpoint, data: data);
       if (response.statusCode == 201 || response.statusCode == 200) {
@@ -1085,8 +1086,9 @@ class ApiAuthRepository implements AuthRepository {
             if (kota.isEmpty) kota = kotaObj['name']?.toString() ?? kota;
             if (kotaObj['provinsi'] is Map) {
               final provObj = kotaObj['provinsi'] as Map<String, dynamic>;
-              if (provinsi.isEmpty)
+              if (provinsi.isEmpty) {
                 provinsi = provObj['name']?.toString() ?? provinsi;
+              }
             }
           }
         }
@@ -1131,15 +1133,19 @@ class ApiAuthRepository implements AuthRepository {
       final parts = fullAddress.split(',').map((e) => e.trim()).toList();
       final filteredParts = parts.where((part) {
         final lowerPart = part.toLowerCase();
-        if (kelurahan.isNotEmpty && lowerPart.contains(kelurahan.toLowerCase()))
+        if (kelurahan.isNotEmpty && lowerPart.contains(kelurahan.toLowerCase())) {
           return false;
+        }
         if (fetchedKecamatan.isNotEmpty &&
-            lowerPart.contains(fetchedKecamatan.toLowerCase()))
+            lowerPart.contains(fetchedKecamatan.toLowerCase())) {
           return false;
-        if (kota.isNotEmpty && lowerPart.contains(kota.toLowerCase()))
+        }
+        if (kota.isNotEmpty && lowerPart.contains(kota.toLowerCase())) {
           return false;
-        if (provinsi.isNotEmpty && lowerPart.contains(provinsi.toLowerCase()))
+        }
+        if (provinsi.isNotEmpty && lowerPart.contains(provinsi.toLowerCase())) {
           return false;
+        }
         return true;
       }).toList();
       fullAddress = filteredParts.join(', ');
@@ -1300,8 +1306,9 @@ class ApiAuthRepository implements AuthRepository {
           String clean = _cleanName(item);
           if (clean.isNotEmpty &&
               !clean.contains('{') &&
-              !provinsis.contains(clean))
+              !provinsis.contains(clean)) {
             provinsis.add(clean);
+          }
         }
       }
     } catch (e) {
@@ -1321,8 +1328,9 @@ class ApiAuthRepository implements AuthRepository {
           String clean = _cleanName(item);
           if (clean.isNotEmpty &&
               !clean.contains('{') &&
-              !kotas.contains(clean))
+              !kotas.contains(clean)) {
             kotas.add(clean);
+          }
         }
       }
     } catch (e) {
@@ -1444,8 +1452,9 @@ class ApiAuthRepository implements AuthRepository {
               }
             }
 
-            if (name.isNotEmpty && !name.contains('{') && !rtRws.contains(name))
+            if (name.isNotEmpty && !name.contains('{') && !rtRws.contains(name)) {
               rtRws.add(name);
+            }
             if (kel.isNotEmpty &&
                 !kel.contains('{') &&
                 !kelurahans.contains(kel)) {
@@ -1461,8 +1470,9 @@ class ApiAuthRepository implements AuthRepository {
             final clean = _cleanName(item);
             if (clean.isNotEmpty &&
                 !clean.contains('{') &&
-                !rtRws.contains(clean))
+                !rtRws.contains(clean)) {
               rtRws.add(clean);
+            }
           }
         }
       }

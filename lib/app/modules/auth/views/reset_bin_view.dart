@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -67,11 +68,52 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
     }
   }
 
-  Future<void> _pickImage() async {
+  void _showImageSourcePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded, color: AppColors.primaryGreen),
+                  title: const Text('Ambil Foto dari Kamera', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryGreen),
+                  title: const Text('Pilih dari Galeri', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
       final file = await picker.pickImage(
-          source: ImageSource.gallery, imageQuality: 85);
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
       if (file != null) {
         final size = (await file.length()) / 1024;
         setState(() {
@@ -81,7 +123,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
       }
     } catch (e) {
       if (mounted) {
-        _showThrottledSnackBar('Gagal memilih foto: $e', backgroundColor: AppColors.dangerRed);
+        _showThrottledSnackBar('Gagal mengambil foto: $e', backgroundColor: AppColors.dangerRed);
       }
     }
   }
@@ -189,7 +231,10 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
   Widget _buildPetugasSection(PetugasPengosonganState petugasState, UserEntity? user) {
     final activePetugas = petugasState.statusResponse?.petugas;
     final listPetugas = petugasState.petugasWilayah;
-    final rwText = (user?.rw != null && user!.rw.isNotEmpty) ? 'RW ${user.rw}' : 'Wilayah Anda';
+    final rawRw = user?.rw.trim() ?? '';
+    final rwText = rawRw.isNotEmpty
+        ? (rawRw.toUpperCase().startsWith('RW') ? rawRw : 'RW $rawRw')
+        : 'Wilayah Anda';
 
     if (_selectedPetugasId == null) {
       if (activePetugas != null) {
@@ -352,7 +397,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Pengosongan dilakukan setelah sampah diangkut oleh petugas. Anda WAJIB memfoto tempat sampah yang sudah KOSONG sebagai bukti pengosongan.',
+                  'Pengajuan pengosongan dilakukan saat tempat sampah sudah penuh (minimal 70%). Anda WAJIB memfoto tempat sampah yang PENUH sebagai bukti pengajuan pengosongan.',
                   style: TextStyle(fontSize: 12.5, color: AppColors.textPrimary, height: 1.4),
                 ),
               ),
@@ -604,17 +649,49 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.image_rounded, color: AppColors.primaryGreen),
-                  const SizedBox(width: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(_evidencePhotoPath!),
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.image_rounded, color: AppColors.primaryGreen, size: 36),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      'Foto terpilih (${_compressedKB.toStringAsFixed(0)} KB)',
-                      style: const TextStyle(color: AppColors.primaryGreen, fontSize: 13),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Foto Bukti Terpilih',
+                          style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                        Text(
+                          '${_compressedKB.toStringAsFixed(0)} KB',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
+                    tooltip: 'Ganti Foto',
                     icon: const Icon(Icons.edit_rounded, size: 20, color: AppColors.primaryGreen),
-                    onPressed: _pickImage,
+                    onPressed: _showImageSourcePicker,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Hapus Foto',
+                    icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.dangerRed),
+                    onPressed: () {
+                      setState(() {
+                        _evidencePhotoPath = null;
+                        _compressedKB = 0;
+                      });
+                    },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -625,7 +702,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: _pickImage,
+                onPressed: _showImageSourcePicker,
                 icon: const Icon(Icons.camera_alt_outlined),
                 label: const Text('Upload Foto Bukti (< 5MB)'),
                 style: OutlinedButton.styleFrom(
@@ -737,7 +814,7 @@ class _ResetBinViewState extends ConsumerState<ResetBinView> {
           const SizedBox(height: AppDimensions.sm),
           Text(
             isPending
-                ? 'Foto bukti pengosongan berhasil dikirimkan ke Petugas Pemilah RW Anda. Mohon tunggu verifikasi oleh petugas.'
+                ? 'Foto bukti tempat sampah penuh berhasil dikirimkan ke Petugas Pemilah RW Anda. Mohon tunggu verifikasi oleh petugas.'
                 : 'Tempat sampah berhasil dikosongkan dan siap digunakan kembali.',
             style: Theme.of(context).textTheme.bodySmall,
             textAlign: TextAlign.center,

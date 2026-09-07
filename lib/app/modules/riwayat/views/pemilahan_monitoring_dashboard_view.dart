@@ -503,10 +503,12 @@ class _PemilahanMonitoringDashboardViewState
 
       if (_selectedKategori != 'Semua') {
         final cat = item.wasteType.name.toLowerCase();
-        if (_selectedKategori == 'Organik' && !cat.contains('organ'))
+        if (_selectedKategori == 'Organik' && !cat.contains('organ')) {
           return false;
-        if (_selectedKategori == 'Anorganik' && cat.contains('organ'))
+        }
+        if (_selectedKategori == 'Anorganik' && cat.contains('organ')) {
           return false;
+        }
       }
 
       if (_selectedDateRange != null) {

@@ -264,8 +264,9 @@ class AktivasiBinNotifier extends StateNotifier<AktivasiBinState> {
     try {
       final List<String> qrSerials = [];
       if (qrOrganik != null && qrOrganik.isNotEmpty) qrSerials.add(qrOrganik);
-      if (qrAnorganik != null && qrAnorganik.isNotEmpty)
+      if (qrAnorganik != null && qrAnorganik.isNotEmpty) {
         qrSerials.add(qrAnorganik);
+      }
 
       final results = await _binRepository.activateBinsBatch(
         qrSerials: qrSerials,

@@ -294,10 +294,12 @@ class _GantiPasswordWargaViewState
                             ),
                           ),
                           validator: (v) {
-                            if (v == null || v.isEmpty)
+                            if (v == null || v.isEmpty) {
                               return 'Kata sandi baru wajib diisi';
-                            if (v.length < 8)
+                            }
+                            if (v.length < 8) {
                               return 'Kata sandi minimal 8 karakter';
+                            }
                             return null;
                           },
                         ),
@@ -341,10 +343,12 @@ class _GantiPasswordWargaViewState
                             ),
                           ),
                           validator: (v) {
-                            if (v == null || v.isEmpty)
+                            if (v == null || v.isEmpty) {
                               return 'Konfirmasi kata sandi wajib diisi';
-                            if (v != _newPasswordController.text)
+                            }
+                            if (v != _newPasswordController.text) {
                               return 'Konfirmasi kata sandi tidak cocok';
+                            }
                             return null;
                           },
                         ),

@@ -713,15 +713,17 @@ class _ScanFlowViewState extends ConsumerState<ScanFlowView> {
                 hint: isOrganic ? 'BIN-ORG-EF2072F0' : 'BIN-ANORG-8215BE3D',
                 overlayColor: AppColors.primaryGreen,
                 onQrDetected: (qrCode) async {
-                  if (_isAiSheetOpen)
+                  if (_isAiSheetOpen) {
                     return false; // Jangan scan jika popup AI masih terbuka
+                  }
 
                   // Guard: skip jika sudah loading, sukses, atau sedang ada error tampil
                   final s = ref.read(scanFlowProvider);
                   if (s.isLoading ||
                       s.scanResult != null ||
-                      s.errorCode != null)
+                      s.errorCode != null) {
                     return false;
+                  }
 
                   // CEK LOKAL JIKA BIN SEDANG PENGAJUAN (isResetPending)
                   final bins = ref.read(binsProvider).value ?? [];

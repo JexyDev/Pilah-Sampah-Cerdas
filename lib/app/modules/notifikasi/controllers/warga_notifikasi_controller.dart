@@ -124,8 +124,9 @@ final wargaNotificationsProvider = FutureProvider<List<NotificationEntity>>((
           (n.title == notif.title &&
               n.desc == notif.desc &&
               n.type == notif.type),
-    ))
+    )) {
       continue;
+    }
 
     result.add(notif);
 

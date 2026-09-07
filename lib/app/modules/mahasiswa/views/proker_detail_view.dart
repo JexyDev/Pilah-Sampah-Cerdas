@@ -14,8 +14,9 @@ final prokerDetailProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, id) async {
       final repo = ref.read(kknRepositoryProvider);
       final detail = await repo.getProgramKerjaDetail(id);
-      if (detail == null)
+      if (detail == null) {
         throw Exception('Data program kerja tidak ditemukan.');
+      }
       return detail;
     });
 
@@ -157,8 +158,9 @@ class ProkerDetailView extends ConsumerWidget {
       floatingActionButton: state.whenOrNull(
         data: (data) {
           final pl = (data['statusPelaksanaan'] ?? '').toString().toUpperCase();
-          if (pl != 'SEDANG_BERJALAN' && pl != 'SEDANG_DILAKSANAKAN')
+          if (pl != 'SEDANG_BERJALAN' && pl != 'SEDANG_DILAKSANAKAN') {
             return null;
+          }
           return Column(
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,

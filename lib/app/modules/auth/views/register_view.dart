@@ -744,7 +744,6 @@ class _RegisterViewState extends ConsumerState<RegisterView> {
                                 items: const [
                                   DropdownMenuItem(value: 'Warga', child: Text('Warga')),
                                   DropdownMenuItem(value: 'Petugas Pemilahan', child: Text('Petugas Pemilah')),
-                                  DropdownMenuItem(value: 'Mahasiswa', child: Text('Mahasiswa KKN')),
                                 ],
                                 onChanged: (val) {
                                   if (val != null) setState(() => _selectedRole = val);

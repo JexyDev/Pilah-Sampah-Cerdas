@@ -100,31 +100,36 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
     repo
         .getDashboard()
         .then((dash) {
-          if (mounted)
+          if (mounted) {
             state = state.copyWith(dashboard: dash, isLoading: false);
+          }
         })
         .catchError((_) {
-          if (mounted && cachedDash == null)
+          if (mounted && cachedDash == null) {
             state = state.copyWith(isLoading: false);
+          }
         });
 
     repo
         .getJadwalHarian()
         .then((jadwal) {
-          if (mounted)
+          if (mounted) {
             state = state.copyWith(jadwalList: jadwal, isLoading: false);
+          }
         })
         .catchError((_) {
-          if (mounted && cachedJadwal == null)
+          if (mounted && cachedJadwal == null) {
             state = state.copyWith(isLoading: false);
+          }
         });
 
     // Fetch Daftar Pengajuan Warga
     repo
         .getDaftarPengajuanWarga()
         .then((pengajuan) {
-          if (mounted)
+          if (mounted) {
             state = state.copyWith(pengajuanList: pengajuan, isLoading: false);
+          }
         })
         .catchError((_) {
           if (mounted) state = state.copyWith(isLoading: false);
@@ -147,8 +152,9 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
         );
       }
     } catch (_) {
-      if (mounted && state.historyList.isEmpty)
+      if (mounted && state.historyList.isEmpty) {
         state = state.copyWith(isLoading: false);
+      }
     }
   }
 
@@ -239,8 +245,9 @@ class PetugasPemilahanNotifier extends StateNotifier<PetugasPemilahanState> {
 
       final now = DateTime.now();
       if (dateRange == 'HARI_INI') {
-        if (dt.year != now.year || dt.month != now.month || dt.day != now.day)
+        if (dt.year != now.year || dt.month != now.month || dt.day != now.day) {
           return false;
+        }
       } else if (dateRange == 'MINGGU_INI') {
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 6));

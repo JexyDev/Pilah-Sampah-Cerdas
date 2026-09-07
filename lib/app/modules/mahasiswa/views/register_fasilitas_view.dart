@@ -684,8 +684,9 @@ class _RegisterFasilitasViewState extends ConsumerState<RegisterFasilitasView> {
                                           )
                                           .toList(),
                                       onChanged: (val) {
-                                        if (val != null)
+                                        if (val != null) {
                                           setState(() => _kapasitasUnit = val);
+                                        }
                                       },
                                     ),
                                   ),

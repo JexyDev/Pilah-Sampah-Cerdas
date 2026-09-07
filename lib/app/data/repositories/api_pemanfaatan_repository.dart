@@ -30,8 +30,9 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
     try {
       final Map<String, dynamic> queryParams = {};
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (kategori != null && kategori.isNotEmpty)
+      if (kategori != null && kategori.isNotEmpty) {
         queryParams['kategori'] = kategori;
+      }
 
       final response = await apiClient.dio.get(
         ApiEndpoints.pemanfaatan,
@@ -90,10 +91,12 @@ class ApiPemanfaatanRepository implements PemanfaatanRepository {
   }) async {
     try {
       final Map<String, dynamic> queryParams = {};
-      if (status != null && status.isNotEmpty && status != 'ALL')
+      if (status != null && status.isNotEmpty && status != 'ALL') {
         queryParams['status'] = status;
-      if (kategori != null && kategori.isNotEmpty && kategori != 'ALL')
+      }
+      if (kategori != null && kategori.isNotEmpty && kategori != 'ALL') {
         queryParams['kategori'] = kategori;
+      }
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
       final response = await apiClient.dio.get(

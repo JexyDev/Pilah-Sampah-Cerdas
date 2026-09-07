@@ -601,13 +601,15 @@ class _MahasiswaViewState extends ConsumerState<MahasiswaView>
     LocationPingState locationState,
     KknLocationState kknLocationState,
   ) {
-    if (state.timesheetSummary == null)
+    if (state.timesheetSummary == null) {
       return _buildLocationStatus(locationState, kknLocationState);
+    }
 
     final summary = state.timesheetSummary!;
     final students = summary['students'] as List?;
-    if (students == null || students.isEmpty)
+    if (students == null || students.isEmpty) {
       return _buildLocationStatus(locationState, kknLocationState);
+    }
 
     final student = students.first as Map<String, dynamic>;
     final totalFormatted =

@@ -356,8 +356,9 @@ class RiwayatProgramKerjaView extends ConsumerWidget {
                                   final detail = await ref
                                       .read(kknRepositoryProvider)
                                       .getProgramKerjaDetail(id);
-                                  if (context.mounted)
+                                  if (context.mounted) {
                                     Navigator.pop(context); // tutup loading
+                                  }
                                   if (detail != null && context.mounted) {
                                     await Navigator.pushNamed(
                                       context,

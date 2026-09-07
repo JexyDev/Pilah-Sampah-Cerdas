@@ -210,8 +210,9 @@ class KetersediaanQrController extends StateNotifier<KetersediaanQrState> {
             qrCodeStr.toUpperCase().contains('-AGN-');
 
         final formattedSerialCode = (() {
-          if (qrCodeStr.startsWith('BSK-') || qrCodeStr.startsWith('TC-'))
+          if (qrCodeStr.startsWith('BSK-') || qrCodeStr.startsWith('TC-')) {
             return qrCodeStr;
+          }
           final tag = isAnorganik ? 'AGN' : 'OGN';
           final digits = qrCodeStr.replaceAll(RegExp(r'\D'), '');
           final seq = digits.isNotEmpty

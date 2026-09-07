@@ -6,6 +6,7 @@ import '../../../routes/app_routes.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../data/models/petugas_pemilahan_models.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
+import 'verifikasi_pengosongan_view.dart';
 class PetugasPemilahanView extends ConsumerWidget {
   const PetugasPemilahanView({super.key});
 
@@ -141,7 +142,6 @@ class PetugasPemilahanView extends ConsumerWidget {
                       const SizedBox(height: 12),
                       ...state.pengajuanList.map((pengajuan) {
                         final wargaName = pengajuan['wargaName'] ?? '';
-                        final pengajuanId = pengajuan['id'] ?? '';
                         final alasan = pengajuan['alasan'] ?? '';
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -178,27 +178,26 @@ class PetugasPemilahanView extends ConsumerWidget {
                                       ],
                                     ),
                                   ),
-                                  ElevatedButton(
+                                  ElevatedButton.icon(
                                     onPressed: () async {
-                                      final ok = await ref.read(petugasPemilahanControllerProvider.notifier).claimPengajuanReset(pengajuanId);
-                                      if (context.mounted) {
-                                        final errorMsg = ref.read(petugasPemilahanControllerProvider).errorMessage;
-                                        ScaffoldMessenger.of(context).clearSnackBars();
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(ok ? 'Pengajuan berhasil diterima & diproses!' : (errorMsg ?? 'Gagal memproses pengajuan.')),
-                                            backgroundColor: ok ? AppColors.primaryGreen : AppColors.maroonRed,
-                                          ),
-                                        );
+                                      final ok = await Navigator.push<bool>(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => VerifikasiPengosonganView(pengajuan: pengajuan),
+                                        ),
+                                      );
+                                      if (ok == true) {
+                                        ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryGreen,
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                     ),
-                                    child: const Text('Terima', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 14),
+                                    label: const Text('Verifikasi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                   ),
                                 ],
                               ),

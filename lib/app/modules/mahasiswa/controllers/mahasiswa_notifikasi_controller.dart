@@ -224,8 +224,9 @@ final mahasiswaNotificationsProvider = FutureProvider<List<NotificationEntity>>(
           (n.title == sanitizedTitle &&
               n.desc == sanitizedDesc &&
               n.type == notif.type),
-    ))
+    )) {
       continue;
+    }
 
     // Pastikan konversi waktu ke lokal jika formatnya UTC (ada 'Z')
     NotificationEntity finalNotif = notif.copyWith(

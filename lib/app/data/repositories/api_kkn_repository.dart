@@ -19,8 +19,9 @@ String? _extractError(dynamic data, String? fallback) {
   } else if (data is String && data.isNotEmpty) {
     if (data.contains('<!DOCTYPE') ||
         data.contains('<html') ||
-        data.length > 100)
+        data.length > 100) {
       return fallback;
+    }
     return data;
   }
   return fallback;
@@ -344,8 +345,9 @@ class ApiKknRepository implements KknRepository {
   }) async {
     try {
       final Map<String, dynamic> queryParams = {};
-      if (kelurahan != null && kelurahan.isNotEmpty)
+      if (kelurahan != null && kelurahan.isNotEmpty) {
         queryParams['kelurahan'] = kelurahan;
+      }
       if (rw != null && rw.isNotEmpty) queryParams['rw'] = rw;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
@@ -1581,10 +1583,11 @@ class ApiKknRepository implements KknRepository {
       );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException)
+      if (e is DioException) {
         throw Exception(
           _extractError(e.response?.data, 'Gagal update pemanfaatan'),
         );
+      }
       rethrow;
     }
   }
@@ -1597,10 +1600,11 @@ class ApiKknRepository implements KknRepository {
       );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException)
+      if (e is DioException) {
         throw Exception(
           _extractError(e.response?.data, 'Gagal hapus pemanfaatan'),
         );
+      }
       rethrow;
     }
   }
@@ -1651,8 +1655,9 @@ class ApiKknRepository implements KknRepository {
       );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException)
+      if (e is DioException) {
         throw Exception(_extractError(e.response?.data, 'Gagal update panen'));
+      }
       rethrow;
     }
   }
@@ -1665,8 +1670,9 @@ class ApiKknRepository implements KknRepository {
       );
       return response.statusCode == 200;
     } catch (e) {
-      if (e is DioException)
+      if (e is DioException) {
         throw Exception(_extractError(e.response?.data, 'Gagal hapus panen'));
+      }
       rethrow;
     }
   }

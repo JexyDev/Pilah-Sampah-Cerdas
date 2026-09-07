@@ -7,7 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
+import '../../../data/models/bin_entity.dart';
+import '../../../data/providers/repository_providers.dart';
 import '../../../data/services/location_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../shared/controllers/connectivity_controller.dart';
 import '../../shared/widgets/feature_rating_dialog.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
@@ -27,24 +30,21 @@ class _TimbanganPemilahanViewState
 
   String? _photoPath;
   Position? _currentLocation;
-  String _selectedClassification = 'Pemilahan Non-B3';
+  String _selectedClassification = 'Organik';
   bool _isSubmitting = false;
+  bool _isScanningAi = false;
   SharedPreferences? _prefs;
 
   int _estimatedPoints = 0;
 
   bool get _canSubmit {
-    final weight =
-        double.tryParse(_weightController.text.trim().replaceAll(',', '.')) ??
-        0.0;
-    return _photoPath != null && weight > 0 && !_isSubmitting;
+    final weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.')) ?? 0.0;
+    return _photoPath != null && weight > 0 && !_isSubmitting && !_isScanningAi;
   }
 
   final List<String> _classifications = [
-    'Pemilahan Non-B3',
-    'Pemilahan B3',
-    'Pemilahan Popok/Pembalut',
-    'Pemilahan Lainnya',
+    'Organik',
+    'Anorganik',
   ];
 
   @override
@@ -135,17 +135,57 @@ class _TimbanganPemilahanViewState
         setState(() {
           _photoPath = file.path;
           _currentLocation = loc;
-          _calculatePoints();
+          _isScanningAi = true;
         });
+
+        // ponytail: AI auto-classification and weight estimation. Fallback to manual entry if offline/timeout.
+        try {
+          final user = ref.read(authProvider).user;
+          final userId = user?.id ?? '';
+          final aiResult = await ref.read(binRepositoryProvider).detectWaste(
+            userId,
+            imagePath: file.path,
+          );
+          if (mounted) {
+            final category = aiResult.detectedType == WasteType.organic ? 'Organik' : 'Anorganik';
+            setState(() {
+              _selectedClassification = category;
+              _weightController.text = aiResult.displayWeightKg.toString();
+            });
+            _calculatePoints();
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('AI terdeteksi: $category (${aiResult.displayWeightKg} Kg)'),
+                backgroundColor: AppColors.primaryGreen,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('[TimbanganPemilahan] AI Scan fallback: $e');
+          if (mounted) {
+            _calculatePoints();
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('AI tidak merespon. Silakan isi kategori & berat secara manual.'),
+                backgroundColor: AppColors.warningOrange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() => _isScanningAi = false);
+          }
+        }
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengambil foto: $e'),
-          backgroundColor: AppColors.maroonRed,
-        ),
+        SnackBar(content: Text('Gagal mengambil foto: $e'), backgroundColor: AppColors.maroonRed),
       );
     }
   }
@@ -163,14 +203,11 @@ class _TimbanganPemilahanViewState
       return;
     }
 
-    final double? weight = double.tryParse(
-      _weightController.text.trim().replaceAll(',', '.'),
-    );
-    if (weight == null || weight <= 0 || weight > 9999) {
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
+    final double? weight = double.tryParse(_weightController.text.trim().replaceAll(',', '.'));
+    if (weight == null || weight <= 0 || weight > 500) {
+      ScaffoldMessenger.of(context).clearSnackBars(); ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Berat timbangan tidak valid!'),
+          content: Text('Berat timbangan tidak valid (0.1 - 500 Kg)!'),
           backgroundColor: AppColors.maroonRed,
         ),
       );
@@ -584,7 +621,7 @@ class _TimbanganPemilahanViewState
     bool hasUnsavedChanges() {
       return _weightController.text.isNotEmpty ||
           _photoPath != null ||
-          _selectedClassification != 'Pemilahan Non-B3';
+          _selectedClassification != _classifications.first;
     }
 
     return PopScope(
@@ -637,437 +674,342 @@ class _TimbanganPemilahanViewState
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.backgroundCanvas,
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(title: const Text('Input Timbangan')),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.md),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Card
-                Container(
-                  padding: const EdgeInsets.all(AppDimensions.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.scale_rounded,
-                        color: AppColors.primaryGreen,
-                        size: 28,
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke Tempat Sampah Pemilahan Global RW.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+      backgroundColor: AppColors.backgroundCanvas,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: const Text('Input Timbangan'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppDimensions.md),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Card
+              Container(
+                padding: const EdgeInsets.all(AppDimensions.md),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
                 ),
-                const SizedBox(height: AppDimensions.lg),
-
-                // 1. Lokasi / Bin Global Info
-                const Text(
-                  'Target Penampungan',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.delete_sweep_rounded,
-                        color: AppColors.primaryGreen,
+                child: const Row(
+                  children: [
+                    Icon(Icons.scale_rounded, color: AppColors.primaryGreen, size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Input manual hasil timbangan fisik pemilahan untuk terakumulasi ke Tempat Sampah Pemilahan Global RW.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Tempat Sampah Pemilahan Global RW',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              'Tercatat di Audit Trail Monitoring RW & DLH',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.lg),
-
-                // 2. Input Berat Timbangan (Kg)
-                const Text(
-                  'Berat Fisik Timbangan (Kg)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _weightController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: false,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      RegExp(r'^\d*[\.\,]?\d*'),
                     ),
                   ],
-                  decoration: const InputDecoration(
-                    hintText: 'Masukkan berat (misal: 12.5 atau 12,5)',
-                    prefixIcon: Icon(
-                      Icons.scale_outlined,
-                      color: AppColors.primaryGreen,
-                    ),
-                    suffixText: 'Kg',
-                    suffixStyle: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty)
-                      return 'Berat timbangan wajib diisi';
-                    final val = double.tryParse(v.replaceAll(',', '.'));
-                    if (val == null || val <= 0)
-                      return 'Masukkan angka positif';
-                    if (val > 9999) return 'Maksimal 9999 kg';
-                    return null;
-                  },
                 ),
-                const SizedBox(height: AppDimensions.lg),
+              ),
+              const SizedBox(height: AppDimensions.lg),
 
-                // 3. Klasifikasi Pemilahan
-                const Text(
-                  'Klasifikasi Kategori Pemilahan',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              // 1. Lokasi / Bin Global Info
+              const Text('Target Penampungan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
                 ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedClassification,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(
-                      Icons.category_outlined,
-                      color: AppColors.primaryGreen,
+                child: const Row(
+                  children: [
+                    Icon(Icons.delete_sweep_rounded, color: AppColors.primaryGreen),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Tempat Sampah Pemilahan Global RW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('Tercatat di Audit Trail Monitoring RW & DLH', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        ],
+                      ),
                     ),
-                  ),
-                  items: _classifications
-                      .map(
-                        (c) => DropdownMenuItem(
-                          value: c,
-                          child: Text(c, style: const TextStyle(fontSize: 14)),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) {
-                    if (v != null) {
-                      setState(() => _selectedClassification = v);
-                      _saveDraft();
-                    }
-                  },
+                  ],
                 ),
-                const SizedBox(height: AppDimensions.lg),
+              ),
+              const SizedBox(height: AppDimensions.lg),
 
-                // 4. Foto Timbangan (Kamera Langsung)
-                const Text(
-                  'Foto Bukti Timbangan (Kamera Langsung)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              // 2. Input Berat Timbangan (Kg)
+              const Text('Berat Fisik Timbangan (Kg)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _weightController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: false),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.\,]?\d*'))],
+                decoration: const InputDecoration(
+                  hintText: 'Masukkan berat (misal: 12.5 atau 12,5)',
+                  prefixIcon: Icon(Icons.scale_outlined, color: AppColors.primaryGreen),
+                  suffixText: 'Kg',
+                  suffixStyle: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
                 ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: _takePhoto,
-                  child: Container(
-                    height: 200, // Make camera area taller for better view
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: _photoPath == null
-                            ? Colors.grey[300]!
-                            : AppColors.primaryGreen,
-                        width: 2,
-                      ),
-                    ),
-                    child: _photoPath != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.file(
-                                  File(_photoPath!),
-                                  fit: BoxFit.cover,
-                                ),
-                                Positioned(
-                                  right: 12,
-                                  top: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.black54,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                if (_currentLocation != null)
-                                  Positioned(
-                                    left: 12,
-                                    bottom: 12,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black54,
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on,
-                                            color: AppColors.primaryGreen,
-                                            size: 14,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'GPS Tercatat: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          )
-                        : const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.camera_alt_rounded,
-                                size: 48,
-                                color: AppColors.primaryGreen,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Ketuk untuk Ambil Foto Timbangan',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.primaryGreen,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Hanya mendukung kamera langsung',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Berat timbangan wajib diisi';
+                  final val = double.tryParse(v.replaceAll(',', '.'));
+                  if (val == null || val <= 0) return 'Masukkan angka positif';
+                  if (val > 500) return 'Maksimal 500 kg per input';
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppDimensions.lg),
+
+              // 3. Klasifikasi Pemilahan
+              const Text('Klasifikasi Kategori Pemilahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                key: ValueKey(_selectedClassification),
+                initialValue: _selectedClassification,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.category_outlined, color: AppColors.primaryGreen),
                 ),
-              ],
-            ),
-          ),
-        ),
-        bottomNavigationBar: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.all(AppDimensions.md),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Dynamic Point Estimator
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.stars_rounded,
-                        color: AppColors.warningOrange,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Estimasi Poin Sementara (Dihitung Server)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  '$_estimatedPoints',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'Pts',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryGreen,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_photoPath != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.warningYellow.withValues(
-                              alpha: 0.2,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.camera_alt_rounded,
-                                size: 12,
-                                color: AppColors.warningOrange,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '+10',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.warningOrange,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.md),
-                // Submit Button
-                SizedBox(
+                items: _classifications
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14))))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) {
+                    setState(() => _selectedClassification = v);
+                    _saveDraft();
+                  }
+                },
+              ),
+              const SizedBox(height: AppDimensions.lg),
+
+              // 4. Foto Timbangan (Kamera Langsung & AI Scan)
+              const Text('Foto Bukti Timbangan (AI Scan)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _isScanningAi ? null : _takePhoto,
+                child: Container(
+                  height: 200, // Make camera area taller for better view
                   width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: _canSubmit ? _submitLog : null,
-                    icon: _isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.check_circle_rounded,
-                            color: Colors.white,
-                          ),
-                    label: Text(
-                      _isSubmitting
-                          ? 'Mengirim Data...'
-                          : 'Simpan Timbangan Pemilahan',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Colors.white,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGreen,
-                      disabledBackgroundColor: Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _photoPath == null ? Colors.grey[300]! : AppColors.primaryGreen,
+                      width: 2,
                     ),
                   ),
+                  child: _photoPath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.file(File(_photoPath!), fit: BoxFit.cover),
+                              Positioned(
+                                right: 12,
+                                top: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black54,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                                ),
+                              ),
+                              if (_currentLocation != null)
+                                Positioned(
+                                  left: 12,
+                                  bottom: 12,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.location_on, color: AppColors.primaryGreen, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'GPS Tercatat: ${_currentLocation!.latitude.toStringAsFixed(4)}, ${_currentLocation!.longitude.toStringAsFixed(4)}',
+                                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              if (_isScanningAi)
+                                Container(
+                                  color: Colors.black54,
+                                  child: const Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircularProgressIndicator(color: Colors.white),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'Memindai sampah dengan AI...',
+                                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : _isScanningAi
+                          ? const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(color: AppColors.primaryGreen),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Memindai sampah dengan AI...',
+                                    style: TextStyle(color: AppColors.primaryGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.camera_alt_rounded, size: 48, color: AppColors.primaryGreen),
+                                SizedBox(height: 8),
+                                Text('Ketuk untuk Ambil Foto Timbangan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                                SizedBox(height: 4),
+                                Text('AI otomatis mengklasifikasi & mengisi estimasi berat', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              ],
+                            ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(AppDimensions.md),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Dynamic Point Estimator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars_rounded, color: AppColors.warningOrange, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Estimasi Poin Sementara (Dihitung Server)',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                '$_estimatedPoints',
+                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primaryGreen),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'Pts',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_photoPath != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.warningYellow.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.camera_alt_rounded, size: 12, color: AppColors.warningOrange),
+                            SizedBox(width: 4),
+                            Text(
+                              '+10',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.warningOrange,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppDimensions.md),
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _canSubmit ? _submitLog : null,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.check_circle_rounded,
+                          color: Colors.white,
+                        ),
+                  label: Text(
+                    _isSubmitting
+                        ? 'Mengirim Data...'
+                        : 'Simpan Timbangan Pemilahan',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGreen,
+                    disabledBackgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
 }

@@ -699,8 +699,9 @@ class KknBackgroundTaskHandler extends TaskHandler {
     if (_apiBaseUrl == null ||
         _authToken == null ||
         _apiBaseUrl!.isEmpty ||
-        _authToken!.isEmpty)
+        _authToken!.isEmpty) {
       return;
+    }
 
     try {
       final client = HttpClient();
@@ -978,10 +979,12 @@ Future<ServiceRequestResult> startKknForegroundService({
   }
 
   // Simpan API config
-  if (apiBaseUrl != null)
+  if (apiBaseUrl != null) {
     await prefs.setString(KknBgPrefKeys.apiBaseUrl, apiBaseUrl);
-  if (authToken != null)
+  }
+  if (authToken != null) {
     await prefs.setString(KknBgPrefKeys.authToken, authToken);
+  }
 
   // Simpan waktu mulai service
   await prefs.setString(

@@ -267,8 +267,8 @@ class _SplashViewState extends ConsumerState<SplashView>
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Image.asset(
-                              'assets/logo/BersekaNew-logo-text-bg-transparent.png', // Logo text
-                              height: 100,
+                              'assets/logo/BersekaNew-logo-bg-transparent.png',
+                              height: 110,
                               fit: BoxFit.contain,
                             ),
                           ),

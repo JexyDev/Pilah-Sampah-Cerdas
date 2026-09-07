@@ -244,10 +244,12 @@ class KknLocationNotifier extends StateNotifier<KknLocationState> {
           }
         } else {
           List<String> parts = [];
-          if (p.subLocality != null && p.subLocality!.isNotEmpty)
+          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
             parts.add(p.subLocality!);
-          if (p.locality != null && p.locality!.isNotEmpty)
+          }
+          if (p.locality != null && p.locality!.isNotEmpty) {
             parts.add(p.locality!);
+          }
           address = parts.join(', ');
         }
         if (address.isEmpty) address = 'Lokasi tidak diketahui';

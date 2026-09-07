@@ -164,8 +164,9 @@ class _RiwayatViewState extends ConsumerState<RiwayatView> {
                             ),
                           ],
                           onChanged: (val) {
-                            if (val != null)
+                            if (val != null) {
                               setState(() => _timeFilterIndex = val);
+                            }
                           },
                         ),
                       ),

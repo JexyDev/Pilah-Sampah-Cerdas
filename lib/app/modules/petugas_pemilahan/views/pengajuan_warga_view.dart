@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_dimensions.dart';
 import '../controllers/petugas_pemilahan_controller.dart';
-import '../../auth/controllers/auth_controller.dart';
+import 'verifikasi_pengosongan_view.dart';
 
 /// Halaman dedicated Pengajuan Pengosongan Tempat Sampah dari Warga.
 class PengajuanWargaView extends ConsumerWidget {
@@ -111,9 +111,9 @@ class PengajuanWargaView extends ConsumerWidget {
     Map<String, dynamic> pengajuan,
   ) {
     final wargaName = pengajuan['wargaName'] ?? '';
-    final pengajuanId = pengajuan['id'] ?? '';
     final alasan = pengajuan['alasan'] ?? '';
     final binCode = pengajuan['binCode'] ?? '';
+    final category = pengajuan['category']?.toString() ?? 'Organik';
     final alamat = pengajuan['address'] ?? pengajuan['alamat'] ?? '';
     final rtRw = pengajuan['rtRw']?.toString() ?? '';
     final createdAt = pengajuan['createdAt'] ?? '';
@@ -210,6 +210,8 @@ class PengajuanWargaView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildDetailRow(Icons.delete_outline_rounded, 'Tempat Sampah', binCode),
+                const SizedBox(height: 8),
+                _buildDetailRow(Icons.category_outlined, 'Kategori', category),
                 if (rtRw.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _buildDetailRow(Icons.location_on_outlined, 'Wilayah', rtRw),
@@ -227,7 +229,7 @@ class PengajuanWargaView extends ConsumerWidget {
                 if (evidencePhotoUrl.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   const Text(
-                    'Foto Bukti Tempat Sampah Kosong:',
+                    'Foto Bukti Tempat Sampah Penuh (Warga):',
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 6),
@@ -321,42 +323,25 @@ class PengajuanWargaView extends ConsumerWidget {
                 ],
                 const SizedBox(height: 16),
 
-                // Tombol Terima
+                // Tombol Verifikasi & Pengosongan
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final ok = await ref
-                          .read(petugasPemilahanControllerProvider.notifier)
-                          .claimPengajuanReset(pengajuanId);
-                      if (context.mounted) {
-                        if (ok) ref.read(authProvider.notifier).fetchProfile();
-                        final errorMsg = ref
-                            .read(petugasPemilahanControllerProvider)
-                            .errorMessage;
-                        ScaffoldMessenger.of(context).clearSnackBars();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? 'Pengajuan berhasil diterima! +15 Poin didapatkan.'
-                                  : (errorMsg ?? 'Gagal memproses pengajuan.'),
-                            ),
-                            backgroundColor: ok
-                                ? AppColors.primaryGreen
-                                : AppColors.maroonRed,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                      final ok = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VerifikasiPengosonganView(pengajuan: pengajuan),
+                        ),
+                      );
+                      if (ok == true) {
+                        ref.read(petugasPemilahanControllerProvider.notifier).refreshAll();
                       }
                     },
-                    icon: const Icon(Icons.check_circle_rounded, size: 18),
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
                     label: const Text(
-                      'Terima & Proses Sekarang',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
+                      'Verifikasi & Kosongkan Tempat Sampah',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
