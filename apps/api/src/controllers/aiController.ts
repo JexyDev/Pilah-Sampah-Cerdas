@@ -110,8 +110,9 @@ export class AiController {
       const confidencePercentage = Math.round(confidence * 100);
 
       const rawOrgPercent = (result as any).organik_percent;
-      const organicPercentage = rawOrgPercent !== undefined ? Math.round(Number(rawOrgPercent)) : confidencePercentage;
-      const nonOrganicPercentage = 100 - organicPercentage;
+      const integerOrgPercent = rawOrgPercent !== undefined ? Math.min(100, Math.max(0, Math.round(Number(rawOrgPercent)))) : confidencePercentage;
+      const organicPercentage = Number((integerOrgPercent / 100).toFixed(2));
+      const nonOrganicPercentage = 100 - integerOrgPercent;
 
       const estimatedPoints = Math.round(weightKg * 100.0 * confidence * 0.9) || (isOrganic ? 85 : 42);
 
@@ -125,7 +126,7 @@ export class AiController {
           confidence,
           confidencePercentage,
           organicPercentage,
-          organik_percent: organicPercentage,
+          organik_percent: integerOrgPercent,
           non_organik_percent: nonOrganicPercentage,
           estimatedPoints,
           isBlurry: (result as any).isBlurry || false,
